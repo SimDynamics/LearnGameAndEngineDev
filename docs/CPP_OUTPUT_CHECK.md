@@ -669,9 +669,15 @@ aritmética entera acotada sobre literales decimales, incluidos paréntesis,
 signos y los operadores `+`, `-`, `*`, `/` y `%`. Se respetan
 precedencia y división entera; se rechazan desbordamiento, divisor cero
 y literales de base ambigua para el comprobador, sin interpretar macros
-ni evaluar expresiones C++ arbitrarias. Además, el motor comprueba la compilación, la
-ejecución y el primer caso válido de `outputCheck` antes de registrar el
-acierto. Los casos posteriores permanecen optativos.
+ni evaluar expresiones C++ arbitrarias. El analizador sólo admite
+directivas `#include` en el archivo evaluado: una función excluida con
+`#if 0`, una macro o una declaración generada no constituyen evidencia
+fuente acreditable. Los comentarios que mencionan esas directivas siguen
+siendo texto ordinario.
+
+Además, el motor comprueba la compilación, la ejecución y el primer caso
+válido de `outputCheck` antes de registrar el acierto. Los casos
+posteriores permanecen optativos.
 
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra
