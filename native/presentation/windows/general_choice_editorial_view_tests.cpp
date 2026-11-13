@@ -101,6 +101,13 @@ void check_reading(HiddenView& view) {
     constexpr std::string_view newer=
         "La operación incumple la condición para aceptar la transición, aunque conserve una cantidad válida.";
     const auto& choice=view.lesson.pages.at(7).blocks.at(2);
+    const auto receipt=state::get_response(read_lesson_state(view.view),
+        view.lesson,choice);
+    require(receipt&&receipt->correct&&receipt->selected==0&&
+            !receipt->historical_choice&&
+            state::selected_choice_text(*receipt,choice)==newer&&
+            state::choice_correct_feedback(*receipt,choice)==choice.explanation,
+        "A valid previous success was lost, duplicated or treated as a new puzzle");
     const auto marked=choice.text_semantics.find("/options/0");
     require(marked!=choice.text_semantics.end()&&
             marked->second.source==newer&&marked->second.spans.size()==1&&
@@ -149,13 +156,29 @@ int main(int argc,char** argv) {
         state::StateData qa;
         state::prepare_lesson_state(qa,lesson);
         seed_compiler_prerequisites(qa,lesson);
+        // The selected answer predates the editorial correction. Its exact
+        // legacy storage key and opaque attempt metadata must remain owned
+        // by this same activity after the revised words appear.
+        const auto& choice=lesson.pages.at(7).blocks.at(2);
+        state::Response previous;
+        previous.selected=0;
+        previous.correct=true;
+        previous.raw_json=R"({"incorrectAttempts":3,"opaque":{"cursor":11}})";
+        const auto key=exercise_key(lesson,choice);
+        state::put_response(qa,key,previous);
+        require(state::response_storage_key(lesson,choice)==key,
+            "A wording-only change moved the historic choice response");
+        const auto original_receipt=state::string_value(qa,"learning_progress",key);
         state::save_current_page(qa,lesson,7);
         HiddenView view(std::move(lesson),qa);
         check_reading(view);
         view.reopen();
         check_reading(view);
+        const auto reopened=read_lesson_state(view.view);
+        require(state::string_value(reopened,"learning_progress",key)==original_receipt,
+            "Reopening the reviewed reading changed a successful historical response");
         std::cout<<"PASS general choice reading: original/current semantic spans, "
-            "audio revision and unchanged QA state\n";
+            "audio revision and original success across reopening\n";
     } catch(const std::exception& error) {
         std::cerr<<"FAIL general choice reading: "<<error.what()<<'\n';
         outcome=1;
