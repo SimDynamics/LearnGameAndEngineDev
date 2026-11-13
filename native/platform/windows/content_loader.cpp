@@ -2520,7 +2520,9 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     };
     for(const auto& entry:records) {
         const auto item=entry.GetObject();
-        allowed_keys(item,{"activity","path","rules"},true);
+        allowed_keys(item,{"activity","path","rules","editablePaths"});
+        require(item.HasKey(L"activity")&&item.HasKey(L"path")&&item.HasKey(L"rules"),
+            "Named-rule source requires activity, path and rules");
         const auto identity=text(item,"activity");
         require(valid_id(identity)&&owners.insert(identity).second,
             "Repeated or invalid named-rule activity");
@@ -2543,6 +2545,18 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                     std::ranges::any_of(owner->project_files,
                         [&](const auto& f){return f.first==check.path;}),
                 "Named-rule project source is not an existing authored C++ file");
+        }
+        if(item.HasKey(L"editablePaths")) {
+            auto more=strings(array(item,"editablePaths"),false,false);
+            require(more.size()<=32,"Too many optional named-rule editable files");
+            std::set<std::string> seen;
+            for(const auto& candidate:more)
+                require(!check.path.empty()&&candidate!=check.path&&
+                    seen.insert(candidate).second&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& file){return file.first==candidate;}),
+                    "An additional named-rule edit must belong to an original project file");
+            check.editable_paths=std::move(more);
         }
         const auto rules=array(item,"rules");
         require(rules.Size()>0&&rules.Size()<=8,
