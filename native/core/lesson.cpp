@@ -365,6 +365,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         }
         token(std::to_string(contract.editable_paths.size()));
         for(const auto& file:contract.editable_paths)token(file);
+        token(std::to_string(contract.comment_only_paths.size()));
+        for(const auto& path:contract.comment_only_paths)token(path);
         if(contract.execution_probe) {
             token("independent-cmake-probe-v1");
             token(contract.execution_probe->harness_path);
