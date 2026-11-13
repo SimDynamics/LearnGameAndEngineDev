@@ -173,8 +173,14 @@ inline std::optional<int> arithmetic_constant(
 }
 inline std::optional<LocalRule> constant(
         const Tokens& t,std::size_t position,std::size_t limit) {
-    if(position+5>=limit||!(id(t[position],"const")||id(t[position],"constexpr"))||
-       !id(t[position+1],"int")||!t[position+2].starts_with("id:"))return {};
+    // Both "const int" and "int const" denote the same const-qualified
+    // integer type. Accept the two idiomatic spellings in an authored rule.
+    if(position+5>=limit)return {};
+    const bool const_before=(id(t[position],"const")||
+        id(t[position],"constexpr"))&&id(t[position+1],"int");
+    const bool const_after=id(t[position],"int")&&id(t[position+1],"const");
+    if(!(const_before||const_after)||!t[position+2].starts_with("id:"))
+        return {};
     const auto name=t[position+2].substr(3);
     const auto assignment=position+3;
     if(op(t[assignment],"=")) {
