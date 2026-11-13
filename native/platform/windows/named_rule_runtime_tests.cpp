@@ -684,11 +684,21 @@ bool llega_a_tiempo(int dias) {
     require(!compiler_runtime_request_allowed(owner,exit_forged),
         "A CMake function with premature exit(0) passed the source gate");
     const auto early_run=run_cpp(exit_forged);
+    const auto probe_status=early_run.named_rule_probe?
+        std::to_string(static_cast<int>(early_run.named_rule_probe->execution.status))+
+        "/"+std::to_string(early_run.named_rule_probe->execution.exit_code.value_or(999))+
+        "/stderr="+early_run.named_rule_probe->execution.stderr_bytes+
+        "/compile="+std::to_string(early_run.named_rule_probe->compilation.exit_code.value_or(999))
+        :std::string("absent");
     require(early_run.error_utf8.empty()&&early_run.compilation.succeeded()&&
         early_run.execution.succeeded()&&early_run.named_rule_probe&&
         early_run.named_rule_probe->execution.succeeded()&&
         early_run.named_rule_probe->execution.stderr_bytes.empty(),
-        "The controlled CMake early exit did not bypass the probe's final line");
+        "The controlled CMake early exit did not bypass the probe's final line"
+        "; runner-error="+early_run.error_utf8+
+        "; compilation="+std::to_string(early_run.compilation.exit_code.value_or(999))+
+        "; execution="+std::to_string(early_run.execution.exit_code.value_or(999))+
+        "; probe="+probe_status);
     const auto early_capture=capture_cpp_execution(exit_forged,early_run);
     require(evaluate_cpp_output_check(*owner.output_check,early_capture,
             exit_forged.revision).verdict==OutputVerdict::correct&&
