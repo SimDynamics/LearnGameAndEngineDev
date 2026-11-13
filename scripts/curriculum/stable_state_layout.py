@@ -835,12 +835,20 @@ def _general_choice_semantic_projection(document: dict) -> dict | None:
         if "optionIndex" not in item:
             continue
         marker = _choice_semantic_entry(shadow, item["id"], item["optionIndex"])
-        if marker is not None:
-            current_sha = hashlib.sha256(item["replacement"].encode("utf-8")).hexdigest()
-            require(marker.get("sourceSha256") == current_sha,
-                    "The revised choice's semantic source fingerprint is stale")
-            original_text = item["block"]["options"][item["optionIndex"]]
-            marker["sourceSha256"] = hashlib.sha256(original_text.encode("utf-8")).hexdigest()
+        archived = item["semanticBefore"]
+        if archived is None:
+            require(marker is None,
+                    "A revised choice invented a semantic marker absent from its original")
+        else:
+            require(marker is not None,
+                    "A revised choice dropped its archived semantic marker")
+            expected = deepcopy(archived)
+            expected["sourceSha256"] = hashlib.sha256(
+                item["replacement"].encode("utf-8")).hexdigest()
+            require(marker == expected,
+                    "Revised choice semantic spans differ from their complete archive")
+            marker.clear()
+            marker.update(deepcopy(archived))
     return overlay
 
 
@@ -1141,8 +1149,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     "The choice snapshot does not match its immutable response contract")
             choices[identity] = spec
         else:
-            require(set(item) == {"id", "block", "optionIndex", "replacement"} and spec is None,
-                    "A general choice review needs its original, option index and replacement only")
+            require(set(item) == {"id", "block", "optionIndex", "replacement", "semanticBefore"}
+                    and spec is None,
+                    "A general choice review needs its original, one option and exact semantic archive")
             require(type(original) is dict and original.get("type") == "multiple_choice"
                     and type(original.get("options")) is list
                     and all(type(option) is str for option in original["options"])
@@ -1159,6 +1168,25 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(type(active) is dict,
                     "General choice review must keep its original activity active")
             _general_choice_projection(item, active)
+            semantic_before = item["semanticBefore"]
+            selected_before = original["options"][index]
+            if semantic_before is not None:
+                require(type(semantic_before) is dict and
+                        set(semantic_before) == {"block", "path", "sourceSha256", "spans"} and
+                        semantic_before["block"] == identity and
+                        semantic_before["path"] == f"/options/{index}",
+                        "The choice semantic predecessor needs its exact original identity")
+                try:
+                    text_semantics._descriptor(semantic_before, selected_before)
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise LayoutError("Archived choice semantic spans are invalid") from exc
+            semantic_after = _choice_semantic_entry(document, identity, index)
+            expected_semantic = deepcopy(semantic_before)
+            if expected_semantic is not None:
+                expected_semantic["sourceSha256"] = hashlib.sha256(
+                    item["replacement"].encode("utf-8")).hexdigest()
+            require(semantic_after == expected_semantic,
+                    "A revised choice changed, inserted or lost historical semantic spans")
             general_choices[identity] = item
     compiler_revisions = meta.get("compilerRevisions", [])
     require(type(compiler_revisions) is list and len(compiler_revisions) <= len(COMPILER_CASE_REVISIONS),
@@ -2291,6 +2319,7 @@ def revise_choice_editorial(document: dict, identity: str,
             and type(replacement) is str and bool(replacement.strip())
             and replacement != original["options"][option_index],
             "General choice review must revise exactly one nonblank option")
+    previous_semantic = deepcopy(_choice_semantic_entry(document, identity, option_index))
     result = deepcopy(document)
     actual = _blocks(result)[identity]
     actual["options"][option_index] = replacement
@@ -2302,7 +2331,8 @@ def revise_choice_editorial(document: dict, identity: str,
         semantic["sourceSha256"] = hashlib.sha256(replacement.encode("utf-8")).hexdigest()
     result["stateLayout"].setdefault("choiceRevisions", []).append({
         "id": identity, "block": deepcopy(original),
-        "optionIndex": option_index, "replacement": replacement})
+        "optionIndex": option_index, "replacement": replacement,
+        "semanticBefore": previous_semantic})
     result["stateLayout"]["editorial"].append({
         "id": identity, "beforeSha256": fingerprint(original),
         "afterSha256": fingerprint(actual)})
@@ -2526,6 +2556,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for item in choices[len(old_choices):]:
         require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
                 "A new choice revision must preserve its complete previous published block")
+        if "optionIndex" in item:
+            require(item["semanticBefore"] == _choice_semantic_entry(
+                baseline, item["id"], item["optionIndex"]),
+                "A choice semantic archive differs from the exact prior lesson")
     new_general_choices = [item for item in choices[len(old_choices):] if "optionIndex" in item]
     if new_general_choices:
         # A single response-text precision must not silently repaint another
