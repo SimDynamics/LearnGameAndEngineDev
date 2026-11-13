@@ -675,11 +675,10 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 if(separator==args.end())continue;
                 const auto pos=static_cast<std::size_t>(separator-args.begin());
                 if(pos<2||pos+2!=args.size())continue;
-                const bool append=std::ranges::any_of(
-                    std::span(args).subspan(1,pos-1),
-                    [&](const auto& arg) {
-                        return equals(arg,"APPEND")||equals(arg,"APPEND_STRING");
-                    });
+                bool append=false;
+                for(std::size_t i=1;i<pos;++i)
+                    append=append||equals(args[i],"APPEND")||
+                        equals(args[i],"APPEND_STRING");
                 if(append)continue;
                 for(std::size_t i=1;i<pos;++i)
                     apply_property(args[i],args[pos+1],args[pos+2]);
