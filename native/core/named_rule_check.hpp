@@ -28,6 +28,20 @@ struct NamedRuleAnalysis {
     bool source_evidence = false;
     std::string reason;
 };
+// Independently execute named C++ functions using a generated test driver,
+// never the student-editable test executable. Every expected result is authored
+// separately from the candidate. No user-provided C++ snippet is injected.
+struct NamedRuleProbeCase {
+    std::string function;
+    int input = 0, expected = 0;
+    bool operator==(const NamedRuleProbeCase&) const = default;
+};
+struct NamedRuleExecutionProbe {
+    std::string harness_path, header;
+    std::vector<NamedRuleProbeCase> cases;
+    bool operator==(const NamedRuleExecutionProbe&) const = default;
+};
+
 // One explicitly authored source in an editor, with independent function
 // requirements. Empty path denotes the ordinary single-file C++ editor.
 // Source evidence is necessary but never sufficient for a passing execution.
@@ -37,6 +51,9 @@ struct NamedRuleSourceCheck {
     // In a CMake exercise, only the reviewed C++ source may change unless
     // the original author expressly permits further existing project files.
     std::vector<std::string> editable_paths;
+    // Optional trusted CMake verification. A passing stdout from the edited
+    // harness alone never proves the project functions calculate these cases.
+    std::optional<NamedRuleExecutionProbe> execution_probe;
     bool operator==(const NamedRuleSourceCheck&) const = default;
 };
 
@@ -202,4 +219,42 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     }
     return {true,{}};
 }
+// Bounded source generation is shared by the worker and its verifier; it
+// accepts identifiers, integer values and a safe include path, never raw C++.
+inline std::optional<std::string> named_rule_probe_source(
+        const NamedRuleExecutionProbe& probe) {
+    const auto identifier=[](std::string_view word) {
+        if(word.empty()||word.size()>128)return false;
+        const auto letter=[](unsigned char c) {
+            return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||c=='_';
+        };
+        if(!letter(static_cast<unsigned char>(word.front())))return false;
+        for(const unsigned char c:word)
+            if(!letter(c)&&!(c>='0'&&c<='9'))return false;
+        return true;
+    };
+    if(probe.cases.empty()||probe.cases.size()>32||probe.header.empty()||
+       probe.header.size()>256||probe.header.starts_with('/')||
+       probe.header.starts_with('.')||probe.header.find("..")!=std::string::npos)
+        return {};
+    for(const unsigned char c:probe.header)
+        if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+             (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='/'))
+            return {};
+    std::string code="#include \""+probe.header+"\"\n\nint main() {\n";
+    for(std::size_t i=0;i<probe.cases.size();++i) {
+        const auto& item=probe.cases[i];
+        if(!identifier(item.function))return {};
+        for(std::size_t j=0;j<i;++j)
+            if(probe.cases[j].function==item.function&&
+               probe.cases[j].input==item.input)return {};
+        code+="    if (static_cast<int>("+item.function+"("+
+            std::to_string(item.input)+")) != "+
+            std::to_string(item.expected)+") return "+
+            std::to_string(i+1)+";\n";
+    }
+    code+="    return 0;\n}\n";
+    return code;
+}
+
 } // namespace lgaed::curriculum
