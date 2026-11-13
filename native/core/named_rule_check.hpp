@@ -27,6 +27,14 @@ struct NamedRuleAnalysis {
     bool source_evidence = false;
     std::string reason;
 };
+// One explicitly authored source in an editor, with independent function
+// requirements. Empty path denotes the ordinary single-file C++ editor.
+// Source evidence is necessary but never sufficient for a passing execution.
+struct NamedRuleSourceCheck {
+    std::string path;
+    std::vector<NamedRuleRequirement> requirements;
+    bool operator==(const NamedRuleSourceCheck&) const = default;
+};
 
 namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
