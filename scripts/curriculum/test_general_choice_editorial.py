@@ -167,8 +167,15 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) == 3 and sys.argv[1] == "--write-reviewed":
+    if len(sys.argv) == 3 and sys.argv[1] in {
+            "--write-reviewed", "--write-reviewed-marked"}:
         published = json.loads(SOURCE.read_text(encoding="utf-8"))
+        if sys.argv[1] == "--write-reviewed-marked":
+            marker = next(field for field in published["textSemantics"]["fields"]
+                          if field["block"] == OWNER and field["path"] == "/options/0")
+            marker["spans"] = [layout.text_semantics.select(
+                layout._blocks(published)[OWNER]["options"][0],
+                "La operación", "prose", reading="natural")]
         revised = layout.revise_choice_editorial(published, OWNER, 0, REVISED)
         output = Path(sys.argv[2])
         output.parent.mkdir(parents=True, exist_ok=True)
