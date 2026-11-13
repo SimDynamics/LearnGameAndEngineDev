@@ -174,6 +174,26 @@ int cajas_para(int piezas) {
 )cpp");
     require(!compiler_runtime_request_allowed(owner,ignored_intermediate),
         "An unused east-const variable supplied a fake second result use");
+    auto unreachable_result=submitted;
+    change_project(unreachable_result,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4;
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,unreachable_result),
+        "Windows credited a named rule from unreachable code after return");
+    auto guarded_result=submitted;
+    change_project(guarded_result,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas <= 0) return 0;
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,guarded_result),
+        "Windows rejected a valid early guard before the named calculation");
     auto wrong=submitted;
     change_project(wrong,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
