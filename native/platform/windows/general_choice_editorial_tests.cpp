@@ -94,9 +94,16 @@ int main(int argc,char** argv) {
         const auto reopened=state::decode(old_state);
         require(state::encode(reopened)==old_state,
             "The general choice review erased a historical response on roundtrip");
+        auto imported=reopened;
+        state::prepare_lesson_state(imported,revised);
+        require(state::string_value(imported,"learning_progress",legacy)==
+                    state::string_value(saved,"learning_progress",legacy),
+            "Importing the old response into the revised lesson erased its historical receipt");
         const auto new_key=state::response_storage_key(revised,after);
         require(!new_key.empty()&&new_key!=legacy,
             "A revised option silently reused its historical answer receipt");
+        require(state::string_value(imported,"learning_progress",new_key).empty(),
+            "An old choice response silently accredited the new wording");
 
         const auto reviewed_file=read_file(std::filesystem::path(argv[2]));
         rejected_change(reviewed_file,[](JsonObject root) {
