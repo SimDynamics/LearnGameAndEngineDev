@@ -2224,6 +2224,45 @@ def refine_order_lines(document: dict, identity: str) -> dict:
     return result
 
 
+def revise_choice_editorial(document: dict, identity: str,
+                            option_index: int, replacement: str) -> dict:
+    """Author one authenticated text-only change without a lesson hash allowlist.
+
+    The original block is archived unchanged and a single option receives
+    revised prose; correct index, all other answers, feedback and narration
+    coordinates remain exactly as published.
+    """
+    validate(document)
+    meta = document.get("stateLayout", {})
+    require(meta.get("version") == 2 and meta.get("locale") == "es",
+            "General choice review requires a published Spanish v2 lesson")
+    _identity(identity)
+    require(identity not in _choice_revisions(document),
+            "A reviewed choice cannot be revised twice under one historical archive")
+    require(CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) is None,
+            "A closed reviewed choice has its own existing revision contract")
+    original = _blocks(document).get(identity)
+    require(type(original) is dict and original.get("type") == "multiple_choice"
+            and type(original.get("options")) is list
+            and type(original.get("correctIndex")) is int,
+            "General choice review requires an existing complete choice activity")
+    require(type(option_index) is int and 0 <= option_index < len(original["options"])
+            and type(replacement) is str and bool(replacement.strip())
+            and replacement != original["options"][option_index],
+            "General choice review must revise exactly one nonblank option")
+    result = deepcopy(document)
+    actual = _blocks(result)[identity]
+    actual["options"][option_index] = replacement
+    result["stateLayout"].setdefault("choiceRevisions", []).append({
+        "id": identity, "block": deepcopy(original),
+        "optionIndex": option_index, "replacement": replacement})
+    result["stateLayout"]["editorial"].append({
+        "id": identity, "beforeSha256": fingerprint(original),
+        "afterSha256": fingerprint(actual)})
+    validate_transition(document, result)
+    return result
+
+
 def revise_choice_option(document: dict, identity: str) -> dict:
     """Prepare one closed option revision and its exact paired fields in memory."""
     validate(document)
@@ -2534,8 +2573,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if format_original is not None:
             previous_source = code_format.source_projection(block, format_original)
             protected = code_format.source_projection(actual, format_original)
-        require(state_fingerprint(_historical_order_contract(baseline, identity, previous_source))
-                == state_fingerprint(_historical_order_contract(current, identity, protected)),
+        previous_review = _historical_choice_contract(baseline, identity, previous_source)
+        current_review = _historical_choice_contract(current, identity, protected)
+        require(state_fingerprint(_historical_order_contract(baseline, identity, previous_review))
+                == state_fingerprint(_historical_order_contract(current, identity, current_review)),
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
             serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
