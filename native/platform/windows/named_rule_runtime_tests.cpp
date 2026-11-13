@@ -194,6 +194,36 @@ int cajas_para(int piezas) {
 )cpp");
     require(compiler_runtime_request_allowed(owner,guarded_result),
         "Windows rejected a valid early guard before the named calculation");
+    auto split_guards=submitted;
+    change_project(split_guards,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+    if (piezas <= 10) return (piezas + 3) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,split_guards),
+        "Complementary guards concealed a hardcoded calculation in Windows");
+    auto split_branches=submitted;
+    change_project(split_branches,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+    else return (piezas + 3) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,split_branches),
+        "Windows accepted an if/else with one hardcoded branch");
+    auto legitimate_branches=submitted;
+    change_project(legitimate_branches,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+    else return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,legitimate_branches),
+        "Windows rejected the same named computation in both if/else branches");
     auto wrong=submitted;
     change_project(wrong,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
