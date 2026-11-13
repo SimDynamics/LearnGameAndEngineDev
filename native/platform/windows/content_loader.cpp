@@ -2520,7 +2520,8 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     };
     for(const auto& entry:records) {
         const auto item=entry.GetObject();
-        allowed_keys(item,{"activity","path","rules","editablePaths","executionProbe"});
+        allowed_keys(item,{"activity","path","rules","editablePaths",
+            "commentOnlyPaths","executionProbe"});
         require(item.HasKey(L"activity")&&item.HasKey(L"path")&&item.HasKey(L"rules"),
             "Named-rule source requires activity, path and rules");
         const auto identity=text(item,"activity");
@@ -2557,6 +2558,21 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                         [&](const auto& file){return file.first==candidate;}),
                     "An additional named-rule edit must belong to an original project file");
             check.editable_paths=std::move(more);
+        }
+        if(item.HasKey(L"commentOnlyPaths")) {
+            auto limited=strings(array(item,"commentOnlyPaths"),false,false);
+            require(limited.size()<=32,
+                "Too many comment-only named-rule source files");
+            std::set<std::string> unique;
+            for(const auto& candidate:limited) {
+                const bool header=candidate.ends_with(".h")||
+                    candidate.ends_with(".hpp")||candidate.ends_with(".hxx");
+                require(header&&unique.insert(candidate).second&&
+                        std::ranges::find(check.editable_paths,candidate)!=
+                        check.editable_paths.end(),
+                    "Comment-only files must be unique, editable original C++ headers");
+            }
+            check.comment_only_paths=std::move(limited);
         }
         const auto rules=array(item,"rules");
         require(rules.Size()>0&&rules.Size()<=8,
