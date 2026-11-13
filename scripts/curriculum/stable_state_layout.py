@@ -1933,7 +1933,9 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
             "Named-rule declarations require 1..64 owners")
     owners, seen = _blocks(document), set()
     for record in checks:
-        require(type(record) is dict and set(record) == {"activity", "path", "rules"},
+        require(type(record) is dict and
+                {"activity", "path", "rules"} <= set(record) <=
+                {"activity", "path", "rules", "editablePaths"},
                 "Named-rule owner must declare activity, path and rules only")
         identity = _identity(record["activity"])
         require(identity not in seen, "Repeated named-rule owner")
@@ -1956,6 +1958,13 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
             require(source == "" and not block.get("cmake") and
                     type(block.get("initialCode")) is str,
                     "Single-file named rules must use an empty source path")
+        extra = record.get("editablePaths", [])
+        require(type(extra) is list and len(extra) <= 32 and
+                all(type(path) is str for path in extra) and
+                len(set(extra)) == len(extra) and
+                (not extra or (bool(files) and source not in extra and
+                    set(extra) <= {item.get("path") for item in files if type(item) is dict})),
+                "Extra editable paths must be unique original project members")
         rules = record["rules"]
         require(type(rules) is list and 0 < len(rules) <= 8,
                 "Each named-rule source requires 1..8 function contracts")
