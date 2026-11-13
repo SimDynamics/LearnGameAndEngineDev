@@ -679,6 +679,12 @@ Además, el motor comprueba la compilación, la ejecución y el primer caso
 válido de `outputCheck` antes de registrar el acierto. Los casos
 posteriores permanecen optativos.
 
+Los usos algebraicamente neutros más directos, como `capacidad -
+capacidad`, `capacidad / capacidad` o multiplicaciones por expresiones
+enteras constantes de valor cero, no cuentan como referencias útiles.
+La comprobación conserva las referencias reales que acompañen a una
+expresión neutra.
+
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra
 parte del programa no fabrique una salida. Las prácticas que requieren
