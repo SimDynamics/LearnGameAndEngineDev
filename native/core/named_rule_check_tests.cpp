@@ -102,6 +102,35 @@ void capacity() {
             return (piezas + 3) / 4 + 0 * capacidad;
         })cpp",rules,false,"Zero multiplication as decoration");
     verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad - capacidad);
+        })cpp",rules,false,"A self-cancelling subtraction does not use the capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   capacidad * (2 - 2) + capacidad * (3 - 3);
+        })cpp",rules,false,"Two products by computed zero are not useful references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   capacidad / capacidad + capacidad % capacidad - 1;
+        })cpp",rules,false,"Self division and remainder do not establish the agreement");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad - capacidad);
+        })cpp",rules,true,"A neutral extra expression does not erase two real uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (2 - 2) * capacidad;
+        })cpp",rules,true,"A zero factor alongside real uses is harmless");
+    verify(R"cpp(
         #if 0
         int cajas_para(int piezas) {
             const int capacidad{4};
