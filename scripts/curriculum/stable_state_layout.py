@@ -805,6 +805,45 @@ def _general_choice_revision(document: dict, identity: str) -> dict | None:
                  if item["id"] == identity and "optionIndex" in item), None)
 
 
+def _choice_semantic_entry(document: dict, identity: str, option_index: int) -> dict | None:
+    """Find only the exact existing public-text marker for the revised option."""
+    overlay = document.get(text_semantics.ROOT_FIELD)
+    if overlay is None:
+        return None
+    require(type(overlay) is dict and type(overlay.get("fields")) is list,
+            "Malformed semantic overlay for an editorial choice revision")
+    path = f"/options/{option_index}"
+    matches = [field for field in overlay["fields"]
+               if type(field) is dict and field.get("block") == identity
+               and field.get("path") == path]
+    require(len(matches) <= 1, "Duplicate semantic source for revised option")
+    return matches[0] if matches else None
+
+
+def _general_choice_semantic_projection(document: dict) -> dict | None:
+    """Restore the original option's presentation hash in a historical view.
+
+    Source selection and narration must not borrow the revised option's SHA
+    when reconstructing the published original response. All span annotations
+    remain intact, rather than being silently regenerated or repositioned.
+    """
+    overlay = deepcopy(document.get(text_semantics.ROOT_FIELD))
+    if overlay is None:
+        return None
+    shadow = {**document, text_semantics.ROOT_FIELD: overlay}
+    for item in document.get("stateLayout", {}).get("choiceRevisions", []):
+        if "optionIndex" not in item:
+            continue
+        marker = _choice_semantic_entry(shadow, item["id"], item["optionIndex"])
+        if marker is not None:
+            current_sha = hashlib.sha256(item["replacement"].encode("utf-8")).hexdigest()
+            require(marker.get("sourceSha256") == current_sha,
+                    "The revised choice's semantic source fingerprint is stale")
+            original_text = item["block"]["options"][item["optionIndex"]]
+            marker["sourceSha256"] = hashlib.sha256(original_text.encode("utf-8")).hexdigest()
+    return overlay
+
+
 def _general_choice_projection(item: dict, block: dict) -> dict:
     """Only the declared option text may differ from the exact archived choice.
 
@@ -2255,6 +2294,12 @@ def revise_choice_editorial(document: dict, identity: str,
     result = deepcopy(document)
     actual = _blocks(result)[identity]
     actual["options"][option_index] = replacement
+    semantic = _choice_semantic_entry(result, identity, option_index)
+    if semantic is not None:
+        # The exact published highlights remain authoritative. A changed
+        # excerpt that no longer matches its UTF-16 span is rejected rather
+        # than automatically moving the student's narration/emphasis ranges.
+        semantic["sourceSha256"] = hashlib.sha256(replacement.encode("utf-8")).hexdigest()
     result["stateLayout"].setdefault("choiceRevisions", []).append({
         "id": identity, "block": deepcopy(original),
         "optionIndex": option_index, "replacement": replacement})
@@ -2481,6 +2526,21 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for item in choices[len(old_choices):]:
         require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
                 "A new choice revision must preserve its complete previous published block")
+    new_general_choices = [item for item in choices[len(old_choices):] if "optionIndex" in item]
+    if new_general_choices:
+        # A single response-text precision must not silently repaint another
+        # source, move spans, or claim that a new sentence was already read.
+        expected_semantics = deepcopy(baseline.get(text_semantics.ROOT_FIELD))
+        expectation = {**baseline}
+        if expected_semantics is not None:
+            expectation = {**baseline, text_semantics.ROOT_FIELD: expected_semantics}
+        for item in new_general_choices:
+            marker = _choice_semantic_entry(expectation, item["id"], item["optionIndex"])
+            if marker is not None:
+                marker["sourceSha256"] = hashlib.sha256(
+                    item["replacement"].encode("utf-8")).hexdigest()
+        require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
+                "Editorial choice revised an unrelated text marker or semantic span")
     old_compilers = old_meta.get("compilerRevisions", []) if old_v2 else []
     compilers = meta.get("compilerRevisions", [])
     require(compilers[:len(old_compilers)] == old_compilers,
@@ -2768,6 +2828,8 @@ def original_projection(document: dict) -> dict:
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
+    if text_semantics.ROOT_FIELD in result:
+        result[text_semantics.ROOT_FIELD] = _general_choice_semantic_projection(document)
     result["pages"] = [{**deepcopy(shells[record["id"]]),
                         "blocks": [deepcopy(blocks[block["id"]]) for block in record["blocks"]]}
                        for record in document["stateLayout"]["origin"]]
