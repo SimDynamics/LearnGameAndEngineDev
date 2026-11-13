@@ -626,3 +626,59 @@ Los programas retirados conservan sus datos, sin controles ni obligaciones
 activas. El segundo editor conserva su dependencia real del primero. La ausencia
 de `outputCheck` sólo conserva exploración libre en el Laboratorio independiente;
 un editor curricular sin evaluador continúa pendiente técnicamente.
+
+## Requisitos generales de constantes nombradas
+
+Un bloque `cpp_compiler` existente que ya dispone de `outputCheck` puede
+recibir, desde la raíz de la lección española con `stateLayout` v2, una
+declaración `compilerNamedRuleChecks`. No se cambian el bloque original, sus
+respuestas, `initialCode`, `projectFiles` ni las direcciones históricas.
+
+```json
+{
+  "compilerNamedRuleChecks": [
+    {
+      "activity": "block_0002_0004",
+      "path": "componente/src/cajas.cpp",
+      "rules": [
+        {
+          "function": "cajas_para",
+          "value": 4,
+          "purposeWords": ["capacidad", "plaza", "cupo"],
+          "minUses": 2
+        }
+      ]
+    }
+  ]
+}
+```
+
+El objeto anterior es un **ejemplo de la extensión raíz**, no un JSON
+curricular publicado. `activity` identifica un editor original; `path`
+identifica un archivo C++ ya presente en el proyecto. Para editores de un solo
+archivo, `path` es la cadena vacía. `function` identifica la función;
+`value` fija el acuerdo entero; `purposeWords` permite varios nombres
+de propósito; `minUses` exige un mínimo de referencias de la constante.
+
+El lector exige una definición de la función, una constante local `int` de
+valor correspondiente, un identificador de propósito y referencias reales al
+resultado, incluso cuando se devuelve mediante variables intermedias. Los
+comentarios, las cadenas y las constantes declaradas pero no utilizadas no
+acreditan el objetivo. Además, el motor comprueba la compilación, la
+ejecución y el primer caso válido de `outputCheck` antes de registrar el
+acierto. Los casos posteriores permanecen optativos.
+
+**Límites de la primera integración:** el análisis léxico de usos no
+demuestra por sí solo que todas las operaciones sean correctas o que otra
+parte del programa no fabrique una salida. Las prácticas que requieren
+conservar otros archivos, ampliar baterías, demostrar dependencias
+efectivas o comprobar funciones con entradas distintas deben añadir sus
+sondas y restricciones pertinentes antes de recibir acreditación completa.
+La ficha técnica sigue abierta hasta esa verificación.
+
+Modificar por primera vez `compilerNamedRuleChecks` crea un objetivo
+nuevo, con huella de recibo distinta de los logros históricos de salida.
+Una vez publicado, el autor no puede retirarlo ni modificarlo
+silenciosamente. El validador Python, el cargador Windows, el comprobador
+de ejecución y las pruebas reales deben coincidir. Los archivos JSON los
+integra Work o GPT Work cuando la capacidad técnica esté acreditada.
