@@ -725,6 +725,41 @@ silenciosamente. El validador Python, el cargador Windows, el comprobador
 de ejecución y las pruebas reales deben coincidir. Los archivos JSON los
 integra Work o GPT Work cuando la capacidad técnica esté acreditada.
 
+### Sonda independiente en editores C++ de archivo único
+
+En un editor de un solo archivo, el alumno también puede modificar `main`
+y fabricar las cinco líneas esperadas sin llamar a sus funciones. Una
+declaración optativa `executionProbe` permite comprobar directamente esas
+funciones con casos adicionales, sin confiar en la salida publicada:
+
+```json
+"executionProbe": {
+  "harness": "",
+  "header": "",
+  "cases": [
+    {"function": "precio_total", "input": 11, "expected": 77},
+    {"function": "alcanza_minimo", "input": 4, "expected": 0},
+    {"function": "alcanza_minimo", "input": 5, "expected": 1}
+  ]
+}
+```
+
+Los campos `harness` y `header` deben estar vacíos en esta modalidad;
+el editor continúa teniendo `path` vacío y no utiliza CMake.
+El motor compila el programa entregado para la comprobación visible y
+ejecuta una segunda compilación de su código con un `main` privado
+generado por el motor. El `main` original se renombra sólo en esa
+segunda copia, sin modificar el borrador del alumno. La prueba llama
+directamente a las funciones con los argumentos y esperados declarados
+por Work, y requiere salida vacía, terminación correcta y procedencia
+criptográfica del código exacto presentado.
+
+El nuevo requisito se incorpora a la huella del objetivo y no revalida
+recibos anteriores de salida. La sonda debe cubrir todas las funciones
+nombradas; se rechazan llamadas repetidas o nombres que inyecten código.
+Un único intento correcto en el editor sigue bastando para avanzar.
+No se exige al estudiante ejecutar manualmente cada caso adicional.
+
 ### Archivos adicionales autorizados en proyectos CMake
 
 De manera predeterminada, sólo puede cambiar el archivo C++ identificado
