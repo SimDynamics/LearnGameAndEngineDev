@@ -746,3 +746,24 @@ la sonda del primer caso forma parte de su propio criterio de corrección.
 
 Para los editores de un solo archivo, `path` y `editablePaths` deben
 ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
+
+### Cabeceras de edición limitada a comentarios
+
+Las actividades que piden corregir una descripción, sin alterar firmas ni
+la interfaz C++, pueden añadir `commentOnlyPaths`:
+
+```json
+"commentOnlyPaths": ["componente/publico/envio/cajas.h"]
+```
+
+Las rutas deben estar incluidas en `editablePaths` y ser cabeceras `.h`,
+`.hpp` o `.hxx` preexistentes. Se admite corregir un comentario como
+«4 plazas» por «6 plazas», pero no se admite cambiar una declaración,
+introducir `#define`, redirigir una llamada ni modificar literales. El
+comprobador léxico compara el código, incluyendo directivas, y descarta
+únicamente las diferencias de comentarios. Rechaza cambios que involucren
+macros sensibles a las líneas del código.
+
+El alcance y los permisos forman parte de la identidad del objetivo
+evaluado: no se reutilizan aciertos de otra revisión. Es una capacidad
+general, no una modificación automática del material histórico.
