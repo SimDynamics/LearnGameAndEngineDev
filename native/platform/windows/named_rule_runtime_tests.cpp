@@ -373,8 +373,10 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "MSVC did not execute the real repaired U3 student program: "+
         real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
     const auto captured=capture_cpp_execution(passing,real);
-    require(real.named_rule_probe&&captured.named_rule_probe_correct,
-        "A valid MSVC single-file program failed the independent function probe");
+    require(real.named_rule_probe&&captured.named_rule_probe_correct&&
+        real.named_rule_probe->execution.stderr_bytes==
+            named_rule_probe_completion_marker,
+        "A valid MSVC single-file program failed the completed independent probe");
     require(evaluate_cpp_output_check(*owner.output_check,captured,passing.revision).verdict==
         OutputVerdict::correct,
         "The repaired program did not preserve the actual five-case authored output");
@@ -419,6 +421,33 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     require(!record_compiler_puzzle_case(saved,lesson,owner,forged,forged_capture,
         "forged visible output")&&!compiler_puzzle_completed(saved,lesson,owner),
         "An incorrect function earned credit from a forged printed report");
+    // A buggy function can call std::exit(0) on an independent test input.
+    // That used to look like successful execution without checking later
+    // cases. The generated driver's final witness must now be present.
+    auto early_exit=passing;
+    early_exit.request_id=904;early_exit.revision=304;
+    early_exit.source_utf8="#include <cstdlib>\n"+early_exit.source_utf8;
+    early_exit.source_utf8=replace_unique(std::move(early_exit.source_utf8),
+        "return articulos * precio_unitario;",
+        "if (articulos == 11) std::exit(0);\n"
+        "    return articulos * precio_unitario;");
+    require(compiler_runtime_request_allowed(owner,early_exit),
+        "The independent probe must detect premature success, not the source gate");
+    const auto premature=run_cpp(early_exit);
+    require(premature.error_utf8.empty()&&premature.compilation.succeeded()&&
+        premature.execution.succeeded()&&premature.named_rule_probe&&
+        premature.named_rule_probe->execution.succeeded()&&
+        premature.named_rule_probe->execution.stdout_bytes.empty()&&
+        premature.named_rule_probe->execution.stderr_bytes.empty(),
+        "The controlled early-exit program must finish without the final witness");
+    const auto premature_capture=capture_cpp_execution(early_exit,premature);
+    require(evaluate_cpp_output_check(*owner.output_check,premature_capture,
+            early_exit.revision).verdict==OutputVerdict::correct&&
+        !premature_capture.named_rule_probe_correct,
+        "A zero exit from the student function bypassed remaining probe cases");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,early_exit,
+            premature_capture,"early exit")&&!compiler_puzzle_completed(saved,lesson,owner),
+        "An early exit awarded completion without the full independent probe");
     auto tampered=real;
     require(tampered.named_rule_probe.has_value(),
         "The independent single-file probe did not record its source digest");
