@@ -836,6 +836,18 @@ de salida cero por sí solo no acredita que se hayan ejecutado todas las
 comparaciones; un testigo estático tampoco sustituye el aislamiento
 frente a código deliberadamente hostil.
 
+Para objetivos con `executionProbe`, la comprobación de fuente rechaza
+referencias ejecutables a funciones capaces de finalizar anticipadamente
+el proceso o el hilo, como `exit`, `_Exit`, `quick_exit`,
+`ExitProcess` y `TerminateProcess`. También rechaza tomar su dirección
+para invocarlas mediante un alias. La restricción se aplica a las
+fuentes sometidas a la sonda, no a cualquier actividad C++; los
+comentarios y literales de texto que mencionen esos nombres no
+constituyen llamadas. Es una protección adicional contra falsificar
+el testigo y terminar con código cero; no convierte al ejecutor en una
+barrera de seguridad contra programas hostiles ni impide todas las
+formas posibles de finalización indirecta.
+
 Se conservan por separado el resultado público, el código original, la
 compilación de la sonda, el programa/objetivo y las huellas de ambas
 ejecuciones. La huella de acreditación de las sondas pasa a la versión
