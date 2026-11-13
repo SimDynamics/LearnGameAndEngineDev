@@ -2028,6 +2028,13 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                 covered.add(case["function"])
             require(covered == functions,
                     "Every named function requires an independent execution case")
+        # An editable .cpp file can itself be the CMake test driver.
+        # Never allow it to fabricate stdout unless a separate independent
+        # executable verifies the same functions.
+        if any(path.endswith(".cpp") for path in extra):
+            require("executionProbe" in record and
+                    record["executionProbe"]["harness"] in extra,
+                    "Editable CMake test drivers require independent execution probes")
 
 
 def _validate_order_visual_separators(document: dict) -> None:
