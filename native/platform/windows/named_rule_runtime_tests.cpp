@@ -624,9 +624,13 @@ bool llega_a_tiempo(int dias) {
     for(const auto& file:forged.project_files)
         if(file.first=="componente/src/cajas.cpp")source=file.second;
     require(!source.empty(),"The named-rule CMake file disappeared");
+    // The negative function keeps the two source-level capacity uses in
+    // each meaningful return path, but deliberately computes a wrong result
+    // for 19 pieces. Source inspection must allow it through, and only the
+    // independent CMake probe may reject its runtime behavior.
     source=replace_unique(std::move(source),
         "    return (piezas + capacidad - 1) / capacidad;",
-        "    if (piezas == 19) return 1;\n"
+        "    if (piezas == 19) return (piezas + capacidad - 1) / capacidad - 3;\n"
         "    return (piezas + capacidad - 1) / capacidad;");
     change_project(forged,"componente/src/cajas.cpp",std::move(source));
     const auto expected=owner.output_check->cases.front().outputs.front();
@@ -674,7 +678,7 @@ bool llega_a_tiempo(int dias) {
         if(file.first=="componente/src/cajas.cpp") {
             file.second="#include <cstdlib>\n"+
                 replace_unique(std::move(file.second),
-                    "    if (piezas == 19) return 1;",
+                    "    if (piezas == 19) return (piezas + capacidad - 1) / capacidad - 3;",
                     "    if (piezas == 19) std::exit(0);");
         }
     require(!compiler_runtime_request_allowed(owner,exit_forged),
