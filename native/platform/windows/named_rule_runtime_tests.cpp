@@ -3,6 +3,7 @@
 #include "core/lesson.hpp"
 
 #include <filesystem>
+#include <winrt/Windows.Data.Json.h>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -33,6 +34,68 @@ void change_project(CppRunRequest& request,std::string_view path,std::string tex
         if(file.first==path){file.second=std::move(text);return;}
     throw std::runtime_error("The original named-rule project source is missing");
 }
+void authored_root_roundtrip(const Lesson& original) {
+    using namespace winrt::Windows::Data::Json;
+    // A prospective Work declaration is injected in memory; none of the
+    // published curriculum files or stored student progress are rewritten.
+    constexpr auto declarations=R"json([
+        {"activity":"block_0002_0004","path":"componente/src/cajas.cpp",
+         "rules":[{"function":"cajas_para","value":4,
+                   "purposeWords":["capacidad","plaza","cupo"],"minUses":2}]},
+        {"activity":"block_0005_0006","path":"componente/src/cajas.cpp",
+         "rules":[{"function":"cajas_para","value":6,
+                   "purposeWords":["capacidad","plaza","cupo"],"minUses":2},
+                  {"function":"llega_a_tiempo","value":4,
+                   "purposeWords":["plazo","dias","tiempo"],"minUses":1}]},
+        {"activity":"block_0007_0004","path":"",
+         "rules":[{"function":"precio_total","value":7,
+                   "purposeWords":["precio","costo","tarifa"],"minUses":1},
+                  {"function":"alcanza_minimo","value":5,
+                   "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]},
+        {"activity":"block_0008_0007","path":"",
+         "rules":[{"function":"precio_total","value":7,
+                   "purposeWords":["precio","costo","tarifa"],"minUses":1},
+                  {"function":"alcanza_minimo","value":5,
+                   "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
+    ])json";
+    auto root=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+    root.Insert(L"compilerNamedRuleChecks",
+        JsonArray::Parse(winrt::to_hstring(declarations)));
+    const auto reviewed=winrt::to_string(root.Stringify());
+    const auto after=parse_lesson_json(reviewed,"es");
+    const auto metadata=parse_lesson_progress_metadata(reviewed,"es");
+    require(original.state_layout.lineage==after.state_layout.lineage&&
+        metadata.state_layout.lineage==after.state_layout.lineage&&
+        original.state_layout.signatures==after.state_layout.signatures&&
+        metadata.state_layout.signatures==after.state_layout.signatures,
+        "A root-only source role changed historical state or layout");
+    for(const auto [page,index]:{
+            std::pair<std::size_t,std::size_t>{2,4},{5,6},{7,4},{8,7}}) {
+        const auto& old=original.pages.at(page).blocks.at(index);
+        const auto& current=after.pages.at(page).blocks.at(index);
+        const auto& read_only=metadata.pages.at(page).blocks.at(index);
+        require(!old.named_rule_source_check&&current.named_rule_source_check&&
+            read_only.named_rule_source_check&&
+            current.named_rule_source_check->requirements.size()==
+                read_only.named_rule_source_check->requirements.size()&&
+            current.stable_id==old.stable_id&&
+            exercise_key(original,old)==exercise_key(after,current)&&
+            draft_key("programming",original,old)==
+                draft_key("programming",after,current)&&
+            reference_objective_frame(original,old)!=
+                reference_objective_frame(after,current)&&
+            !compiler_runtime_request_allowed(current,request_of(current)),
+            "A root-authored named-rule objective was lost or credited the original");
+    }
+    // The native loader must reject an unknown or duplicated authored owner.
+    auto invalid=root.GetNamedArray(L"compilerNamedRuleChecks");
+    invalid.Append(invalid.GetObjectAt(0));
+    bool rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(root.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted duplicate named-rule owners");
+}
+
 void project_examples(const Lesson& lesson) {
     const auto& original=lesson.pages.at(2).blocks.at(4);
     require(original.stable_id=="block_0002_0004"&&original.output_check&&original.cmake,
@@ -155,6 +218,7 @@ int main(int argc,char** argv) {
         const auto lesson=load_lesson(std::filesystem::path(argv[1]),"es");
         require(lesson.id=="programming_practice_tools__comprobaciones_repetibles__nombrar_reglas_y_separar_acuerdos",
             "The named-rules source test loaded another lesson");
+        authored_root_roundtrip(lesson);
         project_examples(lesson);
         single_file_examples(lesson);
         std::cout<<"PASS original named-rule editors: source constraints, historic receipt and draft isolation\n";
