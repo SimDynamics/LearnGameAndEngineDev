@@ -194,6 +194,46 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            if (piezas > 10) return (piezas + 3) / 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "A later correct return cannot excuse an earlier hardcoded calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) {
+                return (piezas + 3) / 4;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "A braced hardcoded conditional branch cannot borrow later source evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) return (piezas + capacidad - 1) / 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "One named use in a conditional return is not the required two");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Two equivalent named return paths must remain accepted");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas <= 0) {
+                return 0;
+            } else {
+                return (piezas + capacidad - 1) / capacidad;
+            }
+        })cpp",rules,true,
+        "An exhaustive zero guard and a named calculation remain compatible");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             if (piezas < 0) return (piezas + capacidad - 1) / capacidad;
             return (piezas + 3) / 4;
         })cpp",rules,false,
