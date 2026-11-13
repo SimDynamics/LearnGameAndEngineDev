@@ -942,9 +942,32 @@ mínima declarada por `cmake_minimum_required(VERSION)` en el directorio raíz,
 según el dato `minimumCMakeVersion.string` de **CMake File API codemodel v2**.
 Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
 `3.19` y `3.21` no. No se deduce esta versión de la instalación de CMake,
-ni se sustituye por una búsqueda textual del código fuente. Este campo no
-acredita todavía el mínimo C++20 ni `CXX_EXTENSIONS OFF` explícitos, porque
-el perfil Windows puede aportarlos sin que el alumno los declare.
+ni se sustituye por una búsqueda textual del código fuente. Para exigir los requisitos explícitos de los objetivos, un elemento de
+`targets` puede declarar `"explicitCxx20": true` y
+`"explicitCxxExtensionsOff": true`. Estas propiedades optativas obligan a
+comprobar que **CMake ejecutó** una declaración de C++20 y una desactivación
+de extensiones sobre el objetivo, además de construirlo y ejecutar su primer
+caso correctamente. El perfil Windows puede aportar C++23 y extensiones
+desactivadas, pero eso **no** satisface las propiedades del alumno.
+
+En la configuración autenticada, el motor guarda una traza JSON privada de
+CMake limitada a los archivos CMake originales del proyecto. Sólo acepta
+órdenes ejecutadas y argumentos expandidos: `target_compile_features(objetivo
+PRIVATE cxx_std_20)`, `set_target_properties(objetivo PROPERTIES
+CXX_STANDARD 20)` y `set_property(TARGET objetivo PROPERTY
+CXX_STANDARD 20)` son formas equivalentes para el mínimo. Para extensiones
+se admiten `set_target_properties(... PROPERTIES CXX_EXTENSIONS OFF)` y
+`set_property(TARGET ... PROPERTY CXX_EXTENSIONS OFF)`, con los valores
+falsos admitidos por CMake. Una orden posterior que active las extensiones
+invalida el requisito. Las rutas, fuentes y enlaces siguen contrastándose
+mediante File API. No se evalúan solamente las cadenas impresas por el alumno,
+ni se concede crédito desde una configuración anterior sin traza autenticada.
+
+La traza está limitada al proyecto y a los objetivos declarados. Esta primera
+capacidad no certifica todavía asignaciones por ámbito de directorio,
+propagación por interfaces de otros objetivos ni cualquier macro dinámica que
+no pueda atribuirse con certeza al objetivo. En esos casos se necesita una
+comprobación adicional en lugar de conceder un acierto supuesto.
 
 Cada contrato ya publicado permanece inmutable. Es posible añadir
 nuevos propietarios al final de la declaración mediante una transición
