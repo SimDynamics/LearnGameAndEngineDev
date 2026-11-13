@@ -118,6 +118,24 @@ void capacity() {
         }
         )cpp",rules,false,"A macro cannot substitute the named local rule");
     verify(R"cpp(
+        /* This comment becomes whitespace before the preprocessor runs. */#if 0
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        }
+        #endif
+        int main() {return 0;}
+        )cpp",rules,false,"A comment-prefixed #if cannot hide inactive evidence");
+    verify(R"cpp(
+        /* A comment may also precede the %: digraph spelling. */%:if 0
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        }
+        %:endif
+        int main() {return 0;}
+        )cpp",rules,false,"A comment-prefixed digraph directive cannot hide code");
+    verify(R"cpp(
         #include_next <iostream>
         int cajas_para(int piezas) {
             const int capacidad{4};
