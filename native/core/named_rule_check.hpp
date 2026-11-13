@@ -96,22 +96,16 @@ inline bool probe_environment_neutral(
 inline bool probe_source_no_early_exit(std::string_view source) {
     const auto scanned=code_format::cpp_tokens(source);
     if(!scanned)return false;
-    std::vector<std::string_view> code;
-    code.reserve(scanned->size());
-    for(const auto& token:*scanned) {
-        if(!token.starts_with("comment:")&&
-           !token.starts_with("literal:")&&
-           !token.starts_with("directive:"))
-            code.emplace_back(token);
-    }
     constexpr std::string_view terminating[]={
         "exit","_Exit","_exit","quick_exit","ExitProcess",
-        "TerminateProcess","_cexit","_c_exit"
+        "TerminateProcess","ExitThread","_endthread","_endthreadex",
+        "_c_exit"
     };
-    for(std::size_t i=0;i+1<code.size();++i) {
-        if(!code[i].starts_with("id:")||code[i+1]!="op:(")
-            continue;
-        const auto name=code[i].substr(3);
+    for(const auto& token:*scanned) {
+        if(!token.starts_with("id:"))continue;
+        const auto name=std::string_view(token).substr(3);
+        // Inspect identifiers, not just direct calls: an alias such as
+        // auto finish=&std::exit; finish(0); also ends a probe early.
         if(std::ranges::find(terminating,name)!=std::end(terminating))
             return false;
     }
