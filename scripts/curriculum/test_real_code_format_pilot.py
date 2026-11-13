@@ -136,6 +136,19 @@ def run_cpp(source: str, directory: Path, name: str) -> str:
     return execution.stdout
 
 
+def append_independent_editorial(published: dict, family: dict[str, dict]) -> dict:
+    # Simulate another real editorial publication after formatting, including
+    # the explicit semantic fingerprint required by the Windows reader.
+    changed = deepcopy(published)
+    changed["pages"][0]["blocks"][3]["text"] += " Comprueba los datos antes de calcular."
+    descriptor = next(field for field in changed["textSemantics"]["fields"]
+                      if field["block"] == "block_0000_0003" and field["path"] == "/text")
+    assert descriptor["spans"] == []
+    descriptor["sourceSha256"] = hashlib.sha256(
+        changed["pages"][0]["blocks"][3]["text"].encode("utf-8")).hexdigest()
+    return state.prepare_v2(changed, "es", family, published)
+
+
 class RealPublishedFormatPilot(unittest.TestCase):
     def test_real_immutable_source_identity_and_safe_revision(self):
         before_bytes = source_path("es").read_bytes()
@@ -186,22 +199,34 @@ class RealPublishedFormatPilot(unittest.TestCase):
             self.assertEqual(original["stateLayout"], formatted["stateLayout"])
             state.validate(formatted)
 
+    def test_windows_fixtures_remain_valid_after_later_editorial(self):
+        family = documents()
+        revised = append_independent_editorial(family["es"], family)
+        with tempfile.TemporaryDirectory(prefix="lgaed-real-later-fixtures-") as path:
+            with mock.patch.dict(pilot.__globals__,
+                                 {"documents": lambda: {**family, "es": revised}}):
+                write_fixtures(Path(path))
+            previous = json.loads((Path(path) / "real.before.json").read_text(encoding="utf-8"))
+            current = json.loads((Path(path) / "real.after.json").read_text(encoding="utf-8"))
+            later = json.loads((Path(path) / "after-editorial" / "real.after.json")
+                               .read_text(encoding="utf-8"))
+        state.validate(previous)
+        state.validate(current)
+        state.validate(later)
+        self.assertEqual(previous, current)
+        self.assertEqual(current, revised)
+        for page, index in POSITIONS:
+            identity = POSITIONS[(page, index)]
+            archived = next(entry["block"] for entry in current["stateLayout"]["sourceFormatRevisions"]
+                            if entry["id"] == identity)
+            self.assertNotEqual(archived["code"], current["pages"][page]["blocks"][index]["code"])
+
     def test_later_editorial_update_preserves_format_proofs(self):
         # Reproduce a later, independent paragraph correction (as in main)
         # without modifying any on-disk curriculum or historical snapshots.
         family = documents()
         published = family["es"]
-        changed = deepcopy(published)
-        changed["pages"][0]["blocks"][3]["text"] += " Comprueba los datos antes de calcular."
-        # The published lesson declares text semantics for every paragraph.
-        # Keep its explicit source fingerprint consistent in the simulated
-        # editorial revision, exactly as a real curriculum publication does.
-        descriptor = next(field for field in changed["textSemantics"]["fields"]
-                          if field["block"] == "block_0000_0003" and field["path"] == "/text")
-        self.assertEqual(descriptor["spans"], [])
-        descriptor["sourceSha256"] = hashlib.sha256(
-            changed["pages"][0]["blocks"][3]["text"].encode("utf-8")).hexdigest()
-        revised = state.prepare_v2(changed, "es", family, published)
+        revised = append_independent_editorial(published, family)
         self.assertEqual(revised["stateLayout"]["editorial"][-1]["id"], "block_0000_0003")
         self.assertEqual(revised["stateLayout"]["sourceFormatRevisions"],
                          published["stateLayout"]["sourceFormatRevisions"])
@@ -220,11 +245,27 @@ class RealPublishedFormatPilot(unittest.TestCase):
 
 def write_fixtures(directory: Path) -> None:
     original, formatted = pilot()
+    # A source-only comparison view after a later editorial revision is not a
+    # valid loadable lesson: its block bytes precede its current editorial SHA.
+    # Use the authentic current document for both physical fixtures then.
+    # Windows retrieves the older source directly from the authenticated
+    # sourceFormatRevisions, rather than loading a forged historical lesson.
+    before = (formatted if original["stateLayout"] == formatted["stateLayout"]
+              else original)
+    later = append_independent_editorial(formatted, documents())
     directory.mkdir(parents=True, exist_ok=True)
-    for name, document in (("real.before.json", original), ("real.after.json", formatted)):
-        (directory / name).write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n",
-                                      encoding="utf-8")
-    print("PASS real U4 decision lesson: two authenticated code blocks, original assets untouched")
+    pairs = (
+        ("real.before.json", before), ("real.after.json", formatted),
+        ("after-editorial/real.before.json", later),
+        ("after-editorial/real.after.json", later),
+    )
+    for name, document in pairs:
+        state.validate(document)
+        destination = directory / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n",
+                               encoding="utf-8")
+    print("PASS real U4 decision lesson: authenticated current/archived sources, original assets untouched")
 
 
 def main() -> None:
