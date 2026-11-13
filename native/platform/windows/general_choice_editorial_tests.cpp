@@ -137,6 +137,11 @@ int main(int argc,char** argv) {
         closed.choice_revision->general_option_index.reset();
         require(state::response_storage_key(revised,closed)!=legacy,
             "A response-changing closed revision incorrectly borrowed the old receipt");
+        const auto closed_history=state::get_response(imported,revised,closed);
+        require(closed_history&&closed_history->correct&&
+            closed_history->historical_choice&&
+            state::selected_choice_text(*closed_history,closed)==before.options[0],
+            "An established response-changing revision lost its separate historical selection");
 
         const auto reviewed_file=read_file(std::filesystem::path(argv[2]));
         rejected_change(reviewed_file,[](JsonObject root) {
