@@ -2217,7 +2217,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         for target in targets:
             require(type(target) is dict and
                     {"name", "type"} <= set(target) <=
-                    {"name", "type", "sources", "linksTo", "exactSources"},
+                    {"name", "type", "sources", "linksTo", "exactSources",
+                     "explicitCxx20", "explicitCxxExtensionsOff"},
                     "CMake target requires a name, type and bounded optional rules")
             name, kind = target["name"], target["type"]
             require(type(name) is str and len(name) <= 128 and
@@ -2242,6 +2243,10 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
             exact = target.get("exactSources", False)
             require(type(exact) is bool and (not exact or bool(sources)),
                     "CMake exactSources requires a nonempty source list")
+            for key in ("explicitCxx20", "explicitCxxExtensionsOff"):
+                if key in target:
+                    require(type(target[key]) is bool,
+                            "CMake explicit requirements must be Boolean")
         selected = block["cmake"].get("target")
         require(selected in targets_by_name and
                 targets_by_name[selected]["type"] == "EXECUTABLE",
