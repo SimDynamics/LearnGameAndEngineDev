@@ -137,9 +137,9 @@ struct CppCmakeTargetEvidence {
 };
 struct CppCmakeGraphEvidence {
     std::string project_fingerprint, configuration_fingerprint, project_name;
-    // Top-level CMake File API directory's declared minimum requirement.
-    std::string minimum_cmake_version;
     std::vector<CppCmakeTargetEvidence> targets;
+    // New fields are appended so historical aggregate initializations stay valid.
+    std::string minimum_cmake_version;
 };
 // Keep platform API names as aliases while the authored root contract lives
 // in the curriculum core, independent of the Windows runner.
