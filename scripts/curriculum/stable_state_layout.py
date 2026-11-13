@@ -1669,8 +1669,10 @@ def _validate_retirement_history(document: dict) -> None:
                             and expected_reference == reference_reviewed
                             and _reviewed_compiler_reference(protected_available[block_id]) == reference_reviewed,
                             "A historical revised compiler reference requires its matching active revision archive")
-                require(state_fingerprint(_historical_order_contract(document, block_id, block, allow_original=True))
-                        == state_fingerprint(_historical_order_contract(document, block_id, protected_available[block_id])),
+                old_reading = _historical_choice_contract(document, block_id, block)
+                active_reading = _historical_choice_contract(document, block_id, protected_available[block_id])
+                require(state_fingerprint(_historical_order_contract(document, block_id, old_reading, allow_original=True))
+                        == state_fingerprint(_historical_order_contract(document, block_id, active_reading)),
                         "Historical reading snapshot changed a response/code contract")
                 seen_blocks.add(block_id)
         historical_blocks = {identity: block for page, record in zip(pages, current)
