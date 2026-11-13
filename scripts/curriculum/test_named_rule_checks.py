@@ -92,7 +92,9 @@ class NamedRuleAuthoringTest(unittest.TestCase):
                 header="../../outside.h"),
             lambda v: v["compilerNamedRuleChecks"][0]["executionProbe"]["cases"].append(
                 deepcopy(v["compilerNamedRuleChecks"][0]["executionProbe"]["cases"][0])),
-            lambda v: v["compilerNamedRuleChecks"][1]["executionProbe"]["cases"].pop(),
+            lambda v: v["compilerNamedRuleChecks"][1]["executionProbe"].update(
+                cases=[case for case in v["compilerNamedRuleChecks"][1]["executionProbe"]["cases"]
+                       if case["function"] != "llega_a_tiempo"]),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(value=True),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(minUses=0),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(
