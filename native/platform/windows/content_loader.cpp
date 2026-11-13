@@ -1609,6 +1609,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             ChoiceRevision record;record.id=id;
             record.raw_json=utf8(snapshot.Stringify());
             record.sha256=fingerprint(snapshot);
+            if(item.HasKey(L"optionIndex"))
+                record.general_option_index=integer(item.GetNamedValue(L"optionIndex"),
+                    static_cast<std::size_t>(array(snapshot,"options").Size()-1));
             result.choice_revisions.push_back(std::move(record));
         }
     }
