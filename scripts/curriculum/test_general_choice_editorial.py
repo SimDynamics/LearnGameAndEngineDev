@@ -81,4 +81,13 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    import sys
+    if len(sys.argv) == 3 and sys.argv[1] == "--write-reviewed":
+        published = json.loads(SOURCE.read_text(encoding="utf-8"))
+        revised = layout.revise_choice_editorial(published, OWNER, 0, REVISED)
+        output = Path(sys.argv[2])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(revised, ensure_ascii=False, indent=2) + "\n",
+                          encoding="utf-8")
+    else:
+        unittest.main()
