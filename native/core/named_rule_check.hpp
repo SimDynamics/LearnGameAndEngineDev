@@ -80,7 +80,7 @@ inline bool probe_environment_neutral(
         "__builtin_FUNCTION","__builtin_source_location",
         "source_location"
     };
-    return std::ranges::none_of(tokens,[](std::string_view token) {
+    return std::ranges::none_of(tokens,[&](std::string_view token) {
         if(!token.starts_with("id:"))return false;
         const auto name=token.substr(3);
         return std::ranges::find(sensitive,name)!=std::end(sensitive);
