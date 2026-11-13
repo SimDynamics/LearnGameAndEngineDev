@@ -350,22 +350,20 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                         i=skipped;
                         continue;
                     }
-                    // Both an unbraced return and a block consisting solely
-                    // of a return are guaranteed on an always-true branch.
+                    // An exhaustive if/else is credited only when both
+                    // return paths meaningfully use the named rule.
                     if(always) {
-                        if(id(t[statement],"return"))
-                            return return_uses(statement);
-                        if(op(t[statement],"{")&&statement+1<bounds.close&&
-                           id(t[statement+1],"return")) {
-                            const auto after=closing(t,statement,"{","}");
-                            auto semicolon=statement+2;
-                            while(semicolon<bounds.close&&
-                                  !op(t[semicolon],";"))++semicolon;
-                            if(after&&semicolon+1==*after)
-                                return return_uses(statement+1);
+                        if(const auto branch=direct_return(statement))
+                            return branch->first;
+                    }else if(const auto branch=direct_return(statement)) {
+                        const auto else_position=branch->second+1;
+                        if(else_position+1<bounds.close&&
+                           id(t[else_position],"else")) {
+                            if(const auto other=direct_return(else_position+1))
+                                return std::min(branch->first,other->first);
                         }
-                    }else if(id(t[statement],"return")) {
-                        conditional_return=statement;
+                        if(id(t[statement],"return"))
+                            conditional_return=statement;
                     }
                 }
             }
