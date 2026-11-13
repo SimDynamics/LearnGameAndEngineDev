@@ -140,8 +140,48 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `editorial` | Pruebas encadenadas `{id, beforeSha256, afterSha256}` de los bloques completos cuya prosa cambia. |
 | `retired` | Opcional. Archivo acumulativo de bloques retirados del recorrido, con `{id, page, next, block}`. No sustituye ni modifica `origin`, `family` o `additions`. |
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
-| `choiceRevisions` | Opcional. Archivo acumulativo de las siete revisiones de opción españolas autorizadas, con `{id, block}` y el bloque publicado anterior íntegro. U11L14 token conserva una transición atómica de opción y explicación. No permite sustituciones generales de respuestas. |
+| `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement}`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
 | `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
+
+### Revisión editorial general de una opción existente
+
+Para precisar una opción sin cambiar cuál es correcta, Work puede usar
+`revise_choice_editorial(document, identity, option_index, replacement)`.
+La función comprueba el origen, conserva íntegra la actividad anterior y
+agrega a `stateLayout.choiceRevisions` la siguiente declaración:
+
+```json
+{
+  "id": "block_0007_0002",
+  "block": { "type": "multiple_choice", "question": "...", "options": ["..."], "correctIndex": 0 },
+  "optionIndex": 0,
+  "replacement": "Redacción revisada de la opción original."
+}
+```
+
+El objeto `block` del ejemplo es abreviado **sólo para documentar la
+estructura**. En un archivo real debe contener el bloque anterior completo,
+incluidas todas las opciones, la pregunta, la explicación y las guías. No
+se permite sustituir ese archivo por un resumen.
+
+El mecanismo admite exactamente un cambio de texto de opción por
+actividad en la versión inicial. El índice correcto y su posición,
+el resto de las opciones, las preguntas y las guías se conservan
+literalmente. La cadena editorial comprueba el hash completo anterior
+y el posterior; el mapa de estado mantiene las mismas direcciones
+históricas. El lector conserva una representación anterior para
+su historial y la evaluación de respuestas sigue usando la misma
+respuesta correcta. Si cambia la solución, el significado evaluado
+o las guías, no corresponde a este mecanismo y requiere un contrato
+distinto. La decisión de que la nueva redacción conserva el significado
+y la autoría del marcado semántico pertenecen a Work.
+
+Las ocho revisiones cerradas preexistentes conservan sus contratos,
+sin convertirse en excepciones de la nueva modalidad. La prueba
+`native.general_choice_editorial_authoring` valida el primer ejemplo
+real sin modificar los JSON curriculares; `native.general_choice_editorial`
+comprueba el cargador y el estado nativo Windows sobre un archivo
+de prueba generado en el directorio de construcción.
 
 Los orígenes y hashes familiares no se regeneran. Los archivos hermanos sin mapa
 deben conservar exactamente su documento publicado; la puerta verifica esa
