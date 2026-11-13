@@ -1935,7 +1935,7 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
     for record in checks:
         require(type(record) is dict and
                 {"activity", "path", "rules"} <= set(record) <=
-                {"activity", "path", "rules", "editablePaths"},
+                {"activity", "path", "rules", "editablePaths", "executionProbe"},
                 "Named-rule owner must declare activity, path and rules only")
         identity = _identity(record["activity"])
         require(identity not in seen, "Repeated named-rule owner")
@@ -1988,6 +1988,46 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     and all(type(w) is str and re.fullmatch(r"[A-Za-z_]{3,32}", w)
                             for w in words) and len(set(words)) == len(words),
                     "Named-rule purpose vocabulary must be bounded and unique")
+        if "executionProbe" in record:
+            probe = record["executionProbe"]
+            require(bool(files) and type(block.get("cmake")) is dict and
+                    type(probe) is dict and set(probe) == {"harness", "header", "cases"},
+                    "Independent named-rule probes require original CMake projects")
+            harness, header = probe["harness"], probe["header"]
+            existing = {entry.get("path") for entry in files if type(entry) is dict}
+            require(type(harness) is str and harness.endswith(".cpp") and
+                    harness in existing and harness != source,
+                    "Independent probe must replace a different original C++ file")
+            require(type(header) is str and len(header) <= 256 and
+                    re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*", header) and
+                    ".." not in header,
+                    "Independent probe include path must be a safe relative name")
+            main_cmake = next((entry.get("initialCode", "")
+                               for entry in files if type(entry) is dict
+                               and entry.get("path") == "CMakeLists.txt"), "")
+            target = block["cmake"].get("target")
+            require(type(target) is str and
+                    f"add_executable({target} {harness})" in main_cmake,
+                    "The independent probe must replace the selected executable source")
+            comparisons = probe["cases"]
+            require(type(comparisons) is list and 1 <= len(comparisons) <= 32,
+                    "Independent source probe needs 1..32 comparisons")
+            seen_cases, covered = set(), set()
+            for case in comparisons:
+                require(type(case) is dict and set(case) == {
+                    "function", "input", "expected"} and
+                    case["function"] in functions and
+                    type(case["input"]) is int and
+                    type(case["expected"]) is int and
+                    all(-(2 ** 31) <= case[k] <= 2 ** 31 - 1
+                        for k in ("input", "expected")),
+                    "Independent cases must call named functions with C++ int facts")
+                key = case["function"], case["input"]
+                require(key not in seen_cases, "An independent probe repeated an input")
+                seen_cases.add(key)
+                covered.add(case["function"])
+            require(covered == functions,
+                    "Every named function requires an independent execution case")
 
 
 def _validate_order_visual_separators(document: dict) -> None:
