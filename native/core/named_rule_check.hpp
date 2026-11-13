@@ -272,6 +272,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     };
     bool declared=false;
     std::size_t nesting=0;
+    std::size_t conditional_uses=0;
     std::optional<std::size_t> conditional_return;
     const auto return_uses=[&](std::size_t keyword) {
         auto last=keyword+1;
@@ -353,10 +354,12 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             const auto result_uses=uses(i+1,last);
-            if(result_uses>0)return result_uses;
             const bool guarded=conditional_return&&*conditional_return==i;
             conditional_return.reset();
-            if(!nesting&&!guarded)return 0;
+            if(!nesting&&!guarded)return result_uses;
+            // A conditional return does not establish that the ordinary
+            // path uses the agreement. Keep scanning for a later return.
+            conditional_uses=std::max(conditional_uses,result_uses);
             i=last;
             continue;
         }
@@ -404,7 +407,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             i=last;
         }
     }
-    return 0;
+    return conditional_uses;
 }
 } // namespace named_rule_detail
 
