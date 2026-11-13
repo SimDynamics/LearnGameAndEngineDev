@@ -88,6 +88,36 @@ inline bool probe_environment_neutral(
     });
 }
 
+// A fixed completion witness must not be supplied by student code before
+// the independent main finishes. Reject explicit premature process-exit
+// calls when the authored objective includes an independent execution probe.
+// The lexical scan ignores harmless mentions in comments and string literals;
+// it is a bounded source safeguard, not a native-code security sandbox.
+inline bool probe_source_no_early_exit(std::string_view source) {
+    const auto scanned=code_format::cpp_tokens(source);
+    if(!scanned)return false;
+    std::vector<std::string_view> code;
+    code.reserve(scanned->size());
+    for(const auto& token:*scanned) {
+        if(!token.starts_with("comment:")&&
+           !token.starts_with("literal:")&&
+           !token.starts_with("directive:"))
+            code.emplace_back(token);
+    }
+    constexpr std::string_view terminating[]={
+        "exit","_Exit","_exit","quick_exit","ExitProcess",
+        "TerminateProcess","_cexit","_c_exit"
+    };
+    for(std::size_t i=0;i+1<code.size();++i) {
+        if(!code[i].starts_with("id:")||code[i+1]!="op:(")
+            continue;
+        const auto name=code[i].substr(3);
+        if(std::ranges::find(terminating,name)!=std::end(terminating))
+            return false;
+    }
+    return true;
+}
+
 inline bool id(std::string_view token,std::string_view name) {
     return token.starts_with("id:")&&token.substr(3)==name;
 }
@@ -599,7 +629,8 @@ inline std::optional<std::string> named_rule_single_file_probe_source(
     if(!probe.harness_path.empty()||!probe.header.empty()||
        candidate.empty()||candidate.size()>4*1024*1024)return {};
     const auto parsed=code_format::cpp_tokens(candidate);
-    if(!parsed||!named_rule_detail::probe_environment_neutral(*parsed))
+    if(!parsed||!named_rule_detail::probe_environment_neutral(*parsed)||
+       !named_rule_detail::probe_source_no_early_exit(candidate))
         return {};
     const auto checks=named_rule_probe_checks(probe);
     if(!checks)return {};
