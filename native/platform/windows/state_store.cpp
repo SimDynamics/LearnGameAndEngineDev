@@ -345,6 +345,11 @@ std::string response_storage_key(const curriculum::Lesson& lesson, const curricu
     if(block.type==curriculum::BlockType::multiple_choice&&block.choice_revision) {
         const auto signature=sha256(curriculum::choice_representation_frame(block));
         if(signature!=block.choice_revision->representation_signature)throw std::runtime_error("La representación de opciones cambió sin conservar su origen.");
+        // A generic editorial correction changes wording only. Its authoring
+        // validator proves the same correct index, every other option, and
+        // the untouched answer contract, so the original receipt remains
+        // valid at the same historical storage address.
+        if(block.choice_revision->general_option_index)return historical;
         return "choice-options/v1/"+lesson.locale+'/'+signature+'/'+historical;
     }
     if (block.type != curriculum::BlockType::order_code || !block.order_refinement) return historical;
@@ -356,6 +361,14 @@ std::string response_storage_key(const curriculum::Lesson& lesson, const curricu
 }
 std::optional<Response> get_response(const StateData& data, const curriculum::Lesson& lesson, const curriculum::Block& block) {
     if(block.type==curriculum::BlockType::multiple_choice&&block.choice_revision) {
+        if(block.choice_revision->general_option_index) {
+            // Do not migrate an answer to a new sidecar or re-grade a valid
+            // selection merely because one option was explained more clearly.
+            // The historical answer remains current under the same owner.
+            auto preserved=get_response(data,curriculum::exercise_key(lesson,block));
+            if(preserved)validate_choice_response(*preserved,block);
+            return preserved;
+        }
         auto historical=get_response(data,curriculum::exercise_key(lesson,block));
         if(historical)validate_choice_response(*historical,original_choice_block(block));
         if(auto current=get_response(data,response_storage_key(lesson,block))) {validate_choice_response(*current,block);return current;}
