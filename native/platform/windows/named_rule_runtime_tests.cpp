@@ -3,6 +3,7 @@
 #include "core/lesson.hpp"
 
 #include <filesystem>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 #include <iostream>
 #include <stdexcept>
