@@ -266,7 +266,7 @@ inline bool productive(const Tokens& t,std::size_t i,
        (i+2<t.size()&&(op(t[i+1],"-")||op(t[i+1],"/")||
                op(t[i+1],"%"))&&t[i+2]==t[i]))
         return false;
-    const zero_after=[&](std::size_t position) {
+    const auto zero_after=[&](std::size_t position) {
         if(position>=t.size())return false;
         if(t[position]=="number:0")return true;
         if(!op(t[position],"("))return false;
@@ -275,7 +275,7 @@ inline bool productive(const Tokens& t,std::size_t i,
         const auto value=arithmetic_constant(t,position,*end+1);
         return value&&*value==0;
     };
-    const zero_before=[&](std::size_t position) {
+    const auto zero_before=[&](std::size_t position) {
         if(position>=t.size())return false;
         if(t[position]=="number:0")return true;
         if(!op(t[position],")"))return false;
@@ -617,7 +617,9 @@ inline std::optional<std::string> named_rule_probe_checks(
             std::to_string(item.expected)+") return "+
             std::to_string(i+1)+";\n";
     }
-    code+="    std::fputs(\""+std::string(named_rule_probe_completion_marker)+\"", stderr);\n";
+    code += "    std::fputs(\"";
+    code += std::string(named_rule_probe_completion_marker);
+    code += "\", stderr);\n";
     code+="    return 0;\n}\n";
     return code;
 }
