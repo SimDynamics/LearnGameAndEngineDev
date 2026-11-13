@@ -629,8 +629,13 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             const auto origin=project_path(json_text(event,L"file")).lexically_normal();
             const bool authored=std::ranges::any_of(request.project_files,
                 [&](const auto& file) {
-                    return authored_cmake_path(file.first)&&
-                        origin==(source/project_path(file.first)).lexically_normal();
+                    if(!authored_cmake_path(file.first))return false;
+                    const auto expected=(source/project_path(file.first))
+                        .lexically_normal().generic_wstring();
+                    const auto observed_path=origin.generic_wstring();
+                    const CaseInsensitive cmp;
+                    return !cmp(expected,observed_path)&&
+                        !cmp(observed_path,expected);
                 });
             if(!authored)continue;
             const auto command=json_text(event,L"cmd");
