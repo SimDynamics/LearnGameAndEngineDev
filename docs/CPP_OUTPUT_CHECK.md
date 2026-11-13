@@ -683,7 +683,10 @@ Los usos algebraicamente neutros más directos, como `capacidad -
 capacidad`, `capacidad / capacidad` o multiplicaciones por expresiones
 enteras constantes de valor cero, no cuentan como referencias útiles.
 La comprobación conserva las referencias reales que acompañen a una
-expresión neutra.
+expresión neutra. Si una variable intermedia derivada de la constante
+se sobrescribe con un cálculo que ya no depende de ella, ese resultado
+descartado no acredita el `return`. Una asignación posterior que
+vuelva a utilizar la constante sí puede establecer la dependencia.
 
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra
