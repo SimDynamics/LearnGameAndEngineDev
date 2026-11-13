@@ -91,6 +91,39 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            if (false) return (piezas + capacidad - 1) / capacidad;
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An unreachable unbraced return cannot earn named-rule credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (0) {
+                return (piezas + capacidad - 1) / capacidad;
+            } else {
+                return (piezas + 3) / 4;
+            }
+        })cpp",rules,false,
+        "A false branch cannot substitute for the live else result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if constexpr (false) {
+                return (piezas + capacidad - 1) / capacidad;
+            }
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An inactive constexpr branch cannot supply result references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (false) return 0;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Skipping dead code must preserve a valid later return");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             const int ajuste = capacidad - 1;
             const int resultado = (piezas + ajuste) / capacidad;
             return resultado;
