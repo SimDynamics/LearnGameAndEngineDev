@@ -29,7 +29,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint pasos_hasta_cero(int pendientes) {\n    if (pendientes == 0) {\n        return 0;\n    }\n    return 1 + pasos_hasta_cero(pendientes - 1);\n}\n\nint main() {\n    std::cout << pasos_hasta_cero(3);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint pasos_hasta_cero(int pendientes) {\n    if (pendientes == 0) {\n        return 0;\n    }\n\n    return 1 + pasos_hasta_cero(pendientes - 1);\n}\n\nint main() {\n    std::cout << pasos_hasta_cero(3);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -64,7 +64,7 @@
           "type": "output_prediction",
           "question": "La función suma los enteros desde 1 hasta tope, con tope entre 0 y 8. Predice su resultado.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint suma_hasta(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_hasta(tope - 1);\n}\n\nint main() {\n    std::cout << suma_hasta(4);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint suma_hasta(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n\n    return tope + suma_hasta(tope - 1);\n}\n\nint main() {\n    std::cout << suma_hasta(4);\n\n    return 0;\n}\n",
           "answers": [
             "10"
           ],
@@ -112,7 +112,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    std::cout << suma_iterativa(2) << \" \" << suma_recursiva(2);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    std::cout << suma_iterativa(2) << \" \" << suma_recursiva(2);\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -149,7 +149,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n\n        std::cout << iterativa << \" \" << recursiva;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -184,11 +184,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa lee tope. Comprueba `0`, `1` y `8`: las dos sumas deben ser cero, uno y treinta y seis, respectivamente. `-1` y `9` deben producir únicamente `Fuera del dominio`, sin llamar a las funciones.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+          "text": "El programa lee tope y presenta las sumas iterativa y recursiva, separadas por un espacio. Para avanzar, basta con comprobar correctamente el caso inicial.\n\nCaso inicial obligatorio\nEntrada: 0 → Salida: 0 0\n\nLos demás casos son ensayos optativos. Permiten contrastar un dato interior, el extremo superior y los rechazos, sin bloquear el avance:\nEntrada: 1 → Salida: 1 1\nEntrada: 8 → Salida: 36 36\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 9 → Salida: Fuera del dominio\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Las entradas rechazadas no deben llegar a las funciones. El salto después del último mensaje es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    int tope{0};\n    std::cin >> tope;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    int tope{0};\n    std::cin >> tope;\n\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n\n        std::cout << iterativa << \" \" << recursiva;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -241,7 +241,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 1;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 1;\n    }\n\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n\n        std::cout << iterativa << \" \" << recursiva;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -319,12 +319,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Las versiones iterativa y recursiva deben coincidir: tope 3 produce 6 6, 0 produce 0 0, 1 produce 1 1 y 8 produce 36 36. -1 y 9 producen Fuera del dominio, sin llamadas a las funciones.\n\nEn la actividad independiente cuyo caso base recursivo devuelve 1, tope 0 produce 0 1; para 3 sería 6 7. Esa variante termina, pero ya no cumple la suma. La referencia conserva el caso base 0 que corresponde al contrato original."
+          "text": "Criterios de corrección. Las versiones iterativa y recursiva deben devolver la misma suma para cada dato válido. Estos son los resultados de los ejemplos y de los ensayos optativos:\n\nEntrada: 3 → Salida: 6 6\nEntrada: 0 → Salida: 0 0\nEntrada: 1 → Salida: 1 1\nEntrada: 8 → Salida: 36 36\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 9 → Salida: Fuera del dominio\n\nLos rechazos se producen antes de llamar a las funciones.\n\nLa variante cuyo caso base recursivo devuelve 1 muestra 0 1 para tope igual a 0; con 3 mostraría 6 7. Esa variante termina, pero su resultado ya no coincide con la suma prometida. La referencia conserva el caso base 0 del contrato original."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n\n        std::cout << iterativa << \" \" << recursiva;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -427,11 +427,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    const int fichas = 9;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    const int fichas = 9;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int parejas = parejas_recursivas(fichas);\n\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia usa otro dato y produce Parejas:4;Fichas:9. El intento con 7 produce Parejas:3;Fichas:7. Los casos 0 y 1 producen respectivamente Parejas:0;Fichas:0 y Parejas:0;Fichas:1; 4 produce Parejas:2;Fichas:4; 12 produce Parejas:6;Fichas:12. Los dos datos inválidos producen sólo Fuera del dominio."
+          "text": "La referencia utiliza nueve fichas y muestra Parejas:4;Fichas:9. El intento inicial utiliza siete fichas y muestra Parejas:3;Fichas:7.\n\nLa actividad de Entrada permite contrastar estos casos con la misma función:\n\nEntrada: 0 → Salida: Parejas:0;Fichas:0\nEntrada: 1 → Salida: Parejas:0;Fichas:1\nEntrada: 4 → Salida: Parejas:2;Fichas:4\nEntrada: 7 → Salida: Parejas:3;Fichas:7\nEntrada: 12 → Salida: Parejas:6;Fichas:12\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 13 → Salida: Fuera del dominio\n\nEn cada salida aceptada, el número de parejas corresponde al dato recibido y Fichas conserva ese dato original."
         },
         {
           "type": "paragraph",
@@ -439,10 +439,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: resultado correcto en todo el dominio de cero a doce; bases que cubran los restos alcanzables; progreso dentro del dominio y término finito; resultado combinado según el número de parejas; parámetro por valor, sin salida en la función; validación anterior a la llamada y formato exacto en main.\n\nLa referencia devuelve como máximo seis. Puedes expresar las bases con una condición o con varios caminos: otra implementación recursiva equivalente es válida si cumple esas mismas obligaciones.",
+          "text": "Criterios del conteo de parejas:\n\nContar correctamente las parejas completas para cualquier dato entre cero y doce.\nResolver sin otra llamada las cantidades que ya no forman una pareja.\nReducir el argumento dentro del dominio hasta alcanzar uno de esos casos base.\nCombinar el resultado de cada llamada con la pareja que se acaba de separar.\nRecibir el argumento por valor y no imprimir desde la función.\nValidar en main antes de llamar y conservar el formato de salida solicitado.\n\nEl resultado máximo es seis. Puedes expresar las bases con una condición o con varios caminos: otra implementación recursiva equivalente es válida si cumple esas mismas responsabilidades.",
           "emphasis": [
             {
-              "text": "bases que cubran los restos alcanzables",
+              "text": "Resolver sin otra llamada las cantidades que ya no forman una pareja",
               "style": "bold"
             },
             {
@@ -461,11 +461,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa lee fichas. Comprueba `0`, `1`, `4`, `7` y `12`, que producen cero, cero, dos, tres y seis parejas. `-1` y `13` deben producir sólo `Fuera del dominio`. En cada aceptación, `Fichas:` conserva el argumento original.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. Respeta exactamente el salto final solicitado."
+          "text": "El programa lee fichas y presenta el número de parejas y las fichas originales. Para avanzar, basta con comprobar correctamente el caso inicial.\n\nCaso inicial obligatorio\nEntrada: 0 → Salida: Parejas:0;Fichas:0\n\nEnsayos optativos\nEntrada: 1 → Salida: Parejas:0;Fichas:1\nEntrada: 4 → Salida: Parejas:2;Fichas:4\nEntrada: 7 → Salida: Parejas:3;Fichas:7\nEntrada: 12 → Salida: Parejas:6;Fichas:12\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 13 → Salida: Fuera del dominio\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». En cada aceptación se conserva el dato original. No añadas espacios ni salto de línea al final de la salida."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int parejas = parejas_recursivas(fichas);\n\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -536,7 +536,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    const int fichas = 8;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n\n    return parejas;\n}\n\nint main() {\n    const int fichas = 8;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -550,25 +550,25 @@
         },
         {
           "type": "heading",
-          "text": "Comparar ambos métodos con todos los datos del dominio"
+          "text": "Comparar ambos métodos con el mismo dato"
         },
         {
           "type": "paragraph",
-          "text": "El programa lee fichas y muestra `recursivas:iterativas:fichas`, sin espacios ni salto final. Comprueba cada entero desde cero hasta doce variando sólo Entrada, sin modificar las funciones. Comprueba también -1 y 13: se rechazan antes de calcular.\n\nPulsa «Compilar, ejecutar y comprobar». En cada aceptación, ambos conteos deben coincidir con el número de parejas completas; la última parte conserva el dato original.",
+          "text": "El programa lee fichas y muestra los resultados recursivo e iterativo, seguidos de las fichas originales. Los tres valores se separan con dos puntos, sin espacios ni salto de línea final. Para avanzar, basta con comprobar correctamente el primer caso.\n\nCaso inicial obligatorio\nEntrada: 0 → Salida: 0:0:0\n\nEnsayos optativos: permiten comparar los métodos con otros datos sin cambiar las funciones ni bloquear el avance.\nEntrada: 1 → Salida: 0:0:1\nEntrada: 2 → Salida: 1:1:2\nEntrada: 3 → Salida: 1:1:3\nEntrada: 4 → Salida: 2:2:4\nEntrada: 5 → Salida: 2:2:5\nEntrada: 6 → Salida: 3:3:6\nEntrada: 7 → Salida: 3:3:7\nEntrada: 8 → Salida: 4:4:8\nEntrada: 9 → Salida: 4:4:9\nEntrada: 10 → Salida: 5:5:10\nEntrada: 11 → Salida: 5:5:11\nEntrada: 12 → Salida: 6:6:12\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 13 → Salida: Fuera del dominio\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Para cada dato válido, ambos conteos deben corresponder a las parejas completas que pueden formarse. Los datos fuera del dominio se rechazan antes de calcular.",
           "emphasis": [
             {
-              "text": "variando sólo Entrada",
+              "text": "Cambia sólo Entrada",
               "style": "bold"
             },
             {
-              "text": "sin modificar las funciones",
+              "text": "sin cambiar las funciones",
               "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n\n    return parejas;\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n\n    return 0;\n}\n",
           "initialStandardInput": "0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -671,7 +671,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__descenso_finito_y_conteo_incorrecto",
           "language": "cpp",
           "question": "Predice la salida de esta variante finita. El argumento está en 0..12; después decide si el resultado cuenta parejas completas.",
-          "code": "#include <iostream>\n\nint variante(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + variante(fichas - 1);\n}\n\nint main() {\n    std::cout << variante(5);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint variante(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + variante(fichas - 1);\n}\n\nint main() {\n    std::cout << variante(5);\n\n    return 0;\n}\n",
           "answers": [
             "4"
           ],
@@ -1073,11 +1073,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 10;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 10;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int grupos = grupos_recursivos(fichas);\n\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia usa otro dato y produce Grupos:3;Fichas:10. El intento con 8 produce Grupos:2;Fichas:8. Los casos 0, 1 y 2 producen cero grupos conservando cada dato en F; 3 produce Grupos:1;Fichas:3; 11 produce Grupos:3;Fichas:11; 12 produce Grupos:4;Fichas:12. -1 y 13 producen sólo Fuera del dominio."
+          "text": "La referencia utiliza diez fichas y muestra Grupos:3;Fichas:10. El intento inicial utiliza ocho fichas y muestra Grupos:2;Fichas:8.\n\nEstos son los casos de la actividad con Entrada; el primero permite avanzar y los demás son ensayos optativos:\n\nEntrada: 0 → Salida: Grupos:0;Fichas:0\nEntrada: 1 → Salida: Grupos:0;Fichas:1\nEntrada: 2 → Salida: Grupos:0;Fichas:2\nEntrada: 3 → Salida: Grupos:1;Fichas:3\nEntrada: 8 → Salida: Grupos:2;Fichas:8\nEntrada: 11 → Salida: Grupos:3;Fichas:11\nEntrada: 12 → Salida: Grupos:4;Fichas:12\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 13 → Salida: Fuera del dominio\n\nCada resultado conserva las fichas iniciales. Las entradas rechazadas no se entregan a la función."
         },
         {
           "type": "paragraph",
@@ -1085,10 +1085,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: contar grupos completos en todo el dominio de cero a doce; cubrir todos los restos alcanzables; un descenso válido y finito; combinar el resultado de acuerdo con tres fichas por grupo; conservar el argumento original; función sin salida y validación anterior a la llamada; formato solicitado.\n\nUna implementación recursiva equivalente, con bases expresadas de otra manera, también puede cumplir el contrato.",
+          "text": "Criterios del conteo de grupos de tres:\n\nContar correctamente los grupos completos para cualquier dato entre cero y doce.\nResolver sin otra llamada las cantidades que ya no forman un grupo.\nReducir el argumento dentro del dominio hasta alcanzar uno de esos casos base.\nCombinar el resultado de cada llamada con el grupo de tres que se acaba de separar.\nConservar el argumento original del llamador.\nCalcular sin imprimir y validar en main antes de llamar.\nPresentar el formato solicitado.\n\nUna implementación recursiva equivalente, con bases expresadas de otra manera, también puede cumplir el contrato.",
           "emphasis": [
             {
-              "text": "cubrir todos los restos alcanzables",
+              "text": "Resolver sin otra llamada las cantidades que ya no forman un grupo",
               "style": "bold"
             }
           ]
@@ -1098,7 +1098,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__mismo_argumento_dos_agrupaciones",
           "language": "cpp",
           "question": "Predice la salida completa. Cada cálculo recibe por valor el mismo objeto de main.",
-          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 5;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 5;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n\n    return 0;\n}\n",
           "answers": [
             "2:1:5"
           ],
@@ -1114,11 +1114,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa lee fichas. Comprueba `0`, `1`, `2`, `3`, `8`, `11` y `12`, con cero, cero, cero, uno, dos, tres y cuatro grupos. Comprueba también los rechazos `-1` y `13`. La función y los formatos permanecen iguales entre entradas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. Respeta exactamente el salto final solicitado."
+          "text": "El programa lee fichas y cuenta grupos completos de tres. Para avanzar, basta con comprobar correctamente el caso inicial.\n\nCaso inicial obligatorio\nEntrada: 0 → Salida: Grupos:0;Fichas:0\n\nEnsayos optativos\nEntrada: 1 → Salida: Grupos:0;Fichas:1\nEntrada: 2 → Salida: Grupos:0;Fichas:2\nEntrada: 3 → Salida: Grupos:1;Fichas:3\nEntrada: 8 → Salida: Grupos:2;Fichas:8\nEntrada: 11 → Salida: Grupos:3;Fichas:11\nEntrada: 12 → Salida: Grupos:4;Fichas:12\nEntrada: -1 → Salida: Fuera del dominio\nEntrada: 13 → Salida: Fuera del dominio\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Conserva la función entre pruebas. No añadas espacios ni salto de línea al final de la salida."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int grupos = grupos_recursivos(fichas);\n\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -1186,7 +1186,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye desde el esqueleto las dos funciones recursivas: una cuenta parejas completas y otra grupos de tres. Lee las fichas y valida cero..doce antes de llamar. Muestra `parejas:grupos:fichas`, sin espacios; cada cálculo debe recibir por valor el mismo dato original de main.\n\nComprueba `1` → `0:0:1`, `2` → `1:0:2`, `3` → `1:1:3` y `6` → `3:2:6`. Pulsa «Compilar, ejecutar y comprobar»; el salto final es opcional. Las reducciones internas de la primera llamada no consumen el objeto que recibe la segunda."
+          "text": "Construye desde el esqueleto las dos funciones recursivas: una cuenta parejas completas y otra grupos de tres. Lee fichas y valida que esté entre cero y doce antes de llamar. Muestra parejas:grupos:fichas, sin espacios; cada cálculo debe recibir por valor el mismo dato original de main.\n\nPara avanzar, basta con comprobar correctamente el caso inicial.\nEntrada: 1 → Salida: 0:0:1\n\nEnsayos optativos\nEntrada: 2 → Salida: 1:0:2\nEntrada: 3 → Salida: 1:1:3\nEntrada: 6 → Salida: 3:2:6\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. Las reducciones internas de la primera llamada no consumen el objeto que recibe la segunda."
         },
         {
           "type": "cpp_compiler",
@@ -1236,7 +1236,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En una aceptación muestra parejas:grupos:fichas, sustituyendo cada nombre por su valor decimal: primero el resultado de las parejas, después el de los grupos de tres y al final las fichas originales conservadas. Los dos signos : son separadores del informe. No añadas espacios ni otros mensajes. La salida ocupa una línea; el salto final es opcional tanto para una aceptación como para un rechazo.\n\nComprueba todos los datos siguientes con el mismo programa. Cambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar» para cada prueba."
+          "text": "Para un dato válido, muestra parejas:grupos:fichas, sustituyendo cada nombre por su valor decimal:\n\nPrimero, el número de parejas completas.\nDespués, el número de grupos completos de tres.\nAl final, las fichas originales conservadas.\n\nLos signos : separan esos valores. No añadas espacios ni otros mensajes. La salida ocupa una línea; el salto final es opcional tanto para un dato aceptado como para un rechazo.\n\nEl primer caso mostrado debajo es el único obligatorio: Entrada 0 debe producir 0:0:0. Un acierto en ese caso permite avanzar. Los catorce casos restantes son ensayos optativos para contrastar el mismo programa con otros datos. Sus entradas y salidas están separadas para que puedas elegir la prueba que quieras realizar.\n\nPara hacer una prueba, cambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar»."
         },
         {
           "type": "paragraph",
@@ -1670,7 +1670,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -3547,6 +3547,556 @@
         "id": "block_0005_0004",
         "beforeSha256": "d76e185da4f38b7579d8dbb843cedea2df66fcf3597e949a20c46debb6281d92",
         "afterSha256": "6c1a4a1ce2ee8818372921ac490adb16c8b665caed4e24e93d28a0a7f3193a9b"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "9273b6db1392c1c0876cb8317f1485e9a69ba62ccbe74d52705bc57f37f44078",
+        "afterSha256": "c316a4afffc6f150b035b7ee7c8c7daede73ca827468ee4541c3fb5ca2c2ce14"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "74eb1979dc2c93f937c6921c79dce5e71637678a9330847c8296c87009787487",
+        "afterSha256": "df5e43fa2562a263472ffc750560bf9f22a55f39d71a7cc26da042deafd76e6c"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ed4579fb17227d58851ed63f4ce5aebf0a856353091f49595b41cbe0f0d290dd",
+        "afterSha256": "c625c8aa3e99cc55956d8c83509642204fd52eea4683bd96c239032f6299bb26"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "d9689a79a68186a03ad0bea38ffbba081650d836054139589a3f8da164a72859",
+        "afterSha256": "fe4d0537d51da306467c4fe0eabe5e7103bc2ffabf2c7153770f32300c3badce"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "ff8acd4572c5579cb04028aeaf076d12a9cf2f20c05c61c6d02641f916730868",
+        "afterSha256": "b63b9ab5b9219735dcc36cce94ce02efc3961a2ea44605bcbc470fa77c75e361"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "d7d12b0dab3dbca400eb67358d12303df697293f0f6b2ae4592788b34d674821",
+        "afterSha256": "7c1ed804476cdbb92effaa156af4978f4cd6f6fa8a4eae0d0879636a95e87c68"
+      },
+      {
+        "id": "block_0003_0010",
+        "beforeSha256": "e297a163d1881d8df4d703b480b517502f0c1fab559fb4cabcef756ce437f996",
+        "afterSha256": "30280ae81aaee7414d75eb8821e45d676f52a02729ee8d7417856d419d0338e2"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "bb546eb707091fae350182db47cd4c2175afe400061226c8e36dfb2c4646e060",
+        "afterSha256": "845efdcdb0ace0f1f60c948d866a54b9bfd5a110ce651f85a797c791034f6c08"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "c480d6e294a0a4c68b8eab980a840d6afa507be3145cf4120cdd0d1f8347603d",
+        "afterSha256": "f4929e79086bebd7ac976abe775ecfd6dd4fa5030eb3189455995220ce765110"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "82840cb6f25844669662fe20bc3e2b7e87345d340d6656a4959a9b1e7cd6dad5",
+        "afterSha256": "681aa7a57d089b17300ad435cb5699972b8689c1642390a54fe630227d387d38"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "2a33c693f6ccc027027b2c3d147a575d1b3d41238140a33ea618e57829e2c923",
+        "afterSha256": "cae27f7b749834ebdd56f204571f1e9664af0bfb004fe58d14d0c73c9ab176f6"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "07d23635e08bbbf45adb6fea9db36981d605e5e5ba51577f0dc8008c58af8e3e",
+        "afterSha256": "18a07aa3af16a4babd70f2dcf840aa33e11ba94c8a9e7fecee6c8ad0ef78ec7e"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "f459f92ab1817c9fec74145f44aa7cd42b61c4d268fa2daea7aba3bfd6837232",
+        "afterSha256": "ebfcbc9576585b1cc36fbb330b186a4d89340c02c2c96c6f8df3100235ecbfbd"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "eda5085b6baa145cf036d46f667da024ea6306765ccb079d02d6e8156da22497",
+        "afterSha256": "4357bc3dc343819792b35334b7a4ddab627ce82889af4703e4e8b195bc4eb391"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "474732f327f020019e47b3ea32e82f42058a7f6d26e60d83c25172f087ca3e77",
+        "afterSha256": "79d7df35d556c733c74e059ea7cbef082d6980320e4213378d76b5e87b1b36cc"
+      },
+      {
+        "id": "comparar_parejas_titulo",
+        "beforeSha256": "67d8c1630616c387e1f47fceae33a6cf2b42eb6806583328d113cbc975d7ad27",
+        "afterSha256": "d49bf62433f919060dd461092625d59b33430013e6e2e5c6c708eff9b5b83751"
+      },
+      {
+        "id": "comparar_parejas_consigna",
+        "beforeSha256": "fd2663fd2136bd4e53799cc61377d546809039495bae69a630d90b491bbcc6a6",
+        "afterSha256": "3f8c91964fa0a22171391ffa794fecfbf6a76cc221a6232161626541eae9826e"
+      },
+      {
+        "id": "comparar_parejas_editor",
+        "beforeSha256": "e43fba426dd15044f236aebc0c51c70f9e46001314c7a0b5245600d640eda761",
+        "afterSha256": "d77ff5a1a631441132b36368747e46c31c49b4edf6fe2b05a3de8283a83b181b"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "1bacc1f125aee76f4bac1256e8f0255e07f4e97444d5fb4fc5537def979bcfba",
+        "afterSha256": "e36ab5e0066c1dda8497afa0249c2dfe6bad12d574a619606d48d09834ec6b62"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "5f62ae4a8fcfb43a396ffcd84366d3ff5219d6aeb3d689b050b095270eb903bc",
+        "afterSha256": "95e19b3c9cd5021091a671001f649ea0b0eb4e69258e8018f68b71a5384995fb"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "b9168d68d7245ac56b64cb64ba420416405f4e1271b4f9913d27b3416b959c3c",
+        "afterSha256": "4999a12145e2f016595e914c954230856c29ee62ab040cd3b7f76637a450c446"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "37eb71ef5b3d369025b400d9f4eaf8abe6b21db673469b45a47e6a4b767b9d7e",
+        "afterSha256": "438d4ed87466608f13cb8f7fda4858daa91e0e7b1d0ca9c2ca81783ac85edb45"
+      },
+      {
+        "id": "block_0010_0005",
+        "beforeSha256": "8c9f3882d57f8593a78156a437df0a9eba2e06221a8b4d34c79ad876749637c5",
+        "afterSha256": "b74a6d314eae95f72add4c147cd3511ea0e7343e40dd9b11559e1ef80cc6a744"
+      },
+      {
+        "id": "block_0010_0008",
+        "beforeSha256": "10f62af4cb7be32642da215755c874d30cf175b61efa23e14a471f5044846ba8",
+        "afterSha256": "494de38518b96e916b5f5ae8844cdea1be7c2da0d9c9e31a5b047e5b8aac7082"
+      },
+      {
+        "id": "block_0010_0009",
+        "beforeSha256": "30425889334d7e5e696c6a8465781cc66a3cf3f029621af9e28e9108467793e3",
+        "afterSha256": "0691b7eeda7bdcc956ca06d38e186815d7cfd79dbcfd446ddc9f9f92ff4d7fea"
+      },
+      {
+        "id": "block_0010_0011",
+        "beforeSha256": "16e7d11ee765d511cf524dcc38141504fc55d605fe81b788547eab833d89deff",
+        "afterSha256": "b99c2d64f6b77836ef05ff552b5b65dd07671171374e480f7f0d6c1a31bd283c"
+      },
+      {
+        "id": "conteos_recursivos_completos_formato",
+        "beforeSha256": "ea5b22bca5e2d9402dba62444fdf5e5d3b9f0f22f114732493224d50d84f1c56",
+        "afterSha256": "f2f469cb9ae6e433397d5f172e9ddfb809988cab8c5efc8977a407ce001e7454"
+      },
+      {
+        "id": "dos_conteos_referencia_codigo",
+        "beforeSha256": "6193750667b07144224f63c93c85a1f611a9e5de3d601c9cafa59e02e2dda515",
+        "afterSha256": "ad56af5df33d791debff593b1e2e5916f4cd735d5a5e9e397ccd46207d84cd80"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint pasos_hasta_cero(int pendientes) {\n    if (pendientes == 0) {\n        return 0;\n    }\n    return 1 + pasos_hasta_cero(pendientes - 1);\n}\n\nint main() {\n    std::cout << pasos_hasta_cero(3);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "La función suma los enteros desde 1 hasta tope, con tope entre 0 y 8. Predice su resultado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_hasta(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_hasta(tope - 1);\n}\n\nint main() {\n    std::cout << suma_hasta(4);\n    return 0;\n}\n",
+          "answers": [
+            "10"
+          ],
+          "explanation": "Se completan 4 + 3 + 2 + 1 + 0. El caso base aporta 0 y permite regresar por las llamadas pendientes."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    std::cout << suma_iterativa(2) << \" \" << suma_recursiva(2);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "6 6",
+                  "6 6\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    int tope{0};\n    std::cin >> tope;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0 0",
+                  "0 0\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "1 1",
+                  "1 1\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "36 36",
+                  "36 36\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0003_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 1;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0 1",
+                  "0 1\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    const int fichas = 9;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Parejas:0;Fichas:0"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Parejas:0;Fichas:1"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "Parejas:2;Fichas:4"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "Parejas:3;Fichas:7"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "Parejas:6;Fichas:12"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    const int fichas = 8;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "comparar_parejas_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n",
+          "initialStandardInput": "0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "0:0:0"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "0:0:1"
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "1:1:2"
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "1:1:3"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "2:2:4"
+                ]
+              },
+              {
+                "standardInput": "5",
+                "outputs": [
+                  "2:2:5"
+                ]
+              },
+              {
+                "standardInput": "6",
+                "outputs": [
+                  "3:3:6"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "3:3:7"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "4:4:8"
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "4:4:9"
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "5:5:10"
+                ]
+              },
+              {
+                "standardInput": "11",
+                "outputs": [
+                  "5:5:11"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "6:6:12"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__descenso_finito_y_conteo_incorrecto",
+          "language": "cpp",
+          "question": "Predice la salida de esta variante finita. El argumento está en 0..12; después decide si el resultado cuenta parejas completas.",
+          "code": "#include <iostream>\n\nint variante(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + variante(fichas - 1);\n}\n\nint main() {\n    std::cout << variante(5);\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Las llamadas con 5, 4, 3 y 2 añaden una unidad, y la llamada con 1 devuelve cero: resulta cuatro. Cinco fichas permiten sólo dos parejas. La variante termina y conserva argumentos válidos, pero retirar una ficha por cada pareja contada no cumple el problema."
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 10;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__mismo_argumento_dos_agrupaciones",
+          "language": "cpp",
+          "question": "Predice la salida completa. Cada cálculo recibe por valor el mismo objeto de main.",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 5;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:5"
+          ],
+          "explanation": "Cinco fichas permiten dos parejas o un grupo de tres. Las llamadas resuelven dos preguntas sobre el mismo dato, sin consumirlo en main: cada parámetro recibe su valor y el objeto original sigue conteniendo cinco."
+        }
+      },
+      {
+        "id": "block_0010_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Grupos:0;Fichas:0"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Grupos:0;Fichas:1"
+                ]
+              },
+              {
+                "standardInput": "2",
+                "outputs": [
+                  "Grupos:0;Fichas:2"
+                ]
+              },
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "Grupos:1;Fichas:3"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Grupos:2;Fichas:8"
+                ]
+              },
+              {
+                "standardInput": "11",
+                "outputs": [
+                  "Grupos:3;Fichas:11"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "Grupos:4;Fichas:12"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Fuera del dominio"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "dos_conteos_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    int fichas{0};\n    std::cin >> fichas;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -4315,7 +4865,7 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "bbcbbf3dc6f171079a3fa35138a9c30a9d887b12375b723d11f413d49543c09e",
+        "sourceSha256": "0c83dccb3a652aa3eb0891d48874c5564b4de60a210e69ad43cf7c950a8314d3",
         "spans": [
           {
             "start": 16,
@@ -4325,71 +4875,71 @@
             "reading": "technical"
           },
           {
-            "start": 33,
-            "end": 34,
+            "start": 191,
+            "end": 192,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 39,
+            "start": 203,
+            "end": 206,
+            "text": "0 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 355,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 44,
-            "end": 45,
+            "start": 366,
+            "end": 369,
+            "text": "1 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 380,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 52,
-            "end": 55,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 72,
-            "end": 76,
-            "text": "cero",
+            "start": 391,
+            "end": 396,
+            "text": "36 36",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 78,
-            "end": 81,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 84,
-            "end": 98,
-            "text": "treinta y seis",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 118,
-            "end": 120,
+            "start": 406,
+            "end": 408,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 126,
+            "start": 419,
+            "end": 436,
+            "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 446,
+            "end": 447,
             "text": "9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 155,
-            "end": 172,
+            "start": 458,
+            "end": 475,
             "text": "Fuera del dominio",
             "role": "output",
             "reading": "natural"
@@ -4637,139 +5187,139 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "946e25fc9d0de2438a357cb8f7070aeee1bb9ed528b8afa5a4cc25efe1003eb3",
+        "sourceSha256": "b7ffa0c7d798694f3515321ec91d10e9625d5b3258055ed1d8a14c06527a466a",
         "spans": [
           {
-            "start": 78,
-            "end": 82,
-            "text": "tope",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 83,
-            "end": 84,
+            "start": 192,
+            "end": 193,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 96,
+            "start": 204,
+            "end": 207,
             "text": "6 6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 99,
+            "start": 217,
+            "end": 218,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 108,
-            "end": 111,
+            "start": 229,
+            "end": 232,
             "text": "0 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 114,
+            "start": 242,
+            "end": 243,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 126,
+            "start": 254,
+            "end": 257,
             "text": "1 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 129,
-            "end": 130,
+            "start": 267,
+            "end": 268,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 139,
-            "end": 144,
+            "start": 279,
+            "end": 284,
             "text": "36 36",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 146,
-            "end": 148,
+            "start": 294,
+            "end": 296,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 152,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 162,
-            "end": 179,
+            "start": 307,
+            "end": 324,
             "text": "Fuera del dominio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 276,
-            "end": 277,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 279,
-            "end": 283,
-            "text": "tope",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 284,
-            "end": 285,
-            "text": "0",
+            "start": 334,
+            "end": 335,
+            "text": "9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 294,
-            "end": 297,
+            "start": 346,
+            "end": 363,
+            "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 470,
+            "end": 471,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 483,
             "text": "0 1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 304,
-            "end": 305,
+            "start": 489,
+            "end": 493,
+            "text": "tope",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 502,
+            "end": 503,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 510,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 312,
-            "end": 315,
+            "start": 521,
+            "end": 524,
             "text": "6 7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 402,
-            "end": 403,
+            "start": 640,
+            "end": 641,
             "text": "0",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5026,96 +5576,138 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "09cf977b17fc240c2b5841c02244fbe41d90f39f377a13deee5482b9712ab8a6",
+        "sourceSha256": "563cfb495064ac862166af064779cfead8120aba8133ce9b94930f26d5b876f3",
         "spans": [
           {
-            "start": 38,
-            "end": 56,
+            "start": 22,
+            "end": 27,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 63,
             "text": "Parejas:4;Fichas:9",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 73,
-            "end": 74,
-            "text": "7",
+            "start": 92,
+            "end": 97,
+            "text": "siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 101,
+            "start": 115,
+            "end": 133,
             "text": "Parejas:3;Fichas:7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 114,
+            "start": 223,
+            "end": 224,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 117,
-            "end": 118,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 144,
-            "end": 162,
+            "start": 235,
+            "end": 253,
             "text": "Parejas:0;Fichas:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 183,
+            "start": 263,
+            "end": 264,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 293,
             "text": "Parejas:0;Fichas:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 185,
-            "end": 186,
+            "start": 303,
+            "end": 304,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 213,
+            "start": 315,
+            "end": 333,
             "text": "Parejas:2;Fichas:4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 215,
-            "end": 217,
+            "start": 343,
+            "end": 344,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 373,
+            "text": "Parejas:3;Fichas:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 385,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 226,
-            "end": 245,
+            "start": 396,
+            "end": 415,
             "text": "Parejas:6;Fichas:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 251,
-            "end": 254,
-            "text": "dos",
+            "start": 425,
+            "end": 427,
+            "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 285,
-            "end": 302,
+            "start": 438,
+            "end": 455,
             "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 465,
+            "end": 467,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 495,
+            "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 574,
+            "end": 580,
+            "text": "Fichas",
             "role": "output",
             "reading": "natural"
           }
@@ -5194,32 +5786,32 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "f0650e665f48ba1efaea8bc562ec985606bb1028a009461a81ae06e0b17eb620",
+        "sourceSha256": "11a783c0a5e0fd1223480b94f24b6e68c93902adba1c05c3d8f0ce274be02bf4",
         "spans": [
           {
-            "start": 52,
-            "end": 56,
+            "start": 103,
+            "end": 107,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 59,
-            "end": 63,
+            "start": 110,
+            "end": 114,
             "text": "doce",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 300,
-            "end": 304,
+            "start": 416,
+            "end": 420,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 342,
-            "end": 346,
+            "start": 506,
+            "end": 510,
             "text": "seis",
             "role": "output",
             "reading": "natural"
@@ -5270,110 +5862,117 @@
       {
         "block": "block_0007_0007",
         "path": "/text",
-        "sourceSha256": "ca37c50d7907d1dd43a7d7e8e802a8ff102114e204983dc3000c11f03a3652b1",
+        "sourceSha256": "f7ffb475e95e4d5f6d0f62a3d032f787536f41370cc759f0d849a4bb74626182",
         "spans": [
           {
-            "start": 18,
-            "end": 24,
+            "start": 16,
+            "end": 22,
             "text": "fichas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 37,
-            "end": 38,
+            "start": 61,
+            "end": 67,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 181,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 42,
-            "end": 43,
+            "start": 192,
+            "end": 210,
+            "text": "Parejas:0;Fichas:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 240,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 47,
-            "end": 48,
+            "start": 251,
+            "end": 269,
+            "text": "Parejas:0;Fichas:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 280,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 52,
-            "end": 53,
+            "start": 291,
+            "end": 309,
+            "text": "Parejas:2;Fichas:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 319,
+            "end": 320,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 60,
+            "start": 331,
+            "end": 349,
+            "text": "Parejas:3;Fichas:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 361,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 80,
-            "text": "cero",
+            "start": 372,
+            "end": 391,
+            "text": "Parejas:6;Fichas:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 86,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 88,
-            "end": 91,
-            "text": "dos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 93,
-            "end": 97,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 100,
-            "end": 104,
-            "text": "seis",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 115,
-            "end": 117,
+            "start": 401,
+            "end": 403,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 124,
-            "text": "13",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 147,
-            "end": 164,
+            "start": 414,
+            "end": 431,
             "text": "Fuera del dominio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 188,
-            "end": 195,
-            "text": "Fichas:",
+            "start": 441,
+            "end": 443,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 471,
+            "text": "Fuera del dominio",
             "role": "output",
             "reading": "natural"
           }
@@ -5514,13 +6113,13 @@
       {
         "block": "comparar_parejas_titulo",
         "path": "/text",
-        "sourceSha256": "6bed1b18a5a80e4b4c136eddcab385aff36f240ab7aef4470d1c8d462b2f1f25",
+        "sourceSha256": "17929358fa8187d1c4b434b36b3d6951d8b7e567cead4782d24a52f600117f8c",
         "spans": []
       },
       {
         "block": "comparar_parejas_consigna",
         "path": "/text",
-        "sourceSha256": "79441ee8d74b556c55d84cb028bbc5d928207a896d74d3004230017106e683ac",
+        "sourceSha256": "70c4d0a033fb8452c20dab5ac15dcb328ece3e30c265f316633ab687d3c0ddd9",
         "spans": [
           {
             "start": 16,
@@ -5530,38 +6129,227 @@
             "reading": "technical"
           },
           {
-            "start": 34,
-            "end": 62,
-            "text": "recursivas:iterativas:fichas",
+            "start": 87,
+            "end": 93,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 114,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 288,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 304,
+            "text": "0:0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 126,
-            "text": "cero",
+            "start": 429,
+            "end": 430,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 133,
-            "end": 137,
-            "text": "doce",
+            "start": 441,
+            "end": 446,
+            "text": "0:0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 457,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 208,
-            "end": 210,
+            "start": 468,
+            "end": 473,
+            "text": "1:1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 483,
+            "end": 484,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 500,
+            "text": "1:1:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 510,
+            "end": 511,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 522,
+            "end": 527,
+            "text": "2:2:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 537,
+            "end": 538,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 549,
+            "end": 554,
+            "text": "2:2:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 565,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 581,
+            "text": "3:3:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 591,
+            "end": 592,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 603,
+            "end": 608,
+            "text": "3:3:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 618,
+            "end": 619,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 630,
+            "end": 635,
+            "text": "4:4:8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 646,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 657,
+            "end": 662,
+            "text": "4:4:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 672,
+            "end": 674,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 685,
+            "end": 691,
+            "text": "5:5:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 701,
+            "end": 703,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 714,
+            "end": 720,
+            "text": "5:5:11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 730,
+            "end": 732,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 743,
+            "end": 749,
+            "text": "6:6:12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 759,
+            "end": 761,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 213,
-            "end": 215,
+            "start": 772,
+            "end": 789,
+            "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 799,
+            "end": 801,
             "text": "13",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 812,
+            "end": 829,
+            "text": "Fuera del dominio",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -6466,123 +7254,158 @@
       {
         "block": "block_0010_0002",
         "path": "/text",
-        "sourceSha256": "68c34fe1aebf00c5606ec2d69f203445bc8aae6444af03e81350000094c03e80",
+        "sourceSha256": "4a453a54abd1abfc5f0f04eb08aae3ef59f954177f7164c7249f92c41853f4ed",
         "spans": [
           {
-            "start": 38,
-            "end": 56,
+            "start": 22,
+            "end": 26,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 62,
             "text": "Grupos:3;Fichas:10",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 73,
-            "end": 74,
-            "text": "8",
+            "start": 91,
+            "end": 95,
+            "text": "ocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 100,
+            "start": 113,
+            "end": 130,
             "text": "Grupos:2;Fichas:8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 113,
+            "start": 254,
+            "end": 255,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 116,
+            "start": 266,
+            "end": 283,
+            "text": "Grupos:0;Fichas:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 294,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 119,
-            "end": 120,
+            "start": 305,
+            "end": 322,
+            "text": "Grupos:0;Fichas:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 333,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 130,
-            "end": 134,
-            "text": "cero",
+            "start": 344,
+            "end": 361,
+            "text": "Grupos:0;Fichas:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 167,
-            "end": 168,
-            "text": "F",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 170,
-            "end": 171,
+            "start": 371,
+            "end": 372,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 180,
-            "end": 197,
+            "start": 383,
+            "end": 400,
             "text": "Grupos:1;Fichas:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 201,
+            "start": 410,
+            "end": 411,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 422,
+            "end": 439,
+            "text": "Grupos:2;Fichas:8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 451,
             "text": "11",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 210,
-            "end": 228,
+            "start": 462,
+            "end": 480,
             "text": "Grupos:3;Fichas:11",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 230,
-            "end": 232,
+            "start": 490,
+            "end": 492,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 241,
-            "end": 259,
+            "start": 503,
+            "end": 521,
             "text": "Grupos:4;Fichas:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 261,
-            "end": 263,
+            "start": 531,
+            "end": 533,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 268,
+            "start": 544,
+            "end": 561,
+            "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 571,
+            "end": 573,
             "text": "13",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 283,
-            "end": 300,
+            "start": 584,
+            "end": 601,
             "text": "Fuera del dominio",
             "role": "output",
             "reading": "natural"
@@ -6641,28 +7464,42 @@
       {
         "block": "block_0010_0004",
         "path": "/text",
-        "sourceSha256": "5fadfe8fada486a2942954641dd3eec362772eb3869a4db4848a71fb4a1d58d6",
+        "sourceSha256": "1f10d70b3f5c76309b934bb5cb0a6c05c3e68b986c25c59083f0bfbc6e576d04",
         "spans": [
           {
-            "start": 57,
-            "end": 61,
+            "start": 34,
+            "end": 38,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 64,
-            "end": 68,
+            "start": 116,
+            "end": 120,
             "text": "doce",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 173,
-            "end": 177,
+            "start": 323,
+            "end": 327,
             "text": "tres",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 438,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -6781,7 +7618,7 @@
       {
         "block": "block_0010_0008",
         "path": "/text",
-        "sourceSha256": "1a9f8df9added6d676ae5e6ce2aaecbe32cf91447856bce07c1fec05dad58c54",
+        "sourceSha256": "6a8b7bd1908044a09818438234765163a19cd9274a4ea77c3436bcb5c3a05457",
         "spans": [
           {
             "start": 16,
@@ -6791,115 +7628,136 @@
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 36,
+            "start": 52,
+            "end": 56,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 40,
-            "end": 41,
+            "start": 170,
+            "end": 187,
+            "text": "Grupos:0;Fichas:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 217,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 46,
+            "start": 228,
+            "end": 245,
+            "text": "Grupos:0;Fichas:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 256,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 50,
-            "end": 51,
+            "start": 267,
+            "end": 284,
+            "text": "Grupos:0;Fichas:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 295,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 55,
-            "end": 56,
+            "start": 306,
+            "end": 323,
+            "text": "Grupos:1;Fichas:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 334,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 60,
-            "end": 62,
+            "start": 345,
+            "end": 362,
+            "text": "Grupos:2;Fichas:8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 374,
             "text": "11",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 67,
-            "end": 69,
+            "start": 385,
+            "end": 403,
+            "text": "Grupos:3;Fichas:11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 415,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 80,
-            "text": "cero",
+            "start": 426,
+            "end": 444,
+            "text": "Grupos:4;Fichas:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 86,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 88,
-            "end": 92,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 97,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 99,
-            "end": 102,
-            "text": "dos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 104,
-            "end": 108,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 111,
-            "end": 117,
-            "text": "cuatro",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 158,
-            "end": 160,
+            "start": 454,
+            "end": 456,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 167,
+            "start": 467,
+            "end": 484,
+            "text": "Fuera del dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 494,
+            "end": 496,
             "text": "13",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 507,
+            "end": 524,
+            "text": "Fuera del dominio",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -6921,7 +7779,7 @@
       {
         "block": "block_0010_0011",
         "path": "/text",
-        "sourceSha256": "9f1f5f4eca0d8fa24cb9ae48a339a1efd759438d50d87fb25994a5951f4eca84",
+        "sourceSha256": "d9e9a7d1cf93677c05aef0d112ef6ed942ec6bf9916a513c2c8cf53c6e8520d0",
         "spans": [
           {
             "start": 33,
@@ -6938,78 +7796,92 @@
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 145,
-            "text": "cero..doce",
+            "start": 115,
+            "end": 121,
+            "text": "fichas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 150,
+            "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 172,
-            "end": 193,
+            "start": 153,
+            "end": 157,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 204,
             "text": "parejas:grupos:fichas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 272,
-            "end": 276,
+            "start": 282,
+            "end": 286,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 290,
-            "end": 291,
+            "start": 363,
+            "end": 364,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 296,
-            "end": 301,
+            "start": 375,
+            "end": 380,
             "text": "0:0:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 305,
-            "end": 306,
+            "start": 409,
+            "end": 410,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 311,
-            "end": 316,
+            "start": 421,
+            "end": 426,
             "text": "1:0:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 320,
-            "end": 321,
+            "start": 436,
+            "end": 437,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 331,
+            "start": 448,
+            "end": 453,
             "text": "1:1:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 336,
-            "end": 337,
+            "start": 463,
+            "end": 464,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 342,
-            "end": 347,
+            "start": 475,
+            "end": 480,
             "text": "3:2:6",
             "role": "output",
             "reading": "natural"
@@ -7235,40 +8107,47 @@
       {
         "block": "conteos_recursivos_completos_formato",
         "path": "/text",
-        "sourceSha256": "0a8e34ace941aa889fd0e8e651e4a9c20d03369db18bedc7b833591cbec861b4",
+        "sourceSha256": "658798992d0688f7066e644a2e23a4c1a82ef88e69eb8a3b769a3cc4926acb26",
         "spans": [
           {
-            "start": 26,
-            "end": 47,
+            "start": 29,
+            "end": 50,
             "text": "parejas:grupos:fichas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 165,
+            "start": 183,
+            "end": 187,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 219,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 227,
-            "end": 228,
+            "start": 246,
+            "end": 247,
             "text": ":",
             "role": "output",
             "reading": "characters"
           },
           {
-            "start": 312,
-            "end": 315,
-            "text": "una",
+            "start": 477,
+            "end": 478,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 493,
+            "end": 498,
+            "text": "0:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 551,
+            "text": "catorce",
             "role": "data",
             "reading": "natural"
           }

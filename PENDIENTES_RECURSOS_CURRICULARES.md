@@ -10,15 +10,6 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
-### TRANSVERSAL_ANDROID_HISTORIAL_COMPLETO
-
-- **ESTADO:** PENDIENTE DE INTEGRACIÓN Y REGRESIÓN EN `Codex`. La auditoría de las 763 lecciones de `es`, `en` y `fr` identificó 28 incompatibilidades de contratos históricos Android, distintas del formato físico. La comprobación anterior de `sourceFormatRevisions` **no** acredita que esas otras incidencias estén resueltas. Codex informó cuatro parches preparados, no incorporados a la rama ni compilados con el proyecto Android completo. No tratar esos archivos preparados como cambios publicados.
-- **ALCANCE TÉCNICO:** preservar las 17 incidencias relacionadas con descripciones de imágenes (`alt`/`caption`, seis), diagnósticos de compilación (`compileCheck`, seis), salida `standardError` (dos), terminación intencional distinta de cero (dos) y salida CRT (una). Conservar la semántica de `standardErrorExact`: no autorizar cambios de expectativa indiscriminadamente ni ocultar falsificaciones detrás de revisiones editoriales.
-- **HISTORIAL EDITORIAL RESTANTE:** admitir y autenticar sin reescritura de progreso las actividades `retired`/`retirementHistory` (cinco lecciones), los retornos `editorial.returnTo` (tres lecciones adicionales) y las revisiones de `editorial.bibliography` (tres). Una lección con retirada también contiene retorno; verificar la combinación sin duplicar incidencias. Los identificadores, posiciones originales, huellas SHA-256, respuestas correctas e incorrectas, borradores, referencias y logros siguen protegidos.
-- **CIERRE TÉCNICO EXIGIDO:** integrar en `Codex` las adaptaciones Kotlin y pruebas auténticas, sin modificar los JSON curriculares para silenciar fallos; ejecutar la suite real Gradle/JUnit y el inventario completo de lecciones con `--rerun-tasks`. La auditoría debe **fallar** cuando quede cualquier incompatibilidad histórica, no sólo cuando fallen las revisiones físicas. Exigir informe JSON con **cero errores históricos**, pruebas de alteraciones maliciosas rechazadas y conservación de respuestas antiguas; los éxitos con JDK y dependencias simuladas o en repositorios de prueba no bastan.
-- **RESPONSABILIDAD Y ACEPTACIÓN:** Codex trabaja y publica únicamente en `Codex`. Work verifica su integración posterior en `main`, la cobertura de los contratos y las pruebas, sin realizar las sincronizaciones del usuario. Retirar íntegramente esta ficha sólo cuando el cierre esté acreditado. No exigir al estudiante que compruebe manualmente cada una de las 763 lecciones.
-
-
 ### TRANSVERSAL_LEGIBILIDAD_CODIGO_Y_SEPARADORES_OPCIONALES
 
 - **ESTADO:** PENDIENTE. Falta corregir la legibilidad de **todo el código curricular de todos los cursos y traducciones** y sus proyectos, no únicamente ejemplos o puzles seleccionados. Deben incorporarse saltos de línea **físicos** entre grupos semánticos del código fuente, no sólo espacios visuales.
@@ -45,6 +36,8 @@ o cerrar la lección. Una ejecución del segundo caso sin aprobar el primero no
 desbloquea; tampoco una salida incorrecta. No borrar los demás oráculos del
 contrato histórico: retirar sus entradas sin una transición autenticada dañaría
 el historial, y no es necesario para volverlos opcionales.
+
+**REVISIÓN EDITORIAL DE BATERÍAS AGRUPADAS:** en U6L19, `lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json`, propietario `capacidad_veinte_bateria`, y en U6L20, `lesson_construir_un_proyecto_desde_su_interfaz.json`, propietarios `estante_base_comprobacion_propia` y `estante_variante_comprobacion_propia`, revisar la agrupación de varios pares de datos en una sola salida obligatoria. Work debe separar una primera comprobación de los ensayos opcionales, con entradas y salidas legibles. Conservar los contratos, borradores y logros anteriores mediante las transiciones compatibles; si la migración necesaria no existe, concretar esa capacidad general para Codex antes de cambiar el contrato. No eliminar los casos históricos ni presentar una salida conjunta como si sus datos fueran pruebas opcionales independientes.
 
 **VERIFICACIONES RESTANTES DE AVANCE Y PRESENTACIÓN:** confirmar que las
 rúbricas de P2 U3L6/U3L8 no exijan recibos multicaso y que sus criterios

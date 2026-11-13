@@ -310,7 +310,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una cabecera puede contener otras clases de definiciones, sujetas a sus reglas. Por eso no conviene concluir que «una cabecera nunca contiene cuerpos». En este proyecto se elige una organización concreta: declaraciones compartidas y una definición de cada función ordinaria en sobres.cpp.\n\nLa función constexpr estudiada anteriormente es implícitamente inline, aunque no se escriba esa palabra. Los cuerpos ordinarios de sobres.cpp y serie.cpp no tienen esa propiedad (Köppe et al., 2023).",
+          "text": "Una cabecera puede contener otras clases de definiciones, sujetas a sus reglas. Por eso no conviene concluir que «una cabecera nunca contiene cuerpos». En este proyecto se elige una organización concreta: declaraciones compartidas y una definición de cada función ordinaria en sobres.cpp.\n\nUna función declarada constexpr es implícitamente inline. En la organización con cabeceras de estos ejemplos, esa propiedad permite incorporar la misma definición a varias unidades de traducción, siempre que sea idéntica y que los nombres utilizados conserven el mismo significado. Por ejemplo, una función constexpr definida en la cabecera compartida puede incorporarse tanto al cliente como a la implementación bajo esas condiciones. Los cuerpos ordinarios de sobres.cpp y serie.cpp no tienen esa propiedad (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "organización concreta",
@@ -698,7 +698,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los proyectos de diagnóstico separan una llamada sin declaración visible de una definición ausente al enlazar. Cada uno conserva un único cambio para que el archivo y la etapa expliquen el fallo. Sin construcción terminada no hay stdout nuevo que evaluar."
+          "text": "Los proyectos de diagnóstico separan una llamada sin declaración visible de una definición ausente al enlazar. Cada uno conserva un único cambio para que el archivo y la etapa expliquen el fallo. Si la construcción falla, el programa nuevo no se ejecuta y no puede producir una salida nueva en la consola."
         },
         {
           "type": "paragraph",
@@ -1097,7 +1097,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva los archivos, pero sólo selecciona `main.cpp`. Pulsa «Compilar y comprobar diagnóstico». Las declaraciones deben permitir compilar el cliente y el enlace debe fallar por las definiciones de la implementación que no se reunió. No hay stdout nuevo que comprobar."
+          "text": "Este proyecto conserva los archivos, pero sólo selecciona main.cpp. Pulsa «Compilar y comprobar diagnóstico». Las declaraciones permiten compilar el cliente, pero al enlazar faltan las definiciones escritas en sobres.cpp, que no se ha seleccionado. Como el enlace falla, el programa nuevo no se ejecuta ni muestra una salida nueva en la consola."
         },
         {
           "type": "cpp_compiler",
@@ -3862,6 +3862,21 @@
         "id": "capacidad_veinte_referencia_explicacion",
         "beforeSha256": "d57b1fc8227f0167ec21ee88f4dd05ce83aec89ef6ce227d38c5f50fe712d523",
         "afterSha256": "09004295aa4a64ac3703646a3b1a5f7cd3a16674a0e1e041849b87d8a87895df"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "01a5fef96435d2e87887bce3165a2fb2e830824836a5353101b49bc9d97aee8b",
+        "afterSha256": "3f431bbe76bbad6629982e49c3a4a7d3363c1c11d5556962d3216fd7958a52fc"
+      },
+      {
+        "id": "block_0012_0004",
+        "beforeSha256": "6dd9d749701c4fdf8ad1ba416663d61ff03f5fe7d57cc1cf92f008fa25c4420b",
+        "afterSha256": "701b0adc4b04102dfe6d60e0c84f7023d8dc0d064591d3facfdc183033dfeada"
+      },
+      {
+        "id": "block_0018_0001",
+        "beforeSha256": "e776beb1d32d4df7a581e1dc5d4bc164f564d9188140e5fee86f567013b6de2e",
+        "afterSha256": "b56d1b013ce83c038a998668236ec3330e8a8393a7830f15830a8f55e250cdde"
       }
     ]
   },
@@ -4703,46 +4718,53 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "b6900d79ac4cc2e7e80ec3f958315d719391c7ec6cd4801191e85073128dd507",
+        "sourceSha256": "384a3d0326ace53afd886c73fdb2fe1069f1b0c61b447275c92289fab4e96f09",
         "spans": [
           {
             "start": 277,
             "end": 287,
             "text": "sobres.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 310,
+            "start": 312,
+            "end": 321,
             "text": "constexpr",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 353,
-            "end": 359,
+            "start": 340,
+            "end": 346,
             "text": "inline",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 421,
-            "end": 431,
+            "start": 597,
+            "end": 606,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 752,
+            "end": 762,
             "text": "sobres.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 434,
-            "end": 443,
+            "start": 765,
+            "end": 774,
             "text": "serie.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 468,
-            "end": 488,
+            "start": 799,
+            "end": 819,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -5779,16 +5801,8 @@
       {
         "block": "block_0012_0004",
         "path": "/text",
-        "sourceSha256": "dea8d6ecbfa8bff5bc61c9e0d8b32f0015b00835e0bb7773eb52a7e4e07f8dfd",
-        "spans": [
-          {
-            "start": 230,
-            "end": 236,
-            "text": "stdout",
-            "role": "cpp",
-            "reading": "auto"
-          }
-        ]
+        "sourceSha256": "56b10498a3a7ac3021b7db9de68b9f3401811c748705caeb92d4f3d9edcde29a",
+        "spans": []
       },
       {
         "block": "block_0012_0005",
@@ -6160,21 +6174,21 @@
       {
         "block": "block_0018_0001",
         "path": "/text",
-        "sourceSha256": "d1fe90b3635533ab0f254a72f9c23d920405f06fa0539bddd14ece6c633e0e7d",
+        "sourceSha256": "95426277c496cd38781afc8c456931a7c82cbdd453d8358110e8eea5ded937fd",
         "spans": [
           {
-            "start": 59,
-            "end": 67,
+            "start": 58,
+            "end": 66,
             "text": "main.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 262,
-            "text": "stdout",
+            "start": 210,
+            "end": 220,
+            "text": "sobres.cpp",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           }
         ]
       },
