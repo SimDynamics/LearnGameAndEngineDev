@@ -189,6 +189,13 @@ bool llega_a_tiempo(int dias) {
         "Independent six-place capacity and four-day deadline were rejected");
     owner.named_rule_source_check->editable_paths={
         "componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"};
+    require(!compiler_runtime_request_allowed(owner,submitted),
+        "An editable C++ test harness earned credit without independent probes");
+    owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+        "pruebas/cajas_casos.cpp","envio/cajas.h",{
+            {"cajas_para",0,0},{"cajas_para",6,1},{"cajas_para",19,4},
+            {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}}};
+    submitted.named_rule_probe=owner.named_rule_source_check->execution_probe;
     auto revised=submitted;
     change_project(revised,"pruebas/cajas_casos.cpp",
         "int main(){return 0;}\n");
@@ -369,6 +376,20 @@ bool llega_a_tiempo(int dias) {
         fake.execution.succeeded(),
         "The negative forged-harness control failed to compile or execute");
     const auto fake_capture=capture_cpp_execution(forged,fake);
+    require(!fake_capture.named_rule_probe_correct,
+        "An edited harness hid an incorrect 19-piece computation");
+    // Even a legitimate result cannot be reused with an altered probe hash
+    // or a different project source. The worker's evidence is source-bound.
+    auto mixed=real;
+    require(mixed.named_rule_probe.has_value(),
+        "An independent CMake probe did not capture its own executable");
+    mixed.named_rule_probe->source_sha256="0";
+    require(!capture_cpp_execution(correct,mixed).named_rule_probe_correct,
+        "The capture accepted a probe belonging to other source bytes");
+    mixed=real;
+    mixed.named_rule_probe->project_sha256="0";
+    require(!capture_cpp_execution(correct,mixed).named_rule_probe_correct,
+        "The capture accepted a probe from another CMake project");
     require(evaluate_cpp_output_check(*owner.output_check,fake_capture,forged.revision).verdict
         ==OutputVerdict::correct,
         "The negative control did not actually reproduce the visible expected stdout");
