@@ -116,10 +116,38 @@ inline bool productive(const Tokens& t,std::size_t i) {
            !(i+2<t.size()&&op(t[i+1],"*")&&t[i+2]=="number:0");
 }
 inline bool used_in_return(const Tokens& t,Bounds bounds,std::string_view name) {
+    // A function may compute an intermediate result and return that object.
+    // Follow simple local initializer dependencies instead of requiring
+    // authors to squeeze the whole expression into one return statement.
+    std::vector<std::string> dependent{std::string(name)};
+    const auto depends=[&](std::size_t first,std::size_t last) {
+        for(auto i=first;i<last;++i)
+            if(productive(t,i))
+                for(const auto& candidate:dependent)
+                    if(id(t[i],candidate))return true;
+        return false;
+    };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
-        if(!id(t[i],"return"))continue;
-        for(auto j=i+1;j<bounds.close&&!op(t[j],";");++j)
-            if(id(t[j],name)&&productive(t,j))return true;
+        if(id(t[i],"return")) {
+            auto last=i+1;
+            while(last<bounds.close&&!op(t[last],";"))++last;
+            if(depends(i+1,last))return true;
+            i=last;
+            continue;
+        }
+        auto start=i;
+        if(id(t[start],"const")||id(t[start],"constexpr"))++start;
+        if(start+2>=bounds.close||
+            !(id(t[start],"int")||id(t[start],"auto"))||
+            !t[start+1].starts_with("id:")||
+            !(op(t[start+2],"=")||op(t[start+2],"{")))continue;
+        const auto local=t[start+1].substr(3);
+        auto last=start+3;
+        while(last<bounds.close&&!op(t[last],";"))++last;
+        if(depends(start+3,last)&&
+           std::ranges::find(dependent,local)==dependent.end())
+            dependent.push_back(local);
+        i=last;
     }
     return false;
 }
