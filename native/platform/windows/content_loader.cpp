@@ -437,6 +437,41 @@ std::string state_fingerprint(const JsonObject& original) {
     }
     return fingerprint(value);
 }
+// A reviewed option is an editorial text revision, not a new answer. Project
+// only that option back to the full archived predecessor before comparing the
+// immutable historical response signature. Other option texts, the correct
+// index, question, feedback and every unlisted property remain unchanged.
+JsonObject general_choice_projection(const JsonObject& current,
+        const JsonObject& revision,bool allow_original=false) {
+    const auto original=revision.GetNamedObject(L"block");
+    require(text(original,"type")=="multiple_choice"&&
+            text(current,"type")=="multiple_choice",
+        "A general choice archive must contain its original choice owner");
+    const auto earlier=array(original,"options");
+    const auto now=array(current,"options");
+    require(earlier.Size()>0&&earlier.Size()==now.Size(),
+        "A general choice review changed the number of answers");
+    const auto position=integer(revision.GetNamedValue(L"optionIndex"),
+        static_cast<std::size_t>(earlier.Size()-1));
+    const auto replacement=text(revision,"replacement");
+    require(!replacement.empty()&&
+            replacement.find_first_not_of(" \t\r\n")!=std::string::npos&&
+            replacement!=utf8(earlier.GetStringAt(static_cast<unsigned>(position))),
+        "A general choice review must revise one nonblank option");
+    if(fingerprint(current)==fingerprint(original)) {
+        require(allow_original,
+            "A general choice revision has no active wording change");
+        return JsonObject::Parse(original.Stringify());
+    }
+    require(utf8(now.GetStringAt(static_cast<unsigned>(position)))==replacement,
+        "A general choice review does not match its authored replacement");
+    const auto projected=JsonObject::Parse(current.Stringify());
+    projected.GetNamedArray(L"options").SetAt(static_cast<unsigned>(position),
+        earlier.GetAt(static_cast<unsigned>(position)));
+    require(fingerprint(projected)==fingerprint(original),
+        "A general choice revision changed another answer, explanation or field");
+    return projected;
+}
 struct ReviewedChoice {
     std::string_view lesson,identity,before_payload,after_payload,before_full,first_after_full;
     std::string_view paired_explanation_before,paired_explanation_after;
