@@ -264,6 +264,15 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     lgaed_add_named_rule_source_tests()
+    # Read-only CMake File API graph: a duplicated library source and a
+    # real target_link_libraries() can print identical stdout but differ in
+    # generated target types, source ownership and linker dependencies.
+    add_executable(lgaed_cpp_cmake_runner_tests
+        native/platform/windows/cpp_cmake_runner_tests.cpp)
+    target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
+    add_test(NAME native.cpp_cmake_graph
+        COMMAND lgaed_cpp_cmake_runner_tests --graph)
+    set_tests_properties(native.cpp_cmake_graph PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
     # Exercise the source-evidence prerequisite on four real, historically
     # mapped U3 editors, without changing their authored JSON contracts.
     add_executable(lgaed_named_rule_runtime_tests

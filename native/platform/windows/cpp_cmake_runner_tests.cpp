@@ -4,6 +4,7 @@
 #include "core/lesson.hpp"
 #include "native_build_config.hpp"
 #include <windows.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -156,9 +157,12 @@ int main() {
 }
 }
 int main(int argc,char** argv){using namespace lgaed;using namespace windows;try{
-    const bool cpp23_only=argc==2&&std::string_view(argv[1])=="--cpp23";check(argc==1||cpp23_only,"Unknown CMake runner test selector");
+    const bool cpp23_only=argc==2&&std::string_view(argv[1])=="--cpp23";
+    const bool graph_only=argc==2&&std::string_view(argv[1])=="--graph";
+    check(argc==1||cpp23_only||graph_only,"Unknown CMake runner test selector");
     const auto environment=resolve_windows_environment({ProfileId::Codex,L"cmake-runner-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});OwnedQa qa(environment.paths.root);initialize_profile_directories(environment.paths);
-    cpp23_cmake_migration(environment);if(cpp23_only){qa.finish();return 0;}
+    if(!graph_only)cpp23_cmake_migration(environment);
+    if(cpp23_only){qa.finish();return 0;}
     CppRunRequest request;request.projects_directory=environment.paths.projects/L"Códigos & nombres";request.project_key="original/exercise/draft";request.request_id=1;request.revision=7;
     request.project_files={{"CMakeLists.txt",R"(cmake_minimum_required(VERSION 3.20)
 project(PersonalNative LANGUAGES CXX)
@@ -201,6 +205,72 @@ target_include_directories(parts PRIVATE include)
         "The private tool host mixed channels or corrupted real Unicode diagnostics");
     check(configured.configuration.stdout_bytes.find("Detecting CXX compiler ABI info - done")!=std::string::npos&&configured.configuration.stderr_bytes.find("CMAKE_OBJECT_PATH_MAX")==std::string::npos,
         "The native tool workspace still exhausts MSVC paths during the real ABI check");
+    // Both programs print 42, but the original executable compiles value.cpp
+    // directly while the second project links the static library. Generated
+    // File API facts must distinguish those structures independently of stdout.
+    check(configured.cmake_graph&&
+        configured.cmake_graph->project_name=="PersonalNative"&&
+        configured.cmake_graph->project_fingerprint==configured.project_fingerprint&&
+        configured.cmake_graph->configuration_fingerprint==configured.configuration_fingerprint,
+        "A successful configure lacked source-bound generated CMake graph evidence");
+    const auto find_target=[](const CppCmakeGraphEvidence& graph,
+            std::string_view name)->const CppCmakeTargetEvidence& {
+        const auto found=std::ranges::find_if(graph.targets,
+            [&](const auto& one){return one.name==name;});
+        check(found!=graph.targets.end(),"No generated target: "+std::string(name));
+        return *found;
+    };
+    const auto contains=[](const auto& items,std::string_view value) {
+        return std::ranges::find(items,std::string(value))!=items.end();
+    };
+    const auto links=[](const CppCmakeTargetEvidence& target,
+            std::string_view name) {
+        return std::ranges::any_of(target.link_libraries,[&](const auto& fragment){
+            return fragment.find(name)!=std::string::npos;
+        });
+    };
+    const auto& original_first=find_target(*configured.cmake_graph,"first");
+    const auto& original_parts=find_target(*configured.cmake_graph,"parts");
+    check(original_first.type=="EXECUTABLE"&&
+        contains(original_first.compiled_sources,"src/main.cpp")&&
+        contains(original_first.compiled_sources,"src/value.cpp")&&
+        !contains(original_first.build_dependencies,"parts")&&
+        !links(original_first,"parts.lib")&&
+        original_parts.type=="STATIC_LIBRARY"&&
+        contains(original_parts.compiled_sources,"src/value.cpp"),
+        "An unrelated library and a duplicate .cpp source were mistaken for a linked target");
+    auto linked=request;
+    linked.project_key+="/real-link-graph";
+    linked.request_id=1201;
+    linked.action=CppRunRequest::Action::compile_run;
+    linked.project_files[0].second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(GraphLinked LANGUAGES CXX)
+add_library(parts STATIC src/value.cpp)
+target_include_directories(parts PRIVATE include)
+target_compile_definitions(parts PRIVATE CHOSEN=42)
+add_executable(first src/main.cpp)
+target_include_directories(first PRIVATE include)
+target_link_libraries(first PRIVATE parts)
+)cmake";
+    const auto linked_result=run_cpp(linked);
+    ran(linked_result);
+    check(linked_result.execution.stdout_bytes=="42"&&
+        linked_result.cmake_graph&&
+        linked_result.cmake_graph->project_name=="GraphLinked",
+        "Actual linked library failed to build or expose the generated CMake graph");
+    const auto& linked_first=find_target(*linked_result.cmake_graph,"first");
+    check(linked_first.type=="EXECUTABLE"&&
+        contains(linked_first.compiled_sources,"src/main.cpp")&&
+        !contains(linked_first.compiled_sources,"src/value.cpp")&&
+        contains(linked_first.build_dependencies,"parts")&&
+        links(linked_first,"parts.lib")&&
+        find_target(*linked_result.cmake_graph,"parts").type=="STATIC_LIBRARY",
+        "The generated library link graph did not differ from direct-source compilation");
+    if(graph_only) {
+        qa.finish();
+        std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
+        return 0;
+    }
     auto available=inspect_cpp_project(request);check(available.configured&&!available.built&&available.target_type=="EXECUTABLE","File API target/configuration inspection failed");
     request.action=CppRunRequest::Action::build;const auto build=run_cpp(request);built(build);check(!build.execution.succeeded()&&build.artifact.filename()==L"real-file-api-name.exe","Build guessed a filename or automatically executed the program");
     available=inspect_cpp_project(request);check(available.built&&available.artifact==build.artifact,"Reopening lost the verified current built artifact");

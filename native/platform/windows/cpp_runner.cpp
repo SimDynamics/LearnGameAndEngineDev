@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <cmath>
 #include <cwchar>
 #include <fstream>
 #include <iterator>
@@ -448,6 +449,102 @@ Target cmake_target(const std::filesystem::path& workspace,const curriculum::Cma
             if(target.HasKey(L"artifacts"))for(const auto& artifact:target.GetNamedArray(L"artifacts"))result.artifacts.push_back(contained(build,project_path(json_text(artifact.GetObject(),L"path"))));return result;}}
     return {};
 }
+// Read the complete generated target graph, never a student's stdout or
+// a regular-expression guess about the CMakeLists.txt source.
+CppCmakeGraphEvidence snapshot_cmake_graph(
+        const std::filesystem::path& workspace,
+        const CppRunRequest& request,
+        std::string_view project_fingerprint,
+        std::string_view configuration_fingerprint) {
+    const auto reply=workspace/L".cmake/api/v1/reply";
+    state::require_safe_path(reply);
+    std::filesystem::path latest;
+    for(const auto& file:std::filesystem::directory_iterator(reply))
+        if(file.is_regular_file()&&file.path().filename().wstring().starts_with(L"index-")&&
+           file.path().extension()==L".json"&&
+           (latest.empty()||file.path().filename()>latest.filename()))
+            latest=file.path();
+    if(latest.empty())throw std::runtime_error("CMake File API index is missing");
+    const auto index=read_json(latest);
+    std::optional<JsonObject> model;
+    for(const auto& entry:index.GetNamedArray(L"objects")) {
+        const auto item=entry.GetObject();
+        if(json_text(item,L"kind")!="codemodel"||
+           item.GetNamedObject(L"version").GetNamedNumber(L"major")!=2)continue;
+        model=read_json(contained(reply,project_path(json_text(item,L"jsonFile"))));
+        break;
+    }
+    if(!model)throw std::runtime_error("CMake File API did not supply codemodel v2");
+    CppCmakeGraphEvidence graph;
+    graph.project_fingerprint=std::string(project_fingerprint);
+    graph.configuration_fingerprint=std::string(configuration_fingerprint);
+    if(model->HasKey(L"projects")&&model->GetNamedArray(L"projects").Size())
+        graph.project_name=json_text(model->GetNamedArray(L"projects").GetObjectAt(0),L"name");
+    bool matched=false;
+    for(const auto& record:model->GetNamedArray(L"configurations")) {
+        const auto configuration=record.GetObject();
+        if(json_text(configuration,L"name")!=request.cmake->build_type)continue;
+        if(matched)throw std::runtime_error("CMake returned repeated configurations");
+        matched=true;
+        if(!configuration.HasKey(L"targets"))continue;
+        const auto references=configuration.GetNamedArray(L"targets");
+        const auto directories=configuration.GetNamedArray(L"directories");
+        std::map<std::string,std::string> names;
+        for(const auto& reference:references) {
+            const auto item=reference.GetObject();
+            const auto id=json_text(item,L"id"),name=json_text(item,L"name");
+            if(id.empty()||name.empty()||!names.emplace(id,name).second)
+                throw std::runtime_error("CMake target ID is missing or duplicated");
+        }
+        for(const auto& reference:references) {
+            const auto item=reference.GetObject();
+            const auto target=read_json(contained(reply,
+                project_path(json_text(item,L"jsonFile"))));
+            CppCmakeTargetEvidence fact;
+            fact.name=json_text(target,L"name");
+            fact.type=json_text(target,L"type");
+            if(fact.name!=json_text(item,L"name")||
+               json_text(target,L"id")!=json_text(item,L"id"))
+                throw std::runtime_error("CMake target does not match its index");
+            if(item.HasKey(L"directoryIndex")) {
+                const auto value=item.GetNamedNumber(L"directoryIndex");
+                if(!std::isfinite(value)||value<0||
+                   value>=static_cast<double>(directories.Size())||
+                   std::trunc(value)!=value)
+                    throw std::runtime_error("CMake directory index is invalid");
+                fact.source_directory=json_text(
+                    directories.GetObjectAt(static_cast<std::uint32_t>(value)),L"source");
+            }
+            if(target.HasKey(L"sources"))
+                for(const auto& item_source:target.GetNamedArray(L"sources")) {
+                    const auto source=item_source.GetObject();
+                    if(source.HasKey(L"compileGroupIndex"))
+                        fact.compiled_sources.push_back(json_text(source,L"path"));
+                }
+            if(target.HasKey(L"dependencies"))
+                for(const auto& dependency:target.GetNamedArray(L"dependencies")) {
+                    const auto id=json_text(dependency.GetObject(),L"id");
+                    // Utility/generated dependencies are not proof of a
+                    // particular student-authored library link.
+                    if(const auto known=names.find(id);known!=names.end())
+                        fact.build_dependencies.push_back(known->second);
+                }
+            if(target.HasKey(L"link")) {
+                const auto link=target.GetNamedObject(L"link");
+                if(link.HasKey(L"commandFragments"))
+                    for(const auto& fragment:link.GetNamedArray(L"commandFragments")) {
+                        const auto item_fragment=fragment.GetObject();
+                        if(json_text(item_fragment,L"role")=="libraries")
+                            fact.link_libraries.push_back(
+                                json_text(item_fragment,L"fragment"));
+                    }
+            }
+            graph.targets.push_back(std::move(fact));
+        }
+    }
+    if(!matched)throw std::runtime_error("CMake requested configuration has no generated graph");
+    return graph;
+}
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
     if(!verify_workspace_identity(request,false))return result;const auto path=result.workspace/L"state.json";if(!std::filesystem::is_regular_file(path))return result;
@@ -539,6 +636,9 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
+    if(availability.configured)
+        result.cmake_graph=snapshot_cmake_graph(workspace,request,
+            result.project_fingerprint,result.configuration_fingerprint);
     if(action==CppRunRequest::Action::configure)return;
     if(!availability.configured)throw std::runtime_error("Configure and generate the current project before building or running it");
     if(action==CppRunRequest::Action::build||action==CppRunRequest::Action::compile_run){materialize(request.project_files,source);auto saved=read_json(state_file);
