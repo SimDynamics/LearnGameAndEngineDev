@@ -262,17 +262,34 @@ inline bool used_in_return(const Tokens& t,Bounds bounds,std::string_view name) 
         }
         auto start=i;
         if(id(t[start],"const")||id(t[start],"constexpr"))++start;
-        if(start+2>=bounds.close||
-            !(id(t[start],"int")||id(t[start],"auto"))||
-            !t[start+1].starts_with("id:")||
-            !(op(t[start+2],"=")||op(t[start+2],"{")))continue;
-        const auto local=t[start+1].substr(3);
-        auto last=start+3;
-        while(last<bounds.close&&!op(t[last],";"))++last;
-        if(depends(start+3,last)&&
-           std::ranges::find(dependent,local)==dependent.end())
-            dependent.push_back(local);
-        i=last;
+        if(start+2<bounds.close&&
+           (id(t[start],"int")||id(t[start],"auto"))&&
+           t[start+1].starts_with("id:")&&
+           (op(t[start+2],"=")||op(t[start+2],"{"))) {
+            const auto local=t[start+1].substr(3);
+            auto last=start+3;
+            while(last<bounds.close&&!op(t[last],";"))++last;
+            if(depends(start+3,last)&&
+               std::ranges::find(dependent,local)==dependent.end())
+                dependent.push_back(local);
+            i=last;
+            continue;
+        }
+        // A later assignment replaces an intermediate's old value.
+        // Without this, an abandoned calculation using a named constant
+        // could be counted even when the returned result was hard-coded.
+        if(i+1<bounds.close&&t[i].starts_with("id:")&&
+           op(t[i+1],"=")) {
+            const auto local=t[i].substr(3);
+            auto last=i+2;
+            while(last<bounds.close&&!op(t[last],";"))++last;
+            const bool derived=depends(i+2,last);
+            const auto previous=std::ranges::find(dependent,local);
+            if(derived&&previous==dependent.end())dependent.push_back(local);
+            else if(!derived&&previous!=dependent.end()&&local!=name)
+                dependent.erase(previous);
+            i=last;
+        }
     }
     return false;
 }
