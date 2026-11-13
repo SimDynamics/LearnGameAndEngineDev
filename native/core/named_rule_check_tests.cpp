@@ -194,6 +194,26 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            if (piezas > 10) {
+                int calculo = (piezas + 3) / 4;
+                return calculo;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "An unrecognized nested return cannot hide a hardcoded early path");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas < 0) {
+                const int observacion = 0;
+                (void)observacion;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "A nonreturning conditional branch does not invalidate a named result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             if (piezas > 10) return (piezas + 3) / 4;
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,false,
