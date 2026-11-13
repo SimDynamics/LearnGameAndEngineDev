@@ -4,6 +4,7 @@
 #include "core/report_observation_check.hpp"
 #include "core/assertion_runtime_check.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/cmake_graph_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
 
@@ -137,6 +138,9 @@ struct ChoiceRevision {
     std::vector<std::string> original_options, original_review_feedback_options;
     std::string original_question, original_explanation, original_review_feedback;
     std::optional<std::size_t> original_correct_index;
+    // Generic text-only reviews keep their original semantic spans; closed
+    // historical choice revisions retain their established reader behavior.
+    std::optional<std::size_t> general_option_index;
 };
 // An exact reviewed compiler contract expansion retains its complete original
 // and independent execution proofs; old success never proves the new checks.
@@ -193,6 +197,9 @@ struct Block {
     // Lesson-root source prerequisite. It is checked before any case receipt
     // and keeps the original editor payload, answers and stable identity.
     std::optional<NamedRuleSourceCheck> named_rule_source_check;
+    // Authored at the lesson root; a new structural proof does not inherit
+    // earlier stdout-only receipts or change the existing editor identity.
+    std::optional<CmakeGraphRequirement> cmake_graph_check;
     std::optional<MathLabelRevision> math_label_revision;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
@@ -358,6 +365,7 @@ struct FreshExecution {
     bool rejection_probe_correct = false;
     bool report_probe_correct = false;
     bool named_rule_probe_correct = false;
+    bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;
     bool assertion_repair_probes_correct = false;
 };

@@ -368,7 +368,11 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         token(std::to_string(contract.comment_only_paths.size()));
         for(const auto& path:contract.comment_only_paths)token(path);
         if(contract.execution_probe) {
-            token("independent-cmake-probe-v1");
+            // The final-witness proof replaces the old exit-code-only
+            // accreditation. Receipts from that weaker probe cannot silently
+            // satisfy the updated objective; draft coordinates stay stable.
+            token(contract.path.empty()?"independent-single-file-probe-v2":
+                "independent-cmake-probe-v2");
             token(contract.execution_probe->harness_path);
             token(contract.execution_probe->header);
             token(std::to_string(contract.execution_probe->cases.size()));
@@ -376,6 +380,20 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 token(item.function);token(std::to_string(item.input));
                 token(std::to_string(item.expected));
             }
+        }
+    }
+    if(activity.cmake_graph_check) {
+        const auto& graph=*activity.cmake_graph_check;
+        token("cmake-generated-graph-v1");
+        token(graph.project_name);
+        token(std::to_string(graph.targets.size()));
+        for(const auto& target:graph.targets) {
+            token(target.name);token(target.type);
+            token(target.exact_sources?"exact-sources":"required-sources");
+            token(std::to_string(target.sources.size()));
+            for(const auto& path:target.sources)token(path);
+            token(std::to_string(target.links_to.size()));
+            for(const auto& name:target.links_to)token(name);
         }
     }
     result += std::to_string(activity.output_check->cases.size()) + '[';

@@ -42,7 +42,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerCmakeGraphChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -800,11 +800,80 @@ def _choice_revisions(document: dict) -> dict[str, dict]:
     return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("choiceRevisions", [])}
 
 
+def _general_choice_revision(document: dict, identity: str) -> dict | None:
+    return next((item for item in document.get("stateLayout", {}).get("choiceRevisions", [])
+                 if item["id"] == identity and "optionIndex" in item), None)
+
+
+def _choice_semantic_entry(document: dict, identity: str, option_index: int) -> dict | None:
+    """Find only the exact existing public-text marker for the revised option."""
+    overlay = document.get(text_semantics.ROOT_FIELD)
+    if overlay is None:
+        return None
+    require(type(overlay) is dict and type(overlay.get("fields")) is list,
+            "Malformed semantic overlay for an editorial choice revision")
+    path = f"/options/{option_index}"
+    matches = [field for field in overlay["fields"]
+               if type(field) is dict and field.get("block") == identity
+               and field.get("path") == path]
+    require(len(matches) <= 1, "Duplicate semantic source for revised option")
+    return matches[0] if matches else None
+
+
+def _general_choice_semantic_projection(document: dict) -> dict | None:
+    """Restore the original option's presentation hash in a historical view.
+
+    Source selection and narration must not borrow the revised option's SHA
+    when reconstructing the published original response. All span annotations
+    remain intact, rather than being silently regenerated or repositioned.
+    """
+    overlay = deepcopy(document.get(text_semantics.ROOT_FIELD))
+    if overlay is None:
+        return None
+    shadow = {**document, text_semantics.ROOT_FIELD: overlay}
+    for item in document.get("stateLayout", {}).get("choiceRevisions", []):
+        if "optionIndex" not in item:
+            continue
+        marker = _choice_semantic_entry(shadow, item["id"], item["optionIndex"])
+        archived = item["semanticBefore"]
+        if archived is None:
+            require(marker is None,
+                    "A revised choice invented a semantic marker absent from its original")
+        else:
+            require(marker is not None,
+                    "A revised choice dropped its archived semantic marker")
+            expected = deepcopy(archived)
+            expected["sourceSha256"] = hashlib.sha256(
+                item["replacement"].encode("utf-8")).hexdigest()
+            require(marker == expected,
+                    "Revised choice semantic spans differ from their complete archive")
+            marker.clear()
+            marker.update(deepcopy(archived))
+    return overlay
+
+
+def _general_choice_projection(item: dict, block: dict) -> dict:
+    """Only the declared option text may differ from the exact archived choice.
+
+    The complete predecessor, response position and other options remain
+    immutable. No arbitrary choice/answer contract is normalized.
+    """
+    original = item["block"]
+    expected = deepcopy(original)
+    index = item["optionIndex"]
+    expected["options"][index] = item["replacement"]
+    require(block == original or block == expected,
+            "General choice review changed another option, answer or authored field")
+    return deepcopy(original)
+
+
 def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
     # Only callers that have validated the complete document/transition use
     # this projection. Keep current prose/guidance for its ordinary validator.
     if identity not in _choice_revisions(document):
         return block
+    if (general := _general_choice_revision(document, identity)) is not None:
+        return _general_choice_projection(general, block)
     result = historical_choice_payload(block)
     spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
     if spec is not None and "paired_explanation" in spec:
@@ -1057,23 +1126,68 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             raise LayoutError(f"Unsafe source formatting for {identity}: {exc}") from exc
         formatted[identity] = original
     choice_revisions = meta.get("choiceRevisions", [])
-    require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS),
+    require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS) + 64,
             "Malformed reviewed choice archive")
     require(not choice_revisions or meta["locale"] == "es", "Choice revisions are authorized only for Spanish")
     choices = {}
+    general_choices = {}
     for item in choice_revisions:
-        require(type(item) is dict and set(item) == {"id", "block"}, "A choice revision needs its identity and complete original block")
+        require(type(item) is dict and {"id", "block"} <= set(item),
+                "A choice revision needs its identity and complete original block")
         identity = _identity(item["id"])
-        require(identity in storage and identity not in choices, "Unknown or repeated choice revision identity")
+        require(identity in storage and identity not in choices and identity not in general_choices,
+                "Unknown or repeated choice revision identity")
         spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
-        require(spec is not None, "This choice revision belongs to its reviewed Spanish lesson and identity")
         original = item["block"]
-        require(type(original) is dict and original.get("type") == "multiple_choice"
-                and fingerprint(original) == spec["full_before"]
-                and fingerprint(_choice_payload(original)) == spec["protected_before"],
-                "The choice archive must preserve its exact complete published block")
-        require(state_fingerprint(original) == digests[identity], "The choice snapshot does not match its immutable response contract")
-        choices[identity] = spec
+        if set(item) == {"id", "block"}:
+            require(spec is not None, "This closed choice revision belongs to its reviewed Spanish owner")
+            require(type(original) is dict and original.get("type") == "multiple_choice"
+                    and fingerprint(original) == spec["full_before"]
+                    and fingerprint(_choice_payload(original)) == spec["protected_before"],
+                    "The choice archive must preserve its exact complete published block")
+            require(state_fingerprint(original) == digests[identity],
+                    "The choice snapshot does not match its immutable response contract")
+            choices[identity] = spec
+        else:
+            require(set(item) == {"id", "block", "optionIndex", "replacement", "semanticBefore"}
+                    and spec is None,
+                    "A general choice review needs its original, one option and exact semantic archive")
+            require(type(original) is dict and original.get("type") == "multiple_choice"
+                    and type(original.get("options")) is list
+                    and all(type(option) is str for option in original["options"])
+                    and type(original.get("correctIndex")) is int,
+                    "General choice review needs a complete original choice block")
+            index = item["optionIndex"]
+            require(type(index) is int and 0 <= index < len(original["options"])
+                    and type(item["replacement"]) is str and bool(item["replacement"].strip())
+                    and original["options"][index] != item["replacement"],
+                    "General choice review needs exactly one real nonblank text revision")
+            require(state_fingerprint(original) == digests[identity],
+                    "General choice archive must match this owner's original response contract")
+            active = active_blocks.get(identity)
+            require(type(active) is dict,
+                    "General choice review must keep its original activity active")
+            _general_choice_projection(item, active)
+            semantic_before = item["semanticBefore"]
+            selected_before = original["options"][index]
+            if semantic_before is not None:
+                require(type(semantic_before) is dict and
+                        set(semantic_before) == {"block", "path", "sourceSha256", "spans"} and
+                        semantic_before["block"] == identity and
+                        semantic_before["path"] == f"/options/{index}",
+                        "The choice semantic predecessor needs its exact original identity")
+                try:
+                    text_semantics._descriptor(semantic_before, selected_before)
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise LayoutError("Archived choice semantic spans are invalid") from exc
+            semantic_after = _choice_semantic_entry(document, identity, index)
+            expected_semantic = deepcopy(semantic_before)
+            if expected_semantic is not None:
+                expected_semantic["sourceSha256"] = hashlib.sha256(
+                    item["replacement"].encode("utf-8")).hexdigest()
+            require(semantic_after == expected_semantic,
+                    "A revised choice changed, inserted or lost historical semantic spans")
+            general_choices[identity] = item
     compiler_revisions = meta.get("compilerRevisions", [])
     require(type(compiler_revisions) is list and len(compiler_revisions) <= len(COMPILER_CASE_REVISIONS),
             "Malformed reviewed compiler archive")
@@ -1150,6 +1264,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         and compiler_references[identity] == reference_reviewed,
                         "A revised compiler reference requires its matching expanded compiler and archive")
             projected = order_contract_projection(source, refined[identity]) if identity in refined else source
+            if identity in general_choices:
+                projected = _general_choice_projection(general_choices[identity], projected)
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
             seen_blocks.append(identity)
@@ -1620,8 +1736,10 @@ def _validate_retirement_history(document: dict) -> None:
                             and expected_reference == reference_reviewed
                             and _reviewed_compiler_reference(protected_available[block_id]) == reference_reviewed,
                             "A historical revised compiler reference requires its matching active revision archive")
-                require(state_fingerprint(_historical_order_contract(document, block_id, block, allow_original=True))
-                        == state_fingerprint(_historical_order_contract(document, block_id, protected_available[block_id])),
+                old_reading = _historical_choice_contract(document, block_id, block)
+                active_reading = _historical_choice_contract(document, block_id, protected_available[block_id])
+                require(state_fingerprint(_historical_order_contract(document, block_id, old_reading, allow_original=True))
+                        == state_fingerprint(_historical_order_contract(document, block_id, active_reading)),
                         "Historical reading snapshot changed a response/code contract")
                 seen_blocks.add(block_id)
         historical_blocks = {identity: block for page, record in zip(pages, current)
@@ -1997,25 +2115,32 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     "Named-rule purpose vocabulary must be bounded and unique")
         if "executionProbe" in record:
             probe = record["executionProbe"]
-            require(bool(files) and type(block.get("cmake")) is dict and
-                    type(probe) is dict and set(probe) == {"harness", "header", "cases"},
-                    "Independent named-rule probes require original CMake projects")
+            require(type(probe) is dict and set(probe) == {"harness", "header", "cases"},
+                    "Independent named-rule probes require harness, header and cases")
             harness, header = probe["harness"], probe["header"]
-            existing = {entry.get("path") for entry in files if type(entry) is dict}
-            require(type(harness) is str and harness.endswith(".cpp") and
-                    harness in existing and harness != source,
-                    "Independent probe must replace a different original C++ file")
-            require(type(header) is str and len(header) <= 256 and
-                    re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*", header) and
-                    ".." not in header,
-                    "Independent probe include path must be a safe relative name")
-            main_cmake = next((entry.get("initialCode", "")
-                               for entry in files if type(entry) is dict
-                               and entry.get("path") == "CMakeLists.txt"), "")
-            target = block["cmake"].get("target")
-            require(type(target) is str and
-                    f"add_executable({target} {harness})" in main_cmake,
-                    "The independent probe must replace the selected executable source")
+            single_file = not bool(files)
+            if single_file:
+                require(harness == "" and header == "" and not block.get("cmake")
+                        and source == "",
+                        "Single-file probes require empty harness and header paths")
+            else:
+                require(type(block.get("cmake")) is dict,
+                        "Project named-rule probes require an original CMake editor")
+                existing = {entry.get("path") for entry in files if type(entry) is dict}
+                require(type(harness) is str and harness.endswith(".cpp") and
+                        harness in existing and harness != source,
+                        "Independent probe must replace a different original C++ file")
+                require(type(header) is str and len(header) <= 256 and
+                        re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*", header) and
+                        ".." not in header,
+                        "Independent probe include path must be a safe relative name")
+                main_cmake = next((entry.get("initialCode", "")
+                                   for entry in files if type(entry) is dict
+                                   and entry.get("path") == "CMakeLists.txt"), "")
+                target = block["cmake"].get("target")
+                require(type(target) is str and
+                        f"add_executable({target} {harness})" in main_cmake,
+                        "The independent probe must replace the selected executable source")
             comparisons = probe["cases"]
             require(type(comparisons) is list and 1 <= len(comparisons) <= 32,
                     "Independent source probe needs 1..32 comparisons")
@@ -2043,6 +2168,84 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     record["executionProbe"]["harness"] in extra,
                     "Editable CMake test drivers require independent execution probes")
 
+
+
+
+def _validate_compiler_cmake_graph_checks(document: dict) -> None:
+    """Bounded, append-only CMake structural objectives, without block edits."""
+    if "compilerCmakeGraphChecks" not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and
+            meta.get("locale") == "es", "CMake graphs require Spanish v2")
+    records = document["compilerCmakeGraphChecks"]
+    require(type(records) is list and 0 < len(records) <= 64,
+            "CMake graph checks require 1..64 owners")
+    owners, seen = _blocks(document), set()
+    for entry in records:
+        require(type(entry) is dict and
+                {"activity", "targets"} <= set(entry) <=
+                {"activity", "project", "targets"},
+                "CMake graph owner needs activity, optional project and targets")
+        identity = _identity(entry["activity"])
+        require(identity not in seen, "Repeated CMake graph activity")
+        seen.add(identity)
+        block = owners.get(identity)
+        require(type(block) is dict and block.get("type") == "cpp_compiler" and
+                type(block.get("cmake")) is dict and
+                type(block.get("projectFiles")) is list and bool(block["projectFiles"]) and
+                type(block.get("outputCheck")) is dict and
+                type(block["outputCheck"].get("cases")) is list and
+                bool(block["outputCheck"]["cases"]) and
+                "compileCheck" not in block,
+                "CMake graph needs an original output-check CMake editor")
+        project = entry.get("project", "")
+        require(type(project) is str and len(project) <= 128,
+                "CMake graph project name must be short text")
+        targets = entry["targets"]
+        require(type(targets) is list and 0 < len(targets) <= 16,
+                "CMake graph needs 1..16 targets")
+        original_paths = {f.get("path") for f in block["projectFiles"]
+                          if type(f) is dict}
+        targets_by_name = {}
+        for target in targets:
+            require(type(target) is dict and
+                    {"name", "type"} <= set(target) <=
+                    {"name", "type", "sources", "linksTo", "exactSources"},
+                    "CMake target requires a name, type and bounded optional rules")
+            name, kind = target["name"], target["type"]
+            require(type(name) is str and len(name) <= 128 and
+                    re.fullmatch(r"[A-Za-z0-9_.+-]+", name) and
+                    name not in targets_by_name and
+                    kind in ("EXECUTABLE", "STATIC_LIBRARY"),
+                    "Invalid, duplicated or unsupported CMake target")
+            targets_by_name[name] = target
+            sources = target.get("sources", [])
+            require(type(sources) is list and len(sources) <= 32 and
+                    all(type(p) is str and
+                        p.lower().endswith((".cpp", ".cc", ".cxx", ".c++")) and
+                        p in original_paths for p in sources) and
+                    len(set(sources)) == len(sources),
+                    "CMake required sources must be unique original C++ files")
+            links = target.get("linksTo", [])
+            require(type(links) is list and len(links) <= 16 and
+                    all(type(n) is str and len(n) <= 128 and
+                        re.fullmatch(r"[A-Za-z0-9_.+-]+", n) and n != name
+                        for n in links) and len(set(links)) == len(links),
+                    "CMake linked targets must be unique non-self names")
+            exact = target.get("exactSources", False)
+            require(type(exact) is bool and (not exact or bool(sources)),
+                    "CMake exactSources requires a nonempty source list")
+        selected = block["cmake"].get("target")
+        require(selected in targets_by_name and
+                targets_by_name[selected]["type"] == "EXECUTABLE",
+                "CMake graph must include the selected executable target")
+        for target in targets:
+            for name in target.get("linksTo", []):
+                require(name in targets_by_name and
+                        targets_by_name[name]["type"] == "STATIC_LIBRARY" and
+                        target["type"] == "EXECUTABLE",
+                        "CMake links require a declared static library and executable")
 
 def _validate_order_visual_separators(document: dict) -> None:
     """A visual-only root extension, never an order fragment or progress slot."""
@@ -2085,6 +2288,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_cmake_graph_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
@@ -2164,6 +2368,53 @@ def refine_order_lines(document: dict, identity: str) -> dict:
     result["stateLayout"].setdefault("orderRefinements", []).append({"id": identity, "block": deepcopy(original)})
     result["stateLayout"]["editorial"].append({"id": identity, "beforeSha256": fingerprint(original),
                                             "afterSha256": fingerprint(actual)})
+    validate_transition(document, result)
+    return result
+
+
+def revise_choice_editorial(document: dict, identity: str,
+                            option_index: int, replacement: str) -> dict:
+    """Author one authenticated text-only change without a lesson hash allowlist.
+
+    The original block is archived unchanged and a single option receives
+    revised prose; correct index, all other answers, feedback and narration
+    coordinates remain exactly as published.
+    """
+    validate(document)
+    meta = document.get("stateLayout", {})
+    require(meta.get("version") == 2 and meta.get("locale") == "es",
+            "General choice review requires a published Spanish v2 lesson")
+    _identity(identity)
+    require(identity not in _choice_revisions(document),
+            "A reviewed choice cannot be revised twice under one historical archive")
+    require(CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) is None,
+            "A closed reviewed choice has its own existing revision contract")
+    original = _blocks(document).get(identity)
+    require(type(original) is dict and original.get("type") == "multiple_choice"
+            and type(original.get("options")) is list
+            and type(original.get("correctIndex")) is int,
+            "General choice review requires an existing complete choice activity")
+    require(type(option_index) is int and 0 <= option_index < len(original["options"])
+            and type(replacement) is str and bool(replacement.strip())
+            and replacement != original["options"][option_index],
+            "General choice review must revise exactly one nonblank option")
+    previous_semantic = deepcopy(_choice_semantic_entry(document, identity, option_index))
+    result = deepcopy(document)
+    actual = _blocks(result)[identity]
+    actual["options"][option_index] = replacement
+    semantic = _choice_semantic_entry(result, identity, option_index)
+    if semantic is not None:
+        # The exact published highlights remain authoritative. A changed
+        # excerpt that no longer matches its UTF-16 span is rejected rather
+        # than automatically moving the student's narration/emphasis ranges.
+        semantic["sourceSha256"] = hashlib.sha256(replacement.encode("utf-8")).hexdigest()
+    result["stateLayout"].setdefault("choiceRevisions", []).append({
+        "id": identity, "block": deepcopy(original),
+        "optionIndex": option_index, "replacement": replacement,
+        "semanticBefore": previous_semantic})
+    result["stateLayout"]["editorial"].append({
+        "id": identity, "beforeSha256": fingerprint(original),
+        "afterSha256": fingerprint(actual)})
     validate_transition(document, result)
     return result
 
@@ -2352,6 +2603,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerCmakeGraphChecks") or
+            (type(current.get("compilerCmakeGraphChecks")) is list and
+             current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
+             baseline["compilerCmakeGraphChecks"]),
+            "Published CMake graph requirements cannot be removed, reordered or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
@@ -2384,6 +2640,25 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     for item in choices[len(old_choices):]:
         require(item["id"] in before and fingerprint(item["block"]) == fingerprint(before[item["id"]]),
                 "A new choice revision must preserve its complete previous published block")
+        if "optionIndex" in item:
+            require(item["semanticBefore"] == _choice_semantic_entry(
+                baseline, item["id"], item["optionIndex"]),
+                "A choice semantic archive differs from the exact prior lesson")
+    new_general_choices = [item for item in choices[len(old_choices):] if "optionIndex" in item]
+    if new_general_choices:
+        # A single response-text precision must not silently repaint another
+        # source, move spans, or claim that a new sentence was already read.
+        expected_semantics = deepcopy(baseline.get(text_semantics.ROOT_FIELD))
+        expectation = {**baseline}
+        if expected_semantics is not None:
+            expectation = {**baseline, text_semantics.ROOT_FIELD: expected_semantics}
+        for item in new_general_choices:
+            marker = _choice_semantic_entry(expectation, item["id"], item["optionIndex"])
+            if marker is not None:
+                marker["sourceSha256"] = hashlib.sha256(
+                    item["replacement"].encode("utf-8")).hexdigest()
+        require(expected_semantics == current.get(text_semantics.ROOT_FIELD),
+                "Editorial choice revised an unrelated text marker or semantic span")
     old_compilers = old_meta.get("compilerRevisions", []) if old_v2 else []
     compilers = meta.get("compilerRevisions", [])
     require(compilers[:len(old_compilers)] == old_compilers,
@@ -2478,8 +2753,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if format_original is not None:
             previous_source = code_format.source_projection(block, format_original)
             protected = code_format.source_projection(actual, format_original)
-        require(state_fingerprint(_historical_order_contract(baseline, identity, previous_source))
-                == state_fingerprint(_historical_order_contract(current, identity, protected)),
+        previous_review = _historical_choice_contract(baseline, identity, previous_source)
+        current_review = _historical_choice_contract(current, identity, protected)
+        require(state_fingerprint(_historical_order_contract(baseline, identity, previous_review))
+                == state_fingerprint(_historical_order_contract(current, identity, current_review)),
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
             serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
@@ -2583,6 +2860,11 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerCmakeGraphChecks") or
+            (type(current.get("compilerCmakeGraphChecks")) is list and
+             current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
+             baseline["compilerCmakeGraphChecks"]),
+            "Published CMake graph requirements cannot be removed, reordered or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
@@ -2669,6 +2951,8 @@ def original_projection(document: dict) -> dict:
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
+    if text_semantics.ROOT_FIELD in result:
+        result[text_semantics.ROOT_FIELD] = _general_choice_semantic_projection(document)
     result["pages"] = [{**deepcopy(shells[record["id"]]),
                         "blocks": [deepcopy(blocks[block["id"]]) for block in record["blocks"]]}
                        for record in document["stateLayout"]["origin"]]

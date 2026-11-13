@@ -71,11 +71,21 @@ void authored_root_roundtrip(const Lesson& original) {
                   {"function":"llega_a_tiempo","value":4,
                    "purposeWords":["plazo","dias","tiempo"],"minUses":1}]},
         {"activity":"block_0007_0004","path":"",
+         "executionProbe":{"harness":"","header":"",
+           "cases":[{"function":"precio_total","input":11,"expected":77},
+                    {"function":"precio_total","input":5,"expected":35},
+                    {"function":"alcanza_minimo","input":4,"expected":0},
+                    {"function":"alcanza_minimo","input":5,"expected":1}]},
          "rules":[{"function":"precio_total","value":7,
                    "purposeWords":["precio","costo","tarifa"],"minUses":1},
                   {"function":"alcanza_minimo","value":5,
                    "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]},
         {"activity":"block_0008_0007","path":"",
+         "executionProbe":{"harness":"","header":"",
+           "cases":[{"function":"precio_total","input":11,"expected":77},
+                    {"function":"precio_total","input":5,"expected":35},
+                    {"function":"alcanza_minimo","input":4,"expected":0},
+                    {"function":"alcanza_minimo","input":5,"expected":1}]},
          "rules":[{"function":"precio_total","value":7,
                    "purposeWords":["precio","costo","tarifa"],"minUses":1},
                   {"function":"alcanza_minimo","value":5,
@@ -125,6 +135,23 @@ void authored_root_roundtrip(const Lesson& original) {
     try {(void)parse_lesson_json(winrt::to_string(no_probe.Stringify()),"es");}
     catch(const std::exception&) {rejected=true;}
     require(rejected,"The loader accepted an editable CMake harness without a probe");
+    auto wrong_single_header=JsonObject::Parse(winrt::to_hstring(reviewed));
+    wrong_single_header.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(3)
+        .GetNamedObject(L"executionProbe")
+        .Insert(L"header",JsonValue::CreateStringValue(L"envio/forgery.h"));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(wrong_single_header.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted an injected single-file header");
+    auto duplicate_single=JsonObject::Parse(winrt::to_hstring(reviewed));
+    auto repeated=duplicate_single.GetNamedArray(L"compilerNamedRuleChecks")
+        .GetObjectAt(3).GetNamedObject(L"executionProbe")
+        .GetNamedArray(L"cases");
+    repeated.Append(repeated.GetObjectAt(0));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(duplicate_single.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted duplicate single-file probe arguments");
 }
 
 void project_examples(const Lesson& lesson) {
@@ -151,6 +178,120 @@ int cajas_para(int piezas) {
 )cpp");
     require(compiler_runtime_request_allowed(owner,submitted),
         "An equivalent local capacity cannot be graded by the editor");
+    // The same valid solution may spell the local and its intermediates
+    // with east-const. This must be accepted by the actual Windows gate.
+    auto const_intermediates=submitted;
+    change_project(const_intermediates,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int const capacidad{4};
+    int const ajuste = capacidad - 1;
+    int const cajas = (piezas + ajuste) / capacidad;
+    return cajas;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,const_intermediates),
+        "Windows rejected east-const intermediate values with the same contract");
+    auto ignored_intermediate=const_intermediates;
+    change_project(ignored_intermediate,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int const capacidad{4};
+    int const observacion = capacidad + capacidad;
+    return (piezas + capacidad - 1) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,ignored_intermediate),
+        "An unused east-const variable supplied a fake second result use");
+    auto zero_group=submitted;
+    change_project(zero_group,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4 + 0 * (capacidad + capacidad);
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,zero_group),
+        "Two zeroed references in a parenthesized expression earned credit");
+    auto valid_with_zero_group=submitted;
+    change_project(valid_with_zero_group,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + capacidad - 1) / capacidad +
+           0 * ((capacidad + capacidad) / 2);
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,valid_with_zero_group),
+        "Harmless zeroed extra expressions must not erase real capacity uses");
+    auto unreachable_result=submitted;
+    change_project(unreachable_result,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4;
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,unreachable_result),
+        "Windows credited a named rule from unreachable code after return");
+    auto guarded_result=submitted;
+    change_project(guarded_result,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas <= 0) return 0;
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,guarded_result),
+        "Windows rejected a valid early guard before the named calculation");
+    auto conditional_shortcut=submitted;
+    change_project(conditional_shortcut,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + 3) / 4;
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,conditional_shortcut),
+        "A hardcoded conditional return borrowed credit from the named fallthrough");
+    auto braced_shortcut=submitted;
+    change_project(braced_shortcut,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) {
+        return (piezas + 3) / 4;
+    }
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,braced_shortcut),
+        "A braced hardcoded return borrowed evidence from a later named return");
+    auto split_guards=submitted;
+    change_project(split_guards,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+    if (piezas <= 10) return (piezas + 3) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,split_guards),
+        "Complementary guards concealed a hardcoded calculation in Windows");
+    auto split_branches=submitted;
+    change_project(split_branches,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+    else return (piezas + 3) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,split_branches),
+        "Windows accepted an if/else with one hardcoded branch");
+    auto legitimate_branches=submitted;
+    change_project(legitimate_branches,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+    else return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,legitimate_branches),
+        "Windows rejected the same named computation in both if/else branches");
     auto wrong=submitted;
     change_project(wrong,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
@@ -234,6 +375,9 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     owner.named_rule_source_check=NamedRuleSourceCheck{"",{
         NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa"},1},
         NamedRuleRequirement{"alcanza_minimo",5,{"minimo","cantidad","umbral"},1}}};
+    owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+        "","",{{"precio_total",11,77},{"precio_total",5,35},
+               {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}};
     auto passing=request_of(owner);
     passing.request_id=901;passing.revision=301;
     passing.projects_directory=projects;
@@ -249,12 +393,31 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "const int minimo_articulos{5};\n    return articulos >= minimo_articulos;");
     require(compiler_runtime_request_allowed(owner,passing),
         "A repaired, purpose-named student source failed the rubric");
+    auto location_sensitive=passing;
+    location_sensitive.source_utf8=replace_unique(
+        std::move(location_sensitive.source_utf8),
+        "return articulos * precio_unitario;",
+        "return articulos * precio_unitario + "
+        "(__LINE__ == 5 ? (articulos == 11 ? 1 : 0) : 0);");
+    require(!compiler_runtime_request_allowed(owner,location_sensitive)&&
+        !named_rule_single_file_probe_source(
+            *owner.named_rule_source_check->execution_probe,
+            location_sensitive.source_utf8),
+        "The Windows source gate accepted code that detects independent compilation");
+    auto harmless_prose=passing;
+    harmless_prose.source_utf8+="\n// __LINE__ and source_location are documentation.\n";
+    require(compiler_runtime_request_allowed(owner,harmless_prose),
+        "A harmless comment was mistaken for compilation-environment behavior");
     const auto real=run_cpp(passing);
     require(real.error_utf8.empty()&&real.compilation.succeeded()&&
         real.execution.succeeded(),
         "MSVC did not execute the real repaired U3 student program: "+
         real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
     const auto captured=capture_cpp_execution(passing,real);
+    require(real.named_rule_probe&&captured.named_rule_probe_correct&&
+        real.named_rule_probe->execution.stderr_bytes==
+            named_rule_probe_completion_marker,
+        "A valid MSVC single-file program failed the completed independent probe");
     require(evaluate_cpp_output_check(*owner.output_check,captured,passing.revision).verdict==
         OutputVerdict::correct,
         "The repaired program did not preserve the actual five-case authored output");
@@ -279,6 +442,76 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     require(evaluate_cpp_output_check(*owner.output_check,bad_capture,shortcut.revision).verdict==
         OutputVerdict::correct,
         "The control shortcut does not actually produce identical visible results");
+    // A student may forge a five-case report by omitting the eleventh-item
+    // defect. The separate test driver must call the functions directly.
+    auto forged=passing;
+    forged.request_id=903;forged.revision=303;
+    forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+        "return articulos * precio_unitario;",
+        "return articulos * precio_unitario + (articulos == 11 ? 1 : 0);");
+    require(compiler_runtime_request_allowed(owner,forged),
+        "Independent probes must not substitute for source-based checks");
+    const auto forged_run=run_cpp(forged);
+    require(forged_run.error_utf8.empty()&&forged_run.compilation.succeeded()&&
+        forged_run.execution.succeeded(),
+        "The forged five-case output control did not compile or run");
+    const auto forged_capture=capture_cpp_execution(forged,forged_run);
+    require(evaluate_cpp_output_check(*owner.output_check,forged_capture,forged.revision).verdict==
+        OutputVerdict::correct&&!forged_capture.named_rule_probe_correct,
+        "A function with correct visible output passed an independent 11-item check");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,forged,forged_capture,
+        "forged visible output")&&!compiler_puzzle_completed(saved,lesson,owner),
+        "An incorrect function earned credit from a forged printed report");
+    // A buggy function can call std::exit(0) on an independent test input.
+    // That used to look like successful execution without checking later
+    // cases. The generated driver's final witness must now be present.
+    auto early_exit=passing;
+    early_exit.request_id=904;early_exit.revision=304;
+    early_exit.source_utf8="#include <cstdlib>\n"+early_exit.source_utf8;
+    early_exit.source_utf8=replace_unique(std::move(early_exit.source_utf8),
+        "return articulos * precio_unitario;",
+        "if (articulos == 11) std::exit(0);\n"
+        "    return articulos * precio_unitario;");
+    require(!compiler_runtime_request_allowed(owner,early_exit)&&
+        !named_rule_single_file_probe_source(
+            *owner.named_rule_source_check->execution_probe,
+            early_exit.source_utf8),
+        "An early exit must be rejected before generating an independent probe");
+    auto aliased_exit=passing;
+    aliased_exit.source_utf8="#include <cstdlib>\n"+aliased_exit.source_utf8;
+    aliased_exit.source_utf8=replace_unique(std::move(aliased_exit.source_utf8),
+        "return articulos * precio_unitario;",
+        "if (articulos == 11) {\n"
+        "        auto finish = &std::exit; finish(0);\n"
+        "    }\n"
+        "    return articulos * precio_unitario;");
+    require(!compiler_runtime_request_allowed(owner,aliased_exit)&&
+        !named_rule_single_file_probe_source(
+            *owner.named_rule_source_check->execution_probe,
+            aliased_exit.source_utf8),
+        "A function-pointer alias bypassed the early-exit source protection");
+    auto harmless_exit_comment=passing;
+    harmless_exit_comment.source_utf8+="\n// std::exit(0) is not executable code.\n";
+    require(compiler_runtime_request_allowed(owner,harmless_exit_comment),
+        "A harmless early-exit comment rejected the valid student source");
+    const auto premature=run_cpp(early_exit);
+    require(premature.error_utf8.empty()&&premature.compilation.succeeded()&&
+        premature.execution.succeeded()&&!premature.named_rule_probe,
+        "An early-exit source unexpectedly received independent probe evidence");
+    const auto premature_capture=capture_cpp_execution(early_exit,premature);
+    require(evaluate_cpp_output_check(*owner.output_check,premature_capture,
+            early_exit.revision).verdict==OutputVerdict::correct&&
+        !premature_capture.named_rule_probe_correct,
+        "A zero exit from the student function bypassed remaining probe cases");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,early_exit,
+            premature_capture,"early exit")&&!compiler_puzzle_completed(saved,lesson,owner),
+        "An early exit awarded completion without the full independent probe");
+    auto tampered=real;
+    require(tampered.named_rule_probe.has_value(),
+        "The independent single-file probe did not record its source digest");
+    tampered.named_rule_probe->project_sha256="0";
+    require(!capture_cpp_execution(passing,tampered).named_rule_probe_correct,
+        "A result from other submitted source bytes was credited");
     require(!record_compiler_puzzle_case(saved,lesson,owner,shortcut,bad_capture,"wrong")&&
         !compiler_puzzle_completed(saved,lesson,owner),
         "Identical MSVC output incorrectly earned a source-aware completion receipt");
@@ -373,9 +606,11 @@ bool llega_a_tiempo(int dias) {
         "Real MSVC CMake could not build or run the amended U3 battery: "+
         real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
     const auto fresh=capture_cpp_execution(correct,real);
-    require(fresh.named_rule_probe_correct&&
-        real.named_rule_probe&&real.named_rule_probe->execution.succeeded(),
-        "The correct student functions did not pass the independent CMake harness");
+    require(fresh.named_rule_probe_correct&&real.named_rule_probe&&
+        real.named_rule_probe->execution.succeeded()&&
+        real.named_rule_probe->execution.stderr_bytes==
+            named_rule_probe_completion_marker,
+        "The correct student functions did not finish the independent CMake harness");
     require(evaluate_cpp_output_check(*owner.output_check,fresh,correct.revision).verdict
         ==OutputVerdict::correct,
         "The valid amended CMake battery did not produce all published comparisons");
@@ -389,9 +624,13 @@ bool llega_a_tiempo(int dias) {
     for(const auto& file:forged.project_files)
         if(file.first=="componente/src/cajas.cpp")source=file.second;
     require(!source.empty(),"The named-rule CMake file disappeared");
+    // The negative function keeps the two source-level capacity uses in
+    // each meaningful return path, but deliberately computes a wrong result
+    // for 19 pieces. Source inspection must allow it through, and only the
+    // independent CMake probe may reject its runtime behavior.
     source=replace_unique(std::move(source),
         "    return (piezas + capacidad - 1) / capacidad;",
-        "    if (piezas == 19) return 1;\n"
+        "    if (piezas == 19) return (piezas + capacidad - 1) / capacidad - 3;\n"
         "    return (piezas + capacidad - 1) / capacidad;");
     change_project(forged,"componente/src/cajas.cpp",std::move(source));
     const auto expected=owner.output_check->cases.front().outputs.front();
@@ -430,6 +669,74 @@ bool llega_a_tiempo(int dias) {
              "fake matches visible stdout")&&
         !compiler_puzzle_completed(saved,lesson,owner),
         "A fake, student-editable harness earned a curriculum receipt");
+    // The student library can exit(0) when a hidden probe calls it,
+    // even though the editable test executable prints the expected report.
+    // Its zero exit status must not be accepted without the final witness.
+    auto exit_forged=forged;
+    exit_forged.request_id=1103;exit_forged.revision=412;
+    for(auto& file:exit_forged.project_files)
+        if(file.first=="componente/src/cajas.cpp") {
+            file.second="#include <cstdlib>\n"+
+                replace_unique(std::move(file.second),
+                    "    if (piezas == 19) return (piezas + capacidad - 1) / capacidad - 3;",
+                    "    if (piezas == 19) std::exit(0);");
+        }
+    require(!compiler_runtime_request_allowed(owner,exit_forged),
+        "A CMake function with premature exit(0) passed the source gate");
+    const auto early_run=run_cpp(exit_forged);
+    const auto probe_status=early_run.named_rule_probe?
+        std::to_string(static_cast<int>(early_run.named_rule_probe->execution.status))+
+        "/"+std::to_string(early_run.named_rule_probe->execution.exit_code.value_or(999))+
+        "/stderr="+early_run.named_rule_probe->execution.stderr_bytes+
+        "/compile="+std::to_string(early_run.named_rule_probe->compilation.exit_code.value_or(999))
+        :std::string("absent");
+    require(early_run.error_utf8.empty()&&early_run.compilation.succeeded()&&
+        early_run.execution.succeeded()&&early_run.named_rule_probe&&
+        early_run.named_rule_probe->execution.succeeded()&&
+        early_run.named_rule_probe->execution.stderr_bytes.empty(),
+        "The controlled CMake early exit did not bypass the probe's final line"
+        "; runner-error="+early_run.error_utf8+
+        "; compilation="+std::to_string(early_run.compilation.exit_code.value_or(999))+
+        "; execution="+std::to_string(early_run.execution.exit_code.value_or(999))+
+        "; probe="+probe_status);
+    const auto early_capture=capture_cpp_execution(exit_forged,early_run);
+    require(evaluate_cpp_output_check(*owner.output_check,early_capture,
+            exit_forged.revision).verdict==OutputVerdict::correct&&
+        !early_capture.named_rule_probe_correct,
+        "The CMake witness check accepted an early exit(0)");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,exit_forged,
+            early_capture,"premature CMake exit")&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "A zero exit before all CMake probes improperly unlocked the editor");
+    // The completion witness is intentionally public. A deliberately
+    // hostile library can imitate it before exiting, so the source gate
+    // must refuse to grade calls to process-exit functions.
+    auto spoofed_witness=exit_forged;
+    spoofed_witness.request_id=1104;spoofed_witness.revision=413;
+    for(auto& file:spoofed_witness.project_files)
+        if(file.first=="componente/src/cajas.cpp") {
+            file.second="#include <cstdio>\n"+
+                replace_unique(std::move(file.second),
+                    "    if (piezas == 19) std::exit(0);",
+                    "    if (piezas == 19) {\n"
+                    "        std::fputs(\"LGAED_NAMED_RULE_PROBE_COMPLETE_V1\", stderr);\n"
+                    "        std::exit(0);\n"
+                    "    }");
+        }
+    require(!compiler_runtime_request_allowed(owner,spoofed_witness),
+        "A project function could fake the known final witness and exit");
+    const auto spoof_run=run_cpp(spoofed_witness);
+    require(spoof_run.error_utf8.empty()&&spoof_run.compilation.succeeded()&&
+        spoof_run.execution.succeeded()&&spoof_run.named_rule_probe&&
+        spoof_run.named_rule_probe->execution.succeeded()&&
+        spoof_run.named_rule_probe->execution.stderr_bytes==
+            named_rule_probe_completion_marker,
+        "The deliberate fixed-witness spoof control did not reproduce");
+    const auto spoof_capture=capture_cpp_execution(spoofed_witness,spoof_run);
+    require(!record_compiler_puzzle_case(saved,lesson,owner,spoofed_witness,
+            spoof_capture,"spoofed fixed witness")&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "A forged completion marker bypassed the CMake source gate");
     require(record_compiler_puzzle_case(saved,lesson,owner,correct,fresh,"correct")&&
         compiler_puzzle_completed(saved,lesson,owner),
         "The first real case with verified independent probes did not grant progress");

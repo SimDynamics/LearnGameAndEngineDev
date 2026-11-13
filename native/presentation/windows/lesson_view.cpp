@@ -570,7 +570,11 @@ struct LessonView {
         else if(vm.answer_editor)identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.answer_editor->document().text);
         else if(block(index).type==BlockType::multiple_choice){
             identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.response.selected);
-            if(block(index).choice_revision)identity=state::sha256(curriculum::choice_representation_frame(block(index)))+'/'+identity;
+            // A purely editorial revision keeps the old answer and attempt
+            // identity. Only a changed response contract needs a new one.
+            if(block(index).choice_revision&&
+               !block(index).choice_revision->general_option_index)
+                identity=state::sha256(curriculum::choice_representation_frame(block(index)))+'/'+identity;
         }
         else {
             std::vector<std::string> values;
@@ -1104,14 +1108,36 @@ struct LessonView {
                 std::erase_if(archived.regions,[&](const auto& region){return region.block_index==index
                     &&(region.feedback||region.target==find_item(control_id(index,40)));});
                 for(auto& region:archived.regions)if(region.block_index==index){
-                    region.text_semantics.reset();
+                    // Closed historical revisions retain their old reader
+                    // behavior. In a generic one-option editorial review the
+                    // original semantic spans were separately authenticated:
+                    // reconstruct the old source, not the new spoken wording.
+                    const bool generic=revision.general_option_index.has_value();
+                    if(!generic)region.text_semantics.reset();
                     region.solved=solved;region.correct=false;reading_context(region,original);
-                    if(region.target==find_item(control_id(index,0)))region.source_text=original.question;
+                    if(region.target==find_item(control_id(index,0)))
+                        region.source_text=original.question;
                     for(std::size_t option=0;option<original.options.size();++option)
                         if(region.target==find_item(control_id(index,21+static_cast<int>(option)*2))){
-                            if(region.source_text!=original.options[option])archived.revised_regions.push_back(region.key);
+                            if(region.source_text!=original.options[option])
+                                archived.revised_regions.push_back(region.key);
                             region.source_text=original.options[option];
+                            if(generic){
+                                const auto path="/options/"+std::to_string(option);
+                                const auto annotated=current.text_semantics.find(path);
+                                if(annotated==current.text_semantics.end())
+                                    region.text_semantics.reset();
+                                else{
+                                    auto historic=annotated->second;
+                                    historic.source=region.source_text;
+                                    curriculum::validate_text_semantics(historic);
+                                    region.text_semantics=std::move(historic);
+                                }
+                            }
                         }
+                    if(generic&&region.text_semantics&&
+                       region.text_semantics->source!=region.source_text)
+                        region.text_semantics.reset();
                 }
                 if(!old_feedback.empty()){
                     const auto last=std::find_if(archived.regions.rbegin(),archived.regions.rend(),[&](const auto& region){return region.block_index==index;});
@@ -2149,6 +2175,8 @@ struct LessonView {
         if(vm.project)vm.project->snapshot(request);
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
+        request.cmake_graph_check=block(index).cmake_graph_check;
+        request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
         // alternative is not confirmed compatible with Windows app protection.
         if(block(index).compile_check){
@@ -4060,9 +4088,20 @@ struct LessonView {
                 const bool independent=!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
                     fresh.named_rule_probe_correct;
+                const bool graph_ready=!block(index).cmake_graph_check||
+                    fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
-                    preserved_source&&independent;
+                    preserved_source&&independent&&graph_ready;
                 auto text = verdict_text(correct);
+                if(!graph_ready&&preserved_source&&block(index).cmake_graph_check) {
+                    const auto graph=windows::evaluate_cmake_graph(running_program,
+                        *result,*block(index).cmake_graph_check);
+                    text+='\n'+ui(
+                        "La estructura CMake aún no cumple el contrato: ",
+                        "The generated CMake structure does not yet meet the contract: ",
+                        "La structure CMake ne respecte pas encore le contrat : ")
+                        +graph.reason;
+                }
                 if(!independent&&preserved_source)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",

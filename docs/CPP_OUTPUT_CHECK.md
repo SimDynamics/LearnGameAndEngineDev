@@ -664,8 +664,11 @@ El lector exige una definición de la función, una constante local `int` de
 valor correspondiente, un identificador de propósito y referencias reales al
 resultado, incluso cuando se devuelve mediante variables intermedias.
 Admite las grafías equivalentes `const int` e `int const`; no exige un
-orden exclusivo de los especificadores de tipo. Los
-comentarios, las cadenas y las constantes declaradas pero no utilizadas no
+orden exclusivo de los especificadores de tipo. Los resultados parciales
+pueden conservarse en variables intermedias `const int`, `int const`,
+`const auto` o `auto const`, siempre que esas referencias lleguen al
+resultado de la función. Los comentarios, las cadenas y las constantes
+declaradas pero no utilizadas no
 acreditan el objetivo. La constante puede inicializarse también con
 aritmética entera acotada sobre literales decimales, incluidos paréntesis,
 signos y los operadores `+`, `-`, `*`, `/` y `%`. Se respetan
@@ -677,6 +680,17 @@ directivas `#include` en el archivo evaluado: una función excluida con
 fuente acreditable. Los comentarios que mencionan esas directivas siguen
 siendo texto ordinario.
 
+Las sondas independientes compilan el mismo código en otro contexto.
+Por ello, el requisito de fuente no admite dependencias activas de
+marcadores que puedan identificar esa segunda compilación, como
+`__LINE__`, `__FILE__`, `__COUNTER__`, `__DATE__`, `__TIME__` o
+`std::source_location`. Las menciones dentro de comentarios y literales
+de texto no constituyen tal dependencia y siguen permitidas.
+Esta restricción evita que una función detecte la sonda y devuelva allí
+un resultado distinto del programa del estudiante; no sustituye las
+pruebas conductuales ni afirma detectar todos los posibles trucos de
+diferenciación del entorno.
+
 Además, el motor comprueba la compilación, la ejecución y el primer caso
 válido de `outputCheck` antes de registrar el acierto. Los casos
 posteriores permanecen optativos.
@@ -684,8 +698,11 @@ posteriores permanecen optativos.
 Los usos algebraicamente neutros más directos, como `capacidad -
 capacidad`, `capacidad / capacidad` o multiplicaciones por expresiones
 enteras constantes de valor cero, no cuentan como referencias útiles.
-La comprobación conserva las referencias reales que acompañen a una
-expresión neutra. Si una variable intermedia derivada de la constante
+Esto incluye factores cero que anulan expresiones completas con
+paréntesis, incluso anidadas: `0 * (capacidad + capacidad)` o
+`(capacidad + capacidad) * (2 - 2)` no acreditan dos referencias
+productivas. La comprobación conserva las referencias reales que
+acompañen a una expresión neutra. Si una variable intermedia derivada de la constante
 se sobrescribe con un cálculo que ya no depende de ella, ese resultado
 descartado no acredita el `return`. Una asignación posterior que
 vuelva a utilizar la constante sí puede establecer la dependencia.
@@ -693,9 +710,19 @@ El mínimo `minUses` se cuenta sobre las referencias útiles que llegan
 al valor devuelto, directamente o a través de variables locales; una
 operación auxiliar que no llega al resultado no incrementa el mínimo.
 Tampoco se acreditan las referencias de un `return` situado directamente
-en una rama `if (false)`, `if (0)` o `if constexpr (false)`. Esta detección
-es acotada: no reemplaza la compilación, la ejecución ni las sondas
-independientes que correspondan a cada actividad.
+en una rama `if (false)`, `if (0)` o `if constexpr (false)`, ni de
+un `return` posterior a otro que termina definitivamente esa vía.
+En condiciones constantes como `if (true)` o `if (1)` se comprueba
+el retorno inmediato ejecutado; una guarda condicional de entrada
+(por ejemplo, `if (piezas <= 0) return 0;`) no impide analizar el
+cálculo posterior en la vía ordinaria. Cuando `if/else` devuelve
+directamente en ambas ramas, las dos deben satisfacer `minUses`;
+no basta con escribir la constante en una rama y dejar cifras fijas en
+la otra. Si sólo hay retornos condicionales cuya cobertura no puede
+probar este analizador acotado, no se acredita el requisito de fuente.
+Esta detección es acotada:
+no reemplaza la compilación, la ejecución ni las sondas independientes
+que correspondan a cada actividad.
 
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra
@@ -711,6 +738,45 @@ Una vez publicado, el autor no puede retirarlo ni modificarlo
 silenciosamente. El validador Python, el cargador Windows, el comprobador
 de ejecución y las pruebas reales deben coincidir. Los archivos JSON los
 integra Work o GPT Work cuando la capacidad técnica esté acreditada.
+
+### Sonda independiente en editores C++ de archivo único
+
+En un editor de un solo archivo, el alumno también puede modificar `main`
+y fabricar las cinco líneas esperadas sin llamar a sus funciones. Una
+declaración optativa `executionProbe` permite comprobar directamente esas
+funciones con casos adicionales, sin confiar en la salida publicada:
+
+```json
+"executionProbe": {
+  "harness": "",
+  "header": "",
+  "cases": [
+    {"function": "precio_total", "input": 11, "expected": 77},
+    {"function": "alcanza_minimo", "input": 4, "expected": 0},
+    {"function": "alcanza_minimo", "input": 5, "expected": 1}
+  ]
+}
+```
+
+Los campos `harness` y `header` deben estar vacíos en esta modalidad;
+el editor continúa teniendo `path` vacío y no utiliza CMake.
+El motor compila el programa entregado para la comprobación visible y
+ejecuta una segunda compilación de su código con un `main` privado
+generado por el motor. El `main` original se renombra sólo en esa
+segunda copia, sin modificar el borrador del alumno. La prueba llama
+directamente a las funciones con los argumentos y esperados declarados
+por Work. La ejecución debe terminar correctamente, conservar vacía la
+salida estándar y emitir únicamente el testigo interno final en stderr,
+después de la última comparación. Ese testigo distingue una sonda
+completada de una función que ejecutó `exit(0)` antes de comprobar
+todos los casos. Se verifica también la procedencia criptográfica del
+código exacto presentado.
+
+El nuevo requisito se incorpora a la huella del objetivo y no revalida
+recibos anteriores de salida. La sonda debe cubrir todas las funciones
+nombradas; se rechazan llamadas repetidas o nombres que inyecten código.
+Un único intento correcto en el editor sigue bastando para avanzar.
+No se exige al estudiante ejecutar manualmente cada caso adicional.
 
 ### Archivos adicionales autorizados en proyectos CMake
 
@@ -766,11 +832,31 @@ objetivo ejecutable CMake, referenciar una cabecera con ruta segura y cubrir
 cada función solicitada con datos independientes. Las entradas y salidas
 enteras son datos declarados por el currículo, no cálculos obtenidos de la
 función evaluada. Un programa que imprime el resultado esperado pero
-implementa mal las funciones no puede ganar el recibo nuevo.
+implementa mal las funciones no puede ganar el recibo nuevo. El testigo
+final también se exige en esta modalidad, sin saltos de línea para no
+confundir las convenciones LF y CRLF de los compiladores. El código
+de salida cero por sí solo no acredita que se hayan ejecutado todas las
+comparaciones; un testigo estático tampoco sustituye el aislamiento
+frente a código deliberadamente hostil.
+
+Para objetivos con `executionProbe`, la comprobación de fuente rechaza
+referencias ejecutables a funciones capaces de finalizar anticipadamente
+el proceso o el hilo, como `exit`, `_Exit`, `quick_exit`,
+`ExitProcess` y `TerminateProcess`. También rechaza tomar su dirección
+para invocarlas mediante un alias. La restricción se aplica a las
+fuentes sometidas a la sonda, no a cualquier actividad C++; los
+comentarios y literales de texto que mencionen esos nombres no
+constituyen llamadas. Es una protección adicional contra falsificar
+el testigo y terminar con código cero; no convierte al ejecutor en una
+barrera de seguridad contra programas hostiles ni impide todas las
+formas posibles de finalización indirecta.
 
 Se conservan por separado el resultado público, el código original, la
 compilación de la sonda, el programa/objetivo y las huellas de ambas
-ejecuciones. Los demás casos del `outputCheck` continúan siendo optativos;
+ejecuciones. La huella de acreditación de las sondas pasa a la versión
+`v2`: un recibo anterior basado sólo en terminación cero no se
+interpreta como prueba de finalización nueva. Las direcciones del
+borrador y las identidades históricas del ejercicio no cambian. Los demás casos del `outputCheck` continúan siendo optativos;
 la sonda del primer caso forma parte de su propio criterio de corrección.
 
 Para los editores de un solo archivo, `path` y `editablePaths` deben
@@ -796,3 +882,65 @@ macros sensibles a las líneas del código.
 El alcance y los permisos forman parte de la identidad del objetivo
 evaluado: no se reutilizan aciertos de otra revisión. Es una capacidad
 general, no una modificación automática del material histórico.
+
+## Comprobación de la estructura CMake generada (raíz de la lección)
+
+Los editores históricos pueden recibir un objetivo estructural complementario sin
+modificar su `cpp_compiler`, los casos `outputCheck` ni sus direcciones. Work declara
+`compilerCmakeGraphChecks` en la raíz de una lección española con `stateLayout`
+versión 2. Un ejemplo, referido a las rutas originales de un proyecto educativo, es:
+
+```json
+"compilerCmakeGraphChecks": [
+  {
+    "activity": "block_0004_0004",
+    "project": "Preparacion",
+    "targets": [
+      {
+        "name": "revisar",
+        "type": "EXECUTABLE",
+        "sources": ["main.cpp"],
+        "exactSources": true,
+        "linksTo": ["faltantes"]
+      },
+      {
+        "name": "faltantes",
+        "type": "STATIC_LIBRARY",
+        "sources": ["faltantes.cpp"],
+        "exactSources": true
+      }
+    ]
+  }
+]
+```
+
+El ejemplo muestra un contrato técnico disponible, no una declaración añadida
+automáticamente a la lección. Los nombres de objetivos y las rutas deben existir
+en la autoría real; la biblioteca se identifica por su objetivo y su artefacto
+generado, no por una coincidencia de nombres dentro de `CMakeLists.txt`.
+
+El motor consulta **CMake File API codemodel v2** de la configuración realmente
+generada por CMake. Separa fuentes compiladas, tipo de objetivo, dependencia de
+construcción y fragmentos de enlace. `add_dependencies()` por sí solo no
+acredita `target_link_libraries()`. Una ejecución que coincida en stdout tampoco
+acredita esta organización si la estructura declarada no coincide. Sólo una
+compilación y ejecución de la revisión actual pueden producir evidencia de
+la nueva rúbrica. El archivo histórico, el editor y las respuestas antiguas
+permanecen intactos; un acierto anterior de salida no satisface automáticamente
+la nueva comprobación. Para avanzar sigue bastando el primer caso correcto
+que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
+
+`project` es opcional. Cada objetivo requiere `name` y `type`
+(`EXECUTABLE` o `STATIC_LIBRARY`); `sources`, `linksTo` y
+`exactSources` son opcionales. Las fuentes declaradas son rutas originales
+de `projectFiles`; `exactSources` exige que no existan fuentes de
+compilación adicionales. `linksTo` referencia objetivos de biblioteca
+estática también declarados, y se acredita mediante dependencia y enlace del
+artefacto real. Cada contrato ya publicado permanece inmutable. Es posible añadir
+nuevos propietarios al final de la declaración mediante una transición
+autenticada, sin modificar ni reordenar los anteriores.
+
+Esta versión no acredita todavía todo el programa de Programación 2:
+requisitos públicos/privados de encabezados, opciones, lista de objetivos,
+avisos del compilador, cronología de reconstrucciones y prácticas abiertas
+necesitan sus propias comprobaciones. No deducirlas de este grafo.

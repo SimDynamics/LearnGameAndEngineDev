@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <cmath>
 #include <cwchar>
 #include <fstream>
 #include <iterator>
@@ -448,6 +449,107 @@ Target cmake_target(const std::filesystem::path& workspace,const curriculum::Cma
             if(target.HasKey(L"artifacts"))for(const auto& artifact:target.GetNamedArray(L"artifacts"))result.artifacts.push_back(contained(build,project_path(json_text(artifact.GetObject(),L"path"))));return result;}}
     return {};
 }
+// Read the complete generated target graph, never a student's stdout or
+// a regular-expression guess about the CMakeLists.txt source.
+CppCmakeGraphEvidence snapshot_cmake_graph(
+        const std::filesystem::path& workspace,
+        const CppRunRequest& request,
+        std::string_view project_fingerprint,
+        std::string_view configuration_fingerprint) {
+    const auto reply=workspace/L".cmake/api/v1/reply";
+    state::require_safe_path(reply);
+    std::filesystem::path latest;
+    for(const auto& file:std::filesystem::directory_iterator(reply))
+        if(file.is_regular_file()&&file.path().filename().wstring().starts_with(L"index-")&&
+           file.path().extension()==L".json"&&
+           (latest.empty()||file.path().filename()>latest.filename()))
+            latest=file.path();
+    if(latest.empty())throw std::runtime_error("CMake File API index is missing");
+    const auto index=read_json(latest);
+    std::optional<JsonObject> model;
+    for(const auto& entry:index.GetNamedArray(L"objects")) {
+        const auto item=entry.GetObject();
+        if(json_text(item,L"kind")!="codemodel"||
+           item.GetNamedObject(L"version").GetNamedNumber(L"major")!=2)continue;
+        model=read_json(contained(reply,project_path(json_text(item,L"jsonFile"))));
+        break;
+    }
+    if(!model)throw std::runtime_error("CMake File API did not supply codemodel v2");
+    CppCmakeGraphEvidence graph;
+    graph.project_fingerprint=std::string(project_fingerprint);
+    graph.configuration_fingerprint=std::string(configuration_fingerprint);
+    bool matched=false;
+    for(const auto& record:model->GetNamedArray(L"configurations")) {
+        const auto configuration=record.GetObject();
+        if(json_text(configuration,L"name")!=request.cmake->build_type)continue;
+        if(matched)throw std::runtime_error("CMake returned repeated configurations");
+        matched=true;
+        if(configuration.HasKey(L"projects")&&
+           configuration.GetNamedArray(L"projects").Size())
+            graph.project_name=json_text(
+                configuration.GetNamedArray(L"projects").GetObjectAt(0),L"name");
+        if(!configuration.HasKey(L"targets"))continue;
+        const auto references=configuration.GetNamedArray(L"targets");
+        const auto directories=configuration.GetNamedArray(L"directories");
+        std::map<std::string,std::string> names;
+        for(const auto& reference:references) {
+            const auto item=reference.GetObject();
+            const auto id=json_text(item,L"id"),name=json_text(item,L"name");
+            if(id.empty()||name.empty()||!names.emplace(id,name).second)
+                throw std::runtime_error("CMake target ID is missing or duplicated");
+        }
+        for(const auto& reference:references) {
+            const auto item=reference.GetObject();
+            const auto target=read_json(contained(reply,
+                project_path(json_text(item,L"jsonFile"))));
+            CppCmakeTargetEvidence fact;
+            fact.name=json_text(target,L"name");
+            fact.type=json_text(target,L"type");
+            if(fact.name!=json_text(item,L"name")||
+               json_text(target,L"id")!=json_text(item,L"id"))
+                throw std::runtime_error("CMake target does not match its index");
+            if(item.HasKey(L"directoryIndex")) {
+                const auto value=item.GetNamedNumber(L"directoryIndex");
+                if(!std::isfinite(value)||value<0||
+                   value>=static_cast<double>(directories.Size())||
+                   std::trunc(value)!=value)
+                    throw std::runtime_error("CMake directory index is invalid");
+                fact.source_directory=json_text(
+                    directories.GetObjectAt(static_cast<std::uint32_t>(value)),L"source");
+            }
+            if(target.HasKey(L"sources"))
+                for(const auto& item_source:target.GetNamedArray(L"sources")) {
+                    const auto source=item_source.GetObject();
+                    if(source.HasKey(L"compileGroupIndex"))
+                        fact.compiled_sources.push_back(json_text(source,L"path"));
+                }
+            if(target.HasKey(L"artifacts"))
+                for(const auto& artifact:target.GetNamedArray(L"artifacts"))
+                    fact.artifacts.push_back(json_text(artifact.GetObject(),L"path"));
+            if(target.HasKey(L"dependencies"))
+                for(const auto& dependency:target.GetNamedArray(L"dependencies")) {
+                    const auto id=json_text(dependency.GetObject(),L"id");
+                    // Utility/generated dependencies are not proof of a
+                    // particular student-authored library link.
+                    if(const auto known=names.find(id);known!=names.end())
+                        fact.build_dependencies.push_back(known->second);
+                }
+            if(target.HasKey(L"link")) {
+                const auto link=target.GetNamedObject(L"link");
+                if(link.HasKey(L"commandFragments"))
+                    for(const auto& fragment:link.GetNamedArray(L"commandFragments")) {
+                        const auto item_fragment=fragment.GetObject();
+                        if(json_text(item_fragment,L"role")=="libraries")
+                            fact.link_libraries.push_back(
+                                json_text(item_fragment,L"fragment"));
+                    }
+            }
+            graph.targets.push_back(std::move(fact));
+        }
+    }
+    if(!matched)throw std::runtime_error("CMake requested configuration has no generated graph");
+    return graph;
+}
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
     if(!verify_workspace_identity(request,false))return result;const auto path=result.workspace/L"state.json";if(!std::filesystem::is_regular_file(path))return result;
@@ -539,6 +641,9 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
+    if(availability.configured&&request.capture_cmake_graph)
+        result.cmake_graph=snapshot_cmake_graph(workspace,request,
+            result.project_fingerprint,result.configuration_fingerprint);
     if(action==CppRunRequest::Action::configure)return;
     if(!availability.configured)throw std::runtime_error("Configure and generate the current project before building or running it");
     if(action==CppRunRequest::Action::build||action==CppRunRequest::Action::compile_run){materialize(request.project_files,source);auto saved=read_json(state_file);
@@ -778,6 +883,96 @@ bool expected_project_diagnostic(const CppRunRequest& request,const CppRunResult
 
 } // namespace
 
+namespace {
+// A File API libraries fragment is a native linker fragment, not a target
+// name. Match the full generated archive basename at a token boundary,
+// avoiding false matches such as otherparts.lib or parts.lib.old.
+bool link_mentions_artifact(std::string_view fragment,std::string_view artifact) {
+    const auto slash=artifact.find_last_of("/\\");
+    const auto basename=artifact.substr(slash==artifact.npos?0:slash+1);
+    if(basename.empty())return false;
+    const auto edge=[](char c) {
+        return c==32||c==9||c==13||c==10||c==34||
+            c==39||c==47||c==92;
+    };
+    for(auto at=fragment.find(basename);at!=fragment.npos;
+            at=fragment.find(basename,at+1)) {
+        const auto end=at+basename.size();
+        if((at==0||edge(fragment[at-1]))&&
+           (end==fragment.size()||edge(fragment[end])))return true;
+    }
+    return false;
+}
+}
+CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
+        const CppRunResult& result,const CppCmakeGraphRequirement& required) {
+    const auto fail=[](std::string why) {
+        return CppCmakeGraphVerdict{false,std::move(why)};
+    };
+    if(!request.cmake||!request.capture_cmake_graph||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       request.request_id!=result.request_id||
+       request.revision!=result.revision||!result.error_utf8.empty()||
+       !result.compilation.succeeded()||
+       result.execution.status!=CppPhaseStatus::completed||
+       !result.cmake_graph||result.target_type!="EXECUTABLE"||
+       result.executable!=request.cmake->target)
+        return fail("Falta una construcción y ejecución nativas de esta revisión.");
+    const auto& graph=*result.cmake_graph;
+    if(result.project_fingerprint!=fingerprint(request)||
+       result.configuration_fingerprint!=fingerprint(request,true)||
+       graph.project_fingerprint!=result.project_fingerprint||
+       graph.configuration_fingerprint!=result.configuration_fingerprint)
+        return fail("La estructura de CMake pertenece a otra revisión del proyecto.");
+    if(!required.project_name.empty()&&
+       graph.project_name!=required.project_name)
+        return fail("El nombre de proyecto generado por CMake no coincide.");
+    if(required.targets.empty())
+        return fail("No hay objetivos de construcción declarados para comprobar.");
+    std::vector<std::string> seen;
+    for(const auto& item:required.targets) {
+        if(item.name.empty()||item.type.empty()||
+           std::ranges::find(seen,item.name)!=seen.end())
+            return fail("Hay un requisito CMake vacío o duplicado.");
+        seen.push_back(item.name);
+        const auto found=std::ranges::find_if(graph.targets,
+            [&](const auto& candidate){return candidate.name==item.name;});
+        if(found==graph.targets.end()||found->type!=item.type)
+            return fail("Falta el objetivo o tipo solicitado: "+item.name);
+        for(const auto& source:item.sources)
+            if(std::ranges::find(found->compiled_sources,source)==
+                found->compiled_sources.end())
+                return fail("El objetivo no compila la fuente: "+source);
+        if(item.exact_sources&&
+           (found->compiled_sources.size()!=item.sources.size()||
+            !std::ranges::all_of(found->compiled_sources,[&](const auto& source) {
+                return std::ranges::find(item.sources,source)!=item.sources.end();
+            })))
+            return fail("El objetivo compila fuentes adicionales o repetidas: "+
+                item.name);
+        for(const auto& name:item.links_to) {
+            const auto library=std::ranges::find_if(graph.targets,
+                [&](const auto& candidate){return candidate.name==name;});
+            if(library==graph.targets.end()||
+               library->artifacts.empty()||
+               std::ranges::find(found->build_dependencies,name)==
+                   found->build_dependencies.end())
+                return fail("Falta la dependencia de biblioteca: "+name);
+            const bool actual_link=std::ranges::any_of(library->artifacts,
+                [&](const auto& artifact) {
+                    return std::ranges::any_of(found->link_libraries,
+                        [&](const auto& fragment) {
+                            return link_mentions_artifact(fragment,artifact);
+                        });
+                });
+            if(!actual_link)
+                return fail("El objetivo no enlaza la biblioteca solicitada: "+name);
+        }
+    }
+    return {true,{}};
+}
+
 std::string cpp_launch_failure_message(std::uint32_t error,std::string_view executable_utf8,bool build_tool) {
     auto message="CreateProcessW (Windows error "+std::to_string(error)+") while starting "
         +std::string(build_tool?"a C++ build tool: ":"a newly compiled program: ")
@@ -889,6 +1084,9 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    if(request.cmake_graph_check)
+        fresh.cmake_graph_correct=evaluate_cmake_graph(
+            request,result,*request.cmake_graph_check).correct;
     if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
         result.compilation.succeeded()&&
         result.target_type=="WASI_COMMAND"&&
@@ -939,18 +1137,28 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(!valid){fresh.report_probe_correct=false;break;}
         }
     }
-    if(request.named_rule_probe&&request.cmake&&result.named_rule_probe) {
-        const auto independent=curriculum::named_rule_probe_source(*request.named_rule_probe);
+    if(request.named_rule_probe&&result.named_rule_probe) {
+        const auto independent=request.cmake?
+            curriculum::named_rule_probe_source(*request.named_rule_probe):
+            request.project_files.empty()?
+                curriculum::named_rule_single_file_probe_source(
+                    *request.named_rule_probe,request.source_utf8):
+                std::optional<std::string>{};
         if(independent) {
             const auto& probe=*result.named_rule_probe;
+            const auto bound_source=request.cmake?
+                state::sha256(curriculum::cpp_project_frame(request.project_files,
+                    request.source_files,request.cmake)):
+                state::sha256(request.source_utf8);
             fresh.named_rule_probe_correct=
                 probe.source_sha256==state::sha256(*independent)&&
-                probe.project_sha256==state::sha256(
-                    curriculum::cpp_project_frame(request.project_files,
-                        request.source_files,request.cmake))&&
+                probe.project_sha256==bound_source&&
                 probe.compilation.succeeded()&&probe.execution.succeeded()&&
                 probe.execution.stdout_bytes.empty()&&
-                probe.execution.stderr_bytes.empty();
+                // A student function may exit(0) before all comparisons
+                // run. Only the generated main emits this final witness.
+                probe.execution.stderr_bytes==
+                    curriculum::named_rule_probe_completion_marker;
         }
     }
     if(request.rejection_probe&&result.rejection_probe&&
@@ -1001,31 +1209,47 @@ CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
 // project. The worker owns this work; the window thread never runs it.
 void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result,
         std::stop_token stop) {
-    if(!request.named_rule_probe||!request.cmake||request.project_files.empty()||
+    if(!request.named_rule_probe||
        request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
        !result.compilation.succeeded()||!result.execution.succeeded()||
        !result.error_utf8.empty()||stop.stop_requested())return;
-    const auto source=curriculum::named_rule_probe_source(*request.named_rule_probe);
+    const bool project=static_cast<bool>(request.cmake);
+    if(project?request.project_files.empty():
+        (!request.project_files.empty()||!request.source_files.empty()))return;
+    const auto source=project?
+        curriculum::named_rule_probe_source(*request.named_rule_probe):
+        curriculum::named_rule_single_file_probe_source(
+            *request.named_rule_probe,request.source_utf8);
     if(!source)return;
     auto second=request;
     second.named_rule_probe.reset(); // recursion and double credit forbidden
+    second.capture_cmake_graph=false; // private probe must not grade CMake structure
+    second.cmake_graph_check.reset();
     second.rejection_probe.reset();
     second.observation_probe.reset();
     second.assertion_mode.reset();
     second.request_id=~request.request_id;
     second.project_key+="/named-rule-independent-v1";
-    const auto entry=std::ranges::find_if(second.project_files,
-        [&](const auto& file) {
-            return file.first==request.named_rule_probe->harness_path;
-        });
-    if(entry==second.project_files.end())return;
-    entry->second=*source;
+    if(project) {
+        const auto entry=std::ranges::find_if(second.project_files,
+            [&](const auto& file) {
+                return file.first==request.named_rule_probe->harness_path;
+            });
+        if(entry==second.project_files.end())return;
+        entry->second=*source;
+    }else{
+        // Preserve the submitted functions, but run them with an independent
+        // main instead of trusting editable student reports and expectations.
+        second.source_utf8=*source;
+        second.stdin_utf8.clear();
+    }
     const auto proof=run_cpp(second,stop);
     if(!proof.error_utf8.empty())return;
     result.named_rule_probe=CppNamedRuleProbe{
         state::sha256(*source),
-        state::sha256(curriculum::cpp_project_frame(request.project_files,
-            request.source_files,request.cmake)),
+        project?state::sha256(curriculum::cpp_project_frame(
+            request.project_files,request.source_files,request.cmake)):
+            state::sha256(request.source_utf8),
         proof.compilation,proof.execution};
 }
 
@@ -1143,6 +1367,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         write_exact(compiler_input, "");
         if(request.backend==CppRunRequest::Backend::wasi) {
             run_wasi_single(request,result,source,input,compiler_input,stop);
+            complete_named_rule_probe(request,result,stop);
             complete_rejection_stream_probe(request,result,stop);
             complete_observation_probes(request,result,stop);
             complete_assertion_probes(request,result,stop);
@@ -1180,6 +1405,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             result.execution = run_phase(executable, {}, result.run_directory, input,
                 L"execution", request.execution_timeout, request.output_limit_bytes, false, stop);
         }
+        complete_named_rule_probe(request,result,stop);
         complete_rejection_stream_probe(request,result,stop);
         complete_observation_probes(request,result,stop);
     } catch (const std::exception& exception) {

@@ -102,7 +102,7 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
             while(end<source.size()&&identifier_part(static_cast<unsigned char>(source[end])))++end;
             push(result,"id:",source.substr(i,end-i));i=end;continue;
         }
-        if(ch>='0'&&ch<='9'||(ch=='.'&&i+1<source.size()&&source[i+1]>='0'&&source[i+1]<='9')) {
+        if((ch>='0'&&ch<='9')||(ch=='.'&&i+1<source.size()&&source[i+1]>='0'&&source[i+1]<='9')) {
             auto end=i+1;
             while(end<source.size()) {
                 const auto c=static_cast<unsigned char>(source[end]);

@@ -437,6 +437,107 @@ std::string state_fingerprint(const JsonObject& original) {
     }
     return fingerprint(value);
 }
+// A reviewed option is an editorial text revision, not a new answer. Project
+// only that option back to the full archived predecessor before comparing the
+// immutable historical response signature. Other option texts, the correct
+// index, question, feedback and every unlisted property remain unchanged.
+JsonObject general_choice_projection(const JsonObject& current,
+        const JsonObject& revision,bool allow_original=false) {
+    const auto original=revision.GetNamedObject(L"block");
+    require(text(original,"type")=="multiple_choice"&&
+            text(current,"type")=="multiple_choice",
+        "A general choice archive must contain its original choice owner");
+    const auto earlier=array(original,"options");
+    const auto now=array(current,"options");
+    require(earlier.Size()>0&&earlier.Size()==now.Size(),
+        "A general choice review changed the number of answers");
+    const auto position=integer(revision.GetNamedValue(L"optionIndex"),
+        static_cast<std::size_t>(earlier.Size()-1));
+    const auto replacement=text(revision,"replacement");
+    require(!replacement.empty()&&
+            replacement.find_first_not_of(" \t\r\n")!=std::string::npos&&
+            replacement!=utf8(earlier.GetStringAt(static_cast<unsigned>(position))),
+        "A general choice review must revise one nonblank option");
+    if(fingerprint(current)==fingerprint(original)) {
+        require(allow_original,
+            "A general choice revision has no active wording change");
+        return JsonObject::Parse(original.Stringify());
+    }
+    require(utf8(now.GetStringAt(static_cast<unsigned>(position)))==replacement,
+        "A general choice review does not match its authored replacement");
+    const auto projected=JsonObject::Parse(current.Stringify());
+    projected.GetNamedArray(L"options").SetAt(static_cast<unsigned>(position),
+        earlier.GetAt(static_cast<unsigned>(position)));
+    require(fingerprint(projected)==fingerprint(original),
+        "A general choice revision changed another answer, explanation or field");
+    return projected;
+}
+// Authenticate the previous public-text marker, not only the option bytes.
+// The root overlay is outside statePayload; without this archive, a choice
+// could silently alter old narration offsets while preserving its answer.
+void validate_general_choice_semantic_archive(
+        const JsonObject& root,const JsonObject& revision) {
+    require(revision.HasKey(L"semanticBefore"),
+        "A general choice revision must archive its previous semantic marker");
+    const auto original=revision.GetNamedObject(L"block");
+    const auto options=array(original,"options");
+    require(options.Size()>0,"A semantic choice archive has no original options");
+    const auto at=integer(revision.GetNamedValue(L"optionIndex"),
+        static_cast<std::size_t>(options.Size()-1));
+    const auto owner=text(revision,"id");
+    const auto path="/options/"+std::to_string(at);
+    const auto archived_value=revision.GetNamedValue(L"semanticBefore");
+    std::optional<JsonObject> archived;
+    if(archived_value.ValueType()!=JsonValueType::Null) {
+        require(archived_value.ValueType()==JsonValueType::Object,
+            "The previous semantic marker must be an object or null");
+        archived=archived_value.GetObject();
+        allowed_keys(*archived,{"block","path","sourceSha256","spans"},true);
+        require(text(*archived,"block")==owner&&
+                text(*archived,"path")==path&&
+                text(*archived,"sourceSha256")==
+                    sha256(utf8(options.GetStringAt(static_cast<unsigned>(at)))),
+            "The archived semantic marker is not the original choice's source");
+        // The new option's current markers are validated by the regular
+        // loader. Validate the PREVIOUS source too, before the reader can
+        // reconstruct its historical UTF-16 highlights.
+        TextSemantics previous;
+        previous.source=utf8(options.GetStringAt(static_cast<unsigned>(at)));
+        for(const auto& value:array(*archived,"spans")) {
+            const auto span=value.GetObject();
+            allowed_keys(span,{"start","end","text","role","reading"});
+            SemanticSpan part;
+            part.start=integer(span.GetNamedValue(L"start"),16*1024*1024);
+            part.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
+            part.text=text(span,"text");
+            part.role=parse_semantic_role(text(span,"role"));
+            if(span.HasKey(L"reading"))
+                part.reading=parse_semantic_reading(text(span,"reading"));
+            previous.spans.push_back(std::move(part));
+        }
+        validate_text_semantics(previous);
+    }
+    std::optional<JsonObject> active;
+    if(root.HasKey(L"textSemantics")) {
+        const auto metadata=root.GetNamedObject(L"textSemantics");
+        for(const auto& item:array(metadata,"fields")) {
+            const auto field=item.GetObject();
+            if(text(field,"block")!=owner||text(field,"path")!=path)continue;
+            require(!active,"Duplicate semantic marker for a revised option");
+            active=field;
+        }
+    }
+    require(static_cast<bool>(archived)==static_cast<bool>(active),
+        "A revised option invented or discarded its original semantic marker");
+    if(active) {
+        auto expected=JsonObject::Parse(archived->Stringify());
+        expected.Insert(L"sourceSha256",JsonValue::CreateStringValue(
+            key(sha256(text(revision,"replacement")))));
+        require(fingerprint(*active)==fingerprint(expected),
+            "A general choice revision altered a historic semantic span");
+    }
+}
+
 struct ReviewedChoice {
     std::string_view lesson,identity,before_payload,after_payload,before_full,first_after_full;
     std::string_view paired_explanation_before,paired_explanation_after;
@@ -1456,6 +1557,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
     std::map<std::string,std::string> refined_order_signatures;
     std::map<std::string,const ReviewedChoice*> revised_choices;
+    std::map<std::string,JsonObject> general_choice_revisions;
     std::map<std::string,const ReviewedCompiler*> revised_compilers;
     std::map<std::string,const ReviewedCompiler*> revised_compiler_references;
     if(metadata.HasKey(L"compilerRevisions")) {
@@ -1489,17 +1591,44 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     if(metadata.HasKey(L"choiceRevisions")) {
         const auto records=array(metadata,"choiceRevisions");
-        require(result.version==2&&records.Size()<=reviewed_choices().size()&&(!records.Size()||locale=="es"),"Reviewed choices require their Spanish v2 ownership");
+        require(result.version==2&&
+                records.Size()<=reviewed_choices().size()+64&&
+                (!records.Size()||locale=="es"),
+            "Choice revisions require their Spanish v2 ownership");
         for(const auto& value:records) {
-            const auto item=value.GetObject();allowed_keys(item,{"id","block"},true);
-            const auto id=text(item,"id");const auto* reviewed=reviewed_choice_owner(lesson_id,id);
-            require(reviewed&&current_blocks.contains(id)&&revised_choices.emplace(id,reviewed).second,
-                "Unknown, inactive or repeated reviewed option identity");
+            const auto item=value.GetObject();
+            const auto id=text(item,"id");
+            require(valid_id(id)&&current_blocks.contains(id)&&
+                    !revised_choices.contains(id)&&
+                    !general_choice_revisions.contains(id),
+                "Unknown, inactive or repeated choice revision identity");
+            const auto* reviewed=reviewed_choice_owner(lesson_id,id);
             const auto snapshot=item.GetNamedObject(L"block");
-            require(text(snapshot,"type")=="multiple_choice"&&fingerprint(snapshot)==reviewed->before_full&&
-                state_fingerprint(snapshot)==reviewed->before_payload&&result.signatures.at(id)==reviewed->before_payload,
-                "The reviewed option snapshot changed its complete published original");
-            ChoiceRevision record;record.id=id;record.raw_json=utf8(snapshot.Stringify());record.sha256=fingerprint(snapshot);
+            if(item.HasKey(L"optionIndex")) {
+                allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore"},true);
+                validate_general_choice_semantic_archive(root,item);
+                require(!reviewed&&text(snapshot,"type")=="multiple_choice"&&
+                        state_fingerprint(snapshot)==result.signatures.at(id),
+                    "General choice archive must belong to an original unchanged answer");
+                // Validate index, type and nonempty replacement now; its
+                // authentic active bytes are checked below against this copy.
+                (void)general_choice_projection(snapshot,item,true);
+                general_choice_revisions.emplace(id,item);
+            }else{
+                allowed_keys(item,{"id","block"},true);
+                require(reviewed&&text(snapshot,"type")=="multiple_choice"&&
+                        fingerprint(snapshot)==reviewed->before_full&&
+                        state_fingerprint(snapshot)==reviewed->before_payload&&
+                        result.signatures.at(id)==reviewed->before_payload,
+                    "The reviewed option snapshot changed its complete published original");
+                revised_choices.emplace(id,reviewed);
+            }
+            ChoiceRevision record;record.id=id;
+            record.raw_json=utf8(snapshot.Stringify());
+            record.sha256=fingerprint(snapshot);
+            if(item.HasKey(L"optionIndex"))
+                record.general_option_index=integer(item.GetNamedValue(L"optionIndex"),
+                    static_cast<std::size_t>(array(snapshot,"options").Size()-1));
             result.choice_revisions.push_back(std::move(record));
         }
     }
@@ -1673,6 +1802,15 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for(const auto& [id,reviewed]:revised_choices)
         require(editorial_edges[id].contains({std::string(reviewed->before_full),std::string(reviewed->first_after_full)}),
             "A reviewed option needs its exact first published editorial edge");
+    // The generic edit has no lesson-specific allowlist. It is allowed only
+    // when the editorial chain authenticates this exact complete predecessor.
+    for(const auto& [id,review]:general_choice_revisions) {
+        const auto original=review.GetNamedObject(L"block");
+        require(editorial.contains(id)&&
+                editorial_edges[id].contains({fingerprint(original),
+                    editorial.at(id)}),
+            "A general choice revision needs its exact archived editorial edge");
+    }
     for(const auto& [id,reviewed]:revised_compilers)
         require(editorial_edges[id].contains({std::string(reviewed->before),std::string(reviewed->after)}),
             "A compiler expansion needs its exact first published editorial edge");
@@ -1692,7 +1830,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             }
             const auto projected=source_format_originals.contains(id)?
                 source_format_projection(block,source_format_originals.at(id)):block;
-            const auto digest=state_fingerprint(projected);
+            const auto general=general_choice_revisions.find(id);
+            const auto normalized_choice=general!=general_choice_revisions.end()?
+                general_choice_projection(projected,general->second):projected;
+            const auto digest=state_fingerprint(normalized_choice);
             validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
             if(projected.HasKey(L"compileCheck")) {
                 const auto spec=reviewed_compile_check(text(projected.GetNamedObject(L"compileCheck"),"diagnostic"));
@@ -1753,7 +1894,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
-                    const auto digest = state_fingerprint(source);
+                    const auto general=general_choice_revisions.find(id);
+                    const auto normalized=general!=general_choice_revisions.end()?
+                        general_choice_projection(source,general->second,true):source;
+                    const auto digest = state_fingerprint(normalized);
                     if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
                         std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                         "A historical compilation diagnostic needs an exact occurrence in its owner's published editorial chain");
@@ -2501,6 +2645,109 @@ void read_order_visual_separators(const JsonObject& root,Lesson& lesson) {
     }
 }
 
+
+void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerCmakeGraphChecks"))return;
+    const auto records=array(root,"compilerCmakeGraphChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            records.Size()>0&&records.Size()<=64,
+        "CMake graph checks require Spanish v2 and 1..64 mapped editors");
+    const auto target_name=[](std::string_view value) {
+        return !value.empty()&&value.size()<=128&&
+            std::ranges::all_of(value,[](unsigned char c) {
+                return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+                    (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='+';
+            });
+    };
+    std::set<std::string> owners;
+    for(const auto& record:records) {
+        const auto item=record.GetObject();
+        allowed_keys(item,{"activity","project","targets"});
+        require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
+            "CMake graph check requires activity and targets");
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&owners.insert(identity).second,
+            "Repeated or invalid CMake graph activity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate CMake graph owner in the mapped lesson");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->cmake&&owner->output_check&&
+                !owner->output_check->cases.empty()&&!owner->compile_check&&
+                !owner->project_files.empty(),
+            "CMake graph checks require an existing output-check CMake editor");
+        CmakeGraphRequirement requirement;
+        if(item.HasKey(L"project")) {
+            requirement.project_name=text(item,"project");
+            require(requirement.project_name.size()<=128,
+                "CMake project name is too long");
+        }
+        const auto targets=array(item,"targets");
+        require(targets.Size()>0&&targets.Size()<=16,
+            "CMake graph requires 1..16 generated targets");
+        std::set<std::string> unique;
+        for(const auto& t:targets) {
+            const auto source=t.GetObject();
+            allowed_keys(source,{"name","type","sources","linksTo","exactSources"});
+            require(source.HasKey(L"name")&&source.HasKey(L"type"),
+                "Each CMake graph target requires a name and type");
+            CmakeRequiredTarget wanted;
+            wanted.name=text(source,"name");
+            wanted.type=text(source,"type");
+            require(target_name(wanted.name)&&unique.insert(wanted.name).second&&
+                    (wanted.type=="EXECUTABLE"||wanted.type=="STATIC_LIBRARY"),
+                "Invalid or duplicated CMake executable/static-library target");
+            if(source.HasKey(L"sources")) {
+                wanted.sources=strings(array(source,"sources"),false,false);
+                require(wanted.sources.size()<=32,
+                    "Too many required compiled sources");
+                std::set<std::string> seen;
+                for(const auto& path:wanted.sources)
+                    require(is_cpp_source_file(path)&&seen.insert(path).second&&
+                            std::ranges::any_of(owner->project_files,
+                                [&](const auto& file){return file.first==path;}),
+                        "Required CMake sources must be unique existing C++ files");
+            }
+            if(source.HasKey(L"linksTo")) {
+                wanted.links_to=strings(array(source,"linksTo"),false,false);
+                require(wanted.links_to.size()<=16,
+                    "Too many CMake library link requirements");
+                std::set<std::string> seen;
+                for(const auto& target:wanted.links_to)
+                    require(target_name(target)&&target!=wanted.name&&
+                            seen.insert(target).second,
+                        "CMake link targets must be unique and different from their consumer");
+            }
+            if(source.HasKey(L"exactSources")) {
+                const auto value=source.GetNamedValue(L"exactSources");
+                require(value.ValueType()==JsonValueType::Boolean,
+                    "CMake exactSources must be a Boolean");
+                wanted.exact_sources=value.GetBoolean();
+                require(!wanted.exact_sources||!wanted.sources.empty(),
+                    "An exact CMake source requirement cannot be empty");
+            }
+            requirement.targets.push_back(std::move(wanted));
+        }
+        const auto selected=std::ranges::find_if(requirement.targets,
+            [&](const auto& target){return target.name==owner->cmake->target;});
+        require(selected!=requirement.targets.end()&&selected->type=="EXECUTABLE",
+            "A CMake graph check must include its selected executable target");
+        for(const auto& target:requirement.targets)
+            for(const auto& dependency:target.links_to) {
+                const auto found=std::ranges::find_if(requirement.targets,
+                    [&](const auto& item){return item.name==dependency;});
+                require(found!=requirement.targets.end()&&
+                        found->type=="STATIC_LIBRARY"&&
+                        target.type=="EXECUTABLE",
+                    "CMake links must reference a declared static library from an executable");
+            }
+        owner->cmake_graph_check=std::move(requirement);
+    }
+}
+
 void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerNamedRuleChecks"))return;
     const auto records=array(root,"compilerNamedRuleChecks");
@@ -2613,26 +2860,32 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
             check.requirements.push_back(std::move(declaration));
         }
         if(item.HasKey(L"executionProbe")) {
-            require(owner->cmake&&owner->project_files.size()>0&&
-                    !check.path.empty(),
-                "An independent named-rule probe requires an original CMake editor");
+            const bool single_file=owner->project_files.empty();
             const auto declaration=item.GetNamedObject(L"executionProbe");
             allowed_keys(declaration,{"harness","header","cases"},true);
             NamedRuleExecutionProbe probe;
             probe.harness_path=text(declaration,"harness");
             probe.header=text(declaration,"header");
-            require(probe.harness_path!=check.path&&
-                    is_cpp_source_file(probe.harness_path)&&
-                    std::ranges::any_of(owner->project_files,
-                        [&](const auto& file){return file.first==probe.harness_path;}),
-                "Independent test harness must replace an existing different C++ file");
-            // The old target must actually build the harness being replaced.
-            const auto cml=std::ranges::find_if(owner->project_files,
-                [](const auto& file){return file.first=="CMakeLists.txt";});
-            require(cml!=owner->project_files.end()&&
-                    cml->second.find("add_executable("+owner->cmake->target+
-                        " "+probe.harness_path+")")!=std::string::npos,
-                "Probe cannot target a file outside the original reviewed executable");
+            if(single_file) {
+                require(!owner->cmake&&check.path.empty()&&
+                        probe.harness_path.empty()&&probe.header.empty(),
+                    "Single-file independent probes require empty harness and header");
+            }else{
+                require(owner->cmake&&!check.path.empty(),
+                    "Project named-rule probes require a CMake editor");
+                require(probe.harness_path!=check.path&&
+                        is_cpp_source_file(probe.harness_path)&&
+                        std::ranges::any_of(owner->project_files,
+                            [&](const auto& file){return file.first==probe.harness_path;}),
+                    "Independent test harness must replace an existing different C++ file");
+                // The old target must build the harness being replaced.
+                const auto cml=std::ranges::find_if(owner->project_files,
+                    [](const auto& file){return file.first=="CMakeLists.txt";});
+                require(cml!=owner->project_files.end()&&
+                        cml->second.find("add_executable("+owner->cmake->target+
+                            " "+probe.harness_path+")")!=std::string::npos,
+                    "Probe cannot target a file outside the original reviewed executable");
+            }
             const auto cases=array(declaration,"cases");
             require(cases.Size()>0&&cases.Size()<=32,
                 "Independent named-rule probe needs between 1 and 32 comparisons");
@@ -2659,7 +2912,10 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                 covered.insert(item_case.function);
                 probe.cases.push_back(std::move(item_case));
             }
-            require(covered==functions&&named_rule_probe_source(probe).has_value(),
+            const auto generated=single_file?
+                named_rule_single_file_probe_source(probe,owner->initial_code):
+                named_rule_probe_source(probe);
+            require(covered==functions&&generated.has_value(),
                 "Every named function needs independent, unambiguous executable cases");
             check.execution_probe=std::move(probe);
         }
@@ -2946,6 +3202,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
@@ -3035,6 +3292,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);

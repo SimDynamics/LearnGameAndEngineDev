@@ -1,0 +1,56 @@
+name: Codex named-rule core (GCC, Clang and MSVC)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - native/core/named_rule_check.hpp
+      - native/core/named_rule_check_tests.cpp
+      - native/core/code_format_compat.hpp
+      - .github/workflows/named-rule-core-codex.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  named-rule-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Fetch exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile portable core tests
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" --version
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/named_rule_check_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_named_rule_core_tests"
+      - name: Run source-evidence, integrity and negative-case tests
+        run: "${RUNNER_TEMP}/lgaed_named_rule_core_tests"
+
+  named-rule-msvc:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Fetch exact Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare Visual C++ toolchain
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile portable core tests with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\named_rule_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"
+      - name: Run MSVC named-rule regressions
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"'

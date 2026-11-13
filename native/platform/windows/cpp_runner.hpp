@@ -1,6 +1,7 @@
 #pragma once
 #include "core/cpp_project.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/cmake_graph_check.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -101,6 +102,12 @@ struct CppRunRequest {
     std::optional<curriculum::ReportMode> observation_probe;
     std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
+    // Ordinary CMake builds and private probes do not need to parse the
+    // entire generated target graph. Enable only for structure-aware checks.
+    bool capture_cmake_graph = false;
+    // The lesson loader supplies this immutable root-authored contract.
+    // It travels with the specific request and cannot be graded from text.
+    std::optional<curriculum::CmakeGraphRequirement> cmake_graph_check;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -121,6 +128,25 @@ struct CppNamedRuleProbe {
     CppPhaseResult compilation, execution;
 };
 
+// Read-only CMake File API evidence, pinned to the submitted project/configuration.
+// Build dependencies are distinct from actual linker library fragments. Neither
+// a successful configure nor a matching stdout grants a curricular achievement.
+struct CppCmakeTargetEvidence {
+    std::string name, type, source_directory;
+    std::vector<std::string> compiled_sources, build_dependencies, link_libraries, artifacts;
+};
+struct CppCmakeGraphEvidence {
+    std::string project_fingerprint, configuration_fingerprint, project_name;
+    std::vector<CppCmakeTargetEvidence> targets;
+};
+// Keep platform API names as aliases while the authored root contract lives
+// in the curriculum core, independent of the Windows runner.
+using CppCmakeRequiredTarget = curriculum::CmakeRequiredTarget;
+using CppCmakeGraphRequirement = curriculum::CmakeGraphRequirement;
+struct CppCmakeGraphVerdict {
+    bool correct = false;
+    std::string reason;
+};
 struct CppRunResult {
     std::uint64_t request_id = 0;
     std::uint64_t revision = 0;
@@ -132,6 +158,7 @@ struct CppRunResult {
     std::optional<std::string> executable;
     std::filesystem::path artifact;
     std::string error_utf8;
+    std::optional<CppCmakeGraphEvidence> cmake_graph;
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
@@ -143,6 +170,12 @@ struct CppProjectAvailability {
     std::string project_fingerprint,configuration_fingerprint,target_type;
     std::filesystem::path workspace,artifact;
 };
+// Structural evidence must belong to the same fresh compiled + executed
+// revision and generated CMake configuration, never an old File API reply.
+// It does not by itself grant a saved curriculum achievement.
+[[nodiscard]] CppCmakeGraphVerdict evaluate_cmake_graph(
+    const CppRunRequest&, const CppRunResult&, const CppCmakeGraphRequirement&);
+
 // Read-only inspection. Never configures, builds, executes or rewrites a draft.
 [[nodiscard]] CppProjectAvailability inspect_cpp_project(const CppRunRequest&);
 

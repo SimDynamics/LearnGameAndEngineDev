@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <span>
@@ -65,6 +66,51 @@ namespace named_rule_detail {
 using Tokens = std::vector<std::string>;
 struct Bounds { std::size_t open, close; };
 struct LocalRule { std::string name; std::size_t end; int value; };
+
+// Independent probes recompile the submitted source under a private main.
+// Compile-time location/build identifiers can reveal that second compilation
+// and make a function behave correctly only for the private driver. Ignore
+// comments and literal text; deny source-level dependence on these markers.
+inline bool probe_environment_neutral(
+        const std::vector<std::string>& tokens) {
+    constexpr std::string_view sensitive[]={
+        "__LINE__","__FILE__","__FILEW__","__BASE_FILE__",
+        "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
+        "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
+        "__FUNCDNAME__","__builtin_LINE","__builtin_FILE",
+        "__builtin_FUNCTION","__builtin_source_location",
+        "source_location"
+    };
+    return std::ranges::none_of(tokens,[&](std::string_view token) {
+        if(!token.starts_with("id:"))return false;
+        const auto name=token.substr(3);
+        return std::ranges::find(sensitive,name)!=std::end(sensitive);
+    });
+}
+
+// A fixed completion witness must not be supplied by student code before
+// the independent main finishes. Reject explicit premature process-exit
+// calls when the authored objective includes an independent execution probe.
+// The lexical scan ignores harmless mentions in comments and string literals;
+// it is a bounded source safeguard, not a native-code security sandbox.
+inline bool probe_source_no_early_exit(std::string_view source) {
+    const auto scanned=code_format::cpp_tokens(source);
+    if(!scanned)return false;
+    constexpr std::string_view terminating[]={
+        "exit","_Exit","_exit","quick_exit","ExitProcess",
+        "TerminateProcess","ExitThread","_endthread","_endthreadex",
+        "_c_exit"
+    };
+    for(const auto& token:*scanned) {
+        if(!token.starts_with("id:"))continue;
+        const auto name=std::string_view(token).substr(3);
+        // Inspect identifiers, not just direct calls: an alias such as
+        // auto finish=&std::exit; finish(0); also ends a probe early.
+        if(std::ranges::find(terminating,name)!=std::end(terminating))
+            return false;
+    }
+    return true;
+}
 
 inline bool id(std::string_view token,std::string_view name) {
     return token.starts_with("id:")&&token.substr(3)==name;
@@ -210,7 +256,8 @@ inline bool role(std::string_view name,const std::vector<std::string>& words) {
     }
     return false;
 }
-inline bool productive(const Tokens& t,std::size_t i) {
+inline bool productive(const Tokens& t,std::size_t i,
+        std::size_t scope_start=0) {
     // Direct algebraic identities cannot establish that a constant is
     // meaningfully used. This is deliberately a bounded syntactic check;
     // arbitrary C++ still requires execution evidence.
@@ -219,7 +266,7 @@ inline bool productive(const Tokens& t,std::size_t i) {
        (i+2<t.size()&&(op(t[i+1],"-")||op(t[i+1],"/")||
                op(t[i+1],"%"))&&t[i+2]==t[i]))
         return false;
-    const zero_after=[&](std::size_t position) {
+    const auto zero_after=[&](std::size_t position) {
         if(position>=t.size())return false;
         if(t[position]=="number:0")return true;
         if(!op(t[position],"("))return false;
@@ -228,7 +275,7 @@ inline bool productive(const Tokens& t,std::size_t i) {
         const auto value=arithmetic_constant(t,position,*end+1);
         return value&&*value==0;
     };
-    const zero_before=[&](std::size_t position) {
+    const auto zero_before=[&](std::size_t position) {
         if(position>=t.size())return false;
         if(t[position]=="number:0")return true;
         if(!op(t[position],")"))return false;
@@ -244,8 +291,27 @@ inline bool productive(const Tokens& t,std::size_t i) {
         }
         return false;
     };
-    return !(i>=2&&op(t[i-1],"*")&&zero_before(i-2))&&
-           !(i+2<t.size()&&op(t[i+1],"*")&&zero_after(i+2));
+    if((i>=2&&op(t[i-1],"*")&&zero_before(i-2))||
+       (i+2<t.size()&&op(t[i+1],"*")&&zero_after(i+2)))
+        return false;
+    // A zero factor can apply to an entire parenthesized expression:
+    // 0*(capacidad+capacidad) has two lexical uses but contributes nothing.
+    // Examine enclosing groups, not just the tokens adjacent to the name.
+    std::vector<std::size_t> containing;
+    for(auto at=scope_start;at<i;++at) {
+        if(op(t[at],"("))containing.push_back(at);
+        else if(op(t[at],")")&&!containing.empty())
+            containing.pop_back();
+    }
+    for(const auto open:containing) {
+        const auto close=closing(t,open,"(",")");
+        if(!close||*close<=i)continue;
+        if((open>=2&&op(t[open-1],"*")&&zero_before(open-2))||
+           (*close+2<t.size()&&op(t[*close+1],"*")&&
+            zero_after(*close+2)))
+            return false;
+    }
+    return true;
 }
 inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         std::string_view name) {
@@ -259,7 +325,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     const auto uses=[&](std::size_t first,std::size_t last) {
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
-            if(!productive(t,i))continue;
+            if(!productive(t,i,bounds.open+1))continue;
             std::size_t contribution=id(t[i],name)?1:0;
             for(const auto& alias:aliases)
                 if(id(t[i],alias.first)) {
@@ -271,32 +337,136 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         return count;
     };
     bool declared=false;
+    std::size_t nesting=0;
+    // A conditional branch that computes a nontrivial result is part of
+    // the function's contract even when a later unconditional return uses
+    // the named constant correctly. Keep the weakest live return path.
+    std::optional<std::size_t> prior_nontrivial_uses;
+    const auto include_prior=[&](std::size_t count) {
+        return prior_nontrivial_uses?
+            std::min(*prior_nontrivial_uses,count):count;
+    };
+    const auto return_uses=[&](std::size_t keyword) {
+        auto last=keyword+1;
+        while(last<bounds.close&&!op(t[last],";"))++last;
+        return uses(keyword+1,last);
+    };
+    // An early zero/false return is a normal domain guard. It contributes
+    // no calculated result; the remaining path must still use the rule.
+    const auto trivial_guard_return=[&](std::size_t keyword) {
+        if(keyword>=bounds.close||!id(t[keyword],"return"))return false;
+        auto last=keyword+1;
+        while(last<bounds.close&&!op(t[last],";"))++last;
+        if(last>=bounds.close||last==keyword+1)return false;
+        if(last==keyword+2&&id(t[keyword+1],"false"))return true;
+        const auto value=arithmetic_constant(t,keyword+1,last);
+        return value&&*value==0;
+    };
+    // Only a full direct return or a brace-enclosed single return is
+    // understood. Other branches are conservatively left uncredited.
+    const auto direct_return=[&](std::size_t at)
+            ->std::optional<std::pair<std::size_t,std::size_t>> {
+        if(at>=bounds.close)return {};
+        if(id(t[at],"return")) {
+            auto last=at+1;
+            while(last<bounds.close&&!op(t[last],";"))++last;
+            if(last>=bounds.close)return {};
+            return std::pair{return_uses(at),last};
+        }
+        if(!op(t[at],"{")||at+1>=bounds.close||
+           !id(t[at+1],"return"))return {};
+        const auto end=closing(t,at,"{","}");
+        if(!end||*end>=bounds.close)return {};
+        auto semicolon=at+2;
+        while(semicolon<*end&&!op(t[semicolon],";"))++semicolon;
+        if(semicolon+1!=*end)return {};
+        return std::pair{return_uses(at+1),*end};
+    };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
-        // A return guarded by a compile-time false condition cannot
-        // establish source evidence, even though the lexer can see it.
-        // Preserve the following else branch and later live statements.
+        if(op(t[i],"{")){++nesting;continue;}
+        if(op(t[i],"}")){if(nesting)--nesting;continue;}
+        // The first unconditional return ends the function path. A later
+        // unreachable return must not manufacture the required source uses.
+        // A simple runtime guard remains conditional and does not suppress
+        // an otherwise valid normal result.
         if(id(t[i],"if")) {
             auto condition=i+1;
             if(condition<bounds.close&&id(t[condition],"constexpr"))
                 ++condition;
             if(condition<bounds.close&&op(t[condition],"(")) {
                 const auto close=closing(t,condition,"(",")");
-                if(close&&*close+2<bounds.close&&
-                   *close==condition+2&&
-                   (id(t[condition+1],"false")||
-                    t[condition+1]=="number:0")) {
+                if(close&&*close+1<bounds.close) {
                     const auto statement=*close+1;
-                    if(op(t[statement],"{")) {
-                        const auto end=closing(t,statement,"{","}");
-                        if(!end||*end>=bounds.close)return 0;
-                        i=*end;
-                    }else{
-                        auto end=statement;
-                        while(end<bounds.close&&!op(t[end],";"))++end;
-                        if(end>=bounds.close)return 0;
-                        i=end;
+                    const bool literal=*close==condition+2;
+                    const bool never=literal&&
+                        (id(t[condition+1],"false")||
+                         t[condition+1]=="number:0");
+                    const bool always=literal&&
+                        (id(t[condition+1],"true")||
+                         t[condition+1]=="number:1");
+                    if(never) {
+                        std::size_t skipped=statement;
+                        if(op(t[statement],"{")) {
+                            const auto end=closing(t,statement,"{","}");
+                            if(!end||*end>=bounds.close)return 0;
+                            skipped=*end;
+                        }else{
+                            while(skipped<bounds.close&&!op(t[skipped],";"))++skipped;
+                            if(skipped>=bounds.close)return 0;
+                        }
+                        // The else arm of an always-false condition is certain
+                        // to run. A single return there makes later code dead.
+                        if(skipped+2<bounds.close&&id(t[skipped+1],"else")) {
+                            const auto alternate=skipped+2;
+                            if(id(t[alternate],"return"))
+                                return return_uses(alternate);
+                            if(op(t[alternate],"{")&&alternate+1<bounds.close&&
+                               id(t[alternate+1],"return")) {
+                                const auto end=closing(t,alternate,"{","}");
+                                auto semicolon=alternate+2;
+                                while(semicolon<bounds.close&&
+                                      !op(t[semicolon],";"))++semicolon;
+                                if(end&&semicolon+1==*end)
+                                    return return_uses(alternate+1);
+                            }
+                        }
+                        i=skipped;
+                        continue;
                     }
-                    continue;
+                    // Nontrivial conditional results must use the rule;
+                    // a later correct fallthrough cannot excuse a shortcut.
+                    if(always) {
+                        if(const auto branch=direct_return(statement))
+                            return include_prior(branch->first);
+                    }else if(const auto branch=direct_return(statement)) {
+                        const auto first_return=
+                            id(t[statement],"return")?statement:statement+1;
+                        const auto else_position=branch->second+1;
+                        if(else_position<bounds.close&&
+                           id(t[else_position],"else")) {
+                            const auto other=direct_return(else_position+1);
+                            if(!other)return 0;
+                            const auto other_statement=else_position+1;
+                            const auto second_return=
+                                id(t[other_statement],"return")?
+                                    other_statement:other_statement+1;
+                            const auto first_is_guard=
+                                trivial_guard_return(first_return);
+                            const auto second_is_guard=
+                                trivial_guard_return(second_return);
+                            const auto count=first_is_guard?
+                                other->first:
+                                second_is_guard?branch->first:
+                                    std::min(branch->first,other->first);
+                            return include_prior(count);
+                        }
+                        if(!trivial_guard_return(first_return))
+                            prior_nontrivial_uses=include_prior(branch->first);
+                        // Skip the recognized return, including braces,
+                        // rather than crediting it a second time.
+                        i=branch->second;
+                        continue;
+                    }
                 }
             }
         }
@@ -304,25 +474,34 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             const auto result_uses=uses(i+1,last);
-            if(result_uses>0)return result_uses;
-            i=last;
-            continue;
+            // Returns inside branches that were not fully understood must
+            // not be ignored: a hardcoded path could otherwise borrow credit
+            // from a correct but later fallthrough.
+            if(nesting)return 0;
+            return include_prior(result_uses);
         }
         auto start=i;
         if(id(t[start],"const")||id(t[start],"constexpr"))++start;
-        if(start+2<bounds.close&&
-           (id(t[start],"int")||id(t[start],"auto"))&&
-           t[start+1].starts_with("id:")&&
-           (op(t[start+2],"=")||op(t[start+2],"{")||
-            op(t[start+2],"("))) {
-            const auto local=t[start+1].substr(3);
-            auto last=start+3;
+        // Local intermediates may use either const placement, just like the
+        // authored rule itself: const int ajuste or int const ajuste.
+        const bool has_type=start<bounds.close&&
+            (id(t[start],"int")||id(t[start],"auto"));
+        const bool trailing_const=has_type&&start+1<bounds.close&&
+            id(t[start+1],"const");
+        const auto variable=start+1+(trailing_const?1u:0u);
+        const auto initializer=variable+1;
+        if(has_type&&initializer<bounds.close&&
+           t[variable].starts_with("id:")&&
+           (op(t[initializer],"=")||op(t[initializer],"{")||
+            op(t[initializer],"("))) {
+            const auto local=t[variable].substr(3);
+            auto last=initializer+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name) {
                 if(declared)return 0; // Ambiguous shadowing of the named rule.
                 declared=true;
             }else {
-                const auto count=uses(start+3,last);
+                const auto count=uses(initializer+1,last);
                 const auto found=std::ranges::find_if(aliases,
                     [&](const auto& alias){return alias.first==local;});
                 if(found==aliases.end())aliases.emplace_back(local,count);
@@ -345,6 +524,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             i=last;
         }
     }
+    // A conditional-only return does not prove that every input path uses the rule.
     return 0;
 }
 } // namespace named_rule_detail
@@ -355,6 +535,8 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     if(requirements.empty())return {false,"No hay reglas declaradas."};
     const auto scanned=code_format::cpp_tokens(source);
     if(!scanned)return {false,"El codigo fuente no admite analisis lexico."};
+    if(!probe_environment_neutral(*scanned))
+        return {false,"El codigo depende de la posicion o del entorno de compilacion."};
     // The lexical source gate must not mistake code hidden behind #if 0,
     // macro substitutions, or generated declarations for compiled evidence.
     // A reviewed named-rule exercise only needs ordinary #include directives.
@@ -437,9 +619,16 @@ inline bool named_rule_comment_only_edit(std::string_view original,
     return only_code(*before)==only_code(*after);
 }
 
-// Bounded source generation is shared by the worker and its verifier; it
-// accepts identifiers, integer values and a safe include path, never raw C++.
-inline std::optional<std::string> named_rule_probe_source(
+// Independently compiled checks are generated from reviewed identifiers,
+// integer facts and a bounded input list. The student's stdout is not trusted.
+// A zero process exit alone is not proof: a student function can call
+// exit(0) before the generated main has checked all authored cases. The
+// trusted driver emits this exact final witness only after its last check.
+// No newline avoids CRT LF/CRLF differences between Windows and WASI.
+inline constexpr std::string_view named_rule_probe_completion_marker=
+    "LGAED_NAMED_RULE_PROBE_COMPLETE_V1";
+
+inline std::optional<std::string> named_rule_probe_checks(
         const NamedRuleExecutionProbe& probe) {
     const auto identifier=[](std::string_view word) {
         if(word.empty()||word.size()>128)return false;
@@ -451,15 +640,8 @@ inline std::optional<std::string> named_rule_probe_source(
             if(!letter(c)&&!(c>='0'&&c<='9'))return false;
         return true;
     };
-    if(probe.cases.empty()||probe.cases.size()>32||probe.header.empty()||
-       probe.header.size()>256||probe.header.starts_with('/')||
-       probe.header.starts_with('.')||probe.header.find("..")!=std::string::npos)
-        return {};
-    for(const unsigned char c:probe.header)
-        if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
-             (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='/'))
-            return {};
-    std::string code="#include \""+probe.header+"\"\n\nint main() {\n";
+    if(probe.cases.empty()||probe.cases.size()>32)return {};
+    std::string code="int main() {\n";
     for(std::size_t i=0;i<probe.cases.size();++i) {
         const auto& item=probe.cases[i];
         if(!identifier(item.function))return {};
@@ -471,8 +653,41 @@ inline std::optional<std::string> named_rule_probe_source(
             std::to_string(item.expected)+") return "+
             std::to_string(i+1)+";\n";
     }
+    code += "    std::fputs(\"";
+    code += std::string(named_rule_probe_completion_marker);
+    code += "\", stderr);\n";
     code+="    return 0;\n}\n";
     return code;
+}
+// CMake: replace the original test executable with a trusted test driver.
+inline std::optional<std::string> named_rule_probe_source(
+        const NamedRuleExecutionProbe& probe) {
+    if(probe.header.empty()||probe.header.size()>256||
+       probe.header.starts_with('/')||probe.header.starts_with('.')||
+       probe.header.find("..")!=std::string::npos)return {};
+    for(const unsigned char c:probe.header)
+        if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+             (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='/'))
+            return {};
+    const auto checks=named_rule_probe_checks(probe);
+    if(!checks)return {};
+    return "#include <cstdio>\n#include \""+probe.header+"\"\n\n"+*checks;
+}
+// Single-file: compile the unchanged submitted functions alongside a fresh,
+// private main. The student's editable main and reports are not executed by
+// the probe. The source-gate separately rejects student preprocessor macros.
+inline std::optional<std::string> named_rule_single_file_probe_source(
+        const NamedRuleExecutionProbe& probe,std::string_view candidate) {
+    if(!probe.harness_path.empty()||!probe.header.empty()||
+       candidate.empty()||candidate.size()>4*1024*1024)return {};
+    const auto parsed=code_format::cpp_tokens(candidate);
+    if(!parsed||!named_rule_detail::probe_environment_neutral(*parsed)||
+       !named_rule_detail::probe_source_no_early_exit(candidate))
+        return {};
+    const auto checks=named_rule_probe_checks(probe);
+    if(!checks)return {};
+    return "#include <cstdio>\n#define main lgaed_student_original_main\n"+
+        std::string(candidate)+"\n#undef main\n\n"+*checks;
 }
 
 } // namespace lgaed::curriculum
