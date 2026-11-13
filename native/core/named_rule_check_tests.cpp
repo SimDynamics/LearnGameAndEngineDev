@@ -28,6 +28,12 @@ void capacity() {
         })cpp",rules,true,"Equivalent capacity name");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            int const plazas_por_caja = 4;
+            return (piezas + plazas_por_caja - 1) / plazas_por_caja;
+        })cpp",rules,true,"Equivalent east-const spelling");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int capacidad = 2 + 4 / 2;
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,"Integer arithmetic and operator precedence");
