@@ -2645,6 +2645,109 @@ void read_order_visual_separators(const JsonObject& root,Lesson& lesson) {
     }
 }
 
+
+void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerCmakeGraphChecks"))return;
+    const auto records=array(root,"compilerCmakeGraphChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            records.Size()>0&&records.Size()<=64,
+        "CMake graph checks require Spanish v2 and 1..64 mapped editors");
+    const auto target_name=[](std::string_view value) {
+        return !value.empty()&&value.size()<=128&&
+            std::ranges::all_of(value,[](unsigned char c) {
+                return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+                    (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='+';
+            });
+    };
+    std::set<std::string> owners;
+    for(const auto& record:records) {
+        const auto item=record.GetObject();
+        allowed_keys(item,{"activity","project","targets"});
+        require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
+            "CMake graph check requires activity and targets");
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&owners.insert(identity).second,
+            "Repeated or invalid CMake graph activity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Duplicate CMake graph owner in the mapped lesson");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                owner->cmake&&owner->output_check&&
+                !owner->output_check->cases.empty()&&!owner->compile_check&&
+                !owner->project_files.empty(),
+            "CMake graph checks require an existing output-check CMake editor");
+        CmakeGraphRequirement requirement;
+        if(item.HasKey(L"project")) {
+            requirement.project_name=text(item,"project");
+            require(requirement.project_name.size()<=128,
+                "CMake project name is too long");
+        }
+        const auto targets=array(item,"targets");
+        require(targets.Size()>0&&targets.Size()<=16,
+            "CMake graph requires 1..16 generated targets");
+        std::set<std::string> unique;
+        for(const auto& t:targets) {
+            const auto source=t.GetObject();
+            allowed_keys(source,{"name","type","sources","linksTo","exactSources"});
+            require(source.HasKey(L"name")&&source.HasKey(L"type"),
+                "Each CMake graph target requires a name and type");
+            CmakeRequiredTarget wanted;
+            wanted.name=text(source,"name");
+            wanted.type=text(source,"type");
+            require(target_name(wanted.name)&&unique.insert(wanted.name).second&&
+                    (wanted.type=="EXECUTABLE"||wanted.type=="STATIC_LIBRARY"),
+                "Invalid or duplicated CMake executable/static-library target");
+            if(source.HasKey(L"sources")) {
+                wanted.sources=strings(array(source,"sources"),false,false);
+                require(wanted.sources.size()<=32,
+                    "Too many required compiled sources");
+                std::set<std::string> seen;
+                for(const auto& path:wanted.sources)
+                    require(is_cpp_source_file(path)&&seen.insert(path).second&&
+                            std::ranges::any_of(owner->project_files,
+                                [&](const auto& file){return file.first==path;}),
+                        "Required CMake sources must be unique existing C++ files");
+            }
+            if(source.HasKey(L"linksTo")) {
+                wanted.links_to=strings(array(source,"linksTo"),false,false);
+                require(wanted.links_to.size()<=16,
+                    "Too many CMake library link requirements");
+                std::set<std::string> seen;
+                for(const auto& target:wanted.links_to)
+                    require(target_name(target)&&target!=wanted.name&&
+                            seen.insert(target).second,
+                        "CMake link targets must be unique and different from their consumer");
+            }
+            if(source.HasKey(L"exactSources")) {
+                const auto value=source.GetNamedValue(L"exactSources");
+                require(value.ValueType()==JsonValueType::Boolean,
+                    "CMake exactSources must be a Boolean");
+                wanted.exact_sources=value.GetBoolean();
+                require(!wanted.exact_sources||!wanted.sources.empty(),
+                    "An exact CMake source requirement cannot be empty");
+            }
+            requirement.targets.push_back(std::move(wanted));
+        }
+        const auto selected=std::ranges::find_if(requirement.targets,
+            [&](const auto& target){return target.name==owner->cmake->target;});
+        require(selected!=requirement.targets.end()&&selected->type=="EXECUTABLE",
+            "A CMake graph check must include its selected executable target");
+        for(const auto& target:requirement.targets)
+            for(const auto& dependency:target.links_to) {
+                const auto found=std::ranges::find_if(requirement.targets,
+                    [&](const auto& item){return item.name==dependency;});
+                require(found!=requirement.targets.end()&&
+                        found->type=="STATIC_LIBRARY"&&
+                        target.type=="EXECUTABLE",
+                    "CMake links must reference a declared static library from an executable");
+            }
+        owner->cmake_graph_check=std::move(requirement);
+    }
+}
+
 void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerNamedRuleChecks"))return;
     const auto records=array(root,"compilerNamedRuleChecks");
@@ -3099,6 +3202,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
@@ -3188,6 +3292,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);

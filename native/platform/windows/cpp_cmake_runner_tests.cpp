@@ -1,5 +1,7 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "platform/windows/environment.hpp"
+#include "platform/windows/content_loader.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "native_build_config.hpp"
@@ -276,6 +278,17 @@ target_link_libraries(first PRIVATE parts)
         }};
     const auto accepted=evaluate_cmake_graph(linked,linked_result,expected_graph);
     check(accepted.correct,"A real source-bound linked CMake project failed its graph criteria: "+accepted.reason);
+    auto linked_declaration=linked;
+    linked_declaration.cmake_graph_check=expected_graph;
+    const auto linked_capture=capture_cpp_execution(linked_declaration,linked_result);
+    check(linked_capture.cmake_graph_correct,
+        "The genuine CMake graph did not reach the first-case execution capture");
+    auto false_declaration=linked_declaration;
+    false_declaration.cmake_graph_check->targets[0].links_to.clear();
+    false_declaration.cmake_graph_check->targets[0].sources={"src/value.cpp"};
+    check(!capture_cpp_execution(false_declaration,linked_result).cmake_graph_correct,
+        "An incorrect authored graph obtained the same execution proof");
+
     const auto late_id=linked_result;
     auto wrong_request=linked;
     ++wrong_request.revision;
@@ -315,13 +328,79 @@ add_dependencies(first parts)
         "The negative CMake graph does not have a real dependency without linking");
     auto relaxed=expected_graph;
     relaxed.targets[0].exact_sources=false;
-    const auto rejected=evaluate_cmake_graph(ordering,order_run,relaxed);
-    check(!rejected.correct&&rejected.reason.find("enlaza")!=std::string::npos,
+    const auto graph_rejected=evaluate_cmake_graph(ordering,order_run,relaxed);
+    check(!graph_rejected.correct&&
+        graph_rejected.reason.find("enlaza")!=std::string::npos,
         "An add_dependencies ordering edge was misrepresented as a library link");
     auto config_only=linked;
     config_only.action=CppRunRequest::Action::configure;
     check(!evaluate_cmake_graph(config_only,linked_result,expected_graph).correct,
         "An earlier CMake configure was treated as a compiled and executed objective");
+    // A real published U2 editor can receive the new root-only graph
+    // declaration without changing any historical source, address or draft.
+    constexpr auto relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_objetivos_dependencias_y_enlace.json";
+    const auto original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/relative);
+    check(original.pages[4].blocks[4].stable_id=="block_0004_0004"&&
+        original.pages[4].blocks[4].cmake&&
+        original.pages[4].blocks[4].output_check&&
+        !original.pages[4].blocks[4].cmake_graph_check,
+        "The actual historical U2 CMake project owner moved or is already declared");
+    std::string projected=original.raw_json;
+    constexpr auto anchor="  \"stateLayout\": {";
+    const auto at=projected.find(anchor);
+    check(at!=projected.npos&&projected.find(anchor,at+1)==projected.npos,
+        "The historical CMake lesson must have one root state map");
+    projected.insert(at,R"json(  "compilerCmakeGraphChecks": [
+    {"activity":"block_0004_0004","project":"Preparacion",
+     "targets":[
+       {"name":"revisar","type":"EXECUTABLE",
+        "sources":["main.cpp"],"linksTo":["faltantes"],"exactSources":true},
+       {"name":"faltantes","type":"STATIC_LIBRARY",
+        "sources":["faltantes.cpp"],"exactSources":true}
+     ]}
+  ],
+)json");
+    const auto mapped=lgaed::windows::parse_lesson_json(projected,"es");
+    const auto metadata=lgaed::windows::parse_lesson_progress_metadata(projected,"es");
+    check(mapped.state_layout.lineage==original.state_layout.lineage&&
+        mapped.state_layout.signatures==original.state_layout.signatures&&
+        metadata.state_layout.lineage==original.state_layout.lineage&&
+        metadata.state_layout.signatures==original.state_layout.signatures,
+        "A root CMake graph declaration changed stable learner state identity");
+    const auto& before=original.pages[4].blocks[4];
+    const auto& after=mapped.pages[4].blocks[4];
+    const auto& lean=metadata.pages[4].blocks[4];
+    check(after.cmake_graph_check.has_value()&&
+        lean.cmake_graph_check==after.cmake_graph_check&&
+        after.initial_code==before.initial_code&&
+        after.project_files==before.project_files&&
+        curriculum::exercise_key(mapped,after)==
+            curriculum::exercise_key(original,before)&&
+        curriculum::draft_key("programming",mapped,after)==
+            curriculum::draft_key("programming",original,before)&&
+        curriculum::reference_objective_frame(mapped,after)!=
+            curriculum::reference_objective_frame(original,before),
+        "The root CMake graph contract did not bind to its owner");
+    CppRunRequest student;
+    student.cmake=after.cmake;
+    student.project_files=after.project_files;
+    student.source_files=after.source_files;
+    student.action=CppRunRequest::Action::compile_run;
+    student.cmake_graph_check=after.cmake_graph_check;
+    student.capture_cmake_graph=true;
+    check(compiler_runtime_request_allowed(after,student),
+        "An authentic CMake student's current structure was not eligible to run");
+    student.capture_cmake_graph=false;
+    check(!compiler_runtime_request_allowed(after,student),
+        "The lesson accepted a CMake request without structural capture");
+    student.capture_cmake_graph=true;
+    student.cmake_graph_check.reset();
+    check(!compiler_runtime_request_allowed(after,student),
+        "The lesson accepted a request omitting its authenticated graph rubric");
+    std::cout<<"PASS root CMake graph declaration: original U2 source, maps, drafts and responses unchanged; new source-bound rubric required\\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";

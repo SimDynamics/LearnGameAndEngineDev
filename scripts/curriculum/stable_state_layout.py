@@ -42,7 +42,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerCmakeGraphChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -2169,6 +2169,84 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     "Editable CMake test drivers require independent execution probes")
 
 
+
+
+def _validate_compiler_cmake_graph_checks(document: dict) -> None:
+    """Bounded, append-only CMake structural objectives, without block edits."""
+    if "compilerCmakeGraphChecks" not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and
+            meta.get("locale") == "es", "CMake graphs require Spanish v2")
+    records = document["compilerCmakeGraphChecks"]
+    require(type(records) is list and 0 < len(records) <= 64,
+            "CMake graph checks require 1..64 owners")
+    owners, seen = _blocks(document), set()
+    for entry in records:
+        require(type(entry) is dict and
+                {"activity", "targets"} <= set(entry) <=
+                {"activity", "project", "targets"},
+                "CMake graph owner needs activity, optional project and targets")
+        identity = _identity(entry["activity"])
+        require(identity not in seen, "Repeated CMake graph activity")
+        seen.add(identity)
+        block = owners.get(identity)
+        require(type(block) is dict and block.get("type") == "cpp_compiler" and
+                type(block.get("cmake")) is dict and
+                type(block.get("projectFiles")) is list and bool(block["projectFiles"]) and
+                type(block.get("outputCheck")) is dict and
+                type(block["outputCheck"].get("cases")) is list and
+                bool(block["outputCheck"]["cases"]) and
+                "compileCheck" not in block,
+                "CMake graph needs an original output-check CMake editor")
+        project = entry.get("project", "")
+        require(type(project) is str and len(project) <= 128,
+                "CMake graph project name must be short text")
+        targets = entry["targets"]
+        require(type(targets) is list and 0 < len(targets) <= 16,
+                "CMake graph needs 1..16 targets")
+        original_paths = {f.get("path") for f in block["projectFiles"]
+                          if type(f) is dict}
+        targets_by_name = {}
+        for target in targets:
+            require(type(target) is dict and
+                    {"name", "type"} <= set(target) <=
+                    {"name", "type", "sources", "linksTo", "exactSources"},
+                    "CMake target requires a name, type and bounded optional rules")
+            name, kind = target["name"], target["type"]
+            require(type(name) is str and len(name) <= 128 and
+                    re.fullmatch(r"[A-Za-z0-9_.+-]+", name) and
+                    name not in targets_by_name and
+                    kind in ("EXECUTABLE", "STATIC_LIBRARY"),
+                    "Invalid, duplicated or unsupported CMake target")
+            targets_by_name[name] = target
+            sources = target.get("sources", [])
+            require(type(sources) is list and len(sources) <= 32 and
+                    all(type(p) is str and
+                        p.lower().endswith((".cpp", ".cc", ".cxx", ".c++")) and
+                        p in original_paths for p in sources) and
+                    len(set(sources)) == len(sources),
+                    "CMake required sources must be unique original C++ files")
+            links = target.get("linksTo", [])
+            require(type(links) is list and len(links) <= 16 and
+                    all(type(n) is str and len(n) <= 128 and
+                        re.fullmatch(r"[A-Za-z0-9_.+-]+", n) and n != name
+                        for n in links) and len(set(links)) == len(links),
+                    "CMake linked targets must be unique non-self names")
+            exact = target.get("exactSources", False)
+            require(type(exact) is bool and (not exact or bool(sources)),
+                    "CMake exactSources requires a nonempty source list")
+        selected = block["cmake"].get("target")
+        require(selected in targets_by_name and
+                targets_by_name[selected]["type"] == "EXECUTABLE",
+                "CMake graph must include the selected executable target")
+        for target in targets:
+            for name in target.get("linksTo", []):
+                require(name in targets_by_name and
+                        targets_by_name[name]["type"] == "STATIC_LIBRARY" and
+                        target["type"] == "EXECUTABLE",
+                        "CMake links require a declared static library and executable")
+
 def _validate_order_visual_separators(document: dict) -> None:
     """A visual-only root extension, never an order fragment or progress slot."""
     if "orderVisualSeparators" not in document:
@@ -2210,6 +2288,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_cmake_graph_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
@@ -2524,6 +2603,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerCmakeGraphChecks") or
+            baseline.get("compilerCmakeGraphChecks") == current.get("compilerCmakeGraphChecks"),
+            "Published CMake graph requirements cannot be removed or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
@@ -2776,6 +2858,9 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerCmakeGraphChecks") or
+            baseline.get("compilerCmakeGraphChecks") == current.get("compilerCmakeGraphChecks"),
+            "Published CMake graph requirements cannot be removed or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")

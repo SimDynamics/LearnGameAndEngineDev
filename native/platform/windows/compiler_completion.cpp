@@ -277,6 +277,13 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.cmake_graph_check!=block.cmake_graph_check)return false;
+    if(block.cmake_graph_check&&
+       (!block.cmake||request.cmake!=block.cmake||
+        request.backend!=CppRunRequest::Backend::native_msvc||
+        request.action!=CppRunRequest::Action::compile_run||
+        !request.capture_cmake_graph||request.diagnostic))
+        return false;
     if(block.named_rule_source_check) {
         const auto& named=*block.named_rule_source_check;
         if(request.named_rule_probe!=named.execution_probe)return false;
@@ -555,7 +562,8 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
        !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured)||
        (block.named_rule_source_check&&
            block.named_rule_source_check->execution_probe&&
-           !execution.named_rule_probe_correct))return false;
+           !execution.named_rule_probe_correct)||
+       (block.cmake_graph_check&&!execution.cmake_graph_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);

@@ -41,6 +41,8 @@ jobs:
           python-version: '3.15.2'
       - name: Verify fourteen historical line-order refinements and source-preservation guards
         run: python -B -m unittest discover -s scripts/curriculum -p test_order_line_refinement.py -v
+      - name: Verify CMake graph declarations preserve published lessons
+        run: python -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
       - name: Compile readers and execute actual Win32 history dialog test
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
       - name: Preserve configure and compilation results

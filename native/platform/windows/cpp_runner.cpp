@@ -1084,6 +1084,9 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    if(request.cmake_graph_check)
+        fresh.cmake_graph_correct=evaluate_cmake_graph(
+            request,result,*request.cmake_graph_check).correct;
     if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
         result.compilation.succeeded()&&
         result.target_type=="WASI_COMMAND"&&
@@ -1221,6 +1224,7 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
     auto second=request;
     second.named_rule_probe.reset(); // recursion and double credit forbidden
     second.capture_cmake_graph=false; // private probe must not grade CMake structure
+    second.cmake_graph_check.reset();
     second.rejection_probe.reset();
     second.observation_probe.reset();
     second.assertion_mode.reset();

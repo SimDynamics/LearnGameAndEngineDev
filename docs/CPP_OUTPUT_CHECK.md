@@ -882,3 +882,64 @@ macros sensibles a las líneas del código.
 El alcance y los permisos forman parte de la identidad del objetivo
 evaluado: no se reutilizan aciertos de otra revisión. Es una capacidad
 general, no una modificación automática del material histórico.
+
+## Comprobación de la estructura CMake generada (raíz de la lección)
+
+Los editores históricos pueden recibir un objetivo estructural complementario sin
+modificar su `cpp_compiler`, los casos `outputCheck` ni sus direcciones. Work declara
+`compilerCmakeGraphChecks` en la raíz de una lección española con `stateLayout`
+versión 2. Un ejemplo, referido a las rutas originales de un proyecto educativo, es:
+
+```json
+"compilerCmakeGraphChecks": [
+  {
+    "activity": "block_0004_0004",
+    "project": "Preparacion",
+    "targets": [
+      {
+        "name": "revisar",
+        "type": "EXECUTABLE",
+        "sources": ["main.cpp"],
+        "exactSources": true,
+        "linksTo": ["faltantes"]
+      },
+      {
+        "name": "faltantes",
+        "type": "STATIC_LIBRARY",
+        "sources": ["faltantes.cpp"],
+        "exactSources": true
+      }
+    ]
+  }
+]
+```
+
+El ejemplo muestra un contrato técnico disponible, no una declaración añadida
+automáticamente a la lección. Los nombres de objetivos y las rutas deben existir
+en la autoría real; la biblioteca se identifica por su objetivo y su artefacto
+generado, no por una coincidencia de nombres dentro de `CMakeLists.txt`.
+
+El motor consulta **CMake File API codemodel v2** de la configuración realmente
+generada por CMake. Separa fuentes compiladas, tipo de objetivo, dependencia de
+construcción y fragmentos de enlace. `add_dependencies()` por sí solo no
+acredita `target_link_libraries()`. Una ejecución que coincida en stdout tampoco
+acredita esta organización si la estructura declarada no coincide. Sólo una
+compilación y ejecución de la revisión actual pueden producir evidencia de
+la nueva rúbrica. El archivo histórico, el editor y las respuestas antiguas
+permanecen intactos; un acierto anterior de salida no satisface automáticamente
+la nueva comprobación. Para avanzar sigue bastando el primer caso correcto
+que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
+
+`project` es opcional. Cada objetivo requiere `name` y `type`
+(`EXECUTABLE` o `STATIC_LIBRARY`); `sources`, `linksTo` y
+`exactSources` son opcionales. Las fuentes declaradas son rutas originales
+de `projectFiles`; `exactSources` exige que no existan fuentes de
+compilación adicionales. `linksTo` referencia objetivos de biblioteca
+estática también declarados, y se acredita mediante dependencia y enlace del
+artefacto real. El mapa es inmutable tras publicarse y requiere una transición
+autenticada para cualquier ampliación futura.
+
+Esta versión no acredita todavía todo el programa de Programación 2:
+requisitos públicos/privados de encabezados, opciones, lista de objetivos,
+avisos del compilador, cronología de reconstrucciones y prácticas abiertas
+necesitan sus propias comprobaciones. No deducirlas de este grafo.

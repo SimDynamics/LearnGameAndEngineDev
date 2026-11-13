@@ -382,6 +382,20 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             }
         }
     }
+    if(activity.cmake_graph_check) {
+        const auto& graph=*activity.cmake_graph_check;
+        token("cmake-generated-graph-v1");
+        token(graph.project_name);
+        token(std::to_string(graph.targets.size()));
+        for(const auto& target:graph.targets) {
+            token(target.name);token(target.type);
+            token(target.exact_sources?"exact-sources":"required-sources");
+            token(std::to_string(target.sources.size()));
+            for(const auto& path:target.sources)token(path);
+            token(std::to_string(target.links_to.size()));
+            for(const auto& name:target.links_to)token(name);
+        }
+    }
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
         token(item.standard_input); token(item.executable.value_or(""));

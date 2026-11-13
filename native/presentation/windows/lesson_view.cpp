@@ -2175,6 +2175,8 @@ struct LessonView {
         if(vm.project)vm.project->snapshot(request);
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
+        request.cmake_graph_check=block(index).cmake_graph_check;
+        request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
         // alternative is not confirmed compatible with Windows app protection.
         if(block(index).compile_check){

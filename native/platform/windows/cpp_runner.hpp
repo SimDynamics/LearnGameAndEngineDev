@@ -1,6 +1,7 @@
 #pragma once
 #include "core/cpp_project.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/cmake_graph_check.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -104,6 +105,9 @@ struct CppRunRequest {
     // Ordinary CMake builds and private probes do not need to parse the
     // entire generated target graph. Enable only for structure-aware checks.
     bool capture_cmake_graph = false;
+    // The lesson loader supplies this immutable root-authored contract.
+    // It travels with the specific request and cannot be graded from text.
+    std::optional<curriculum::CmakeGraphRequirement> cmake_graph_check;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -135,18 +139,10 @@ struct CppCmakeGraphEvidence {
     std::string project_fingerprint, configuration_fingerprint, project_name;
     std::vector<CppCmakeTargetEvidence> targets;
 };
-// A future curricular author may require generated targets and specific
-// structural relationships. Empty sets mean no requirement in that category;
-// the expected project name is optional. This is not a new lesson JSON field.
-struct CppCmakeRequiredTarget {
-    std::string name, type;
-    std::vector<std::string> sources, links_to;
-    bool exact_sources = false;
-};
-struct CppCmakeGraphRequirement {
-    std::string project_name;
-    std::vector<CppCmakeRequiredTarget> targets;
-};
+// Keep platform API names as aliases while the authored root contract lives
+// in the curriculum core, independent of the Windows runner.
+using CppCmakeRequiredTarget = curriculum::CmakeRequiredTarget;
+using CppCmakeGraphRequirement = curriculum::CmakeGraphRequirement;
 struct CppCmakeGraphVerdict {
     bool correct = false;
     std::string reason;
