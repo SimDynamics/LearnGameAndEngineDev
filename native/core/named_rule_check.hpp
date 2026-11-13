@@ -66,6 +66,27 @@ using Tokens = std::vector<std::string>;
 struct Bounds { std::size_t open, close; };
 struct LocalRule { std::string name; std::size_t end; int value; };
 
+// Independent probes recompile the submitted source under a private main.
+// Compile-time location/build identifiers can reveal that second compilation
+// and make a function behave correctly only for the private driver. Ignore
+// comments and literal text; deny source-level dependence on these markers.
+inline bool probe_environment_neutral(
+        const std::vector<std::string>& tokens) {
+    constexpr std::string_view sensitive[]={
+        "__LINE__","__FILE__","__FILEW__","__BASE_FILE__",
+        "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
+        "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
+        "__FUNCDNAME__","__builtin_LINE","__builtin_FILE",
+        "__builtin_FUNCTION","__builtin_source_location",
+        "source_location"
+    };
+    return std::ranges::none_of(tokens,[](std::string_view token) {
+        if(!token.starts_with("id:"))return false;
+        const auto name=token.substr(3);
+        return std::ranges::find(sensitive,name)!=std::end(sensitive);
+    });
+}
+
 inline bool id(std::string_view token,std::string_view name) {
     return token.starts_with("id:")&&token.substr(3)==name;
 }
@@ -433,6 +454,8 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     if(requirements.empty())return {false,"No hay reglas declaradas."};
     const auto scanned=code_format::cpp_tokens(source);
     if(!scanned)return {false,"El codigo fuente no admite analisis lexico."};
+    if(!probe_environment_neutral(*scanned))
+        return {false,"El codigo depende de la posicion o del entorno de compilacion."};
     // The lexical source gate must not mistake code hidden behind #if 0,
     // macro substitutions, or generated declarations for compiled evidence.
     // A reviewed named-rule exercise only needs ordinary #include directives.
@@ -566,6 +589,9 @@ inline std::optional<std::string> named_rule_single_file_probe_source(
         const NamedRuleExecutionProbe& probe,std::string_view candidate) {
     if(!probe.harness_path.empty()||!probe.header.empty()||
        candidate.empty()||candidate.size()>4*1024*1024)return {};
+    const auto parsed=code_format::cpp_tokens(candidate);
+    if(!parsed||!named_rule_detail::probe_environment_neutral(*parsed))
+        return {};
     const auto checks=named_rule_probe_checks(probe);
     if(!checks)return {};
     return "#define main lgaed_student_original_main\n"+
