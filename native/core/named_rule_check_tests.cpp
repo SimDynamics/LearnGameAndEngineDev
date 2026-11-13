@@ -26,6 +26,20 @@ void capacity() {
             const int plazas_por_caja = 4;
             return (piezas + plazas_por_caja - 1) / plazas_por_caja;
         })cpp",rules,true,"Equivalent capacity name");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int cupo{4};
+            const int ajuste = cupo - 1;
+            const int cajas = (piezas + ajuste) / cupo;
+            return cajas;
+        })cpp",rules,true,"A returned intermediate derived from the local capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int cupo{4};
+            const int ajuste = cupo - 1;
+            const int cajas = (piezas + 3) / 4;
+            return cajas;
+        })cpp",rules,false,"An unused intermediate must not establish the returned calculation");
     verify("int cajas_para(int piezas) {return (piezas + 3) / 4;}",
         rules,false,"Unmodified source");
     verify(R"cpp(
