@@ -570,7 +570,11 @@ struct LessonView {
         else if(vm.answer_editor)identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.answer_editor->document().text);
         else if(block(index).type==BlockType::multiple_choice){
             identity=lgaed::attempts::ExerciseAnswerIdentity::of(vm.response.selected);
-            if(block(index).choice_revision)identity=state::sha256(curriculum::choice_representation_frame(block(index)))+'/'+identity;
+            // A purely editorial revision keeps the old answer and attempt
+            // identity. Only a changed response contract needs a new one.
+            if(block(index).choice_revision&&
+               !block(index).choice_revision->general_option_index)
+                identity=state::sha256(curriculum::choice_representation_frame(block(index)))+'/'+identity;
         }
         else {
             std::vector<std::string> values;
