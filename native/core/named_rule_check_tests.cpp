@@ -601,6 +601,25 @@ int main() {return 0;}
         throw std::runtime_error("A single-file probe accepted injected C++");
     if(named_rule_single_file_probe_source(single,""))
         throw std::runtime_error("A single-file probe accepted an empty source");
+    // A process can fake the fixed witness and call exit(0) before the
+    // remaining comparisons; the authored source gate must reject the
+    // termination even when all named constants are otherwise correct.
+    for(const auto term:{"std::exit(0)","exit /*comment*/ (0)",
+            "std::_Exit(0)","std::quick_exit(0)",
+            "ExitProcess(0)","TerminateProcess(0, 0)",
+            "std::_exit(0)"}) {
+        const auto premature=candidate+
+            "\nvoid early_finish() { "+std::string(term)+"; }\n";
+        if(named_rule_single_file_probe_source(single,premature)||
+           named_rule_detail::probe_source_no_early_exit(premature))
+            throw std::runtime_error("An early process termination spoofed a probe");
+    }
+    const auto harmless=candidate+
+        "\n// std::exit(0) and ExitProcess(0) are comments.\n"
+        "const char* warning = \"exit(0) quick_exit(0)\";\n";
+    if(!named_rule_single_file_probe_source(single,harmless)||
+       !named_rule_detail::probe_source_no_early_exit(harmless))
+        throw std::runtime_error("Harmless exit text blocked a legitimate probe");
     for(const auto marker:{"__LINE__","__FILE__","__COUNTER__",
             "std::source_location::current().line()"}) {
         const auto location_sensitive=candidate+
