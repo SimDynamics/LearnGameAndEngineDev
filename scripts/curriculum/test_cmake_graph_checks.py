@@ -23,22 +23,28 @@ def declaration() -> list[dict]:
     return [{
         "activity": "block_0004_0004",
         "project": "Preparacion",
+        "minimumCmakeVersion": "3.20",
         "targets": [
             {"name": "revisar", "type": "EXECUTABLE",
              "sources": ["main.cpp"], "exactSources": True,
-             "linksTo": ["faltantes"]},
+             "linksTo": ["faltantes"], "explicitCxx20": True,
+             "explicitCxxExtensionsOff": True},
             {"name": "faltantes", "type": "STATIC_LIBRARY",
-             "sources": ["faltantes.cpp"], "exactSources": True},
+             "sources": ["faltantes.cpp"], "exactSources": True,
+             "explicitCxx20": True, "explicitCxxExtensionsOff": True},
         ],
     }, {
         "activity": "block_0008_0003",
         "project": "Pases",
+        "minimumCmakeVersion": "3.20",
         "targets": [
             {"name": "portero", "type": "EXECUTABLE",
              "sources": ["acceso.cpp"], "linksTo": ["regla"],
-             "exactSources": True},
+             "exactSources": True, "explicitCxx20": True,
+             "explicitCxxExtensionsOff": True},
             {"name": "regla", "type": "STATIC_LIBRARY",
-             "sources": ["regla.cpp"], "exactSources": True},
+             "sources": ["regla.cpp"], "exactSources": True,
+             "explicitCxx20": True, "explicitCxxExtensionsOff": True},
         ],
     }]
 
