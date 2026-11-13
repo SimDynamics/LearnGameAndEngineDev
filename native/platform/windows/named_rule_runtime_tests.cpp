@@ -201,6 +201,25 @@ int cajas_para(int piezas) {
 )cpp");
     require(!compiler_runtime_request_allowed(owner,ignored_intermediate),
         "An unused east-const variable supplied a fake second result use");
+    auto zero_group=submitted;
+    change_project(zero_group,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4 + 0 * (capacidad + capacidad);
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,zero_group),
+        "Two zeroed references in a parenthesized expression earned credit");
+    auto valid_with_zero_group=submitted;
+    change_project(valid_with_zero_group,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + capacidad - 1) / capacidad +
+           0 * ((capacidad + capacidad) / 2);
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,valid_with_zero_group),
+        "Harmless zeroed extra expressions must not erase real capacity uses");
     auto unreachable_result=submitted;
     change_project(unreachable_result,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
