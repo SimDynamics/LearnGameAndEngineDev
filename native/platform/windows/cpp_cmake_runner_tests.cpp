@@ -567,6 +567,7 @@ set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
         "Original U2L1 lesson changed its root stateLayout anchor");
     inventory_projected.insert(inventory_at,R"json(  "compilerCmakeGraphChecks": [
       {"activity":"block_0009_0003","project":"InventarioLocal",
+       "minimumCmakeVersion":"3.20",
        "targets":[{"name":"comprobar","type":"EXECUTABLE",
                    "sources":["inventario.cpp"],"exactSources":true}]}
     ],
@@ -685,7 +686,38 @@ set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
             inventory_after,inventory_impostor,impostor_fresh,
             "Proyecto ajeno"),
         "U2L1 accepted matching stdout from the wrong CMake project");
-    std::cout<<"PASS original U2L1 CMake: real source and project name, first-case receipt, historical reopen, wrong project refused\\n";
+    // CMake's generated top-level directory records the minimum actually
+    // declared by the project, not the newer CMake executable in the runner.
+    auto inventory_old_min=inventory;
+    inventory_old_min.request_id=1452;inventory_old_min.revision=452;
+    inventory_old_min.project_key+="/older-minimum";
+    for(auto& file:inventory_old_min.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto original_version="cmake_minimum_required(VERSION 3.20)";
+            const auto at=file.second.find(original_version);
+            check(at!=file.second.npos,"The original inventory minimum moved");
+            file.second.replace(at,std::char_traits<char>::length(original_version),
+                "cmake_minimum_required(VERSION 3.19)");
+        }
+    const auto old_min_run=run_cpp(inventory_old_min);
+    ran(old_min_run);
+    const auto old_min_fresh=capture_cpp_execution(inventory_old_min,old_min_run);
+    check(old_min_run.execution.stdout_bytes=="0:1:1"&&
+        old_min_run.cmake_graph&&
+        old_min_run.cmake_graph->minimum_cmake_version=="3.19"&&
+        evaluate_cpp_output_check(*inventory_after.output_check,old_min_fresh,
+            inventory_old_min.revision).verdict==curriculum::OutputVerdict::correct&&
+        !old_min_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(inventory_saved,inventory_mapped,
+            inventory_after,inventory_old_min,old_min_fresh,
+            "Requisito mínimo alterado"),
+        "U2L1 accepted a different CMake minimum with matching stdout");
+    check(curriculum::cmake_numeric_version("3.20")==
+        curriculum::cmake_numeric_version("3.20.0")&&
+        curriculum::cmake_numeric_version("3.20")!=
+        curriculum::cmake_numeric_version("3.21"),
+        "Equivalent CMake version spelling or ordering changed");
+    std::cout<<"PASS original U2L1 CMake: real source, project, exact minimum, first-case history, wrong project/minimum refused\\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
