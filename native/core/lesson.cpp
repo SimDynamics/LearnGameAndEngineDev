@@ -400,6 +400,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             for(const auto& path:target.sources)token(path);
             token(std::to_string(target.links_to.size()));
             for(const auto& name:target.links_to)token(name);
+            if(target.require_explicit_cxx20)token("authored-cxx20-v1");
+            if(target.require_explicit_extensions_off)
+                token("authored-extensions-off-v1");
         }
     }
     result += std::to_string(activity.output_check->cases.size()) + '[';
