@@ -386,6 +386,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
         token(graph.project_name);
+        // Preserve the original seal for older graph declarations. Only a
+        // newly authored minimum requirement adds a new objective frame.
+        if(!graph.minimum_cmake_version.empty()) {
+            token("minimum-cmake-version-v1");
+            token(graph.minimum_cmake_version);
+        }
         token(std::to_string(graph.targets.size()));
         for(const auto& target:graph.targets) {
             token(target.name);token(target.type);
