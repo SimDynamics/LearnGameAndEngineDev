@@ -33,6 +33,7 @@ def declaration() -> list[dict]:
              "purposeWords": ["capacidad", "plaza", "cupo"], "minUses": 2}]},
         {"activity": "block_0005_0006", "path": "componente/src/cajas.cpp",
          "editablePaths": ["componente/publico/envio/cajas.h", "pruebas/cajas_casos.cpp"],
+         "commentOnlyPaths": ["componente/publico/envio/cajas.h"],
          "executionProbe": {"harness": "pruebas/cajas_casos.cpp", "header": "envio/cajas.h",
                             "cases": [
                                 {"function": "cajas_para", "input": 6, "expected": 1},
@@ -96,6 +97,12 @@ class NamedRuleAuthoringTest(unittest.TestCase):
             lambda v: v["compilerNamedRuleChecks"][1]["executionProbe"].update(
                 cases=[case for case in v["compilerNamedRuleChecks"][1]["executionProbe"]["cases"]
                        if case["function"] != "llega_a_tiempo"]),
+            lambda v: v["compilerNamedRuleChecks"][1].update(
+                commentOnlyPaths=["pruebas/cajas_casos.cpp"]),
+            lambda v: v["compilerNamedRuleChecks"][1].update(
+                commentOnlyPaths=["no_existe.h"]),
+            lambda v: v["compilerNamedRuleChecks"][2].update(
+                commentOnlyPaths=["componente/publico/envio/cajas.h"]),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(value=True),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(minUses=0),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(
