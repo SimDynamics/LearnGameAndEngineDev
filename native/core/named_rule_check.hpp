@@ -407,7 +407,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             i=last;
         }
     }
-    return conditional_uses;
+    // A conditional-only return does not prove that every input path uses the rule.
+    return 0;
 }
 } // namespace named_rule_detail
 
