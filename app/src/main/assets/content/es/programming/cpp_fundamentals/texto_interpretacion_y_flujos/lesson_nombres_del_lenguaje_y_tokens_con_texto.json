@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para reconocer nombres necesitamos fijar qué caracteres pueden iniciarlos y cuáles pueden aparecer después. También debemos distinguir una palabra reservada, que tiene una función especial en el lenguaje, de los nombres elegidos por quien escribe la entrada (Stroustrup, 2024, sección 6.8.2).\n\nEn nuestro lenguaje, un nombre comienza por una letra ASCII A..Z o a..z. Después admite letras, dígitos y el guion bajo _. Tiene de uno a doce caracteres; cuentan todos, incluidos los dígitos y el guion bajo. Las mayúsculas y minúsculas se distinguen. Reservamos la palabra exacta `crea`; `crea2` y `Crea` son nombres. Estas reglas y el límite de doce caracteres pertenecen al lenguaje que diseñamos."
+          "text": "Para reconocer nombres necesitamos fijar qué caracteres pueden iniciarlos y cuáles pueden aparecer después. También debemos distinguir una palabra reservada, que tiene una función especial en el lenguaje, de los nombres elegidos por quien escribe la entrada (Stroustrup, 2024).\n\nEstas son las reglas del lenguaje que diseñamos:\nPrimer carácter: una letra ASCII de A..Z o a..z.\nCaracteres posteriores: letras, dígitos y el guion bajo `_`.\nLongitud: de uno a doce caracteres, contando también los dígitos y el guion bajo.\nMayúsculas y minúsculas: se distinguen.\nPalabra reservada: la coincidencia exacta `crea`; `crea2` y `Crea` son nombres.\n\nPor ejemplo, `Turno_4` comienza por una letra y continúa con caracteres permitidos. En cambio, `_Turno` incumple la regla del primer carácter. Estas reglas no describen todos los nombres posibles de C++; pertenecen a nuestro lenguaje."
         },
         {
           "type": "multiple_choice",
@@ -53,7 +53,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ampliamos `Token` con el campo `texto`, de tipo `std::string`, para conservar un nombre completo. El campo `clase` sigue indicando cómo interpretar los datos del token: un token numérico utiliza `valor`; uno de nombre utiliza `texto`. Esta ampliación permite representar categorías con datos diferentes (Stroustrup, 2024, sección 6.8.2).\n\nEn los tokens que construimos aquí, un número como `8` se representa mediante `Token{numero, 8, \"\"}`. Un nombre como `Turno_4` se representa mediante `Token{nombre, 0, \"Turno_4\"}`. Ese cero deja sin información el campo numérico del token de nombre: no asigna cero a una variable del lenguaje interpretado.\n\nUn signo, la palabra `crea` y el final del texto utilizan `valor` igual a cero y `texto` vacío, porque su categoría basta para identificarlos. Todas las formas de construcción mostradas proporcionan los tres campos. Al devolver un token al lector, `token_valido` comprueba que sus datos respetan estas reglas.",
+          "text": "Ampliamos `Token` con el campo `texto`, de tipo `std::string`, para conservar un nombre completo. El campo `clase` indica qué clase de token tenemos y cómo interpretar sus otros datos (Stroustrup, 2024).\n\nToken numérico: utiliza `valor` para guardar el número y deja `texto` vacío.\nToken de nombre: utiliza `texto` para guardar el nombre y deja `valor` igual a cero.\nToken de signo, palabra `crea` o final del texto: su categoría basta para identificarlo; mantiene `valor` igual a cero y `texto` vacío.\n\nPor ejemplo, el número de entrada `8` se representa mediante `Token{numero, 8, \"\"}`. El nombre de entrada `Turno_4` se representa mediante `Token{nombre, 0, \"Turno_4\"}`. Ese cero deja sin información el campo numérico del token de nombre: no asigna cero a una variable del lenguaje interpretado.\n\nTodas las formas de construcción mostradas proporcionan los tres campos. Al devolver un token al lector, `token_valido` comprueba que sus datos respetan estas reglas.",
           "emphasis": [
             {
               "text": "no asigna cero a una variable",
@@ -72,7 +72,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las constantes `numero`, `nombre`, `declaracion` y `final_texto` dan nombres a las categorías internas. Sus valores `char` son, respectivamente, `'n'`, `'v'`, `'d'` y `'f'`. Por ejemplo, un token puede tener `clase` igual a `nombre` y `texto` igual a `\"f\"`: la categoría y el texto reconocido cumplen funciones distintas.\n\nPor eso, leer la entrada `\"f\"` entrega un token de `nombre`. Sólo agotar el flujo produce la categoría `final_texto`. Leer el carácter `'n'` tampoco produce un token numérico; un número se reconoce a partir de los dígitos de la entrada.\n\nEl `main` del ejemplo construye el token de `nombre` `dato` y muestra `dato.texto`. El resultado es `Turno_4`. Todavía no hay una tabla que asocie ese `nombre` con un valor."
+          "text": "Las constantes `numero`, `nombre`, `declaracion` y `final_texto` dan nombres a las categorías internas. Sus valores `char` son, respectivamente, `'n'`, `'v'`, `'d'` y `'f'`. Por ejemplo, un token puede tener `clase` igual a `nombre` y `texto` igual a `\"f\"`: la categoría y el texto reconocido cumplen funciones distintas.\n\nPor eso, leer la entrada `\"f\"` entrega un token de `nombre`. Sólo agotar el flujo produce la categoría `final_texto`. Leer el carácter `'n'` tampoco produce un token numérico; un número se reconoce a partir de los dígitos de la entrada.\n\nEl `main` del ejemplo construye el token de `nombre` `dato` y muestra `dato.texto`. El resultado es `Turno_4`. Todavía no hay una tabla que asocie ese nombre con un valor."
         },
         {
           "type": "inline_fill_code",
@@ -97,11 +97,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La extracción habitual de una cadena con `>>`, como `entrada >> palabra`, lee hasta encontrar un separador en blanco. No distingue los signos de nuestro lenguaje: `saldo+2;` se leería como una sola palabra. El lexer debe reunir únicamente los caracteres permitidos en el nombre y detenerse ante su delimitador (Stroustrup, 2024, sección 6.8.2).\n\nSi `get` lee con éxito el carácter `+` después de `saldo`, ese carácter no pertenece al nombre. `putback` lo conserva para que la próxima llamada al lexer pueda reconocer el signo. Si `get` falla porque se agotó el flujo justo al terminar la palabra, no hay un carácter nuevo que devolver: se entrega el token correspondiente a la palabra ya reconocida. Para `saldo` será de nombre; para `crea` será de declaración. La siguiente lectura reconocerá el final del texto."
+          "text": "La extracción habitual de una cadena con `>>`, como `entrada >> palabra`, lee hasta encontrar un separador en blanco. No distingue los signos de nuestro lenguaje: `saldo+2;` se leería como una sola palabra. El lexer debe reunir únicamente los caracteres permitidos en el nombre y detenerse ante su delimitador (Stroustrup, 2024).\n\nSi `get` lee con éxito el carácter `+` después de `saldo`, ese carácter no pertenece al nombre. `putback` lo conserva para que la próxima llamada al lexer pueda reconocer el signo. Si `get` falla porque se agotó el flujo justo al terminar la palabra, no hay un carácter nuevo que devolver: se entrega el token correspondiente a la palabra ya reconocida. Para `saldo` será de nombre; para `crea` será de declaración. La siguiente lectura reconocerá el final del texto."
         },
         {
           "type": "paragraph",
-          "text": "Así, `saldo+2;` entrega un token de nombre con texto `\"saldo\"`, el signo `+`, el número `2`, el signo `;` y el final. La palabra reservada se compara después de reunir el nombre completo: `crea2` no se divide en `crea` seguido de `2`.\n\nUn nombre de más de doce caracteres se rechaza, tanto si el carácter adicional es una letra como si es un dígito o un guion bajo. En las inspecciones de esta lección, un rechazo termina ese caso. La batería continúa con otro texto y un lector nuevo; no ejecuta automáticamente el descarte de una operación del intérprete anterior."
+          "text": "Para la entrada `saldo+2;`, el lector entrega estos tokens, en orden:\n\nUn nombre cuyo texto es `\"saldo\"`.\nEl signo `+`.\nUn número cuyo valor es 2.\nEl signo `;`.\nEl final del texto.\n\nLa palabra reservada se compara después de reunir el nombre completo: `crea2` no se divide en `crea` seguido de `2`.\n\nUn nombre de más de doce caracteres se rechaza, tanto si el carácter adicional es una letra como si es un dígito o un guion bajo. En las inspecciones de esta lección, un rechazo termina ese caso. La batería continúa con otro texto y un lector nuevo; no ejecuta automáticamente el descarte de una operación del intérprete anterior."
         },
         {
           "type": "multiple_choice",
@@ -135,7 +135,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea saldo=8;saldo+2;\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n            else std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n\n    for (char c : texto) {\n        if (!sigue_nombre(c))\n            return false;\n    }\n\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\")\n        return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n')\n            continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99)\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12)\n                        throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof())\n        throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120)\n            throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_)\n            throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token))\n            throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad())\n            throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';')\n                return true;\n            if (pendiente.clase == final_texto)\n                return false;\n        }\n        entrada_.clear();\n\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';')\n                return true;\n        }\n        if (entrada_.bad() || !entrada_.eof())\n            throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea saldo=8;saldo+2;\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero)\n                std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre)\n                std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion)\n                std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) {\n                std::cout << \"Fin\\n\";\n                break;\n            }\n            else\n                std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -153,7 +153,7 @@
           "type": "output_prediction",
           "question": "Predice las líneas del inspector para una palabra semejante a la reservada y un nombre con guion bajo.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea2=7;A_3\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n            else std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n\n    for (char c : texto) {\n        if (!sigue_nombre(c))\n            return false;\n    }\n\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\")\n        return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n')\n            continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99)\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12)\n                        throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof())\n        throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120)\n            throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_)\n            throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token))\n            throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad())\n            throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';')\n                return true;\n            if (pendiente.clase == final_texto)\n                return false;\n        }\n        entrada_.clear();\n\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';')\n                return true;\n        }\n        if (entrada_.bad() || !entrada_.eof())\n            throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea2=7;A_3\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero)\n                std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre)\n                std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion)\n                std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) {\n                std::cout << \"Fin\\n\";\n                break;\n            }\n            else\n                std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n",
           "answers": [
             "Nombre: crea2\nSigno: =\nNumero: 7\nSigno: ;\nNombre: A_3\nFin"
           ],
@@ -183,7 +183,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en el editor de esta página el cliente de la inspección, utilizando el lexer, `Token` y `Lector_tokens` del programa trabajado. Recupera sus definiciones y adapta `main` para recorrer la batería solicitada. Es una integración guiada de esos componentes; tendrás que decidir qué operaciones del lector necesita el cliente.\n\nPara `\"Pasillo_2*4;\"`, lee el primer nombre, devuélvelo al lector, recupéralo y continúa con el resto. La reserva debe conservar su categoría, valor auxiliar y texto completo. Muestra estas cinco líneas:\n\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\n\nTras esa traza inicial, inspecciona por completo estos ocho textos, en este orden y con un lector nuevo por caso:\n1. `\"n;\"`\n2. `\"Crea;\"`\n3. `\"crea;\"`\n4. `\"A1_B;\"`\n5. `\"abcdefghijkl;\"`\n6. `\"abcdefghijklm;\"`\n7. `\"_A;\"`\n8. `\"solo\"`\n\nEn esas ocho inspecciones usa Nombre: texto, Palabra: crea, Numero: N, Signo: C y Fin. Ante un rechazo, captura la excepción y muestra Error: seguido de un espacio y Nombre demasiado largo o Caracter no admitido, según corresponda. La primera traza conserva su etiqueta Reservado: Pasillo_2.\n\n`main` antepone Caso N en una línea a cada una de las nueve pruebas, numeradas desde 1. Todas las líneas terminan con salto y no hay líneas vacías adicionales. Usa Compilar, ejecutar y comprobar con la batería completa y la misma implementación.",
+          "text": "Construye en el editor de esta página el cliente de la inspección, utilizando el lexer, `Token` y `Lector_tokens` del programa trabajado. Recupera sus definiciones y adapta `main` para recorrer la batería solicitada. Es una integración guiada de esos componentes; tendrás que decidir qué operaciones del lector necesita el cliente.\n\nPara `\"Pasillo_2*4;\"`, lee el primer nombre, devuélvelo al lector, recupéralo y continúa con el resto. La reserva debe conservar su categoría, valor auxiliar y texto completo. Muestra estas cinco líneas:\n\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\n\nTras esa traza inicial, inspecciona por completo estos ocho textos, en este orden y con un lector nuevo por caso:\nCaso 2: `\"n;\"`\nCaso 3: `\"Crea;\"`\nCaso 4: `\"crea;\"`\nCaso 5: `\"A1_B;\"`\nCaso 6: `\"abcdefghijkl;\"`\nCaso 7: `\"abcdefghijklm;\"`\nCaso 8: `\"_A;\"`\nCaso 9: `\"solo\"`\n\nEn esas ocho inspecciones usa Nombre: texto, Palabra: crea, Numero: N, Signo: C y Fin. Ante un rechazo, captura la excepción y muestra Error: seguido de un espacio y Nombre demasiado largo o Caracter no admitido, según corresponda. La primera traza conserva su etiqueta Reservado: Pasillo_2.\n\n`main` antepone Caso N en una línea a cada una de las nueve pruebas, numeradas desde 1. Todas las líneas terminan con salto y no hay líneas vacías adicionales. Usa Compilar, ejecutar y comprobar con la batería completa y la misma implementación.",
           "emphasis": [
             {
               "text": "cliente de la inspección",
@@ -214,7 +214,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de la construcción: conservar los tres datos del token al reservarlo, reconocer la palabra reservada sólo por coincidencia completa, conservar los delimitadores y comprobar la longitud del nombre. No se hace `putback` de un carácter tras una lectura fallida.\n\nUna reserva llena debe rechazar otra devolución sin perder el token que conservaba. Las nueve trazas del botón comprueban los resultados solicitados; no prueban por sí solas todas las combinaciones de categoría, datos y estado de la reserva. La recuperación posterior contrasta también una devolución fallida con los tokens nuevos."
+          "text": "Conserva estos criterios al construir el cliente:\n\nReservar un token conserva sus tres datos.\nReconocer la palabra reservada exige que coincida el nombre completo.\nUn delimitador leído correctamente se conserva para la lectura siguiente; una lectura fallida no proporciona otro carácter al que aplicar `putback`.\nLos nombres respetan tanto la regla del primer carácter como la de continuación y la longitud máxima.\n\nSi la reserva ya está llena, otra devolución se rechaza sin perder el token guardado. Las nueve trazas del botón comprueban los resultados solicitados, pero no todas las combinaciones de categoría, datos y estado de la reserva. La actividad posterior contrasta también una devolución fallida con los tokens nuevos."
         },
         {
           "type": "cpp_compiler",
@@ -236,7 +236,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Integra tus definiciones de Token, el lexer, Lector_tokens, presentar e inspeccionar antes de examinar_devolucion en este editor. Conserva la interfaz y el cliente proporcionado: vuelve a ejecutar las nueve pruebas anteriores y añade cinco contrastes. Si utilizaste otros nombres para las funciones de inspección, adapta sus llamadas manteniendo datos e informes.\n\nEl caso 10 inspecciona crea sin otro carácter posterior. Los casos 11 a 14 intentan reservar los tokens Token{nombre, 0, \"Crea\"}, Token{nombre, 5, \"Caja\"}, Token{nombre, 0, \"crea\"} y Token{'+', 0, \"x\"}, respectivamente. Cada intento utiliza un lector nuevo con la secuencia 8; y después del intento se leen dos tokens para presentar sus tres campos.\n\nAplica el contrato de cada categoría: un nombre necesita texto válido y campo numérico cero; un signo necesita valor cero y texto vacío. Un rechazo no ocupa la reserva ni consume el texto. La palabra reservada debe clasificarse igual cuando termina ante un delimitador y cuando termina al agotarse el origen.\n\nPulsa «Compilar, ejecutar y comprobar» con la misma implementación y el cliente completo. Conserva los dos puntos entre categoría, valor y texto; cuando el texto está vacío, la línea acaba en ese último separador. Todas las líneas terminan con salto.",
+          "text": "Integra tus definiciones de Token, el lexer, Lector_tokens, presentar e inspeccionar antes de examinar_devolucion en este editor. Conserva la interfaz y el cliente proporcionado: vuelve a ejecutar las nueve pruebas anteriores y añade cinco contrastes. Si utilizaste otros nombres para las funciones de inspección, adapta sus llamadas manteniendo datos e informes.\n\nLos cinco contrastes añadidos son:\n\nCaso 10: inspeccionar crea sin otro carácter posterior.\nCaso 11: intentar reservar Token{nombre, 0, \"Crea\"}.\nCaso 12: intentar reservar Token{nombre, 5, \"Caja\"}.\nCaso 13: intentar reservar Token{nombre, 0, \"crea\"}.\nCaso 14: intentar reservar Token{'+', 0, \"x\"}.\n\nCada intento de reserva utiliza un lector nuevo con la secuencia 8;. Después se leen dos tokens para presentar sus tres campos.\n\nAplica el contrato de cada categoría: un nombre necesita texto válido y campo numérico cero; un signo necesita valor cero y texto vacío. Un rechazo no ocupa la reserva ni consume el texto. La palabra reservada debe clasificarse igual cuando termina ante un delimitador y cuando termina al agotarse el origen.\n\nPulsa «Compilar, ejecutar y comprobar» con la misma implementación y el cliente completo. Conserva los dos puntos entre categoría, valor y texto; cuando el texto está vacío, la línea acaba en ese último separador. Todas las líneas terminan con salto.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -250,7 +250,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin repetir main.\n\nvoid examinar_devolucion(const Token& candidato) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(candidato);\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n    const Token leido = lector.leer();\n    std::cout << \"Leido: \" << leido.clase << ':' << leido.valor\n              << ':' << leido.texto << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.clase << ':' << siguiente.valor\n              << ':' << siguiente.texto << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto) break;\n    }\n    const std::vector<std::string> pruebas{\"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\", \"_A;\", \"solo\"};\n    int caso = 2;\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    std::cout << \"Caso 10\\n\";\n    inspeccionar(\"crea\");\n    std::cout << \"Caso 11\\n\";\n    examinar_devolucion(Token{nombre, 0, \"Crea\"});\n    std::cout << \"Caso 12\\n\";\n    examinar_devolucion(Token{nombre, 5, \"Caja\"});\n    std::cout << \"Caso 13\\n\";\n    examinar_devolucion(Token{nombre, 0, \"crea\"});\n    std::cout << \"Caso 14\\n\";\n    examinar_devolucion(Token{'+', 0, \"x\"});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin repetir main.\n\nvoid examinar_devolucion(const Token& candidato) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(candidato);\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n\n    const Token leido = lector.leer();\n    std::cout << \"Leido: \" << leido.clase << ':' << leido.valor\n              << ':' << leido.texto << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.clase << ':' << siguiente.valor\n              << ':' << siguiente.texto << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto)\n            break;\n    }\n    const std::vector<std::string> pruebas{\n        \"n;\",\n        \"Crea;\",\n        \"crea;\",\n        \"A1_B;\",\n        \"abcdefghijkl;\",\n        \"abcdefghijklm;\",\n        \"_A;\",\n        \"solo\"\n    };\n    int caso = 2;\n\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    std::cout << \"Caso 10\\n\";\n    inspeccionar(\"crea\");\n    std::cout << \"Caso 11\\n\";\n    examinar_devolucion(Token{nombre, 0, \"Crea\"});\n    std::cout << \"Caso 12\\n\";\n    examinar_devolucion(Token{nombre, 5, \"Caja\"});\n    std::cout << \"Caso 13\\n\";\n    examinar_devolucion(Token{nombre, 0, \"crea\"});\n    std::cout << \"Caso 14\\n\";\n    examinar_devolucion(Token{'+', 0, \"x\"});\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -304,7 +304,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__reserva_textual_y_rechazos_conservados",
           "question": "Este `main` utiliza las constantes `numero` y `nombre`, `Token` y `Lector_tokens` del programa trabajado «Inspección trabajada antes de interpretar», con sus definiciones intactas. Aquí se muestra sólo el cliente. En `lector.leer().clase` se obtiene un token y se consulta su categoría. Predice las cinco líneas de salida, en orden, conservando los dos puntos que separan los campos y sin añadir comillas.",
           "language": "cpp",
-          "code": "int main() {\n    Lector_tokens lector{\"f;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    try {\n        lector.devolver(Token{numero, 7, \"x\"});\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Lleno: \" << error.what() << \"\\n\";\n    }\n    const Token recuperado = lector.leer();\n    std::cout << \"Guardado: \" << recuperado.clase << \":\"\n              << recuperado.valor << \":\" << recuperado.texto << \"\\n\";\n    std::cout << \"Siguiente: \" << lector.leer().clase << \"\\n\";\n\n    Lector_tokens otro{\"8;\"};\n    try {\n        otro.devolver(Token{numero, 7, \"x\"});\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Vacio: \" << error.what() << \"\\n\";\n    }\n    const Token siguiente = otro.leer();\n    std::cout << \"Entrada: \" << siguiente.clase << \":\"\n              << siguiente.valor << \"\\n\";\n    return 0;\n}\n",
+          "code": "int main() {\n    Lector_tokens lector{\"f;\"};\n    const Token primero = lector.leer();\n\n    lector.devolver(primero);\n    try {\n        lector.devolver(Token{numero, 7, \"x\"});\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Lleno: \" << error.what() << \"\\n\";\n    }\n    const Token recuperado = lector.leer();\n    std::cout << \"Guardado: \" << recuperado.clase << \":\"\n              << recuperado.valor << \":\" << recuperado.texto << \"\\n\";\n    std::cout << \"Siguiente: \" << lector.leer().clase << \"\\n\";\n\n    Lector_tokens otro{\"8;\"};\n    try {\n        otro.devolver(Token{numero, 7, \"x\"});\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Vacio: \" << error.what() << \"\\n\";\n    }\n    const Token siguiente = otro.leer();\n    std::cout << \"Entrada: \" << siguiente.clase << \":\"\n              << siguiente.valor << \"\\n\";\n    return 0;\n}\n",
           "answers": [
             "Lleno: Buffer ocupado\nGuardado: v:0:f\nSiguiente: ;\nVacio: Token invalido\nEntrada: n:8"
           ],
@@ -314,7 +314,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    Lector_tokens lector{\"Patio_6+3;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token t = lector.leer();\n        if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n        if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n        else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n        else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n        else std::cout << \"Signo: \" << t.clase << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n\n    for (char c : texto) {\n        if (!sigue_nombre(c))\n            return false;\n    }\n\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\")\n        return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n')\n            continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99)\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12)\n                        throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof())\n        throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120)\n            throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_)\n            throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token))\n            throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad())\n            throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';')\n                return true;\n            if (pendiente.clase == final_texto)\n                return false;\n        }\n        entrada_.clear();\n\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';')\n                return true;\n        }\n        if (entrada_.bad() || !entrada_.eof())\n            throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    Lector_tokens lector{\"Patio_6+3;\"};\n    const Token primero = lector.leer();\n\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token t = lector.leer();\n        if (t.clase == final_texto) {\n            std::cout << \"Fin\\n\";\n            break;\n        }\n        if (t.clase == numero)\n            std::cout << \"Numero: \" << t.valor << \"\\n\";\n        else if (t.clase == nombre)\n            std::cout << \"Nombre: \" << t.texto << \"\\n\";\n        else if (t.clase == declaracion)\n            std::cout << \"Palabra: crea\\n\";\n        else\n            std::cout << \"Signo: \" << t.clase << \"\\n\";\n    }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -322,7 +322,7 @@
         },
         {
           "type": "note",
-          "text": "Reconocer nombres requiere precisar qué caracteres pueden iniciarlos y cuáles pueden continuarlos. Un token de nombre necesita conservar el texto reconocido, además de su categoría; una palabra reservada se distingue comparando el nombre completo (Stroustrup, 2024, sección 6.8.2). Por eso `crea2` no se divide en la palabra `crea` y un número. Las reglas ASCII y el límite de longitud de este lenguaje determinan qué texto acepta el lector."
+          "text": "Reconocer nombres requiere precisar qué caracteres pueden iniciarlos y cuáles pueden continuarlos. Un token de nombre necesita conservar el texto reconocido, además de su categoría; una palabra reservada se distingue comparando el nombre completo (Stroustrup, 2024). Por eso `crea2` no se divide en la palabra `crea` y un número. Las reglas ASCII y el límite de longitud de este lenguaje determinan qué texto acepta el lector."
         }
       ]
     },
@@ -335,7 +335,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nvoid presentar(const Token& token) {\n    if (token.clase == final_texto) std::cout << \"Fin\\n\";\n    else if (token.clase == numero) std::cout << \"Numero: \" << token.valor << \"\\n\";\n    else if (token.clase == nombre) std::cout << \"Nombre: \" << token.texto << \"\\n\";\n    else if (token.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n    else std::cout << \"Signo: \" << token.clase << \"\\n\";\n}\n\nvoid inspeccionar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        while (true) {\n            const Token token = lector.leer();\n            presentar(token);\n            if (token.clase == final_texto) break;\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto) break;\n    }\n    const std::vector<std::string> pruebas{\"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\", \"_A;\", \"solo\"};\n    int caso = 2;\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n\n    for (char c : texto) {\n        if (!sigue_nombre(c))\n            return false;\n    }\n\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\")\n        return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n')\n            continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99)\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12)\n                        throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada)\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof())\n                throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof())\n        throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120)\n            throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_)\n            throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token))\n            throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad())\n            throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';')\n                return true;\n            if (pendiente.clase == final_texto)\n                return false;\n        }\n        entrada_.clear();\n\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';')\n                return true;\n        }\n        if (entrada_.bad() || !entrada_.eof())\n            throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nvoid presentar(const Token& token) {\n    if (token.clase == final_texto)\n        std::cout << \"Fin\\n\";\n    else if (token.clase == numero)\n        std::cout << \"Numero: \" << token.valor << \"\\n\";\n    else if (token.clase == nombre)\n        std::cout << \"Nombre: \" << token.texto << \"\\n\";\n    else if (token.clase == declaracion)\n        std::cout << \"Palabra: crea\\n\";\n    else\n        std::cout << \"Signo: \" << token.clase << \"\\n\";\n}\n\nvoid inspeccionar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        while (true) {\n            const Token token = lector.leer();\n            presentar(token);\n            if (token.clase == final_texto)\n                break;\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto)\n            break;\n    }\n    const std::vector<std::string> pruebas{\n        \"n;\",\n        \"Crea;\",\n        \"crea;\",\n        \"A1_B;\",\n        \"abcdefghijkl;\",\n        \"abcdefghijklm;\",\n        \"_A;\",\n        \"solo\"\n    };\n    int caso = 2;\n\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -1355,6 +1355,193 @@
         "id": "block_0005_0002",
         "beforeSha256": "229f9357276a99984de2505a3caffdaad48dbc9afb69f3b347f52a2b4f6eb26b",
         "afterSha256": "5cf69ed1dc235e21edb0a53534ebcb1a1e1c7d44d9a48e5071327f89e00f1c1b"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "024f853805304fbb52aca45438f19b0e3fcbd94ad379547b40a3dfc7a24dc196",
+        "afterSha256": "6196148a5037f9f22e79e56d60294098bf99124607f05229816020f74df23467"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "46f8924c9fd1478f39c9a0e50240de4abd2aea0f5aa942386d0fdf5cad85676d",
+        "afterSha256": "7f3773b814386fab567285300edaaa1d9645872bf81fc5ed9a750324a4cdbe51"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "f8f69a18a80d8783b2193e5caad71fea5fc86ef226cd6ca105bb1f3afd15c799",
+        "afterSha256": "7e2be6629e708e8f16df3f5ba83c0bf4af1faed6bee17aca7b10529672c88b12"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "08382f34927a5e25c69c024b85f5d73e88fdf5b8efe5810a9d25a9ab987dc1bd",
+        "afterSha256": "95163115d7a00eb62654fc3835ae90e12ce53d8526b0bb95aaca85ab9404bc37"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "195d35fe7565f20c5e9d7c9918f6eb02a3a0763c07e0ea0ccca6bbf5baf922a1",
+        "afterSha256": "9f8a4b21ed1cb47d08ca0d1575c03f2ae1610aec939df307152486323bf29e49"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "00d9a6b4dd4daf9a9d1509c2d2951f6e3b3d569968f19fc4dab960363e07a20b",
+        "afterSha256": "5affbed5b16a9705ed170db7283086498c07d843bd4d4d0b970accecc0c37a03"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_consigna",
+        "beforeSha256": "9a896ee5b92ee650ab62798171138160f5139de27edf822c24bc038e8df7edb8",
+        "afterSha256": "dfa61aee87a9ce18482e0a4ba10dec2c77f3a97102ddfcd6203b4d9ec050b3a4"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "ad8b86b27e9f5055a941ea34c488975fad987afe8e3943f255839397e0f047ce",
+        "afterSha256": "fdac328959b7ce7368c5466876e9b9f6617ec56ec2e8115a19499bce75b54edd"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "6196148a5037f9f22e79e56d60294098bf99124607f05229816020f74df23467",
+        "afterSha256": "285bf020f4087d94f81760d5b15969870c10ff295ae63eab32cc7b8470ad43aa"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "e10c60e63b74db987ee396d3be9f2cec828751f36fad6a14835cd06821c92720",
+        "afterSha256": "70e9da838afdb66c48c16c9ff2a36464bcf2e906e7b08912daf20630f4889804"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "517c1c7c78dafa882171cc4076b6d0f657ac310bcdc294c7ea7ff0ed3d8d025a",
+        "afterSha256": "2144028d3d3e35067be668bb3202fd0ef271f4ed76e83bfe153c6e7c6c82836f"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "beforeSha256": "67c7f27278fe964dedec7e5f7c52e8625ad412734a9bf5777bd02675d936ba34",
+        "afterSha256": "26cf5b9cd1d021e7f848d5746077d32ab264c479392cd4c9f63db1d4544d25d7"
+      },
+      {
+        "id": "work_u11l17_reserva_textual",
+        "beforeSha256": "cd0b31928b4a692c710281757d4164bd40bba73275a102aa84bed9b70a0180b0",
+        "afterSha256": "88f8289f12931d7f8cc52984b3e28303c0a10ceee441e36dac34d90e51e4654c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "9d4f20996d56d874ec5ba02f64a972afa9f5955c0fc5f6d2cf70da5bcfe8833a",
+        "afterSha256": "6d7ccdb1cbd2f70b16785084124a7a7d767ccd591999d637a0f1ac29ad874127"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "23e991b5896d58049fd23ea3f63d3dfbc7e507f8289b81fe31757ca1d0471048",
+        "afterSha256": "89cc3e998686d4b58e1907fec45da29b7b2a6485c9bb69f53ccd783cff03bc6d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "285bf020f4087d94f81760d5b15969870c10ff295ae63eab32cc7b8470ad43aa",
+        "afterSha256": "e31b6c9535fcb8a34e9973b336c135458f7d3c5be1733d5d3d3f46e8efa9ca13"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "4c6df150ae0db6936fbf4ad03b24480b9397cbbc6784c132e775ae647852e8c5",
+        "afterSha256": "f4fd38dab453198089fc992ac330dc51709afc831ec7a64496b76e95af878c9a"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea saldo=8;saldo+2;\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n            else std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice las líneas del inspector para una palabra semejante a la reservada y un nombre con guion bajo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea2=7;A_3\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n            else std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Nombre: crea2\nSigno: =\nNumero: 7\nSigno: ;\nNombre: A_3\nFin"
+          ],
+          "explanation": "El lexer reúne crea2 antes de comparar la palabra completa con crea. Como el dígito forma parte del nombre, presenta Nombre: crea2 y conserva = para la lectura siguiente. Después reconoce ese signo, el número 7 y el terminador ;, en ese orden.\n\nLa última palabra es A_3: empieza por una letra y continúa con un guion bajo y un dígito admitidos. El final del origen termina su reconocimiento, por lo que aparecen Nombre: A_3 y Fin. No se añade otro ; que no estaba escrito.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e04",
+          "reviewFeedback": "Reúne cada nombre completo antes de comparar con la palabra reservada. Sigue después cada signo y distingue el final de la palabra del terminador de una operación."
+        }
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin repetir main.\n\nvoid examinar_devolucion(const Token& candidato) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(candidato);\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n    const Token leido = lector.leer();\n    std::cout << \"Leido: \" << leido.clase << ':' << leido.valor\n              << ':' << leido.texto << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.clase << ':' << siguiente.valor\n              << ':' << siguiente.texto << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto) break;\n    }\n    const std::vector<std::string> pruebas{\"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\", \"_A;\", \"solo\"};\n    int caso = 2;\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    std::cout << \"Caso 10\\n\";\n    inspeccionar(\"crea\");\n    std::cout << \"Caso 11\\n\";\n    examinar_devolucion(Token{nombre, 0, \"Crea\"});\n    std::cout << \"Caso 12\\n\";\n    examinar_devolucion(Token{nombre, 5, \"Caja\"});\n    std::cout << \"Caso 13\\n\";\n    examinar_devolucion(Token{nombre, 0, \"crea\"});\n    std::cout << \"Caso 14\\n\";\n    examinar_devolucion(Token{'+', 0, \"x\"});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El caso 10 reconoce la palabra completa crea como declaración antes de entregar el final. Crea es un nombre válido y puede reservarse con valor auxiliar cero. Los otros tres tokens incumplen respectivamente el campo numérico del nombre, la exclusión de la palabra reservada y el texto vacío del signo. Al rechazarlos, las dos lecturas siguen obteniendo el número 8 y su terminador original.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nNombre: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                    ],
+                    "text": "La inspección del caso 10 muestra Nombre: crea en lugar de la categoría de declaración. Revisa la rama en que acaba el origen después de reunir la palabra: también debe comparar el texto completo con la palabra reservada. El caso anterior crea; sólo recorría la rama que encontraba un delimitador."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: aceptada\nLeido: v:5:Caja\nSiguiente: n:8:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                    ],
+                    "text": "El caso 12 admite un token de nombre cuyo campo numérico vale 5. Ese campo debe ser cero en esta categoría, aunque Caja sea un nombre válido. Comprueba ambas condiciones antes de guardar; el rechazo debe dejar las lecturas sobre 8; intactas."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: aceptada\nLeido: v:0:crea\nSiguiente: n:8:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                    ],
+                    "text": "El caso 13 admite crea como texto de un token de nombre. Esa palabra está reservada por coincidencia exacta y tiene una categoría propia. Revisa también la validación de un token que se devuelve directamente: que el lexer clasifique bien la palabra no basta para validar otro token construido por el cliente."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: aceptada\nLeido: +:0:x\nSiguiente: n:8:\n"
+                    ],
+                    "text": "El caso 14 admite un signo con texto x, aunque el contrato exige que ese campo esté vacío. El valor numérico cero y la categoría de signo no comprueban el campo textual. Rechaza el token antes de modificar la reserva."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "work_u11l17_reserva_textual",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__reserva_textual_y_rechazos_conservados",
+          "question": "Este `main` utiliza las constantes `numero` y `nombre`, `Token` y `Lector_tokens` del programa trabajado «Inspección trabajada antes de interpretar», con sus definiciones intactas. Aquí se muestra sólo el cliente. En `lector.leer().clase` se obtiene un token y se consulta su categoría. Predice las cinco líneas de salida, en orden, conservando los dos puntos que separan los campos y sin añadir comillas.",
+          "language": "cpp",
+          "code": "int main() {\n    Lector_tokens lector{\"f;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    try {\n        lector.devolver(Token{numero, 7, \"x\"});\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Lleno: \" << error.what() << \"\\n\";\n    }\n    const Token recuperado = lector.leer();\n    std::cout << \"Guardado: \" << recuperado.clase << \":\"\n              << recuperado.valor << \":\" << recuperado.texto << \"\\n\";\n    std::cout << \"Siguiente: \" << lector.leer().clase << \"\\n\";\n\n    Lector_tokens otro{\"8;\"};\n    try {\n        otro.devolver(Token{numero, 7, \"x\"});\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Vacio: \" << error.what() << \"\\n\";\n    }\n    const Token siguiente = otro.leer();\n    std::cout << \"Entrada: \" << siguiente.clase << \":\"\n              << siguiente.valor << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "Lleno: Buffer ocupado\nGuardado: v:0:f\nSiguiente: ;\nVacio: Token invalido\nEntrada: n:8"
+          ],
+          "explanation": "El carácter f del texto se reconoce como nombre: su categoría interna es v, su campo numérico sin uso conserva 0 y su texto conserva f. La primera devolución llena la reserva. El intento siguiente encuentra esa reserva ocupada antes de comprobar que el token propuesto es incoherente; el rechazo conserva el primer token completo. Leerlo libera la reserva y la lectura posterior obtiene el punto y coma del flujo. En el otro lector, la reserva empieza vacía: un token numérico con texto no vacío incumple el contrato y se rechaza antes de guardarlo. Ese intento no consume los caracteres de entrada; la lectura siguiente obtiene la categoría numérica n y el valor 8.",
+          "reviewFeedback": "Comprueba primero qué condición revisa devolver antes de guardar. Sigue por separado el token reservado y los caracteres que quedan en cada lector. Un intento rechazado antes de modificar la reserva debe conservar el estado anterior."
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    Lector_tokens lector{\"Patio_6+3;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token t = lector.leer();\n        if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n        if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n        else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n        else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n        else std::cout << \"Signo: \" << t.clase << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nvoid presentar(const Token& token) {\n    if (token.clase == final_texto) std::cout << \"Fin\\n\";\n    else if (token.clase == numero) std::cout << \"Numero: \" << token.valor << \"\\n\";\n    else if (token.clase == nombre) std::cout << \"Nombre: \" << token.texto << \"\\n\";\n    else if (token.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n    else std::cout << \"Signo: \" << token.clase << \"\\n\";\n}\n\nvoid inspeccionar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        while (true) {\n            const Token token = lector.leer();\n            presentar(token);\n            if (token.clase == final_texto) break;\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto) break;\n    }\n    const std::vector<std::string> pruebas{\"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\", \"_A;\", \"solo\"};\n    int caso = 2;\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1397,146 +1584,6 @@
     "version": 1,
     "fields": [
       {
-        "block": "block_0003_0001",
-        "path": "/text",
-        "sourceSha256": "b2a56dd4bb830d94a1bd10cd1f8a236c6de48df2535908fe2093c24f1f1d9d55",
-        "spans": [
-          {
-            "start": 96,
-            "end": 100,
-            "text": "crea",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 105,
-            "end": 106,
-            "text": "=",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 294,
-            "end": 324,
-            "text": "std::string palabra(1, actual)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 334,
-            "end": 341,
-            "text": "palabra",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 383,
-            "end": 389,
-            "text": "actual",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 414,
-            "end": 415,
-            "text": "1",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 483,
-            "end": 489,
-            "text": "actual",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 501,
-            "end": 504,
-            "text": "'s'",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 534,
-            "end": 537,
-            "text": "\"s\"",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 600,
-            "end": 620,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 637,
-            "end": 654,
-            "text": "palabra += actual",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 729,
-            "end": 743,
-            "text": "palabra.size()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 882,
-            "end": 884,
-            "text": "12",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 941,
-            "end": 948,
-            "text": "empty()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 983,
-            "end": 1003,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 1007,
-            "end": 1020,
-            "text": "nombre_valido",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1065,
-            "end": 1073,
-            "text": "texto[0]",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1131,
-            "end": 1133,
-            "text": "||",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1211,
-            "end": 1215,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
         "block": "block_0000_0000",
         "path": "/text",
         "sourceSha256": "06dd22f131b883d780d265011400426d3f2874b6d0ea2b56791fd792cdc2ed3d",
@@ -1551,7 +1598,7 @@
             "start": 11,
             "end": 34,
             "text": "\"crea saldo=8;saldo+2;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
@@ -1594,56 +1641,70 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "202eed0b35453d28fdf0c8d8e9da228c043284cf53b46b23cfde95c23f0bc377",
+        "sourceSha256": "f29bbdfb2715d4c36f405dbf32e6913a4bb810e7db8eb142ccf5f1faac071bb7",
         "spans": [
           {
             "start": 258,
-            "end": 291,
-            "text": "(Stroustrup, 2024, sección 6.8.2)",
+            "end": 276,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 354,
-            "end": 358,
+            "start": 364,
+            "end": 368,
             "text": "A..Z",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 361,
-            "end": 365,
+            "start": 371,
+            "end": 375,
             "text": "a..z",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 414,
-            "end": 415,
+            "start": 434,
+            "end": 435,
             "text": "_",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 576,
-            "end": 580,
+            "start": 603,
+            "end": 607,
             "text": "crea",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 584,
-            "end": 589,
+            "start": 611,
+            "end": 616,
             "text": "crea2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 594,
-            "end": 598,
+            "start": 621,
+            "end": 625,
             "text": "Crea",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
+          },
+          {
+            "start": 655,
+            "end": 662,
+            "text": "Turno_4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 737,
+            "end": 743,
+            "text": "_Turno",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -1705,7 +1766,7 @@
             "end": 6,
             "text": "_saldo",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1719,7 +1780,7 @@
             "end": 7,
             "text": "saldo_2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1733,7 +1794,7 @@
             "end": 6,
             "text": "2saldo",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1764,108 +1825,133 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "a6d16fca3cddf5da2c2b2b6a2093a3d8aaa38108e2310221709cb73ada42cb1f",
+        "sourceSha256": "e1a5128b8a2ab5b66ef4ccde56cefe8008f2848c1d0a15265d4fa5036b1ce250",
         "spans": [
           {
             "start": 11,
             "end": 16,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 32,
             "end": 37,
             "text": "texto",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 49,
             "end": 60,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 108,
             "end": 113,
             "text": "clase",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 196,
-            "end": 201,
-            "text": "valor",
-            "role": "cpp"
-          },
-          {
-            "start": 227,
-            "end": 232,
-            "text": "texto",
-            "role": "cpp"
-          },
-          {
-            "start": 303,
-            "end": 336,
-            "text": "(Stroustrup, 2024, sección 6.8.2)",
+            "start": 184,
+            "end": 202,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 391,
-            "end": 392,
+            "start": 230,
+            "end": 235,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 273,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 308,
+            "end": 313,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 351,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 396,
+            "text": "crea",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 466,
+            "end": 471,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 489,
+            "end": 494,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 539,
+            "end": 540,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 418,
-            "end": 438,
+            "start": 566,
+            "end": 586,
             "text": "Token{numero, 8, \"\"}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 457,
-            "end": 464,
+            "start": 611,
+            "end": 618,
             "text": "Turno_4",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 490,
-            "end": 517,
+            "start": 644,
+            "end": 671,
             "text": "Token{nombre, 0, \"Turno_4\"}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 669,
-            "end": 673,
-            "text": "crea",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 706,
-            "end": 711,
-            "text": "valor",
-            "role": "cpp"
-          },
-          {
-            "start": 729,
-            "end": 734,
-            "text": "texto",
-            "role": "cpp"
-          },
-          {
-            "start": 896,
-            "end": 908,
+            "start": 907,
+            "end": 919,
             "text": "token_valido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "f118fd38765f49a33fee82c57f488c62e36a763867cfdce84573256009844f84",
+        "sourceSha256": "8da16e8d06e607c8ba0ac29214ebbfabcd3c72746327ccf146ef4ee7929330f3",
         "spans": [
           {
             "start": 16,
@@ -1943,15 +2029,15 @@
             "start": 252,
             "end": 255,
             "text": "\"f\"",
-            "role": "data",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 349,
             "end": 352,
             "text": "\"f\"",
-            "role": "data",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 375,
@@ -2001,12 +2087,6 @@
             "text": "Turno_4",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 713,
-            "end": 719,
-            "text": "nombre",
-            "role": "cpp"
           }
         ]
       },
@@ -2095,19 +2175,21 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "3658a88e7de0ef6853215c962dbee28797a11bfbae9dfa5617ba9c3b1b60faba",
+        "sourceSha256": "d513938ef8f216c4464fcec5012f8f9f6f52bd8767275d0bbaea2c7e0fb836c5",
         "spans": [
           {
             "start": 42,
             "end": 44,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
             "start": 53,
             "end": 71,
             "text": "entrada >> palabra",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
             "start": 164,
@@ -2118,53 +2200,56 @@
           },
           {
             "start": 310,
-            "end": 343,
-            "text": "(Stroustrup, 2024, sección 6.8.2)",
+            "end": 328,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 350,
-            "end": 353,
+            "start": 335,
+            "end": 338,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
-            "start": 382,
-            "end": 383,
+            "start": 367,
+            "end": 368,
             "text": "+",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 397,
-            "end": 402,
+            "start": 382,
+            "end": 387,
             "text": "saldo",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 443,
-            "end": 450,
+            "start": 428,
+            "end": 435,
             "text": "putback",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
-            "start": 531,
-            "end": 534,
+            "start": 516,
+            "end": 519,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
-            "start": 706,
-            "end": 711,
+            "start": 691,
+            "end": 696,
             "text": "saldo",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 735,
-            "end": 739,
+            "start": 720,
+            "end": 724,
             "text": "crea",
             "role": "data",
             "reading": "natural"
@@ -2174,63 +2259,63 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "d91310e19d0e6102b1e9865d377ff7a40a5090c9973b0ee6970c9f69ab368e1f",
+        "sourceSha256": "7c8e004e06f6ab2c9279bef0a3ad3872e10f7342fa6d71b63e95c0ae39ab1890",
         "spans": [
           {
-            "start": 6,
-            "end": 14,
+            "start": 17,
+            "end": 25,
             "text": "saldo+2;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 54,
-            "end": 61,
+            "start": 96,
+            "end": 103,
             "text": "\"saldo\"",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 74,
-            "end": 75,
+            "start": 116,
+            "end": 117,
             "text": "+",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
-            "start": 89,
-            "end": 90,
+            "start": 144,
+            "end": 145,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 104,
+            "start": 157,
+            "end": 158,
             "text": ";",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
-            "start": 189,
-            "end": 194,
+            "start": 253,
+            "end": 258,
             "text": "crea2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 213,
-            "end": 217,
+            "start": 277,
+            "end": 281,
             "text": "crea",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 231,
-            "end": 232,
+            "start": 295,
+            "end": 296,
             "text": "2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2352,6 +2437,146 @@
         "path": "/text",
         "sourceSha256": "b3e89b4fb5fa29786b596d1e5b24fc4b684afc8ed48bcaa9e331df0ca2f83569",
         "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "b2a56dd4bb830d94a1bd10cd1f8a236c6de48df2535908fe2093c24f1f1d9d55",
+        "spans": [
+          {
+            "start": 96,
+            "end": 100,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 294,
+            "end": 324,
+            "text": "std::string palabra(1, actual)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 341,
+            "text": "palabra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 383,
+            "end": 389,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 414,
+            "end": 415,
+            "text": "1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 483,
+            "end": 489,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 501,
+            "end": 504,
+            "text": "'s'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 534,
+            "end": 537,
+            "text": "\"s\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 600,
+            "end": 620,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 637,
+            "end": 654,
+            "text": "palabra += actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 729,
+            "end": 743,
+            "text": "palabra.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 882,
+            "end": 884,
+            "text": "12",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 941,
+            "end": 948,
+            "text": "empty()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 983,
+            "end": 1003,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 1007,
+            "end": 1020,
+            "text": "nombre_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1065,
+            "end": 1073,
+            "text": "texto[0]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1131,
+            "end": 1133,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1211,
+            "end": 1215,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2488,7 +2713,7 @@
             "start": 209,
             "end": 210,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2610,182 +2835,263 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "eeed526350e21eebfc396a17c385047043fe11a7e9e64f57fe16945492ec5d1a",
+        "sourceSha256": "68e8de86a90474a5197b5159a027b17989718d6ebe4cd119dc06fa42e4c53a85",
         "spans": [
           {
             "start": 89,
             "end": 94,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
             "start": 99,
             "end": 112,
             "text": "Lector_tokens",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
             "start": 174,
             "end": 178,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
             "start": 339,
             "end": 353,
             "text": "\"Pasillo_2*4;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
             "start": 538,
-            "end": 590,
-            "text": "Reservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin",
+            "end": 566,
+            "text": "Reservado: Pasillo_2\nSigno: ",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 706,
-            "end": 707,
-            "text": "1",
+            "start": 566,
+            "end": 567,
+            "text": "*",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 567,
+            "end": 585,
+            "text": "\nNumero: 4\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 585,
+            "end": 586,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 586,
+            "end": 590,
+            "text": "\nFin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 711,
+            "end": 712,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 710,
-            "end": 714,
+            "start": 715,
+            "end": 719,
             "text": "\"n;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
-            "start": 720,
+            "start": 726,
             "end": 727,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 730,
+            "end": 737,
             "text": "\"Crea;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
-            "start": 733,
-            "end": 740,
+            "start": 744,
+            "end": 745,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 748,
+            "end": 755,
             "text": "\"crea;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
-            "start": 746,
-            "end": 753,
+            "start": 762,
+            "end": 763,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 766,
+            "end": 773,
             "text": "\"A1_B;\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 759,
-            "end": 774,
-            "text": "\"abcdefghijkl;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
             "start": 780,
-            "end": 796,
-            "text": "\"abcdefghijklm;\"",
+            "end": 781,
+            "text": "6",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 784,
+            "end": 799,
+            "text": "\"abcdefghijkl;\"",
+            "role": "string",
             "reading": "technical"
           },
           {
-            "start": 802,
+            "start": 806,
             "end": 807,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 810,
+            "end": 826,
+            "text": "\"abcdefghijklm;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 833,
+            "end": 834,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 837,
+            "end": 842,
             "text": "\"_A;\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
-            "start": 813,
-            "end": 819,
+            "start": 849,
+            "end": 850,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 853,
+            "end": 859,
             "text": "\"solo\"",
-            "role": "data",
+            "role": "string",
             "reading": "technical"
           },
           {
-            "start": 852,
-            "end": 865,
+            "start": 892,
+            "end": 905,
             "text": "Nombre: texto",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 867,
-            "end": 880,
+            "start": 907,
+            "end": 920,
             "text": "Palabra: crea",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 882,
-            "end": 891,
+            "start": 922,
+            "end": 931,
             "text": "Numero: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 893,
-            "end": 901,
+            "start": 933,
+            "end": 941,
             "text": "Signo: C",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 904,
-            "end": 907,
+            "start": 944,
+            "end": 947,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 957,
-            "end": 963,
+            "start": 997,
+            "end": 1003,
             "text": "Error:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 988,
-            "end": 1010,
+            "start": 1028,
+            "end": 1050,
             "text": "Nombre demasiado largo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1013,
-            "end": 1033,
+            "start": 1053,
+            "end": 1073,
             "text": "Caracter no admitido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1092,
-            "end": 1112,
+            "start": 1132,
+            "end": 1152,
             "text": "Reservado: Pasillo_2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1116,
-            "end": 1120,
+            "start": 1156,
+            "end": 1160,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "auto"
           },
           {
-            "start": 1131,
-            "end": 1137,
+            "start": 1171,
+            "end": 1177,
             "text": "Caso N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1200,
-            "end": 1201,
+            "start": 1240,
+            "end": 1241,
             "text": "1",
             "role": "data",
             "reading": "natural"
@@ -2960,186 +3266,16 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "43125235e545ae1b6b42f8a5e40983a6ad52b1d289c11ad5c11e8f4eb09002dd",
+        "sourceSha256": "d830b1e58007004dac151eb969d7b21515195929c6e007954ca11be630289362",
         "spans": [
           {
-            "start": 219,
-            "end": 226,
+            "start": 303,
+            "end": 310,
             "text": "putback",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0000",
-        "path": "/text",
-        "sourceSha256": "17c86c31d3fe40c6594a2fbe07743a020726cec418a076b8bbd7f19ebb94a775",
-        "spans": []
-      },
-      {
-        "block": "work_u11l17_reserva_textual",
-        "path": "/question",
-        "sourceSha256": "b6b23f76607a2a1eb44118de6be3a4834d97b67556e21cc8a3d962d023c214ef",
-        "spans": [
-          {
-            "start": 6,
-            "end": 10,
-            "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 36,
-            "end": 42,
-            "text": "numero",
-            "role": "cpp"
-          },
-          {
-            "start": 47,
-            "end": 53,
-            "text": "nombre",
-            "role": "cpp"
-          },
-          {
-            "start": 57,
-            "end": 62,
-            "text": "Token",
-            "role": "cpp"
-          },
-          {
-            "start": 67,
-            "end": 80,
-            "text": "Lector_tokens",
-            "role": "cpp"
-          },
-          {
-            "start": 218,
-            "end": 237,
-            "text": "lector.leer().clase",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "work_u11l17_reserva_textual",
-        "path": "/explanation",
-        "sourceSha256": "c7986845b1128242165778083e5f4e5705929c3eaddb5dcbde76683f78d97365",
-        "spans": [
-          {
-            "start": 12,
-            "end": 13,
-            "text": "f",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 73,
-            "end": 74,
-            "text": "v",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 111,
-            "end": 112,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 133,
-            "end": 134,
-            "text": "f",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 651,
-            "end": 652,
-            "text": "n",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 664,
-            "end": 665,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "work_u11l17_reserva_textual",
-        "path": "/reviewFeedback",
-        "sourceSha256": "d472386a0689aa1c2b9a56d6bbde3161e55b890e985d6577ba3fb820700bf58f",
-        "spans": [
-          {
-            "start": 39,
-            "end": 47,
-            "text": "devolver",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0002",
-        "path": "/text",
-        "sourceSha256": "fbb5540f79377213b47c7a6bf641d3e4e64e89c67081fd537001a30307dfd610",
-        "spans": [
-          {
-            "start": 36,
-            "end": 48,
-            "text": "\"Patio_6+3;\"",
-            "role": "data",
+            "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 333,
-            "end": 346,
-            "text": "Lector_tokens",
-            "role": "cpp"
-          },
-          {
-            "start": 353,
-            "end": 366,
-            "text": "istringstream",
-            "role": "cpp"
           }
         ]
-      },
-      {
-        "block": "block_0006_0003",
-        "path": "/text",
-        "sourceSha256": "fff30645cf9dca3b1ea86b25c619fcefce64fcc5bc9a44c93ea7e0146df2b20f",
-        "spans": [
-          {
-            "start": 247,
-            "end": 280,
-            "text": "(Stroustrup, 2024, sección 6.8.2)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 291,
-            "end": 296,
-            "text": "crea2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 326,
-            "end": 330,
-            "text": "crea",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0000",
-        "path": "/text",
-        "sourceSha256": "c85fdc4ad960ace613710e7c38e777fb958b6bf24b1154c5579775d4dcfb3fe3",
-        "spans": []
       },
       {
         "block": "u11_coherencia_de_tokens_textuales_y_final_titulo",
@@ -3150,7 +3286,7 @@
       {
         "block": "u11_coherencia_de_tokens_textuales_y_final_consigna",
         "path": "/text",
-        "sourceSha256": "1eba80c38e7ffa065d53f7c705983d587681d5f1773561e4f36729397c29d4a0",
+        "sourceSha256": "41919a47cdeed4715f92f23e0335c9411ffb3b4171794895349c133028c48e56",
         "spans": [
           {
             "start": 28,
@@ -3188,64 +3324,78 @@
             "reading": "technical"
           },
           {
-            "start": 373,
-            "end": 375,
+            "start": 406,
+            "end": 408,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 388,
-            "end": 392,
+            "start": 423,
+            "end": 427,
             "text": "crea",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 432,
-            "end": 434,
+            "start": 462,
+            "end": 464,
             "text": "11",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 437,
-            "end": 439,
-            "text": "14",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 469,
-            "end": 493,
+            "start": 484,
+            "end": 508,
             "text": "Token{nombre, 0, \"Crea\"}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 495,
-            "end": 519,
+            "start": 515,
+            "end": 517,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 537,
+            "end": 561,
             "text": "Token{nombre, 5, \"Caja\"}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 521,
-            "end": 545,
+            "start": 568,
+            "end": 570,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 590,
+            "end": 614,
             "text": "Token{nombre, 0, \"crea\"}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 548,
-            "end": 566,
+            "start": 621,
+            "end": 623,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 643,
+            "end": 661,
             "text": "Token{'+', 0, \"x\"}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 639,
-            "end": 641,
+            "start": 729,
+            "end": 731,
             "text": "8;",
             "role": "data",
             "reading": "characters"
@@ -3259,8 +3409,253 @@
         "spans": [
           {
             "start": 33,
+            "end": 68,
+            "text": "Caso 1\nReservado: Pasillo_2\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "*",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 69,
+            "end": 87,
+            "text": "\nNumero: 4\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 88,
+            "end": 117,
+            "text": "\nFin\nCaso 2\nNombre: n\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 118,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 118,
+            "end": 150,
+            "text": "\nFin\nCaso 3\nNombre: Crea\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 151,
+            "end": 184,
+            "text": "\nFin\nCaso 4\nPalabra: crea\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 185,
+            "end": 217,
+            "text": "\nFin\nCaso 5\nNombre: A1_B\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 218,
+            "end": 258,
+            "text": "\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 259,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 259,
+            "end": 419,
+            "text": "\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 419,
+            "end": 420,
+            "text": "v",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 420,
+            "end": 439,
+            "text": ":0:Crea\nSiguiente: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 439,
+            "end": 440,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 440,
+            "end": 483,
+            "text": ":8:\nCaso 12\nReserva: Token invalido\nLeido: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 483,
+            "end": 484,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 484,
+            "end": 499,
+            "text": ":8:\nSiguiente: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 499,
+            "end": 500,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 500,
+            "end": 543,
+            "text": ":0:\nCaso 13\nReserva: Token invalido\nLeido: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 543,
+            "end": 544,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 544,
+            "end": 559,
+            "text": ":8:\nSiguiente: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 559,
+            "end": 560,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 560,
+            "end": 603,
+            "text": ":0:\nCaso 14\nReserva: Token invalido\nLeido: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 603,
+            "end": 604,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 604,
+            "end": 619,
+            "text": ":8:\nSiguiente: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 619,
+            "end": 620,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 620,
             "end": 623,
-            "text": "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:",
+            "text": ":0:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "8c58c19417492224ef678b2dcc3a4cc2195fe4272731cc76012a24f3181f013c",
+        "spans": [
+          {
+            "start": 8,
+            "end": 10,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 94,
+            "text": "Crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 364,
+            "text": "8",
             "role": "output",
             "reading": "natural"
           }
@@ -3372,39 +3767,175 @@
         ]
       },
       {
-        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "8c58c19417492224ef678b2dcc3a4cc2195fe4272731cc76012a24f3181f013c",
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "17c86c31d3fe40c6594a2fbe07743a020726cec418a076b8bbd7f19ebb94a775",
+        "spans": []
+      },
+      {
+        "block": "work_u11l17_reserva_textual",
+        "path": "/question",
+        "sourceSha256": "b6b23f76607a2a1eb44118de6be3a4834d97b67556e21cc8a3d962d023c214ef",
         "spans": [
           {
-            "start": 8,
+            "start": 6,
             "end": 10,
-            "text": "10",
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 36,
+            "end": 42,
+            "text": "numero",
+            "role": "cpp"
+          },
+          {
+            "start": 47,
+            "end": 53,
+            "text": "nombre",
+            "role": "cpp"
+          },
+          {
+            "start": 57,
+            "end": 62,
+            "text": "Token",
+            "role": "cpp"
+          },
+          {
+            "start": 67,
+            "end": 80,
+            "text": "Lector_tokens",
+            "role": "cpp"
+          },
+          {
+            "start": 218,
+            "end": 237,
+            "text": "lector.leer().clase",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "work_u11l17_reserva_textual",
+        "path": "/explanation",
+        "sourceSha256": "c7986845b1128242165778083e5f4e5705929c3eaddb5dcbde76683f78d97365",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "f",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "v",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "0",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 40,
-            "end": 44,
-            "text": "crea",
-            "role": "data",
-            "reading": "natural"
+            "start": 133,
+            "end": 134,
+            "text": "f",
+            "role": "output",
+            "reading": "characters"
           },
           {
-            "start": 90,
-            "end": 94,
-            "text": "Crea",
-            "role": "data",
-            "reading": "natural"
+            "start": 651,
+            "end": 652,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
           },
           {
-            "start": 363,
-            "end": 364,
+            "start": 664,
+            "end": 665,
             "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "work_u11l17_reserva_textual",
+        "path": "/reviewFeedback",
+        "sourceSha256": "d472386a0689aa1c2b9a56d6bbde3161e55b890e985d6577ba3fb820700bf58f",
+        "spans": [
+          {
+            "start": 39,
+            "end": 47,
+            "text": "devolver",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "fbb5540f79377213b47c7a6bf641d3e4e64e89c67081fd537001a30307dfd610",
+        "spans": [
+          {
+            "start": 36,
+            "end": 48,
+            "text": "\"Patio_6+3;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 333,
+            "end": 346,
+            "text": "Lector_tokens",
+            "role": "cpp"
+          },
+          {
+            "start": 353,
+            "end": 366,
+            "text": "istringstream",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "59c3a0564d61940e56581f6d6b79cea78cc89762063243d5183dfd56e7ee56d9",
+        "spans": [
+          {
+            "start": 247,
+            "end": 265,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 281,
+            "text": "crea2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 315,
+            "text": "crea",
             "role": "data",
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "c85fdc4ad960ace613710e7c38e777fb958b6bf24b1154c5579775d4dcfb3fe3",
+        "spans": []
       },
       {
         "block": "u11_coherencia_de_tokens_textuales_y_final_referencia_titulo",
@@ -3461,15 +3992,29 @@
           },
           {
             "start": 345,
+            "end": 346,
+            "text": "v",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 346,
             "end": 353,
-            "text": "v:0:Crea",
+            "text": ":0:Crea",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 384,
+            "end": 385,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 385,
             "end": 388,
-            "text": "n:8:",
+            "text": ":8:",
             "role": "output",
             "reading": "natural"
           },
@@ -3482,15 +4027,29 @@
           },
           {
             "start": 487,
+            "end": 488,
+            "text": "n",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 488,
             "end": 491,
-            "text": "n:8:",
+            "text": ":8:",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 494,
+            "end": 495,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 495,
             "end": 498,
-            "text": ";:0:",
+            "text": ":0:",
             "role": "output",
             "reading": "natural"
           },

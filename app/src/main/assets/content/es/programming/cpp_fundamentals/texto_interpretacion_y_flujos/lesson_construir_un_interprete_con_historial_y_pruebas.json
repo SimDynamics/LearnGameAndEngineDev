@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un banco de ensayos: un programa que procesa textos de prueba, presenta los resultados y resume las operaciones aceptadas. Cada prueba se prepara en un objeto `std::string` del programa, con hasta 120 caracteres ASCII, incluidos los separadores. Cada operación termina en `;`.\n\nConserva el lenguaje construido: literales de 0..99, `+` y `-` binarios, `*` y `/` con prioridad, signos unarios y paréntesis. Cada resultado parcial permanece en -100..100 y se admiten hasta 8 aperturas o signos unarios anidados."
+          "text": "Construye un banco de ensayos: un programa que procesa textos de prueba, presenta los resultados y resume las operaciones aceptadas. Cada prueba se prepara en un objeto `std::string` del programa, con hasta 120 caracteres ASCII, incluidos los separadores. Cada operación termina en `;`.\n\nConserva los límites del intérprete que has construido:\nLiterales enteros: de 0 a 99.\nOperaciones: suma y resta binarias, multiplicación y división con prioridad, signos unarios y paréntesis.\nResultados parciales: de -100 a 100, incluidos los extremos.\nProfundidad: hasta 8 signos unarios o aperturas de paréntesis pendientes de resolver. Ambos consumen el mismo límite, también cuando se combinan."
         },
         {
           "type": "paragraph",
@@ -24,11 +24,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Al terminar una prueba, presenta cuatro líneas en este orden:\n\n- Aceptadas: con el tamaño del historial.\n- Rechazadas: con la cantidad de operaciones diagnosticadas.\n- Suma: con la suma de los resultados aceptados.\n- Historial: seguida por cada resultado en orden, con un espacio antes de cada uno.\n\nUsa un espacio después de las tres primeras etiquetas. Con historial vacío la suma es 0 y la última línea contiene sólo Historial:."
+          "text": "Al terminar una prueba, presenta cuatro líneas en este orden:\n\nAceptadas: seguida del tamaño del historial.\nRechazadas: seguida de la cantidad de operaciones diagnosticadas.\nSuma: seguida de la suma de los resultados aceptados.\nHistorial: seguida de los resultados en orden, con un espacio antes de cada uno.\n\nEscribe un espacio entre cada una de las tres primeras etiquetas y su cantidad. Con historial vacío, la suma es 0 y la última línea contiene sólo Historial:."
         },
         {
           "type": "paragraph",
-          "text": "La banda de -100..100 limita los resultados parciales de cada operación; la suma del historial reúne resultados de operaciones ya aceptadas y tiene otro dominio.\n\nEl límite de 120 caracteres permite usar una cota conservadora de 120 operaciones o intentos que consumen una frontera o un carácter. Cada resultado aceptado tiene magnitud máxima 100; por tanto, la suma del historial tiene magnitud como máximo 12000. Los contadores y esa suma son representables en `int` conforme al rango mínimo exigido por C++ (Köppe et al., 2023). Conserva ese límite de texto en tus pruebas.",
+          "text": "El límite de -100..100 se aplica a cada resultado parcial de una operación. La suma del historial reúne resultados de operaciones distintas y tiene otro dominio. Por ejemplo, `60;60;` acepta dos operaciones de valor 60; al sumar después sus resultados se obtiene 120. Ninguna de esas operaciones tuvo un resultado parcial superior a 100.\n\nCon un texto de hasta 120 caracteres, una cota conservadora es 120 intentos: cada uno consume al menos un carácter o un terminador. Cada resultado aceptado tiene magnitud máxima 100, por lo que la suma del historial tiene magnitud como máximo 12000. Los contadores y esa suma caben en `int`, cuyo rango mínimo en C++ incluye esos valores (Köppe et al., 2023). Conserva el límite de texto al preparar las pruebas.",
           "emphasis": [
             {
               "text": "tiene otro dominio",
@@ -50,11 +50,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial es `\"3+4;8/0;(2+1)*5;\"`. Debe presentar Valor: 7, un error de divisor cero y Valor: 15. El resumen debe ser Aceptadas: 2, Rechazadas: 1, Suma: 22 e Historial: 7 15, en ese orden. No se guarda el 8 de la operación rechazada ni se pierde la agrupación posterior."
+          "text": "El texto inicial es `\"3+4;8/0;(2+1)*5;\"`. La primera operación acepta 7. La segunda se rechaza porque intenta dividir entre cero. La tercera calcula primero 2 + 1 y multiplica ese resultado por 5, por lo que acepta 15.\n\nSu informe completo es:\n\nCaso 1\nValor: 7\nError: Divisor cero\nValor: 15\nAceptadas: 2\nRechazadas: 1\nSuma: 22\nHistorial: 7 15\n\nEl historial conserva sólo las dos operaciones completas aceptadas. No guarda el parcial 8 del intento rechazado ni pierde la operación posterior al error."
         },
         {
           "type": "paragraph",
-          "text": "Los casos `\"-4;9/2;\"`, `\"60;60;\"`, `\"-99-1;99+1;\"` y `\"0;\"` contrastan negativos, división entera, suma del historial fuera de la banda de una expresión y cero válido. La batería incluye además `\"5;5;\"` para comprobar que dos resultados iguales siguen siendo dos operaciones aceptadas."
+          "text": "Otros textos permiten comprobar por separado estas condiciones:\n\n`\"-4;9/2;\"` acepta -4 y 4. La división entre enteros descarta la parte fraccionaria del cociente; el historial tiene suma 0.\n`\"60;60;\"` acepta dos resultados de 60 y su resumen suma 120, aunque cada operación permanece en la banda permitida.\n`\"-99-1;99+1;\"` acepta -100 y 100, los dos extremos del dominio.\n`\"0;\"` acepta un resultado cero.\n`\"5;5;\"` acepta dos resultados iguales: el historial conserva 5 5 y su suma es 10."
         },
         {
           "type": "paragraph",
@@ -147,7 +147,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Compara el vector antes y después de un error: sus elementos previos y su orden deben conservarse. No registres el acumulado antes de validar `;`. Una función puede obtener un cálculo parcial correcto y todavía no haber aceptado toda la operación."
+          "text": "Compara el vector antes y después de un error: sus elementos previos y su orden deben conservarse. No registres el resultado antes de validar `;`.\n\nPor ejemplo, el texto `7` permite obtener el valor 7, pero no aceptar la operación porque falta el terminador. El texto `7;` sí permite incorporarlo al historial. Poder calcular una expresión y aceptar la operación completa son decisiones distintas."
         }
       ]
     },
@@ -164,7 +164,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"4*2;6/0;3-5;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n\n    entrada_.clear();\n\n    char actual = '?';\n\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n\n    for (int valor : valores) {\n        total += valor;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::string texto{\"4*2;6/0;3-5;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -182,7 +182,7 @@
           "type": "output_prediction",
           "question": "Predice toda la salida con un rechazo, un resultado cero y otra operación válida.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"5+;0;9-2;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n\n    entrada_.clear();\n\n    char actual = '?';\n\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n\n    for (int valor : valores) {\n        total += valor;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::string texto{\"5+;0;9-2;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
           "answers": [
             "Error: Se esperaba una unidad\nValor: 0\nValor: 7\nAceptadas: 2\nRechazadas: 1\nSuma: 7\nHistorial: 0 7"
           ],
@@ -220,7 +220,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La batería usa `\"3;-4;0;\"`, `\"-1;-2;\"`, `\"\"`, `\"5+;2;\"` y `\"2;2;\"`, en ese orden, con las cabeceras Caso N y todos los informes anteriores. Los dos primeros casos tienen recuentos (1,1) y (0,2); el vacío tiene (0,0). En `\"5+;2;\"`, el parcial 5 se rechaza y sólo 2 cuenta como positivo. El quinto caso tiene recuentos (2,0): los dos resultados positivos iguales cuentan como dos operaciones aceptadas.\n\nSi tu borrador conserva las cuatro llamadas anteriores, el panel «Caso adicional de la batería» muestra la cabecera Caso 5 y la llamada `probar(\"2;2;\");` que debes añadir antes del `return 0;` final de `main`. Conserva el resto de tu implementación. El inicial actual ya incluye las cinco llamadas.\n\nUsa Compilar, ejecutar y comprobar con los cinco informes, sin sustituir los resultados aceptados por valores parciales.",
+          "text": "Cada texto comienza con un lector, historial y contador de rechazos nuevos. La batería utiliza estas cinco sesiones, en este orden:\n\nCaso 1: `\"3;-4;0;\"`. El resumen añade Positivos: 1 y Negativos: 1.\nCaso 2: `\"-1;-2;\"`. El resumen añade Positivos: 0 y Negativos: 2.\nCaso 3: `\"\"`. El resumen añade Positivos: 0 y Negativos: 0.\nCaso 4: `\"5+;2;\"`. El parcial 5 no se acepta; sólo el resultado 2 cuenta, por lo que se añaden Positivos: 1 y Negativos: 0.\nCaso 5: `\"2;2;\"`. Los dos resultados iguales cuentan por separado: se añaden Positivos: 2 y Negativos: 0.\n\nConserva las cabeceras Caso N y todos los informes anteriores. Si tu borrador contiene sólo las cuatro llamadas anteriores, el panel «Caso adicional de la batería» muestra la cabecera Caso 5 y la llamada `probar(\"2;2;\");` que debes añadir antes del `return 0;` final de `main`. Conserva el resto de tu implementación. El inicial actual ya incluye las cinco llamadas.\n\nUsa Compilar, ejecutar y comprobar con los cinco informes, sin sustituir los resultados aceptados por valores parciales.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -230,7 +230,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"3;-4;0;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"-1;-2;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"5+;2;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"2;2;\");\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n\n    entrada_.clear();\n\n    char actual = '?';\n\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n\n    for (int valor : valores) {\n        total += valor;\n    }\n\n    return total;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"3;-4;0;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"-1;-2;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"5+;2;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"2;2;\");\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -308,13 +308,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int contar_positivos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor > 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint contar_negativos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor < 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n"
+          "code": "int contar_positivos(const std::vector<int>& valores) {\n    int cantidad = 0;\n\n    for (int valor : valores) {\n        if (valor > 0) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint contar_negativos(const std::vector<int>& valores) {\n    int cantidad = 0;\n\n    for (int valor : valores) {\n        if (valor < 0) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n"
         },
         {
           "type": "output_prediction",
           "question": "Predice la salida completa de la ampliación con otros datos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint contar_positivos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor > 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint contar_negativos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor < 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::string texto{\"2-7;0;4/2;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n\n    std::cout << \"\\nPositivos: \" << contar_positivos(aceptados);\n    std::cout << \"\\nNegativos: \" << contar_negativos(aceptados);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n\n    entrada_.clear();\n\n    char actual = '?';\n\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n\n    for (int valor : valores) {\n        total += valor;\n    }\n\n    return total;\n}\n\nint contar_positivos(const std::vector<int>& valores) {\n    int cantidad = 0;\n\n    for (int valor : valores) {\n        if (valor > 0) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint contar_negativos(const std::vector<int>& valores) {\n    int cantidad = 0;\n\n    for (int valor : valores) {\n        if (valor < 0) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint main() {\n    const std::string texto{\"2-7;0;4/2;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n\n    std::cout << \"\\nPositivos: \" << contar_positivos(aceptados);\n    std::cout << \"\\nNegativos: \" << contar_negativos(aceptados);\n    return 0;\n}\n",
           "answers": [
             "Valor: -5\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nSuma: -3\nHistorial: -5 0 2\nPositivos: 1\nNegativos: 1"
           ],
@@ -432,7 +432,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Organizar las reglas mediante funciones conserva la prioridad y la asociación del lenguaje. La reserva permite devolver un token leído que corresponde a otra regla; recuperar un fallo exige dejar el lector preparado para otra operación (Stroustrup, 2024, secciones 5.5, 5.8 y 6.7).\n\nLas pruebas entre componentes complementan las de cada componente aislado: aceptar una operación, registrar su resultado en el historial y resumir ese historial son decisiones diferentes."
+          "text": "Organizar las reglas mediante funciones conserva la prioridad y la asociación del lenguaje. La reserva permite devolver un token leído que corresponde a otra regla; recuperar un fallo exige dejar el lector preparado para otra operación (Stroustrup, 2024).\n\nLas pruebas entre componentes complementan las de cada componente aislado: aceptar una operación, registrar su resultado en el historial y resumir ese historial son decisiones diferentes."
         }
       ]
     },
@@ -1759,6 +1759,71 @@
         "id": "block_0008_0001",
         "beforeSha256": "9a7d85af18c66ebd83d223f3b696596fa472ac1afb0f211cf9feed2758fd1262",
         "afterSha256": "b297361954745ee505ac793cede83c5fd887450f02de0015d6224b794661c825"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "477221a57d120d94f2ad9c980cbe00447f22f7574cb1090fd73a55a2f721f9b0",
+        "afterSha256": "137b173e9090f748a8524d91f6a185685da85bf968dd36aa6134f4b147aca11d"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "c60fcb045b679c1b260eb77966d5397ecac6c3dd3cb9f5701e7362493b34535a",
+        "afterSha256": "d19e532da7a31454466f4065e9232e9ebec75ac4ba1c9989c01219f29fd1439e"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "0405b44359cd69cec23b708ecf1686b734d1fda5a3cfed66d2d1556e0ba4f40d",
+        "afterSha256": "b05c22985d2c2fa00223a06a774b97286f3250e11b4d1a89dd46a789596dfac7"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "117626dc474c0d0ceb125cbcde930da765fc7d91afc901a6434c9f41f3f9820d",
+        "afterSha256": "f6a57c6202882a218a27a60d6a2d23eaea74484d40b34aff69e88097eddd743d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "ad4a02d27c1d06186631670cf74aaac44c44f496ebc68c262594bfdf03da34c4",
+        "afterSha256": "014d109d301ba04623d23b5975dd97ef205c0d3f003c991860c325f113ad6f95"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "3673a12e4386bb97c29226078f6224d140b1b2a2f0de10cf302a6cb7f757cfe7",
+        "afterSha256": "45097dec286dce756aaf251d8356e607b851e3d9d5d9e2730c8393cdfcba3302"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "b36d98c868e0a2d479dc968580bdc622a0ff8bdc0dd749e2b0678f4eedb8a238",
+        "afterSha256": "1b2f0ba4f320c0829ae080cca2d0be3d3cf2b4bb6867b9e6f37977f4c040a433"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "737f4341f68201ee89e263e9bfc8f3e3e5375cd666c0f2d360b82fff0008aff4",
+        "afterSha256": "5c72f858d41937e157faa01134b5edb7463d7117d49ae4d14d0a71ad4ca7e6ca"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "b53352e1020efd8d0b1ded02a9fcf508bfe3790dca7a3f8a371cf6a1f6fb592f",
+        "afterSha256": "56a433ca9828f3db54f7ce53b38ac2cf93fc3b68c92b02a2f40c3729117db669"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "4c16c2e55bfcd7bf342d18092d049639f8989865bf61b96df3813e4c72b6cf9a",
+        "afterSha256": "e10a6ec5651a5d59aa7d1408594e24e072124cb966ba5c3264ed34edf6d121d4"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "7b9c4229709dc9caf07a9c0bd56bf496e62b0148195f69797290cd8ac63be83f",
+        "afterSha256": "6f4afd39de79d025dd24dbce83c3abcdb5f02cdcd68f7f6b04a44b1f32c0dec1"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "bb9ecc9656022b0f64f59cf6125312ca170a288b681603fe93545ae22099eecb",
+        "afterSha256": "6fe8b493536575f2d2c968b88a2d8941bdcefbf8ff20728ea7e6ae4d5ac170e3"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "472ec7dc94f69bed391977b4289c03427264ee9576558fa15b555ec3e831cbeb",
+        "afterSha256": "b33173be8c0fbe8689659ecbdfe58f38a301ada9f2538915df67fb0249d30146"
       }
     ],
     "compilerRevisions": [
@@ -1816,67 +1881,74 @@
           }
         ]
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"4*2;6/0;3-5;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice toda la salida con un rechazo, un resultado cero y otra operación válida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"5+;0;9-2;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Error: Se esperaba una unidad\nValor: 0\nValor: 7\nAceptadas: 2\nRechazadas: 1\nSuma: 7\nHistorial: 0 7"
+          ],
+          "explanation": "En 5+;, falta la unidad derecha. Se registra un rechazo y se consume el terminador reservado al recuperar; el parcial 5 no entra en el vector. La operación 0; sí está completa y añade 0. Después, 9-2; calcula 7 y lo añade detrás.\n\nEl historial queda 0 7: dos aceptaciones, un rechazo y suma 7. De ahí salen Aceptadas: 2, Rechazadas: 1, Suma: 7 e Historial: 0 7, después del diagnóstico y de las dos líneas de valores aceptados.",
+          "reviewFeedback": "Sigue primero el terminador reservado y la recuperación. Registra sólo las operaciones posteriores completas; después calcula el tamaño, los rechazos, la suma y el orden de ese historial."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"3;-4;0;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"-1;-2;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"5+;2;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"2;2;\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nValor: 3\nValor: -4\nValor: 0\nAceptadas: 3\nRechazadas: 0\nSuma: -1\nHistorial: 3 -4 0\nPositivos: 1\nNegativos: 1\nCaso 2\nValor: -1\nValor: -2\nAceptadas: 2\nRechazadas: 0\nSuma: -3\nHistorial: -1 -2\nPositivos: 0\nNegativos: 2\nCaso 3\nAceptadas: 0\nRechazadas: 0\nSuma: 0\nHistorial:\nPositivos: 0\nNegativos: 0\nCaso 4\nError: Se esperaba una unidad\nValor: 2\nAceptadas: 1\nRechazadas: 1\nSuma: 2\nHistorial: 2\nPositivos: 1\nNegativos: 0\nCaso 5\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 0\nSuma: 4\nHistorial: 2 2\nPositivos: 2\nNegativos: 0\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int contar_positivos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor > 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint contar_negativos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor < 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la salida completa de la ampliación con otros datos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            izquierda = resultado_en_dominio(izquierda / derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint contar_positivos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor > 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint contar_negativos(const std::vector<int>& valores) {\n    int cantidad = 0;\n    for (int valor : valores) {\n        if (valor < 0) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::string texto{\"2-7;0;4/2;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n\n    std::cout << \"\\nPositivos: \" << contar_positivos(aceptados);\n    std::cout << \"\\nNegativos: \" << contar_negativos(aceptados);\n    return 0;\n}\n",
+          "answers": [
+            "Valor: -5\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nSuma: -3\nHistorial: -5 0 2\nPositivos: 1\nNegativos: 1"
+          ],
+          "explanation": "Las operaciones completas calculan, por orden, 2 - 7 = -5, 0 y 4 / 2 = 2. Ninguna falla, así que el historial conserva -5 0 2, con tres aceptaciones, ningún rechazo y suma -5 + 0 + 2 = -3.\n\nAl recorrer ese vector, -5 cumple la condición de negativo y 2 la de positivo. El cero no cumple ninguna de las dos. Por eso se añaden Positivos: 1 y Negativos: 1 sin cambiar las tres entradas del historial.",
+          "reviewFeedback": "Forma primero el historial de las operaciones completas. Después separa los valores mayores y menores que cero sin incluir un resultado nulo en ninguna de esas categorías."
+        }
+      }
     ]
   },
   "textSemantics": {
     "version": 1,
     "fields": [
-      {
-        "block": "block_0000_0004",
-        "path": "/text",
-        "sourceSha256": "b8b5e31ed54e2b762b997b652e69ffd0c9e9b917e524cd34a7b29df73ef14209",
-        "spans": [
-          {
-            "start": 12,
-            "end": 21,
-            "text": "-100..100",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 176,
-            "end": 179,
-            "text": "120",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 229,
-            "end": 232,
-            "text": "120",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 343,
-            "end": 346,
-            "text": "100",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 408,
-            "end": 413,
-            "text": "12000",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 464,
-            "end": 467,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 510,
-            "end": 530,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
       {
         "block": "block_0000_0000",
         "path": "/text",
@@ -1886,13 +1958,14 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "cccbd59bbe20f06c0b1f0941754967e5ddcf02e858d746dd0cd31a67527e7b05",
+        "sourceSha256": "806103b44a66d322406e97543739503c5fb7486a15aa946f7fcb9e9f44b2c930",
         "spans": [
           {
             "start": 170,
             "end": 181,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 207,
@@ -1909,50 +1982,36 @@
             "reading": "characters"
           },
           {
-            "start": 334,
-            "end": 339,
-            "text": "0..99",
+            "start": 366,
+            "end": 367,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 342,
-            "end": 343,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 348,
-            "end": 349,
-            "text": "-",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 362,
-            "end": 363,
-            "text": "*",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 368,
-            "end": 369,
-            "text": "/",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 451,
-            "end": 460,
-            "text": "-100..100",
+            "start": 370,
+            "end": 372,
+            "text": "99",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 480,
-            "end": 481,
+            "start": 505,
+            "end": 509,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 512,
+            "end": 515,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 560,
+            "end": 561,
             "text": "8",
             "role": "data",
             "reading": "natural"
@@ -1990,48 +2049,132 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "4eaa9d2210294169578cf1408f01cfc099c13f3ade265ab44e98ff762334ec83",
+        "sourceSha256": "850b108df543c66aa84c97f5d70f83d6b5a2b52a696859d8bf3cfed4d03d07b4",
         "spans": [
           {
-            "start": 65,
-            "end": 75,
+            "start": 63,
+            "end": 73,
             "text": "Aceptadas:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 118,
+            "start": 108,
+            "end": 119,
             "text": "Rechazadas:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 173,
+            "start": 174,
+            "end": 179,
             "text": "Suma:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 217,
-            "end": 227,
+            "start": 228,
+            "end": 238,
             "text": "Historial:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 386,
-            "end": 387,
+            "start": 422,
+            "end": 423,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 420,
-            "end": 430,
+            "start": 456,
+            "end": 466,
             "text": "Historial:",
             "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "124b9b91b854627e7e5f7949f6ab3471bacf916f4dbbcc2b73425fe2a8273299",
+        "spans": [
+          {
+            "start": 13,
+            "end": 22,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 182,
+            "text": "60;60;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 216,
+            "end": 218,
+            "text": "60",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 266,
+            "text": "120",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 336,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 364,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 405,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 520,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 582,
+            "end": 587,
+            "text": "12000",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 625,
+            "end": 628,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 677,
+            "end": 697,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -2051,61 +2194,55 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "fcdf490837bf0b514c9de9f390b3bd760454aa0335545c285cff49fd6b26841e",
+        "sourceSha256": "ae4e1d26c07047417366f952bf915dd04ea585a013fe8e8819cb61579b6fbd42",
         "spans": [
           {
-            "start": 20,
-            "end": 38,
+            "start": 21,
+            "end": 39,
             "text": "\"3+4;8/0;(2+1)*5;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 64,
-            "text": "Valor: 7",
+            "start": 70,
+            "end": 71,
+            "text": "7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 102,
-            "text": "Valor: 15",
-            "role": "output",
-            "reading": "natural"
+            "start": 157,
+            "end": 162,
+            "text": "2 + 1",
+            "role": "math",
+            "reading": "auto"
           },
           {
-            "start": 124,
-            "end": 136,
-            "text": "Aceptadas: 2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 138,
-            "end": 151,
-            "text": "Rechazadas: 1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 153,
-            "end": 161,
-            "text": "Suma: 22",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 164,
-            "end": 179,
-            "text": "Historial: 7 15",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 211,
-            "end": 212,
-            "text": "8",
+            "start": 194,
+            "end": 195,
+            "text": "5",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 217,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 342,
+            "text": "Caso 1\nValor: 7\nError: Divisor cero\nValor: 15\nAceptadas: 2\nRechazadas: 1\nSuma: 22\nHistorial: 7 15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 434,
+            "text": "8",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2113,37 +2250,105 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "299c62c843249e1948ccc3bce5989a91b4d2c7f7a25a7e8ae444922062a5f468",
+        "sourceSha256": "85354b17552400b7602890055331f8ef92d7e0ba460533de098aacee4edeaf31",
         "spans": [
           {
-            "start": 11,
-            "end": 20,
+            "start": 66,
+            "end": 75,
             "text": "\"-4;9/2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 24,
-            "end": 32,
+            "start": 84,
+            "end": 86,
+            "text": "-4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 199,
             "text": "\"60;60;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 49,
+            "start": 226,
+            "end": 228,
+            "text": "60",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 250,
+            "text": "120",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 321,
             "text": "\"-99-1;99+1;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 58,
+            "start": 330,
+            "end": 334,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 340,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 377,
             "text": "\"0;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 195,
-            "end": 201,
+            "start": 406,
+            "end": 412,
             "text": "\"5;5;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 467,
+            "end": 470,
+            "text": "5 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 486,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2163,7 +2368,7 @@
             "end": 24,
             "text": "5;5;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           }
         ]
       },
@@ -2183,14 +2388,14 @@
             "start": 44,
             "end": 45,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 98,
             "end": 99,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2225,7 +2430,7 @@
             "start": 354,
             "end": 355,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2464,10 +2669,17 @@
           },
           {
             "start": 1073,
-            "end": 1086,
-            "text": "Se esperaba ;",
+            "end": 1085,
+            "text": "Se esperaba ",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 1085,
+            "end": 1086,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
           },
           {
             "start": 1088,
@@ -2509,13 +2721,13 @@
             "end": 1287,
             "text": "11*10/2",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
             "start": 1301,
             "end": 1304,
             "text": "110",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2536,7 +2748,7 @@
             "end": 1512,
             "text": "2+3*4",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
             "start": 1522,
@@ -2550,7 +2762,7 @@
             "end": 1559,
             "text": "9-4-2",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
             "start": 1569,
@@ -2588,8 +2800,8 @@
             "start": 97,
             "end": 105,
             "text": "\"2-2;3;\"",
-            "role": "data",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2609,7 +2821,7 @@
             "start": 26,
             "end": 27,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2623,7 +2835,7 @@
             "start": 136,
             "end": 137,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2701,12 +2913,33 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "75310d1324f315fd38ec1ee1cfa6af866b61675812a3cb4d3112361b23098bb7",
+        "sourceSha256": "00bb76870180efcf6bb20c1cdadcc09e35b16ba1ba985d5af55052695c0592dd",
         "spans": [
           {
             "start": 143,
             "end": 144,
             "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "7",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 271,
+            "text": "7;",
             "role": "data",
             "reading": "characters"
           }
@@ -2831,7 +3064,7 @@
             "start": 118,
             "end": 119,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2845,7 +3078,7 @@
             "start": 184,
             "end": 185,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2859,7 +3092,7 @@
             "start": 209,
             "end": 210,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2873,7 +3106,7 @@
             "start": 291,
             "end": 292,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2927,35 +3160,35 @@
             "start": 34,
             "end": 35,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 38,
             "end": 39,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 55,
             "end": 56,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 90,
             "end": 91,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 220,
             "end": 221,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3048,117 +3281,453 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "f9e8ff68d00f55987361b8e479b655a2ea53f0779c4ba890582a5ab5c3803962",
+        "sourceSha256": "39ac35a6fe7004d7957d7fc0e30388bd49e18eb21ef2ef7a61cffeb2ee28bcd2",
         "spans": [
           {
-            "start": 16,
-            "end": 25,
+            "start": 133,
+            "end": 139,
+            "text": "Caso 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 151,
             "text": "\"3;-4;0;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 29,
-            "end": 37,
+            "start": 171,
+            "end": 183,
+            "text": "Positivos: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 198,
+            "text": "Negativos: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 206,
+            "text": "Caso 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 217,
             "text": "\"-1;-2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 41,
-            "end": 43,
+            "start": 237,
+            "end": 249,
+            "text": "Positivos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 264,
+            "text": "Negativos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 272,
+            "text": "Caso 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 277,
             "text": "\"\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 47,
-            "end": 54,
+            "start": 297,
+            "end": 309,
+            "text": "Positivos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 312,
+            "end": 324,
+            "text": "Negativos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 332,
+            "text": "Caso 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 342,
             "text": "\"5+;2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 65,
-            "text": "\"2;2;\"",
-            "role": "string"
-          },
-          {
-            "start": 100,
-            "end": 106,
-            "text": "Caso N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 180,
-            "end": 185,
-            "text": "(1,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 188,
-            "end": 193,
-            "text": "(0,2)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 210,
-            "end": 215,
-            "text": "(0,0)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 221,
-            "end": 228,
-            "text": "\"5+;2;\"",
-            "role": "string"
-          },
-          {
-            "start": 242,
-            "end": 243,
+            "start": 356,
+            "end": 357,
             "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 262,
-            "end": 263,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 317,
-            "end": 322,
-            "text": "(2,0)",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 518,
-            "end": 524,
+            "start": 390,
+            "end": 391,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 421,
+            "end": 433,
+            "text": "Positivos: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 436,
+            "end": 448,
+            "text": "Negativos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 456,
             "text": "Caso 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 539,
+            "start": 459,
+            "end": 465,
+            "text": "\"2;2;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 527,
+            "end": 539,
+            "text": "Positivos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
             "end": 554,
+            "text": "Negativos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 580,
+            "end": 586,
+            "text": "Caso N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 741,
+            "end": 747,
+            "text": "Caso 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 762,
+            "end": 777,
             "text": "probar(\"2;2;\");",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 584,
-            "end": 593,
+            "start": 807,
+            "end": 816,
             "text": "return 0;",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 605,
-            "end": 609,
+            "start": 828,
+            "end": 832,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_titulo",
+        "path": "/text",
+        "sourceSha256": "d6ad3fb15af86f01d92d7500e84e8fe0586c566eef3d661d7583ac8687bc06d1",
+        "spans": []
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_consigna",
+        "path": "/text",
+        "sourceSha256": "d79f54b7682ac8d132c83e4e860923ac1b70f5c8a9cb28673a37909d953e9ae5",
+        "spans": [
+          {
+            "start": 80,
+            "end": 84,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 174,
+            "text": "\"9;0;-3;9;7\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 265,
+            "text": "Caso N",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_salida",
+        "path": "/text",
+        "sourceSha256": "716f212223a54d8182e202ea928cf19c79c2cf82e2078a3d0f31846a5023fed2",
+        "spans": [
+          {
+            "start": 33,
+            "end": 617,
+            "text": "Caso 1\nValor: 3\nValor: -4\nValor: 0\nAceptadas: 3\nRechazadas: 0\nSuma: -1\nHistorial: 3 -4 0\nPositivos: 1\nNegativos: 1\nCaso 2\nValor: -1\nValor: -2\nAceptadas: 2\nRechazadas: 0\nSuma: -3\nHistorial: -1 -2\nPositivos: 0\nNegativos: 2\nCaso 3\nAceptadas: 0\nRechazadas: 0\nSuma: 0\nHistorial:\nPositivos: 0\nNegativos: 0\nCaso 4\nError: Se esperaba una unidad\nValor: 2\nAceptadas: 1\nRechazadas: 1\nSuma: 2\nHistorial: 2\nPositivos: 1\nNegativos: 0\nCaso 5\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 0\nSuma: 4\nHistorial: 2 2\nPositivos: 2\nNegativos: 0\nCaso 6\nValor: 9\nValor: 0\nValor: -3\nValor: 9\nError: Se esperaba ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 617,
+            "end": 618,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 618,
+            "end": 700,
+            "text": "\nAceptadas: 4\nRechazadas: 1\nSuma: 15\nHistorial: 9 0 -3 9\nPositivos: 2\nNegativos: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "d041a65b42b869b7d05cf2e78a647c104e359c42798017480ba28b50fe1ad7e7",
+        "spans": [
+          {
+            "start": 40,
+            "end": 41,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 44,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 48,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 173,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "79b2eeb77582544b8c8ca319596b33ee025a6c553cfa6bf034f371110098b349",
+        "spans": [
+          {
+            "start": 157,
+            "end": 162,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "516fbd03f22b4d2007ba6e1fce14d1de417b904c6c3026c51518047631d6fc22",
+        "spans": []
+      },
+      {
+        "block": "u11_historial_ante_error_final_incompleto_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "889e055ce10b0639fa1c9dc677eac8794665920a827be005feb880572964ca9d",
+        "spans": [
+          {
+            "start": 3,
+            "end": 13,
+            "text": "9;0;-3;9;7",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 159,
+            "end": 178,
+            "text": "Error: Se esperaba ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 179,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 271,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 331,
+            "end": 339,
+            "text": "9 0 -3 9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 355,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 387,
+            "text": "9 + 0 - 3 + 9 = 15",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 398,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 426,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 550,
+            "end": 551,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3215,7 +3784,7 @@
             "start": 59,
             "end": 60,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3243,14 +3812,14 @@
             "start": 214,
             "end": 216,
             "text": "-5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 251,
             "end": 252,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3296,8 +3865,8 @@
             "start": 16,
             "end": 24,
             "text": "\"60;60;\"",
-            "role": "data",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 68,
@@ -3331,7 +3900,7 @@
             "start": 125,
             "end": 128,
             "text": "120",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3430,7 +3999,7 @@
             "end": 2,
             "text": "6;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           }
         ]
       },
@@ -3458,7 +4027,7 @@
             "end": 5,
             "text": "2+;5;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           }
         ]
       },
@@ -3472,7 +4041,7 @@
             "end": 6,
             "text": "2+3*4;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           }
         ]
       },
@@ -3486,7 +4055,7 @@
             "end": 6,
             "text": "9-4-2;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           }
         ]
       },
@@ -3500,7 +4069,7 @@
             "end": 5,
             "text": "99+2;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           }
         ]
       },
@@ -3543,12 +4112,12 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "fc967e766b7194df75f5629aa5cbcaf67f41ed197af6c6f979c24276bc32fe5d",
+        "sourceSha256": "e682a55b1198d3175de3ad2ee021a7227496a2c1d38acf3164f750c4cf9d3cfb",
         "spans": [
           {
             "start": 236,
-            "end": 280,
-            "text": "(Stroustrup, 2024, secciones 5.5, 5.8 y 6.7)",
+            "end": 254,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3565,242 +4134,6 @@
         "path": "/text",
         "sourceSha256": "73f9b697858c9769398d52b6e4c3b467524d337d592ec3da1387f17034960a75",
         "spans": []
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_titulo",
-        "path": "/text",
-        "sourceSha256": "d6ad3fb15af86f01d92d7500e84e8fe0586c566eef3d661d7583ac8687bc06d1",
-        "spans": []
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_consigna",
-        "path": "/text",
-        "sourceSha256": "d79f54b7682ac8d132c83e4e860923ac1b70f5c8a9cb28673a37909d953e9ae5",
-        "spans": [
-          {
-            "start": 80,
-            "end": 84,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 162,
-            "end": 174,
-            "text": "\"9;0;-3;9;7\"",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 259,
-            "end": 265,
-            "text": "Caso N",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_salida",
-        "path": "/text",
-        "sourceSha256": "716f212223a54d8182e202ea928cf19c79c2cf82e2078a3d0f31846a5023fed2",
-        "spans": [
-          {
-            "start": 33,
-            "end": 700,
-            "text": "Caso 1\nValor: 3\nValor: -4\nValor: 0\nAceptadas: 3\nRechazadas: 0\nSuma: -1\nHistorial: 3 -4 0\nPositivos: 1\nNegativos: 1\nCaso 2\nValor: -1\nValor: -2\nAceptadas: 2\nRechazadas: 0\nSuma: -3\nHistorial: -1 -2\nPositivos: 0\nNegativos: 2\nCaso 3\nAceptadas: 0\nRechazadas: 0\nSuma: 0\nHistorial:\nPositivos: 0\nNegativos: 0\nCaso 4\nError: Se esperaba una unidad\nValor: 2\nAceptadas: 1\nRechazadas: 1\nSuma: 2\nHistorial: 2\nPositivos: 1\nNegativos: 0\nCaso 5\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 0\nSuma: 4\nHistorial: 2 2\nPositivos: 2\nNegativos: 0\nCaso 6\nValor: 9\nValor: 0\nValor: -3\nValor: 9\nError: Se esperaba ;\nAceptadas: 4\nRechazadas: 1\nSuma: 15\nHistorial: 9 0 -3 9\nPositivos: 2\nNegativos: 1",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
-        "sourceSha256": "79b2eeb77582544b8c8ca319596b33ee025a6c553cfa6bf034f371110098b349",
-        "spans": [
-          {
-            "start": 157,
-            "end": 162,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_comprobacion",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "d041a65b42b869b7d05cf2e78a647c104e359c42798017480ba28b50fe1ad7e7",
-        "spans": [
-          {
-            "start": 40,
-            "end": 41,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 43,
-            "end": 44,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 46,
-            "end": 48,
-            "text": "-3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 56,
-            "end": 57,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 90,
-            "end": 91,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 171,
-            "end": 173,
-            "text": "15",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_referencia_titulo",
-        "path": "/text",
-        "sourceSha256": "516fbd03f22b4d2007ba6e1fce14d1de417b904c6c3026c51518047631d6fc22",
-        "spans": []
-      },
-      {
-        "block": "u11_historial_ante_error_final_incompleto_referencia_razonamiento",
-        "path": "/text",
-        "sourceSha256": "889e055ce10b0639fa1c9dc677eac8794665920a827be005feb880572964ca9d",
-        "spans": [
-          {
-            "start": 3,
-            "end": 13,
-            "text": "9;0;-3;9;7",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 56,
-            "end": 57,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 59,
-            "end": 60,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 62,
-            "end": 64,
-            "text": "-3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 67,
-            "end": 68,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 105,
-            "end": 106,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 144,
-            "end": 145,
-            "text": ";",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 159,
-            "end": 179,
-            "text": "Error: Se esperaba ;",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 192,
-            "end": 193,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 266,
-            "end": 271,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 331,
-            "end": 339,
-            "text": "9 0 -3 9",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 354,
-            "end": 355,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 369,
-            "end": 387,
-            "text": "9 + 0 - 3 + 9 = 15",
-            "role": "math",
-            "reading": "technical"
-          },
-          {
-            "start": 397,
-            "end": 398,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 424,
-            "end": 426,
-            "text": "-3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 550,
-            "end": 551,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
       }
     ],
     "rootFields": [
