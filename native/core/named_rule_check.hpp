@@ -1,0 +1,165 @@
+#pragma once
+
+#include "core/code_format_compat.hpp"
+
+#include <algorithm>
+#include <charconv>
+#include <cctype>
+#include <limits>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <vector>
+
+namespace lgaed::curriculum {
+
+// A source prerequisite, never an execution receipt on its own. Authoring
+// supplies the purpose vocabulary; there is no global list of "right" names.
+struct NamedRuleRequirement {
+    std::string function;
+    int value = 0;
+    std::vector<std::string> purpose_words;
+    std::size_t min_uses = 1;
+};
+struct NamedRuleAnalysis {
+    bool source_evidence = false;
+    std::string reason;
+};
+
+namespace named_rule_detail {
+using Tokens = std::vector<std::string>;
+struct Bounds { std::size_t open, close; };
+struct LocalRule { std::string name; std::size_t end; int value; };
+
+inline bool id(std::string_view token,std::string_view name) {
+    return token.starts_with("id:")&&token.substr(3)==name;
+}
+inline bool op(std::string_view token,std::string_view name) {
+    return token.starts_with("op:")&&token.substr(3)==name;
+}
+inline std::optional<std::size_t> closing(
+        const Tokens& t,std::size_t at,std::string_view left,std::string_view right) {
+    if(at>=t.size()||!op(t[at],left))return {};
+    std::size_t depth=0;
+    for(auto i=at;i<t.size();++i) {
+        if(op(t[i],left))++depth;
+        else if(op(t[i],right)) {
+            if(!depth)return {};
+            if(--depth==0)return i;
+        }
+    }
+    return {};
+}
+inline std::optional<Bounds> body(const Tokens& t,std::string_view name) {
+    std::optional<Bounds> found;
+    for(std::size_t i=0;i+1<t.size();++i) {
+        if(!id(t[i],name)||!op(t[i+1],"("))continue;
+        const auto args=closing(t,i+1,"(",")");
+        if(!args)return {};
+        if(*args+1>=t.size()||!op(t[*args+1],"{"))continue;
+        const auto end=closing(t,*args+1,"{","}");
+        if(!end||found)return {};
+        found=Bounds{*args+1,*end};
+    }
+    return found;
+}
+inline std::optional<int> number(const Tokens& t,std::size_t start,std::size_t end) {
+    bool negative=false;
+    if(start<end&&(op(t[start],"+")||op(t[start],"-"))) {
+        negative=op(t[start],"-");++start;
+    }
+    if(start+1!=end||!t[start].starts_with("number:"))return {};
+    const auto text=std::string_view(t[start]).substr(7);
+    int value=0;
+    const auto parsed=std::from_chars(text.data(),text.data()+text.size(),value);
+    if(parsed.ec!=std::errc{}||parsed.ptr!=text.data()+text.size())return {};
+    return negative?-value:value;
+}
+inline std::optional<LocalRule> constant(
+        const Tokens& t,std::size_t position,std::size_t limit) {
+    if(position+5>=limit||!(id(t[position],"const")||id(t[position],"constexpr"))||
+       !id(t[position+1],"int")||!t[position+2].starts_with("id:"))return {};
+    const auto name=t[position+2].substr(3);
+    const auto assignment=position+3;
+    if(op(t[assignment],"=")) {
+        auto end=assignment+1;
+        while(end<limit&&!op(t[end],";"))++end;
+        if(end>=limit)return {};
+        const auto value=number(t,assignment+1,end);
+        if(value)return LocalRule{name,end,*value};
+    }
+    if(op(t[assignment],"{")||op(t[assignment],"(")) {
+        const bool brace=op(t[assignment],"{");
+        const auto end=closing(t,assignment,brace?"{":"(",brace?"}":")");
+        if(!end||*end+1>=limit||!op(t[*end+1],";"))return {};
+        const auto value=number(t,assignment+1,*end);
+        if(value)return LocalRule{name,*end+1,*value};
+    }
+    return {};
+}
+inline bool role(std::string_view name,const std::vector<std::string>& words) {
+    std::string folded;
+    for(const unsigned char c:name)folded+=static_cast<char>(std::tolower(c));
+    for(const auto& item:words) {
+        if(item.size()<3)continue;
+        std::string word;
+        for(const unsigned char c:item)word+=static_cast<char>(std::tolower(c));
+        if(folded.find(word)!=std::string::npos)return true;
+    }
+    return false;
+}
+inline bool productive(const Tokens& t,std::size_t i) {
+    // A common fake "use" of a constant must not satisfy the source goal.
+    return !(i>=2&&op(t[i-1],"*")&&t[i-2]=="number:0")&&
+           !(i+2<t.size()&&op(t[i+1],"*")&&t[i+2]=="number:0");
+}
+inline bool used_in_return(const Tokens& t,Bounds bounds,std::string_view name) {
+    for(auto i=bounds.open+1;i<bounds.close;++i) {
+        if(!id(t[i],"return"))continue;
+        for(auto j=i+1;j<bounds.close&&!op(t[j],";");++j)
+            if(id(t[j],name)&&productive(t,j))return true;
+    }
+    return false;
+}
+} // namespace named_rule_detail
+
+inline NamedRuleAnalysis analyze_named_rule_sources(
+        std::string_view source,std::span<const NamedRuleRequirement> requirements) {
+    using namespace named_rule_detail;
+    if(requirements.empty())return {false,"No hay reglas declaradas."};
+    const auto scanned=code_format::cpp_tokens(source);
+    if(!scanned)return {false,"El codigo fuente no admite analisis lexico."};
+    Tokens t;
+    for(const auto& token:*scanned)
+        if(!token.starts_with("comment:")&&!token.starts_with("directive:")&&
+           !token.starts_with("literal:"))t.push_back(token);
+    for(const auto& rule:requirements) {
+        if(rule.function.empty()||rule.purpose_words.empty()||!rule.min_uses)
+            return {false,"La declaracion de la regla esta incompleta."};
+        const auto bounds=body(t,rule.function);
+        if(!bounds)return {false,"Falta definir la funcion "+rule.function+"."};
+        std::vector<LocalRule> candidates;
+        std::size_t depth=0;
+        for(auto i=bounds->open+1;i<bounds->close;++i) {
+            if(op(t[i],"{")){++depth;continue;}
+            if(op(t[i],"}")){if(depth)--depth;continue;}
+            if(depth)continue;
+            const auto item=constant(t,i,bounds->close);
+            if(item&&role(item->name,rule.purpose_words))candidates.push_back(*item);
+        }
+        if(candidates.size()!=1)
+            return {false,"Falta una constante local de proposito en "+rule.function+"."};
+        const auto& value=candidates.front();
+        if(value.value!=rule.value)
+            return {false,"La constante de "+rule.function+" no representa el acuerdo."};
+        std::size_t references=0;
+        for(auto i=value.end+1;i<bounds->close;++i)
+            if(id(t[i],value.name)&&productive(t,i))++references;
+        if(references<rule.min_uses||!used_in_return(t,*bounds,value.name))
+            return {false,"La constante no interviene en el resultado de "+rule.function+"."};
+    }
+    return {true,{}};
+}
+} // namespace lgaed::curriculum
