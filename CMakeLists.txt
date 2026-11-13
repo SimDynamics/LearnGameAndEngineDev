@@ -264,6 +264,14 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     lgaed_add_named_rule_source_tests()
+    # Exercise the source-evidence prerequisite on four real, historically
+    # mapped U3 editors, without changing their authored JSON contracts.
+    add_executable(lgaed_named_rule_runtime_tests
+        native/platform/windows/named_rule_runtime_tests.cpp)
+    target_link_libraries(lgaed_named_rule_runtime_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.named_rule_runtime COMMAND lgaed_named_rule_runtime_tests
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json")
+    set_tests_properties(native.named_rule_runtime PROPERTIES TIMEOUT 40)
     # Compile and execute four real U3L6/U3L8 original student editors
     # against native MSVC with independent stdout/stderr and semantic probes.
     # The original JSON remains untouched: the reviewed root declaration is
