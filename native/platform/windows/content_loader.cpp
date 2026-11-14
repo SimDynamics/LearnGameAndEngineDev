@@ -405,7 +405,15 @@ void require_formatted_question_semantics(const JsonObject& root,
     if(!original.HasKey(L"question"))return;
     const auto previous=text(original,"question"),revised=text(current,"question");
     if(previous==revised)return;
-    require(!trimmed(previous).empty()&&!trimmed(revised).empty(),
+    // Apply the same Unicode-aware whitespace convention used for authored
+    // language metadata. The later SemanticPublicFields::trimmed method is
+    // not visible here, and calling it broke the actual MSVC Windows build.
+    const nonblank=[](std::string_view value) {
+        const auto utf16=key(value);
+        return std::ranges::any_of(std::wstring_view(utf16.c_str(),utf16.size()),
+            [](wchar_t c){return !narration_space(c);});
+    };
+    require(nonblank(previous)&&nonblank(revised),
         "Combined source/question revision needs nonblank public wording");
     require(root.HasKey(L"textSemantics"),
         "Formatted question needs an explicit semantic descriptor");
