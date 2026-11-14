@@ -162,6 +162,49 @@ void capacity() {
         })cpp",rules,false,"A different computed value is still a wrong agreement");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                const int total = capacidad + capacidad;
+                (void)total;
+            }
+            return (piezas + 3) / 4 + total;
+        })cpp",rules,false,
+        "An inner shadow cannot lend its capacity uses to the outer total");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                int total{0};
+                total = capacidad + capacidad;
+            }
+            return (piezas + 3) / 4 + total;
+        })cpp",rules,false,
+        "An assignment to a shadowed local must not credit its outer namesake");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total = (piezas + capacidad - 1) / capacidad;
+            {
+                int total{0};
+                total = piezas / 4;
+            }
+            return total;
+        })cpp",rules,true,
+        "A nested shadow must not erase a correct outer result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                total = (piezas + capacidad - 1) / capacidad;
+            }
+            return total;
+        })cpp",rules,true,
+        "An inner block can legitimately assign a calculation to the outer alias");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int cupo{4};
             const int ajuste = cupo - 1;
             const int cajas = (piezas + ajuste) / cupo;

@@ -588,16 +588,20 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     // Local aliases carry their originating use count across initializers and
     // assignments. An overwritten alias loses its previous evidence.
     constexpr std::size_t limit=64;
-    std::vector<std::pair<std::string,std::size_t>> aliases;
+    // A block may declare a new variable with an existing outer name.
+    // Its evidence expires at scope exit; assignments to the outer variable
+    // still propagate when there is no inner shadowing declaration.
+    struct Alias { std::string name; std::size_t count,depth; };
+    std::vector<Alias> aliases;
     const auto uses=[&](std::size_t first,std::size_t last) {
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
             if(absorbed_by_boolean_literal(t,i,first,last)||
                !productive(t,i,bounds.open+1))continue;
             std::size_t contribution=id(t[i],name)?1:0;
-            for(const auto& alias:aliases)
-                if(id(t[i],alias.first)) {
-                    contribution=alias.second;
+            for(auto alias=aliases.rbegin();alias!=aliases.rend();++alias)
+                if(id(t[i],alias->name)) {
+                    contribution=alias->count;
                     break;
                 }
             count+=std::min(contribution,limit-count);
@@ -652,7 +656,15 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(op(t[i],"{")){++nesting;continue;}
-        if(op(t[i],"}")){if(nesting)--nesting;continue;}
+        if(op(t[i],"}")){
+            if(nesting) {
+                std::erase_if(aliases,[&](const Alias& alias){
+                    return alias.depth==nesting;
+                });
+                --nesting;
+            }
+            continue;
+        }
         // The first unconditional return ends the function path. A later
         // unreachable return must not manufacture the required source uses.
         // A simple runtime guard remains conditional and does not suppress
@@ -768,10 +780,14 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 declared=true;
             }else {
                 const auto count=uses(initializer+1,last);
+                // A declaration within braces shadows rather than updating
+                // an alias that belongs to the enclosing scope.
                 const auto found=std::ranges::find_if(aliases,
-                    [&](const auto& alias){return alias.first==local;});
-                if(found==aliases.end())aliases.emplace_back(local,count);
-                else found->second=count;
+                    [&](const Alias& alias){
+                        return alias.name==local&&alias.depth==nesting;
+                    });
+                if(found==aliases.end())aliases.push_back({local,count,nesting});
+                else found->count=count;
             }
             i=last;
             continue;
@@ -783,10 +799,11 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name)return 0;
             const auto count=uses(i+2,last);
-            const auto found=std::ranges::find_if(aliases,
-                [&](const auto& alias){return alias.first==local;});
-            if(found==aliases.end())aliases.emplace_back(local,count);
-            else found->second=count;
+            // Assignments target the nearest in-scope declaration.
+            const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                [&](const Alias& alias){return alias.name==local;});
+            if(found==aliases.rend())aliases.push_back({local,count,nesting});
+            else found->count=count;
             i=last;
         }
     }
