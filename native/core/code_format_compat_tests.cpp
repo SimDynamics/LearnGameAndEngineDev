@@ -102,6 +102,42 @@ int main() {
             R"qa(message("${CMAKE_CURRENT_LIST_LINE}"))qa",
             "\nmessage(\"${CMAKE_CURRENT_LIST_LINE}\")",Language::cmake),
         "CMake line introspection silently changed its value");
+    check(!code_format::equivalent(
+            R"qa(function(where)
+  message("${CMAKE_CURRENT_FUNCTION_LIST_LINE}")
+endfunction()
+where()
+)qa",
+            R"qa(
+function(where)
+  message("${CMAKE_CURRENT_FUNCTION_LIST_LINE}")
+endfunction()
+where()
+)qa",Language::cmake),
+        "CMake function-definition line introspection silently changed its value");
+    check(!code_format::equivalent(
+            "if(CMAKE_CURRENT_LIST_LINE)\nmessage(\"ok\")\nendif()",
+            "\nif(CMAKE_CURRENT_LIST_LINE)\nmessage(\"ok\")\nendif()",Language::cmake),
+        "A bare CMake line-position variable escaped format protection");
+    check(code_format::equivalent(
+            R"qa(#[=[ ${CMAKE_CURRENT_LIST_LINE} in a comment ]=]
+message([=[${CMAKE_CURRENT_LIST_LINE}]=])
+)qa",
+            R"qa(#[=[ ${CMAKE_CURRENT_LIST_LINE} in a comment ]=]
+
+message([=[${CMAKE_CURRENT_LIST_LINE}]=])
+)qa",Language::cmake),
+        "CMake bracket arguments and bracket comments were mistaken for expansions");
+    check(code_format::equivalent(
+            "# CMAKE_CURRENT_FUNCTION_LIST_LINE is just documentation\n"
+            "message(\"CMAKE_CURRENT_LIST_LINE\")",
+            "# CMAKE_CURRENT_FUNCTION_LIST_LINE is just documentation\n\n"
+            "message(\"CMAKE_CURRENT_LIST_LINE\")",Language::cmake),
+        "CMake literal names in comments or quotes blocked safe source spacing");
+    check(code_format::equivalent(
+            "set(my_CMAKE_CURRENT_LIST_LINE 7)\nmessage(ok)",
+            "set(my_CMAKE_CURRENT_LIST_LINE 7)\n\nmessage(ok)",Language::cmake),
+        "A longer inert CMake identifier was treated as a position variable");
     check(!code_format::equivalent("a", "a\n",Language::immutable),
         "Unknown data source was modified");
 }
