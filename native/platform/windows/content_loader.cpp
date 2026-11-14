@@ -2663,7 +2663,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     for(const auto& record:records) {
         const auto item=record.GetObject();
         allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
-            "optionSelection","sourceIntegrity"});
+            "optionSelection","sourceIntegrity","configureMessageOrder"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2691,6 +2691,30 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             require(curriculum::cmake_numeric_version(
                 requirement.minimum_cmake_version).has_value(),
                 "CMake minimum requires a numeric major.minor version");
+        }
+        if(item.HasKey(L"configureMessageOrder")) {
+            const auto messages=array(item,"configureMessageOrder");
+            require(messages.Size()>0&&messages.Size()<=16,
+                "CMake order needs 1..16 original STATUS messages");
+            for(const auto& raw:messages) {
+                const auto value=raw.GetObject();
+                allowed_keys(value,{"path","text"},true);
+                const auto path=text(value,"path");
+                const auto expected=text(value,"text");
+                require(!expected.empty()&&expected.size()<=256&&
+                        std::ranges::all_of(expected,[](unsigned char c) {
+                            return c>=32&&c!=127;
+                        })&&
+                        std::ranges::any_of(owner->project_files,
+                            [&](const auto& file) {
+                                return file.first==path&&
+                                    (path=="CMakeLists.txt"||
+                                     path.ends_with("/CMakeLists.txt")||
+                                     path.ends_with(".cmake"));
+                            }),
+                    "STATUS message must belong to an original CMake file");
+                requirement.configure_message_order.emplace_back(path,expected);
+            }
         }
         const auto targets=array(item,"targets");
         require(targets.Size()>0&&targets.Size()<=16,

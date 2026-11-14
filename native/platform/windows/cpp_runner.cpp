@@ -576,6 +576,7 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
 bool requires_authored_cmake_trace(const CppRunRequest& request) {
     return request.capture_cmake_graph&&request.cmake_graph_check&&
         (request.cmake_graph_check->option_selection||
+         !request.cmake_graph_check->configure_message_order.empty()||
          std::ranges::any_of(request.cmake_graph_check->targets,
             [](const auto& target) {
                 return target.require_explicit_cxx20||
@@ -621,6 +622,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
     // certify an early prefix of the student's CMake commands.
     auto observed=graph.targets;
     auto observed_options=graph.authored_option_defaults;
+    auto observed_messages=graph.authored_status_messages;
     const auto target_for=[&](std::string_view name)->CppCmakeTargetEvidence* {
         const auto it=std::ranges::find_if(observed,
             [&](const auto& item){return item.name==name;});
@@ -644,17 +646,20 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             if(!event.HasKey(L"cmd"))continue; // trace format header
             if(!event.HasKey(L"file")||!event.HasKey(L"args"))return;
             const auto origin=project_path(json_text(event,L"file")).lexically_normal();
-            const bool authored=std::ranges::any_of(request.project_files,
-                [&](const auto& file) {
-                    if(!authored_cmake_path(file.first))return false;
-                    const auto expected=(source/project_path(file.first))
-                        .lexically_normal().generic_wstring();
-                    const auto observed_path=origin.generic_wstring();
-                    const CaseInsensitive cmp;
-                    return !cmp(expected,observed_path)&&
-                        !cmp(observed_path,expected);
-                });
-            if(!authored)continue;
+            std::string authored_path;
+            for(const auto& file:request.project_files) {
+                if(!authored_cmake_path(file.first))continue;
+                const auto expected=(source/project_path(file.first))
+                    .lexically_normal().generic_wstring();
+                const auto observed_path=origin.generic_wstring();
+                const CaseInsensitive cmp;
+                if(!cmp(expected,observed_path)&&
+                   !cmp(observed_path,expected)) {
+                    authored_path=file.first;
+                    break;
+                }
+            }
+            if(authored_path.empty())continue;
             const auto command=json_text(event,L"cmd");
             std::vector<std::string> args;
             for(const auto& value:event.GetNamedArray(L"args")) {
@@ -669,7 +674,10 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 }
             }
             if(args.empty())continue;
-            if(equals(command,"option")&&args.size()>=2) {
+            if(equals(command,"message")&&args.size()==2&&
+               equals(args[0],"STATUS")) {
+                observed_messages.emplace_back(authored_path,args[1]);
+            }else if(equals(command,"option")&&args.size()>=2) {
                 observed_options.emplace_back(args[0],
                     args.size()==2||off(args[2])?"OFF":"ON");
             }else if(equals(command,"target_include_directories")&&
@@ -756,6 +764,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             std::move(observed[i].authored_private_include_directories);
     }
     graph.authored_option_defaults=std::move(observed_options);
+    graph.authored_status_messages=std::move(observed_messages);
 }
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
@@ -1182,6 +1191,14 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     }
     if(required.targets.empty())
         return fail("No hay objetivos de construcción declarados para comprobar.");
+    auto message=graph.authored_status_messages.cbegin();
+    for(const auto& wanted:required.configure_message_order) {
+        message=std::find(message,graph.authored_status_messages.cend(),wanted);
+        if(message==graph.authored_status_messages.cend())
+            return fail("Falta STATUS en su archivo y orden: "+wanted.first+
+                " / "+wanted.second);
+        ++message;
+    }
     for(const auto& [path,digest]:required.source_integrity) {
         const auto found=std::ranges::find_if(request.project_files,
             [&](const auto& file){return file.first==path;});

@@ -2186,7 +2186,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
                 {"activity", "project", "minimumCmakeVersion", "targets",
-                 "optionSelection", "sourceIntegrity"},
+                 "optionSelection", "sourceIntegrity", "configureMessageOrder"},
                 "CMake graph owner needs bounded optional requirements")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
@@ -2209,6 +2209,24 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) and
                     all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
                     "CMake minimum must be a numeric major.minor version")
+        if "configureMessageOrder" in entry:
+            messages = entry["configureMessageOrder"]
+            source_cmake = {f.get("path") for f in block["projectFiles"]
+                            if type(f) is dict and type(f.get("path")) is str
+                            and (f["path"] == "CMakeLists.txt" or
+                                 f["path"].endswith("/CMakeLists.txt") or
+                                 f["path"].endswith(".cmake"))}
+            require(type(messages) is list and 0 < len(messages) <= 16 and
+                    all(type(item) is dict and
+                        set(item) == {"path", "text"} and
+                        type(item["path"]) is str and
+                        item["path"] in source_cmake and
+                        type(item["text"]) is str and
+                        0 < len(item["text"]) <= 256 and
+                        all(ord(c) >= 32 and ord(c) != 127
+                            for c in item["text"])
+                        for item in messages),
+                    "CMake STATUS order needs original CMake files and text")
         if "sourceIntegrity" in entry:
             integrity = entry["sourceIntegrity"]
             require(type(integrity) is dict and

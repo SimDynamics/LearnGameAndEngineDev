@@ -70,6 +70,8 @@ struct CmakeGraphRequirement {
     // SHA-256 of every original non-CMake file after any specifically
     // allowed source repair. Generated from the immutable original lesson.
     std::vector<std::pair<std::string,std::string>> source_integrity;
+    // Ordered status markers bound to the exact original CMake source file.
+    std::vector<std::pair<std::string,std::string>> configure_message_order;
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 

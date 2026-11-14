@@ -416,6 +416,13 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 for(const auto& root:target.private_include_roots)token(root);
             }
         }
+        if(!graph.configure_message_order.empty()) {
+            token("cmake-authored-message-order-v1");
+            token(std::to_string(graph.configure_message_order.size()));
+            for(const auto& [path,status]:graph.configure_message_order) {
+                token(path);token(status);
+            }
+        }
         if(!graph.source_integrity.empty()) {
             token("cmake-source-integrity-v1");
             token(std::to_string(graph.source_integrity.size()));

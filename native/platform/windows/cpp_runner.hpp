@@ -150,6 +150,7 @@ struct CppCmakeGraphEvidence {
     // New fields are appended so historical aggregate initializations stay valid.
     std::string minimum_cmake_version;
     std::vector<std::pair<std::string,std::string>> authored_option_defaults;
+    std::vector<std::pair<std::string,std::string>> authored_status_messages;
 };
 // This separately compiled result is bound to the OFF configuration fingerprint.
 struct CppCmakeOptionProbe {
