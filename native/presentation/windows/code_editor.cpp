@@ -928,8 +928,17 @@ struct CodeEditor::Impl {
             if (mutating) {
                 self.capture();
                 self.pending_edit.reset();
-                if(!self.applying)if(const auto parent=GetParent(window))
-                    SendMessageW(parent,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),reinterpret_cast<LPARAM>(window));
+                if(!self.applying) {
+                    // EN_CHANGE may run inside RichEdit's frozen edit. Inspect
+                    // the final line geometry only after native Unfreeze.
+                    self.restore_top_when_all_lines_fit();
+                    SendMessageW(window,EM_GETSCROLLPOS,0,
+                        reinterpret_cast<LPARAM>(&self.now().scroll));
+                    if(const auto parent=GetParent(window))
+                        SendMessageW(parent,WM_COMMAND,
+                            MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),
+                            reinterpret_cast<LPARAM>(window));
+                }
             }
             return result;
         } catch (...) {
