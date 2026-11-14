@@ -231,6 +231,38 @@ void capacity() {
             return (piezas + 3) / 4;
         })cpp",rules,false,
         "An unreachable unbraced return cannot earn named-rule credit");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (0x0) return (piezas + capacidad - 1) / capacidad;
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "A zero hex condition cannot make an unreachable result count");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if constexpr (0b0) {
+                return (piezas + capacidad - 1) / capacidad;
+            }
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An inactive binary-zero constexpr arm cannot justify hardcoded output");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (0X1u) return (piezas + 3) / 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "A numeric-true early return cannot be rescued by dead named code");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if ((0b0)) return (piezas + 3) / 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "A parenthesized binary-false guard cannot suppress valid named code");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
@@ -523,6 +555,33 @@ void capacity() {
             const int capacidad{4};
             return (piezas + 3) / 4 + 0 * capacidad;
         })cpp",rules,false,"Zero multiplication as decoration");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + capacidad * 0x0 + capacidad * 0b0;
+        })cpp",rules,false,
+        "Hexadecimal and binary zero factors cannot manufacture two uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + 00u * (capacidad + capacidad);
+        })cpp",rules,false,
+        "A suffixed octal zero annihilates an entire parenthesized expression");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad + capacidad) * 0X0;
+        })cpp",rules,false,
+        "An uppercase hexadecimal zero after grouped uses is still neutral");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   0x0 * capacidad;
+        })cpp",rules,true,
+        "A dead hexadecimal factor cannot erase an otherwise correct named result");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
@@ -576,6 +635,43 @@ void capacity() {
                    (capacidad > 0 && capacidad < 8 && false);
         })cpp",rules,false,
         "An && false suffix cannot make earlier references productive");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 && capacidad < 8 && 0x0);
+        })cpp",rules,false,
+        "An && hexadecimal-zero suffix discards both local-rule references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 || capacidad < 8 || 0b1) - 1;
+        })cpp",rules,false,
+        "A binary-true OR suffix cannot establish a named-rule dependency");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (0x1 || capacidad || capacidad) - 1;
+        })cpp",rules,false,
+        "A true hex prefix skips both named OR operands");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (0b0 && capacidad && capacidad);
+        })cpp",rules,false,
+        "A false binary prefix skips both named AND operands");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad > 0 || 02) - 1;
+        })cpp",rules,true,
+        "An irrelevant octal-true suffix must preserve earlier real uses");
+
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
