@@ -224,6 +224,23 @@ inline std::optional<int> number(const Tokens& t,std::size_t start,std::size_t e
         static_cast<long long>(magnitude);
     return static_cast<int>(signed_value);
 }
+// Boolean conditions and neutral factors obey the C++ integer literal
+// value, not its textual base. For example, 0x0 and 0b0 are false, while
+// 0x1 and 02 are true. Keep this deliberately literal-only: never evaluate
+// a student's arbitrary condition just to manufacture static evidence.
+inline std::optional<bool> boolean_literal(
+        const Tokens& t,std::size_t start,std::size_t end) {
+    while(start<end&&op(t[start],"(")) {
+        const auto close=closing(t,start,"(",")");
+        if(!close||*close!=end-1)break;
+        ++start;--end;
+    }
+    if(start+1!=end)return {};
+    if(id(t[start],"true"))return true;
+    if(id(t[start],"false"))return false;
+    if(const auto value=number(t,start,end))return *value!=0;
+    return {};
+}
 // Accept bounded integer arithmetic as well as decimal literals. Requiring
 // just one spelling of a constant would reject equivalent student solutions.
 // Do not evaluate arbitrary C++ or macros: these are source-side hints only,
@@ -335,14 +352,8 @@ inline bool absorbed_by_boolean_literal(const Tokens& t,std::size_t at,
         std::size_t first,std::size_t last) {
     if(at<first||at>=last||last-first>256)return false;
     const auto literal=[&](std::size_t start,std::size_t end,bool expected) {
-        while(start<end&&op(t[start],"(")) {
-            const auto close=closing(t,start,"(",")");
-            if(!close||*close!=end-1)break;
-            ++start;--end;
-        }
-        if(end!=start+1)return false;
-        return expected?(id(t[start],"true")||t[start]=="number:1"):
-            (id(t[start],"false")||t[start]=="number:0");
+        const auto value=boolean_literal(t,start,end);
+        return value&&*value==expected;
     };
     std::vector<std::size_t> ors;
     std::size_t depth=0;
@@ -401,7 +412,8 @@ inline bool productive(const Tokens& t,std::size_t i,
         return false;
     const auto zero_after=[&](std::size_t position) {
         if(position>=t.size())return false;
-        if(t[position]=="number:0")return true;
+        if(const auto value=number(t,position,position+1);value&&*value==0)
+            return true;
         if(!op(t[position],"("))return false;
         const auto end=closing(t,position,"(",")");
         if(!end)return false;
@@ -410,7 +422,8 @@ inline bool productive(const Tokens& t,std::size_t i,
     };
     const auto zero_before=[&](std::size_t position) {
         if(position>=t.size())return false;
-        if(t[position]=="number:0")return true;
+        if(const auto value=number(t,position,position+1);value&&*value==0)
+            return true;
         if(!op(t[position],")"))return false;
         std::size_t depth=0;
         for(auto cursor=position+1;cursor-->0;) {
@@ -466,14 +479,8 @@ inline bool productive(const Tokens& t,std::size_t i,
         if(!ambiguous&&!logical_operators.empty()&&(and_only||or_only)) {
             const auto literal_operand=[&](std::size_t first,std::size_t last,
                     bool desired) {
-                while(first<last&&op(t[first],"(")) {
-                    const auto end=closing(t,first,"(",")");
-                    if(!end||*end!=last-1)break;
-                    ++first;--last;
-                }
-                if(last!=first+1)return false;
-                return desired?(id(t[first],"true")||t[first]=="number:1"):
-                    (id(t[first],"false")||t[first]=="number:0");
+                const auto value=boolean_literal(t,first,last);
+                return value&&*value==desired;
             };
             std::size_t first=open+1;
             bool constant_group=false;
@@ -498,10 +505,9 @@ inline bool productive(const Tokens& t,std::size_t i,
         // parentheses. An || after false && starts a potentially live branch;
         // a comma or conditional expression starts a separate result.
         if(open+2<*close) {
-            const bool dead_and=(id(t[open+1],"false")||
-                t[open+1]=="number:0")&&op(t[open+2],"&&");
-            const bool dead_or=(id(t[open+1],"true")||
-                t[open+1]=="number:1")&&op(t[open+2],"||");
+            const auto first=boolean_literal(t,open+1,open+2);
+            const bool dead_and=first&&!*first&&op(t[open+2],"&&");
+            const bool dead_or=first&&*first&&op(t[open+2],"||");
             if(dead_and||dead_or) {
                 std::size_t nested=0;
                 for(auto at=open+3;at<*close;++at) {
@@ -659,13 +665,10 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 const auto close=closing(t,condition,"(",")");
                 if(close&&*close+1<bounds.close) {
                     const auto statement=*close+1;
-                    const bool literal=*close==condition+2;
-                    const bool never=literal&&
-                        (id(t[condition+1],"false")||
-                         t[condition+1]=="number:0");
-                    const bool always=literal&&
-                        (id(t[condition+1],"true")||
-                         t[condition+1]=="number:1");
+                    const auto literal=boolean_literal(
+                        t,condition+1,*close);
+                    const bool never=literal&&!*literal;
+                    const bool always=literal&&*literal;
                     if(never) {
                         std::size_t skipped=statement;
                         if(op(t[statement],"{")) {
