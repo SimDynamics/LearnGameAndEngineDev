@@ -301,6 +301,67 @@ void source_bound_order_groups_preserve_history() {
         "archive, reader projection, invalid source and overlapping group rejection\n";
 }
 
+// This owner exists only in a disposable fixture. A genuine new review must
+// work without adding another lesson/hash exception to the native loader.
+void generic_order_groups_accept_new_owner() {
+    using namespace lgaed;
+    const std::string reviewed=R"lgaed({"id":"qa_order_generic","title":"Grupos independientes","pages":[{"blocks":[{"type":"order_code","id":"independent_order","question":"Ordena","fragments":["int a{1};","int b{2};","return a + b;"],"correctOrder":[0,1,2],"explanation":"Dos variables independientes."}]}],"stateLayout":{"version":2,"locale":"es","origin":[{"id":"page_0","blocks":[{"id":"qa_new_independent_order","sha256":"f18d4a1e05c3b696d68c217a74a3ab0428ef917011bcd56e0acb71507d24b149"}]}],"current":[{"id":"page_0","blocks":["qa_new_independent_order"]}],"family":{"es":{"sha256":"0000000000000000000000000000000000000000000000000000000000000000","origin":[{"id":"page_0","blocks":[{"id":"qa_new_independent_order","sha256":"f18d4a1e05c3b696d68c217a74a3ab0428ef917011bcd56e0acb71507d24b149"}]}]}},"additions":[],"editorial":[]},"orderEquivalenceGroups":[{"activity":"qa_new_independent_order","sourceSha256":"f18d4a1e05c3b696d68c217a74a3ab0428ef917011bcd56e0acb71507d24b149","groups":[[0,1]]}]})lgaed";
+    const auto at=reviewed.find(",\"orderEquivalenceGroups\":");
+    check(at!=reviewed.npos,"Generic order QA fixture lost its root declaration");
+    const auto prior=reviewed.substr(0,at)+"}";
+    const auto original=windows::parse_lesson_json(prior,"es");
+    const auto active=windows::parse_lesson_json(reviewed,"es");
+    const auto metadata=windows::parse_lesson_progress_metadata(reviewed,"es");
+    const auto& before=original.pages.at(0).blocks.at(0);
+    const auto& after=active.pages.at(0).blocks.at(0);
+    const auto& summary=metadata.pages.at(0).blocks.at(0);
+    check(before.stable_id=="qa_new_independent_order"&&
+          before.order_equivalence_groups.empty()&&
+          after.order_equivalence_groups==std::vector<std::vector<std::size_t>>{{0,1}}&&
+          summary.order_equivalence_groups==after.order_equivalence_groups,
+        "The generic root order reviewer still requires a hardcoded historical owner");
+    const auto swapped=std::vector<std::size_t>{1,0,2};
+    const auto invalid=std::vector<std::size_t>{2,1,0};
+    check(!curriculum::evaluate_order(before,swapped).correct&&
+          curriculum::evaluate_order(after,swapped).correct&&
+          curriculum::evaluate_order(summary,swapped).correct&&
+          !curriculum::evaluate_order(after,invalid).correct&&
+          curriculum::evaluate_order(after,after.correct_order).correct,
+        "Generic order groups changed canonical evaluation or accepted a dependency inversion");
+    check(before.raw_json==after.raw_json&&
+          before.correct_order==after.correct_order&&
+          before.fragments==after.fragments&&
+          curriculum::order_representation_frame(before)==
+              curriculum::order_representation_frame(after)&&
+          curriculum::exercise_key(original,before)==
+              curriculum::exercise_key(active,after)&&
+          curriculum::draft_key("programming",original,before)==
+              curriculum::draft_key("programming",active,after),
+        "A new order equivalence rewrote physical code or existing learner state");
+    const auto reject=[](std::string forged) {
+        bool loader=false,progress=false;
+        try{(void)lgaed::windows::parse_lesson_json(forged,"es");}
+        catch(const std::exception&){loader=true;}
+        try{(void)lgaed::windows::parse_lesson_progress_metadata(forged,"es");}
+        catch(const std::exception&){progress=true;}
+        check(loader&&progress,"Unverified generic order metadata passed one native loader");
+    };
+    auto forged=reviewed;
+    auto marker=forged.find("\"groups\":[[0,1]]");
+    check(marker!=forged.npos,"Generic group negative fixture is missing");
+    forged.replace(marker,std::string_view("\"groups\":[[0,1]]").size(),
+                   "\"groups\":[[0,2]]");
+    reject(forged);
+    forged=reviewed;
+    marker=forged.find("\"sourceSha256\":\"f18d4a1e");
+    check(marker!=forged.npos,"Generic source negative fixture is missing");
+    marker+=std::string_view("\"sourceSha256\":\"").size();
+    forged.replace(marker,1,"0");
+    reject(forged);
+    std::cout<<"PASS generic order root: new stable owner, swapped independent cards, "
+        "original response, source digest and catalog state\n";
+}
+
 void optional_visual_chips_do_not_publish_answers(HWND host){
     using namespace lgaed::presentation;
     const auto dpi=static_cast<int>(GetDpiForWindow(host));
@@ -510,6 +571,7 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
         if(whitespace_only){
             optional_root_metadata_preserves_published_history();
             source_bound_order_groups_preserve_history();
+            generic_order_groups_accept_new_owner();
             optional_visual_chips_do_not_publish_answers(host);
             preserve_code_spacing_in_rows_and_editor(host);
             DestroyWindow(host);
