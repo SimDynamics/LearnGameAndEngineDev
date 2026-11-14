@@ -145,6 +145,26 @@ int main() {
         const auto host = CreateWindowExW(0,type.lpszClassName,L"Catalog QA",WS_OVERLAPPEDWINDOW,0,0,1000,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host != nullptr,"Create catalog QA host");
         MoveWindow(host,0,0,px(host,1000),px(host,850),TRUE);
+        {
+            // The last card can end before the visible viewport. No Windows
+            // default white rectangle may remain under the Android-style cards.
+            auto empty_list=create_card_list(host,4998,WM_APP+300);
+            reader_theme::apply(empty_list,reader_theme::Surface::screen);
+            MoveWindow(empty_list,0,0,px(empty_list,240),px(empty_list,180),TRUE);
+            const wchar_t* label=L"Tarjeta de prueba";
+            check(SendMessageW(empty_list,LB_ADDSTRING,0,reinterpret_cast<LPARAM>(label))!=LB_ERR,
+                "Create one themed catalog card");
+            InvalidateRect(empty_list,nullptr,TRUE);
+            UpdateWindow(empty_list);
+            const auto dc=GetDC(empty_list);
+            check(dc!=nullptr,"Inspect the empty catalog viewport");
+            const auto actual=GetPixel(dc,px(empty_list,30),px(empty_list,140));
+            const auto expected=reader_theme::background(empty_list);
+            ReleaseDC(empty_list,dc);
+            DestroyWindow(empty_list);
+            check(actual==expected,
+                "The empty trailing catalog viewport kept a white/system background");
+        }
         std::filesystem::path opened; unsigned launches = 0, options = 0,smo_launches=0;bool all_actions=false;
         auto create = [&] {
             auto view = create_catalog_view(host,environment,root,[&](const auto& path) { opened = path; ++launches; },
@@ -377,6 +397,15 @@ int main() {
         SendMessageW(list,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(40,20));
         SendMessageW(list,WM_LBUTTONUP,0,MAKELPARAM(40,20)); pump();
         check(catalog_location(view) == before && launches == 0,"Dragging the catalog triggered card activation");
+        // A malformed progress asset must never leave later units with an
+        // orphaned "Abrir" detail or a raw local JSON path in the subtitle.
+        navigate_catalog(view,{"es","programming","cpp_fundamentals",{}});list=GetDlgItem(view,4105);
+        check(SendMessageW(list,LB_GETCOUNT,0,0)==12,"The course lost indexed units");
+        check(row_caption(list,10).find(L" — Abrir")==std::wstring::npos&&
+            row_caption(list,11).find(L" — Abrir")==std::wstring::npos,
+            "U11/U12 showed an activation label instead of progress status");
+        check(caption(GetDlgItem(view,4109)).find(L".json")==std::wstring::npos,
+            "The catalog exposed an internal JSON path in its heading");
         navigate_catalog(view,{"es","programming","cpp_fundamentals","cpp_fundamentals__programas_y_ejecucion"}); list = GetDlgItem(view,4105);
         check(SendMessageW(list,LB_GETCOUNT,0,0) == 5,"Indexed lesson list missing");
         check(caption(GetDlgItem(view,4114))==L"Unidad 1"&&caption(GetDlgItem(view,4109))==L"Lecciones"
