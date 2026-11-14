@@ -98,6 +98,63 @@ void accepted_semantics() {
         "Alternative ostream evidence rejected a valid closed interval");
 }
 
+void source_edits_stay_inside_assigned_diagnostic() {
+    using lgaed::curriculum::rejection_function_only_edit;
+    const std::string original=
+        "#include <ostream>\n"
+        "void informar_rechazo_cajas(std::ostream& destino,int peticion,int piezas) {\n"
+        "    destino << \"Error\\n\";\n"
+        "}\n\nint main() { return 0; }\n";
+    const auto modify=[&](std::string_view body) {
+        const auto open=original.find('{');
+        const auto end=original.find("\n}\n\nint main()",open);
+        require(open!=std::string::npos&&end!=std::string::npos,
+            "Original U3L6 diagnostic source isolation fixture is malformed");
+        return original.substr(0,open+1)+std::string(body)+
+            original.substr(end+1);
+    };
+    require(rejection_function_only_edit(
+        original,original,RejectionOperation::boxes),
+        "The unchanged original diagnostic was rejected");
+    require(rejection_function_only_edit(original,modify(
+        "\n    if (peticion>0) { destino << piezas; }\n"),
+        RejectionOperation::boxes),
+        "A legitimate branch inside the original rejection function was rejected");
+    require(rejection_function_only_edit(original,modify(
+        "\n    destino << R\"guard(} <% %> { #include)guard\"; // }\n"),
+        RejectionOperation::boxes),
+        "String or comment braces falsely terminated the assigned diagnostic");
+    require(rejection_function_only_edit(original,modify(
+        "\n    if (peticion>0) <% destino << piezas; %>\n"),
+        RejectionOperation::boxes),
+        "Balanced digraph braces inside the rejection function were rejected");
+
+    require(!rejection_function_only_edit(original,modify(
+        "\n    destino << piezas;\n}\n"
+        "namespace forged {\n"
+        "    int hidden() { return 8; }\n"),
+        RejectionOperation::boxes),
+        "An early function close and injected namespace obtained source credit");
+    require(!rejection_function_only_edit(original,modify(
+        "\n    destino << piezas;\n%>\n"
+        "namespace forged <% int hidden() <% return 8; %>\n"),
+        RejectionOperation::boxes),
+        "A digraph closure introduced code outside the assigned rejection function");
+    require(!rejection_function_only_edit(original,modify(
+        "\n    if (peticion>0) {\n        destino << piezas;\n"),
+        RejectionOperation::boxes),
+        "A missing nested closing brace was accepted");
+    require(!rejection_function_only_edit(original,modify(
+        "\n    #define FORGED 8\n    destino << FORGED;\n"),
+        RejectionOperation::boxes),
+        "A preprocessor macro slipped into an assigned rejection function");
+
+    const auto changed_main=original.substr(0,original.size()-1)+" ";
+    require(!rejection_function_only_edit(original,changed_main,
+        RejectionOperation::boxes),
+        "The code after the assigned diagnostic was changed");
+}
+
 void rejected_semantics() {
     constexpr RejectionFacts box_facts[]{{1,-1},{3,21}};
     constexpr RejectionFacts balance_facts[]{{2,10,0},{3,0,-1}};
@@ -259,6 +316,7 @@ void rejected_semantics() {
 int main() {
     try {
         accepted_semantics();
+        source_edits_stay_inside_assigned_diagnostic();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "
             "three valid review actions, field identities and negative cases\n";
