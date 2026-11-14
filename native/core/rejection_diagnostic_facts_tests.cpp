@@ -177,7 +177,7 @@ void rejected_semantics() {
             return "Saldo, petición "+std::to_string(request)+
                 ", cobros="+std::to_string(charges)+
                 ", devoluciones="+std::to_string(returns)+
-                ": "+std::string(phrase)+". Revise los datos.\\n";
+                ": "+std::string(phrase)+". Revise los datos.\n";
         };
         const auto valid=message(2,10,0)+message(3,0,-1);
         require(evaluate_rejection_diagnostics(
