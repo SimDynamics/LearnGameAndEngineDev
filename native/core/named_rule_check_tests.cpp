@@ -251,6 +251,44 @@ void capacity() {
         "An inner block can legitimately assign a calculation to the outer alias");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4
+                + (sizeof(capacidad) - sizeof(int))
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,false,
+        "sizeof never evaluates the capacity, despite two lexical references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4
+                + (sizeof(decltype(capacidad)) - sizeof(int))
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,false,
+        "decltype and sizeof must not create value-dependency evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4
+                + (sizeof +capacidad - sizeof(int))
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,false,
+        "Unary sizeof cannot create a productive named-rule use");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            auto const tipo = sizeof(capacidad);
+            return (piezas + 3) / 4 + tipo + tipo - 2 * sizeof(int);
+        })cpp",rules,false,
+        "An alias computed from sizeof must not launder source evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,true,
+        "Real capacity uses stay credited alongside harmless sizeof metadata");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int cupo{4};
             const int ajuste = cupo - 1;
             const int cajas = (piezas + ajuste) / cupo;

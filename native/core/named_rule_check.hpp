@@ -400,8 +400,36 @@ inline bool absorbed_by_boolean_literal(const Tokens& t,std::size_t at,
     return false;
 }
 
+// An unevaluated operand observes the type or validity of an expression,
+// not the current value of a purpose-named local constant. Such references
+// must never contribute evidence that the arithmetic uses that agreement.
+// Limit the recognition to C++ unevaluated operators, leaving arbitrary
+// expressions to the independent runtime probe.
+inline bool unevaluated_rule_use(const Tokens& t,std::size_t i,
+        std::size_t scope_start) {
+    if(i>=t.size()||i<scope_start)return false;
+    const auto query=[&](std::size_t at) {
+        return id(t[at],"sizeof")||id(t[at],"decltype")||
+            id(t[at],"noexcept")||id(t[at],"typeid");
+    };
+    // Both sizeof value and sizeof(+value) are unevaluated. The
+    // parenthesized forms below also handle nested sizeof(decltype(value)).
+    if(i>scope_start&&query(i-1))return true;
+    if(i>=scope_start+2&&query(i-2)&&
+       (op(t[i-1],"+")||op(t[i-1],"-")||
+        op(t[i-1],"*")||op(t[i-1],"&")))return true;
+    std::vector<std::size_t> open;
+    for(auto at=scope_start;at<i;++at) {
+        if(op(t[at],"("))open.push_back(at);
+        else if(op(t[at],")")&&!open.empty())open.pop_back();
+    }
+    return std::ranges::any_of(open,[&](std::size_t at){
+        return at>scope_start&&query(at-1);
+    });
+}
 inline bool productive(const Tokens& t,std::size_t i,
         std::size_t scope_start=0) {
+    if(unevaluated_rule_use(t,i,scope_start))return false;
     // Direct algebraic identities cannot establish that a constant is
     // meaningfully used. This is deliberately a bounded syntactic check;
     // arbitrary C++ still requires execution evidence.
