@@ -138,6 +138,11 @@ struct CppCmakeTargetEvidence {
     // Observed author commands from a matching CMake configure, not
     // compiler defaults or a regex against arbitrary source text.
     bool explicit_cxx20 = false, explicit_extensions_off = false;
+    // Actual C++ include paths from File API plus student commands executed
+    // at configure time, not inferred from a successful build or stdout.
+    std::vector<std::string> include_directories;
+    std::vector<std::string> authored_public_include_directories;
+    std::vector<std::string> authored_private_include_directories;
 };
 struct CppCmakeGraphEvidence {
     std::string project_fingerprint, configuration_fingerprint, project_name;

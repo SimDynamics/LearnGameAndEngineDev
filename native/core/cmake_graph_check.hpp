@@ -45,6 +45,9 @@ struct CmakeRequiredTarget {
     // CMake commands. Toolchain defaults cannot satisfy them.
     bool require_explicit_cxx20 = false;
     bool require_explicit_extensions_off = false;
+    // PUBLIC paths must be received by actual linked consumers. PRIVATE
+    // paths must be restricted to the owning library's compilation.
+    std::vector<std::string> public_include_roots,private_include_roots;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
 // A binary option exercise verifies ON and an independent default-OFF build

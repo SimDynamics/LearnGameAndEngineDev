@@ -2219,7 +2219,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
             require(type(target) is dict and
                     {"name", "type"} <= set(target) <=
                     {"name", "type", "sources", "linksTo", "exactSources",
-                     "explicitCxx20", "explicitCxxExtensionsOff"},
+                     "explicitCxx20", "explicitCxxExtensionsOff",
+                     "publicIncludeRoots", "privateIncludeRoots"},
                     "CMake target requires a name, type and bounded optional rules")
             name, kind = target["name"], target["type"]
             require(type(name) is str and len(name) <= 128 and
@@ -2248,6 +2249,32 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                 if key in target:
                     require(type(target[key]) is bool,
                             "CMake explicit requirements must be Boolean")
+            for key in ("publicIncludeRoots", "privateIncludeRoots"):
+                if key not in target:
+                    continue
+                roots = target[key]
+                require(kind == "STATIC_LIBRARY" and type(roots) is list and
+                        0 < len(roots) <= 8 and
+                        all(type(root) is str and len(root) <= 256 and
+                            re.fullmatch(
+                                r"[A-Za-z0-9_.+-]+(?:/[A-Za-z0-9_.+-]+)*", root) and
+                            all(part not in (".", "..") for part in root.split("/")) and
+                            any(type(path) is str and
+                                path.startswith(root + "/") and
+                                path.lower().endswith((".h", ".hpp", ".hxx"))
+                                for path in original_paths) for root in roots) and
+                        len(set(roots)) == len(roots),
+                        "CMake include roots must be unique original header directories")
+            require(not (set(target.get("publicIncludeRoots", [])) &
+                         set(target.get("privateIncludeRoots", []))),
+                    "CMake include roots cannot be both PUBLIC and PRIVATE")
+        for library in targets:
+            if (library.get("publicIncludeRoots") or
+                    library.get("privateIncludeRoots")):
+                require(any(consumer.get("type") == "EXECUTABLE" and
+                            library["name"] in consumer.get("linksTo", [])
+                            for consumer in targets),
+                        "CMake include scopes need a linked executable")
         selected = block["cmake"].get("target")
         require(selected in targets_by_name and
                 targets_by_name[selected]["type"] == "EXECUTABLE",

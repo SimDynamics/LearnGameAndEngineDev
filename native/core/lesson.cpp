@@ -403,6 +403,14 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(target.require_explicit_cxx20)token("authored-cxx20-v1");
             if(target.require_explicit_extensions_off)
                 token("authored-extensions-off-v1");
+            if(!target.public_include_roots.empty()||
+               !target.private_include_roots.empty()) {
+                token("cmake-public-private-includes-v1");
+                token(std::to_string(target.public_include_roots.size()));
+                for(const auto& root:target.public_include_roots)token(root);
+                token(std::to_string(target.private_include_roots.size()));
+                for(const auto& root:target.private_include_roots)token(root);
+            }
         }
         if(graph.option_selection) {
             token("cmake-option-default-off-v1");
