@@ -85,15 +85,15 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
             const auto expected=[&](COLORREF reference){
                 return high_contrast?presentation::reader_theme::foreground(syntax):reference;
             };
-            const auto token=[&](std::wstring_view word,COLORREF color,const char* message){
+            const auto token_part=[&](std::wstring_view word,std::size_t begin,
+                    std::size_t length,COLORREF color,const char* message){
                 const auto at=displayed.find(word);
-                check(at!=displayed.npos,message);
-                if(at==displayed.npos)return;
-                // Every code unit of the actual native span must keep the
-                // reference tint. Checking only the first quote or digit can
-                // conceal a partially recolored string or escaped character.
+                check(at!=displayed.npos&&begin<=word.size()&&
+                    length<=word.size()-begin,message);
+                if(at==displayed.npos||begin>word.size()||
+                   length>word.size()-begin)return;
                 bool all_match=true;
-                for(std::size_t offset=0;offset<word.size();++offset) {
+                for(auto offset=begin;offset<begin+length;++offset) {
                     CHARRANGE range{static_cast<LONG>(at+offset),static_cast<LONG>(at+offset+1)};
                     SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
                     CHARFORMAT2W format{};format.cbSize=sizeof(format);
@@ -103,20 +103,34 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
                 }
                 check(all_match,message);
             };
+            const auto token=[&](std::wstring_view word,COLORREF color,const char* message) {
+                token_part(word,0,word.size(),color,message);
+            };
             token(L"#include",RGB(92,156,231),"Reference preprocessor ink changed");
             token(L"equipos",RGB(184,151,244),"Reference identifier ink changed");
             token(L"for",RGB(248,166,200),"Reference keyword ink changed");
             token(L"3",RGB(241,162,117),"Reference numeric ink changed");
             token(L"\"Revision=\"",RGB(131,209,151),"Reference string ink changed");
-            token(L"'\\n'",RGB(131,209,151),"Reference character escape ink changed");
+            token_part(L"'\\n'",0,1,RGB(241,162,117),
+                "Reference character literal opening quote is not orange");
+            token_part(L"'\\n'",1,2,RGB(131,209,151),
+                "Reference character escape is not green");
+            token_part(L"'\\n'",3,1,RGB(241,162,117),
+                "Reference character literal closing quote is not orange");
             token(LR"verify(R"tag(/* no comentar */ "Revision=raw" // literal)tag")verify",
                 RGB(131,209,151),"C++ raw string contained fake comments or quotes with wrong ink");
             token(LR"verify(u8R"raw(// sin procesar "texto")raw")verify",
                 RGB(131,209,151),"C++ u8 raw string prefix or contents lost string ink");
             token(LR"verify(u8"Texto")verify",
                 RGB(131,209,151),"C++ UTF-8 string prefix differs from its contents");
-            token(LR"verify(L'\n')verify",
-                RGB(131,209,151),"C++ wide character prefix or escape differs from its contents");
+            token_part(LR"verify(L'\n')verify",0,1,RGB(131,209,151),
+                "C++ wide character prefix lost green ink");
+            token_part(LR"verify(L'\n')verify",1,1,RGB(241,162,117),
+                "C++ wide character opening quote is not orange");
+            token_part(LR"verify(L'\n')verify",2,2,RGB(131,209,151),
+                "C++ wide character escape is not green");
+            token_part(LR"verify(L'\n')verify",4,1,RGB(241,162,117),
+                "C++ wide character closing quote is not orange");
             token(LR"verify("dato"_custom)verify",
                 RGB(131,209,151),"An adjacent user-defined literal suffix lost string ink");
             token(L"// comentario",RGB(172,172,172),"Reference comment ink changed");

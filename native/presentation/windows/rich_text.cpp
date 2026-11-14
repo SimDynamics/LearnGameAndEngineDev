@@ -575,6 +575,24 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_backgro
         } else if(const auto literal=cpp_ordinary_literal_end(text,index);literal) {
             index=*literal;
             result.push_back({start,index,string_color}); include_header=false;
+            // The reference C++ renderer distinguishes the apostrophes of
+            // character literals (orange) from their content/escapes (green).
+            // Keep a u8/u/U/L prefix and any user-defined suffix green.
+            auto quote=start;
+            if(text.substr(start).starts_with(L"u8'"))quote+=2;
+            else if(text.substr(start).starts_with(L"u'")||
+                    text.substr(start).starts_with(L"U'")||
+                    text.substr(start).starts_with(L"L'"))++quote;
+            if(quote<index&&text[quote]==L'\'') {
+                result.push_back({quote,quote+1,literal_color});
+                for(auto closing=quote+1;closing<index;++closing) {
+                    if(text[closing]==L'\\'&&closing+1<index){++closing;continue;}
+                    if(text[closing]==L'\'') {
+                        result.push_back({closing,closing+1,literal_color});
+                        break;
+                    }
+                }
+            }
         } else if (text[index] == L'#') {
             ++index; while (index < text.size() && (text[index] == L' ' || text[index] == L'\t')) ++index;
             const auto directive = index; while (index < text.size() && identifier_part(text[index])) ++index;
