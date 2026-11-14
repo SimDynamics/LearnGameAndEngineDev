@@ -2339,7 +2339,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     const auto initial_checker_graph=evaluate_cmake_graph(
         initial_checker_build,initial_checker_run,built_structure);
     check(initial_checker_run.error_utf8.empty()&&
-        initial_checker_run.configuration.succeeded()&&
+        // The target switch reuses the same verified CMake configuration:
+        // cpp_project_frame(configuration_only) intentionally excludes target.
+        initial_checker_run.configuration.status==CppPhaseStatus::not_started&&
         initial_checker_run.compilation.succeeded()&&
         initial_checker_run.execution.status==CppPhaseStatus::completed&&
         initial_checker_run.execution.exit_code==1&&
