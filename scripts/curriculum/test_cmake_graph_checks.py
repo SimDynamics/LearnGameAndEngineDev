@@ -449,6 +449,11 @@ class OriginalCmakeSubdirectoryTest(unittest.TestCase):
                 "project": "EnviosComprobables",
                 "minimumCmakeVersion": "3.20",
                 "sourceIntegrity": {"preserveNonCmake": True},
+                "configureMessageOrder": [
+                    {"path": "CMakeLists.txt", "text": "raiz_antes"},
+                    {"path": "componente/CMakeLists.txt", "text": "componente"},
+                    {"path": "CMakeLists.txt", "text": "raiz_despues"},
+                ],
                 "targets": [
                     {"name": "comprobar_cajas", "type": "EXECUTABLE",
                      "sources": ["pruebas/cajas_casos.cpp"],
@@ -522,6 +527,30 @@ class OriginalCmakeSubdirectoryTest(unittest.TestCase):
             "sourceDirectory"] = "componente"
         with self.assertRaises(state.LayoutError):
             state.validate(edited)
+
+    def test_status_message_order_is_bounded_and_immutable(self):
+        invalid_messages = (
+            None, [],
+            [{"path": "CMakeLists.txt", "text": ""}],
+            [{"path": "CMakeLists.txt", "text": 1}],
+            [{"path": "CMakeLists.txt", "text": "a\n"}],
+            [{"path": "inexistente/CMakeLists.txt", "text": "componente"}],
+            [{"path": "CMakeLists.txt", "text": "raiz_antes",
+              "unknown": 1}],
+        )
+        for value in invalid_messages:
+            changed = deepcopy(self.after)
+            changed["compilerCmakeGraphChecks"][0][
+                "configureMessageOrder"] = value
+            with self.subTest(value=value):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(changed)
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][0][
+            "configureMessageOrder"].reverse()
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
 
     def test_source_directory_cannot_change_after_publication(self):
         changed = deepcopy(self.after)

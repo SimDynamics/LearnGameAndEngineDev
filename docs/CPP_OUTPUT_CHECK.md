@@ -1067,9 +1067,25 @@ cadena mostrada por el programa. Una biblioteca declarada solo en la raíz
 se rechaza aunque compile exactamente los mismos archivos, enlace a los
 mismos consumidores y produzca las mismas salidas. La sintaxis específica
 de `add_subdirectory` puede variar siempre que el árbol generado demuestre
-la estructura solicitada. La verificación del orden de mensajes de
-configuración es un requisito distinto y todavía no queda acreditado por
-esta propiedad.
+la estructura solicitada. Una rúbrica puede añadir la propiedad independiente
+`configureMessageOrder`, que observa los mensajes `STATUS` realmente
+ejecutados y los archivos CMake originales donde se emitieron:
+
+```json
+"configureMessageOrder": [
+  {"path": "CMakeLists.txt", "text": "raiz_antes"},
+  {"path": "componente/CMakeLists.txt", "text": "componente"},
+  {"path": "CMakeLists.txt", "text": "raiz_despues"}
+]
+```
+
+Se utiliza la traza JSON de CMake, que registra el orden de ejecución y
+el archivo de origen, no una búsqueda literal de mensajes en los archivos
+ni solamente el registro de salida. Una solución que imprime
+`componente` desde la raíz sin ejecutarlo dentro del archivo del hijo
+se rechaza, incluso si su biblioteca y los resultados son correctos.
+Se permiten otros mensajes intermedios, pero no omitir ni reordenar los
+hitos declarados.
 
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,

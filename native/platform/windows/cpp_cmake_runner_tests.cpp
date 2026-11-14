@@ -1360,6 +1360,11 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
       {"activity":"block_0006_0003","project":"EnviosComprobables",
        "minimumCmakeVersion":"3.20",
        "sourceIntegrity":{"preserveNonCmake":true},
+       "configureMessageOrder":[
+         {"path":"CMakeLists.txt","text":"raiz_antes"},
+         {"path":"componente/CMakeLists.txt","text":"componente"},
+         {"path":"CMakeLists.txt","text":"raiz_despues"}
+       ],
        "targets":[
          {"name":"comprobar_cajas","type":"EXECUTABLE",
           "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
@@ -1491,6 +1496,46 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         check(child!=graph.targets.end()&&
             child->source_directory==(boxes?"componente":"codigo/lotes"),
             "CMake File API did not place the library in its original child");
+        if(boxes) {
+            check(graph.authored_status_messages.size()>=3&&
+                graph.authored_status_messages[0]==
+                    std::pair<std::string,std::string>{"CMakeLists.txt","raiz_antes"}&&
+                graph.authored_status_messages[1]==
+                    std::pair<std::string,std::string>{"componente/CMakeLists.txt","componente"}&&
+                graph.authored_status_messages[2]==
+                    std::pair<std::string,std::string>{"CMakeLists.txt","raiz_despues"},
+                "U3L2 CMake STATUS order did not match the original source owners");
+            auto forged=request;
+            forged.request_id=subproject_id;
+            forged.revision=subproject_id++;
+            forged.project_key+="/root-spoofed-message";
+            for(auto& file:forged.project_files) {
+                if(file.first=="componente/CMakeLists.txt") {
+                    constexpr auto child_message="message(STATUS \"componente\")";
+                    const auto at=file.second.find(child_message);
+                    check(at!=file.second.npos,
+                        "U3L2 expected child message no longer present");
+                    file.second.erase(at,std::char_traits<char>::length(child_message));
+                }else if(file.first=="CMakeLists.txt") {
+                    constexpr auto later_message="message(STATUS \"raiz_despues\")";
+                    const auto at=file.second.find(later_message);
+                    check(at!=file.second.npos,
+                        "U3L2 last root message changed");
+                    file.second.insert(at,"message(STATUS \"componente\")\n");
+                }
+            }
+            const auto forged_result=run_cpp(forged);
+            ran(forged_result);
+            const auto fake_fresh=capture_cpp_execution(forged,forged_result);
+            const auto reason=evaluate_cmake_graph(forged,forged_result,
+                *mapped_block.cmake_graph_check);
+            check(forged_result.execution.stdout_bytes==expected&&
+                !fake_fresh.cmake_graph_correct&&!reason.correct&&
+                reason.reason.find("STATUS")!=std::string::npos&&
+                evaluate_cpp_output_check(*mapped_block.output_check,fake_fresh,
+                    forged.revision).verdict==curriculum::OutputVerdict::correct,
+                "U3L2 credited child STATUS printed only from root CMake");
+        }
         auto history_request=request;
         history_request.capture_cmake_graph=false;
         history_request.cmake_graph_check.reset();
