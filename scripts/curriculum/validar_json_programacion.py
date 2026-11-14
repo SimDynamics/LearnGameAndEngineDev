@@ -1456,6 +1456,7 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
     the archive and historical exercise address.
     """
     if (course_id not in STRUCTURAL_COURSES or
+            type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0 or
             not isinstance(previous_document, dict) or
             not isinstance(current_document, dict) or
             not isinstance(old, dict) or not isinstance(current, dict) or
@@ -1469,6 +1470,18 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
             previous_document.get("id") != current_document.get("id")):
         return False
     try:
+        # Bind the complete lesson to its actual repository path, not
+        # merely a course prefix shared by unrelated lesson files.
+        lesson_path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(
+            PurePosixPath("app/src/main/assets/content/es/programming") / course_id)
+        if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                or lesson_path.suffix != ".json"
+                or not lesson_path.stem.startswith("lesson_")
+                or not lesson_path.stem[7:]):
+            return False
+        lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
+        if previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id:
+            return False
         baseline = _state_layout.prepare(previous_document)
         storage = _state_layout.validate(baseline)
         identities = [baseline["stateLayout"]["current"][page]["blocks"][block]
@@ -1476,6 +1489,10 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         if len(identities) != 1:
             return False
         identity = identities[0]
+        # Equivalent tokens alone cannot authenticate the caller's
+        # claimed old block. It must be the exact published owner.
+        if _state_layout._blocks(baseline).get(identity) != old:
+            return False
         archives = meta.get("sourceFormatRevisions", [])
         if not isinstance(archives, list) or not any(
                 isinstance(entry, dict) and entry.get("id") == identity for entry in archives):

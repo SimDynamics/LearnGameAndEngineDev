@@ -10,6 +10,7 @@ on:
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_compile_check_source_format.py
       - scripts/curriculum/test_reviewed_diagnostic_structural_format.py
+      - scripts/curriculum/test_source_format_provenance.py
       - .github/workflows/codex-reviewed-diagnostic-format.yml
   workflow_dispatch:
 
@@ -33,3 +34,5 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_compile_check_source_format.py -v
       - name: Verify ordinary validators, authenticated formatting and tampering
         run: python -B -m unittest discover -s scripts/curriculum -p test_reviewed_diagnostic_structural_format.py -v
+      - name: Reject detached source-format provenance and wrong lesson paths
+        run: python -B -m unittest discover -s scripts/curriculum -p test_source_format_provenance.py -v
