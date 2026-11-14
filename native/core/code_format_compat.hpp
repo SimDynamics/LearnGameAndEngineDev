@@ -190,4 +190,29 @@ inline bool forbidden_preprocessor_in_edit(std::string_view body) {
     });
 }
 
+
+// Enforce an authored function-body boundary, not merely a matching textual
+// prefix and suffix. Otherwise a student could close main or the assigned
+// diagnostic function early and introduce namespace-scope code before a
+// different final '}' that happens to match the published suffix.
+// Use lexical C++ tokens: braces inside comments, quoted/raw strings and
+// character literals are ordinary data. The <% and %> brace digraphs are
+// equivalent to '{' and '}' in C++ and must obey the same boundary.
+inline bool confined_function_body_edit(std::string_view body) {
+    if(forbidden_preprocessor_in_edit(body))return false;
+    const auto tokens=cpp_tokens(body);
+    if(!tokens)return false;
+    std::size_t braces=1; // The authenticated function opening brace.
+    for(const auto& token:*tokens) {
+        if(token=="op:{"||token=="op:<%") {
+            if(braces>=4096)return false; // Bound hostile nesting.
+            ++braces;
+        }else if(token=="op:}"||token=="op:%>") {
+            if(braces==1)return false; // Would escape the assigned function.
+            --braces;
+        }
+    }
+    return braces==1; // Every nested brace must close inside the body.
+}
+
 } // namespace lgaed::curriculum::code_format
