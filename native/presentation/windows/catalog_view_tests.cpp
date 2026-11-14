@@ -183,7 +183,7 @@ void malformed_progress_keeps_other_units_available(HWND host) {
     check(row_caption(list,0).find(L"progreso parcial")!=std::wstring::npos&&
         row_caption(list,0).find(L" — Abrir")==std::wstring::npos,
         "The broken unit was misrepresented as fully measured or just Abrir");
-    check(row_caption(list,1).find(L"0 de 1 lecci")==std::wstring::npos?false:true,
+    check(row_caption(list,1).find(L"0 de 1 lecci")!=std::wstring::npos,
         "The intact following unit lost its completed/total counter");
     const auto notice=caption(GetDlgItem(view,4109));
     check(notice.find(L"No se pudo calcular")!=std::wstring::npos&&
