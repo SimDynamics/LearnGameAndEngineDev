@@ -1497,8 +1497,8 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 std::to_string(native_build.execution.stdout_bytes.size())+
             "; expected_chars="+std::to_string(expected.size())+
             "; captured_CR="+std::to_string(std::ranges::count(
-                native_build.execution.stdout_bytes,'\\r'))+
-            "; expected_CR="+std::to_string(std::ranges::count(expected,'\\r'))+
+                native_build.execution.stdout_bytes,'\r'))+
+            "; expected_CR="+std::to_string(std::ranges::count(expected,'\r'))+
             "; stdout_identical="+
                 std::to_string(native_build.execution.stdout_bytes==expected)+
             "; output_verdict="+std::to_string(
