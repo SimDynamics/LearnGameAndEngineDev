@@ -31,6 +31,81 @@ void capacity() {
             int const plazas_por_caja = 4;
             return (piezas + plazas_por_caja - 1) / plazas_por_caja;
         })cpp",rules,true,"Equivalent east-const spelling");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0x4};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"Hexadecimal capacity represents four");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0b100};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"Binary capacity represents four");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{04};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"An octal four is an equivalent integer");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0X4u};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"A valid unsigned suffix preserves a small signed value");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0B100LL};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"A long long binary literal can initialize the same int");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4'0 / 10};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"C++ digit separators are parsed before division");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0x5};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"Hexadecimal five is not the four-place contract");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{08};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"Invalid octal digits cannot earn credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0b102};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"Invalid binary digits cannot earn credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{0x4unit};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"A user-defined integer suffix has no guaranteed numeric meaning");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4.0};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"A decimal floating point token is not an integer literal");
+    const std::array octal_rules{NamedRuleRequirement{"cajas_para",8,
+        {"capacidad","plaza","cupo"},2}};
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{010};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",octal_rules,true,"The octal 010 is eight, not decimal ten");
+    const std::array minimum_rules{NamedRuleRequirement{"limite_real",
+        std::numeric_limits<int>::min(),{"umbral"},1}};
+    verify(R"cpp(
+        int limite_real(int numero) {
+            const int umbral{-2147483648};
+            return numero < umbral ? umbral : umbral;
+        })cpp",minimum_rules,true,"Signed decimal INT_MIN remains valid");
+    verify(R"cpp(
+        int limite_real(int numero) {
+            const int umbral{-0x80000000};
+            return numero < umbral ? umbral : umbral;
+        })cpp",minimum_rules,false,"Nondecimal unsigned negation is not the same int");
+
 
     verify(R"cpp(
         int cajas_para(int piezas) {
