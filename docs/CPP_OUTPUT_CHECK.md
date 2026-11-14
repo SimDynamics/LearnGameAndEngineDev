@@ -261,8 +261,14 @@ calcula los resultados y exige el código de salida normal correspondiente.
 
 Los mensajes abiertos se comprueban por operación, número de petición,
 cantidad o par de campos con sus valores, intervalo 0..20 o 0..9 y acción
-de revisión, sin imponer una frase literal. Se comprueba el número y el orden
-de ocurrencias, sin confundir un saldo negativo válido con una entrada rechazada.
+de revisión, sin imponer una frase literal. El intervalo admite notaciones
+claras como «de 0 a 9», «0-9», «0 - 9», «0..9» o «[0, 9]», siempre
+que se identifique como rango o dominio permitido. Una coma aislada entre
+dos datos no acredita un intervalo: la notación con coma exige ambos
+corchetes de un intervalo cerrado. Tampoco se acepta cambiar un límite,
+intercambiar cobros y devoluciones o sustituir una acción afirmativa por
+«no revise». Se comprueba el número y el orden de ocurrencias, sin
+confundir un saldo negativo válido con una entrada rechazada.
 La variante de saldos requiere, por orden, un rechazo inferior, una aceptación y
 un rechazo superior, con los otros operandos válidos y sin reutilizar los pares
 preparados.
