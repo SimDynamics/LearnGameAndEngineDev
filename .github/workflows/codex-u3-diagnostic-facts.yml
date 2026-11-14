@@ -1,0 +1,55 @@
+name: Codex U3L6 diagnostic facts (GCC Clang MSVC)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-u3-diagnostic-facts.yml
+      - native/core/rejection_diagnostic_facts.hpp
+      - native/core/rejection_diagnostic_facts_tests.cpp
+      - native/core/code_format_compat.hpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-semantics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Checkout exact Codex source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile independent diagnostic fact tests
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/rejection_diagnostic_facts_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_u3_diagnostic_facts"
+      - name: Run equivalent intervals and negative cases
+        run: "${RUNNER_TEMP}/lgaed_u3_diagnostic_facts"
+
+  windows-semantics:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact Codex source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare Visual C++ toolchain
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile independent diagnostic fact tests with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\rejection_diagnostic_facts_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_u3_diagnostic_facts.exe"
+      - name: Run MSVC equivalent intervals and negative cases
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_u3_diagnostic_facts.exe"'
