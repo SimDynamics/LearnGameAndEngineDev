@@ -1002,8 +1002,21 @@ declaración equivalente `PRIVATE`/`PUBLIC` del objetivo correcto. Además,
 los fragmentos de compilación generados por **CMake File API codemodel v2**
 deben contener esas opciones para el mismo objetivo. Recibir `/W4` desde
 el perfil Windows, declararlo en otro objetivo o escribir una cadena sin
-ejecutar no satisface el contrato. Los argumentos dinámicos que no puedan
-atribuirse de forma segura no conceden crédito.
+ejecutar no satisface el contrato. Tampoco sirve
+`target_compile_options(cantidades INTERFACE /W4 /permissive-)` para exigir
+opciones de **compilación de la propia biblioteca**: `INTERFACE` transmite
+requisitos a consumidores, pero no los aplica a `cantidades`. En cambio,
+`PUBLIC` sí puede ser válido, porque se aplica tanto a la biblioteca como
+a los consumidores.
+
+La segunda comprobación rechaza también la simulación de una declaración
+correcta cuyo efecto se borra posteriormente, por ejemplo, con
+`set_property(TARGET cantidades PROPERTY COMPILE_OPTIONS "")`. Aunque la
+traza documente la llamada original y las salidas sigan siendo correctas,
+las opciones no llegaron a la compilación del objetivo. Cada contraejemplo
+utiliza un proyecto aislado y conserva las fuentes y los recibos históricos.
+Los argumentos dinámicos que no puedan atribuirse de forma segura no
+conceden crédito.
 
 Para enseñar las mismas intenciones con compiladores distintos, CMake puede
 seleccionar opciones apropiadas en sus ramas de configuración:
