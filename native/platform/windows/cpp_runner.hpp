@@ -143,6 +143,8 @@ struct CppCmakeTargetEvidence {
     std::vector<std::string> include_directories;
     std::vector<std::string> authored_public_include_directories;
     std::vector<std::string> authored_private_include_directories;
+    std::vector<std::string> authored_compile_options;
+    std::vector<std::string> effective_compile_options;
 };
 struct CppCmakeTargetListApplication {
     std::vector<std::string> targets;

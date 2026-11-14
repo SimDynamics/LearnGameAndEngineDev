@@ -534,15 +534,34 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
             if(target.HasKey(L"compileGroups"))
                 for(const auto& group_value:target.GetNamedArray(L"compileGroups")) {
                     const auto group=group_value.GetObject();
-                    if(json_text(group,L"language")!="CXX"||
-                       !group.HasKey(L"includes"))continue;
-                    for(const auto& item_include:group.GetNamedArray(L"includes")) {
-                        const auto path=json_text(item_include.GetObject(),L"path");
-                        if(!path.empty()&&std::ranges::find(
-                                fact.include_directories,path)==
-                                fact.include_directories.end())
-                            fact.include_directories.push_back(path);
-                    }
+                    if(json_text(group,L"language")!="CXX")continue;
+                    if(group.HasKey(L"includes"))
+                        for(const auto& item_include:group.GetNamedArray(L"includes")) {
+                            const auto path=json_text(item_include.GetObject(),L"path");
+                            if(!path.empty()&&std::ranges::find(
+                                    fact.include_directories,path)==
+                                    fact.include_directories.end())
+                                fact.include_directories.push_back(path);
+                        }
+                    // File API commands confirm effective flags independently
+                    // from the student-authored target_compile_options trace.
+                    if(group.HasKey(L"compileCommandFragments"))
+                        for(const auto& part:group.GetNamedArray(L"compileCommandFragments")) {
+                            const auto fragment=json_text(part.GetObject(),L"fragment");
+                            std::string_view remaining(fragment);
+                            while(!remaining.empty()) {
+                                const auto begin=remaining.find_first_not_of(" \t\r\n");
+                                if(begin==remaining.npos)break;
+                                remaining.remove_prefix(begin);
+                                const auto end=remaining.find_first_of(" \t\r\n");
+                                const std::string option(remaining.substr(0,end));
+                                if(std::ranges::find(fact.effective_compile_options,option)==
+                                        fact.effective_compile_options.end())
+                                    fact.effective_compile_options.push_back(option);
+                                if(end==remaining.npos)break;
+                                remaining.remove_prefix(end);
+                            }
+                        }
                 }
             if(target.HasKey(L"artifacts"))
                 for(const auto& artifact:target.GetNamedArray(L"artifacts"))
@@ -582,6 +601,7 @@ bool requires_authored_cmake_trace(const CppRunRequest& request) {
             [](const auto& target) {
                 return target.require_explicit_cxx20||
                     target.require_explicit_extensions_off||
+                    !target.authored_compile_options.empty()||
                     !target.public_include_roots.empty()||
                     !target.private_include_roots.empty();
             }));
@@ -821,6 +841,22 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                             target->authored_private_include_directories
                                 .push_back(resolved);
                     }
+                }
+            }else if(equals(command,"target_compile_options")&&args.size()>2) {
+                auto* target=target_for(args.front());
+                if(!target)continue;
+                bool applies_to_target=false;
+                for(std::size_t i=1;i<args.size();++i) {
+                    if(equals(args[i],"PRIVATE")||equals(args[i],"PUBLIC"))
+                        applies_to_target=true;
+                    else if(equals(args[i],"INTERFACE"))
+                        applies_to_target=false;
+                    else if(equals(args[i],"BEFORE"))continue;
+                    else if(applies_to_target&&
+                            args[i].find("$<")==std::string::npos&&
+                            std::ranges::find(target->authored_compile_options,
+                                args[i])==target->authored_compile_options.end())
+                        target->authored_compile_options.push_back(args[i]);
                 }
             }else if(equals(command,"target_compile_features")&&args.size()>2) {
                 auto* target=target_for(args.front());
@@ -1372,6 +1408,16 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
         if(item.require_explicit_extensions_off&&
            !found->explicit_extensions_off)
             return fail("Falta desactivar las extensiones explícitamente en: "+item.name);
+        for(const auto& option:item.authored_compile_options) {
+            if(std::ranges::find(found->authored_compile_options,option)==
+                    found->authored_compile_options.end())
+                return fail("Falta declarar target_compile_options en "+
+                    item.name+": "+option);
+            if(std::ranges::find(found->effective_compile_options,option)==
+                    found->effective_compile_options.end())
+                return fail("La opción no llegó a la compilación de "+
+                    item.name+": "+option);
+        }
         for(const auto& root:item.public_include_roots) {
             const auto dir=cmake_source/project_path(root);
             if(!include_has(found->authored_public_include_directories,dir))

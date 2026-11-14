@@ -1965,11 +1965,25 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     check(adapted_warning_flags&&
         warning_request.project_files!=warning_original,
         "U3L7 platform-specific CMake flags were not prepared");
+    CppCmakeGraphRequirement warning_options{
+        "AvisosYContrato",{
+            {"comprobar_cantidad","EXECUTABLE",
+                {"comprobar.cpp"},{"cantidades"},true},
+            {"cantidades","STATIC_LIBRARY",{"cantidad.cpp"},{},true}
+        }};
+    warning_options.minimum_cmake_version="3.20";
+    warning_options.targets.back().authored_compile_options={
+        "/W4","/permissive-"};
+    warning_request.cmake_graph_check=warning_options;
+    warning_request.capture_cmake_graph=true;
     const auto faulty_warning_run=run_cpp(warning_request);
     const auto warning_output=
         faulty_warning_run.compilation.stdout_bytes+
         faulty_warning_run.compilation.stderr_bytes;
-    check(faulty_warning_run.error_utf8.empty()&&
+    const auto actual_warning_graph=evaluate_cmake_graph(
+        warning_request,faulty_warning_run,warning_options);
+    check(actual_warning_graph.correct&&
+        faulty_warning_run.error_utf8.empty()&&
         faulty_warning_run.configuration.succeeded()&&
         faulty_warning_run.compilation.succeeded()&&
         faulty_warning_run.execution.status==CppPhaseStatus::completed&&
@@ -2008,6 +2022,30 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             capture_cpp_execution(warning_request,corrected_warning_run),
             warning_request.revision).verdict==curriculum::OutputVerdict::correct,
         "U3L7 repaired inclusive condition did not pass all original cases");
+    // A global /W4 default must not replace an authored library setting.
+    auto inherited=warning_request;
+    inherited.project_key+="/inherited-warning-only";
+    inherited.request_id=3304;
+    ++inherited.revision;
+    for(auto& file:inherited.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "# Deliberately no target-specific MSVC option");
+    const auto inherited_run=run_cpp(inherited);
+    ran(inherited_run);
+    const auto inherited_capture=capture_cpp_execution(
+        inherited,inherited_run);
+    const auto inherited_goal=evaluate_cmake_graph(
+        inherited,inherited_run,warning_options);
+    check(matches_native_console_output(
+            inherited_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            inherited_capture,inherited.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !inherited_goal.correct&&!inherited_capture.cmake_graph_correct&&
+        inherited_goal.reason.find("target_compile_options")!=std::string::npos,
+        "Inherited /W4 incorrectly credited an authored CMake warning");
     auto exclusive=warning_request;
     exclusive.request_id=3303;
     ++exclusive.revision;
@@ -2300,15 +2338,18 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
        {"name":"comprobar_ajustes","type":"EXECUTABLE",
         "sources":["pruebas/casos.cpp"],"linksTo":["ajustes"],
         "exactSources":true,"explicitCxx20":true,
-        "explicitCxxExtensionsOff":true},
+        "explicitCxxExtensionsOff":true,
+        "authoredCompileOptions":["/W4","/permissive-"]},
        {"name":"consultar_ajustes","type":"EXECUTABLE",
         "sources":["app/consulta.cpp"],"linksTo":["ajustes"],
         "exactSources":true,"explicitCxx20":true,
-        "explicitCxxExtensionsOff":true},
+        "explicitCxxExtensionsOff":true,
+        "authoredCompileOptions":["/W4","/permissive-"]},
        {"name":"ajustes","type":"STATIC_LIBRARY",
         "sources":["src/ajuste.cpp"],"publicIncludeRoots":["publico"],
         "exactSources":true,"explicitCxx20":true,
-        "explicitCxxExtensionsOff":true}
+        "explicitCxxExtensionsOff":true,
+        "authoredCompileOptions":["/W4","/permissive-"]}
      ]}
   ],
 )json");

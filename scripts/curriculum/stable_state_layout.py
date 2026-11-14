@@ -2268,7 +2268,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     {"name", "type", "sources", "linksTo", "exactSources",
                      "explicitCxx20", "explicitCxxExtensionsOff",
                      "publicIncludeRoots", "privateIncludeRoots",
-                     "sourceDirectory"},
+                     "sourceDirectory", "authoredCompileOptions"},
                     "CMake target requires a name, type and bounded optional rules")
             name, kind = target["name"], target["type"]
             require(type(name) is str and len(name) <= 128 and
@@ -2297,6 +2297,14 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                 if key in target:
                     require(type(target[key]) is bool,
                             "CMake explicit requirements must be Boolean")
+            if "authoredCompileOptions" in target:
+                options = target["authoredCompileOptions"]
+                require(type(options) is list and 0 < len(options) <= 8 and
+                        all(type(option) is str and
+                            re.fullmatch(r"[/-][A-Za-z][A-Za-z0-9_.:+-]{0,62}",
+                                         option) for option in options) and
+                        len(set(options)) == len(options),
+                        "CMake authored compile options must be distinct safe flags")
             if "sourceDirectory" in target:
                 source_dir = target["sourceDirectory"]
                 require(kind == "STATIC_LIBRARY" and
