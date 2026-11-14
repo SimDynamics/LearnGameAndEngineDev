@@ -8,6 +8,7 @@ on:
       - scripts/curriculum/validate_programming_practice_tools.py
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/test_code_format_compat.py
       - scripts/curriculum/test_compile_check_source_format.py
       - scripts/curriculum/test_reviewed_diagnostic_structural_format.py
       - scripts/curriculum/test_source_format_provenance.py
@@ -30,6 +31,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Verify source-format fixtures and combined editorial revisions
+        run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
       - name: Verify original layout and diagnostic contracts
         run: python -B -m unittest discover -s scripts/curriculum -p test_compile_check_source_format.py -v
       - name: Verify ordinary validators, authenticated formatting and tampering
