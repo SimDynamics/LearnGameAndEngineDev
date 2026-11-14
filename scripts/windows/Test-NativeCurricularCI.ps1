@@ -94,7 +94,7 @@ $qaSuiteConfig = switch ($Suite) {
             CMakeOption = 'LGAED_WASI_RUNNER_QA_ONLY'
             Targets = @('lgaed_cpp_runner_tests')
             Results = 'wasi-runner'
-            Tests = @('native.wasi_runner')
+            Tests = @('native.wasi_runner', 'native.open_battery_runner')
         }
     }
     'NarrationWorker' {

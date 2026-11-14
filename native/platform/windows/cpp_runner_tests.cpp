@@ -69,7 +69,8 @@ int main(int argc, char** argv) {
     const bool diagnostic_only = argc == 2 && std::string_view(argv[1]) == "--diagnostic-utf8";
     const bool cpp23_only = argc == 2 && std::string_view(argv[1]) == "--cpp23";
     const bool wasi_only = argc == 2 && std::string_view(argv[1]) == "--wasi";
-    if (argc > 1 && !diagnostic_only && !cpp23_only && !wasi_only) return 2;
+    const bool battery_only = argc == 2 && std::string_view(argv[1]) == "--open-battery";
+    if (argc > 1 && !diagnostic_only && !cpp23_only && !wasi_only && !battery_only) return 2;
     const lgaed::LaunchOptions options{lgaed::ProfileId::Codex,
         L"cpp-runner-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
             std::to_wstring(GetTickCount64()), false};
@@ -94,6 +95,8 @@ int main(int argc, char** argv) {
         if (cpp23_only && !name.starts_with("C++23 ")) return;
         if (wasi_only && !name.starts_with("WASI ")) return;
         if (!wasi_only && name.starts_with("WASI ")) return;
+        if (battery_only && !name.starts_with("Open battery ")) return;
+        if (!battery_only && name.starts_with("Open battery ")) return;
         try {
             action();
             ++passed;
@@ -1309,6 +1312,85 @@ int main(int count, char**) {
         result = run_cpp(value);
         require(result.compilation.status == CppPhaseStatus::launch_failed && result.run_directory.empty(),
             "Reject invalid timeout without starting work");
+    });
+
+    test("Open battery executes original CMake with authenticated private mutations", [&] {
+        using namespace lgaed::curriculum;
+        auto value=request("");
+        value.project_key="qa-open-battery-v1";
+        value.cmake=CmakeConfig{"comprobar_ajustes",{},"Debug"};
+        value.compile_timeout=90s;
+        value.execution_timeout=10s;
+        value.project_files={
+            {"CMakeLists.txt",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(PrivateBatteryQA LANGUAGES CXX)
+add_library(ajustes STATIC src/ajuste.cpp)
+target_include_directories(ajustes PUBLIC publico)
+add_executable(comprobar_ajustes pruebas/casos.cpp)
+target_link_libraries(comprobar_ajustes PRIVATE ajustes)
+target_compile_features(ajustes PRIVATE cxx_std_20)
+target_compile_features(comprobar_ajustes PRIVATE cxx_std_20)
+set_target_properties(ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)
+)cmake"},
+            {"publico/control/ajuste.h",R"cpp(#pragma once
+bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);
+)cpp"},
+            {"src/ajuste.cpp",R"cpp(#include "control/ajuste.h"
+bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {
+    if(valor<-20||valor>20||inferior<-20||inferior>20||
+       superior<-20||superior>20||inferior>superior)return false;
+    ajuste=valor<inferior?inferior-valor:valor>superior?superior-valor:0;
+    return true;
+}
+)cpp"},
+            {"pruebas/casos.cpp",R"cpp(#include "control/ajuste.h"
+#include <iostream>
+bool comprobar(int valor,int inferior,int superior,int inicial,
+               bool acepta,int ajuste) {
+    int resultado=inicial;
+    const bool actual=intentar_ajuste(valor,inferior,superior,resultado);
+    return actual==acepta&&resultado==ajuste;
+}
+int main() {
+    int fallos=0;
+    if(!comprobar(2,3,7,77,true,1))++fallos;
+    if(!comprobar(3,3,7,59,true,0))++fallos;
+    std::cout<<"Fallos="<<fallos<<'\n';
+    return fallos?1:0;
+}
+)cpp"}
+        };
+        value.open_battery_probe=OpenBatteryProbeSpec{
+            "src/ajuste.cpp","pruebas/casos.cpp",
+            "intentar_ajuste","comprobar_ajustes",
+            {{2,3,7,77}}
+        };
+        const auto submitted=value.project_files;
+        const auto positive=run_cpp(value);
+        successful(positive);
+        require(positive.open_battery_evidence&&
+                positive.open_battery_evidence->runs.size()==4,
+                "Four actual CMake executions were not retained as private evidence");
+        const auto current=capture_cpp_execution(value,positive);
+        require(current.open_battery_probe_correct,
+                "Correct original + added case did not pass independent mutations");
+        require(value.project_files==submitted,
+                "The private CMake probe changed student or published project bytes");
+        auto missing=value;
+        for(auto& [name,source]:missing.project_files)
+            if(name=="pruebas/casos.cpp") {
+                const auto before="    if(!comprobar(3,3,7,59,true,0))++fallos;\n";
+                const auto at=source.find(before);
+                require(at!=std::string::npos,
+                        "The owned test fixture lost its additional case");
+                source.erase(at,std::string_view(before).size());
+            }
+        const auto insufficient=run_cpp(missing);
+        successful(insufficient);
+        require(!capture_cpp_execution(missing,insufficient).open_battery_probe_correct,
+                "An unchanged one-case battery was accepted as expanded evidence");
+        require(missing.project_files!=submitted,
+                "The negative fixture did not change its authored test source");
     });
 
     std::cout << "Real C++ runner: " << passed << " passed, " << failed << " failed.\n";
