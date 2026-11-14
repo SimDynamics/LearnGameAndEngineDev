@@ -1013,6 +1013,18 @@ int cajas_para(int piezas);
     if(named_rule_comment_only_edit("constexpr auto marker=\"// 4\";",
                                     "constexpr auto marker=\"// 6\";"))
         throw std::runtime_error("Changed literal bytes were treated as comments");
+    if(!named_rule_comment_only_edit(
+            "/* originally documented */ int value = 4;",
+            "/* revised documentation */ int value = 4;"))
+        throw std::runtime_error("Harmless comment-only prose was rejected");
+    if(named_rule_comment_only_edit(
+            "/*x*/ int column = __builtin_COLUMN();",
+            "/*expanded explanatory comment*/ int column = __builtin_COLUMN();"))
+        throw std::runtime_error("A source-column-changing comment edit reused an old header contract");
+    if(named_rule_comment_only_edit(
+            "// label\nint line = __builtin_LINE();",
+            "// label\n\nint line = __builtin_LINE();"))
+        throw std::runtime_error("A source-line-changing comment edit reused an old header contract");
 }
 
 void independently_generated_probe() {
