@@ -61,6 +61,14 @@ void lexical_safety(){
             "auto line=std::source_location::current().line();",
             "auto line=\nstd::source_location::current().line();",Language::cpp),
         "std::source_location was affected by an introduced physical line");
+    check(!code_format::equivalent(
+            "int main(){return __builtin_LINE();}",
+            "int main(){\nreturn __builtin_LINE();}",Language::cpp),
+        "Source __builtin_LINE() changed value after a token-equivalent newline");
+    check(!code_format::equivalent(
+            "int main(){return __builtin_COLUMN();}",
+            "int main(){ return __builtin_COLUMN();}",Language::cpp),
+        "Source __builtin_COLUMN() changed value after token-equivalent spacing");
     check(!code_format::equivalent(R"qa(auto s="abc"_length;)qa",
             R"qa(auto s="abc" _length;)qa",Language::cpp),
         "Adjacent user-defined literal suffix was detached");
