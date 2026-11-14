@@ -709,7 +709,13 @@ enteras constantes de valor cero, no cuentan como referencias útiles.
 Esto incluye factores cero que anulan expresiones completas con
 paréntesis, incluso anidadas: `0 * (capacidad + capacidad)` o
 `(capacidad + capacidad) * (2 - 2)` no acreditan dos referencias
-productivas. La comprobación conserva las referencias reales que
+productivas. El cero conserva su significado con cualquier notación entera
+válida de C++: `0x0`, `0b0`, `00u` o `0X0` también descartan factores
+decorativos. Asimismo, `if (0x0)` no convierte una rama inalcanzable en
+evidencia, mientras que `if (0x1)` no permite ignorar un retorno inmediato.
+En expresiones lógicas, los sufijos `&& 0x0` y `|| 0b1` absorben el resultado
+de sus respectivos grupos, sin transformar las referencias anteriores en
+usos productivos. La comprobación conserva las referencias reales que
 acompañen a una expresión neutra. Si una variable intermedia derivada de la constante
 se sobrescribe con un cálculo que ya no depende de ella, ese resultado
 descartado no acredita el `return`. Una asignación posterior que
