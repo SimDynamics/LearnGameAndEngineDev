@@ -2772,7 +2772,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                     std::pair{L"publicIncludeRoots",&wanted.public_include_roots},
                     std::pair{L"privateIncludeRoots",&wanted.private_include_roots}}) {
                 if(!source.HasKey(key))continue;
-                *roots=strings(array(source,key),false,false);
+                *roots=strings(source.GetNamedArray(key),false,false);
                 require(wanted.type=="STATIC_LIBRARY"&&
                         !roots->empty()&&roots->size()<=8,
                     "CMake include roots require 1..8 library-owned paths");
