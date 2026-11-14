@@ -267,7 +267,9 @@ que se identifique como rango o dominio permitido. También reconoce los
 dos extremos expresamente nombrados: «mínimo 0, máximo 9» o «límite
 inferior 0, límite superior 9», con esos mismos valores obligatorios.
 Un solo límite no basta, ni puede darse por válido otro mínimo o máximo
-contradictorio. Una coma aislada entre datos no acredita un intervalo:
+contradictorio. Si el mismo mensaje incluye «rango 0..9, mínimo 1»,
+se rechaza la contradicción aunque también aparezca un intervalo correcto.
+Una coma aislada entre datos no acredita un intervalo:
 la notación con coma exige ambos corchetes de un intervalo cerrado.
 Tampoco se acepta cambiar un límite, intercambiar cobros y devoluciones
 o sustituir una acción afirmativa por «no revise». Se comprueba el número y el orden de ocurrencias, sin
