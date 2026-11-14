@@ -42,7 +42,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la raíz de tu proyecto, abre depurar_informe.cpp con Bloc de notas. Escribe y guarda el programa siguiente. Los tipos y la inicialización por listas ya pertenecen al modelo. Este main crea siempre la misma muestra, llama al informe y no lee ni escribe archivos de datos; así observarás el mismo recorrido cada vez."
+          "text": "Continúa en la consola de herramientas nativas x64, con cmd y desde la raíz de InspectionLog que creaste para el proyecto. Conserva los archivos de la aplicación y sus pruebas. Prepararemos dos archivos separados para estudiar un defecto deliberado, sin sustituir informe.cpp.\n\nLa orden siguiente abre depurar_informe.cpp con Bloc de notas. Si pregunta si debe crear el archivo, acepta. Escribe el programa mostrado, guarda en UTF-8 y conserva la extensión .cpp, sin añadir .txt. Utiliza los pasos de guardado y comprobación que ya practicaste.\n\nEste main prepara directamente un solo grupo verde con dos registros, llama a mostrar_informe y termina. No pide rutas ni abre archivos de inspecciones. Cada ejecución utiliza los mismos registros en el mismo orden, de modo que podrás comparar la primera y la segunda visita a una instrucción sin cambiar la muestra."
         },
         {
           "type": "paragraph",
@@ -55,7 +55,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea otro archivo llamado informe_error.cpp. Copia en él el contenido de tu informe.cpp y cambia únicamente la instrucción aceptados += registro.recuento.aceptados; por aceptados = registro.recuento.aceptados;. Conserva el resto del informe, guarda el archivo nuevo y comprueba que el original mantiene +=. Esta modificación deliberada prepara la observación; todavía no modifica el ejecutable de la aplicación."
+          "text": "Abre informe_error.cpp con la orden siguiente. Copia allí el contenido de tu informe.cpp correcto; estás preparando otra implementación del mismo mostrar_informe para esta prueba.\n\nDentro del recorrido interior, localiza esta instrucción del original:\naceptados += registro.recuento.aceptados;\n\nEn la copia cambia únicamente esa instrucción por:\naceptados = registro.recuento.aceptados;\n\nGuarda informe_error.cpp y comprueba que informe.cpp conserva +=. La copia acumula los rechazados como antes, pero reemplaza el total de aceptados por la cantidad de cada registro. Ese cambio en el archivo fuente todavía no actualiza ningún ejecutable. La construcción que sigue elegirá la copia para poder observar el defecto."
         },
         {
           "type": "paragraph",
@@ -71,7 +71,7 @@
         },
         {
           "type": "paragraph",
-          "text": "/Zi genera información que permite relacionar instrucciones, nombres y líneas con el programa construido; se conserva en archivos .pdb (Microsoft, 2026a). /Od desactiva optimizaciones para facilitar el seguimiento de este ejemplo (Microsoft, 2021). Las opciones /W4, /EHsc y /Fe:depurar_informe.exe mantienen las funciones ya practicadas: advertencias, tratamiento de excepciones y nombre del ejecutable."
+          "text": "La orden de construcción mantiene las opciones conocidas y añade dos para seguir la ejecución:\n/W4 solicita advertencias que conviene revisar.\n/EHsc conserva el soporte de manejo de excepciones de C++ de esta receta.\n/Fe:depurar_informe.exe elige el nombre del ejecutable en la carpeta actual.\n\n/Zi genera datos de depuración: nombres de variables y funciones, tipos y relaciones con líneas de la fuente. Se conservan en archivos .pdb para que el depurador pueda presentar esos datos al ejecutar el programa. El PDB no es el archivo fuente ni otro programa que debas iniciar (Microsoft, 2026a).\n\n/Od desactiva optimizaciones para facilitar que este ejemplo se siga paso a paso (Microsoft, 2021). Generar datos con /Zi y desactivar optimizaciones con /Od cumplen funciones diferentes.\n\nConserva juntos la fuente guardada, el ejecutable y los PDB de esta construcción. El depurador necesita que correspondan a la misma revisión: un nombre de archivo igual no convierte los datos de otra construcción en los de ésta."
         },
         {
           "type": "paragraph",
@@ -79,7 +79,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, introduce echo %ERRORLEVEL% en esta misma consola, inmediatamente después de la orden de cl. Se espera 0: la construcción terminó sin errores (Microsoft, 2025a). Si el valor es distinto, resuelve el diagnóstico, guarda y repite la construcción. Revisa también las advertencias. Aplica esta comprobación a cada orden de cl de la lección.\n\nSólo entonces ejecuta el programa. La consulta que aparece después de su ejecución corresponde al retorno de ese programa, no al de la construcción anterior."
+          "text": "Al terminar la orden de cl, introduce inmediatamente echo %ERRORLEVEL% en la misma consola, como una línea independiente. Se espera cero: la construcción terminó sin errores (Microsoft, 2025a). Si devuelve otro valor, lee los diagnósticos, corrige la causa, guarda y construye de nuevo antes de ejecutar. Revisa también las advertencias. Aplica esta comprobación a cada construcción de la lección.\n\nDespués ejecuta el programa y consulta otra vez su retorno con la orden indicada. Esa segunda consulta corresponde al programa ejecutado, no a la construcción.\n\nCon la copia defectuosa y esta muestra se obtiene este informe, con un salto al final de cada línea:\nGrupos: 1\nAceptados: 3\nRechazados: 1\nMayor: verde 5\n\nCompara el total de aceptados con el previsto a partir de los registros. La ejecución puede terminar con cero y escribir ese total equivocado: este main comprueba que se pudo presentar el informe, pero no compara su suma con el resultado previsto."
         },
         {
           "type": "paragraph",
@@ -111,7 +111,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al iniciar Visual Studio por primera vez puede aparecer una pantalla para añadir una cuenta. En la prueba del autor se utilizó la opción visible Skip and add accounts later., que permitió continuar sin añadirla. Si aparece después la preparación inicial del editor, revisa sus opciones y pulsa Start Visual Studio. Si tu instalación ya completó ese inicio, continúa directamente en el IDE."
+          "text": "Visual Studio puede pedir una preparación inicial antes de mostrar el editor. Las dos capturas siguientes corresponden a ese recorrido real del autor, no a una nueva instalación realizada por estas instrucciones.\n\nSi aparece la pantalla para añadir una cuenta, el enlace Skip and add accounts later. está debajo de las opciones de cuenta. En el ensayo se seleccionó ese enlace para continuar sin añadir una.\n\nSi aparece después la personalización, revisa Development settings y el tema. La captura conserva General y Dark. Start Visual Studio, en la parte inferior, continúa al entorno de desarrollo. Si tu instalación ya completó esa preparación, utiliza directamente el IDE abierto; no necesitas repetirla para estudiar el informe."
         },
         {
           "type": "image",
@@ -129,7 +129,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la misma consola de desarrollo, abre el ejecutable con esta orden. devenv inicia el IDE de Visual Studio y /DebugExe prepara el archivo indicado para depurarlo (Microsoft, 2024). En esta práctica no se crea otra solución con una segunda copia de los fuentes."
+          "text": "Desde la misma consola de desarrollo y la raíz del proyecto, ejecuta la orden siguiente. devenv inicia Visual Studio. /DebugExe indica que quieres abrir para depuración el ejecutable nombrado a continuación; depurar_informe.exe es el que acabas de construir en esta carpeta (Microsoft, 2024).\n\nEsta apertura prepara el programa que observarás. La ejecución bajo el depurador comenzará cuando pulses F5. No crea otra implementación de tu programa ni reconstruye por sí sola los archivos que guardaste. Utilizaremos este ejecutable y los fuentes correspondientes, sin crear otra solución con una segunda copia de ellos."
         },
         {
           "type": "paragraph",
@@ -152,7 +152,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Pulsa F5 o elige Depurar → Iniciar depuración; en inglés, Debug → Start Debugging. Cuando se alcance el punto, la flecha de ejecución señalará la instrucción que está a punto de ejecutarse. No confundas colocar el punto con haberlo alcanzado: el programa tiene que iniciarse y recorrer esa parte."
+          "text": "Después de colocar el punto, pulsa F5 o elige Depurar → Iniciar depuración; en inglés, Debug → Start Debugging. Así comienza la ejecución bajo el depurador y avanza hasta alcanzar un punto de interrupción o terminar (Microsoft, 2025e).\n\nEn esta muestra el recorrido entra en mostrar_informe y alcanza la asignación del primer registro. Cuando se detenga, la flecha de ejecución señalará la instrucción que está a punto de ejecutarse. El círculo que colocaste antes sólo indicaba dónde querías parar; la flecha muestra dónde está detenida ahora la ejecución.\n\nComprueba que estás en informe_error.cpp y en la asignación de aceptados. Todavía no ha ejecutado esa asignación en esta visita. Ese momento permite leer el valor anterior y compararlo con el que quedará después de dar un paso."
         },
         {
           "type": "multiple_choice",
@@ -176,7 +176,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la ejecución detenida, abre Depurar → Ventanas → Variables locales; en inglés, Debug → Windows → Locals. Localiza aceptados. El registro actual es registro; despliega recuento dentro de él para observar sus cantidades. También puedes mantener el puntero sobre esas expresiones en el editor para consultar sus valores (Microsoft, 2025e)."
+          "text": "Con la ejecución detenida en el informe, abre Depurar → Ventanas → Variables locales; en inglés, Debug → Windows → Locals. Esa ventana presenta variables del contexto en el que está detenida la ejecución, para consultar sus valores sin añadir instrucciones de impresión al programa (Microsoft, 2025e).\n\nBusca estos dos datos:\naceptados es la variable del informe que debe conservar la suma de los registros anteriores.\nregistro.recuento.aceptados es la cantidad aportada por el registro que se está recorriendo ahora.\n\nPara consultar el segundo, localiza registro, despliega su contenido y después recuento. Lee dentro de él el miembro aceptados. También puedes mantener el puntero sobre la expresión correspondiente en el editor para consultar su valor. Los dos datos comparten la palabra aceptados, pero uno es el total del informe y el otro es la cantidad de un registro; debes comparar ambos antes y después del paso."
         },
         {
           "type": "paragraph",
@@ -184,11 +184,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En la primera visita, identifica el total acumulado antes de la asignación y la cantidad del registro actual. Pulsa F10, que ejecuta la siguiente instrucción sin entrar paso a paso en una llamada que ésta contenga. El programa sigue ejecutando esas llamadas cuando corresponden; el cambio está en dónde se detiene el depurador (Microsoft, 2025e)."
+          "text": "En la primera visita, la flecha sigue sobre la asignación. El total aceptados empieza en cero y el primer registro aporta dos. Lee esos valores antes de avanzar: conocer el dato que entra permite explicar el cambio que vas a observar.\n\nPulsa F10 una vez. En este ejemplo ejecuta la asignación y vuelve a detenerse en la instrucción siguiente, la que trata los rechazados. Comprueba el nuevo valor del acumulador en Variables locales; la captura posterior muestra dos.\n\nF10 permite avanzar sin entrar paso a paso en una función llamada por la instrucción. Si hay una llamada, su código sí se ejecuta; lo que cambia es el lugar donde vuelve a detenerse el depurador. Aquí la operación que estás observando es la asignación de aceptados (Microsoft, 2025e)."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba el nuevo valor de aceptados. Pulsa F5 para continuar hasta la siguiente visita al mismo punto de interrupción. Ahora corresponde al segundo registro. Observa otra vez el valor anterior y el dato que se va a incorporar; después pulsa F10 y compara el resultado. No arrastres la flecha de ejecución ni edites valores: aquí queremos observar el recorrido del programa sin alterarlo."
+          "text": "Después del primer paso, pulsa F5 para continuar. Ahora F5 reanuda la ejecución que estaba detenida; no inicia otra desde el principio. En este caso avanza por el resto de la primera iteración y vuelve a parar en el mismo punto al procesar el segundo registro.\n\nAntes de dar otro paso, observa los dos datos de esa segunda visita. El acumulador aún contiene la aportación anterior, dos; el registro actual aporta tres. La instrucción señalada todavía no ha incorporado ese registro.\n\nPulsa F10 y lee el valor que quedó en aceptados. Compara el antes y el después con la suma prevista. No arrastres la flecha de ejecución ni edites los valores de las variables: aquí quieres observar el recorrido original, para distinguir el efecto de la instrucción de un cambio introducido desde el depurador."
         },
         {
           "type": "multiple_choice",
@@ -272,7 +272,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Detén la depuración con Mayús+F5 o Depurar → Detener depuración. En informe_error.cpp, sustituye la asignación por aceptados += registro.recuento.aceptados; y guarda. Ejecuta la orden de construcción de esta página. Guardar el texto no actualiza el programa que estabas depurando."
+          "text": "Detén la ejecución antes de corregir la fuente. Utiliza Mayús+F5 o Depurar → Detener depuración; en inglés, Debug → Stop Debugging. Así terminas la sesión que estaba utilizando el ejecutable anterior.\n\nEn informe_error.cpp sustituye la asignación defectuosa por:\naceptados += registro.recuento.aceptados;\n\nConserva el resto del archivo y guarda con Ctrl+S. La captura muestra esa corrección guardada, con el punto todavía colocado. Guardar no actualiza el ejecutable ni los datos de depuración: vuelve a la consola de desarrollo, en la raíz, y utiliza la orden de construcción siguiente."
         },
         {
           "type": "image",
@@ -287,7 +287,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Inmediatamente después de la orden de construcción, consulta echo %ERRORLEVEL% y continúa cuando indique 0. Ejecuta el programa desde la consola y comprueba las cuatro líneas. Después repite el recorrido del depurador sobre la nueva construcción. El punto de interrupción debe estar ligado a la instrucción corregida; si la fuente abierta no coincide con la construida, revisa las rutas y reconstruye antes de interpretar otros valores."
+          "text": "Justo después de reconstruir, introduce echo %ERRORLEVEL% en una línea independiente. Continúa cuando muestre cero y hayas revisado los mensajes. Si la construcción falla, corrige y repítela: no atribuyas a la fuente corregida un ejecutable que quedó de antes.\n\nEjecuta la orden siguiente desde la misma raíz. Deben aparecer las cuatro líneas mostradas, cada una con salto final. Consulta inmediatamente echo %ERRORLEVEL% para comprobar también el retorno de esa ejecución: se espera cero.\n\nRegresa a Visual Studio para repetir la observación. Confirma que sigue abierto depurar_informe.exe de esta carpeta y que informe_error.cpp muestra la instrucción corregida. El punto de interrupción debe corresponder a esa fuente y a los PDB de la nueva construcción. Pulsa F5 para iniciar otra ejecución; haber guardado o reconstruido no convierte las observaciones de la sesión anterior en observaciones de ésta."
         },
         {
           "type": "paragraph",
@@ -299,7 +299,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al alcanzar la segunda visita, el valor anterior de aceptados debe seguir siendo 2 y el registro debe aportar 3. Después de F10, el acumulador debe valer 5. Esta observación comprueba la hipótesis de corrección en el mismo caso que detectó el fallo."
+          "text": "Sigue de nuevo las dos visitas con la muestra fija. En la primera parada, el acumulador empieza en cero y el registro aporta dos. Después de F10 debe quedar en dos.\n\nPulsa F5 para continuar hasta la segunda parada. Antes de ejecutar la suma, aceptados debe conservar dos y registro.recuento.aceptados debe aportar tres. Después de F10, el acumulador debe valer cinco: conserva los dos anteriores y añade los tres nuevos.\n\nLas capturas siguientes muestran el acumulador de esa segunda visita, antes y después del paso de la construcción corregida. El resultado final del informe y esta observación interna se complementan: uno comprueba la línea escrita y la otra muestra cómo se obtuvo en el caso que detectó el fallo."
         },
         {
           "type": "image",
@@ -317,7 +317,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye y ejecuta después el comprobador de la lección de pruebas con la copia informe_error.cpp que acabas de corregir. Conserva pruebas_tmp, la carpeta de archivos de prueba que preparaste en esa lección. Mantén la selección explícita de fuentes y utiliza el nombre pruebas_corregidas.exe para distinguir esta ejecución de la batería original. Comprueba el retorno de cl con echo %ERRORLEVEL% antes de ejecutar el comprobador. Las cuarenta y cinco comprobaciones deben pasar y el proceso debe devolver 0: no basta con obtener cinco en un único caso."
+          "text": "Comprueba además la copia corregida con pruebas.cpp, el comprobador completo de la lección anterior. Conserva pruebas_tmp, la carpeta que ese programa utiliza para crear sus propios archivos.\n\nLa orden siguiente mantiene modelo.cpp y archivos.cpp, pero elige informe_error.cpp como única implementación del informe y pruebas.cpp como único main. De ese modo pruebas la copia que acabas de corregir. No añadas informe.cpp ni el main de la aplicación a esta construcción. El nombre pruebas_corregidas.exe permite distinguirla de la batería original.\n\nGuarda los fuentes, construye y consulta el retorno de cl con echo %ERRORLEVEL% antes de ejecutar. Tras una construcción correcta, ejecuta el comprobador y consulta otra vez el retorno, ahora de esa ejecución. Cada una de las cuarenta y cinco líneas de comprobación debe terminar en OK; el resumen debe ser Bateria completa: OK y el proceso debe devolver cero. Obtener cinco en la muestra pequeña no comprueba por sí solo esas otras condiciones."
         },
         {
           "type": "paragraph",
@@ -340,7 +340,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba también que la batería detecta el defecto deliberado. En informe_error.cpp, vuelve temporalmente a la asignación =, guarda y construye el comprobador con otro nombre mediante la orden siguiente. Consulta el retorno de cl antes de ejecutarlo. Una vez construida correctamente esa revisión, la batería debe señalar la diferencia del informe y terminar con un código distinto de cero. Esta contraprueba muestra qué condición vigila la batería."
+          "text": "Realiza una contraprueba para observar si esa batería detecta el defecto que estudiaste. En informe_error.cpp vuelve temporalmente de += a = en la asignación de aceptados, conserva el resto y guarda. Construye con la orden siguiente: el nombre pruebas_error.exe mantiene separado este ejecutable del comprobador de la copia corregida.\n\nConsulta primero el retorno de cl; si la construcción no termina correctamente, todavía no puedes valorar qué detecta la batería. Después ejecuta pruebas_error.exe y consulta inmediatamente su código de terminación.\n\nCon el comprobador de referencia, las demás comprobaciones deben seguir en OK, pero aparecerán estas dos líneas de fallo:\ninforme_limite: FALLO\nBateria completa: FALLO\n\nEl proceso debe devolver uno. Esa diferencia es el resultado previsto de la contraprueba, no un fallo que debas ocultar cambiando el esperado. El párrafo posterior relaciona el caso que falla con sus datos."
         },
         {
           "type": "paragraph",
@@ -372,7 +372,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el punto aparece sin enlazarse o nunca se alcanza, primero confirma que estás depurando depurar_informe.exe construido desde la carpeta actual y que ese recorrido llama a mostrar_informe. Comprueba que conservas los fuentes y los archivos .pdb correspondientes. Un archivo de símbolos de otra construcción no describe necesariamente este ejecutable (Microsoft, 2026a)."
+          "text": "Si Visual Studio indica que el punto no puede activarse, o la ejecución termina sin detenerse allí, comprueba primero qué archivos estás utilizando. La observación necesita estas tres correspondencias:\n\nEl programa abierto para depurar es depurar_informe.exe de la carpeta donde terminaste correctamente la construcción.\nLa fuente abierta es informe_error.cpp de esa misma carpeta, con la instrucción que construiste.\nLos archivos .pdb pertenecen a esa construcción y están disponibles para el depurador (Microsoft, 2026a).\n\nLos PDB aportan los datos que permiten relacionar el ejecutable con nombres y líneas. Un archivo de otra construcción no se vuelve compatible por tener un nombre parecido. Comprueba también que el main utilizado llama a mostrar_informe y que el punto está en el recorrido que esa muestra alcanza. Resuelve primero esa correspondencia antes de interpretar un valor como evidencia de la corrección."
         },
         {
           "type": "paragraph",
@@ -429,7 +429,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la raíz del proyecto crea informe_rechazados_error.cpp y depurar_rechazados.cpp con Bloc de notas. En el primero copia tu informe.cpp correcto y sustituye únicamente rechazados += registro.recuento.rechazados; por rechazados = registro.recuento.rechazados;. En el segundo copia depurar_informe.cpp y utiliza Recuento{2, 2} para el primer registro y Recuento{3, 4} para el segundo. Los aceptados conservan sus cantidades anteriores; los rechazados pasan a ser dos cantidades positivas."
+          "text": "Ahora prepara una prueba separada del total de rechazados. Desde la raíz, utiliza las dos órdenes siguientes para abrir informe_rechazados_error.cpp y depurar_rechazados.cpp. Escribe y guarda sus contenidos con el mismo procedimiento de Bloc de notas, sin alterar los archivos de la aplicación.\n\nEn informe_rechazados_error.cpp copia tu informe.cpp correcto. Cambia sólo la instrucción de rechazados:\nrechazados += registro.recuento.rechazados;\n\nSustitúyela en esa copia por:\nrechazados = registro.recuento.rechazados;\n\nLa suma de aceptados debe conservar +=. En depurar_rechazados.cpp copia el main de depurar_informe.cpp y conserva el grupo verde y los ID de los dos registros. Utiliza Recuento{2, 2} para el primero y Recuento{3, 4} para el segundo. En cada recuento, el primer miembro sigue siendo aceptados y el segundo es rechazados: sólo has cambiado esta segunda columna de los datos. Guarda ambos archivos antes de construir."
         },
         {
           "type": "paragraph",
@@ -453,7 +453,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda ambos archivos y construye esta prueba separada con la orden completa. Consulta echo %ERRORLEVEL% inmediatamente después de cl y continúa cuando indique 0. Después abre su ejecutable en Visual Studio y coloca el punto en la asignación de rechazados, dentro de informe_rechazados_error.cpp. Los parámetros y la selección de fuentes cumplen las mismas funciones que en la prueba anterior; cambian la copia del informe, el main de la muestra y el ejecutable."
+          "text": "Guarda los dos fuentes nuevos y ejecuta la orden de construcción completa desde la raíz, en la consola de desarrollo. Su selección reúne modelo.cpp, la nueva copia del informe y el main de esta muestra; /Fe:depurar_rechazados.exe elige otro ejecutable para mantener separado el caso anterior. /W4, /EHsc, /Zi y /Od cumplen las funciones que acabas de practicar.\n\nConsulta echo %ERRORLEVEL% inmediatamente después de cl, en una línea independiente. Continúa cuando indique cero y hayas revisado los diagnósticos.\n\nLa orden devenv que sigue abre depurar_rechazados.exe para depurarlo. En Visual Studio abre informe_rechazados_error.cpp de esta carpeta y coloca con F9 el punto en la asignación de rechazados. Comprueba que estás observando la nueva copia y no el acumulador de aceptados del caso anterior. Pulsa F5 para iniciar esta ejecución."
         },
         {
           "type": "paragraph",
@@ -465,7 +465,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Observa las dos visitas al punto y el cambio tras F10. Diagnostica la diferencia con tu expectativa, detén la ejecución y corrige la copia. Guarda, reconstruye con la misma orden y repite la observación. Añade al README.md los valores realmente vistos y el motivo por el que la segunda visita distingue los procedimientos. Conserva informe.cpp como fuente de la aplicación y elige explícitamente los archivos de cada construcción."
+          "text": "En Variables locales compara rechazados con registro.recuento.rechazados. Sigue el mismo recorrido de dos visitas:\nEn la primera, lee los valores antes del paso y pulsa F10 para observar el efecto de la asignación.\nPulsa F5 para continuar al segundo registro. Lee otra vez los dos valores, pulsa F10 y compáralos con la suma prevista en el puzzle.\n\nCon la copia defectuosa, el informe debe mostrar estas cuatro líneas, con salto final:\nGrupos: 1\nAceptados: 5\nRechazados: 4\nMayor: verde 5\n\nDetén la depuración con Mayús+F5. Corrige sólo la instrucción de rechazados en informe_rechazados_error.cpp para que utilice +=, guarda y repite la misma orden completa de construcción. Comprueba su retorno antes de iniciar otra ejecución.\n\nRepite entonces la observación: antes del segundo paso debe conservarse dos en el acumulador y el registro debe aportar cuatro; después del paso deben quedar seis. Desde la consola de desarrollo y la misma raíz, ejecuta .\\depurar_rechazados.exe y consulta inmediatamente echo %ERRORLEVEL% en otra línea: se espera cero. El informe esperado es:\nGrupos: 1\nAceptados: 5\nRechazados: 6\nMayor: verde 5\n\nAmbas versiones de este main pueden terminar con cero: ese resultado no compara por sí solo la suma. En README.md registra los valores que realmente observaste y explica por qué la segunda visita distingue reemplazar de acumular. Conserva informe.cpp y elige explícitamente las fuentes de cada construcción. Esta transferencia utiliza tus propias observaciones; las capturas anteriores muestran el caso de aceptados."
         }
       ]
     }
@@ -1480,6 +1480,106 @@
         "id": "block_0006_0001",
         "beforeSha256": "430e36f2ab19c88b3934e7337f4925d82b6c48367a37b08d9df5c28f09289af1",
         "afterSha256": "6f72cab532fb347624b30c878848f55708500aaff59bbc824e26eedefeb49022"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "58c6a6ba1172889626d63c0f6b2a69483cf5c9a053a17b9c7b78613eec7dd811",
+        "afterSha256": "c60c0342785b1960f63848117863e9d3f99a7aa4591b41edcf72ad1919407ea9"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "a9782c122acd8d74b002b5def02327dfc847afe67f79599056e6c3960ac2f75c",
+        "afterSha256": "d44f0017c653c1c07aae6500ef8e0b608a1a32b0957f8950af51d75dd9b94ccc"
+      },
+      {
+        "id": "block_0001_0008",
+        "beforeSha256": "f8cc82a008cb570a51a9155f1bdce9b3b7fab3d23562808d383b75ef0fd813f5",
+        "afterSha256": "2f9d88f0dc536442c03cf6bfca3f67c16ccf9e8baf020f7f74d68be5fa2ec0c5"
+      },
+      {
+        "id": "u12_inspectionlog_construccion_antes_de_depurar",
+        "beforeSha256": "d00ae258db145b1d1be6ba3980c42ad5a8dd726e4f47d0b0ee058bf6bb23b7b7",
+        "afterSha256": "7b3658c45ca6d5eab3d3ec076216c3eef6763c2f6bd78ee511eaff0e76d44770"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "489d2749e24334d0bdcbbb04881e1feb5f958a3f1d7516a5d04df68ff88d9155",
+        "afterSha256": "4636ee1619f9081dd7a115ce004cf31cf694d14188b61c227fd8dcb08da89b11"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e505d8117f1282e0b6067215c9afdf34fa50c956f16b14fe388631f56cd71722",
+        "afterSha256": "b77a8950a1c37e25a1a0caa46ee02ba56e6a8588de8b66831a871476532dcb30"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "42f47cf9aeaab1410e6eb92b09cd38a95038994ad6907ad8db542780f6547b5a",
+        "afterSha256": "538c7ee4504c6ccae9615097141a953b52ec694494950569989608da44582123"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d1d4f7e32500b49007222dcf92e334c23c945addd0bc43af4a29f809f251e50f",
+        "afterSha256": "6c91a60e2597e71930463119f268b1e9296672b3319fdef47f49935e44be4efa"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9b19a500aef3fad7ad7604b45f2e124404e96c76d407d77c0bdf0dfd86f97efc",
+        "afterSha256": "ce4fef292230cdb10c5d53f1754a5d3443e45e297f87b1a019e502afbd43d59e"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "6384eb980595491d1a28838791be2877fbb6d3f101a13aeae5efbf1a5f8cee32",
+        "afterSha256": "d9224ec674a09c79c72232615d31a8f59ed96f337ee201db18855afc23d8eb79"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "52b389841ec2229f5c9c91ac010f0d8ad805a527e64a5a21969ecb7378342d15",
+        "afterSha256": "d1437482af3d7b65b64d64ed64fd7a7f346dc1894dde73db63730f788087e1a1"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "ac5a8e3c4ff9d9f20acf1367e67841c62b6cf6b7a5e2e6da957d9d062b4adeba",
+        "afterSha256": "54c97fa044a8df9ae51191bb5d6574e9ccf7c076e9002ca3d2f35bbcc5c69753"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "6bdcac0bdbbabb1ad7719b91b59b53bdf7df0d072667419917ea0562714027f0",
+        "afterSha256": "d3e2fde3497a19e3ffff618d17ab0f0456e241bea38820b3d347d399e0771e98"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "ff6e8a97958b486094ed4fe9b25b8aaa935843c2c09fa67b3e5283c6132e3b57",
+        "afterSha256": "d2310dee2f71196c9536ab7cd36262ada2b2b19e84460217aedcfeee560ab885"
+      },
+      {
+        "id": "block_0005_0011",
+        "beforeSha256": "1e2745c496725b1ccedab90444012fab5422e2f7a5336deb0866fad9d193f6fd",
+        "afterSha256": "eae94d020b1e9264904854bb197c9b105a40419cc9de4ff27ef51536d3d5be1a"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "6f72cab532fb347624b30c878848f55708500aaff59bbc824e26eedefeb49022",
+        "afterSha256": "1ce79380fa96601493766f5c05c3a083738c395c71bcca67f88ec3f0915d157d"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "f0bf718d6f065680c520aef52e552b62698a3868c50498a8d00b2836f0c60649",
+        "afterSha256": "e117a4399abe4cc3f60345abee3eba8f18577f67700aaba22b295a6f95d0cf1e"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "2aa9e1546dda8a6d0363f3d136a5bce68a74352cd6f0842127d88971ac9f9fb4",
+        "afterSha256": "3b9d010410f7f47af25b446c5eb984e0a3e0daf94dd85fa6f0160936ce28767a"
+      },
+      {
+        "id": "block_0008_0008",
+        "beforeSha256": "7e6b33b686e88955fa21962fa69d873ad917d16ccd9341d4e314277831b16658",
+        "afterSha256": "e6feaa5340075ce36b5c7dd63762989562ed29e57c8588d2e6891d33ddc10184"
+      },
+      {
+        "id": "block_0008_0008",
+        "beforeSha256": "e6feaa5340075ce36b5c7dd63762989562ed29e57c8588d2e6891d33ddc10184",
+        "afterSha256": "b22f82303a671654d2eca1d8ddc2511256f44bc08619fe7712e6d918ba2f10ea"
       }
     ]
   },
@@ -1646,21 +1746,77 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "c1746748c5ab282ea8c75125587c2d31e6d43d9c31dd259a3d97f56af1d2b53a",
+        "sourceSha256": "bc099a7173ca0810270a2a780cf7cf9e2c1e5332059283f8776270ae29be592c",
         "spans": [
           {
-            "start": 32,
-            "end": 51,
+            "start": 47,
+            "end": 50,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 59,
+            "text": "cmd",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 92,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 275,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 321,
             "text": "depurar_informe.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 186,
+            "start": 427,
+            "end": 432,
+            "text": "UTF-8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 461,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 474,
+            "end": 478,
+            "text": ".txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 551,
+            "end": 555,
             "text": "main",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 624,
+            "end": 639,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1681,42 +1837,63 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "a4feac8416f1dc52e6ea7606c73298aa12deacb660ae3d20a991824cd94f52f1",
+        "sourceSha256": "f95df1cb81631d5eea7a266fbd517410b62a822ff70a90be78f7f6d24051b32b",
         "spans": [
           {
-            "start": 26,
-            "end": 43,
+            "start": 5,
+            "end": 22,
             "text": "informe_error.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 87,
+            "start": 77,
+            "end": 88,
             "text": "informe.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 164,
+            "start": 146,
+            "end": 161,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 293,
             "text": "aceptados += registro.recuento.aceptados;",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 209,
+            "start": 346,
+            "end": 386,
             "text": "aceptados = registro.recuento.aceptados;",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 305,
+            "start": 395,
+            "end": 412,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 440,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 452,
             "text": "+=",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           }
         ]
       },
@@ -1765,63 +1942,91 @@
       {
         "block": "block_0001_0008",
         "path": "/text",
-        "sourceSha256": "7a8fb56d7f7648a7061afe2875e4e08e591557069d7f5f954a7deac7569d4d99",
+        "sourceSha256": "94d74fd764bac199b192b0eea9c5b388785828dd753638eb635b4c82720e5fa8",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
-            "text": "/Zi",
+            "start": 95,
+            "end": 98,
+            "text": "/W4",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 130,
-            "end": 134,
+            "start": 143,
+            "end": 148,
+            "text": "/EHsc",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 217,
+            "end": 240,
+            "text": "/Fe:depurar_informe.exe",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 295,
+            "end": 298,
+            "text": "/Zi",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 430,
+            "end": 434,
             "text": ".pdb",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 153,
+            "start": 512,
+            "end": 515,
+            "text": "PDB",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 575,
+            "end": 593,
             "text": "(Microsoft, 2026a)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 155,
-            "end": 158,
+            "start": 596,
+            "end": 599,
             "text": "/Od",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 230,
-            "end": 247,
+            "start": 677,
+            "end": 694,
             "text": "(Microsoft, 2021)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 262,
-            "end": 265,
-            "text": "/W4",
+            "start": 714,
+            "end": 717,
+            "text": "/Zi",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 267,
-            "end": 272,
-            "text": "/EHsc",
+            "start": 750,
+            "end": 753,
+            "text": "/Od",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 275,
-            "end": 298,
-            "text": "/Fe:depurar_informe.exe",
+            "start": 841,
+            "end": 844,
+            "text": "PDB",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           }
         ]
       },
@@ -2021,19 +2226,54 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "ad40fb2d81ae0c2e1fa9147c2a5da2aa777d6e5e547da7d21e1f4039f67485cf",
+        "sourceSha256": "8f91f905fe0da63929136a1539ab80d2456aab7fd807b05302c8b4880e098033",
         "spans": [
           {
-            "start": 145,
-            "end": 173,
+            "start": 0,
+            "end": 13,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 299,
             "text": "Skip and add accounts later.",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 294,
-            "end": 313,
+            "start": 455,
+            "end": 475,
+            "text": "Development settings",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 507,
+            "end": 514,
+            "text": "General",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 521,
+            "text": "Dark",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 523,
+            "end": 542,
             "text": "Start Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 672,
+            "end": 675,
+            "text": "IDE",
             "role": "data",
             "reading": "natural"
           }
@@ -2042,27 +2282,48 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "491cb5ec87bb6785205f0c871978f19cb0a51725ba577a42925b8f000993ca4d",
+        "sourceSha256": "5b3ad1926d0efa73c27baf7c1642142bd793f8b3b82a8b09adf2fa1d5ee8a04c",
         "spans": [
           {
-            "start": 73,
-            "end": 79,
+            "start": 89,
+            "end": 95,
             "text": "devenv",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 113,
-            "end": 122,
+            "start": 103,
+            "end": 116,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 127,
             "text": "/DebugExe",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 166,
-            "end": 183,
+            "start": 208,
+            "end": 227,
+            "text": "depurar_informe.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 291,
             "text": "(Microsoft, 2024)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 401,
+            "text": "F5",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2147,28 +2408,56 @@
       {
         "block": "block_0002_0006",
         "path": "/text",
-        "sourceSha256": "2ca9409adfc2dab4d2bac2374c8dfee1070cfd383fbd28836403f335e001de98",
+        "sourceSha256": "e2fd82371c700452563334ea33d05a9f8af2a4c79d5d0fe574eff32dfbc3e255",
         "spans": [
           {
-            "start": 6,
-            "end": 8,
+            "start": 35,
+            "end": 37,
             "text": "F5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 17,
-            "end": 45,
+            "start": 46,
+            "end": 74,
             "text": "Depurar → Iniciar depuración",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 81,
+            "start": 87,
+            "end": 110,
             "text": "Debug → Start Debugging",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 234,
+            "text": "(Microsoft, 2025e)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 290,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 582,
+            "end": 599,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 622,
+            "end": 631,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2211,67 +2500,151 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "2802d67aa5f7bd922efe82c0887f335b7259e0d3276547991cc234aa1e8245cb",
+        "sourceSha256": "d7974456a2e32d60bf8286253be60892b32105d0d0a7319e70b1d0fe8eaecb2f",
         "spans": [
           {
-            "start": 32,
-            "end": 70,
+            "start": 46,
+            "end": 84,
             "text": "Depurar → Ventanas → Variables locales",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 107,
+            "start": 97,
+            "end": 121,
             "text": "Debug → Windows → Locals",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 118,
-            "end": 127,
-            "text": "aceptados",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 151,
-            "end": 159,
-            "text": "registro",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 171,
-            "end": 179,
-            "text": "recuento",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 321,
-            "end": 339,
+            "start": 282,
+            "end": 300,
             "text": "(Microsoft, 2025e)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 335,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 419,
+            "end": 446,
+            "text": "registro.recuento.aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 478,
+            "end": 486,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 555,
+            "end": 563,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 598,
+            "end": 606,
+            "text": "recuento",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 636,
+            "end": 645,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 790,
+            "end": 799,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 865,
+            "end": 873,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "65d29e3c5e3846225b901b08f5dea3e725d74ea59862c8014c871285661850c6",
+        "sourceSha256": "057619c10abd33c7510ddfa7fe62d41435e264b65cb71b43b33ce3d9f7a3a59f",
         "spans": [
           {
-            "start": 116,
-            "end": 119,
+            "start": 68,
+            "end": 77,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 125,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 245,
             "text": "F10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 327,
-            "end": 345,
+            "start": 415,
+            "end": 432,
+            "text": "Variables locales",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 466,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 472,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 724,
+            "end": 733,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 734,
+            "end": 752,
             "text": "(Microsoft, 2025e)",
             "role": "citation",
             "reading": "natural"
@@ -2281,28 +2654,56 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "549a6f8d2b7126f8c3abf29c4235041117cd8c7656650d46334fd27bfc269c15",
+        "sourceSha256": "27b4cf3f488e5bfe75cb2bdefdd56c723a2cde9f9a4e3faf4fecb88404f51eb8",
         "spans": [
           {
-            "start": 28,
-            "end": 37,
-            "text": "aceptados",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 45,
-            "end": 47,
+            "start": 31,
+            "end": 33,
             "text": "F5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 243,
-            "end": 246,
+            "start": 56,
+            "end": 58,
+            "text": "F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 301,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 385,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 417,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 490,
+            "end": 493,
             "text": "F10",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 522,
+            "end": 531,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2614,35 +3015,49 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "9ad7215191f95afc44ab6c140d59878dfee3ee97cf20ceded7ee2253883c3988",
+        "sourceSha256": "76437049ab3854604649bcbbca7d789cd44175dc91011ed2b18d0e18a65fb0d8",
         "spans": [
           {
-            "start": 24,
-            "end": 32,
+            "start": 56,
+            "end": 64,
             "text": "Mayús+F5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 35,
-            "end": 63,
+            "start": 67,
+            "end": 95,
             "text": "Depurar → Detener depuración",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 68,
-            "end": 85,
+            "start": 108,
+            "end": 130,
+            "text": "Debug → Stop Debugging",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 222,
             "text": "informe_error.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 156,
+            "start": 263,
+            "end": 304,
             "text": "aceptados += registro.recuento.aceptados;",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 349,
+            "end": 355,
+            "text": "Ctrl+S",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2663,20 +3078,69 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "50ba6e3ceb5e74c3fa80aac0c3080c5462b5ccd1c9c02535fa87f5c6bacf1c6a",
+        "sourceSha256": "677c409c5d4c3821b87e195fb66ad9badcb3cb0f9e77cd4950accebb17e3518c",
         "spans": [
           {
-            "start": 61,
-            "end": 78,
+            "start": 40,
+            "end": 57,
             "text": "echo %ERRORLEVEL%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 105,
-            "end": 106,
-            "text": "0",
+            "start": 110,
+            "end": 114,
+            "text": "cero",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 404,
+            "end": 421,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 484,
+            "end": 488,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 514,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 571,
+            "end": 590,
+            "text": "depurar_informe.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 613,
+            "end": 630,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 729,
+            "end": 732,
+            "text": "PDB",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 765,
+            "end": 767,
+            "text": "F5",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2712,40 +3176,103 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "0f01d3989a323e9a05caccca305b7cbc3d3bca9697196e88e14dea5ffa40ef53",
+        "sourceSha256": "f75dbab173371178055b2fd752d15d7165d9e19b742dd39635cbdc98bec2ae03",
         "spans": [
           {
-            "start": 52,
-            "end": 61,
-            "text": "aceptados",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 81,
-            "end": 82,
-            "text": "2",
-            "role": "data",
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 110,
-            "end": 111,
-            "text": "3",
-            "role": "data",
+            "start": 99,
+            "end": 103,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 124,
-            "end": 127,
+            "start": 125,
+            "end": 128,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 144,
             "text": "F10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 155,
-            "text": "5",
+            "start": 160,
+            "end": 163,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 174,
+            "text": "F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 251,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 270,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 300,
+            "text": "registro.recuento.aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 318,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 331,
+            "end": 334,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 366,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 384,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 412,
+            "text": "tres",
             "role": "output",
             "reading": "natural"
           }
@@ -2754,54 +3281,110 @@
       {
         "block": "block_0005_0007",
         "path": "/text",
-        "sourceSha256": "63b5ed3a5e2079665093f1a0e59562aef62d701d2366edaf057d92fb615bc84a",
+        "sourceSha256": "80b2331501ae406e0b213089b0c4773ccc5eece1695793efce45f4e2795b8d90",
         "spans": [
           {
-            "start": 81,
-            "end": 98,
-            "text": "informe_error.cpp",
+            "start": 40,
+            "end": 51,
+            "text": "pruebas.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 132,
-            "end": 143,
+            "start": 110,
+            "end": 121,
             "text": "pruebas_tmp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 292,
+            "start": 221,
+            "end": 231,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 246,
+            "text": "archivos.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 276,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 328,
+            "text": "pruebas.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 344,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 409,
+            "end": 420,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 427,
+            "end": 431,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 502,
             "text": "pruebas_corregidas.exe",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 372,
-            "end": 374,
+            "start": 604,
+            "end": 606,
             "text": "cl",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 379,
-            "end": 396,
+            "start": 611,
+            "end": 628,
             "text": "echo %ERRORLEVEL%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 506,
-            "end": 507,
-            "text": "0",
+            "start": 832,
+            "end": 834,
+            "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 530,
-            "end": 535,
-            "text": "cinco",
+            "start": 856,
+            "end": 876,
+            "text": "Bateria completa: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 904,
+            "end": 908,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -2852,33 +3435,75 @@
       {
         "block": "block_0005_0011",
         "path": "/text",
-        "sourceSha256": "e3c8b42d2707b36c779b5b173d2470920f924a01ea27289e8ded2e85331525de",
+        "sourceSha256": "23109cf9a15cf00e8178f7f12b4030910c8ca3c5881d8b69424037444e1f8d9d",
         "spans": [
           {
-            "start": 67,
-            "end": 84,
+            "start": 92,
+            "end": 109,
             "text": "informe_error.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 124,
+            "start": 134,
+            "end": 136,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 140,
             "text": "=",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 228,
-            "end": 230,
-            "text": "cl",
+            "start": 161,
+            "end": 170,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 261,
+            "text": "pruebas_error.exe",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 386,
-            "end": 390,
-            "text": "cero",
+            "start": 367,
+            "end": 369,
+            "text": "cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 482,
+            "end": 499,
+            "text": "pruebas_error.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 628,
+            "end": 630,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 675,
+            "end": 720,
+            "text": "informe_limite: FALLO\nBateria completa: FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 747,
+            "end": 750,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           }
@@ -2970,35 +3595,63 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "30ddb7c58df7be24c93f02a2ebf37daa003be8777bd7dbed28b2d69cb1d6e64c",
+        "sourceSha256": "14ce6708d06f9f68f499df04a2ea9e9436d4bb610388034055b58af86e8868be",
         "spans": [
           {
-            "start": 91,
-            "end": 110,
+            "start": 3,
+            "end": 16,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 258,
             "text": "depurar_informe.exe",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 174,
-            "end": 189,
-            "text": "mostrar_informe",
-            "role": "cpp",
-            "reading": "auto"
+            "start": 342,
+            "end": 359,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 242,
-            "end": 246,
+            "start": 431,
+            "end": 435,
             "text": ".pdb",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 352,
-            "end": 370,
+            "start": 504,
+            "end": 522,
             "text": "(Microsoft, 2026a)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 529,
+            "end": 532,
+            "text": "PDB",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 722,
+            "end": 726,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 745,
+            "end": 760,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3130,63 +3783,126 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "f37fc278ad093766282ee965ad2eb689cfee196a10420cf4af0d5f7e1f4c2a4e",
+        "sourceSha256": "453dc00dacc53caad7299aeae368f216c75e82c477d8f6c29055295ae2646929",
         "spans": [
           {
-            "start": 29,
+            "start": 47,
             "end": 57,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 148,
             "text": "informe_rechazados_error.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 60,
-            "end": 82,
+            "start": 151,
+            "end": 173,
             "text": "depurar_rechazados.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 136,
+            "start": 299,
+            "end": 327,
+            "text": "informe_rechazados_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 348,
             "text": "informe.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 212,
+            "start": 389,
+            "end": 399,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 401,
+            "end": 444,
             "text": "rechazados += registro.recuento.rechazados;",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 217,
-            "end": 259,
+            "start": 476,
+            "end": 518,
             "text": "rechazados = registro.recuento.rechazados;",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 281,
-            "end": 300,
+            "start": 531,
+            "end": 540,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 556,
+            "end": 558,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 563,
+            "end": 585,
+            "text": "depurar_rechazados.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 595,
+            "end": 599,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 603,
+            "end": 622,
             "text": "depurar_informe.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 311,
-            "end": 325,
+            "start": 688,
+            "end": 702,
             "text": "Recuento{2, 2}",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 352,
-            "end": 366,
+            "start": 721,
+            "end": 735,
             "text": "Recuento{3, 4}",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 802,
+            "end": 811,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 828,
+            "end": 838,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3388,56 +4104,133 @@
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "27a23100cc9620d8bc78929cc974a86e919bab85eed6dffe14db11c3d2a6d146",
+        "sourceSha256": "c6d8250743108f5b8f51b485048e9beb699a1c9f70fd5039d0e0e8d8e49d4934",
         "spans": [
           {
-            "start": 87,
-            "end": 104,
+            "start": 137,
+            "end": 147,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 185,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 229,
+            "text": "/Fe:depurar_rechazados.exe",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 293,
+            "end": 296,
+            "text": "/W4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 298,
+            "end": 303,
+            "text": "/EHsc",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 305,
+            "end": 308,
+            "text": "/Zi",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 311,
+            "end": 314,
+            "text": "/Od",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 372,
+            "end": 389,
             "text": "echo %ERRORLEVEL%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 131,
-            "end": 133,
+            "start": 416,
+            "end": 418,
             "text": "cl",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 160,
-            "end": 161,
-            "text": "0",
+            "start": 472,
+            "end": 476,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 193,
-            "end": 206,
+            "start": 522,
+            "end": 528,
+            "text": "devenv",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 544,
+            "end": 566,
+            "text": "depurar_rechazados.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 586,
+            "end": 599,
             "text": "Visual Studio",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 255,
-            "text": "rechazados",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 267,
-            "end": 295,
+            "start": 605,
+            "end": 633,
             "text": "informe_rechazados_error.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 427,
-            "end": 431,
-            "text": "main",
+            "start": 663,
+            "end": 665,
+            "text": "F9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 695,
+            "end": 705,
+            "text": "rechazados",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 775,
+            "end": 784,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 812,
+            "text": "F5",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3472,28 +4265,189 @@
       {
         "block": "block_0008_0008",
         "path": "/text",
-        "sourceSha256": "3e67a32d6bfaf4ab6affe6192e0ffed0b9e8e505ddb67eb9908e7a25989cf315",
+        "sourceSha256": "6c618f7e1bc38fe48b08ada7d43b49bc95f4f7ba61a17feb306ef7bc48daffa2",
         "spans": [
           {
-            "start": 50,
-            "end": 53,
+            "start": 3,
+            "end": 20,
+            "text": "Variables locales",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 39,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 72,
+            "text": "registro.recuento.rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 172,
             "text": "F10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 213,
-            "end": 222,
+            "start": 221,
+            "end": 223,
+            "text": "F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 280,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 299,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 404,
+            "end": 410,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 436,
+            "end": 487,
+            "text": "Grupos: 1\nAceptados: 5\nRechazados: 4\nMayor: verde 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 513,
+            "end": 521,
+            "text": "Mayús+F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 554,
+            "end": 564,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 568,
+            "end": 596,
+            "text": "informe_rechazados_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 614,
+            "end": 616,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 802,
+            "end": 805,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 850,
+            "end": 856,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 888,
+            "end": 892,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 950,
+            "end": 974,
+            "text": ".\\depurar_rechazados.exe",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1001,
+            "end": 1018,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1044,
+            "end": 1048,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1074,
+            "end": 1125,
+            "text": "Grupos: 1\nAceptados: 5\nRechazados: 6\nMayor: verde 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1151,
+            "end": 1155,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1176,
+            "end": 1180,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1231,
+            "end": 1240,
             "text": "README.md",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 332,
-            "end": 343,
+            "start": 1366,
+            "end": 1377,
             "text": "informe.cpp",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 1533,
+            "end": 1542,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4155,42 +5109,56 @@
       {
         "block": "u12_inspectionlog_construccion_antes_de_depurar",
         "path": "/text",
-        "sourceSha256": "590a283882de88172c8660a707d83853c1a5a3bf7e6d2c955adbf884838f5c5b",
+        "sourceSha256": "3841fbdb69504e9212d693e7e02b08fb56ed02789042df73222c9a1276853be8",
         "spans": [
           {
-            "start": 29,
-            "end": 46,
+            "start": 24,
+            "end": 26,
+            "text": "cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 53,
+            "end": 70,
             "text": "echo %ERRORLEVEL%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 108,
-            "end": 110,
-            "text": "cl",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 123,
-            "text": "0",
+            "start": 132,
+            "end": 136,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 179,
+            "start": 174,
+            "end": 192,
             "text": "(Microsoft, 2025a)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 338,
-            "end": 340,
-            "text": "cl",
-            "role": "data",
+            "start": 661,
+            "end": 712,
+            "text": "Grupos: 1\nAceptados: 3\nRechazados: 1\nMayor: verde 5",
+            "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 819,
+            "end": 823,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 862,
+            "end": 866,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
