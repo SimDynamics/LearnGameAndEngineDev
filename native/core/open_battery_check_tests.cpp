@@ -92,7 +92,7 @@ void parsing() {
 void specification() {
     const OpenBatteryProbeSpec correct_spec{
         "src/ajuste.cpp","pruebas/casos.cpp","intentar_ajuste",
-        "comprobar_ajustes",{originals.begin(),originals.end()}};
+        "comprobar","comprobar_ajustes",{originals.begin(),originals.end()}};
     verify(open_battery_probe_spec_valid(correct_spec),
            "An authentic original CMake owner was rejected");
     auto forged=correct_spec;forged.test_path="../escape.cpp";

@@ -110,6 +110,7 @@ struct OutputCheck {
     std::optional<RejectionOperation> rejection_operation;
     std::optional<ReportMode> observation_report;
     std::optional<AssertionMode> assertion_check;
+    bool open_battery_check = false; // Independent project mutations decide the result.
 };
 // A closed compile-time rejection is a different objective from runtime stdout.
 // The loader binds each diagnostic to its reviewed Spanish editor and source.
@@ -197,6 +198,9 @@ struct Block {
     // Lesson-root source prerequisite. It is checked before any case receipt
     // and keeps the original editor payload, answers and stable identity.
     std::optional<NamedRuleSourceCheck> named_rule_source_check;
+    // The root declares this open CMake battery without changing its
+    // previously published block or saved student draft identity.
+    std::optional<OpenBatteryProbeSpec> open_battery_probe;
     // Authored at the lesson root; a new structural proof does not inherit
     // earlier stdout-only receipts or change the existing editor identity.
     std::optional<CmakeGraphRequirement> cmake_graph_check;

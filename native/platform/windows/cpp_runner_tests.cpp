@@ -1362,7 +1362,7 @@ int main() {
         };
         value.open_battery_probe=OpenBatteryProbeSpec{
             "src/ajuste.cpp","pruebas/casos.cpp",
-            "intentar_ajuste","comprobar_ajustes",
+            "intentar_ajuste","comprobar","comprobar_ajustes",
             {{2,3,7,77}}
         };
         const auto submitted=value.project_files;

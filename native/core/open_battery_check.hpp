@@ -22,7 +22,7 @@ struct OpenBatteryCall {
 };
 enum class OpenBatteryMutation { baseline, invert_acceptance, corrupt_destination };
 struct OpenBatteryProbeSpec {
-    std::string library_path, test_path, function_name, test_target;
+    std::string library_path, test_path, function_name, comparison_name, test_target;
     std::vector<OpenBatteryCall> original_cases;
     bool operator==(const OpenBatteryProbeSpec&) const = default;
 };
@@ -75,6 +75,7 @@ inline bool open_battery_probe_spec_valid(const OpenBatteryProbeSpec& spec) {
     return safe(spec.library_path)&&safe(spec.test_path)&&
         spec.library_path!=spec.test_path&&
         open_battery_identifier(spec.function_name)&&
+        open_battery_identifier(spec.comparison_name)&&
         open_battery_identifier(spec.test_target)&&
         open_battery_originals_valid(spec.original_cases);
 }
