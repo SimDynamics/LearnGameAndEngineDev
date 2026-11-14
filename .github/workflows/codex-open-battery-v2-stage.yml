@@ -1,0 +1,265 @@
+name: Codex temporary native battery v2 staging
+on:
+  push:
+    branches: [Codex]
+    paths: [.github/workflows/codex-open-battery-v2-stage.yml]
+permissions:
+  contents: read
+jobs:
+  stage:
+    if: github.repository == 'SimDynamics/LearnGameAndEngineDev' && github.ref == 'refs/heads/Codex'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Prepare exact native edits without moving any branch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          base = 'dde72d705bfbc290ac671bea7b76ed93650fb7ae'
+          assert subprocess.check_output(['git','rev-parse','HEAD^'],text=True).strip() == base
+          assert subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines() == ['.github/workflows/codex-open-battery-v2-stage.yml']
+          def edit(path, before, after):
+              p=Path(path)
+              text=p.read_text(encoding='utf-8')
+              if text.count(before)!=1:
+                  raise RuntimeError('Nonunique edit anchor in '+path+': '+before[:100])
+              with p.open('w',encoding='utf-8',newline='') as out:
+                  out.write(text.replace(before,after,1))
+          h='native/core/open_battery_check.hpp'
+          t='native/core/open_battery_check_tests.cpp'
+          r='native/platform/windows/cpp_runner.cpp'
+          l='native/core/lesson.cpp'
+          w='native/platform/windows/cpp_runner_tests.cpp'
+          edit(h,'enum class OpenBatteryMutation { baseline, invert_acceptance, corrupt_destination };', '''enum class OpenBatteryMutation { baseline, invert_acceptance, corrupt_destination };
+          // V1 checked only acceptance for historical calls. Its receipts remain
+          // historical data, but cannot certify the stronger two-observation goal.
+          inline constexpr std::string_view open_battery_objective_version =
+              "open-cmake-battery-independent-mutations-v2";
+          struct OpenBatteryPhase {
+              OpenBatteryMutation mutation=OpenBatteryMutation::baseline;
+              std::optional<OpenBatteryCall> target;
+              bool operator==(const OpenBatteryPhase&) const = default;
+          };''')
+          edit(h,'// Authenticated source file names and finite mutation work are required.', '''// Shared by the native worker and verifier: one clean execution, then an
+          // acceptance-only and a destination-only defect for every old/new call.
+          // Call distinctness is checked by the verifier before awarding credit.
+          inline std::optional<std::vector<OpenBatteryPhase>> open_battery_mutation_plan(
+                  std::span<const OpenBatteryCall> original,OpenBatteryCall added) {
+              if(!open_battery_originals_valid(original))return {};
+              std::vector<OpenBatteryPhase> plan;
+              plan.reserve(2*original.size()+3);
+              plan.push_back({OpenBatteryMutation::baseline,std::nullopt});
+              const auto append=[&](OpenBatteryCall target) {
+                  plan.push_back({OpenBatteryMutation::invert_acceptance,target});
+                  plan.push_back({OpenBatteryMutation::corrupt_destination,target});
+              };
+              for(const auto& target:original)append(target);
+              append(added);
+              return plan;
+          }
+          // Authenticated source file names and finite mutation work are required.''')
+          edit(h,'// The runner supplies the baseline followed by one inversion of each old\n// call, then one acceptance and one destination mutation of the new call.', '// The worker supplies the baseline and both result dimensions for every\n// historical call and the new call, in open_battery_mutation_plan order.')
+          edit(h,'runs.size()!=original.size()+3','runs.size()!=2*original.size()+3')
+          edit(h,'''    for(std::size_t i=1;i<runs.size();++i) {
+                  const auto required=i<=original.size()?
+                      OpenBatteryMutation::invert_acceptance:
+                      i==original.size()+1?
+                          OpenBatteryMutation::invert_acceptance:
+                          OpenBatteryMutation::corrupt_destination;
+                  const auto target=i<=original.size()?original[i-1]:*extra;
+                  if(runs[i].mutation!=required||runs[i].target!=target)''', '''    const auto plan=open_battery_mutation_plan(original,*extra);
+              if(!plan||plan->size()!=runs.size())
+                  return {false,"No existe un plan completo de mutaciones independientes.",{}};
+              for(std::size_t i=1;i<runs.size();++i) {
+                  const auto& required=(*plan)[i];
+                  if(runs[i].mutation!=required.mutation||runs[i].target!=required.target)''')
+          edit(t,'std::vector<OpenBatteryRun> runs(originals.size()+3);','std::vector<OpenBatteryRun> runs(2*originals.size()+3);')
+          edit(t,'''        runs[i].mutation=i==originals.size()+2?
+                      OpenBatteryMutation::corrupt_destination:
+                      OpenBatteryMutation::invert_acceptance;
+                  runs[i].target=i<=originals.size()?originals[i-1]:added;''', '''        // Deliberately independent of the production plan implementation.
+                  runs[i].mutation=i%2==0?OpenBatteryMutation::corrupt_destination:
+                      OpenBatteryMutation::invert_acceptance;
+                  const auto target=(i-1)/2;
+                  runs[i].target=target<originals.size()?originals[target]:added;''')
+          edit(t,'runs[originals.size()].stdout_bytes','runs[2*originals.size()].stdout_bytes')
+          edit(t,'runs[originals.size()+1].stdout_bytes','runs[2*originals.size()+1].stdout_bytes')
+          edit(t,'void judgments() {', '''void destination_coverage() {
+              const OpenBatteryCall added{3,3,7,59};
+              const auto plan=open_battery_mutation_plan(originals,added);
+              verify(plan&&plan->size()==25,"Eleven old cases require 25 native phases");
+              const auto reference=correct(added);
+              for(std::size_t i=0;i<plan->size();++i)
+                  verify((*plan)[i].mutation==reference[i].mutation&&
+                         (*plan)[i].target==reference[i].target,
+                         "Native plan skipped or reordered an observation");
+              for(std::size_t i=0;i<originals.size();++i) {
+                  auto runs=reference;
+                  runs[2*i+2].exit_code=0;
+                  verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+                         "An accepted or rejected historical call ignored its destination");
+                  runs=reference;
+                  runs[2*i+2]=runs[2*i+1];
+                  verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+                         "Repeated acceptance evidence replaced a destination mutation");
+              }
+              std::vector<OpenBatteryRun> legacy{reference.front()};
+              for(std::size_t i=0;i<originals.size();++i)legacy.push_back(reference[2*i+1]);
+              legacy.push_back(reference[reference.size()-2]);
+              legacy.push_back(reference.back());
+              verify(legacy.size()==14&&
+                     !open_battery_verify(originals,legacy,"project-fingerprint").accepted,
+                     "A former fourteen-run witness silently acquired v2 credit");
+              verify(!open_battery_mutation_plan({},added),"An empty plan was accepted");
+              verify(open_battery_objective_version==
+                     "open-cmake-battery-independent-mutations-v2",
+                     "The stronger contract reused the previous receipt version");
+          }
+          void judgments() {''')
+          edit(t,'generated();parsing();specification();reporting();agreement();judgments();','generated();parsing();specification();reporting();agreement();destination_coverage();judgments();')
+          edit(r,'private_request.project_key+="/open-battery-private-v1/"','private_request.project_key+="/open-battery-private-v2/"')
+          edit(r,'''    for(std::size_t i=0;i<spec.original_cases.size();++i)
+                  if(!run(curriculum::OpenBatteryMutation::invert_acceptance,
+                          spec.original_cases[i],i+1))return;
+              if(!run(curriculum::OpenBatteryMutation::invert_acceptance,
+                      added,spec.original_cases.size()+1))return;
+              if(!run(curriculum::OpenBatteryMutation::corrupt_destination,
+                      added,spec.original_cases.size()+2))return;''', '''    const auto plan=curriculum::open_battery_mutation_plan(spec.original_cases,*added);
+              if(!plan)return;
+              // The clean baseline above is phase zero. Preserve separate builds
+              // and executions for both observations of every historical case.
+              for(std::size_t i=1;i<plan->size();++i)
+                  if(!run((*plan)[i].mutation,(*plan)[i].target,i))return;''')
+          edit(l,'token("open-cmake-battery-independent-mutations-v1");','token(open_battery_objective_version);')
+          edit(w,'''        require(original.pages.size()==7&&loaded.pages.size()==7&&
+                          saved.pages.size()==7&&original.pages[6].blocks.size()>11&&''','''        require(original.pages.size()==loaded.pages.size()&&
+                          original.pages.size()==saved.pages.size()&&''')
+          edit(w,'''        const auto& before=original.pages[6].blocks[11];
+                  const auto& owner=loaded.pages[6].blocks[11];
+                  const auto& progress=saved.pages[6].blocks[11];''','''        const auto mapped=[](const Lesson& lesson)->const Block& {
+                      const Block* found=nullptr;
+                      for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
+                          if(block.stable_id=="block_0006_0011") {
+                              require(!found,"Duplicate stable open-battery owner");
+                              found=&block;
+                          }
+                      require(found!=nullptr,"Missing stable open-battery owner");
+                      return *found;
+                  };
+                  const auto& before=mapped(original);
+                  const auto& owner=mapped(loaded);
+                  const auto& progress=mapped(saved);''')
+          edit(w,'''        state::StateData recorded;
+                  require(!windows::compiler_puzzle_completed(recorded,loaded,owner),
+                          "An unattempted open battery inherited progress");''','''        state::StateData recorded;
+                  const auto pack=[](std::string_view value) {
+                      return std::to_string(value.size())+":"+std::string(value);
+                  };
+                  const auto current_frame=reference_objective_frame(loaded,owner);
+                  auto legacy_frame=current_frame;
+                  const auto version=legacy_frame.find(open_battery_objective_version);
+                  require(version!=std::string::npos,"Missing v2 objective identity");
+                  constexpr std::string_view legacy_version=
+                      "open-cmake-battery-independent-mutations-v1";
+                  require(legacy_version.size()==open_battery_objective_version.size(),
+                          "Historical length-prefixed objective fixture changed");
+                  legacy_frame.replace(version,open_battery_objective_version.size(),legacy_version);
+                  const auto prefix="compiler-puzzle/v1/"+loaded.locale+"/"+loaded.id+"/"+
+                      exercise_key(loaded,owner)+"/";
+                  const auto old_key=prefix+state::sha256(legacy_frame)+"/";
+                  const auto new_key=prefix+state::sha256(current_frame)+"/";
+                  const auto program=windows::compiler_program_frame(valid);
+                  const auto& first=owner.output_check->cases.front();
+                  const auto old_proof=state::sha256("compiler-case-v1/"+pack(old_key)+
+                      pack(program)+pack("0")+pack(first.standard_input)+
+                      pack(first.executable.value_or("")));
+                  auto& old=recorded.preferences["native_windows"];
+                  old[old_key+"program"]=program;
+                  old[old_key+"cases"]=std::vector<std::string>{old_proof};
+                  old[old_key+"completed"]=state::sha256("compiler-complete-v1/"+
+                      pack(old_key)+pack(program)+pack(old_proof));
+                  old[old_key+"feedback"]=std::string("Historical v1 result");
+                  const auto historical=recorded;
+                  require(old_key!=new_key&&
+                          !windows::compiler_puzzle_completed(recorded,loaded,owner)&&
+                          !windows::compiler_puzzle_completed(
+                              state::decode(state::encode(recorded)),saved,progress),
+                          "An old acceptance-only receipt acquired destination credit");''')
+          edit(w,'''        const auto reopened_state=state::decode(state::encode(recorded));
+                  require(windows::compiler_puzzle_completed(
+                              reopened_state,saved,progress),''','''        for(const auto& [key,value]:historical.preferences.at("native_windows")) {
+                      const auto retained=state::find(recorded,"native_windows",key);
+                      require(retained&&*retained==value,
+                              "A v2 achievement changed the historical receipt");
+                  }
+                  const auto reopened_state=state::decode(state::encode(recorded));
+                  require(windows::compiler_puzzle_completed(
+                              reopened_state,saved,progress),''')
+          edit(w,'''        for(auto& [name,value]:tampered.preferences["native_windows"])
+                      if(name.ends_with("/cases")) {''','''        for(auto& [name,value]:tampered.preferences["native_windows"])
+                      if(name==new_key+"cases") {''')
+          edit(w,'    if(!comprobar(2,3,7,77,true,1))++fallos;\n    if(!comprobar(3,3,7,59,true,0))++fallos;', '    if(!comprobar(2,3,7,77,true,1))++fallos;\n    if(!comprobar(0,7,3,77,false,77))++fallos;\n    if(!comprobar(3,3,7,59,true,0))++fallos;')
+          edit(w,'            {{2,3,7,77}}\n','            {{2,3,7,77},{0,7,3,77}}\n')
+          edit(w,'positive.open_battery_evidence->runs.size()==4,\n                "Four actual CMake executions were not retained as private evidence"','positive.open_battery_evidence->runs.size()==7,\n                "Seven actual CMake executions were not retained as private evidence"')
+          edit(w,'''        auto missing=value;
+                  for(auto& [name,source]:missing.project_files)
+                      if(name=="pruebas/casos.cpp") {''','''        for(const int ignored:{2,0}) {
+                      auto defective=value;
+                      for(auto& [name,source]:defective.project_files)
+                          if(name=="pruebas/casos.cpp") {
+                              const std::string old="return actual==acepta&&resultado==ajuste;";
+                              const auto at=source.find(old);
+                              require(at!=std::string::npos,"Missing destination fixture");
+                              source.replace(at,old.size(),"return actual==acepta&&(valor=="+
+                                  std::to_string(ignored)+"||resultado==ajuste);");
+                          }
+                      const auto rejected=run_cpp(defective);
+                      successful(rejected);
+                      require(!capture_cpp_execution(defective,rejected).open_battery_probe_correct,
+                              "A historical comparison ignoring its destination earned credit");
+                  }
+                  auto missing=value;
+                  for(auto& [name,source]:missing.project_files)
+                      if(name=="pruebas/casos.cpp") {''')
+          expected={h,t,r,l,w}
+          actual=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          assert actual==expected,(actual,expected)
+          subprocess.run(['git','diff','--check'],check=True)
+          subprocess.run(['git','diff','--stat'],check=True)
+          PY
+      - name: Compile and execute affected portable production tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for CXX in g++ clang++; do
+            "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative native/core/open_battery_check_tests.cpp -o "$RUNNER_TEMP/open-battery-stage"
+            "$RUNNER_TEMP/open-battery-stage"
+            CXX="$CXX" python3 -B -m unittest discover -s scripts/curriculum -p test_open_battery_trace_runtime.py -v
+          done
+      - name: Store tested file blobs only, never update branches
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,os,subprocess,urllib.request
+          from pathlib import Path
+          files=['native/core/open_battery_check.hpp','native/core/open_battery_check_tests.cpp','native/platform/windows/cpp_runner.cpp','native/core/lesson.cpp','native/platform/windows/cpp_runner_tests.cpp']
+          assert set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())==set(files)
+          for path in files:
+              data=Path(path).read_bytes()
+              expected=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              req=urllib.request.Request('https://api.github.com/repos/SimDynamics/LearnGameAndEngineDev/git/blobs',method='POST',data=json.dumps({'content':data.decode('utf-8'),'encoding':'utf-8'}).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+              with urllib.request.urlopen(req,timeout=30) as response:
+                  result=json.load(response)
+              assert result['sha']==expected
+              print('TESTED_BLOB '+json.dumps({'path':path,'sha':result['sha']}),flush=True)
+          PY
