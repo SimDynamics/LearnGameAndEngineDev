@@ -2297,9 +2297,13 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             {"ajustes","STATIC_LIBRARY",{"src/ajuste.cpp"},{},true}
         }};
     built_structure.minimum_cmake_version="3.20";
+    // Even this initial, intentionally unfinished program must prove that
+    // warnings are declared on every target and reach its actual MSVC build.
+    // Inherited defaults cannot stand in for the CMake work being taught.
     for(auto& target:built_structure.targets) {
         target.require_explicit_cxx20=true;
         target.require_explicit_extensions_off=true;
+        target.authored_compile_options={"/W4","/permissive-"};
     }
     built_structure.targets.back().public_include_roots={"publico"};
     initial_build.cmake_graph_check=built_structure;
