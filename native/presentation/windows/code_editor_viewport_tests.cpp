@@ -103,6 +103,52 @@ int main(){
     key.message=WM_KEYDOWN;const bool second=windows::CodeEditor::handle_key_message(key);if(!second)SendMessageW(edit,WM_KEYDOWN,VK_RETURN,1);
     check(editor->document().text==indented+"\n    ","Enter lost the current line's existing spaces");
     key.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(key);
+    {
+        // Fullscreen reproduction: add many rows, pan downward, then delete
+        // the added rows. The native first visible line must return to zero,
+        // rather than leaving an empty bottom viewport that cannot pan up.
+        MoveWindow(edit,0,0,650,950,TRUE);
+        SendMessageW(edit,EM_SETZOOM,100,100);
+        std::string expanded;
+        for(int row=0;row<110;++row)
+            expanded+="int row_"+std::to_string(row)+" = "+std::to_string(row)+";\n";
+        editor->reset(windows::predefined_code_document(expanded));
+        POINT far_down{0,900};
+        SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&far_down));
+        POINT saved{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
+        check(saved.y>0,"Fullscreen regression failed to scroll inside its long source");
+        const auto cut=SendMessageW(edit,EM_LINEINDEX,18,0);
+        check(cut>0,"Fullscreen regression has no eighteenth native line");
+        CHARRANGE tail{static_cast<LONG>(cut),-1};
+        SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&tail));
+        SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L""));
+        pump();
+        POINT trimmed{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&trimmed));
+        check(SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0&&trimmed.y==0,
+            "Deleting fullscreen rows left the editor stuck at its previous bottom scroll");
+        const auto shortened=editor->document().text;
+        check(shortened.starts_with("int row_0 = 0;")&&
+            shortened.find("row_109")==shortened.npos&&
+            SendMessageW(edit,EM_GETLINECOUNT,0,0)<=19,
+            "Fullscreen scroll repair changed the student's remaining source text");
+        editor->undo();pump();
+        POINT restored{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&restored));
+        check(editor->document().text==expanded&&restored.y>0,
+            "Undo failed to recover the long source and its earlier genuine scroll");
+        editor->redo();pump();
+        POINT redone{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&redone));
+        check(editor->document().text==shortened&&redone.y==0&&
+            SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+            "Redo restored a stale fullscreen bottom offset after source shrink");
+        // Resizing from a short viewport to fullscreen should also discard
+        // an obsolete offset only when every remaining visual line fits.
+        MoveWindow(edit,0,0,650,170,TRUE);
+        POINT inset{0,160};SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&inset));
+        MoveWindow(edit,0,0,650,950,TRUE);pump();
+        POINT expanded_view{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&expanded_view));
+        check(expanded_view.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+            "Returning to fullscreen retained a stale compact-viewport scroll");
+    }
     editor_window=nullptr;editor.reset();DestroyWindow(host);OleUninitialize();FreeLibrary(rich);
     std::cout<<assertions<<" actual Win32 editor checks, "<<failed<<" failures\n";return failed?1:0;
 }
