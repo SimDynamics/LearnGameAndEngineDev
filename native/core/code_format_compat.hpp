@@ -143,20 +143,37 @@ inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view sou
         }
         if(source[i]=='"') {
             auto end=quoted_end(source,i);if(!end)return {};
+            // Adjacent quoted arguments trigger a CMake syntax warning.
+            // Formatting them apart would change the diagnostic behavior.
+            if(*end<source.size()&&!space(source[*end])&&
+               source[*end]!='('&&source[*end]!=')'&&source[*end]!='#')return {};
             push(result,"quoted:",source.substr(i,*end-i));i=*end;continue;
         }
         if(source[i]=='('||source[i]==')') {
             push(result,"paren:",source.substr(i,1));++i;continue;
         }
         auto end=i;
-        while(end<source.size()&&!space(source[end])&&source[end]!='('&&source[end]!=')'
-                &&source[end]!='#'&&source[end]!='"') {
+        bool legacy_quote=false;
+        while(end<source.size()) {
             if(source[end]=='\\') {
                 if(end+1>=source.size())return {};
                 end+=2;
-            } else ++end;
+            }else if(source[end]=='"') {
+                // Preserve one unquoted legacy token, including quoted pieces.
+                // -Da="b c" is not the same argument list as -Da= "b c".
+                legacy_quote=!legacy_quote;
+                ++end;
+            }else if(!legacy_quote&&source.substr(end).starts_with("$(")) {
+                // Preserve make-style references as one unquoted token.
+                const auto close=source.find(')',end+2);
+                if(close==source.npos)return {};
+                end=close+1;
+            }else if(!legacy_quote&&(space(source[end])||
+                      source[end]=='('||source[end]==')'||source[end]=='#')) {
+                break;
+            }else ++end;
         }
-        if(end==i)return {};
+        if(end==i||legacy_quote)return {};
         push(result,"word:",source.substr(i,end-i));i=end;
     }
     return result;

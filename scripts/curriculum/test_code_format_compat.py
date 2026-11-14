@@ -157,6 +157,32 @@ class SourceFormatTest(unittest.TestCase):
                     {"type": "code", "code": before},
                     {"type": "code", "code": "\n" + before})
 
+    def test_cmake_legacy_arguments_not_spaced_into_different_calls(self):
+        # CMake treats these legacy unquoted forms as one argument.
+        allowed = [
+            ('show(-Da="b c")\nmessage(ok)',
+             'show(-Da="b c")\n\nmessage(ok)'),
+            ('show(-Dfoo=$(BAR))\nmessage(ok)',
+             'show(-Dfoo=$(BAR))\n\nmessage(ok)'),
+            ('message("a b")', 'message(\n  "a b"\n)'),
+        ]
+        for before, after in allowed:
+            with self.subTest(allowed=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after}))
+        blocked = [
+            ('show(-Da="b c")', 'show(-Da= "b c")'),
+            ('show(a" "b)', 'show(a " " b)'),
+            ('show(-Dfoo=$(BAR))', 'show(-Dfoo=$ (BAR))'),
+            ('show("x""y")', 'show("x" "y")'),
+        ]
+        for before, after in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after})
+
     def test_cmake_location_tokens_match_native_and_configure_expansion(self):
         allowed = [
             '#[=[ ${CMAKE_CURRENT_LIST_LINE} is inert ]=]\nmessage(ok)',

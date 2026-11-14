@@ -151,16 +151,35 @@ def _cmake_tokens(src: str) -> tuple[str, ...]:
                 elif src[end] == '"': end += 1; break
                 else: end += 1
             else: raise SourceFormatError("Unterminated CMake quoted argument")
+            # CMake warns for adjacent quoted arguments. A format review
+            # must not remove that warning by introducing a separator.
+            if end < len(src) and src[end] not in _WS + "()#":
+                raise SourceFormatError("Unseparated CMake quoted argument")
             tokens.append("quoted:" + src[i:end]); i = end; continue
         if src[i] in "()":
             tokens.append("paren:" + src[i]); i += 1; continue
         end = i
-        while end < len(src) and src[end] not in _WS + "()#\"":
+        legacy_quote = False
+        while end < len(src):
             if src[end] == "\\":
                 if end + 1 >= len(src): raise SourceFormatError("Trailing CMake escape")
                 end += 2
-            else: end += 1
-        if end == i: raise SourceFormatError("Unexpected CMake delimiter")
+            elif src[end] == '"':
+                # -Da="b c" is one legacy unquoted argument, unlike -Da= "b c".
+                legacy_quote = not legacy_quote
+                end += 1
+            elif not legacy_quote and src.startswith("$(", end):
+                # CMake's make-style reference is literal within the same
+                # argument. A space before '(' would change the argument list.
+                close = src.find(")", end + 2)
+                if close < 0: raise SourceFormatError("Unterminated CMake make-style reference")
+                end = close + 1
+            elif not legacy_quote and src[end] in _WS + "()#":
+                break
+            else:
+                end += 1
+        if end == i or legacy_quote:
+            raise SourceFormatError("Malformed CMake legacy unquoted argument")
         tokens.append("word:" + src[i:end]); i = end
     return tuple(tokens)
 

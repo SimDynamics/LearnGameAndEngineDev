@@ -47,6 +47,24 @@ void lexical_safety(){
         "add_library(envios STATIC lib.cpp)\ntarget_include_directories(envios PUBLIC include)\n",
         "add_library(\n  envios\n  STATIC lib.cpp\n)\n\ntarget_include_directories(\n  envios PUBLIC include\n)\n",Language::cmake),
         "Safe CMake command formatting was rejected");
+    check(code_format::equivalent(
+        "show(-Da=\"b c\")\nmessage(ok)", "show(-Da=\"b c\")\n\nmessage(ok)",
+        Language::cmake), "Unquoted legacy CMake argument blocked safe layout");
+    check(code_format::equivalent(
+        "show(-Dfoo=$(BAR))\nmessage(ok)", "show(-Dfoo=$(BAR))\n\nmessage(ok)",
+        Language::cmake), "Literal make-style CMake reference blocked safe layout");
+    check(!code_format::equivalent(
+        "show(-Da=\"b c\")", "show(-Da= \"b c\")",Language::cmake),
+        "Spacing split one legacy quoted CMake argument into two");
+    check(!code_format::equivalent(
+        "show(a\" \"b)", "show(a \" \" b)",Language::cmake),
+        "Spacing split a mixed unquoted CMake argument into three");
+    check(!code_format::equivalent(
+        "show(-Dfoo=$(BAR))", "show(-Dfoo=$ (BAR))",Language::cmake),
+        "Spacing split a make-style CMake variable reference");
+    check(!code_format::equivalent(
+        "show(\"x\"\"y\")", "show(\"x\" \"y\")",Language::cmake),
+        "Spacing hid a CMake adjacent-quote syntax diagnostic");
     check(!code_format::equivalent("int n=1;","int n=2;",Language::cpp),
         "An altered integer literal was accepted");
     check(!code_format::equivalent("int n=x+ +y;","int n=x++y;",Language::cpp),
