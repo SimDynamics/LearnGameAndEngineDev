@@ -307,7 +307,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El inicial proporciona `Registro`, la comprobación del dominio de `Recuento` y su operador de extracción. Construye `bool leer_linea(const std::string& linea, Registro& destino)`: recibe una cadena sin el salto que delimita la línea, consulta esa cadena y puede modificar el registro recibido por referencia.\n\nCrea un candidato local para reunir el identificador y el recuento. Comprueba que se obtuvieron todos los campos, que el identificador cumple su intervalo y que después sólo quedan blancos. El operador proporcionado ya comprueba los delimitadores y el dominio del recuento. Solo después de aceptar todo el texto, asigna el candidato completo a `destino` y devuelve `true`; un rechazo devuelve `false` conservando todos los campos anteriores. La función no imprime: el llamador presenta su resultado.",
+          "text": "El código inicial del editor proporciona `Registro`, la comprobación del dominio de `Recuento` y su operador de extracción. Construye `bool leer_linea(const std::string& linea, Registro& destino)`: recibe una cadena sin el salto que delimita la línea, consulta esa cadena y puede modificar el registro recibido por referencia.\n\nCrea un candidato local para reunir el identificador y el recuento. Comprueba que se obtuvieron todos los campos, que el identificador cumple su intervalo y que después sólo quedan blancos. El operador proporcionado ya comprueba los delimitadores y el dominio del recuento. Solo después de aceptar todo el texto, asigna el candidato completo a `destino` y devuelve `true`; un rechazo devuelve `false` conservando todos los campos anteriores. La función no imprime: el llamador presenta su resultado.",
           "emphasis": [
             {
               "text": "Solo después de aceptar todo el texto",
@@ -321,7 +321,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería con estas cadenas, exactamente en este orden: `\"3 [2;1]\"`, `\"3 [2;1] sobra\"`, `\"10 [2;1]\"`, `\"3 [2;11]\"`, `\"03 [02;+1]\"`, `\"3 [2;1]  \"`, `\"\"`, `\"3 [2;1\"`, `\"-1 [2;1]\"`, `\"3 [2,1]\"`, `\"3 [2;1][0;0]\"`, `\"0 [0;0]\"` y `\"9 [10;10]\"`.\n\nAntes de cada llamada crea o restablece el destino como `Registro{8, {9, 9}}`. Muestra el resultado booleano como cero o uno, seguido de `id`, `aceptados` y `rechazados`, separados por dos puntos. Cada informe ocupa una línea y termina con un salto; no añadas títulos ni líneas vacías.\n\nSe llama a la misma función en todos los casos, pero cada llamada construye su propio flujo local. Completa las trece pruebas: la primera referencia posterior sólo muestra cuatro de ellas. Resuelve el puzzle previo y pulsa Compilar, ejecutar y comprobar con el programa completo.",
+          "text": "Construye una batería de trece pruebas para comprobar el mismo lector con representaciones válidas, datos fuera del dominio, campos incompletos y texto sobrante. Antes de cada llamada crea o restablece el destino como `Registro{8, {9, 9}}`. Las comillas de la lista delimitan las cadenas del código; no forman parte de los textos analizados. En la sexta cadena hay dos espacios después del corchete y la séptima está vacía.\n\nMuestra el resultado booleano como cero o uno, seguido de `id`, `aceptados` y `rechazados`, separados por dos puntos. Cada informe ocupa una línea y termina con un salto; no añadas títulos ni líneas vacías. Utiliza estas cadenas exactamente en este orden:\n\nCadena 1: `\"3 [2;1]\"`\nSalida esperada: `1:3:2:1`\n\nCadena 2: `\"3 [2;1] sobra\"`\nSalida esperada: `0:8:9:9`\n\nCadena 3: `\"10 [2;1]\"`\nSalida esperada: `0:8:9:9`\n\nCadena 4: `\"3 [2;11]\"`\nSalida esperada: `0:8:9:9`\n\nCadena 5: `\"03 [02;+1]\"`\nSalida esperada: `1:3:2:1`\n\nCadena 6: `\"3 [2;1]  \"`\nSalida esperada: `1:3:2:1`\n\nCadena 7: `\"\"`\nSalida esperada: `0:8:9:9`\n\nCadena 8: `\"3 [2;1\"`\nSalida esperada: `0:8:9:9`\n\nCadena 9: `\"-1 [2;1]\"`\nSalida esperada: `0:8:9:9`\n\nCadena 10: `\"3 [2,1]\"`\nSalida esperada: `0:8:9:9`\n\nCadena 11: `\"3 [2;1][0;0]\"`\nSalida esperada: `0:8:9:9`\n\nCadena 12: `\"0 [0;0]\"`\nSalida esperada: `1:0:0:0`\n\nCadena 13: `\"9 [10;10]\"`\nSalida esperada: `1:9:10:10`\n\nSe llama a la misma función en todos los casos, pero cada llamada construye su propio flujo local. El destino se restablece antes de cada llamada: el resultado de una prueba no se usa como destino inicial de la siguiente. La comprobación de este editor compara los trece informes de la batería en una sola ejecución. La primera referencia posterior muestra cuatro casos y la siguiente conserva la batería completa. Pulsa Compilar, ejecutar y comprobar con el programa completo.",
           "emphasis": [
             {
               "text": "cada llamada construye su propio flujo local",
@@ -357,11 +357,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Entrada contiene sólo el número del caso: 1, 2 o 3. El cliente selecciona una de las tres cadenas de su vector muestras, crea un flujo local con ese texto y obtiene sus líneas con std::getline. Las cadenas están visibles en el código: \\n representa un salto de línea y \\t una tabulación. Se conservan así exactamente las líneas vacías, los blancos y la última línea sin salto, sin tener que escribirlos manualmente en Entrada.\n\nEl cliente crea Registro destino{8, {9, 7}}; una sola vez, antes del bucle. Después de una aceptación, el siguiente rechazo debe conservar ese registro nuevo. Imprime en cada línea el resultado booleano y los tres campos actuales, separados por dos puntos. Obtener una línea y aceptar un registro siguen siendo decisiones diferentes (Köppe et al., 2023)."
+          "text": "Entrada contiene sólo el número del caso: 1, 2 o 3. El cliente selecciona una de las tres cadenas de su vector muestras y crea un flujo local con ese texto. Después, std::getline copia a linea los caracteres de cada línea y consume el salto que la termina, sin copiar ese salto a la cadena. Una línea vacía también puede obtenerse; que su lectura tenga éxito no significa que contenga un registro válido. Si la última línea tiene caracteres pero no un salto final, también se obtiene y se analiza.\n\nLas cadenas están visibles en el código: \\n representa un salto de línea y \\t una tabulación. Se conservan así exactamente las líneas vacías, los blancos y la última línea sin salto, sin tener que escribirlos manualmente en Entrada.\n\nEl cliente crea Registro destino{8, {9, 7}}; una sola vez, antes del bucle. Después de una aceptación, el siguiente rechazo debe conservar ese registro nuevo. Aquí el destino se conserva entre llamadas; cada llamada crea un flujo nuevo para analizar la línea recibida. El origen que entrega las líneas y los orígenes que las analizan son objetos distintos. Imprime en cada línea el resultado booleano y los tres campos actuales, separados por dos puntos. Obtener una línea y aceptar un registro siguen siendo decisiones diferentes (Köppe et al., 2023)."
         },
         {
           "type": "paragraph",
-          "text": "La Entrada inicial selecciona el caso 1. Completa la función, conserva el cliente y las dependencias y pulsa Compilar, ejecutar y comprobar. Después cambia Entrada a 2 y a 3 y comprueba ambos. Puedes separar ese único entero con espacios o un salto final: esos blancos sólo rodean el selector y no cambian las cadenas que se analizan.\n\nEl primer caso combina aceptaciones, un sufijo inválido, una forma sin espacio y otra con signo positivo, ceros iniciales y tabulación final. El segundo comienza con líneas vacías o incompletas, acepta el registro de ceros y termina con una línea truncada sin salto final. El tercero comprueba el límite del identificador, un segundo recuento como residuo y cantidades con ceros iniciales. No añadas títulos ni líneas vacías a la salida del programa.\n\nSalida del caso 1, con un salto al final de cada línea:\n1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10\n\nSalida del caso 2, con un salto al final de cada línea:\n0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0\n\nSalida del caso 3, con un salto al final de cada línea:\n0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4"
+          "text": "La Entrada inicial selecciona el caso 1. Completa la función, conserva el cliente de main y pulsa Compilar, ejecutar y comprobar. La primera comprobación correcta con Entrada 1 es obligatoria para avanzar. Los casos 2 y 3 son ensayos opcionales: puedes cambiar Entrada y comprobarlos sin que sean necesarios para avanzar ni consultar la referencia. Puedes rodear el único entero con espacios o un salto final; esos blancos no cambian las cadenas que se analizan.\n\nCada caso contiene una secuencia de líneas sobre el mismo destino. Conserva su orden: una aceptación cambia el registro que debe proteger el rechazo siguiente. El primer caso combina aceptaciones, un sufijo inválido, una forma sin espacio y otra con signo positivo, ceros iniciales y tabulación final. El segundo comienza con líneas vacías o incompletas, acepta el registro de ceros y termina con una línea truncada sin salto final. El tercero comprueba el límite del identificador, un segundo recuento como texto sobrante y cantidades con ceros iniciales. No añadas títulos ni líneas vacías a la salida del programa.\n\nEntrada obligatoria:\n1\nSalida esperada, con un salto al final de cada línea:\n1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10\n\nEntrada opcional:\n2\nSalida esperada, con un salto al final de cada línea:\n0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0\n\nEntrada opcional:\n3\nSalida esperada, con un salto al final de cada línea:\n0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4"
         },
         {
           "type": "cpp_compiler",
@@ -1369,6 +1369,31 @@
         "id": "block_0002_0004",
         "beforeSha256": "a35ba49b2a3dad2e4fe85a285b19db3ff2fe44068823ff66a018f444f521e569",
         "afterSha256": "3eec603dc5a59b0a8e44abd144c173764197724d5eb2e01ca04329be1401b21c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "caea04c1a9b3c13e7b6cc136e6af6e3efcbd94514ec5ff57f991becb355e2277",
+        "afterSha256": "f094702c61b2f9ffc19afcdacdbd142b9b2188869f9b7aeae65c83aa6de163d4"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "ddf7c6b41cb2faa159dd50879108084a81b8f5cc2ff3c012d3169ec0f820de37",
+        "afterSha256": "98ee7c8425636239d742fd72960f9db2344a1190a098dbe6c72ee230538a1a18"
+      },
+      {
+        "id": "u12_linea_estado_actual_cliente",
+        "beforeSha256": "8a49e23da19f5c321d6f1d387088fbec3808b2b85c2832f13ab98abc866d69b7",
+        "afterSha256": "1dc339da903aff34d4937e8e434feb81f4bb3614179a17309329e6efb3f8087a"
+      },
+      {
+        "id": "u12_linea_estado_actual_casos",
+        "beforeSha256": "8b95b84e74df4d690aa066b54e5ec2ed378afc7863c1300322d5b3801c31945b",
+        "afterSha256": "1e235be16b2e664701f4b73608309e37202ea884ee544ece7e92638f88a4d0c0"
+      },
+      {
+        "id": "u12_linea_estado_actual_casos",
+        "beforeSha256": "1e235be16b2e664701f4b73608309e37202ea884ee544ece7e92638f88a4d0c0",
+        "afterSha256": "eb87b3a0fd110f992107945fc715a35b06d5abf8396e3c34e024f4f3c90bf217"
       }
     ]
   },
@@ -2602,41 +2627,41 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "2d12ab4897101ec8d1b1ec549773e77f7e0aa078b67a1258b3c24ebd4aafbb18",
+        "sourceSha256": "dbfe5b73c07a65718d4ef329bdc3c3875a1b5d54cd4f0e2789c8181274b319a7",
         "spans": [
           {
-            "start": 24,
-            "end": 32,
+            "start": 42,
+            "end": 50,
             "text": "Registro",
             "role": "cpp"
           },
           {
-            "start": 67,
-            "end": 75,
+            "start": 85,
+            "end": 93,
             "text": "Recuento",
             "role": "cpp"
           },
           {
-            "start": 117,
-            "end": 177,
+            "start": 135,
+            "end": 195,
             "text": "bool leer_linea(const std::string& linea, Registro& destino)",
             "role": "cpp"
           },
           {
-            "start": 655,
-            "end": 662,
+            "start": 673,
+            "end": 680,
             "text": "destino",
             "role": "cpp"
           },
           {
-            "start": 676,
-            "end": 680,
+            "start": 694,
+            "end": 698,
             "text": "true",
             "role": "cpp"
           },
           {
-            "start": 704,
-            "end": 709,
+            "start": 722,
+            "end": 727,
             "text": "false",
             "role": "cpp"
           }
@@ -2645,122 +2670,213 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "0f10f955d48208bfe51cbce1dc72c50b2bf52a4c05c165c753aaf6fa63b8f697",
+        "sourceSha256": "227da72cef78568369caccd405efeb2b8419bb636d89136bc3ecb63925cbc97b",
         "spans": [
           {
-            "start": 74,
-            "end": 83,
+            "start": 219,
+            "end": 238,
+            "text": "Registro{8, {9, 9}}",
+            "role": "cpp"
+          },
+          {
+            "start": 484,
+            "end": 486,
+            "text": "id",
+            "role": "cpp"
+          },
+          {
+            "start": 490,
+            "end": 499,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 504,
+            "end": 514,
+            "text": "rechazados",
+            "role": "cpp"
+          },
+          {
+            "start": 693,
+            "end": 702,
             "text": "\"3 [2;1]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 87,
-            "end": 102,
+            "start": 722,
+            "end": 729,
+            "text": "1:3:2:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 743,
+            "end": 758,
             "text": "\"3 [2;1] sobra\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 116,
+            "start": 778,
+            "end": 785,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 799,
+            "end": 809,
             "text": "\"10 [2;1]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 130,
+            "start": 829,
+            "end": 836,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 850,
+            "end": 860,
             "text": "\"3 [2;11]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 134,
-            "end": 146,
+            "start": 880,
+            "end": 887,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 901,
+            "end": 913,
             "text": "\"03 [02;+1]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 161,
+            "start": 933,
+            "end": 940,
+            "text": "1:3:2:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 954,
+            "end": 965,
             "text": "\"3 [2;1]  \"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 167,
+            "start": 985,
+            "end": 992,
+            "text": "1:3:2:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1006,
+            "end": 1008,
             "text": "\"\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 171,
-            "end": 179,
+            "start": 1028,
+            "end": 1035,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1049,
+            "end": 1057,
             "text": "\"3 [2;1\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 183,
-            "end": 193,
+            "start": 1077,
+            "end": 1084,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1098,
+            "end": 1108,
             "text": "\"-1 [2;1]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 197,
-            "end": 206,
+            "start": 1128,
+            "end": 1135,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1150,
+            "end": 1159,
             "text": "\"3 [2,1]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 210,
-            "end": 224,
+            "start": 1179,
+            "end": 1186,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1201,
+            "end": 1215,
             "text": "\"3 [2;1][0;0]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 228,
-            "end": 237,
+            "start": 1235,
+            "end": 1242,
+            "text": "0:8:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1257,
+            "end": 1266,
             "text": "\"0 [0;0]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 242,
-            "end": 253,
+            "start": 1286,
+            "end": 1293,
+            "text": "1:0:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1308,
+            "end": 1319,
             "text": "\"9 [10;10]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 314,
-            "end": 333,
-            "text": "Registro{8, {9, 9}}",
-            "role": "cpp"
-          },
-          {
-            "start": 395,
-            "end": 397,
-            "text": "id",
-            "role": "cpp"
-          },
-          {
-            "start": 401,
-            "end": 410,
-            "text": "aceptados",
-            "role": "cpp"
-          },
-          {
-            "start": 415,
-            "end": 425,
-            "text": "rechazados",
-            "role": "cpp"
+            "start": 1339,
+            "end": 1348,
+            "text": "1:9:10:10",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3272,7 +3388,7 @@
       {
         "block": "u12_linea_estado_actual_cliente",
         "path": "/text",
-        "sourceSha256": "491226f13424205bafac6671e8b65f5822f9333d899f721ade3146c82ad320b8",
+        "sourceSha256": "a11783803cadcfa69befd7e364a7e90d1523cb17c8dfdb8eb9f055aa40d35e0c",
         "spans": [
           {
             "start": 42,
@@ -3303,36 +3419,36 @@
             "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 192,
+            "start": 166,
+            "end": 178,
             "text": "std::getline",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 237,
+            "start": 540,
+            "end": 542,
             "text": "\\n",
             "role": "string",
             "reading": "characters"
           },
           {
-            "start": 269,
-            "end": 271,
+            "start": 574,
+            "end": 576,
             "text": "\\t",
             "role": "string",
             "reading": "characters"
           },
           {
-            "start": 444,
-            "end": 472,
+            "start": 749,
+            "end": 777,
             "text": "Registro destino{8, {9, 7}};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 761,
-            "end": 781,
+            "start": 1264,
+            "end": 1284,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -3342,7 +3458,7 @@
       {
         "block": "u12_linea_estado_actual_casos",
         "path": "/text",
-        "sourceSha256": "8a17e0771a88257cdb2e9db7c7a5ecc484492ef719aa51e74fc2542fc2581e46",
+        "sourceSha256": "3a3a2ac79d7c576736b2c4373b5f1f014fd44f8fb3b7381016003d82724a13e3",
         "spans": [
           {
             "start": 38,
@@ -3352,36 +3468,36 @@
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 167,
+            "start": 216,
+            "end": 217,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 172,
-            "end": 173,
+            "start": 220,
+            "end": 221,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 844,
-            "end": 886,
+            "start": 1160,
+            "end": 1202,
             "text": "1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 944,
-            "end": 983,
+            "start": 1278,
+            "end": 1317,
             "text": "0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1041,
-            "end": 1076,
+            "start": 1393,
+            "end": 1428,
             "text": "0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4",
             "role": "output",
             "reading": "natural"

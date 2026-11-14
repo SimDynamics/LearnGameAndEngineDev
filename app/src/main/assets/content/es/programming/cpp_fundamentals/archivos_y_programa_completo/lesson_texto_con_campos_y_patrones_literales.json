@@ -10,10 +10,14 @@
         },
         {
           "type": "paragraph",
-          "text": "`std::format`, declarado en `<format>`, compone y devuelve un `std::string`. Su primer argumento es el patrón: una cadena que describe el texto fijo y los campos donde presentar los argumentos siguientes. Aquí escribiremos el patrón como un literal de cadena, entre comillas dobles en el código.\n\nDentro del patrón, un par de llaves `{}` delimita un campo de sustitución: en ese lugar del resultado se escribe la representación de un argumento. Los caracteres ordinarios del patrón se copian. Componer no imprime; `main` puede guardar la cadena devuelta, mostrarla o pasarla a otra función (Stroustrup, 2024, sección 9.10.6).",
+          "text": "std::format, declarada en <format>, compone una cadena y la devuelve como un std::string. Su primer argumento es el patrón: el texto que indica qué partes se escriben siempre y en qué lugares se presentan los datos recibidos después. Aquí escribiremos el patrón como un literal de cadena, entre comillas dobles en el código.\n\nDentro del patrón, {} es un campo de sustitución: las llaves indican el lugar donde se escribe la representación de un argumento. El texto ordinario que rodea los campos se conserva en el resultado. Con varios campos vacíos, se usan en orden los argumentos que siguen al patrón (Stroustrup, 2024).\n\nLa llamada no imprime el mensaje. main puede guardar la cadena devuelta, insertarla en std::cout para mostrarla o pasarla a otra función. Componer el texto y mostrarlo son operaciones distintas.",
           "emphasis": [
             {
-              "text": "Componer no imprime",
+              "text": "campo de sustitución",
+              "style": "bold"
+            },
+            {
+              "text": "Componer el texto y mostrarlo son operaciones distintas",
               "style": "bold"
             }
           ]
@@ -21,11 +25,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string texto = std::format(\"Zona {}; cantidad {}\", \"Sur\", 6);\n    std::cout << texto;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string texto = std::format(\"Zona {}; cantidad {}\", \"Sur\", 6);\n\n    std::cout << texto;\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La comparación guiada produce Zona Sur; cantidad 6, sin salto final. El patrón contiene dos campos: el primero recibe el texto \"Sur\" y el segundo, el entero `6`, ambos proporcionados después del patrón. No escribimos esos datos dentro del patrón.\n\nMantendremos los patrones como literales conocidos en el código. Los datos, en cambio, pueden proceder de literales o variables que se pasan como argumentos. La llamada compone el resultado con los valores que recibe en ese momento."
+          "text": "En la llamada del ejemplo, identifica el papel de cada argumento:\n\n\"Zona {}; cantidad {}\" es el patrón. Aporta el texto fijo y dos campos.\n\"Sur\" aporta el texto para el primer campo.\n6 aporta el entero para el segundo campo.\n\nLa llamada devuelve Zona Sur; cantidad 6. Después, std::cout muestra esa cadena, sin añadir un salto final.\n\nLos datos se pasan después del patrón; no tenemos que escribir sus valores dentro de él. Pueden proceder de literales o de variables. La composición utiliza los valores que recibe al ejecutarse la llamada."
         },
         {
           "type": "multiple_choice",
@@ -53,13 +57,13 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando los campos son `{}`, la selección es automática: el primero utiliza el primer argumento posterior al patrón, el segundo utiliza el segundo y así sucesivamente. Esta selección no consume ni elimina los datos. La llamada compone caracteres con los valores que recibe; no deja una relación que vuelva a componer la cadena al cambiar después una variable (Köppe et al., 2023).\n\nAsí, guardar el resultado permite conservar el mensaje de ese momento. Modificar más tarde una variable del llamador no modifica por sí solo los caracteres de la cadena guardada."
+          "text": "Cuando los campos se escriben como {}, la elección de argumentos es automática:\n\nEl primer campo utiliza el primer argumento posterior al patrón.\nEl segundo utiliza el segundo, y así sucesivamente.\n\nSeleccionar un argumento no consume ni elimina el dato. La llamada utiliza sus valores para construir una cadena; no mantiene una relación que vuelva a componerla si después cambia una variable (Köppe et al., 2023).\n\nPor eso, guardar el resultado conserva el mensaje de ese momento. Una asignación posterior a una variable del programa que llamó a la función modifica esa variable, pero no reescribe los caracteres que ya se guardaron en la cadena."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 9;\n    std::string texto = std::format(\"{}:{}\", \"Este\", cantidad);\n    cantidad = 2;\n    std::cout << texto << \"|\" << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 9;\n    std::string texto = std::format(\"{}:{}\", \"Este\", cantidad);\n\n    cantidad = 2;\n    std::cout << texto << \"|\" << cantidad;\n    return 0;\n}\n",
           "answers": [
             "Este:9|2"
           ],
@@ -70,7 +74,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string primero = std::format(\"[{}]\", \"\");\n    std::string segundo = std::format(\"[{}]-[{}]\", \"N\", 0);\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string primero = std::format(\"[{}]\", \"\");\n    std::string segundo = std::format(\"[{}]-[{}]\", \"N\", 0);\n\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
           "answers": [
             "[]|[N]-[0]"
           ],
@@ -103,10 +107,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Un campo `{0}` selecciona el primer argumento posterior al patrón; `{1}`, el segundo. Los índices comienzan en cero, como en `std::vector`, pero aquí identifican posiciones de argumentos en la llamada. Permiten cambiar su orden de presentación o utilizar el mismo dato varias veces, sin modificarlo.\n\nCada índice debe corresponder a un argumento que exista. Seleccionar `{2}` exige que haya un tercer argumento, aunque los dos anteriores no se utilicen en ningún campo. Los argumentos no seleccionados siguen ocupando su posición. Repetir un índice no exige otro argumento: selecciona otra vez el mismo. Por tanto, no siempre coincide el número de campos con la cantidad de argumentos necesaria.\n\nSi eliges índices explícitos, escríbelos en todos los campos de esa llamada. No mezcles `{0}` con `{}`; las llaves dobles que producen texto literal no son campos y no cuentan como selección automática (Köppe et al., 2023).",
+          "text": "Podemos escribir un índice dentro de cada campo para elegir qué argumento se presenta:\n\n{0} selecciona el primer argumento posterior al patrón.\n{1} selecciona el segundo.\n{2} selecciona el tercero.\n\nLos índices comienzan en cero, como los de std::vector; aquí señalan posiciones de argumentos en la llamada. Podemos cambiar el orden de presentación o repetir un índice para volver a usar el mismo dato, sin modificarlo.\n\nCada posición seleccionada debe existir. Por ejemplo, para usar {2} debemos proporcionar un tercer argumento, aunque ningún campo muestre los dos anteriores. Si repetimos ese índice, volvemos a seleccionar el mismo argumento: no necesitamos otro por cada repetición. El número de campos y el mínimo de argumentos necesarios pueden ser distintos.\n\nEn una llamada debemos elegir una sola forma de seleccionar los argumentos: campos automáticos o índices explícitos en todos sus campos. No se pueden mezclar {0} y {} como campos de la misma llamada (Köppe et al., 2023). Las llaves dobles que veremos para escribir texto literal no son campos automáticos.",
           "emphasis": [
             {
-              "text": "Cada índice debe corresponder a un argumento que exista",
+              "text": "Cada posición seleccionada debe existir",
               "style": "bold"
             }
           ]
@@ -159,10 +163,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Las llaves simples del patrón delimitan campos. Para obtener una llave visible sin abrir un campo, escribe `{{` o `}}` dentro del patrón: cada par produce una sola llave en el resultado.\n\nEl patrón \"{{{}}}\" reúne tres fragmentos: `{{` escribe la llave inicial, `{}` selecciona el argumento y `}}` escribe la llave final. Las llaves que ya contiene el argumento son datos de ese campo: esta llamada las copia sin interpretarlas otra vez como parte del patrón (Köppe et al., 2023).",
+          "text": "Las llaves simples del patrón delimitan campos. Para escribir una llave en el resultado sin abrir ni cerrar un campo, se duplica dentro del patrón:\n\n{{ escribe {.\n}} escribe }.\n\nPor ejemplo, el patrón \"{{{}}}\" se lee por fragmentos:\n\n{{ escribe la llave inicial.\n{} coloca el argumento en el campo.\n}} escribe la llave final.\n\nEstas reglas se aplican a los caracteres del patrón. Si el argumento ya contiene llaves, sus caracteres se copian como datos del campo; no se vuelven a interpretar como otro patrón (Köppe et al., 2023).",
           "emphasis": [
             {
-              "text": "sin interpretarlas otra vez como parte del patrón",
+              "text": "no se vuelven a interpretar como otro patrón",
               "style": "bold"
             }
           ]
@@ -171,7 +175,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{{codigo={}}}\", \"T\") << \"|\"\n        << std::format(\"{}\", \"{dato}\");\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{{codigo={}}}\", \"T\") << \"|\"\n              << std::format(\"{}\", \"{dato}\");\n    return 0;\n}\n",
           "answers": [
             "{codigo=T}|{dato}"
           ],
@@ -324,7 +328,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Sin una especificación adicional dentro del campo, un `int` se presenta en decimal, un `char` como carácter y un `bool` como true o false. Para una cadena se copian sus caracteres. Esta presentación básica de `bool` difiere de la inserción habitual en `std::cout` que hemos utilizado sin activar palabras lógicas, donde aparecían cero o uno.\n\nElegir una operación de composición no convierte el argumento a otro tipo. Dos argumentos de tipos distintos pueden producir caracteres iguales, aunque conserven su diferencia de tipo (Köppe et al., 2023)."
+          "text": "En los campos básicos que estamos usando, sin instrucciones adicionales dentro de las llaves, la presentación depende del tipo del argumento:\n\nUn int se representa en decimal.\nUn char aporta su carácter.\nUn bool se representa con true o false.\nUna cadena aporta sus caracteres.\n\nLa presentación de bool difiere de la inserción habitual en std::cout que hemos usado sin activar palabras lógicas: allí veíamos cero o uno (Köppe et al., 2023).\n\nElegir cómo componer el texto no convierte el argumento a otro tipo. Argumentos de tipos distintos pueden dar lugar a caracteres iguales; para distinguir los tipos debemos fijarnos en los argumentos del programa, no sólo en lo que se ve escrito."
         },
         {
           "type": "output_prediction",
@@ -341,7 +345,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{}:{}\", 31, false) << \"|\" << 31;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{}:{}\", 31, false)\n              << \"|\" << 31;\n    return 0;\n}\n",
           "answers": [
             "31:false|1f"
           ],
@@ -350,7 +354,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`std::format` compone su cadena con las reglas del patrón y los tipos de sus argumentos. No consulta la base, el modo de decimales, la precisión ni el relleno seleccionados en `std::cout` (Köppe et al., 2023).\n\nMostrar después esa cadena sí es otra operación, realizada en el flujo de destino. Por ejemplo, un ancho pendiente de `std::setw` puede añadir relleno alrededor de la cadena completa. Distingue la composición del texto y su inserción posterior; más adelante compararás ambos formatos en detalle."
+          "text": "std::format compone su cadena mediante el patrón y los tipos de los argumentos. No toma la base, la precisión, el modo de decimales ni el relleno que se hayan elegido en std::cout (Köppe et al., 2023). Por eso debemos seguir por separado estas operaciones:\n\nComponer la cadena determina los caracteres que devuelve la llamada.\nInsertar después esa cadena en un flujo muestra los caracteres con las opciones de ese destino.\n\nPor ejemplo, un ancho que haya quedado pendiente mediante std::setw puede añadir relleno alrededor de la cadena completa al insertarla. Ese relleno pertenece a la operación de salida; no cambia el contenido de la cadena devuelta. Más adelante compararás ambas operaciones con ejemplos detallados."
         }
       ]
     },
@@ -362,10 +366,10 @@
         },
         {
           "type": "paragraph",
-          "text": "En estas llamadas de C++23, el patrón literal se comprueba durante la compilación. Cada campo debe seleccionar un argumento existente y su especificación, si la tiene, debe corresponder al tipo. El patrón \"{}:{}\" necesita argumentos para los dos campos; `{1}` requiere que exista un segundo argumento. Puede haber argumentos que ningún campo utilice: lo importante es que existan todos los seleccionados. También deben estar bien escritas las llaves y mantenerse una sola forma de seleccionar índices en cada llamada (Köppe et al., 2023).\n\nUn patrón incorrecto se corrige antes de ejecutar; no produce una salida alternativa que debas adivinar. Esta comprobación del patrón no significa que se hayan calculado antes de ejecutar los valores de las variables: la composición utiliza los argumentos cuando se realiza la llamada.",
+          "text": "En las llamadas de C++23 que estamos usando, el patrón literal se comprueba durante la compilación. Debe cumplir estas condiciones:\n\nCada campo selecciona un argumento que existe.\nLas instrucciones adicionales de un campo, si las hay, son compatibles con el tipo del argumento.\nLas llaves están bien escritas y los campos de una llamada no mezclan índices automáticos y explícitos (Köppe et al., 2023).\n\nPor ejemplo, \"{}:{}\" necesita argumentos para sus dos campos. El campo {1} requiere que exista un segundo argumento. Puede haber argumentos que ningún campo seleccione; lo necesario es que existan todas las posiciones utilizadas.\n\nSi el patrón de estas llamadas es incorrecto, el programa debe corregirse antes de ejecutarlo. No se obtiene otra cadena que debas adivinar. Comprobar el patrón durante la compilación tampoco significa calcular en ese momento el valor de cada variable: la composición utiliza los valores recibidos al ejecutar la llamada.",
           "emphasis": [
             {
-              "text": "Un patrón incorrecto se corrige antes de ejecutar",
+              "text": "debe corregirse antes de ejecutarlo",
               "style": "bold"
             }
           ]
@@ -433,7 +437,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe `std::string resumen(const std::string& codigo, int unidades)`, que devuelve un mensaje con la forma pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. CODIGO y UNIDADES indican los lugares de los argumentos; no se copian como esas palabras. El código contiene de cero a ocho caracteres ASCII imprimibles, incluidas llaves si las tiene; las unidades van de cero a mil, incluidos los extremos.\n\nUsa un patrón literal con índices para presentar el mismo argumento `codigo` en sus dos lugares. Las llaves exteriores son texto del mensaje. La función devuelve el resultado sin salto final, sin imprimir ni modificar los argumentos.\n\nConstruye una sola batería en `main`. Primero prepara el código \"B\" y una variable entera con valor `4`; compón y guarda el primer mensaje. Cambia después esa variable a `9` y presenta la cadena guardada, sin volver a componerla. Presenta a continuación `resumen(\"\", 0)` y después `resumen(\"{X}\", 6)`. Escribe un salto después de cada una de esas tres líneas, incluida la última.\n\nPuedes llamar `cantidad` a la variable del llamador: es distinta del parámetro `unidades`, que recibe el valor pasado al llamar a `resumen`. Completa el puzzle de la página anterior, construye el programa y usa Compilar, ejecutar y comprobar con toda la batería.",
+          "text": "Construye std::string resumen(const std::string& codigo, int unidades). Devuelve un mensaje con la forma pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. Los nombres CODIGO y UNIDADES indican dónde van los datos; no son palabras que deban copiarse al resultado.\n\nLos argumentos cumplen estas condiciones:\n\nEl código tiene de cero a ocho caracteres ASCII imprimibles, incluidos espacios o llaves si los contiene.\nLas unidades están entre cero y mil, ambos incluidos.\n\nUsa un patrón literal con índices para presentar el mismo argumento codigo en sus dos lugares. Las llaves que rodean su primera aparición pertenecen al mensaje. La función devuelve el texto sin salto final, no imprime ni modifica los argumentos.\n\nEn main, realiza esta secuencia:\n\nPrepara el código \"B\" y una variable entera con valor 4. Compón el mensaje y guárdalo en una cadena.\nCambia después esa variable entera a 9. Muestra el mensaje guardado, sin volver a componerlo.\nMuestra el resultado de resumen(\"\", 0) en la línea siguiente.\nMuestra el de resumen(\"{X}\", 6) en la última línea.\n\nEscribe un salto después de cada una de las tres líneas, incluida la última. Puedes llamar cantidad a la variable del programa: es distinta del parámetro unidades, que recibe el valor pasado cuando llamamos a resumen. Construye la función y esta secuencia en el editor; después pulsa «Compilar, ejecutar y comprobar».",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -457,7 +461,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El primer mensaje debe conservar las unidades que había al componerse. La batería comprueba también el dato vacío, el valor cero y las llaves dentro del código, manteniendo el mismo patrón y la misma implementación entre llamadas. La salida literal no demuestra por sí sola que se haya reutilizado el argumento o conservado sus datos: esos criterios se contrastan también con la organización del programa."
+          "text": "La primera cadena debe conservar las unidades que recibió la función al componerla. Cambiar la variable entera después no vuelve a ejecutar esa llamada ni reescribe el mensaje ya guardado.\n\nLas otras llamadas comprueban el código vacío, el valor cero y un código que contiene llaves. Todas deben utilizar el mismo patrón y la misma función, sin acumular los caracteres de una llamada en otra.\n\nLa app compara la salida con los caracteres pedidos. Contrasta también la organización de tu código: la función debe seleccionar el argumento repetido por su índice, conservar sus caracteres y componer a partir de los valores recibidos. Copiar los mensajes esperados como constantes no cumple esa tarea."
         }
       ]
     },
@@ -470,14 +474,14 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n\n    std::string guardado = resumen(codigo, cantidad);\n\n    cantidad = 9;\n    std::cout << guardado << \"\\n\"\n              << resumen(\"\", 0) << \"\\n\"\n              << resumen(\"{X}\", 6);\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Esta primera referencia realiza las tres composiciones requeridas, pero omite el salto después de la última línea. Por ese detalle no satisface todavía la salida literal del editor anterior; la referencia completa al final de esta página añade el salto que falta.\n\nLas líneas son pedido {B}: 4 unidades; copia=B, pedido {}: 0 unidades; copia= y pedido {{X}}: 6 unidades; copia={X}. Criterios: función que devuelve una cadena completa; código reutilizado sin modificarlo; llaves literales distinguidas de los campos; separadores conservados con vacío y cero; llamadas que no acumulan resultados. Cambiar `cantidad` después de la primera composición no modifica `guardado`. Se aceptan otras escrituras que cumplan el contrato.",
+          "text": "La primera referencia realiza las tres composiciones requeridas y muestra estas líneas:\n\npedido {B}: 4 unidades; copia=B\npedido {}: 0 unidades; copia=\npedido {{X}}: 6 unidades; copia={X}\n\nOmite el salto después de la última línea. Por eso todavía no coincide exactamente con la salida solicitada. La referencia completa al final de esta página añade ese salto.\n\nCompara la función y sus llamadas con estos criterios:\n\nLa función devuelve una cadena completa y utiliza los valores recibidos.\nEl índice del código se repite sin modificar el dato.\nLas llaves del mensaje se distinguen de los campos del patrón.\nLos textos fijos se conservan incluso con un código vacío o unidades con valor cero.\nCada llamada compone su propio resultado, sin añadir mensajes anteriores.\n\nCambiar cantidad después de componer la primera cadena no modifica guardado. Se aceptan otras escrituras que respeten el mismo contrato.",
           "emphasis": [
             {
-              "text": "omite el salto después de la última línea",
+              "text": "Omite el salto después de la última línea",
               "style": "bold"
             }
           ]
@@ -486,7 +490,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string dato = \"{R}\";\n    std::cout << std::format(\"{0}-{0}\", dato) << \"|\" << dato;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string dato = \"{R}\";\n\n    std::cout << std::format(\"{0}-{0}\", dato) << \"|\" << dato;\n    return 0;\n}\n",
           "answers": [
             "{R}-{R}|{R}"
           ],
@@ -512,12 +516,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Referencia posterior de la batería completa: conserva las tres llamadas en el mismo programa y escribe el salto final después de cada resultado, también después del tercero."
+          "text": "La referencia completa mantiene las tres llamadas en el mismo programa y escribe un salto después de cada resultado, incluido el último."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    const std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n\n    const std::string guardado = resumen(codigo, cantidad);\n\n    cantidad = 9;\n    std::cout << guardado << \"\\n\"\n              << resumen(\"\", 0) << \"\\n\"\n              << resumen(\"{X}\", 6) << \"\\n\";\n    return 0;\n}\n"
         }
       ]
     },
@@ -546,7 +550,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe `std::string envio(const std::string& codigo, int cajas)`, que devuelve un mensaje con la forma envio {CODIGO}: CAJAS cajas; codigo=CODIGO. Usa un patrón literal con índices para repetir el código. Las llaves exteriores pertenecen al mensaje; las que contenga el dato se conservan como caracteres de ese dato.\n\nEl código contiene de cero a ocho caracteres ASCII imprimibles y `cajas` está entre cero y mil, incluidos los extremos. La función devuelve texto sin salto final, sin imprimir ni modificar sus argumentos. `main` presenta primero `envio(\"Z\", 0)` y después `envio(\"\", 6)`, con un salto después de cada resultado.\n\nConstruye una solución nueva en este editor y reúne toda la batería en el mismo programa. Usa Compilar, ejecutar y comprobar cuando esté completa. La referencia aparece en la página siguiente.",
+          "text": "Construye std::string envio(const std::string& codigo, int cajas). Debe devolver un mensaje con la forma envio {CODIGO}: CAJAS cajas; codigo=CODIGO. Usa un patrón literal con índices para repetir el código. Las llaves exteriores pertenecen al mensaje; las que ya contenga el dato se conservan como caracteres de ese dato.\n\nEl código tiene de cero a ocho caracteres ASCII imprimibles. cajas está entre cero y mil, ambos incluidos. La función devuelve el texto sin salto final, no imprime ni modifica los argumentos.\n\nEn main, presenta estas llamadas en orden, cada una en su propia línea:\n\nenvio(\"Z\", 0) debe producir envio {Z}: 0 cajas; codigo=Z.\nenvio(\"\", 6) debe producir envio {}: 6 cajas; codigo=.\n\nEscribe un salto después de cada resultado, también del último. Construye la función y las llamadas en este editor; después pulsa «Compilar, ejecutar y comprobar». La referencia aparece en la página siguiente.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -574,7 +578,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa que lea un código de la primera línea de Entrada y una cantidad de la segunda. La primera línea puede estar vacía o contener de uno a ocho caracteres ASCII imprimibles, incluidos espacios y llaves. La segunda contiene un entero entre 0 y 1000. Estas pruebas respetan ese dominio; no se solicita un diagnóstico para entradas que lo incumplan.\n\nImplementa std::string envio(const std::string& codigo, int cajas). Debe devolver la forma envio {CODIGO}: CAJAS cajas; codigo=CODIGO, conservando el código en sus dos apariciones y todas las cifras de la cantidad. Usa un patrón literal con selección por índices, sin modificar los argumentos ni imprimir dentro de la función. La cadena devuelta no incluye salto de línea.",
+          "text": "Construye un programa que reciba el código y la cantidad desde el campo Entrada del editor:\n\nLa primera línea contiene el código completo. Puede estar vacía o tener de uno a ocho caracteres ASCII imprimibles, incluidos espacios y llaves.\nLa segunda línea contiene un entero entre 0 y 1000.\n\nLas pruebas respetan ese dominio; esta tarea no solicita diagnosticar entradas que lo incumplan.\n\nImplementa std::string envio(const std::string& codigo, int cajas). Debe devolver envio {CODIGO}: CAJAS cajas; codigo=CODIGO, conservando todos los caracteres del código en sus dos apariciones y todas las cifras de la cantidad. Usa un patrón literal con índices para repetir el código, sin modificar los argumentos ni imprimir dentro de la función. La cadena devuelta no incluye un salto de línea.",
           "emphasis": [
             {
               "text": "todas las cifras",
@@ -584,17 +588,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En main, usa std::getline para recibir la primera línea completa; después lee la cantidad. Llama a envio y muestra la cadena seguida de un único salto de línea. No escribas solicitudes de entrada ni otros rótulos.\n\nCompila y ejecuta el mismo programa con las tres entradas siguientes, cambiando sólo el contenido de Entrada entre ejecuciones. Una línea vacía en el segundo caso es parte de la entrada: no la sustituyas por comillas ni por un espacio. El tercer código tiene ocho caracteres, incluidos sus dos espacios. Cada caso requiere su propio resultado correcto.",
-          "emphasis": [
-            {
-              "text": "el mismo programa",
-              "style": "bold"
-            }
-          ]
+          "text": "En main, usa std::getline para recibir la primera línea completa; después lee la cantidad. Llama a envio y muestra la cadena seguida de un único salto de línea. No escribas solicitudes de entrada ni otros rótulos.\n\nEl primer caso es el necesario para avanzar. Los otros dos son ensayos opcionales con el mismo programa: cambia sólo el contenido de Entrada entre ejecuciones y compara cada resultado con el indicado.\n\nEn el caso de código vacío, la primera línea está vacía de verdad: escribe su salto sin añadir comillas ni un espacio. En el último caso, el código tiene ocho caracteres, incluidos dos espacios."
         },
         {
           "type": "paragraph",
-          "text": "Caso 1: primera línea Q; segunda línea 10.\nCaso 2: primera línea vacía; segunda línea 1000.\nCaso 3: primera línea Z {Q} 7!; segunda línea 305.\n\nTermina cada línea de Entrada con un salto de línea. Cada ejecución produce una sola línea. Los resultados de los casos 1, 2 y 3, respectivamente, son:\nenvio {Q}: 10 cajas; codigo=Q\nenvio {}: 1000 cajas; codigo=\nenvio {Z {Q} 7!}: 305 cajas; codigo=Z {Q} 7!"
+          "text": "Primer caso:\nPrimera línea: Q\nSegunda línea: 10\nResultado:\nenvio {Q}: 10 cajas; codigo=Q\n\nSegundo caso, opcional:\nPrimera línea vacía.\nSegunda línea: 1000\nResultado:\nenvio {}: 1000 cajas; codigo=\n\nTercer caso, opcional:\nPrimera línea: Z {Q} 7!\nSegunda línea: 305\nResultado:\nenvio {Z {Q} 7!}: 305 cajas; codigo=Z {Q} 7!\n\nTermina cada línea de Entrada con un salto. Cada ejecución produce una sola línea, también terminada con salto."
         },
         {
           "type": "cpp_compiler",
@@ -665,7 +663,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::cout << envio(\"Z\", 0) << \"\\n\" << envio(\"\", 6) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::cout << envio(\"Z\", 0) << \"\\n\"\n              << envio(\"\", 6) << \"\\n\";\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -674,11 +672,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::string codigo;\n    int cajas = 0;\n    if (!std::getline(std::cin, codigo) || !(std::cin >> cajas)) {\n        return 1;\n    }\n    std::cout << envio(codigo, cajas) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::string codigo;\n    int cajas = 0;\n\n    if (!std::getline(std::cin, codigo) || !(std::cin >> cajas)) {\n        return 1;\n    }\n\n    std::cout << envio(codigo, cajas) << \"\\n\";\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "std::getline obtiene la primera línea con todos sus caracteres y admite que esté vacía. La extracción posterior obtiene el entero de la segunda línea. Las dos lecturas tienen responsabilidades distintas: tratar el código como una palabra perdería los espacios del tercer caso.\n\nEn el patrón, {{ y }} aportan las llaves exteriores. El índice 0 selecciona el código en sus dos apariciones; el índice 1 selecciona la cantidad completa. El código que llega como argumento se copia y sus llaves no se analizan como un patrón nuevo.\n\nLas pruebas anteriores con cantidades de una cifra no distinguirían cajas de cajas % 10. Los valores 10, 1000 y 305 sí separan esos resultados. Los tres casos acreditan esas observaciones; no inspeccionan cómo está escrita la función ni prueban por sí solos todos los valores del dominio."
+          "text": "std::getline recibe todos los caracteres de la primera línea, incluso cuando está vacía. La extracción siguiente recibe el entero de la segunda línea. Son lecturas distintas: leer el código con una extracción de palabra se detendría en el primer espacio y perdería parte del código del último caso.\n\nEn el patrón, {{ y }} producen las llaves exteriores del mensaje. El índice 0 selecciona el código en sus dos apariciones; el índice 1 selecciona la cantidad completa. Las llaves del código son caracteres del dato y no se vuelven a analizar como otro patrón.\n\nLas cantidades muestran por qué hay que pasar el entero completo al campo:\n\nCon 10, el resultado debe contener 10. El resto de dividirlo entre diez sería 0.\nCon 1000, debe contener 1000; ese resto también sería 0.\nCon 305, debe contener 305; el resto sería 5.\n\nSi sólo se probaran cantidades de una cifra, cajas y cajas % 10 coincidirían. Estos datos permiten detectar que se ha reducido indebidamente la cantidad a su última cifra. Cada ejecución comprueba los caracteres que produce para esa entrada; no inspecciona cómo está escrita la función ni demuestra por sí sola todos los valores del dominio."
         }
       ]
     }
@@ -1986,6 +1984,258 @@
         "id": "block_0008_0001",
         "beforeSha256": "9c1ef42591f41774ed6b49a7c2d478e70ac5d3da2ca359ad1ba74f3dc2641f06",
         "afterSha256": "77e5bb652c33a40cb0387377e586292878ff768eb1d78825c350c123b5284279"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "b9a822d109ed61171b412ada69bd5e232c442b3215f54fe95dca7043a2a2cff3",
+        "afterSha256": "8dbae7c01ee44265660d0f09969a45c5532a6b610b4116c26469c9f8e606aa0b"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "df5d1030b224ece9279d5b5ddfc79fcbd6649eb1b64e7ea62e95bd41a92f35d9",
+        "afterSha256": "7e266e8aade3d51a22b46ed85abfbdaff25e106747672f1b0674ca896c0dddc6"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "7e1c9e0482b5b5df169674ba861f951538d5e520901363c20b1279a2fc0adc01",
+        "afterSha256": "c5442d81f9b265399badd49fdb4c8c339dabb1f4e0587a73cfc077b96a49e674"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "d5dd91e2fb9b1f3bc89a94bf1b4d2b824cf1c73dfa053ee036424f3a8fe73595",
+        "afterSha256": "241996aa12b507c3694abad72e254c589d653e82cdf57296de0cf91e054f9bf9"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "7eae1075b672a26fbcb4989cde410170904675ad7d6c0e57b48a2f60651c0fcd",
+        "afterSha256": "986e1c75dbfb4464421c2ca3a021a94f3687a68d41ced4cb1dcd44439f9648ba"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "3a1e88d806af67b76abec5cfbd138a8230d7a41d7f6911e7592420f031191d0f",
+        "afterSha256": "ec2d54b9659f3958213e23e61979b56ee96ed34de8466126488fcb8aa4b1dddd"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "d7a289abcd03330cbe261f83f53974fdeac1dbbc73c5eded63f2e521cdced24a",
+        "afterSha256": "5caa0006f0227ccf37a5a6e9b9b44092f8c04b4208f6fe82943f02a2ad58b0fc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "f5c203b754a18fd35beae31e29932708a63a89d896496bc9e4c631e0d8f19c92",
+        "afterSha256": "7629ade15ba3e8be0d8a66dc364194330b1397e511ab939fb532ec03f204d0e8"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "83bd27f58c968b6d20255f0945f5c2ba4663489254f3d430f2201915a4288030",
+        "afterSha256": "e9f674bcc95e615656f1c907d57f7cdfeed995e8fd1c33c4d44149fab68e3936"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "35f88941b488cecd544a0490ee905933e4e01e812732e4002e0ae28eeb25cadf",
+        "afterSha256": "7577c06ef307542d875b52c7a8b53f4d836b826e914d74fd76f65e8fef2100fb"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "90586ec10b9fc4f0f0a76465f37caf4ed915e071a0236ba7558cabc2df99f70f",
+        "afterSha256": "3c600be737dea2a9e85ad4137822051985c1478a673f7b57dfd294837079cb53"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "f50285ea54c52a6f73c31b9562ed3e2a1f5d32a75a6a3f76c5ec94dc9a842c7d",
+        "afterSha256": "2a026d66f6d463b87b49b8ad2e2fe040076cc395d5c580e7cc05508b2e4aebdf"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "5c97153c468e268b668d586674a50cba2c3a7786e00d10e31105d520724f88bf",
+        "afterSha256": "1bc445f610bfcf2d1f39793aff54586d72c011f4e62a8ec1631e4efa354a247a"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "27e99561d30efca4058e129863a592aa3e7fd33357054bd2a171f78d8acbc809",
+        "afterSha256": "181c27423ae930d224ca396ef703d43053663e17d0d67ef55986bf7fb58271bb"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "6397bfd5db0107a0fe908a59637d76690e13f45dc5b4b04ed3aca18e44a9fa20",
+        "afterSha256": "7282f70c3c9f17ac7f9ecba2aa19c3864253af58e76544bd9c633ab7aab66e45"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "9d2cd3f50d5e6930013bdc95c0ea37b7e971ae021ee9f3c68d1ac37360bc7ef3",
+        "afterSha256": "ca1d64d4c865f6b79c942f56d9f80cce64aca6e6b93b25a2fe5c41455d455c48"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "fec839018ab9277f13223aefa36274aeddfb6d6c22e82851453efaf0383e736a",
+        "afterSha256": "6376b4ea2cd65e8a79d7d1fa4e689fd831a64efcf46eddc0136064ab8eecd188"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "9e24043e95eea7843feb050f16fcc6bf63550bb6a3896a151c530733bc5613f0",
+        "afterSha256": "002c79c3e5877d833f1b6ff731007bd9ee857d17b89ac0fb08864fa421b372ce"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "a7f1eec45858e7610b41f0a052e929012aabb4490170b14a12902b5ea5bd3243",
+        "afterSha256": "c55a5ce7ef618c14cb3397f3337cf969b9dfddd7a4a8662872cd3770687ec3af"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "370dc6afa62fc838a5023ec170cd83b54d3b0bb57db9351d4b8497058ad81fca",
+        "afterSha256": "9f2d22a683a7b68adf84976198f57cda062c7bbfc861826e26962325278c2986"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "cb8d556e66c292874d884ea50ff2ec902c3f5037b0c1866ff879b30bad81a65d",
+        "afterSha256": "5720c1f2591965ddeea734fe497368560c445ddbe041c4e4ffef8c762a19cbf5"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_contrato",
+        "beforeSha256": "fa398e1275d022aa0ee61d6e791fdcc4a3e6ae1ca0070f1a3d23abfd4217f660",
+        "afterSha256": "44e52d1cd6223cf1a5736b41c2415914a9195259aa04a2ee63463fe54ecb1725"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_lectura",
+        "beforeSha256": "96875145f6b203c00e98aed5285c9a87b4c9ae46f316424f373cde5b903af964",
+        "afterSha256": "cdf8ae73758af87c5c8331b4ddf34c11a8b628236f4ba149876fddf6a7444b86"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_entradas",
+        "beforeSha256": "1a230c4181c21cd15bc9318f80eac78cf3f5cc3adc7cb0ded9c10e1ddb93e440",
+        "afterSha256": "c389e68e7f8a585ffbb95dc89dc77e166b197c53eb37459ba36054cdc0f938a1"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "9a5cf7f5d378210ed9d747f67d1bf66aad1d57def790be601272b08fa988e199",
+        "afterSha256": "a238a37d21163b5fb5b96e75d872058a6d818001bedbd2c4b1c08b7d9f9eb50d"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_referencia_codigo",
+        "beforeSha256": "ac34e38481f67864520a8bcd1b22df82017aa21ced7e3b7c5cf4f09ca918943a",
+        "afterSha256": "0077344628fecd7ddd3c819ea5e6e3625c067d9727aac7de5caa0f268c2fba3b"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_referencia_razonamiento",
+        "beforeSha256": "4b5f1ab298033254db1a1ed5c9daf64d131cc89fd156177cca7d132a0aebeb45",
+        "afterSha256": "b7b189ca91dcda1ea6430716d59fef9993e8800a38ba1abdc6f59e50deb65ca1"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8dbae7c01ee44265660d0f09969a45c5532a6b610b4116c26469c9f8e606aa0b",
+        "afterSha256": "66e6d28feea55a8a81c3bcc1869474045211d3b906edf7fc04efe3cb8194ef00"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string texto = std::format(\"Zona {}; cantidad {}\", \"Sur\", 6);\n    std::cout << texto;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 9;\n    std::string texto = std::format(\"{}:{}\", \"Este\", cantidad);\n    cantidad = 2;\n    std::cout << texto << \"|\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Este:9|2"
+          ],
+          "explanation": "Cuando se ejecuta la composición, cantidad contiene 9. Los dos campos producen Este:9, y esos caracteres quedan guardados en texto. La asignación posterior cambia la variable a 2, pero no vuelve a ejecutar la composición.\n\nLa salida combina la cadena ya guardada y el valor actual de la variable: Este:9|2. Guardar el resultado de la llamada no mantiene una conexión que actualice automáticamente la cadena.",
+          "reviewFeedback": "Localiza el momento en que se compone y guarda la cadena. Sigue después la asignación a la variable sin volver a ejecutar esa composición."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string primero = std::format(\"[{}]\", \"\");\n    std::string segundo = std::format(\"[{}]-[{}]\", \"N\", 0);\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "[]|[N]-[0]"
+          ],
+          "explanation": "En la primera composición, el argumento vacío aporta cero caracteres. Los corchetes pertenecen al patrón y permanecen, de modo que se obtiene [].\n\nLa segunda composición coloca N en el primer campo y el carácter 0 en el segundo. Conserva los corchetes y el guion y produce [N]-[0]. El separador insertado por el programa une ambos resultados: []|[N]-[0]. Un dato vacío y el entero cero no tienen la misma representación.",
+          "reviewFeedback": "Una cadena vacía no aporta caracteres a su campo, pero no elimina los delimitadores literales. Distingue ese caso del entero cero."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{{codigo={}}}\", \"T\") << \"|\"\n        << std::format(\"{}\", \"{dato}\");\n    return 0;\n}\n",
+          "answers": [
+            "{codigo=T}|{dato}"
+          ],
+          "explanation": "En el primer patrón, {{ aporta una llave de apertura, el texto fijo aporta codigo=, el campo aporta T y }} aporta la llave de cierre. Esa composición produce {codigo=T}.\n\nLa segunda llamada recibe {dato} como dato para un único campo. Sus llaves se copian junto con las letras y no crean otros campos. Con el separador del programa, la salida completa es {codigo=T}|{dato}.",
+          "reviewFeedback": "Distingue las llaves dobles escritas en el patrón de las llaves que ya forman parte del dato. Cada una interviene en una etapa diferente."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{}:{}\", 31, false) << \"|\" << 31;\n    return 0;\n}\n",
+          "answers": [
+            "31:false|1f"
+          ],
+          "explanation": "La llamada a std::format compone 31:false con sus propias reglas: el entero aparece en decimal y el valor lógico como palabra. Insertar esa cadena en std::cout conserva sus caracteres.\n\nEl segundo 31 se inserta directamente como entero en std::cout, que sigue configurado en hexadecimal, y aparece como 1f. Las dos operaciones producen en conjunto 31:false|1f.",
+          "reviewFeedback": "Sigue por separado la cadena que compone format y el entero insertado directamente en cout. No traslades entre ambas operaciones el estado del flujo."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string dato = \"{R}\";\n    std::cout << std::format(\"{0}-{0}\", dato) << \"|\" << dato;\n    return 0;\n}\n",
+          "answers": [
+            "{R}-{R}|{R}"
+          ],
+          "explanation": "Los dos campos seleccionan el mismo argumento {R}. Cada campo copia sus tres caracteres y el guion fijo queda entre ambas copias, formando {R}-{R}. Las llaves del dato no abren campos nuevos.\n\nLa composición no modifica dato. Al mostrar después el separador y esa variable, la salida se completa como {R}-{R}|{R}.",
+          "reviewFeedback": "Reutilizar el argumento presenta de nuevo sus caracteres. No vuelve a interpretar sus llaves como un patrón ni cambia el dato original."
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    const std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6) << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::cout << envio(\"Z\", 0) << \"\\n\" << envio(\"\", 6) << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::string codigo;\n    int cajas = 0;\n    if (!std::getline(std::cin, codigo) || !(std::cin >> cajas)) {\n        return 1;\n    }\n    std::cout << envio(codigo, cajas) << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2039,71 +2289,105 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "05271c158bce377b425460857c019c4f848e9e23daddcc3cdff4848b3fed1fce",
+        "sourceSha256": "78fbc4819e1555e39e80a5871fe161fdba0e4eeb26167d7a910f8e0162a6ee9c",
         "spans": [
           {
-            "start": 1,
-            "end": 12,
+            "start": 0,
+            "end": 11,
             "text": "std::format",
-            "role": "cpp"
-          },
-          {
-            "start": 29,
-            "end": 37,
-            "text": "<format>",
-            "role": "cpp"
-          },
-          {
-            "start": 63,
-            "end": 74,
-            "text": "std::string",
-            "role": "cpp"
-          },
-          {
-            "start": 334,
-            "end": 336,
-            "text": "{}",
-            "role": "string",
+            "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 515,
-            "end": 519,
-            "text": "main",
-            "role": "cpp"
+            "start": 26,
+            "end": 34,
+            "text": "<format>",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 590,
-            "end": 624,
-            "text": "(Stroustrup, 2024, sección 9.10.6)",
+            "start": 77,
+            "end": 88,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 347,
+            "text": "{}",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 604,
+            "end": 622,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 659,
+            "end": 663,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 712,
+            "end": 721,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "8578d0b402a1952c13b521a88cdb143048887db76297f776c4dab5c88e8673d8",
+        "sourceSha256": "814d75f653ca427df5fdf3f60dc0431d39fe94ec103574bff1c0e1d8a92d1745",
         "spans": [
           {
-            "start": 30,
-            "end": 50,
+            "start": 67,
+            "end": 89,
+            "text": "\"Zona {}; cantidad {}\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 130,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "\"Sur\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 184,
+            "text": "6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 266,
             "text": "Zona Sur; cantidad 6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 132,
-            "text": "\"Sur\"",
-            "role": "string"
-          },
-          {
-            "start": 158,
-            "end": 159,
-            "text": "6",
-            "role": "cpp"
+            "start": 277,
+            "end": 286,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2116,7 +2400,8 @@
             "start": 28,
             "end": 53,
             "text": "std::format(\"Fila {}\", 3)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2164,7 +2449,8 @@
             "start": 28,
             "end": 32,
             "text": "cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2183,7 +2469,8 @@
             "start": 10,
             "end": 23,
             "text": "ostringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2214,18 +2501,18 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "2132a227574581e18b958f524c1a0d0d9165e00e7062e2f1129dafc2be1f51df",
+        "sourceSha256": "3c66396c2f2ef3cfb1604aca4297fd33dbce44e4bc7966179981088eb5bdfc7d",
         "spans": [
           {
-            "start": 23,
-            "end": 25,
+            "start": 35,
+            "end": 37,
             "text": "{}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 358,
-            "end": 378,
+            "start": 393,
+            "end": 413,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2254,6 +2541,13 @@
             "start": 52,
             "end": 53,
             "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 62,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -2305,6 +2599,13 @@
         "sourceSha256": "d7eeb39b3e1e237557dcecccf5a1469f40b7fcfb0a755eaf94bfc046b4a0909e",
         "spans": [
           {
+            "start": 53,
+            "end": 57,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 142,
             "end": 144,
             "text": "[]",
@@ -2338,6 +2639,13 @@
             "text": "[]|[N]-[0]",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 385,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2345,7 +2653,15 @@
         "block": "block_0001_0003",
         "path": "/reviewFeedback",
         "sourceSha256": "15156685d7a8d61a18d0d6912528923f47a1b913936155a126035d2f5fb2b6d4",
-        "spans": []
+        "spans": [
+          {
+            "start": 125,
+            "end": 129,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2356,7 +2672,8 @@
             "start": 19,
             "end": 28,
             "text": "\"{} / {}\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 39,
@@ -2477,52 +2794,74 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "89537a57c4780392444cb253b85ec43f793a0684e3fc6112d96887e0914bd8b4",
+        "sourceSha256": "7209220253bdd615999cada2c5344a64256675ecc8cf136a92212e193da6dccb",
         "spans": [
           {
-            "start": 10,
-            "end": 13,
+            "start": 88,
+            "end": 91,
             "text": "{0}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 68,
-            "end": 71,
+            "start": 144,
+            "end": 147,
             "text": "{1}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 126,
-            "end": 137,
-            "text": "std::vector",
-            "role": "cpp"
-          },
-          {
-            "start": 371,
-            "end": 374,
+            "start": 171,
+            "end": 174,
             "text": "{2}",
             "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 224,
+            "end": 228,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 253,
+            "text": "std::vector",
+            "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 786,
-            "end": 789,
+            "start": 485,
+            "end": 488,
+            "text": "{2}",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 563,
+            "end": 566,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 926,
+            "end": 929,
             "text": "{0}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 796,
-            "end": 798,
+            "start": 932,
+            "end": 934,
             "text": "{}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 899,
-            "end": 919,
+            "start": 967,
+            "end": 987,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2665,6 +3004,13 @@
             "reading": "natural"
           },
           {
+            "start": 242,
+            "end": 246,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 309,
             "end": 310,
             "text": "R",
@@ -2688,12 +3034,20 @@
             "start": 9,
             "end": 12,
             "text": "\"A\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 15,
             "end": 16,
             "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 70,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           }
@@ -2752,6 +3106,20 @@
             "text": "7/7",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 219,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 297,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2807,7 +3175,15 @@
         "block": "block_0002_0004",
         "path": "/reviewFeedback/1",
         "sourceSha256": "b751a4368da6101d73050a686e52600988c482fcfc2afdcfbcd949c8fc3873af",
-        "spans": []
+        "spans": [
+          {
+            "start": 66,
+            "end": 70,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2824,52 +3200,67 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "09ae2128a727ba28b7660e1ad073e352cce79dc070e3998abd3b56da791d5cc7",
+        "sourceSha256": "77ca6950efeb75fc5814b6f3e75a0d9c15d99fd3326608f002995f1e8df0c415",
         "spans": [
           {
-            "start": 108,
-            "end": 110,
+            "start": 149,
+            "end": 151,
             "text": "{{",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 115,
-            "end": 117,
+            "start": 160,
+            "end": 161,
+            "text": "{",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 163,
+            "end": 165,
             "text": "}}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 198,
-            "end": 206,
+            "start": 174,
+            "end": 175,
+            "text": "}",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 201,
+            "end": 209,
             "text": "\"{{{}}}\"",
-            "role": "string"
-          },
-          {
-            "start": 231,
-            "end": 233,
-            "text": "{{",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 262,
-            "end": 264,
+            "start": 234,
+            "end": 236,
+            "text": "{{",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 263,
+            "end": 265,
             "text": "{}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 293,
-            "end": 295,
+            "start": 299,
+            "end": 301,
             "text": "}}",
             "role": "string",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 458,
-            "end": 478,
+            "start": 508,
+            "end": 528,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2953,19 +3344,22 @@
             "start": 13,
             "end": 19,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 29,
             "end": 33,
             "text": "\"{}\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 46,
             "end": 76,
             "text": "std::format(\"[{}]\", argumento)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2982,6 +3376,20 @@
             "reading": "technical"
           },
           {
+            "start": 47,
+            "end": 50,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 99,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 111,
             "end": 113,
             "text": "{}",
@@ -2994,6 +3402,13 @@
             "text": "[{}]",
             "role": "output",
             "reading": "characters"
+          },
+          {
+            "start": 287,
+            "end": 290,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3043,37 +3458,141 @@
         "block": "contar_campos_y_argumentos_necesarios",
         "path": "/feedback/correct",
         "sourceSha256": "c720e7bc8b5243387678458950dab598aba2a3057befae9b34baebc7fc1f42f1",
-        "spans": []
+        "spans": [
+          {
+            "start": 23,
+            "end": 26,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 126,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 156,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 183,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 221,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 278,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 308,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 336,
+            "end": 338,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contar_campos_y_argumentos_necesarios",
         "path": "/feedback/incorrect",
         "sourceSha256": "965d56cc1b91191399fa3f544b31336e6dbc3b1e637d68ba68b290ece041b4f6",
-        "spans": []
+        "spans": [
+          {
+            "start": 120,
+            "end": 124,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contar_campos_y_argumentos_necesarios",
         "path": "/responses/0/fields/0/label",
         "sourceSha256": "241a8d3fc1d8737fbc04a6e074a6246ee1df9ea9a849a56c3b145bfb4da58c90",
-        "spans": []
+        "spans": [
+          {
+            "start": 48,
+            "end": 51,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contar_campos_y_argumentos_necesarios",
         "path": "/responses/0/fields/1/label",
         "sourceSha256": "4227e819a974e0d7872f20bb2e0b0bb948a7dd8475850ea2274a81560185c413",
-        "spans": []
+        "spans": [
+          {
+            "start": 55,
+            "end": 58,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contar_campos_y_argumentos_necesarios",
         "path": "/responses/0/fields/2/label",
         "sourceSha256": "ae3dd50f2cb3ab08039bc86189f75c6baac144c76db6e7d67f76e888a74b6de9",
-        "spans": []
+        "spans": [
+          {
+            "start": 41,
+            "end": 44,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contar_campos_y_argumentos_necesarios",
         "path": "/responses/0/fields/3/label",
         "sourceSha256": "29b45c0bd31edc5370f4c7bcdfca8fb237d47dad0f190e7c2756fa654a704236",
-        "spans": []
+        "spans": [
+          {
+            "start": 48,
+            "end": 51,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contar_campos_y_argumentos_necesarios",
@@ -3114,7 +3633,8 @@
             "start": 1,
             "end": 10,
             "text": "\"{2}/{2}\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -3127,7 +3647,8 @@
             "start": 1,
             "end": 10,
             "text": "\"{{{1}}}\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -3140,7 +3661,8 @@
             "start": 1,
             "end": 10,
             "text": "\"{{}}:{}\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -3153,55 +3675,74 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "c098280c6ad2bcfd907cdc262a9cf897e2bf001ecf4e153eb69ade56eef0a217",
+        "sourceSha256": "bf96b9484f39eec904ca509b7849bbbf0114b2b0e990f8cb323f85e043cbb033",
         "spans": [
           {
-            "start": 55,
-            "end": 58,
+            "start": 146,
+            "end": 149,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 88,
-            "end": 92,
+            "start": 179,
+            "end": 183,
             "text": "char",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 118,
+            "start": 207,
+            "end": 211,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 125,
-            "end": 129,
+            "start": 230,
+            "end": 234,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 132,
-            "end": 137,
+            "start": 237,
+            "end": 242,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 210,
-            "end": 214,
+            "start": 298,
+            "end": 302,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 253,
-            "end": 262,
+            "start": 339,
+            "end": 348,
             "text": "std::cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 527,
-            "end": 547,
+            "start": 408,
+            "end": 412,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 415,
+            "end": 418,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 419,
+            "end": 439,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -3340,45 +3881,50 @@
             "start": 41,
             "end": 47,
             "text": "format",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 86,
             "end": 90,
             "text": "cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "f7779f9ec34be7a166d88cd63941c2c4e541e18900f575ce5552d4dfe2ba5ab1",
+        "sourceSha256": "57a3fd17cfa14af19d48fda942798d69d07ece22071f24c8edafdd6e008ea5b6",
         "spans": [
           {
-            "start": 1,
-            "end": 12,
+            "start": 0,
+            "end": 11,
             "text": "std::format",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 177,
-            "end": 186,
+            "start": 170,
+            "end": 179,
             "text": "std::cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 208,
+            "start": 180,
+            "end": 200,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 339,
+            "start": 482,
+            "end": 491,
             "text": "std::setw",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3391,27 +3937,35 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "fe9a2797fe2f469481dceb59e223965db4614248235ad0c94511fde509d27aea",
+        "sourceSha256": "dff1ce3b4fce9b7468224e7930c469c32e69df8a9832c6ea817a51988be20bdf",
         "spans": [
           {
-            "start": 205,
-            "end": 212,
-            "text": "\"{}:{}\"",
-            "role": "string"
+            "start": 381,
+            "end": 401,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 258,
-            "text": "{1}",
+            "start": 417,
+            "end": 424,
+            "text": "\"{}:{}\"",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 517,
-            "end": 537,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
+            "start": 454,
+            "end": 457,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 475,
+            "end": 478,
+            "text": "{1}",
+            "role": "string",
+            "reading": "characters"
           }
         ]
       },
@@ -3430,7 +3984,8 @@
             "start": 10,
             "end": 18,
             "text": "\"{}:{0}\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -3443,7 +3998,8 @@
             "start": 0,
             "end": 28,
             "text": "std::format(\"{1}:{0}\", 2, 5)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3456,7 +4012,8 @@
             "start": 0,
             "end": 26,
             "text": "std::format(\"{}:{}\", 2, 5)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3469,7 +4026,8 @@
             "start": 0,
             "end": 27,
             "text": "std::format(\"{}:{0}\", 2, 5)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3489,7 +4047,15 @@
         "block": "block_0005_0002",
         "path": "/reviewFeedback/2",
         "sourceSha256": "55e538e054c6d2bd605403035b8305a41468750cf90e43de202062b5f2da26fe",
-        "spans": []
+        "spans": [
+          {
+            "start": 80,
+            "end": 83,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -3500,7 +4066,8 @@
             "start": 49,
             "end": 74,
             "text": "std::format(\"{}:{}\", \"A\")",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3525,7 +4092,8 @@
             "start": 7,
             "end": 10,
             "text": "{1}",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -3538,13 +4106,15 @@
             "start": 6,
             "end": 7,
             "text": "A",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 43,
             "end": 45,
             "text": "{}",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -3575,7 +4145,8 @@
             "start": 90,
             "end": 101,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 298,
@@ -3602,13 +4173,15 @@
             "start": 75,
             "end": 87,
             "text": "codigo=\"{X}\"",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 90,
             "end": 100,
             "text": "unidades=6",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3716,102 +4289,163 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "cc69b546d1a7ebecdba60a817982394133c464e9eab6caa5581364b8c460ea4f",
+        "sourceSha256": "2ab6265df0332ebcf1472ca0420edcc7a457f47b4fe6d7866a7bd95af3e363f5",
         "spans": [
           {
-            "start": 9,
-            "end": 69,
+            "start": 10,
+            "end": 70,
             "text": "std::string resumen(const std::string& codigo, int unidades)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 109,
-            "end": 157,
+            "start": 105,
+            "end": 153,
             "text": "pedido {CODIGO}: UNIDADES unidades; copia=CODIGO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 159,
-            "end": 165,
+            "start": 167,
+            "end": 173,
             "text": "CODIGO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 176,
+            "start": 176,
+            "end": 184,
             "text": "UNIDADES",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 470,
-            "end": 476,
+            "start": 326,
+            "end": 330,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 337,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 442,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 448,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 542,
             "text": "codigo",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 667,
-            "end": 671,
+            "start": 550,
+            "end": 553,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 722,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 700,
-            "end": 703,
+            "start": 767,
+            "end": 770,
             "text": "\"B\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 737,
-            "end": 738,
+            "start": 803,
+            "end": 804,
             "text": "4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 807,
-            "end": 808,
+            "start": 887,
+            "end": 888,
             "text": "9",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 891,
-            "end": 905,
+            "start": 968,
+            "end": 982,
             "text": "resumen(\"\", 0)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 918,
-            "end": 935,
+            "start": 1020,
+            "end": 1037,
             "text": "resumen(\"{X}\", 6)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1032,
-            "end": 1040,
+            "start": 1103,
+            "end": 1107,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1150,
+            "end": 1158,
             "text": "cantidad",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1097,
-            "end": 1105,
+            "start": 1213,
+            "end": 1221,
             "text": "unidades",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1148,
-            "end": 1155,
+            "start": 1268,
+            "end": 1275,
             "text": "resumen",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "d730055ae5086a8083975a4c808cdafa90f5d4baa866be5ecc1a867c80adf239",
-        "spans": []
+        "sourceSha256": "9d22e95708bf880d41bef3909e01ccd7828453b317346cb5665c5e9896f318e0",
+        "spans": [
+          {
+            "start": 246,
+            "end": 250,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -3822,40 +4456,42 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "83bf31f4a85a28c4fe759640ed87b6065b6db4fc8963d58ce851c52827acb333",
+        "sourceSha256": "6bf5895983b66af656ec46e0c9c912d9b993010e5f8f99646b9d7fd57568c5f3",
         "spans": [
           {
-            "start": 280,
-            "end": 311,
-            "text": "pedido {B}: 4 unidades; copia=B",
+            "start": 34,
+            "end": 38,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 186,
+            "text": "pedido {B}: 4 unidades; copia=B\npedido {}: 0 unidades; copia=\npedido {{X}}: 6 unidades; copia={X}",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 313,
-            "end": 342,
-            "text": "pedido {}: 0 unidades; copia=",
-            "role": "output",
+            "start": 687,
+            "end": 691,
+            "text": "cero",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 345,
-            "end": 380,
-            "text": "pedido {{X}}: 6 unidades; copia={X}",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 604,
-            "end": 612,
+            "start": 776,
+            "end": 784,
             "text": "cantidad",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 661,
-            "end": 669,
+            "start": 835,
+            "end": 843,
             "text": "guardado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3871,11 +4507,25 @@
         "sourceSha256": "1819b2d6a25228b6687058ed7ad5ff2d369a40e24c18c537ba90902adefb91d9",
         "spans": [
           {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 46,
             "end": 49,
             "text": "{R}",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 139,
@@ -3957,8 +4607,16 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "bb23227af20d818555f8c58b21902468706e35c7d2d2abe0bf2e5ee6a7809c7d",
-        "spans": []
+        "sourceSha256": "5467d30ac7fba6d61b3560dd7b16ac11368a2f8b5903104236bc34235e4afb5b",
+        "spans": [
+          {
+            "start": 36,
+            "end": 40,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0000",
@@ -3970,13 +4628,28 @@
         "block": "block_0008_0001",
         "path": "/question",
         "sourceSha256": "2f1c508102c57292fc7a5b025f3e454bfcf4fd99850dc4cac54a431cdfbeb3f3",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0001",
         "path": "/explanation",
         "sourceSha256": "33ddacc465a9a0ef6da587122663287496724abb0f3c637bb64c2bb7cd795ff3",
         "spans": [
+          {
+            "start": 55,
+            "end": 58,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 230,
             "end": 231,
@@ -4051,57 +4724,106 @@
         "block": "block_0008_0001",
         "path": "/reviewFeedback/2",
         "sourceSha256": "2ddfda7a6dd4a57c7f86179471837594e5b297fe5e073ff4b795a8d3c056ef45",
-        "spans": []
+        "spans": [
+          {
+            "start": 37,
+            "end": 41,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "3205d943c63d8f432a03edd8876f7c318d0235932608bab7b80765b92f5702ab",
+        "sourceSha256": "c7a22f535e1294066b4ed238b53632cf29d8085a57a6b491e8efc01eab06d7e2",
         "spans": [
           {
-            "start": 9,
-            "end": 64,
+            "start": 10,
+            "end": 65,
             "text": "std::string envio(const std::string& codigo, int cajas)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 104,
-            "end": 146,
+            "start": 105,
+            "end": 147,
             "text": "envio {CODIGO}: CAJAS cajas; codigo=CODIGO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 385,
-            "end": 390,
+            "start": 342,
+            "end": 346,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 353,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 389,
             "text": "cajas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 525,
-            "end": 529,
+            "start": 401,
+            "end": 405,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 411,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 523,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 549,
-            "end": 562,
+            "start": 589,
+            "end": 602,
             "text": "envio(\"Z\", 0)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 575,
-            "end": 587,
+            "start": 617,
+            "end": 645,
+            "text": "envio {Z}: 0 cajas; codigo=Z",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 647,
+            "end": 659,
             "text": "envio(\"\", 6)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 674,
+            "end": 700,
+            "text": "envio {}: 6 cajas; codigo=",
+            "role": "output",
+            "reading": "natural"
           }
         ]
-      },
-      {
-        "block": "block_0009_0000",
-        "path": "/text",
-        "sourceSha256": "7a33c3160cbcf0cad312bee81d9a6fff96bd974ef4b5a612f2700e02cfa561e0",
-        "spans": []
       },
       {
         "block": "u12_formato_cifras_y_codigo_titulo",
@@ -4112,42 +4834,63 @@
       {
         "block": "u12_formato_cifras_y_codigo_contrato",
         "path": "/text",
-        "sourceSha256": "b280425e45bf81fd19688a4275cb35b2f7dd805a2b361b9f034faae5aeede880",
+        "sourceSha256": "0411aba8b21f041b58cefa3b15f20cf1234eed1a3d1662ac6b7c638c58fe3bee",
         "spans": [
           {
-            "start": 256,
-            "end": 257,
+            "start": 168,
+            "end": 171,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 178,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 281,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 260,
-            "end": 264,
+            "start": 284,
+            "end": 288,
             "text": "1000",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 376,
-            "end": 431,
+            "start": 400,
+            "end": 455,
             "text": "std::string envio(const std::string& codigo, int cajas)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 498,
+            "start": 471,
+            "end": 513,
             "text": "envio {CODIGO}: CAJAS cajas; codigo=CODIGO",
             "role": "output",
-            "reading": "characters"
+            "reading": "natural"
+          },
+          {
+            "start": 566,
+            "end": 569,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "u12_formato_cifras_y_codigo_lectura",
         "path": "/text",
-        "sourceSha256": "6e6b450cc5a2f74ae509ae7dddbdbc8f4729a518e740aab5679a94dfa2295792",
+        "sourceSha256": "714c2d09b8e6218915ef0a2b434f42989a4a6f132a57abc26dc3ac27da860a03",
         "spans": [
           {
             "start": 3,
@@ -4169,66 +4912,87 @@
             "text": "envio",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 273,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 571,
+            "end": 575,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 598,
+            "end": 601,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "u12_formato_cifras_y_codigo_entradas",
         "path": "/text",
-        "sourceSha256": "b4dd3e7eacdf6db227cb7ef2367135a33f812c1ee624f2120934f591f8b79a2a",
+        "sourceSha256": "de34a3de147ce6363891a373c3f8edc15720d0fecd6b74960cdfe852811218d7",
         "spans": [
           {
-            "start": 22,
-            "end": 23,
+            "start": 28,
+            "end": 29,
             "text": "Q",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 39,
-            "end": 41,
+            "start": 45,
+            "end": 47,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 86,
-            "end": 90,
-            "text": "1000",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 114,
-            "end": 122,
-            "text": "Z {Q} 7!",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 138,
-            "end": 141,
-            "text": "305",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 296,
-            "end": 325,
+            "start": 59,
+            "end": 88,
             "text": "envio {Q}: 10 cajas; codigo=Q",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 355,
+            "start": 150,
+            "end": 154,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 195,
             "text": "envio {}: 1000 cajas; codigo=",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 356,
-            "end": 400,
+            "start": 235,
+            "end": 243,
+            "text": "Z {Q} 7!",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 259,
+            "end": 262,
+            "text": "305",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 318,
             "text": "envio {Z {Q} 7!}: 305 cajas; codigo=Z {Q} 7!",
             "role": "output",
             "reading": "natural"
@@ -4245,6 +5009,13 @@
             "end": 14,
             "text": "10",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 37,
+            "text": "dos",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4295,6 +5066,13 @@
             "text": "cajas % 10",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4304,10 +5082,24 @@
         "sourceSha256": "278a1ab90aae410ed9b46f1f68a911b2db715cbb93aa81b7a2881d04d2c8a284",
         "spans": [
           {
+            "start": 91,
+            "end": 94,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 118,
             "end": 122,
             "text": "1000",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 169,
+            "text": "cuatro",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4330,6 +5122,27 @@
             "text": "1000",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 101,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 165,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 243,
+            "text": "mil",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4346,10 +5159,24 @@
             "reading": "characters"
           },
           {
+            "start": 32,
+            "end": 36,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 159,
             "end": 162,
             "text": "305",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 178,
+            "text": "tres",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4379,8 +5206,35 @@
             "text": "305",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 87,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 128,
+            "text": "trescientos cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 139,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "7a33c3160cbcf0cad312bee81d9a6fff96bd974ef4b5a612f2700e02cfa561e0",
+        "spans": []
       },
       {
         "block": "u12_formato_cifras_y_codigo_referencia_titulo",
@@ -4391,7 +5245,7 @@
       {
         "block": "u12_formato_cifras_y_codigo_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "744790dbada22a18a5b93aa2aecf9946460c059b92b7e6d614e3db7a3cd0512f",
+        "sourceSha256": "13669db571c041f6babf58b540db9917396c4e99762946ed0495a300ef60b02a",
         "spans": [
           {
             "start": 0,
@@ -4401,67 +5255,130 @@
             "reading": "technical"
           },
           {
-            "start": 292,
-            "end": 294,
+            "start": 314,
+            "end": 316,
             "text": "{{",
             "role": "string",
             "reading": "characters"
           },
           {
-            "start": 297,
-            "end": 299,
+            "start": 319,
+            "end": 321,
             "text": "}}",
             "role": "string",
             "reading": "characters"
           },
           {
-            "start": 341,
-            "end": 342,
+            "start": 376,
+            "end": 377,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 398,
-            "end": 399,
+            "start": 406,
+            "end": 409,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 434,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 596,
-            "end": 601,
-            "text": "cajas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 605,
-            "end": 615,
-            "text": "cajas % 10",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 629,
-            "end": 631,
+            "start": 640,
+            "end": 642,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 633,
-            "end": 637,
+            "start": 671,
+            "end": 673,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 703,
+            "end": 707,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 714,
+            "end": 715,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 721,
+            "end": 725,
             "text": "1000",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 640,
-            "end": 643,
+            "start": 741,
+            "end": 745,
+            "text": "1000",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 771,
+            "end": 772,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 778,
+            "end": 781,
             "text": "305",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 797,
+            "end": 800,
+            "text": "305",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 817,
+            "end": 818,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 855,
+            "end": 858,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 866,
+            "end": 871,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 874,
+            "end": 884,
+            "text": "cajas % 10",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

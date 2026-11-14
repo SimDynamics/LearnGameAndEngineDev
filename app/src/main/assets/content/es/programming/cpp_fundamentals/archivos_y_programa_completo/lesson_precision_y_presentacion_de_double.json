@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una variable de tipo `double` conserva un valor. Al insertar ese valor en un flujo de salida, elegimos cómo presentarlo mediante caracteres. Podemos mostrar menos cifras o más cifras sin asignar otro valor a la variable. Pedir más dígitos de salida tampoco mejora el cálculo que produjo el dato (Stroustrup, 2024, sección 9.10.2).\n\nAquí estudiaremos la precisión de presentación: una opción del flujo que controla cuántas cifras se escriben según el formato elegido. Esa opción se distingue del valor almacenado y de la exactitud con que una medida física describe su objeto. El programa conserva su dato aunque su escritura sea más breve.",
+          "text": "Una variable de tipo `double` conserva un valor. Al insertar ese valor en un flujo de salida, elegimos los caracteres que lo presentan. Por ejemplo, el valor 12.5 puede mostrarse como 12.50: el cero añadido completa la escritura, pero no asigna otro valor a la variable. Pedir más dígitos de salida tampoco mejora el cálculo que produjo el dato (Stroustrup, 2024).\n\nAquí estudiaremos la precisión de presentación: una opción del flujo que controla cuántas cifras se escriben según el formato elegido. No debe confundirse con el valor almacenado ni con la exactitud de una medida física. Cambiar esa opción cambia cómo se escribe el dato, sin asignar otro valor a la variable.",
           "emphasis": [
             {
               "text": "precisión de presentación",
@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`std::fixed` selecciona notación fija: los dígitos se escriben alrededor del punto decimal sin un exponente añadido. `std::scientific` selecciona notación científica: presenta una cifra antes del punto y añade una parte con e que indica cuántas veces multiplicar o dividir por diez. Interpretaremos esa parte en la página siguiente. `std::defaultfloat` selecciona el modo general, que elige una escritura sin exponente o una escritura científica según la magnitud y la precisión.\n\n`std::setprecision(2)` guarda el valor dos como opción de precisión del flujo. El entero entre paréntesis es el argumento de este manipulador; para utilizarlo incluimos `<iomanip>`. La precisión y el modo son opciones distintas: el significado de ese dos depende de si está seleccionado `std::fixed`, `std::scientific` o `std::defaultfloat`. Veremos ese conteo antes de trabajar con otros datos (Köppe et al., 2023; Stroustrup, 2024, sección 9.10.2).",
+          "text": "Estos manipuladores seleccionan formas distintas de escribir un valor:\n\n`std::fixed` selecciona notación fija: escribe los dígitos alrededor del punto decimal, sin añadir un exponente. Con dos cifras después del punto, el valor 12.5 se escribe 12.50.\n\n`std::scientific` selecciona notación científica: escribe una cifra antes del punto y añade un exponente. Por ejemplo, 1.25e+01 representa 1.25 multiplicado por diez, es decir, 12.5. En la página siguiente veremos cómo leer cada parte.\n\n`std::defaultfloat` selecciona el modo general. Según el valor y la precisión, este modo elige una escritura sin exponente o una escritura científica.\n\n`std::setprecision(2)` guarda dos como opción de precisión del flujo. El entero entre paréntesis es el argumento que indica la precisión solicitada; para utilizar este manipulador incluimos `<iomanip>`. La precisión y el modo son opciones distintas: ese dos cuenta las cifras posteriores al punto en modo fijo o científico, y las cifras significativas en modo general. Las cifras significativas se cuentan desde la primera cifra distinta de cero; desarrollaremos ese conteo con ejemplos (Köppe et al., 2023; Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "La precisión y el modo son opciones distintas",
@@ -35,11 +35,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 12.5;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(3) << medida;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 12.5;\n\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n              << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(3) << medida;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La comparación guiada produce 12.50|1.25e+01|12.5, sin salto final. Los separadores proceden de las cadenas del programa. Las tres partes representan doce y medio; no son tres asignaciones nuevas a `medida`. En las páginas siguientes distinguiremos el exponente y el número de cifras que controla cada modo."
+          "text": "La comparación guiada produce esta única línea, sin salto final:\n\n12.50|1.25e+01|12.5\n\nLas barras separan las tres presentaciones y proceden de las cadenas del programa. Cada parte representa doce y medio. Ninguna de esas inserciones asigna otro valor a `medida`."
         }
       ]
     },
@@ -51,7 +51,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la escritura científica, la parte posterior a e es el exponente: su signo y su valor indican cómo aplicar un factor de diez a la parte anterior. En 1.25e+01 se multiplica 1.25 por diez y se obtiene 12.5. Con e+02 se multiplica por cien, porque se aplica dos veces el factor diez.\n\nUn exponente negativo indica divisiones: 2.50e-01 representa 2.50 dividido por diez, es decir, 0.25; e-02 indica dividir por cien. El exponente cero no cambia la cantidad: en 2.50e+00 el factor es uno, por lo que se representa 2.50.\n\nLas cifras del exponente se leen en decimal. Sus ceros iniciales forman parte del formato: +01 expresa uno, no una selección de base octal. La e separa la parte numérica del exponente; aquí no es un dígito hexadecimal.",
+          "text": "En una escritura como 1.25e+01, la letra e separa la parte numérica 1.25 del exponente +01. El signo positivo indica multiplicar por factores de diez; el número del exponente indica cuántos factores se aplican:\n\n1.25e+01: 1.25 × 10 = 12.5. Se aplica un factor de diez.\n\n1.25e+02: 1.25 × 10 × 10 = 125. Se aplican dos factores de diez; equivalen a multiplicar por cien.\n\nUn exponente negativo indica divisiones:\n\n2.50e-01: 2.50 ÷ 10 = 0.25. Se divide una vez por diez.\n\n2.50e-02: 2.50 ÷ 10 ÷ 10 = 0.025. Se divide dos veces por diez; equivale a dividir por cien.\n\nEl exponente cero no cambia la cantidad: 2.50e+00 representa 2.50. No se multiplica ni se divide por diez; el factor correspondiente es uno.\n\nLas cifras del exponente se leen en decimal. En +01, el cero inicial completa el formato y el exponente vale uno: no selecciona la base octal. La e separa la parte numérica del exponente; aquí no es un dígito hexadecimal.",
           "emphasis": [
             {
               "text": "El exponente cero no cambia la cantidad",
@@ -159,7 +159,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 0.125;\n    std::cout << std::scientific << std::setprecision(2) << medida;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 0.125;\n\n    std::cout << std::scientific << std::setprecision(2) << medida;\n\n    return 0;\n}\n",
           "answers": [
             "1.25e-01"
           ],
@@ -192,7 +192,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con `std::fixed`, `std::setprecision(2)` pide dos cifras después del punto: 8.8125 se presenta como 8.81. Con `std::scientific` pide también dos cifras después del punto de la parte anterior a e: 8.81e+00. En esos casos no cuenta los caracteres del exponente.\n\nCon `std::defaultfloat`, esa misma precisión permite hasta dos cifras significativas en total: el dato del ejemplo se presenta como 8.8. Aquí el conteo empieza en la primera cifra distinta de cero. El signo y el punto no cuentan como cifras; tampoco se cuentan como parte de ese total los caracteres del exponente (Stroustrup, 2024, sección 9.10.2).",
+          "text": "Para comparar los formatos, mantengamos el mismo valor, 8.8125, y la opción `std::setprecision(2)`:\n\nCon `std::fixed` se piden dos cifras después del punto. Se escribe 8.81.\n\nCon `std::scientific` se piden también dos cifras después del punto de la parte anterior a e. Se escribe 8.81e+00. Los caracteres del exponente no forman parte de ese conteo.\n\nCon `std::defaultfloat` se permiten hasta dos cifras significativas en total. El conteo empieza en la primera cifra distinta de cero: en este caso son 8 y 8, y se escribe 8.8.\n\nEl signo y el punto no cuentan como cifras. Tampoco se cuentan como cifras significativas los caracteres del exponente. Así, la misma opción de precisión controla posiciones distintas según el modo seleccionado (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "dos cifras después del punto",
@@ -207,7 +207,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El conteo se refiere a la escritura numérica que estamos mostrando. En 0.0125, las cifras significativas son 1, 2 y 5; los ceros anteriores sólo sitúan el punto. En 0.0105, el cero que está entre 1 y 5 sí cuenta: también hay tres cifras significativas.\n\nEn el modo general de estos ejemplos no se añaden necesariamente ceros hasta alcanzar la precisión permitida. Por eso un dato de valor dos puede presentarse como 2, y cero como 0. La opción limita el detalle de la escritura; no certifica por sí sola cuántos dígitos de una medida física son fiables."
+          "text": "Veamos el conteo en cantidades menores que uno:\n\nEn 0.0125 se cuentan las cifras 1, 2 y 5: hay tres cifras significativas. Los ceros anteriores al 1 sólo sitúan el punto decimal.\n\nEn 0.0105 se cuentan 1, 0 y 5: también hay tres cifras significativas. El cero intermedio sí cuenta porque está después de la primera cifra distinta de cero.\n\nEn el modo general de estos ejemplos, la precisión indica un máximo; no obliga a añadir ceros hasta llenarlo. Por eso el valor dos puede escribirse 2 y el valor cero, 0. La opción controla la escritura; por sí sola no indica cuántos dígitos de una medida física son fiables."
         },
         {
           "type": "math_puzzle",
@@ -299,7 +299,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 4.3125;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << medida;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 4.3125;\n\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n              << std::scientific << medida << \"|\" << std::defaultfloat << medida;\n\n    return 0;\n}\n",
           "answers": [
             "4.31|4.31e+00|4.3"
           ],
@@ -332,7 +332,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Seleccionar un formato de salida no asigna un nuevo valor al dato. Al evaluar una expresión aritmética posterior se utiliza el valor de la variable, no una cadena que se haya mostrado antes. Sigue por separado las inserciones en el flujo y las operaciones del cálculo.\n\nLos datos de estos ejemplos se han elegido para estudiar el redondeo de la presentación sin resolver un empate entre dos escrituras posibles. Un `double` también puede contener una aproximación de un dato inicial; pedir más cifras no elimina esa aproximación. Conserva separados el cálculo y el formato del informe.",
+          "text": "Considera una variable que conserva 5.1875 y cuya salida se pide con dos cifras después del punto. Examinamos primero 5.18. La siguiente cifra decimal es 7: en este caso, el redondeo aumenta la centésima de 8 a 9 y la escritura resultante es 5.19.\n\nSeleccionar ese formato no asigna un nuevo valor al dato. La variable conserva 5.1875. Al multiplicarla después por 16, se obtiene 83, porque 5.1875 × 16 = 83. El cálculo no utiliza la escritura redondeada 5.19 que apareció antes en la consola.\n\nLos datos de estos ejemplos evitan el empate entre dos escrituras posibles. Un `double` también puede contener una aproximación del dato inicial; pedir más cifras no elimina esa aproximación. Debemos distinguir el valor utilizado por el cálculo de los caracteres elegidos para mostrarlo.",
           "emphasis": [
             {
               "text": "no asigna un nuevo valor al dato",
@@ -344,7 +344,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 6.9375;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\";\n    std::cout << std::defaultfloat << std::setprecision(6) << medida * 16;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 6.9375;\n\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\";\n    std::cout << std::defaultfloat << std::setprecision(6) << medida * 16;\n\n    return 0;\n}\n",
           "answers": [
             "6.94|111"
           ],
@@ -377,7 +377,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El modo y la precisión permanecen como opciones independientes del flujo. `std::defaultfloat` selecciona el modo general, pero no modifica por sí solo la precisión guardada; para cambiarla usamos `std::setprecision` (Köppe et al., 2023).\n\nUn flujo nuevo comienza en modo general con precisión seis. Volver a `std::defaultfloat` no restaura toda la configuración inicial: por ejemplo, no cambia la base de los enteros. Elige deliberadamente cada opción que necesite tu informe, como hicimos con los flujos independientes.",
+          "text": "El modo y la precisión permanecen como opciones independientes del flujo. `std::defaultfloat` selecciona el modo general, pero no modifica por sí solo la precisión guardada; para cambiarla usamos `std::setprecision` (Köppe et al., 2023).\n\nPor ejemplo, si la precisión guardada es dos y después seleccionamos el modo general, seguirá siendo dos. Para volver a la precisión seis de un flujo nuevo, debemos pedirla expresamente con `std::setprecision(6)`.\n\nVolver a `std::defaultfloat` tampoco restaura otras opciones: por ejemplo, no cambia la base seleccionada para los enteros. Elige cada opción que necesite tu informe.",
           "emphasis": [
             {
               "text": "no modifica por sí solo la precisión guardada",
@@ -389,7 +389,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 8.8125;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::defaultfloat << medida << \"|\" << std::setprecision(6) << medida;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 8.8125;\n\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n              << std::defaultfloat << medida << \"|\" << std::setprecision(6) << medida;\n\n    return 0;\n}\n",
           "answers": [
             "8.81|8.8|8.8125"
           ],
@@ -400,7 +400,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el manipulador que abandona fixed y vuelve a notación general.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 3.5 << \"|\"\n        << std::___ << std::setprecision(6) << 3.5;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 3.5 << \"|\"\n              << std::___ << std::setprecision(6) << 3.5;\n\n    return 0;\n}\n",
           "answers": [
             "defaultfloat"
           ],
@@ -417,7 +417,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El formato de presentación para valores de punto flotante no convierte en double una expresión de tipo `int`. Cuando se inserta un entero, su representación sigue las reglas de salida de enteros. Cuando se inserta un `double`, el modo y la precisión elegidos determinan sus cifras de presentación.\n\nCon `std::fixed` también podemos pedir cero cifras después del punto. En ese caso puede aparecer una escritura sin punto aunque el dato siga siendo de tipo `double`. El aspecto del texto no basta para deducir el tipo de la expresión que lo produjo.",
+          "text": "El formato de presentación para valores de punto flotante no convierte en double una expresión de tipo `int`. Si insertamos el literal `18` con `std::fixed` y precisión dos, se escribe 18, sin parte decimal. La expresión sigue siendo un entero y utiliza las reglas de salida para enteros.\n\nSi insertamos un `double`, el modo y la precisión elegidos sí controlan las cifras de esa presentación. Con `std::fixed` podemos pedir incluso cero cifras después del punto: el dato 5.1875 se presenta entonces como 5. Su escritura no lleva punto, pero el dato sigue siendo de tipo `double`. El aspecto del texto no basta para deducir el tipo de la expresión que lo produjo.",
           "emphasis": [
             {
               "text": "no convierte en double una expresión de tipo `int`",
@@ -429,7 +429,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 27 << \"|\" << 3.5;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 27 << \"|\" << 3.5;\n\n    return 0;\n}\n",
           "answers": [
             "27|3.50"
           ],
@@ -440,7 +440,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(0) << 6.9375 << \"|\"\n        << std::setprecision(2) << 0.0;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(0) << 6.9375 << \"|\"\n              << std::setprecision(2) << 0.0;\n\n    return 0;\n}\n",
           "answers": [
             "7|0.00"
           ],
@@ -478,7 +478,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una función que reciba un dato de tipo `double`, entre cero y veinte, y devuelva una cadena con el formato F=valor;S=valor;G=valor. Cada llamada debe crear su propio `std::ostringstream` local. F utiliza `std::fixed` con dos cifras tras el punto; S utiliza `std::scientific` con dos cifras tras el punto; G utiliza `std::defaultfloat` con precisión dos. La función devuelve el texto sin imprimir ni modificar el dato del programa que la llama.\n\nEn `main`, guarda 8.8125 en una variable. Presenta mediante la misma función ese primer dato, después 6.9375, cero y doce, en ese orden y en cuatro líneas. En una quinta línea, presenta el primer dato multiplicado por dieciséis, usando modo general con precisión seis. Todas las líneas terminan con salto, incluida la última.\n\nResuelve el puzzle previo, construye toda la batería y pulsa «Compilar, ejecutar y comprobar». El cotejo automático comprueba la salida; después contrasta también la organización de tu función y la conservación del dato con los criterios de referencia.",
+          "text": "Construye una función que reciba un dato de tipo `double`, entre cero y veinte, y devuelva una cadena con el formato F=valor;S=valor;G=valor. Cada llamada debe crear su propio `std::ostringstream` local. Los campos tienen estas reglas:\n\nF utiliza `std::fixed` con dos cifras después del punto.\n\nS utiliza `std::scientific` con dos cifras después del punto.\n\nG utiliza `std::defaultfloat` con precisión dos: como máximo, dos cifras significativas.\n\nLa función devuelve la cadena sin salto final, sin imprimirla y sin modificar el dato del programa que la llama.\n\nEn `main`, guarda 8.8125 en una variable y llama a esa misma función para componer las siguientes cuatro líneas. Después escribe el cálculo indicado en la quinta línea:\n\nDato 8.8125: F=8.81;S=8.81e+00;G=8.8\n\nDato 6.9375: F=6.94;S=6.94e+00;G=6.9\n\nDato cero: F=0.00;S=0.00e+00;G=0\n\nDato doce: F=12.00;S=1.20e+01;G=12\n\nEl valor de la primera variable multiplicado por dieciséis, usando modo general con precisión seis: 141\n\nTodas las líneas terminan con salto, incluida la última. Construye el programa completo y pulsa «Compilar, ejecutar y comprobar». El cotejo automático comprueba la salida; los criterios de referencia también permiten revisar la organización de la función y la conservación del dato.",
           "emphasis": [
             {
               "text": "su propio `std::ostringstream` local",
@@ -492,7 +492,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -510,7 +510,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Utiliza tu función con la firma std::string presentar(double dato). Si habías elegido otro nombre, adáptalo para que coincida con el cliente. Recibe un double entre 0 y 20, ambos incluidos. Devuelve una cadena F=valor;S=valor;G=valor sin salto final: F utiliza modo fijo con dos cifras después del punto; S, modo científico con dos cifras después del punto; G, modo general con dos cifras significativas como máximo. Cada llamada crea su propio std::ostringstream, compone con el dato recibido y devuelve el texto sin imprimir ni cambiar std::cout.\n\nConserva íntegro el main proporcionado y escribe tu función antes de él. El cliente mantiene las cuatro llamadas y el cálculo final de la práctica anterior. Después prueba 0.15625, 0.0078125, 9.96875 y el límite 20. Son cantidades del mismo dominio: tu función debe aplicar el contrato también cuando hay ceros antes de la primera cifra significativa o cuando redondear cambia la parte entera de la representación.\n\nPara esas cuatro llamadas adicionales, el cliente deja std::cout en modo científico con precisión 5. Tras cada cadena devuelta inserta una barra y el mismo dato directamente en ese flujo. Distingue las dos presentaciones de cada línea: la cadena tiene sus campos propios y el dato exterior utiliza las opciones del llamador. El modo y la precisión de std::cout deben conservarse entre llamadas.\n\nMantén una sola implementación para todos los datos y pulsa «Compilar, ejecutar y comprobar». El programa produce nueve líneas, con salto al terminar cada una, incluida la última. No sustituyas los cálculos de presentación por cadenas guardadas para los casos conocidos.",
+          "text": "Utiliza tu función con la firma `std::string presentar(double dato)`. Si habías elegido otro nombre, adáptalo para que coincida con el cliente. Recibe un `double` entre 0 y 20, ambos incluidos, y devuelve una cadena F=valor;S=valor;G=valor sin salto final:\n\nF utiliza modo fijo con dos cifras después del punto.\n\nS utiliza modo científico con dos cifras después del punto.\n\nG utiliza modo general con dos cifras significativas como máximo.\n\nCada llamada crea su propio `std::ostringstream`, compone los campos con el dato recibido y devuelve el texto sin imprimir ni cambiar `std::cout`.\n\nConserva íntegro el `main` proporcionado y escribe tu función antes de él. El cliente mantiene las cuatro llamadas y el cálculo final de la práctica anterior. Después añade estas llamadas:\n\n`presentar(0.15625)`\n\n`presentar(0.0078125)`\n\n`presentar(9.96875)`\n\n`presentar(20)`\n\nEstas cantidades siguen dentro del dominio permitido. Comprueban el conteo cuando hay ceros antes de la primera cifra significativa y cuando el redondeo cambia la parte entera.\n\nPara esas cuatro llamadas adicionales, el cliente deja `std::cout` en modo científico con precisión 5. En cada línea imprime la cadena devuelta, una barra y el mismo dato directamente en ese flujo. Por ejemplo, la primera línea adicional debe ser:\n\nF=0.16;S=1.56e-01;G=0.16|1.56250e-01\n\nAntes de la barra están los campos compuestos por la función; después está el dato presentado por `std::cout`. La función no debe cambiar el modo ni la precisión de ese flujo.\n\nMantén una sola implementación para todos los datos y pulsa «Compilar, ejecutar y comprobar». El programa produce nueve líneas, con salto al terminar cada una, incluida la última. No sustituyas los cálculos de presentación por cadenas guardadas para los casos conocidos.",
           "emphasis": [
             {
               "text": "una sola implementación",
@@ -528,7 +528,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\n// Define aqui presentar(double dato), sin otro main.\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    std::cout << std::scientific << std::setprecision(5);\n    std::cout << presentar(0.15625) << \"|\" << 0.15625 << \"\\n\";\n    std::cout << presentar(0.0078125) << \"|\" << 0.0078125 << \"\\n\";\n    std::cout << presentar(9.96875) << \"|\" << 9.96875 << \"\\n\";\n    std::cout << presentar(20) << \"|\" << 20.0 << \"\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\n// Define aqui presentar(double dato), sin otro main.\n\nint main() {\n    double primero = 8.8125;\n\n    std::cout << presentar(primero) << \"\\n\"\n              << presentar(6.9375) << \"\\n\"\n              << presentar(0) << \"\\n\"\n              << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    std::cout << std::scientific << std::setprecision(5);\n    std::cout << presentar(0.15625) << \"|\" << 0.15625 << \"\\n\";\n    std::cout << presentar(0.0078125) << \"|\" << 0.0078125 << \"\\n\";\n    std::cout << presentar(9.96875) << \"|\" << 9.96875 << \"\\n\";\n    std::cout << presentar(20) << \"|\" << 20.0 << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -565,7 +565,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las cuatro llamadas deben componer mensajes independientes. El flujo local configura los campos sin heredar el formato de `std::cout`; devolver una cadena tampoco transfiere sus opciones al destino. El cálculo posterior usa la variable original.\n\nUna salida coincidente no demuestra por sí sola que se haya creado la función pedida ni que las representaciones se obtengan insertando el dato. Revisa tu fuente: debe producir las tres escrituras de otra cantidad permitida sin sustituirlas por respuestas almacenadas como cadenas fijas."
+          "text": "Cada llamada debe empezar con un flujo local nuevo, para que su cadena no acumule el texto de las llamadas anteriores. Sus modos y su precisión se configuran en ese objeto; no se heredan de `std::cout`. Al imprimir la cadena devuelta, tampoco se transfieren sus opciones a `std::cout`: se escriben los caracteres que ya contiene.\n\nEl cálculo final debe utilizar la variable original, que conserva 8.8125. Su producto por dieciséis es 141; no debe partir de una escritura redondeada.\n\nUna salida coincidente no demuestra por sí sola que se haya creado la función pedida. Revisa tu fuente: una misma función debe obtener las presentaciones insertando el dato recibido en su flujo local, también para otras cantidades permitidas, sin elegir respuestas guardadas como cadenas fijas."
         }
       ]
     },
@@ -578,11 +578,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n              << \";S=\" << std::scientific << dato\n              << \";G=\" << std::defaultfloat << dato;\n\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n\n    std::cout << presentar(primero) << \"\\n\"\n              << presentar(6.9375) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La primera referencia es una comparación parcial: presenta sólo las composiciones de 8.8125 y 6.9375 y el resultado 141. Su última línea no termina con salto. Ilustra la separación entre presentación y cálculo, pero no satisface aún las cuatro llamadas y las cinco líneas completas de la consigna. La referencia final de esta página sí incluye toda la batería.\n\nAl contrastar tu construcción, comprueba que cada campo elige su modo y precisión, que la función devuelve una cadena sin imprimir y que las llamadas no acumulan texto previo. El cálculo posterior debe usar el dato original. Para cero se obtiene F=0.00;S=0.00e+00;G=0; para doce, F=12.00;S=1.20e+01;G=12. Puedes elegir otra organización si conserva el contrato.",
+          "text": "La primera referencia es una comparación parcial. Presenta sólo estas líneas:\n\nPara 8.8125: F=8.81;S=8.81e+00;G=8.8\n\nPara 6.9375: F=6.94;S=6.94e+00;G=6.9\n\nResultado del cálculo: 141\n\nSu última línea no termina con salto. Ilustra la separación entre presentación y cálculo, pero todavía no satisface las cuatro llamadas ni las cinco líneas completas de la consigna. La referencia final de esta página sí contiene todo el programa pedido.\n\nEn la composición de 6.9375, el campo fijo parte de 6.93. La siguiente cifra decimal es 7, por lo que el redondeo aumenta la centésima de 3 a 4: se escribe 6.94. La variable no recibe ese valor. Por eso, en la predicción anterior, el cálculo `medida * 16` utilizaba 6.9375 y daba 111.\n\nAl comparar tu construcción, comprueba que cada campo selecciona su modo y precisión, que la función devuelve una cadena sin imprimir y que las llamadas no acumulan texto previo. El cálculo posterior debe usar el dato original. Las otras dos composiciones requeridas son:\n\nPara cero: F=0.00;S=0.00e+00;G=0\n\nPara doce: F=12.00;S=1.20e+01;G=12\n\nPuedes elegir otra organización si conserva el contrato.",
           "emphasis": [
             {
               "text": "comparación parcial",
@@ -594,7 +594,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 2.0;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(6) << medida;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 2.0;\n\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n              << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(6) << medida;\n\n    return 0;\n}\n",
           "answers": [
             "2.00|2.00e+00|2"
           ],
@@ -608,7 +608,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n              << \";S=\" << std::scientific << dato\n              << \";G=\" << std::defaultfloat << dato;\n\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n\n    std::cout << presentar(primero) << \"\\n\"\n              << presentar(6.9375) << \"\\n\"\n              << presentar(0) << \"\\n\"\n              << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -616,12 +616,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Para 0.15625, el campo fijo utiliza dos posiciones tras el punto y produce 0.16. El científico desplaza la escritura a una cifra antes del punto y produce 1.56e-01. El general conserva dos cifras significativas y también produce 0.16. Esa coincidencia entre fijo y general no se mantiene para toda cantidad.\n\nCon 0.0078125, las primeras cifras significativas son siete y ocho; los ceros anteriores sitúan el punto. El campo general produce 0.0078, mientras el fijo, limitado a dos posiciones decimales, produce 0.01. El científico produce 7.81e-03: su exponente negativo indica dividir la parte anterior por mil. El cálculo del programa sigue conservando el dato recibido.\n\nEl valor 9.96875 se presenta como 9.97 en fijo y como 9.97e+00 en científico. Con dos cifras significativas, el modo general redondea a 10. El último caso utiliza el límite 20, cuyo campo general es 20. Ninguna de estas inserciones exige modificar la variable ni preparar una excepción para cada cantidad.\n\nEl std::cout del cliente es otro flujo. Por eso sus cantidades exteriores conservan el modo científico y la precisión cinco: por ejemplo, 1.56250e-01 y 7.81250e-03. La función de la referencia configura exclusivamente su objeto local; devolver una cadena no copia las opciones de ese objeto al destino. La referencia completa siguiente conserva también las cinco líneas originales."
+          "text": "Para 0.15625, el campo fijo conserva dos posiciones después del punto. Parte de 0.15 y la siguiente cifra, 6, hace que se redondee a 0.16. El científico presenta 1.56e-01: 1.56 dividido por diez representa 0.156. El general conserva dos cifras significativas y escribe 0.16. Aquí fijo y general coinciden, pero contaron posiciones distintas.\n\nCon 0.0078125, las primeras cifras significativas son 7 y 8; los ceros anteriores sólo sitúan el punto. La siguiente cifra es 1, de modo que el campo general escribe 0.0078. El fijo, en cambio, empieza por 0.00; la tercera cifra decimal es 7 y el redondeo da 0.01. El científico escribe 7.81e-03: dividir 7.81 por mil representa 0.00781. Ninguna de esas presentaciones cambia el dato recibido.\n\nCon 9.96875, fijo y científico conservan dos cifras después del punto en su parte numérica. Se parte de 9.96; la siguiente cifra, 8, hace que se escriba 9.97 o 9.97e+00, respectivamente.\n\nEn general, el mismo dato se presenta con dos cifras significativas. Primero se retiene 9.9. La siguiente cifra es 6, por lo que debe aumentarse una décima: 9.9 + 0.1 = 10. Ese aumento pasa por la unidad y cambia la parte entera. El resultado es 10; el modo general no obliga a añadir la cifra decimal de 10.0. El último caso recibe el límite 20 y su campo general escribe 20.\n\nEl `std::cout` del cliente es otro flujo. Mantiene el modo científico y la precisión cinco que seleccionó el cliente. Después de las barras deben aparecer estos datos:\n\nPara 0.15625: 1.56250e-01\n\nPara 0.0078125: 7.81250e-03\n\nPara 9.96875: 9.96875e+00\n\nPara 20: 2.00000e+01\n\nLa función de la referencia configura exclusivamente su flujo local. Devolver una cadena no copia las opciones de ese objeto al destino. La referencia completa siguiente conserva también las cinco líneas originales."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    std::cout << std::scientific << std::setprecision(5);\n    std::cout << presentar(0.15625) << \"|\" << 0.15625 << \"\\n\";\n    std::cout << presentar(0.0078125) << \"|\" << 0.0078125 << \"\\n\";\n    std::cout << presentar(9.96875) << \"|\" << 9.96875 << \"\\n\";\n    std::cout << presentar(20) << \"|\" << 20.0 << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n              << \";S=\" << std::scientific << dato\n              << \";G=\" << std::defaultfloat << dato;\n\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n\n    std::cout << presentar(primero) << \"\\n\"\n              << presentar(6.9375) << \"\\n\"\n              << presentar(0) << \"\\n\"\n              << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    std::cout << std::scientific << std::setprecision(5);\n    std::cout << presentar(0.15625) << \"|\" << 0.15625 << \"\\n\";\n    std::cout << presentar(0.0078125) << \"|\" << 0.0078125 << \"\\n\";\n    std::cout << presentar(9.96875) << \"|\" << 9.96875 << \"\\n\";\n    std::cout << presentar(20) << \"|\" << 20.0 << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1772,6 +1772,364 @@
         "id": "block_0007_0003",
         "beforeSha256": "b754dc88cb10644bc6bef3a7a5be702646116d8b4864af6ca4a9da5dbb97d61a",
         "afterSha256": "52f7169f2aaf370ba3f9cf686a6017a206e3218f6c6d79dd97953b7a024c8130"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "eb51431a395e315c8ce9aa4a678a4933372a32cb9221d36252fa19279805cd24",
+        "afterSha256": "c44f1c89f2fc8411444401fd2da47af2d8bd47a75ead550cceaf0480d146bd25"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "d8efe690b3e2662e06454d533c470fbd8c0b5b95ae62498fc7662948d586f352",
+        "afterSha256": "31629024972dc62be96e0ff30b5ad438a8c1bfd3e7c0ffb81b9b9c41a26dcd07"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "96b6defa772177b6e72a1075659839843e33e5b4754ea660ae09ee08891d572d",
+        "afterSha256": "a1b59eeb0527c2842b68c6f40c3ec4616b126f34fa839923c88770b71413b9f6"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "6dc3e6ff317b41a71f375a450622c11fd9267503c13bd43174a663e629e8de51",
+        "afterSha256": "422780f91fd678005b092a80bd17738c127ef439af650aec805f81788a51bbe6"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0ed654d37b64118069a21c927813ff2028732d75bc7f9211d7f3852972bf3dd6",
+        "afterSha256": "eb0b3096edcfc05bb58241a3cef7a00257d2d58662cae652d7a1b5d9c271ef50"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "581fe3fb4ccfec27f0932719e2be82d4f8ee9d15f68f6d870c46d9e0999ac879",
+        "afterSha256": "fad0949695a2ef69bed669e8085cb3e2d8114a0bb5a1de6257dff24996d03b72"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "6e0c3eb1e377834fa389c379375a11dc1e31e41ad9df69dfbbbf2f3a34f236f2",
+        "afterSha256": "87ba8b1e528e814d174e80eec81f0f1415e33c724edcd8305ecae934b5f7d730"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "f1bc71d1e964cd3b3969a1976240252cc3f19327fc47f41a244847ff1dc52536",
+        "afterSha256": "b2262bb656e65a7665889f0d963eefe4b24e1f4b4fc80a0cd39a5ac936cbf459"
+      },
+      {
+        "id": "precision_y_tipo_insertado",
+        "beforeSha256": "f34c228d09b5b5b1cfaf9f86af988380bb4e30bb4d16782b6f2f6272365ddfb2",
+        "afterSha256": "d2652bc83add8c21fe67bd8379147baf7a3620567459d9aee65514e7db940f0e"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "14de5891fa3568878977e1962b1d49cfd57cc651647f1d9f8136b2e4e454ddd9",
+        "afterSha256": "fe633ec916cfc79521972417d970e62b80f32f4e94e8b7e89e7334b7a5a45ddc"
+      },
+      {
+        "id": "u12_precision_en_valores_pequenos_consigna",
+        "beforeSha256": "97f1b3c6f368df335da38c7ff31dcb3d6fac360fc81c3a90a0c8f356922c5d4c",
+        "afterSha256": "e1f619ef27c41347a5a20917bdae006856c78a7d8be5b1222494d168d3f5f007"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "94c92967c5fe3cf23e08540ade92f11470747689ab0a42a2b97b3e70542b22e4",
+        "afterSha256": "4a98d69657497e4708f64950b651f5ff593dd4edb26cf586fb5efeda0b7df111"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "40809b6d385572ddba650b631dfcf13abc93837deb684de3a6fc3ddf70d21dcb",
+        "afterSha256": "4433c6dc58004a85f4b5a41b47aa38f5c36f1966479f65fdc0aeacc7251c0f20"
+      },
+      {
+        "id": "u12_precision_en_valores_pequenos_referencia_razonamiento",
+        "beforeSha256": "59029529e2ba32ec2026d2fa7e73625867bbeeeb936ca381ae587273622e411b",
+        "afterSha256": "801c1f0264189db3d03b702bb4f796917fb07adb04a927429784bf95727faedc"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "d9d7dc7d9d26d610931abe2624dcc06d89439d97d59629959d2b197439d88c9f",
+        "afterSha256": "875a20325cecf6f12cafb661c4b40da36b5b8432a0c5dce301d609cfcf76fdc1"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "d100b1ae3350e916b8d386f74f53cff73c8f2aa48c0b41be90d911974e4ccf09",
+        "afterSha256": "91e3e21b0cff3d6da28c6ba529f8e08084c5c3ca8e08f8c7591e9490389d4910"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "553a2a7fd5232a6a72912516a7159cc1bc4348151a117173b514424f8339ba18",
+        "afterSha256": "0166abcff871e6d803c3c10000cf86a84befc8223c721c81d972e771f0ee366c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0f05816a28a6dc854b0db3242af25ebe774b5b9f88dbd56e8738d98a8b97b20d",
+        "afterSha256": "008700521d2112d1da3cd703a0efce1a68b3ef9b875aedc43be18f249f774754"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "f73abd6232bb908f1d8a91b2ac32b8dd96fba5ff55e0375c214b5c8dd4ed111d",
+        "afterSha256": "02704a1e6cbfe032d50a3cf601524906fd016a94722e1680e90fb28ed023b360"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "3f2e9b3dc0298b7115a1c6ea3ae3e9c93e67c4a628b55ac504b7f98b6da0134c",
+        "afterSha256": "c945dbd21b078469efbc3c491750fc492e7ab3852ae1e4aeef513fc5ca98175e"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f487bd8d0d7ac23906cacba2ae44ec6b332e953f35aef81afc8439455ad45fc4",
+        "afterSha256": "7897a4ce1445cbf0762761a5ada69be22142d47773585ee38cc0d1c7952dd9c3"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "270d4dd4f1cd1fe56ec57bb0f28420f5307849b03be6b8b552177d214b4212be",
+        "afterSha256": "7ae76261a3bc426d8264e427d36260d5c9ec2ee010cb6d2fec8d6ce93295fe42"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "5aedc87287c83bb617f076d71cee412e21069679a22c989c542fd6ef32fb678f",
+        "afterSha256": "c133d2a1ae36f4d5c480210b13a5cd83c47ed50541d0f7fbdc43d01c8dc64daf"
+      },
+      {
+        "id": "u12_precision_en_valores_pequenos_comprobacion",
+        "beforeSha256": "c01bce751030466f873cf1f9ced573798721c5d7be9ce2953d22c4a52eaaf4cf",
+        "afterSha256": "7ef1a22ee50bb7c50d9125c8657b0d245d8bf7b42ef6c18aadaaa5959a2836f5"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "620581423f661563b1d8a147f8b7ff174781bb35a15df43be0a6d02a1453f099",
+        "afterSha256": "9bcd8de7eda6a205a4c3bb80a02513f65383b010c8956143983706191750d7ad"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "52f7169f2aaf370ba3f9cf686a6017a206e3218f6c6d79dd97953b7a024c8130",
+        "afterSha256": "319fdb8856948dd2bd455cf5f05c3234579cde2f5e46ce1be8fe7c438fb27411"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "07264a8698c077cbca75d46d1a32d247805aeec6ba40b822f3c8057c1e475d22",
+        "afterSha256": "76c943b4b6ceade4fb40a829d1f6d24b174ac4362c70a3fc179cb1d4204163f3"
+      },
+      {
+        "id": "u12_precision_en_valores_pequenos_referencia",
+        "beforeSha256": "65fc74fbb55bc8686deac096d512e34da39155c4d9482f2f9f1fc0ea554c8575",
+        "afterSha256": "a6fb90ab2f0685c66e22a4b87a97d978cb59fb075a32d1dc7a5c94879fbdabf7"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "87ba8b1e528e814d174e80eec81f0f1415e33c724edcd8305ecae934b5f7d730",
+        "afterSha256": "1fe7942c084ec13de9cc92080421da88a6013031939e317c79bb04efea3988ff"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "4433c6dc58004a85f4b5a41b47aa38f5c36f1966479f65fdc0aeacc7251c0f20",
+        "afterSha256": "d955115d191be7c8a493ef0bc405e30852c1a68deaed50544cdbb5b3dd12714b"
+      },
+      {
+        "id": "precision_y_tipo_insertado",
+        "beforeSha256": "d2652bc83add8c21fe67bd8379147baf7a3620567459d9aee65514e7db940f0e",
+        "afterSha256": "acc83b1f12181e3407137db5e5174eafd457ab023dce45d9c1ca85594555f711"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 12.5;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(3) << medida;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 0.125;\n    std::cout << std::scientific << std::setprecision(2) << medida;\n    return 0;\n}\n",
+          "answers": [
+            "1.25e-01"
+          ],
+          "explanation": "El modo std::scientific escribe una cifra antes del punto. Para el valor 0.125, la parte numérica anterior al exponente es 1.25 y debe dividirse por diez para conservar la cantidad original. El exponente es, por tanto, -01.\n\nstd::setprecision(2) pide las dos cifras posteriores al punto: 2 y 5. Al reunir la parte numérica y el exponente se obtiene 1.25e-01, sin salto final. El cero del exponente pertenece a su escritura; no cambia el factor de diez.",
+          "reviewFeedback": "Separa las cifras posteriores al punto del exponente. Conserva su signo y los caracteres que exige la notación científica del programa."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 4.3125;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << medida;\n    return 0;\n}\n",
+          "answers": [
+            "4.31|4.31e+00|4.3"
+          ],
+          "explanation": "Las tres inserciones utilizan el mismo valor 4.3125 y mantienen la precisión 2. Con std::fixed, se conservan dos posiciones después del punto y se obtiene 4.31. Con std::scientific, también se conservan dos posiciones después del punto, pero se añade el exponente cero: 4.31e+00.\n\nstd::defaultfloat cambia lo que cuenta esa precisión: ahora son dos cifras significativas en total, 4 y 3. La tercera cifra no obliga a aumentar la segunda, por lo que aparece 4.3. Los separadores forman la salida 4.31|4.31e+00|4.3.",
+          "reviewFeedback": "Mantén la precisión guardada al cambiar de modo y decide qué cuenta en fixed, scientific y general. No cambies el valor de la variable."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 6.9375;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\";\n    std::cout << std::defaultfloat << std::setprecision(6) << medida * 16;\n    return 0;\n}\n",
+          "answers": [
+            "6.94|111"
+          ],
+          "explanation": "La primera inserción presenta 6.9375 con dos cifras después del punto. La representación se redondea a 6.94, pero ninguna instrucción asigna esa cantidad a medida.\n\nDespués se calcula medida * 16 con el valor conservado: 6.9375 × 16 = 111. El modo general y la precisión seis permiten mostrar 111, sin añadir ceros decimales. La salida completa es 6.94|111. Usar la escritura redondeada en el cálculo habría producido otro resultado.",
+          "reviewFeedback": "Distingue los caracteres de la primera inserción del valor que se multiplica después. Sigue también el modo y la precisión de la segunda salida."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 8.8125;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::defaultfloat << medida << \"|\" << std::setprecision(6) << medida;\n    return 0;\n}\n",
+          "answers": [
+            "8.81|8.8|8.8125"
+          ],
+          "explanation": "Primero, std::fixed y la precisión 2 presentan 8.8125 como 8.81. Después, std::defaultfloat selecciona el modo general, pero mantiene la precisión dos: sólo se muestran dos cifras significativas, 8.8.\n\nLa última inserción cambia expresamente la precisión a 6. El valor se escribe completo como 8.8125; sus cinco cifras significativas caben en ese máximo y no es necesario añadir un cero. Así se obtiene 8.81|8.8|8.8125.",
+          "reviewFeedback": "Sigue dos opciones independientes: el modo seleccionado y el valor de precisión. defaultfloat no restaura por sí solo la precisión inicial."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el manipulador que abandona fixed y vuelve a notación general.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 3.5 << \"|\"\n        << std::___ << std::setprecision(6) << 3.5;\n    return 0;\n}\n",
+          "answers": [
+            "defaultfloat"
+          ],
+          "explanation": "La respuesta defaultfloat completa std::defaultfloat y selecciona el modo general. Antes de ese cambio, std::fixed y la precisión dos habían presentado 3.5 como 3.50.\n\nLa instrucción posterior std::setprecision(6) ajusta por separado la precisión. En modo general no se añaden ceros hasta llenar ese máximo, por lo que la segunda escritura es 3.5. El programa completo produce 3.50|3.5.",
+          "reviewFeedback": "Escribe sólo el nombre del manipulador situado después de std::. La selección del modo general se distingue del ajuste de precisión que aparece después."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 27 << \"|\" << 3.5;\n    return 0;\n}\n",
+          "answers": [
+            "27|3.50"
+          ],
+          "explanation": "El literal 27 tiene tipo int. Al insertarlo, se utilizan las reglas para enteros y aparece 27, aunque el flujo tenga seleccionado std::fixed. No se realiza una conversión a double.\n\nEl literal 3.5 sí tiene tipo double. Su inserción utiliza el modo fijo y las dos cifras posteriores al punto solicitadas, de modo que aparece 3.50. Las dos inserciones forman 27|3.50.",
+          "reviewFeedback": "Identifica el tipo de cada expresión insertada antes de aplicar las reglas de formato para double."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(0) << 6.9375 << \"|\"\n        << std::setprecision(2) << 0.0;\n    return 0;\n}\n",
+          "answers": [
+            "7|0.00"
+          ],
+          "explanation": "La primera inserción utiliza std::fixed con precisión cero: no escribe cifras después del punto. El valor 6.9375 se redondea al entero más próximo en la representación y aparece 7; no se trunca a seis ni se cambia el tipo del dato.\n\nDespués, la precisión pasa a dos y se inserta el literal 0.0, de tipo double. El modo fijo escribe 0.00, con dos ceros después del punto. La salida completa es 7|0.00.",
+          "reviewFeedback": "Analiza por separado la inserción con cero cifras después del punto y la inserción posterior del valor cero con otra precisión."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "F=8.81;S=8.81e+00;G=8.8\nF=6.94;S=6.94e+00;G=6.9\nF=0.00;S=0.00e+00;G=0\nF=12.00;S=1.20e+01;G=12\n141\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_precision_en_valores_pequenos_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\n// Define aqui presentar(double dato), sin otro main.\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    std::cout << std::scientific << std::setprecision(5);\n    std::cout << presentar(0.15625) << \"|\" << 0.15625 << \"\\n\";\n    std::cout << presentar(0.0078125) << \"|\" << 0.0078125 << \"\\n\";\n    std::cout << presentar(9.96875) << \"|\" << 9.96875 << \"\\n\";\n    std::cout << presentar(20) << \"|\" << 20.0 << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "F=8.81;S=8.81e+00;G=8.8\nF=6.94;S=6.94e+00;G=6.9\nF=0.00;S=0.00e+00;G=0\nF=12.00;S=1.20e+01;G=12\n141\nF=0.16;S=1.56e-01;G=0.16|1.56250e-01\nF=0.01;S=7.81e-03;G=0.0078|7.81250e-03\nF=9.97;S=9.97e+00;G=10|9.96875e+00\nF=20.00;S=2.00e+01;G=20|2.00000e+01\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las cinco líneas iniciales se conservan. Para 0.15625 y 0.0078125, el modo general cuenta cifras significativas, por lo que sus campos son G=0.16 y G=0.0078. Para 9.96875, el redondeo produce G=10, sin forzar un decimal. Los datos exteriores mantienen el modo científico y las cinco cifras posteriores al punto pedidos por el cliente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "F=8.81;S=8.81e+00;G=8.8\nF=6.94;S=6.94e+00;G=6.9\nF=0.00;S=0.00e+00;G=0\nF=12.00;S=1.20e+01;G=12\n141\nF=0.16;S=1.56e-01;G=0.2|1.56250e-01\nF=0.01;S=7.81e-03;G=0.0|7.81250e-03\nF=9.97;S=9.97e+00;G=10.0|9.96875e+00\nF=20.00;S=2.00e+01;G=20|2.00000e+01\n"
+                    ],
+                    "text": "En los campos generales aparecen G=0.2, G=0.0 y G=10.0, en lugar de G=0.16, G=0.0078 y G=10. Contar posiciones decimales fijas no equivale a contar dos cifras significativas. La batería anterior no incluía cantidades positivas menores que uno ni este redondeo a diez, por lo que ambas reglas podían coincidir en sus casos. Selecciona el modo general para ese campo del flujo local."
+                  },
+                  {
+                    "outputs": [
+                      "F=8.81;S=8.81e+00;G=8.8\nF=6.94;S=6.94e+00;G=6.9\nF=0.00;S=0.00e+00;G=0\nF=12.00;S=1.20e+01;G=12\n141\nF=0.16;S=1.56e-01;G=0.16|1.56e-01\nF=0.01;S=7.81e-03;G=0.0078|7.81e-03\nF=9.97;S=9.97e+00;G=10|9.97e+00\nF=20.00;S=2.00e+01;G=20|2.00e+01\n"
+                    ],
+                    "text": "Las cadenas devueltas coinciden, pero el dato exterior de la primera llamada adicional aparece como 1.56e-01, con dos cifras tras el punto, en lugar de 1.56250e-01, con cinco. Lo mismo ocurre con los demás datos exteriores. La precisión dos pertenece a la composición local; aplicarla a std::cout cambia una opción del llamador. En la batería anterior, el cliente restablecía expresamente la precisión antes del cálculo final y ocultaba ese cambio."
+                  },
+                  {
+                    "outputs": [
+                      "F=8.81;S=8.81e+00;G=8.8\nF=6.94;S=6.94e+00;G=6.9\nF=0.00;S=0.00e+00;G=0\nF=12.00;S=1.20e+01;G=12\n141\nF=0.16;S=1.56e-01;G=0.16|0.15625\nF=0.01;S=7.81e-03;G=0.0078|0.00781\nF=9.97;S=9.97e+00;G=10|9.96875\nF=20.00;S=2.00e+01;G=20|20.00000\n"
+                    ],
+                    "text": "Las cadenas devueltas coinciden, pero las cantidades exteriores aparecen sin el exponente solicitado. Por ejemplo, se escribe 0.15625 en lugar de 1.56250e-01. El cliente había dejado std::cout en modo científico: las llamadas no deben cambiarlo a fijo. Los manipuladores de cada campo deben actuar sobre el flujo local. La batería anterior seleccionaba de nuevo el modo general antes del cálculo final y no detectaba esta modificación."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 2.0;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(6) << medida;\n    return 0;\n}\n",
+          "answers": [
+            "2.00|2.00e+00|2"
+          ],
+          "explanation": "Las tres inserciones presentan el valor dos. Con std::fixed y precisión dos, aparecen dos cifras después del punto: 2.00. std::scientific conserva esa precisión y añade un exponente cero, porque no hace falta multiplicar ni dividir la parte 2.00: 2.00e+00.\n\nPara la última inserción se seleccionan el modo general y la precisión seis. Ese máximo no obliga a rellenar con ceros una representación que ya expresa el valor; se escribe 2. El resultado es 2.00|2.00e+00|2.",
+          "reviewFeedback": "Sigue el modo y la precisión antes de cada inserción. Distingue las cifras exigidas tras el punto de los ceros que el modo general puede omitir."
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_precision_en_valores_pequenos_referencia",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\"\n        << presentar(0) << \"\\n\" << presentar(12) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16 << \"\\n\";\n\n    std::cout << std::scientific << std::setprecision(5);\n    std::cout << presentar(0.15625) << \"|\" << 0.15625 << \"\\n\";\n    std::cout << presentar(0.0078125) << \"|\" << 0.0078125 << \"\\n\";\n    std::cout << presentar(9.96875) << \"|\" << 9.96875 << \"\\n\";\n    std::cout << presentar(20) << \"|\" << 20.0 << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1811,153 +2169,6 @@
     "version": 1,
     "fields": [
       {
-        "block": "block_0000_0002",
-        "path": "/text",
-        "sourceSha256": "55315cde0ea2218373eaae1b24fa158a29618f4ab845334304e2c23163dc839e",
-        "spans": [
-          {
-            "start": 1,
-            "end": 11,
-            "text": "std::fixed",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 118,
-            "end": 133,
-            "text": "std::scientific",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 176,
-            "end": 179,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 224,
-            "end": 225,
-            "text": "e",
-            "role": "output",
-            "reading": "characters"
-          },
-          {
-            "start": 277,
-            "end": 281,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 334,
-            "end": 351,
-            "text": "std::defaultfloat",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 482,
-            "end": 502,
-            "text": "std::setprecision(2)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 520,
-            "end": 523,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 651,
-            "end": 660,
-            "text": "<iomanip>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 732,
-            "end": 735,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 769,
-            "end": 779,
-            "text": "std::fixed",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 783,
-            "end": 798,
-            "text": "std::scientific",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 803,
-            "end": 820,
-            "text": "std::defaultfloat",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 876,
-            "end": 930,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024, sección 9.10.2)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0004_0003",
-        "path": "/text",
-        "sourceSha256": "e7df3174146d70c8ce9e53bb8f96f9204df3b46a113040586213fc0835fa7620",
-        "spans": [
-          {
-            "start": 75,
-            "end": 92,
-            "text": "std::defaultfloat",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 197,
-            "end": 214,
-            "text": "std::setprecision",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 216,
-            "end": 236,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 293,
-            "end": 297,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 309,
-            "end": 326,
-            "text": "std::defaultfloat",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
         "block": "block_0000_0000",
         "path": "/text",
         "sourceSha256": "838628463ef2779de0efc60256aa5cd678afca6108608dc53ce8ee98d2c2ee07",
@@ -1966,18 +2177,166 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "1e5d2772c6d411dcd1e1a61daa8c4e7d069bf3a621b0d50464f4456e3438c8ec",
+        "sourceSha256": "e025b3e8ea1035e1f20c6cf4f65dde6e4ea560faa140bf3ace6fb57bf6372db8",
         "spans": [
           {
             "start": 22,
             "end": 28,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 295,
-            "end": 329,
-            "text": "(Stroustrup, 2024, sección 9.10.2)",
+            "start": 158,
+            "end": 162,
+            "text": "12.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 189,
+            "text": "12.50",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 198,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 363,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "f085fbbe87996763598ad8fa165134c1f0c8e02fc33c284c5d680cc65c2d7f6b",
+        "spans": [
+          {
+            "start": 73,
+            "end": 83,
+            "text": "std::fixed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 192,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 232,
+            "text": "12.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 249,
+            "text": "12.50",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 268,
+            "text": "std::scientific",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 310,
+            "end": 313,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 379,
+            "text": "1.25e+01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 395,
+            "text": "1.25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 417,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 433,
+            "text": "12.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 490,
+            "end": 507,
+            "text": "std::defaultfloat",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 642,
+            "end": 662,
+            "text": "std::setprecision(2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 671,
+            "end": 674,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 832,
+            "end": 841,
+            "text": "<iomanip>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 895,
+            "end": 898,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1082,
+            "end": 1086,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1128,
+            "end": 1166,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1986,20 +2345,35 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "0f133db1a15f396457571eb1da28de19345275d31c90fda7cb39b74cc698a84e",
+        "sourceSha256": "44395a16e9d07b6facf92d6ed01f96b0bb1cb6f8070a2dc20019b13c5be77a27",
         "spans": [
           {
-            "start": 30,
-            "end": 49,
+            "start": 66,
+            "end": 85,
             "text": "12.50|1.25e+01|12.5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 205,
+            "start": 110,
+            "end": 114,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 204,
+            "text": "doce y medio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 261,
             "text": "medida",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2012,97 +2386,230 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "d5ace419935ffaed05b9dc355590c47ff6ce3739696971db637b6ab3d4d5c1f8",
+        "sourceSha256": "b31558d414a2b58a6efb0ac14f6e91a4c96e6823025dba2c4308df6fcdd8643f",
         "spans": [
           {
-            "start": 49,
-            "end": 50,
-            "text": "e",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 151,
-            "end": 159,
+            "start": 22,
+            "end": 30,
             "text": "1.25e+01",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 174,
-            "end": 178,
-            "text": "1.25",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 201,
-            "end": 205,
-            "text": "12.5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 211,
-            "end": 215,
-            "text": "e+02",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 325,
-            "end": 333,
-            "text": "2.50e-01",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 345,
-            "end": 349,
-            "text": "2.50",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 379,
-            "end": 383,
-            "text": "0.25",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 385,
-            "end": 389,
-            "text": "e-02",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 459,
-            "end": 467,
-            "text": "2.50e+00",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 511,
-            "end": 515,
-            "text": "2.50",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 609,
-            "end": 612,
-            "text": "+01",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 661,
-            "end": 662,
+            "start": 41,
+            "end": 42,
             "text": "e",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 68,
+            "end": 72,
+            "text": "1.25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 90,
+            "text": "+01",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 145,
+            "end": 149,
+            "text": "diez",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 220,
+            "text": "1.25e+01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 238,
+            "text": "1.25 × 10 = 12.5",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 267,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 278,
+            "text": "1.25e+02",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 300,
+            "text": "1.25 × 10 × 10 = 125",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 313,
+            "end": 316,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 333,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 367,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 420,
+            "text": "2.50e-01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 422,
+            "end": 438,
+            "text": "2.50 ÷ 10 = 0.25",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 450,
+            "end": 453,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 462,
+            "end": 466,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 477,
+            "text": "2.50e-02",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 479,
+            "end": 501,
+            "text": "2.50 ÷ 10 ÷ 10 = 0.025",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 513,
+            "end": 516,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 531,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 556,
+            "end": 560,
+            "text": "cien",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 580,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 604,
+            "end": 612,
+            "text": "2.50e+00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 624,
+            "end": 628,
+            "text": "2.50",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 664,
+            "end": 668,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 699,
+            "end": 702,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 756,
+            "text": "+01",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 761,
+            "end": 765,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 814,
+            "end": 817,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 851,
+            "end": 852,
+            "text": "e",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2122,13 +2629,20 @@
             "start": 13,
             "end": 16,
             "text": "+02",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 36,
             "end": 41,
             "text": "3.125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "cien",
             "role": "data",
             "reading": "natural"
           },
@@ -2136,20 +2650,27 @@
             "start": 52,
             "end": 57,
             "text": "312.5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 72,
             "end": 75,
             "text": "-02",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 91,
             "end": 96,
             "text": "3.125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 105,
+            "text": "cien",
             "role": "data",
             "reading": "natural"
           },
@@ -2157,6 +2678,20 @@
             "start": 107,
             "end": 114,
             "text": "0.03125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 161,
+            "text": "uno",
             "role": "data",
             "reading": "natural"
           },
@@ -2164,14 +2699,14 @@
             "start": 174,
             "end": 183,
             "text": "3.125e+00",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 195,
             "end": 200,
             "text": "3.125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2185,7 +2720,7 @@
             "start": 27,
             "end": 28,
             "text": "e",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2199,7 +2734,7 @@
             "start": 0,
             "end": 9,
             "text": "3.125e+02",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2213,7 +2748,7 @@
             "start": 0,
             "end": 9,
             "text": "3.125e-02",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2227,7 +2762,7 @@
             "start": 0,
             "end": 9,
             "text": "3.125e+00",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2241,7 +2776,7 @@
             "start": 0,
             "end": 7,
             "text": "0.03125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2255,7 +2790,7 @@
             "start": 0,
             "end": 5,
             "text": "3.125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2269,7 +2804,7 @@
             "start": 0,
             "end": 5,
             "text": "312.5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2293,16 +2828,30 @@
             "reading": "technical"
           },
           {
+            "start": 32,
+            "end": 35,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 73,
             "end": 78,
             "text": "0.125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 123,
             "end": 127,
             "text": "1.25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 153,
+            "text": "diez",
             "role": "data",
             "reading": "natural"
           },
@@ -2310,7 +2859,7 @@
             "start": 219,
             "end": 222,
             "text": "-01",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
@@ -2319,6 +2868,13 @@
             "text": "std::setprecision(2)",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 258,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 288,
@@ -2340,6 +2896,20 @@
             "text": "1.25e-01",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 383,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 447,
+            "end": 451,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2358,7 +2928,7 @@
             "start": 30,
             "end": 38,
             "text": "2.50e+02",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2372,21 +2942,77 @@
             "start": 13,
             "end": 16,
             "text": "+02",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
+          },
+          {
+            "start": 24,
+            "end": 27,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 55,
             "end": 69,
             "text": "2.50 × 10 = 25",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
+          },
+          {
+            "start": 99,
+            "end": 103,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 115,
             "end": 118,
             "text": "250",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 164,
+            "text": "doscientos cincuenta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 178,
+            "text": "Dos y medio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 224,
+            "text": "Veinticinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 243,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 254,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2400,7 +3026,7 @@
             "start": 0,
             "end": 11,
             "text": "Dos y medio",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2414,7 +3040,7 @@
             "start": 0,
             "end": 11,
             "text": "Veinticinco",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2428,7 +3054,7 @@
             "start": 0,
             "end": 20,
             "text": "Doscientos cincuenta",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2442,7 +3068,7 @@
             "start": 65,
             "end": 66,
             "text": "e",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2451,7 +3077,15 @@
         "block": "block_0001_0003",
         "path": "/reviewFeedback/1",
         "sourceSha256": "612429c41051162174f4b96277d8128b551fabf1103c285de1d4834062ae4fb5",
-        "spans": []
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -2468,71 +3102,117 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "7db31da8ae5949e4c0f350d5d89c98a826ceba7212f244681df929269981c98a",
+        "sourceSha256": "e7eb3a67eefbaf5f955c9beb858a8c56d6e4256e0d31f14e996c9657eb8f81b2",
         "spans": [
           {
-            "start": 5,
-            "end": 15,
-            "text": "std::fixed",
-            "role": "cpp"
-          },
-          {
-            "start": 19,
-            "end": 39,
-            "text": "std::setprecision(2)",
-            "role": "cpp"
-          },
-          {
-            "start": 76,
-            "end": 82,
+            "start": 56,
+            "end": 62,
             "text": "8.8125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 100,
-            "end": 104,
+            "start": 77,
+            "end": 97,
+            "text": "std::setprecision(2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 116,
+            "text": "std::fixed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 130,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 172,
             "text": "8.81",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 126,
+            "start": 180,
+            "end": 195,
             "text": "std::scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 193,
-            "end": 194,
-            "text": "e",
+            "start": 214,
+            "end": 217,
+            "text": "dos",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 267,
+            "text": "e",
+            "role": "output",
             "reading": "characters"
           },
           {
-            "start": 196,
-            "end": 204,
+            "start": 280,
+            "end": 288,
             "text": "8.81e+00",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 283,
+            "start": 356,
+            "end": 373,
             "text": "std::defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 393,
             "end": 396,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 479,
+            "end": 483,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 502,
+            "end": 503,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 507,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 522,
+            "end": 525,
             "text": "8.8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 575,
-            "end": 609,
-            "text": "(Stroustrup, 2024, sección 9.10.2)",
+            "start": 739,
+            "end": 757,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2541,67 +3221,130 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "f091fa8f92b245542123157e8dfab437fdf5e1d526750284b2d9d8e21d80f3d2",
+        "sourceSha256": "20ac83ef28c1912c2c2abb07908c002f9384ab9e0f48c8bc5a9e89bbd07fa16c",
         "spans": [
           {
-            "start": 71,
-            "end": 77,
+            "start": 43,
+            "end": 46,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 58,
             "text": "0.0125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 109,
-            "end": 110,
+            "start": 81,
+            "end": 82,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 113,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 116,
-            "end": 117,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 165,
-            "end": 171,
-            "text": "0.0105",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 196,
-            "end": 197,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 200,
-            "end": 201,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 416,
-            "end": 417,
+            "start": 84,
+            "end": 85,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 431,
-            "end": 432,
+            "start": 88,
+            "end": 89,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 99,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 189,
+            "text": "0.0105",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 205,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 209,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 227,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 258,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 336,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 469,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 487,
+            "end": 488,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 500,
+            "end": 504,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 507,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2617,44 +3360,50 @@
             "start": 41,
             "end": 48,
             "text": "0.03125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 76,
             "end": 77,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 81,
             "end": 101,
             "text": "std::setprecision(n)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 139,
             "end": 144,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 147,
             "end": 157,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 209,
             "end": 221,
             "text": "defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 239,
             "end": 240,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2667,7 +3416,15 @@
             "start": 4,
             "end": 9,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 14,
+            "end": 19,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 48,
@@ -2680,7 +3437,15 @@
             "start": 61,
             "end": 71,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 111,
@@ -2693,35 +3458,50 @@
             "start": 148,
             "end": 149,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 151,
             "end": 152,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 154,
             "end": 155,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 158,
             "end": 159,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 193,
             "end": 205,
             "text": "defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 215,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 312,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2734,20 +3514,22 @@
             "start": 68,
             "end": 73,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 112,
             "end": 113,
             "text": "e",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 117,
             "end": 127,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2760,7 +3542,8 @@
             "start": 4,
             "end": 9,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 11,
@@ -2773,7 +3556,8 @@
             "start": 23,
             "end": 33,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 35,
@@ -2786,7 +3570,8 @@
             "start": 49,
             "end": 61,
             "text": "defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 63,
@@ -2806,13 +3591,15 @@
             "start": 9,
             "end": 10,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 33,
             "end": 38,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2825,13 +3612,15 @@
             "start": 9,
             "end": 10,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 33,
             "end": 43,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2844,13 +3633,15 @@
             "start": 15,
             "end": 16,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 47,
             "end": 59,
             "text": "defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2869,7 +3660,8 @@
             "start": 9,
             "end": 10,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2882,7 +3674,8 @@
             "start": 0,
             "end": 5,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2895,7 +3688,8 @@
             "start": 0,
             "end": 10,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2908,13 +3702,15 @@
             "start": 0,
             "end": 12,
             "text": "defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 20,
             "end": 21,
             "text": "n",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2930,17 +3726,24 @@
         "sourceSha256": "cbce2d9d994e47f2653aed53082fde85746a02b90b95cd84d98b5db652ea0416",
         "spans": [
           {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 45,
             "end": 51,
             "text": "4.3125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 77,
             "end": 78,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2949,6 +3752,13 @@
             "text": "std::fixed",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 112,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 155,
@@ -2965,6 +3775,20 @@
             "reading": "technical"
           },
           {
+            "start": 203,
+            "end": 206,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 268,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 270,
             "end": 278,
             "text": "4.31e+00",
@@ -2977,6 +3801,13 @@
             "text": "std::defaultfloat",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 348,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 381,
@@ -3017,13 +3848,15 @@
             "start": 71,
             "end": 76,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 78,
             "end": 88,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3036,13 +3869,22 @@
             "start": 0,
             "end": 5,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 8,
             "end": 23,
             "text": "setprecision(2)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 57,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3062,7 +3904,7 @@
             "start": 29,
             "end": 30,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3076,13 +3918,34 @@
             "start": 126,
             "end": 132,
             "text": "8.8125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 150,
             "end": 154,
             "text": "8.81",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 217,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 251,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 289,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           }
@@ -3092,19 +3955,43 @@
         "block": "block_0002_0004",
         "path": "/options/0",
         "sourceSha256": "1f9200c3d22d93493c4f77e1435db0e0522c2ad94ab8d202cffb38e17886f6ba",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
         "path": "/options/1",
         "sourceSha256": "458f23e2342346c5a13a2a4aa14ecd8437a93e8a997c1191b47494eccea332f1",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
         "path": "/options/2",
         "sourceSha256": "dac911cb4d1a34375cad4a2d2a72597d7aa368ad657d3d419b72c4330dd225ca",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -3121,7 +4008,8 @@
             "start": 13,
             "end": 18,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3134,7 +4022,8 @@
             "start": 72,
             "end": 77,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3147,13 +4036,105 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "0c81b91f12a6f9131d393b9797009a7f5fda6927cbab4e5eadcb37395a6702a8",
+        "sourceSha256": "7adf3074c2bb834dac940e7e8859164c41d42f0ca1cc87023dc0d19f47b09a76",
         "spans": [
           {
-            "start": 416,
-            "end": 422,
+            "start": 36,
+            "end": 42,
+            "text": "5.1875",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 72,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "text": "5.18",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 208,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 212,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 246,
+            "text": "5.19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 334,
+            "text": "5.1875",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 367,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 382,
+            "text": "83",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 407,
+            "text": "5.1875 × 16 = 83",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 455,
+            "end": 459,
+            "text": "5.19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 546,
+            "end": 549,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 575,
+            "end": 581,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3172,6 +4153,13 @@
             "start": 30,
             "end": 36,
             "text": "6.9375",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -3201,7 +4189,14 @@
             "end": 238,
             "text": "6.9375 × 16 = 111",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
+          },
+          {
+            "start": 271,
+            "end": 275,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 293,
@@ -3241,20 +4236,22 @@
             "start": 53,
             "end": 59,
             "text": "6.9375",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 71,
             "end": 86,
             "text": "setprecision(2)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 91,
             "end": 96,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3288,14 +4285,14 @@
             "start": 135,
             "end": 141,
             "text": "6.9375",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 278,
             "end": 284,
             "text": "6.9375",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3321,7 +4318,7 @@
             "start": 7,
             "end": 11,
             "text": "6.94",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3351,6 +4348,69 @@
         "spans": []
       },
       {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "37d8ec2546f1e69786aa6ea5890161d6217e1514415626b92331833cf8c03a3f",
+        "spans": [
+          {
+            "start": 75,
+            "end": 92,
+            "text": "std::defaultfloat",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 214,
+            "text": "std::setprecision",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 236,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 283,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 343,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 376,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 450,
+            "text": "std::setprecision(6)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 464,
+            "end": 481,
+            "text": "std::defaultfloat",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
         "block": "block_0004_0001",
         "path": "/question",
         "sourceSha256": "ee6af0f0911e0883e90751549c89fa821b6e191993f4957307092fcd4b359f62",
@@ -3372,14 +4432,14 @@
             "start": 35,
             "end": 36,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 47,
             "end": 53,
             "text": "8.8125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3397,6 +4457,20 @@
             "reading": "technical"
           },
           {
+            "start": 147,
+            "end": 150,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 172,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 196,
             "end": 199,
             "text": "8.8",
@@ -3407,7 +4481,7 @@
             "start": 257,
             "end": 258,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3415,6 +4489,13 @@
             "end": 300,
             "text": "8.8125",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 311,
+            "text": "cinco",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -3435,7 +4516,8 @@
             "start": 81,
             "end": 93,
             "text": "defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3448,7 +4530,8 @@
             "start": 42,
             "end": 47,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3479,10 +4562,17 @@
             "reading": "technical"
           },
           {
+            "start": 130,
+            "end": 133,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 152,
             "end": 155,
             "text": "3.5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3524,7 +4614,8 @@
             "start": 58,
             "end": 63,
             "text": "std::",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3537,44 +4628,99 @@
             "start": 37,
             "end": 40,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "precision_y_tipo_insertado",
         "path": "/text",
-        "sourceSha256": "61db7b00757a81ddc5b4754a2a85a0b7d87a63b78c47289cc51307f87ec17d81",
+        "sourceSha256": "f3b0c2e3aba3164aa213aecd3f87173496de93317e4e96e6af140bb7de187271",
         "spans": [
           {
             "start": 74,
             "end": 80,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 104,
             "end": 107,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 224,
-            "text": "double",
-            "role": "cpp"
+            "start": 136,
+            "end": 138,
+            "text": "18",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 304,
-            "end": 314,
+            "start": 145,
+            "end": 155,
             "text": "std::fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 462,
+            "start": 169,
+            "end": 172,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 187,
+            "text": "18",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 314,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 409,
+            "text": "std::fixed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 433,
+            "end": 437,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 478,
+            "text": "5.1875",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 505,
+            "end": 506,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 572,
+            "end": 578,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3663,7 +4809,8 @@
             "start": 91,
             "end": 97,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3686,16 +4833,37 @@
             "reading": "technical"
           },
           {
+            "start": 54,
+            "end": 58,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 106,
             "end": 112,
             "text": "6.9375",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 178,
             "end": 179,
             "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 200,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 265,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           },
@@ -3721,6 +4889,13 @@
             "reading": "natural"
           },
           {
+            "start": 342,
+            "end": 345,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 393,
             "end": 399,
             "text": "7|0.00",
@@ -3733,7 +4908,22 @@
         "block": "block_0005_0002",
         "path": "/reviewFeedback",
         "sourceSha256": "643d41aa9e736a868576e757e1c53966a7cb186d0e563c8bfd0e86808d42307a",
-        "spans": []
+        "spans": [
+          {
+            "start": 38,
+            "end": 42,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 107,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -3747,16 +4937,46 @@
         "sourceSha256": "0ddde02ba744fe2a120ac50f7f8f79542b6b654655519366e1c80a948e694b65",
         "spans": [
           {
+            "start": 13,
+            "end": 17,
+            "text": "doce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 39,
             "end": 44,
             "text": "fixed",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 52,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 64,
             "end": 74,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 82,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 110,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3780,6 +5000,13 @@
             "reading": "technical"
           },
           {
+            "start": 30,
+            "end": 33,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 63,
             "end": 68,
             "text": "12.00",
@@ -3794,17 +5021,38 @@
             "reading": "characters"
           },
           {
+            "start": 87,
+            "end": 91,
+            "text": "doce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 109,
             "end": 113,
             "text": "1.20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "diez",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 173,
+            "text": "dos",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 216,
             "end": 219,
             "text": "+01",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
@@ -3820,6 +5068,13 @@
             "text": "G",
             "role": "output",
             "reading": "characters"
+          },
+          {
+            "start": 247,
+            "end": 250,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 292,
@@ -3930,7 +5185,8 @@
             "start": 33,
             "end": 43,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3943,7 +5199,8 @@
             "start": 32,
             "end": 42,
             "text": "scientific",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3951,18 +5208,41 @@
         "block": "block_0006_0000",
         "path": "/text",
         "sourceSha256": "e6175aaddc5deef8f2e5b6e75495907a684339a7c47436c1219701101e3bea88",
-        "spans": []
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "ce7dab635ddaa07b796e8e5e9b2fbea66a5826b79892e0be0e81ea89251e5ed2",
+        "sourceSha256": "745b21a113cf98b999d32b8476799f4c5f5b5df1a00da471871dfc8eaf158b06",
         "spans": [
           {
             "start": 50,
             "end": 56,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 69,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 78,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 117,
@@ -3975,203 +5255,185 @@
             "start": 177,
             "end": 195,
             "text": "std::ostringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 204,
-            "end": 205,
+            "start": 237,
+            "end": 238,
             "text": "F",
             "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 248,
+            "end": 258,
+            "text": "std::fixed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 267,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 215,
-            "end": 225,
-            "text": "std::fixed",
-            "role": "cpp"
-          },
-          {
-            "start": 257,
-            "end": 258,
+            "start": 295,
+            "end": 296,
             "text": "S",
             "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 306,
+            "end": 321,
+            "text": "std::scientific",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 330,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 268,
-            "end": 283,
-            "text": "std::scientific",
-            "role": "cpp"
-          },
-          {
-            "start": 315,
-            "end": 316,
+            "start": 358,
+            "end": 359,
             "text": "G",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 326,
-            "end": 343,
+            "start": 369,
+            "end": 386,
             "text": "std::defaultfloat",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 459,
-            "end": 463,
-            "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 473,
-            "end": 479,
-            "text": "8.8125",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 557,
-            "end": 563,
-            "text": "6.9375",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0003",
-        "path": "/text",
-        "sourceSha256": "1c883db91e54c58a295c803887573f3d06e36e22712b9895ab8a3e86e0193bed",
-        "spans": [
-          {
-            "start": 123,
-            "end": 132,
-            "text": "std::cout",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0000",
-        "path": "/text",
-        "sourceSha256": "dfaf067123ac8333bd52a2ae6504b49f1452d34b35f417368a72ab536f2771fa",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0002",
-        "path": "/text",
-        "sourceSha256": "ec0343da83919ca5349ab0f59c03fb7a11667e5ccfa8ba1587b18ab9a17c8484",
-        "spans": [
-          {
-            "start": 85,
-            "end": 91,
-            "text": "8.8125",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 100,
-            "text": "6.9375",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 116,
-            "end": 119,
-            "text": "141",
+            "start": 402,
+            "end": 405,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 608,
-            "end": 629,
+            "start": 420,
+            "end": 423,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 566,
+            "end": 570,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 580,
+            "end": 586,
+            "text": "8.8125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 660,
+            "end": 666,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 717,
+            "end": 723,
+            "text": "quinta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 737,
+            "end": 743,
+            "text": "8.8125",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 745,
+            "end": 768,
+            "text": "F=8.81;S=8.81e+00;G=8.8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 775,
+            "end": 781,
+            "text": "6.9375",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 783,
+            "end": 806,
+            "text": "F=6.94;S=6.94e+00;G=6.9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 813,
+            "end": 817,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 819,
+            "end": 840,
             "text": "F=0.00;S=0.00e+00;G=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 642,
-            "end": 665,
-            "text": "F=12.00;S=1.20e+01;G=12",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0003",
-        "path": "/question",
-        "sourceSha256": "ee6af0f0911e0883e90751549c89fa821b6e191993f4957307092fcd4b359f62",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0003",
-        "path": "/explanation",
-        "sourceSha256": "5d4c77234220f240353022c6229a8397773b4424548ac00d6b343ec1e673f66d",
-        "spans": [
-          {
-            "start": 49,
-            "end": 59,
-            "text": "std::fixed",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 116,
-            "end": 120,
-            "text": "2.00",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 137,
-            "text": "std::scientific",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 241,
-            "end": 245,
-            "text": "2.00",
+            "start": 847,
+            "end": 851,
+            "text": "doce",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 247,
-            "end": 255,
-            "text": "2.00e+00",
+            "start": 853,
+            "end": 876,
+            "text": "F=12.00;S=1.20e+01;G=12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 432,
-            "end": 433,
-            "text": "2",
+            "start": 927,
+            "end": 936,
+            "text": "dieciséis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 972,
+            "end": 976,
+            "text": "seis",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 451,
-            "end": 466,
-            "text": "2.00|2.00e+00|2",
+            "start": 978,
+            "end": 981,
+            "text": "141",
             "role": "output",
             "reading": "natural"
           }
         ]
-      },
-      {
-        "block": "block_0007_0003",
-        "path": "/reviewFeedback",
-        "sourceSha256": "b942e3cc43ca4daa8036293cc4b51f6551934ba81dfd765ec10d8f9fcd6bc153",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0004",
-        "path": "/text",
-        "sourceSha256": "7d0298a14c66779c95de795e1c497ec4e1a0042980e164566ff3e092960fb079",
-        "spans": []
       },
       {
         "block": "u12_precision_en_valores_pequenos_titulo",
@@ -4182,133 +5444,182 @@
       {
         "block": "u12_precision_en_valores_pequenos_consigna",
         "path": "/text",
-        "sourceSha256": "9a3921774e2f852981e352c5a8270ddb26ad2f7bbde2000b5babbb7a586b7c3a",
+        "sourceSha256": "ee4b468f073889bc1794a19e104eeb9b09515bf0c7016af051bbcc0544f02777",
         "spans": [
           {
-            "start": 32,
-            "end": 66,
+            "start": 33,
+            "end": 67,
             "text": "std::string presentar(double dato)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 152,
-            "end": 158,
+            "start": 155,
+            "end": 161,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 166,
+            "start": 169,
+            "end": 170,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 171,
+            "start": 173,
+            "end": 175,
             "text": "20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 210,
-            "end": 233,
+            "start": 216,
+            "end": 239,
             "text": "F=valor;S=valor;G=valor",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 251,
-            "end": 252,
+            "start": 258,
+            "end": 259,
             "text": "F",
             "role": "output",
             "reading": "characters"
           },
           {
-            "start": 305,
-            "end": 306,
+            "start": 282,
+            "end": 285,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 314,
             "text": "S",
             "role": "output",
             "reading": "characters"
           },
           {
-            "start": 358,
-            "end": 359,
+            "start": 343,
+            "end": 346,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 375,
             "text": "G",
             "role": "output",
             "reading": "characters"
           },
           {
-            "start": 445,
-            "end": 463,
+            "start": 401,
+            "end": 404,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 470,
+            "end": 488,
             "text": "std::ostringstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 538,
-            "end": 547,
+            "start": 576,
+            "end": 585,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 570,
-            "end": 574,
+            "start": 610,
+            "end": 614,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 722,
-            "end": 729,
-            "text": "0.15625",
+            "start": 688,
+            "end": 694,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 731,
-            "end": 740,
-            "text": "0.0078125",
+            "start": 780,
+            "end": 798,
+            "text": "presentar(0.15625)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 802,
+            "end": 822,
+            "text": "presentar(0.0078125)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 826,
+            "end": 844,
+            "text": "presentar(9.96875)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 848,
+            "end": 861,
+            "text": "presentar(20)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1052,
+            "end": 1058,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 742,
-            "end": 749,
-            "text": "9.96875",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 762,
-            "end": 764,
-            "text": "20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1021,
-            "end": 1030,
+            "start": 1098,
+            "end": 1107,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1064,
-            "end": 1065,
+            "start": 1142,
+            "end": 1143,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1317,
-            "end": 1326,
+            "start": 1291,
+            "end": 1327,
+            "text": "F=0.16;S=1.56e-01;G=0.16|1.56250e-01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1428,
+            "end": 1437,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 1620,
+            "end": 1625,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -4332,17 +5643,24 @@
         "sourceSha256": "f1446d630a4314acb2d58cbc65516d20101b143c1980eb61be9464fa332953a5",
         "spans": [
           {
+            "start": 4,
+            "end": 9,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 46,
             "end": 53,
             "text": "0.15625",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 56,
             "end": 65,
             "text": "0.0078125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4363,7 +5681,7 @@
             "start": 163,
             "end": 170,
             "text": "9.96875",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4371,6 +5689,13 @@
             "end": 196,
             "text": "G=10",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 282,
+            "text": "cinco",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4421,6 +5746,27 @@
             "text": "G=10",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 151,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 242,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 266,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4437,9 +5783,30 @@
             "reading": "natural"
           },
           {
+            "start": 114,
+            "end": 117,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 152,
             "end": 163,
             "text": "1.56250e-01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 174,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 240,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           },
@@ -4481,6 +5848,332 @@
         ]
       },
       {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "39b247d7feff83106ca72b37f9be59832ea55f0b0bc220b50fc288470bbcb534",
+        "spans": [
+          {
+            "start": 191,
+            "end": 200,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 283,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 403,
+            "text": "8.8125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 421,
+            "end": 430,
+            "text": "dieciséis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 437,
+            "text": "141",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "dfaf067123ac8333bd52a2ae6504b49f1452d34b35f417368a72ab536f2771fa",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "9e991495685e52d719114316e90dd753b804b1f1809cab7ad03d3339d9793b84",
+        "spans": [
+          {
+            "start": 84,
+            "end": 90,
+            "text": "8.8125",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 115,
+            "text": "F=8.81;S=8.81e+00;G=8.8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 128,
+            "text": "6.9375",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 153,
+            "text": "F=6.94;S=6.94e+00;G=6.9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 181,
+            "text": "141",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 309,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 331,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 459,
+            "end": 465,
+            "text": "6.9375",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 490,
+            "end": 494,
+            "text": "6.93",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 526,
+            "end": 527,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 577,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 580,
+            "end": 581,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 594,
+            "end": 598,
+            "text": "6.94",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 681,
+            "end": 692,
+            "text": "medida * 16",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 704,
+            "end": 710,
+            "text": "6.9375",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 721,
+            "text": "111",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 962,
+            "end": 965,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1002,
+            "end": 1006,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1008,
+            "end": 1029,
+            "text": "F=0.00;S=0.00e+00;G=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1036,
+            "end": 1040,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1042,
+            "end": 1065,
+            "text": "F=12.00;S=1.20e+01;G=12",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "ee6af0f0911e0883e90751549c89fa821b6e191993f4957307092fcd4b359f62",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "5d4c77234220f240353022c6229a8397773b4424548ac00d6b343ec1e673f66d",
+        "spans": [
+          {
+            "start": 40,
+            "end": 43,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 59,
+            "text": "std::fixed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 75,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 120,
+            "text": "2.00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 137,
+            "text": "std::scientific",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 182,
+            "end": 186,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 245,
+            "text": "2.00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 255,
+            "text": "2.00e+00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 333,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 432,
+            "end": 433,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 466,
+            "text": "2.00|2.00e+00|2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "b942e3cc43ca4daa8036293cc4b51f6551934ba81dfd765ec10d8f9fcd6bc153",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/text",
+        "sourceSha256": "7d0298a14c66779c95de795e1c497ec4e1a0042980e164566ff3e092960fb079",
+        "spans": [
+          {
+            "start": 37,
+            "end": 43,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 90,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "u12_precision_en_valores_pequenos_referencia_titulo",
         "path": "/text",
         "sourceSha256": "9a370c064a630691fffc84e08229c4fa6e7d59d568ea5c0e0121241fe4f9a3d8",
@@ -4489,7 +6182,7 @@
       {
         "block": "u12_precision_en_valores_pequenos_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "4fb387b965bb4411addcded2a56a35595288d3e61569b10578b24e38724eb665",
+        "sourceSha256": "b539ffbb261e8ba04984078ec1bb49bdb5888c2ddb9dd7df509d113f219c053e",
         "spans": [
           {
             "start": 5,
@@ -4499,115 +6192,339 @@
             "reading": "natural"
           },
           {
-            "start": 75,
-            "end": 79,
+            "start": 37,
+            "end": 40,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "0.15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 137,
             "text": "0.16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 155,
-            "end": 163,
+            "start": 162,
+            "end": 170,
             "text": "1.56e-01",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 233,
+            "start": 172,
+            "end": 176,
+            "text": "1.56",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 194,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 211,
+            "text": "0.156",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 236,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 273,
             "text": "0.16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 313,
-            "end": 322,
+            "start": 347,
+            "end": 356,
             "text": "0.0078125",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 440,
-            "end": 446,
+            "start": 397,
+            "end": 398,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 401,
+            "end": 402,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 470,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 515,
             "text": "0.0078",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 511,
-            "end": 515,
+            "start": 549,
+            "end": 553,
+            "text": "0.00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 583,
+            "end": 584,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 602,
+            "end": 606,
             "text": "0.01",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 539,
-            "end": 547,
+            "start": 630,
+            "end": 638,
             "text": "7.81e-03",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 683,
-            "end": 690,
+            "start": 648,
+            "end": 652,
+            "text": "7.81",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 657,
+            "end": 660,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 672,
+            "end": 679,
+            "text": "0.00781",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 742,
+            "end": 749,
             "text": "9.96875",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 708,
-            "end": 712,
+            "start": 779,
+            "end": 782,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 842,
+            "end": 846,
+            "text": "9.96",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 868,
+            "end": 869,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 891,
+            "end": 895,
             "text": "9.97",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 728,
-            "end": 736,
+            "start": 898,
+            "end": 906,
             "text": "9.97e+00",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 810,
-            "end": 812,
+            "start": 968,
+            "end": 971,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1014,
+            "end": 1017,
+            "text": "9.9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1041,
+            "end": 1042,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1071,
+            "end": 1074,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1083,
+            "end": 1097,
+            "text": "9.9 + 0.1 = 10",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 1172,
+            "end": 1174,
             "text": "10",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 847,
-            "end": 849,
+            "start": 1231,
+            "end": 1235,
+            "text": "10.0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1269,
+            "end": 1271,
             "text": "20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 873,
-            "end": 875,
+            "start": 1299,
+            "end": 1301,
             "text": "20",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 984,
-            "end": 993,
+            "start": 1308,
+            "end": 1317,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1119,
-            "end": 1130,
+            "start": 1389,
+            "end": 1394,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1478,
+            "end": 1485,
+            "text": "0.15625",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1487,
+            "end": 1498,
             "text": "1.56250e-01",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1133,
-            "end": 1144,
+            "start": 1505,
+            "end": 1514,
+            "text": "0.0078125",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1516,
+            "end": 1527,
             "text": "7.81250e-03",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1534,
+            "end": 1541,
+            "text": "9.96875",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1543,
+            "end": 1554,
+            "text": "9.96875e+00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1561,
+            "end": 1563,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1565,
+            "end": 1576,
+            "text": "2.00000e+01",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1769,
+            "end": 1774,
+            "text": "cinco",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4622,7 +6539,8 @@
             "start": 28,
             "end": 34,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La lección anterior permitió reconocer el producto, la carga de escritorio con C++ y el SDK. Ahora resolveremos una ausencia concreta. Visual Studio puede abrirse como editor sin que esa instalación tenga el compilador de C++. El editor permite escribir archivos; el compilador transforma la fuente; el SDK aporta cabeceras, bibliotecas y herramientas de Windows. Necesitamos comprobar esas funciones por separado. Preparar rutas de búsqueda permite localizar una herramienta; no crea los archivos de una herramienta que todavía falta instalar."
+          "text": "La lección anterior permitió reconocer el producto, la carga de escritorio con C++ y el SDK. Ahora resolveremos una ausencia concreta. Visual Studio puede abrirse como editor sin tener instalado el compilador de C++.\n\nCada pieza cumple una función:\nEl editor permite escribir y guardar los archivos de código fuente.\nEl compilador analiza y traduce ese código para construir el programa.\nEl SDK aporta cabeceras, bibliotecas y herramientas de Windows que utiliza este entorno.\n\nNecesitamos comprobarlas por separado. Cuando escribes el nombre de una herramienta en la consola, la ventana la busca en determinadas carpetas. Preparar esas rutas de búsqueda permite encontrar un compilador ya instalado; no instala los archivos de un compilador ausente."
         },
         {
           "type": "paragraph",
-          "text": "Si ya tienes la instalación y los componentes revisados, conserva esa preparación y pasa después a comprobar la consola. Si existe Visual Studio pero falta C++, modifica esa misma instalación. Si no tienes Visual Studio, obtén el instalador oficial y selecciona las herramientas necesarias durante la instalación inicial. No hace falta crear otra copia sólo para seguir este ejemplo (Microsoft, 2026e)."
+          "text": "Elige el recorrido que corresponde a tu equipo:\nSi ya identificaste Visual Studio y sus componentes de C++ y SDK, conserva esa preparación. El paso siguiente será comprobar su uso desde la consola.\nSi Visual Studio existe pero le faltan las herramientas de C++, abre su instalador y modifica esa misma instalación.\nSi Visual Studio todavía no existe, obtén el instalador oficial y selecciona las herramientas necesarias al instalarlo por primera vez.\n\nNo necesitas crear otra copia de Visual Studio sólo para reproducir las capturas. Debes preparar la instalación que vas a utilizar y comprobar sus componentes (Microsoft, 2026f)."
         },
         {
           "type": "paragraph",
@@ -47,11 +47,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Para una instalación nueva, abre en el navegador la página de descargas de Visual Studio: https://visualstudio.microsoft.com/downloads/. Localiza Visual Studio Community y su descarga gratuita. El archivo pequeño descargado es el iniciador de la instalación: prepara Visual Studio Installer y obtiene los paquetes que selecciones. Descargar ese archivo todavía no instala el compilador (Microsoft, 2026e)."
+          "text": "Si necesitas una instalación nueva, realiza estos pasos en el navegador:\n1. Abre https://visualstudio.microsoft.com/downloads/.\n2. Localiza Visual Studio Community y selecciona su descarga gratuita.\n3. Espera a que termine la descarga e identifica la carpeta en la que se guardó el archivo.\n\nEse archivo pequeño inicia la preparación: obtiene Visual Studio Installer, la aplicación que permite seleccionar y administrar los componentes. Después se descargarán e instalarán los paquetes elegidos. Tener el iniciador en Descargas todavía no significa tener instalado el compilador (Microsoft, 2026f)."
         },
         {
           "type": "paragraph",
-          "text": "Abre el archivo descargado desde la carpeta en la que lo guardó tu navegador. Su nombre puede ser VisualStudioSetup.exe o vs_community.exe según el enlace empleado. Comprueba el origen Microsoft y, cuando Windows muestre la confirmación para ejecutarlo, identifica al editor Microsoft Corporation. Lee las condiciones que presenta el instalador y continúa cuando corresponda. Si el programa pide una actualización propia, espera a que la complete antes de elegir componentes (Microsoft, 2026e)."
+          "text": "Abre la carpeta de descarga y ejecuta el archivo obtenido. Según el enlace utilizado, puede llamarse `VisualStudioSetup.exe` o `vs_community.exe`. Comprueba que procede de la página oficial de Microsoft.\n\nSi Windows solicita permiso para que el programa haga cambios, lee el nombre del editor: debe identificar a Microsoft Corporation. Esa confirmación permite al instalador modificar el equipo; no elige por ti los componentes de C++. Lee las condiciones que presenta el instalador y continúa si las aceptas.\n\nSi Visual Studio Installer necesita actualizarse antes de mostrar los componentes, espera a que complete su actualización. Después podrás elegir la carga de C++ (Microsoft, 2026f)."
         },
         {
           "type": "paragraph",
@@ -106,7 +106,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Marca la carga de escritorio con C++. En Installation details, Detalles de la instalación, despliega su nombre y comprueba la selección de las herramientas MSVC para x64/x86. MSVC identifica el compilador y sus herramientas; x64 y x86 indican destinos de 64 y 32 bits. Selecciona también un SDK de Windows compatible si en tu revisión falta. Puedes localizarlo en Individual components, Componentes individuales, utilizando el filtro enseñado en la lección anterior (Microsoft, 2025g, 2026e)."
+          "text": "Marca la carga Desktop development with C++, Desarrollo para el escritorio con C++. Antes de aplicar el cambio, revisa lo que se va a instalar:\n1. En el panel derecho Installation details, Detalles de la instalación, despliega el nombre de esa carga.\n2. Busca las herramientas MSVC para x64/x86 y comprueba su casilla. MSVC identifica el compilador y sus herramientas; x64 y x86 indican destinos de 64 y 32 bits, respectivamente.\n3. Si falta un SDK de Windows compatible, selecciona también ese componente. Puedes abrir Individual components, Componentes individuales, y utilizar el filtro de búsqueda enseñado en la lección anterior.\n\nEl nombre de una herramienta en la lista no basta: lee también el estado de su casilla. La selección indica qué componentes se incorporarán cuando apliques el cambio (Microsoft, 2025g, 2026f)."
         },
         {
           "type": "paragraph",
@@ -114,7 +114,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Revisa el destino y el espacio que indica el instalador antes de aplicar. En una instalación nueva el botón inicia la instalación; para cambiar una existente, utiliza Modificar. Marcar la casilla prepara la selección, pero todavía no significa que los paquetes hayan terminado de instalarse."
+          "text": "Antes de aplicar la selección, revisa la ubicación de instalación y el espacio que indica el instalador. La ubicación es la carpeta donde quedarán los componentes; la necesidad de espacio depende de lo ya instalado y de los paquetes elegidos.\n\nSi estás preparando Visual Studio por primera vez, utiliza el botón de instalación. Si cambias una instalación existente, utiliza Modificar. Espera a que termine la operación antes de usar las herramientas. Marcar una casilla sólo prepara el cambio: todavía no descarga ni instala por completo el componente."
         },
         {
           "type": "multiple_choice",
@@ -154,7 +154,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si solicita reiniciar, guarda primero el trabajo de las aplicaciones abiertas y realiza el reinicio antes de utilizar las herramientas que dependen de él. Un resultado que requiere reinicio no equivale todavía a un entorno listo para construir. En una instalación controlada por comandos, el código 0 indica operación completada; 3010 indica que se requiere reiniciar antes de usarla. En la prueba mostrada ambas operaciones finalizaron con 0 (Microsoft, 2025f)."
+          "text": "Si el instalador solicita reiniciar Windows, guarda primero el trabajo de las aplicaciones abiertas y realiza el reinicio. Después vuelve a abrir las herramientas que vas a utilizar. Mientras haya un reinicio necesario pendiente, todavía falta una parte de la preparación.\n\nLas instalaciones que se controlan mediante comandos también comunican su resultado con un código numérico:\nEl código `0` indica que la operación se completó correctamente.\nEl código `3010` indica que se completó, pero hace falta reiniciar antes de utilizar la instalación.\n\nEstos códigos son resultados del instalador; no son valores que debas escribir en una casilla. En la prueba mostrada, tanto la instalación inicial de Community como la incorporación de C++ finalizaron con código cero (Microsoft, 2025f)."
         },
         {
           "type": "paragraph",
@@ -187,7 +187,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando la operación termine, vuelve a revisar la tarjeta de Community y abre Modificar para inspeccionar la selección. Comprueba que la carga de C++ y sus herramientas figuran en esa misma instalación. Esta revisión posterior debe corresponder al producto y la ruta que acabas de preparar."
+          "text": "Cuando la operación termine, vuelve a la pestaña Installed, Instalado, de Visual Studio Installer. Localiza la misma tarjeta de Community que preparaste y selecciona Modify, Modificar, para revisar sus componentes.\n\nComprueba que la carga de escritorio con C++ y las herramientas MSVC figuran seleccionadas. Relaciona esta revisión con el nombre del producto y su ubicación. Si hay varias instalaciones, observar las herramientas de otra tarjeta no demuestra que se hayan incorporado a la elegida. Abrir de nuevo la selección permite inspeccionarla; no necesitas aplicar otro cambio si todo está correcto."
         },
         {
           "type": "image",
@@ -246,7 +246,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para consultar las carpetas de cabeceras antes de instalar, abre Inicio, escribe cmd y abre Símbolo del sistema. Ejecuta la orden siguiente desde cualquier carpeta: utiliza una ruta absoluta y no modifica archivos. dir enumera el contenido y /b muestra solo los nombres. Si elegiste una ubicación diferente para Windows Kits, sustituye únicamente la ruta entre comillas por su carpeta Include. Un nombre de versión indica que existe esa carpeta; por sí solo no prueba que el SDK esté completo."
+          "text": "Antes de añadir un SDK, puedes consultar las carpetas de sus cabeceras:\n1. Abre Inicio, escribe cmd y selecciona Símbolo del sistema. En este recorrido se usa esa consola de comandos, no PowerShell.\n2. Escribe la orden completa siguiente y pulsa Intro. Puedes estar en cualquier carpeta, porque la orden contiene la ubicación completa que se va a consultar.\n\n`dir` enumera el contenido de una carpeta. La opción `/b` pide mostrar sólo los nombres, sin las columnas habituales de fechas y tamaños. Las comillas mantienen la ruta completa como un solo argumento aunque contenga espacios. La orden consulta el disco; no instala ni modifica archivos.\n\nLa ruta mostrada corresponde a la ubicación habitual de Windows Kits. Si ya elegiste otra, utiliza su carpeta Include, donde se agrupan las cabeceras por versión. El instalador del SDK muestra esa ubicación en Install Path. Un nombre de versión en la lista demuestra que existe esa carpeta; todavía no prueba que estén completos sus componentes."
         },
         {
           "type": "paragraph",
@@ -269,7 +269,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En Specify Location, selecciona la primera opción, Install the Windows Software Development Kit… to this computer, para instalar en este equipo. La otra opción descarga archivos para una instalación en otro equipo. Revisa Install Path y pulsa Next. En la prueba se conservó C:\\Program Files (x86)\\Windows Kits\\10\\, que ya era la ubicación común de Windows Kits; no se creó una copia alternativa del SDK anterior."
+          "text": "En Specify Location, elige dónde y para qué se obtendrán los archivos:\n1. Selecciona Install the Windows Software Development Kit… to this computer. Esa primera opción prepara la instalación en este equipo. La otra descarga archivos para instalar después en otro equipo.\n2. Revisa Install Path, la carpeta de instalación. En la prueba se conservó `C:\\Program Files (x86)\\Windows Kits\\10\\`, la ubicación común que ya utilizaba Windows Kits. Añadir una versión allí no significó quitar la anterior.\n3. Pulsa Next para pasar a la pantalla siguiente. Todavía no se han aplicado los componentes.\n\nSi tu equipo muestra otra ubicación, identifica esa carpeta y consérvala para las consultas posteriores. No sustituyas una ruta válida por la de la captura sólo para hacer coincidir su texto."
         },
         {
           "type": "image",
@@ -299,7 +299,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En Select the features you want to install, localiza Windows SDK for Desktop C++ amd64 Apps. Aquí amd64 identifica el destino x64 de 64 bits usado en esta práctica. Marca esa casilla y revisa la selección completa antes de pulsar Install. En el ensayo se dejaron desmarcadas las características opcionales que no se iban a utilizar y se marcó amd64 al final. Al hacerlo, el instalador activó también Signing Tools, UWP Managed Apps, UWP C++ Apps y Desktop C++ x86 Apps. La captura muestra esas cinco casillas activas; describe la selección observada en esta versión, sin atribuir a cada paquete una dependencia interna que no se ha comprobado."
+          "text": "En Select the features you want to install, localiza Windows SDK for Desktop C++ amd64 Apps y marca su casilla. Aquí amd64 identifica el destino x64 de 64 bits que usaremos; no indica que el procesador tenga que ser de una marca determinada.\n\nAntes de pulsar Install, revisa toda la selección. En el ensayo se dejaron desmarcadas las características opcionales que no se iban a utilizar y se marcó amd64 al final. Al hacerlo, el instalador activó también otros componentes. La captura muestra estas cinco casillas activas:\nWindows SDK Signing Tools for Desktop Apps.\nWindows SDK for UWP Managed Apps.\nWindows SDK for UWP C++ Apps.\nWindows SDK for Desktop C++ x86 Apps.\nWindows SDK for Desktop C++ amd64 Apps.\n\nEsta lista permite reconocer la selección observada en esa versión del instalador. No demuestra por sí sola por qué se activó internamente cada paquete. Conserva además los componentes que necesiten tus otros proyectos."
         },
         {
           "type": "image",
@@ -329,7 +329,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cierra las consolas de desarrollo que estuvieran abiertas antes de instalar. Desde Inicio, abre x64 Native Tools Command Prompt for VS 2026 de la instalación que utilizarás; el nombre puede estar traducido. Esa consola prepara las rutas del compilador, las cabeceras y las bibliotecas. Ejecuta las dos órdenes siguientes por separado, desde cualquier carpeta: solo consultan el entorno de esa ventana. La siguiente lección desarrolla la preparación de la consola y la construcción completa del programa de prueba."
+          "text": "Una consola que estaba abierta antes de instalar puede conservar las rutas anteriores. Cierra esas ventanas de desarrollo y abre una nueva desde Inicio: busca x64 Native Tools Command Prompt for VS 2026 de la instalación elegida. El nombre puede estar traducido.\n\nEsa entrada abre un Símbolo del sistema preparado para las herramientas de Visual Studio. Configura en esa ventana las ubicaciones del compilador, las cabeceras y las bibliotecas; no vuelve a instalar esos archivos. Aquí las expresiones rodeadas de signos de porcentaje son nombres que la consola sustituye por valores de su entorno.\n\nEjecuta las dos órdenes siguientes por separado y pulsa Intro después de cada una. Puedes estar en cualquier carpeta: sólo consultan la preparación de esa ventana. La lección siguiente desarrolla el recorrido completo de la consola y la construcción del programa pequeño."
         },
         {
           "type": "paragraph",
@@ -341,7 +341,7 @@
         },
         {
           "type": "paragraph",
-          "text": "echo %WindowsSDKVersion% muestra el identificador que seleccionó la consola. where rc localiza el ejecutable del compilador de recursos de Windows, una herramienta que forma parte del SDK. En el ensayo se preparó explícitamente el entorno de Enterprise para 10.0.28000.0 y se obtuvo una ruta de rc.exe dentro de esa versión. No se atribuye esta segunda comprobación al compilador nuevo de Community: utiliza la instalación que ya estaba disponible en el equipo."
+          "text": "En `echo %WindowsSDKVersion%`, `echo` muestra texto y `%WindowsSDKVersion%` se sustituye por la versión de SDK seleccionada en esa ventana. La orden permite leer esa elección; no la cambia. Si aparece literalmente el nombre entre porcentajes, la variable no está definida: comprueba que abriste la consola de desarrollo indicada.\n\n`where rc` busca un ejecutable llamado rc en la carpeta actual y en las carpetas de búsqueda de la consola. `rc.exe` es el compilador de recursos de Windows, una herramienta del SDK. Lee la ruta mostrada y localiza en ella la carpeta de versión. Si aparecen varias coincidencias, no des por hecho que todas pertenecen al SDK que quieres comprobar.\n\nEn el ensayo se preparó explícitamente el entorno de Enterprise para `10.0.28000.0` y se encontró rc.exe dentro de esa versión. Esa comprobación usa Enterprise, que ya estaba disponible en el equipo. No se atribuye al compilador nuevo de Community."
         },
         {
           "type": "image",
@@ -352,7 +352,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el valor de WindowsSDKVersion sigue correspondiendo a otra versión, todavía no has comprobado que esta ventana utilice el SDK recién añadido. Revisa que abriste la consola de la instalación elegida y compara sus rutas con la versión que necesitas. Si una consola nueva no encuentra rc, revisa la instalación de los componentes y la preparación del entorno antes de continuar. La prueba final será construir de nuevo la fuente y ejecutar el resultado; un programa que existía antes del cambio no verifica las herramientas recién seleccionadas."
+          "text": "Si la consola seleccionó otra versión, primero decide qué necesitas comprobar. Un SDK anterior compatible puede seguir sirviendo para tu proyecto. Pero, si quieres verificar el SDK recién añadido, debes seleccionarlo en la ventana que usarás para construir.\n\nDesde la consola de desarrollo de la instalación elegida, sigue este procedimiento:\n1. Ejecuta `echo %VSINSTALLDIR%`. La consola debe mostrar la carpeta de esa instalación de Visual Studio, terminada en una barra invertida. Compara la ubicación con la que identificaste en su instalador. Si sólo aparece el nombre entre porcentajes, vuelve a abrir la entrada de desarrollo correcta desde Inicio.\n2. Ejecuta esta línea completa para seleccionar el SDK del ejemplo:\n`call \"%VSINSTALLDIR%VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 10.0.28000.0`\n3. Vuelve a ejecutar `echo %WindowsSDKVersion%` y `where rc`, cada una por separado. Deben identificar el SDK solicitado y la ruta de su herramienta. Ejecuta también `where cl` y comprueba que su ruta sigue perteneciendo a la instalación de Visual Studio que elegiste.\n\nEn la segunda orden, `%VSINSTALLDIR%` aporta la carpeta que acabas de consultar. El resto de la ruta señala `vcvarsall.bat`, un archivo de órdenes de Visual Studio que prepara las herramientas. Las comillas agrupan su ruta aunque contenga espacios. `call` lo ejecuta y permite continuar en el archivo de órdenes cuando se utiliza también desde uno de esos archivos. El argumento `x64` elige herramientas y destino de 64 bits. El argumento `10.0.28000.0` elige esa versión del SDK: cámbialo por la versión instalada que necesitas comprobar, tal como aparece en Include. Si esa versión no está instalada o la preparación comunica un error, no continúes como si la selección hubiera funcionado (Microsoft, 2026e).\n\nEsta orden prepara la ventana actual; no descarga un SDK ni cambia permanentemente todas las consolas. En la comprobación nueva se utilizó Community con el SDK ya instalado y se confirmaron ambas rutas. La siguiente lección comprobará además una construcción y ejecución nuevas: ejecutar un programa anterior no verifica las herramientas que acabas de seleccionar."
         },
         {
           "type": "multiple_choice",
@@ -1186,6 +1186,76 @@
         "id": "sdk_obtener",
         "beforeSha256": "95b66e68678a3ea5183f15526e7a13911be49e5ce475fa6083d2b1839b644b42",
         "afterSha256": "207ba970f0627cf04516bed2af956bfc5b62f75659eec7ec48d4490e1ba32442"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "f2b4572df21b83d8e5f9a0fb2d6f1823d36cb7e72c7f5afd09042a42f5f71e5a",
+        "afterSha256": "8f82deb36ef24f4032cb251fccfeb75767f6983e84235f6616755868ff2e0cc2"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f986354fd5a7ec4f2b1a1b24a2136a64cb4eca289d2623c0b85f00ca222d839e",
+        "afterSha256": "4d1cc4670e66d1a13795bfb91755ceae9c573034a0235d2014947dd47c7a6f81"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "27f60d0a60005d4d5d1df0973cdd10b343d84786b88497bb1296593a212b8770",
+        "afterSha256": "da225c1db03f348d3276b8f4a2c6ea440a1b83408721e0686e074fc5a3aef4b5"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "0d01ce00d296d50823aba84af2e49ae29b3ea0e2ae49f0a674fbfadf776d9d7a",
+        "afterSha256": "e430be32c23880bed7371b965f7809e8b5cd76ab4f8e99240aee7da4972cf4ed"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "f435a03e44ea92b5233f220ab065a3b36d9bbd9fc279ca418fbc584ad1eb2a26",
+        "afterSha256": "50f05a5645f3e60524ee978561980b7d30913546ef2d8f8e4f73c60635fb71f3"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "140f2a92979870d6da3b75a57944ccc2cd21da880ee6ff6013ac88ca2b4612a0",
+        "afterSha256": "2170fe26d57d4b7153db75dace63a1ac745b48426134a79a31836ac3154c98e8"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "c43e42a2bc37be38e2c2e381398df2ee0946dad4f23e81c9ed87b47ad3bcf4bf",
+        "afterSha256": "e2d767027639408944aac08e565e80df6cfba50303d5e5a89f07a0fbccee96cb"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "ef9d9cd594b0c06f95ca718c659ba378969e5da71c9309f911d98e83a50ff2e2",
+        "afterSha256": "039f5dc5c1c1acb3e500560aaaaee731851c518d3ca4505c0f4a371e05fa499a"
+      },
+      {
+        "id": "sdk_consultar_versiones",
+        "beforeSha256": "ac61dfdd65cb4a4199c60bc436cbae8dec0e2b345823c2444a07d934b1e8b288",
+        "afterSha256": "84d358c25da0d5c29c37c59eb0f3517de5e2c442cc787e9ccef6edad99e70540"
+      },
+      {
+        "id": "sdk_destino",
+        "beforeSha256": "ff8763b62343b069e73173fdce8f691e00773f6cb5f3d5983ef08ae68bd3282f",
+        "afterSha256": "661699259ac410e1fa49fd77ab89b77f4cdd385b0e1e69871f0d6e4d0e82d5bd"
+      },
+      {
+        "id": "sdk_componentes",
+        "beforeSha256": "9ceaa910347bfb33763a7c2e588e1366d846fe1c0dd5293339ed01c84941ebf6",
+        "afterSha256": "96989b322d19ec248a14e14492153ca6055edf19967440fa6e4de446d435f426"
+      },
+      {
+        "id": "sdk_consola",
+        "beforeSha256": "e47ae3ab4e2ff01b7b57081636ad78e2c32a9d9dd60f2930f9cd54dc19154cc7",
+        "afterSha256": "9ac2a168a5dc4a7a540e650a32be62582b7876c6a263f67e28373bde78c99ff4"
+      },
+      {
+        "id": "sdk_interpretar_consola",
+        "beforeSha256": "43c4afca87f05aa3de77209b892359dae061fe4762670b1ca3657dd4c5575acd",
+        "afterSha256": "85cfe9380b0fa47a56be397ccf5dbb6f3ff99bc83f4481f40ba9209dcef8fd4e"
+      },
+      {
+        "id": "sdk_si_difiere",
+        "beforeSha256": "2e951e323b1acffe566805698b3cf8767f4b6d20f31cd0b6a8cb795ffefb45a0",
+        "afterSha256": "d98ce0e76aa15176245bd9171ee4eaecd541b6ec2cfdf8c6a9f7824056d808df"
       }
     ]
   },
@@ -1201,54 +1271,18 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "ad768666eb8daf76c138e9cbd9e3512202f46d0dfdaeb4e1fe0fd173ead8be22",
-        "spans": [
-          {
-            "start": 88,
-            "end": 91,
-            "text": "SDK",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 135,
-            "end": 148,
-            "text": "Visual Studio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 303,
-            "end": 306,
-            "text": "SDK",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "ec052adb1dc80e5128db381a9e1e4b3cbf7d25abd6dd6fc79340c7cafffa9c54",
+        "spans": []
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "6d2656363bbc85bb2897d85ffac7b0b42f42d1d34a85af46a8e62d03b61d3cb4",
+        "sourceSha256": "8b239fbeba73ca9aaea4c8108031fbe6c015f706b136bd31e5face53aab3aace",
         "spans": [
           {
-            "start": 131,
-            "end": 144,
-            "text": "Visual Studio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 206,
-            "end": 219,
-            "text": "Visual Studio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 383,
-            "end": 401,
-            "text": "(Microsoft, 2026e)",
+            "start": 611,
+            "end": 629,
+            "text": "(Microsoft, 2026f)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1421,40 +1455,12 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "fc901c51959be0e5ae2677c146f23a7107d4421e22899efc4b1e5c2fc49ab4d7",
+        "sourceSha256": "f8d3eab7515b43af4827bae1c1bea39dcaddb7ab8e665419a846cc22e053cdb5",
         "spans": [
           {
-            "start": 75,
-            "end": 88,
-            "text": "Visual Studio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 90,
-            "end": 135,
-            "text": "https://visualstudio.microsoft.com/downloads/",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 169,
-            "text": "Visual Studio Community",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 267,
-            "end": 290,
-            "text": "Visual Studio Installer",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 386,
-            "end": 404,
-            "text": "(Microsoft, 2026e)",
+            "start": 579,
+            "end": 597,
+            "text": "(Microsoft, 2026f)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1463,33 +1469,26 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "145b56d3cdb7ed042c8772b7878a4e8f0f5e63079edbf81e5148c366a5243cc5",
+        "sourceSha256": "e112b0d5478d852902fa15871a905989c853a593454210fcaad906822e7a09d0",
         "spans": [
           {
-            "start": 98,
-            "end": 119,
+            "start": 102,
+            "end": 123,
             "text": "VisualStudioSetup.exe",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 138,
+            "start": 128,
+            "end": 144,
             "text": "vs_community.exe",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 275,
-            "end": 296,
-            "text": "Microsoft Corporation",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 475,
-            "end": 493,
-            "text": "(Microsoft, 2026e)",
+            "start": 672,
+            "end": 690,
+            "text": "(Microsoft, 2026f)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1792,96 +1791,12 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "5e80e7c8ec3c90f8fdb35c017e9c0eb998e10e5d4376b6fd61b22a89504269a4",
+        "sourceSha256": "ba7297e2c7f168aa541d67e6fd20c25bf1099d8cba4a2ef69ea4dca257942743",
         "spans": [
           {
-            "start": 41,
-            "end": 61,
-            "text": "Installation details",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 63,
-            "end": 89,
-            "text": "Detalles de la instalación",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 156,
-            "end": 160,
-            "text": "MSVC",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 166,
-            "end": 173,
-            "text": "x64/x86",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 175,
-            "end": 179,
-            "text": "MSVC",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 225,
-            "end": 228,
-            "text": "x64",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 231,
-            "end": 234,
-            "text": "x86",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 255,
-            "end": 257,
-            "text": "64",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 260,
-            "end": 262,
-            "text": "32",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 291,
-            "end": 294,
-            "text": "SDK",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 364,
-            "end": 385,
-            "text": "Individual components",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 387,
-            "end": 411,
-            "text": "Componentes individuales",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 466,
-            "end": 491,
-            "text": "(Microsoft, 2025g, 2026e)",
+            "start": 802,
+            "end": 827,
+            "text": "(Microsoft, 2025g, 2026f)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1939,16 +1854,8 @@
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "2f4d7ff84df992fb219b516f69e5cfed3a07663f1ac9b0adf2867ae9cf6b9f95",
-        "spans": [
-          {
-            "start": 167,
-            "end": 176,
-            "text": "Modificar",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "0ad3ad5338c7fe81dbb7974b6932aaafe00edc4911f15f457ea5295e67099e38",
+        "spans": []
       },
       {
         "block": "block_0002_0006",
@@ -2048,32 +1955,25 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "809d88cb8775da1b7c1592216f73fbb51a07a22b077be8fc3a1fa1bf8b9e6b28",
+        "sourceSha256": "e1a9590e306e0293256c9e8cbede2375a947584784fd2dd60e1651c229070de8",
         "spans": [
           {
-            "start": 299,
-            "end": 300,
+            "start": 393,
+            "end": 394,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 334,
+            "start": 458,
+            "end": 462,
             "text": "3010",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 441,
-            "end": 442,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 443,
-            "end": 461,
+            "start": 766,
+            "end": 784,
             "text": "(Microsoft, 2025f)",
             "role": "citation",
             "reading": "natural"
@@ -2143,23 +2043,8 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "cd3e75952fb27412010fec9fad82ac4c855206eea22d732e72867dd157108612",
-        "spans": [
-          {
-            "start": 60,
-            "end": 69,
-            "text": "Community",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 77,
-            "end": 86,
-            "text": "Modificar",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "b809287774e2b32465ce3b92359e949a0f1699b4e197ebeaef3317dac8b970c9",
+        "spans": []
       },
       {
         "block": "block_0004_0002",
@@ -2676,61 +2561,19 @@
       {
         "block": "sdk_consultar_versiones",
         "path": "/text",
-        "sourceSha256": "470486193286ba96c76584b71e59f3982f99dbc6d8855f97abfba73255867a3a",
+        "sourceSha256": "6eb5c7b23764757cd280bf9db09382a626acbcb27d358504cce0c189ad1feb8f",
         "spans": [
           {
-            "start": 65,
-            "end": 71,
-            "text": "Inicio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 81,
-            "end": 84,
-            "text": "cmd",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 92,
-            "end": 111,
-            "text": "Símbolo del sistema",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 215,
-            "end": 218,
+            "start": 360,
+            "end": 363,
             "text": "dir",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 242,
-            "end": 244,
+            "start": 413,
+            "end": 415,
             "text": "/b",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 312,
-            "end": 324,
-            "text": "Windows Kits",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 385,
-            "end": 392,
-            "text": "Include",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 475,
-            "end": 478,
-            "text": "SDK",
             "role": "data",
             "reading": "natural"
           }
@@ -2885,54 +2728,12 @@
       {
         "block": "sdk_destino",
         "path": "/text",
-        "sourceSha256": "970fcd81e19af8741a8bed130d64b774468e25446a1e773b0510959c3f4b12b9",
+        "sourceSha256": "b22390c4261c2890dbb8fad559d947f6763ff66d1a3ca12f68c193d831033fa4",
         "spans": [
           {
-            "start": 3,
-            "end": 19,
-            "text": "Specify Location",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 51,
-            "end": 113,
-            "text": "Install the Windows Software Development Kit… to this computer",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 222,
-            "end": 234,
-            "text": "Install Path",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 243,
-            "end": 247,
-            "text": "Next",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 274,
-            "end": 313,
-            "text": "C:\\Program Files (x86)\\Windows Kits\\10\\",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 348,
-            "end": 360,
-            "text": "Windows Kits",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 399,
-            "end": 402,
-            "text": "SDK",
+            "end": 387,
+            "text": "C:\\Program Files (x86)\\Windows Kits\\10\\",
             "role": "data",
             "reading": "natural"
           }
@@ -3094,79 +2895,8 @@
       {
         "block": "sdk_componentes",
         "path": "/text",
-        "sourceSha256": "f21cc39f8bbc7b667a8e29af8b85ae5d1eda44c97209e104a268383311451bb4",
-        "spans": [
-          {
-            "start": 3,
-            "end": 42,
-            "text": "Select the features you want to install",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 53,
-            "end": 91,
-            "text": "Windows SDK for Desktop C++ amd64 Apps",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 98,
-            "end": 103,
-            "text": "amd64",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 126,
-            "end": 129,
-            "text": "x64",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 230,
-            "end": 237,
-            "text": "Install",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 343,
-            "end": 348,
-            "text": "amd64",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 400,
-            "end": 413,
-            "text": "Signing Tools",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 415,
-            "end": 431,
-            "text": "UWP Managed Apps",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 433,
-            "end": 445,
-            "text": "UWP C++ Apps",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 448,
-            "end": 468,
-            "text": "Desktop C++ x86 Apps",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "c6f52805ee83ec201a595307dfbdc5fc56cfcd461535eb807ddec8ac3667c573",
+        "spans": []
       },
       {
         "block": "sdk_imagen_componentes",
@@ -3444,23 +3174,8 @@
       {
         "block": "sdk_consola",
         "path": "/text",
-        "sourceSha256": "90d952868e801805d40cc8238924df422e0d8d3cd661208f7f2cac35529dcadd",
-        "spans": [
-          {
-            "start": 83,
-            "end": 89,
-            "text": "Inicio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 96,
-            "end": 139,
-            "text": "x64 Native Tools Command Prompt for VS 2026",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "2ea611c51010ec9f4158ebf953fa30c420e65255714a4d683e1796f0c55be825",
+        "spans": []
       },
       {
         "block": "sdk_comando_entorno",
@@ -3493,62 +3208,48 @@
       {
         "block": "sdk_interpretar_consola",
         "path": "/text",
-        "sourceSha256": "69316712445d15a6307719acf253a7f87e127bd77a2118faf2f011eebd40e769",
+        "sourceSha256": "49cbcf6001be390413c0d587d9379aefe57fd3104479e50d0906105635daca7b",
         "spans": [
           {
-            "start": 0,
-            "end": 24,
+            "start": 4,
+            "end": 28,
             "text": "echo %WindowsSDKVersion%",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 77,
-            "end": 85,
+            "start": 32,
+            "end": 36,
+            "text": "echo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 74,
+            "text": "%WindowsSDKVersion%",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 340,
             "text": "where rc",
             "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 139,
-            "end": 146,
-            "text": "Windows",
-            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 187,
-            "text": "SDK",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 242,
-            "end": 252,
-            "text": "Enterprise",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 258,
-            "end": 270,
-            "text": "10.0.28000.0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 295,
-            "end": 301,
+            "start": 440,
+            "end": 446,
             "text": "rc.exe",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 389,
-            "end": 398,
-            "text": "Community",
-            "role": "data",
+            "start": 750,
+            "end": 762,
+            "text": "10.0.28000.0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3667,28 +3368,84 @@
       {
         "block": "sdk_si_difiere",
         "path": "/text",
-        "sourceSha256": "9b780fb67be858f26fb6d709ac4e0ad61c7d733e2299e59afbd193dd94716f84",
+        "sourceSha256": "13cb9e2335426b8991e67832a75abefde09dfa68d0a19f8132f818674add0175",
         "spans": [
           {
-            "start": 15,
-            "end": 32,
-            "text": "WindowsSDKVersion",
+            "start": 355,
+            "end": 374,
+            "text": "echo %VSINSTALLDIR%",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 128,
-            "text": "SDK",
+            "start": 724,
+            "end": 794,
+            "text": "call \"%VSINSTALLDIR%VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 10.0.28000.0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 285,
-            "end": 287,
-            "text": "rc",
+            "start": 818,
+            "end": 842,
+            "text": "echo %WindowsSDKVersion%",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
+          },
+          {
+            "start": 847,
+            "end": 855,
+            "text": "where rc",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 963,
+            "end": 971,
+            "text": "where cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1088,
+            "end": 1102,
+            "text": "%VSINSTALLDIR%",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1175,
+            "end": 1188,
+            "text": "vcvarsall.bat",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1316,
+            "end": 1320,
+            "text": "call",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1446,
+            "end": 1449,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1506,
+            "end": 1518,
+            "text": "10.0.28000.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1757,
+            "end": 1775,
+            "text": "(Microsoft, 2026e)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },

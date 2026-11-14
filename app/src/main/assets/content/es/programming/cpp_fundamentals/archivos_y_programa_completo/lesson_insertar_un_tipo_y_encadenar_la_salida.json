@@ -171,7 +171,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora construye la batería completa en un solo programa. Define `int probar(const Recuento& resumen)`: cada llamada crea un `std::ostringstream` nuevo para componer el registro seguido de `\";fin\"`, abre la muestra relativa `recuento_lgp.txt`, inserta en ella solamente el registro, cierra el archivo y comprueba su estado. La función devuelve `0` si todo fue correcto y `1` si detectó un fallo.\n\nDesde `main`, llama a `probar` con `{3, 2}`, `{0, 0}` y `{10, 10}`, en ese orden. Si una llamada devuelve `1`, termina el programa con ese código. Cada llamada correcta muestra su informe y un salto de línea. Salida esperada:\n`Memoria=[3;2];fin|Guardado`\n`Memoria=[0;0];fin|Guardado`\n`Memoria=[10;10];fin|Guardado`\n\nLas tres llamadas abren el mismo nombre de archivo para escribir desde el principio. Cada una reemplaza el contenido anterior; al terminar correctamente la batería, la muestra contiene únicamente `[10;10]`, sin salto final. La ruta relativa pertenece al directorio de trabajo de esa ejecución. Pulsa Compilar, ejecutar y comprobar con las tres llamadas.",
+          "text": "Ahora construye la batería completa en un solo programa. Define `int probar(const Recuento& resumen)`: cada llamada crea un `std::ostringstream` nuevo para componer el registro seguido de `\";fin\"`, abre la muestra relativa `recuento_lgp.txt`, inserta en ella solamente el registro, cierra el archivo y comprueba su estado. La función devuelve `0` si todo fue correcto y `1` si detectó un fallo.\n\nDesde `main`, llama a `probar` con `{3, 2}`, `{0, 0}` y `{10, 10}`, en ese orden. La llamada `probar({3, 2})` proporciona un objeto `Recuento` cuyo campo `aceptados` vale `3` y cuyo campo `rechazados` vale `2`. Los valores entre llaves siguen el orden de los campos en la definición del tipo. Las otras dos llamadas forman sus objetos del mismo modo. Si una llamada devuelve `1`, termina el programa con ese código. Cada llamada correcta muestra su informe y un salto de línea. Salida esperada:\n`Memoria=[3;2];fin|Guardado`\n`Memoria=[0;0];fin|Guardado`\n`Memoria=[10;10];fin|Guardado`\n\nLas tres llamadas abren el mismo nombre de archivo para escribir desde el principio. Cada una reemplaza el contenido anterior; al terminar correctamente la batería, la muestra contiene únicamente `[10;10]`, sin salto final. La ruta relativa pertenece al directorio de trabajo de esa ejecución. Pulsa Compilar, ejecutar y comprobar con las tres llamadas.",
           "emphasis": [
             {
               "text": "batería completa",
@@ -378,19 +378,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Prueba las tres entradas indicadas a continuación. Puedes separar sus enteros con espacios, tabuladores o saltos de línea ASCII. La primera debe producir:\nA=[a;2]|[3;a]|a\nB=|...[10;2]|[3;10]|10\nOriginales=10:2|3:10\nConserva los tres puntos antes de la apertura en la segunda línea y el salto final. Escribe una implementación común para los tres casos y pulsa «Compilar, ejecutar y comprobar» al cambiar Entrada."
+          "text": "Comienza con la Entrada 1 y pulsa «Compilar, ejecutar y comprobar». La primera comprobación correcta de ese caso es la necesaria para avanzar en este editor.\n\nLas entradas 2 y 3 son ensayos opcionales. Conserva la misma implementación del operador y cambia únicamente el campo Entrada. Puedes separar los enteros con espacios, tabuladores o saltos de línea como los de los ejemplos.\n\nDebajo de cada entrada aparecen sus tres líneas de salida esperadas. Cada línea, incluida la última, termina con un salto. Mantén juntos los dos recuentos, los dos flujos y la consulta de los campos originales de cada caso: estas observaciones comparan lo que hace una misma implementación con dos configuraciones distintas."
         },
         {
           "type": "paragraph",
-          "text": "Entrada 1:\n10 2 3 10"
+          "text": "Entrada 1 (obligatoria):\n10 2 3 10\n\nSalida esperada:\nA=[a;2]|[3;a]|a\nB=|...[10;2]|[3;10]|10\nOriginales=10:2|3:10"
         },
         {
           "type": "paragraph",
-          "text": "Entrada 2:\n0 0 10 0"
+          "text": "Entrada 2 (opcional):\n0 0 10 0\n\nSalida esperada:\nA=[0;0]|[a;0]|a\nB=|...[0;0]|[10;0]|10\nOriginales=0:0|10:0"
         },
         {
           "type": "paragraph",
-          "text": "Entrada 3:\n9 1 2 8"
+          "text": "Entrada 3 (opcional):\n9 1 2 8\n\nSalida esperada:\nA=[9;1]|[2;8]|a\nB=|...[9;1]|[2;8]|10\nOriginales=9:1|2:8"
         },
         {
           "type": "cpp_compiler",
@@ -1315,6 +1315,31 @@
         "id": "block_0004_0004",
         "beforeSha256": "d0a85ed78bf33af6d0d107eab65bf29cfb167a24f723bd220057e7ec1d904612",
         "afterSha256": "af1de3309690c3d214d96deda67477b6af674817aa76108466d7016d674758c5"
+      },
+      {
+        "id": "requisitos_bateria_de_recuentos",
+        "beforeSha256": "ed91fb454f6e97d65954a51c2a599292cc09140321b4cd4285f428610f10dbf7",
+        "afterSha256": "51c0c55be951b92d5bc81ed67afc3276bf44c68a9d460ab55c3c5517dbcf23a2"
+      },
+      {
+        "id": "u12_insercion_dos_configuraciones_contrato_2",
+        "beforeSha256": "59cf583e53f8460f07a97c4af7502fe1e3dbe1476e8afb157dfb7b920734ce8e",
+        "afterSha256": "e19a0efc55118b9f40e1b3c37684abab894d15b8d4cba26ced678032ccb28767"
+      },
+      {
+        "id": "u12_insercion_dos_configuraciones_entrada_0",
+        "beforeSha256": "9b1294c4799c7b5f9de5accd90265120adf04c32ebda64fc3db144fbf9818516",
+        "afterSha256": "7ffd343faec82c344da2c7d7b38c7ed8e65be6bcff6a5e7b0bcb4523ba1af61b"
+      },
+      {
+        "id": "u12_insercion_dos_configuraciones_entrada_1",
+        "beforeSha256": "0d441fac6645959bbad34b04a93bea66882f7fc7e83373ba3995a57fca260a29",
+        "afterSha256": "80c161f14a47bd779b3e277f78aea20c44d11fa62a41652d31e7c4607b74f1b1"
+      },
+      {
+        "id": "u12_insercion_dos_configuraciones_entrada_2",
+        "beforeSha256": "ccb9d1a33226445b2636e179a32c09426d571681d9479f53af3a9a1c1019f030",
+        "afterSha256": "96fd4c89ceb245b35dc979a717ac6922472b072c2ecdc391469f04e240e2d6b4"
       }
     ]
   },
@@ -2181,7 +2206,7 @@
       {
         "block": "requisitos_bateria_de_recuentos",
         "path": "/text",
-        "sourceSha256": "ed5543d580b429c6cfc0e6fa14222afdc459c4062dd5b99b878c2e8041c43d26",
+        "sourceSha256": "3a3780003a3ed30ab08ce99ea325e8c7ef6ec286df64be0e0b928ff1a94631f2",
         "spans": [
           {
             "start": 65,
@@ -2253,36 +2278,72 @@
             "role": "cpp"
           },
           {
-            "start": 503,
+            "start": 490,
             "end": 504,
+            "text": "probar({3, 2})",
+            "role": "cpp"
+          },
+          {
+            "start": 529,
+            "end": 537,
+            "text": "Recuento",
+            "role": "cpp"
+          },
+          {
+            "start": 551,
+            "end": 560,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 568,
+            "end": 569,
+            "text": "3",
+            "role": "output"
+          },
+          {
+            "start": 585,
+            "end": 595,
+            "text": "rechazados",
+            "role": "cpp"
+          },
+          {
+            "start": 603,
+            "end": 604,
+            "text": "2",
+            "role": "output"
+          },
+          {
+            "start": 772,
+            "end": 773,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 623,
-            "end": 649,
+            "start": 892,
+            "end": 918,
             "text": "Memoria=[3;2];fin|Guardado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 652,
-            "end": 678,
+            "start": 921,
+            "end": 947,
             "text": "Memoria=[0;0];fin|Guardado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 681,
-            "end": 709,
+            "start": 950,
+            "end": 978,
             "text": "Memoria=[10;10];fin|Guardado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 909,
-            "end": 916,
+            "start": 1178,
+            "end": 1185,
             "text": "[10;10]",
             "role": "output",
             "reading": "natural"
@@ -2752,11 +2813,43 @@
       {
         "block": "u12_insercion_dos_configuraciones_contrato_2",
         "path": "/text",
-        "sourceSha256": "374aa2f6764b137b05cfeae8c743d2af9bfb65c9b6b34834a249b23a82a4cb1f",
+        "sourceSha256": "5774c2c38b90877a3e4bfb6f28393e99fd43eb9ce6443c9322031a23a6f538d6",
         "spans": [
           {
-            "start": 155,
-            "end": 214,
+            "start": 24,
+            "end": 25,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 176,
+            "end": 177,
+            "text": "3",
+            "role": "data"
+          }
+        ]
+      },
+      {
+        "block": "u12_insercion_dos_configuraciones_entrada_0",
+        "path": "/text",
+        "sourceSha256": "2817c1a60f32345039c8b5b7410564c2e0c7caa8b81654f35b27454f5f427e8e",
+        "spans": [
+          {
+            "start": 25,
+            "end": 34,
+            "text": "10 2 3 10",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 53,
+            "end": 112,
             "text": "A=[a;2]|[3;a]|a\nB=|...[10;2]|[3;10]|10\nOriginales=10:2|3:10",
             "role": "output",
             "reading": "natural"
@@ -2764,44 +2857,44 @@
         ]
       },
       {
-        "block": "u12_insercion_dos_configuraciones_entrada_0",
-        "path": "/text",
-        "sourceSha256": "96cc27174ccaef7d8103a4f999ec97726e212bc8fccefa2f0b0ae629cd68cf8e",
-        "spans": [
-          {
-            "start": 11,
-            "end": 20,
-            "text": "10 2 3 10",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
         "block": "u12_insercion_dos_configuraciones_entrada_1",
         "path": "/text",
-        "sourceSha256": "5d17718b1bdc38bfb81bef3b018a306c8d5530bbdf6ae40c15daecc9dc91f237",
+        "sourceSha256": "b34902c9c4cafc42b607632e9198f82aab7653f3a2ebd79a23cdb4c7c26047e8",
         "spans": [
           {
-            "start": 11,
-            "end": 19,
+            "start": 22,
+            "end": 30,
             "text": "0 0 10 0",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 49,
+            "end": 106,
+            "text": "A=[0;0]|[a;0]|a\nB=|...[0;0]|[10;0]|10\nOriginales=0:0|10:0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "u12_insercion_dos_configuraciones_entrada_2",
         "path": "/text",
-        "sourceSha256": "6b16c335c169805ec8a336ab466361be6d02c6592bec9620b27209783eab2fba",
+        "sourceSha256": "7f9af8cad83d5734b25ab4cb133567f996f4ed69bb5c3c28b65ef2728b8468f4",
         "spans": [
           {
-            "start": 11,
-            "end": 18,
+            "start": 22,
+            "end": 29,
             "text": "9 1 2 8",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 48,
+            "end": 103,
+            "text": "A=[9;1]|[2;8]|a\nB=|...[9;1]|[2;8]|10\nOriginales=9:1|2:8",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

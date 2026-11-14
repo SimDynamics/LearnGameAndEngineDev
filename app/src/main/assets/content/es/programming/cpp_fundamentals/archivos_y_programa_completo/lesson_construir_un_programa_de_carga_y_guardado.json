@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa el formato Conjunto ya definido: grupos rojo, verde y azul, cada uno presente como máximo una vez; registros con ID de 0 a 9, únicos dentro de su grupo; y cantidades de 0 a 10. Conserva el orden de ambos vectores, los grupos vacíos y los registros cuyas cantidades son cero. La muestra completa debe tener un cierre exterior y sólo blancos hasta EOF.",
+          "text": "Recupera los tres niveles del modelo: un `Conjunto` contiene el vector de grupos; cada `Grupo` guarda su identificador y su vector de registros; cada `Registro` guarda su identificador y un recuento con aceptados y rechazados.\n\nLos únicos grupos son rojo, verde y azul, cada uno presente como máximo una vez. Los registros tienen ID de cero a nueve, únicos dentro de su grupo; cada cantidad está entre cero y diez, incluidos los límites. El mismo ID de registro puede aparecer en grupos distintos.\n\nConserva el orden de ambos vectores, los grupos vacíos y los registros cuyas cantidades son cero. Por ejemplo, un grupo azul sin registros sigue siendo un elemento del conjunto: no equivale a que azul esté ausente. La muestra completa necesita su cierre exterior; después sólo admite blancos hasta el fin de la entrada. Esos blancos pueden ser espacios, tabulaciones o saltos de línea.",
           "emphasis": [
             {
               "text": "orden"
@@ -29,11 +29,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada llamada de prueba crea inspecciones_entrada.txt con el texto recibido. La primera muestra es { conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }. Comprueba apertura, escritura y cierre antes de abrirlo para lectura. Cada llamada inicializa su estado previo con verde y 9[6;2]. Si la muestra es inválida, conserva ese estado y termina sin abrir inspecciones_salida.txt para escribir. Una avería de lectura se informa como problema técnico, sin considerarla una muestra válida."
+          "text": "Cada llamada de prueba recibe una cadena y crea con ella inspecciones_entrada.txt. La primera cadena es:\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\n\nComprueba tres operaciones por separado: que se abrió el archivo, que se escribieron los caracteres y que se cerró correctamente. Sólo entonces ábrelo para leer. Así una escritura de preparación fallida no se confunde con una muestra que incumple el formato.\n\nAntes de cargar, prepara un conjunto con verde y su registro 9[6;2]. Conserva una copia de esos datos para poder compararlos después. Cada llamada comienza de nuevo con ese estado, sin arrastrar el resultado de la llamada anterior.\n\nSi el lector rechaza la muestra, el conjunto debe seguir conteniendo exactamente ese grupo y ese registro. Comprueba sus datos completos y termina esa llamada sin abrir inspecciones_salida.txt para escribir. Si se detecta una avería de lectura mediante `bad()`, informa del problema técnico: no presentes esa ejecución como una carga aceptada ni como un rechazo normal del formato."
         },
         {
           "type": "paragraph",
-          "text": "Si la muestra es válida, reemplaza el estado completo, compón su texto antes de abrir inspecciones_salida.txt, escribe y comprueba el cierre de salida. Reabre ese archivo en la misma ejecución, léelo y compara todos sus datos con el estado cargado. El informe de cantidades se calcula a partir de los registros; no se usa como sustituto de esa comparación."
+          "text": "Si la muestra se acepta, sustituye el conjunto previo completo. No añadas los grupos nuevos al verde anterior. Una muestra válida sin grupos debe dejar el conjunto vacío.\n\nA partir del conjunto aceptado, compón primero la cadena que vas a guardar y comprueba el resultado. Después abre inspecciones_salida.txt, comprueba la apertura, escribe la cadena y comprueba la escritura. Cierra ese flujo y comprueba también el cierre.\n\nReabre la salida para leerla en la misma ejecución. Utiliza el lector completo para obtener otro conjunto y comprueba el éxito de la lectura. Compara entonces todos sus datos con los del conjunto cargado: grupos, registros, identificadores, cantidades y posiciones.\n\nEl informe calcula las sumas recorriendo los registros del conjunto cargado. Esas sumas responden cuántos aceptados y rechazados hay; no permiten decidir si se conservaron los datos. Dos conjuntos pueden sumar lo mismo y asociar sus cantidades a registros o grupos diferentes."
         }
       ]
     },
@@ -45,7 +45,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Elige tus funciones y sus contratos. Separa interpretación de caracteres, validez de los datos, aceptación del conjunto, composición textual, operaciones de archivo e informe. Las funciones de lectura y composición protegen sus objetos destino ante false; ninguna promete restaurar caracteres consumidos ni un archivo que falló al escribirse.",
+          "text": "Elige tus funciones y sus contratos antes de escribir `main`. Separa estas responsabilidades:\n\nInterpretación de caracteres: el operador de extracción obtiene un recuento; `leer_grupo` obtiene un grupo; `leer_conjunto` obtiene el conjunto y consume su cierre. Cada lector trabaja con un candidato local y sólo asigna al destino cuando acepta lo que le corresponde.\n\nValidez de los datos: comprueba identificadores, cantidades y duplicados en su colección. Esta comprobación también se necesita para objetos construidos directamente, sin pasar por un lector.\n\nLa aceptación del conjunto: `leer_muestra_completa` exige el conjunto válido y comprueba que después de su cierre sólo queden blancos hasta el final. Sólo entonces sustituye el destino.\n\nComposición textual: `componer_conjunto` valida el objeto y prepara una cadena en memoria. Devuelve un resultado `bool`; si es `true`, la nueva cadena queda en su parámetro destino.\n\nLas operaciones de archivo: el cliente comprueba apertura, escritura, cierre y lectura. Una cadena bien compuesta no garantiza que el archivo se pueda abrir o guardar.\n\nInforme y comparación: las sumas se calculan recorriendo registros; `mismos_datos` compara todos los campos y sus posiciones. Ninguna de esas funciones necesita imprimir: el cliente presenta sus resultados.\n\nLas funciones de lectura y composición protegen sus objetos destino ante `false`. Esa promesa no restaura los caracteres ya consumidos del flujo ni el contenido de un archivo que falló al escribirse.",
           "emphasis": [
             {
               "text": "aceptación del conjunto"
@@ -74,7 +74,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La batería fija reúne diez muestras, sin cambiar de programa entre intentos. Base usa «{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }». Vacio usa «{ conjunto }». Presente vacio usa «{ conjunto { grupo rojo } }». ID local usa «{ conjunto { grupo rojo 7[1;0] } { grupo azul 7[2;1] } }». Son válidas: compartir un ID entre grupos distintos no lo duplica dentro de un grupo.\n\nGrupo repetido usa «{ conjunto { grupo rojo } { grupo rojo } }». Registro repetido usa «{ conjunto { grupo rojo 7[1;0] 7[2;1] } }». Cantidad invalida usa «{ conjunto { grupo rojo 7[11;0] } }».\n\nSegundo truncado usa «{ conjunto { grupo rojo } { grupo azul 2[1;0]». Texto posterior usa «{ conjunto } resto». Sin cierre exterior usa «{ conjunto { grupo rojo 0[1;0] }». Estas seis muestras se rechazan. Las comillas angulares delimitan aquí cada muestra; no forman parte de sus caracteres."
+          "text": "La batería utiliza diez muestras preparadas en el programa. No escribas estas cadenas en Entrada. Cada nombre identifica una llamada independiente de prueba, con su propio estado previo.\n\nMuestras válidas:\nBase: { conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\nVacio: { conjunto }\nPresente vacio: { conjunto { grupo rojo } }\nID local: { conjunto { grupo rojo 7[1;0] } { grupo azul 7[2;1] } }\n\nBase conserva azul aunque esté vacío. Vacio no contiene ningún grupo. Presente vacio contiene rojo, pero ningún registro. ID local admite el registro siete en rojo y en azul porque no se repite dentro de un mismo grupo.\n\nMuestras que se rechazan:\nGrupo repetido: { conjunto { grupo rojo } { grupo rojo } }\nRegistro repetido: { conjunto { grupo rojo 7[1;0] 7[2;1] } }\nCantidad invalida: { conjunto { grupo rojo 7[11;0] } }\nSegundo truncado: { conjunto { grupo rojo } { grupo azul 2[1;0]\nTexto posterior: { conjunto } resto\nSin cierre exterior: { conjunto { grupo rojo 0[1;0] }\n\nLas dos primeras repiten una identidad en su colección. La tercera contiene once aceptados, fuera del límite. En Segundo truncado faltan el cierre de azul y el del conjunto; en Sin cierre exterior ya terminó rojo, pero falta el cierre exterior. Texto posterior tiene un conjunto completo seguido de caracteres que no son blancos. Ninguna de estas seis muestras autoriza a sustituir el estado previo."
         },
         {
           "type": "paragraph",
@@ -90,7 +90,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe los tipos y las funciones y organiza la batería en estas etapas:\n\n1. Encapsula una ejecución completa en probar(texto_entrada). La llamada crea y cierra el archivo de entrada y prepara el estado previo con verde y su registro 9[6;2]. Intenta cargar la muestra completa sobre ese estado. Si la acepta, compone el texto antes de abrir la salida, lo guarda, lo relee y compara todos sus datos. Si la rechaza, conserva el estado previo y no abre la salida para escribir.\n\n2. Distingue el resultado de probar de los indicadores del informe. La función devuelve cero tanto al aceptar datos como al rechazarlos según el contrato; un problema técnico informa su etapa y devuelve uno. main llama a probar para las diez muestras, en el orden indicado, y termina si alguna llamada devuelve uno. Antes de cada llamada presenta Caso: nombre.\n\n3. Si la muestra se acepta, presenta Entrada aceptada, Grupos: N, Aceptados: N, Rechazados: N y Verificacion: B, una línea por resultado. Si se rechaza, presenta Entrada rechazada y Estado conservado: B, comparando todos los datos previos. N representa la cantidad calculada y B el bool observado. Termina todas las líneas con salto.\n\nLos resultados de las cuatro muestras válidas son:\nBase: 2 grupos, 3 aceptados y 1 rechazado.\nVacio: 0 grupos, 0 aceptados y 0 rechazados.\nPresente vacio: 1 grupo, 0 aceptados y 0 rechazados.\nID local: 2 grupos, 3 aceptados y 1 rechazado. Las otras seis muestras se rechazan y conservan el estado previo. Todos los indicadores Verificacion y Estado conservado deben valer uno. Pulsa Compilar, ejecutar y comprobar con la batería completa.",
+          "text": "Construye los tipos, los lectores, la validación, el compositor y la comparación estudiados. El editor sólo contiene las cabeceras y un `main` mínimo. Los datos de prueba se preparan en el programa; deja Entrada vacía.\n\nEncapsula una ejecución completa en `probar(texto_entrada)`. Dentro de esa llamada realiza las operaciones en este orden:\n\n1. Crea el archivo de entrada con la cadena recibida. Comprueba apertura, escritura y cierre antes de continuar.\n2. Prepara el estado previo verde con 9[6;2] y una copia que conserve esos datos. Abre la entrada y llama al lector de la muestra completa sobre el estado actual. Comprueba por separado si hubo una avería de lectura.\n3. Si la muestra se rechaza, compara el estado actual con la copia previa. Muestra el rechazo y esa comparación. Termina la llamada sin abrir la salida para escribir.\n4. Si se acepta, compón sus datos en una cadena. Sólo tras una composición correcta abre la salida. Comprueba apertura, escritura y cierre por separado.\n5. Reabre la salida, lee una muestra completa en otro conjunto y comprueba esa lectura. Compara el conjunto cargado con el recuperado mediante `mismos_datos`.\n6. Recorre los grupos y sus registros del conjunto cargado para sumar aceptados y rechazados. Presenta el informe y el resultado de la comparación del paso anterior. Si la comparación de recuperación falla, termina con retorno uno.\n\nDistingue dos clases de resultado. `probar` devuelve cero cuando atendió una aceptación o un rechazo normal de datos. Devuelve uno ante un problema técnico e informa de la etapa. En cambio, los indicadores del informe expresan si se conservaron o recuperaron todos los datos; cada uno debe mostrar uno en su ruta prevista.\n\nEn `main`, presenta el rótulo de cada caso y llama a `probar` con las diez muestras, en el orden de la página anterior. Si una llamada devuelve uno, termina el programa; no continúes como si ese ensayo se hubiera preparado correctamente. Cada llamada reinicia su estado previo.\n\nEl caso declarado actualmente en este editor es esa ejecución completa. La salida requerida es:\nCaso: Base\nEntrada aceptada\nGrupos: 2\nAceptados: 3\nRechazados: 1\nVerificacion: 1\nCaso: Vacio\nEntrada aceptada\nGrupos: 0\nAceptados: 0\nRechazados: 0\nVerificacion: 1\nCaso: Presente vacio\nEntrada aceptada\nGrupos: 1\nAceptados: 0\nRechazados: 0\nVerificacion: 1\nCaso: ID local\nEntrada aceptada\nGrupos: 2\nAceptados: 3\nRechazados: 1\nVerificacion: 1\nCaso: Grupo repetido\nEntrada rechazada\nEstado conservado: 1\nCaso: Registro repetido\nEntrada rechazada\nEstado conservado: 1\nCaso: Cantidad invalida\nEntrada rechazada\nEstado conservado: 1\nCaso: Segundo truncado\nEntrada rechazada\nEstado conservado: 1\nCaso: Texto posterior\nEntrada rechazada\nEstado conservado: 1\nCaso: Sin cierre exterior\nEntrada rechazada\nEstado conservado: 1\n\nCada resultado ocupa una línea; también la última termina con un salto. Respeta los rótulos, el espacio después de cada etiqueta y el orden mostrado. Pulsa Compilar, ejecutar y comprobar. Sólo la primera comprobación correcta del caso declarado es necesaria para avanzar.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -99,7 +99,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba cada resultado antes de usarlo. Un flujo de entrada que llega normalmente a EOF no se trata como si hubiese una avería bad(). No borres las banderas durante el análisis para aceptar un dato incompleto. Los ifstream locales pueden cerrar al salir de su bloque; comprueba explícitamente escritura y close() de cada ofstream, porque terminar de insertar caracteres no acredita su cierre correcto.",
+          "text": "Comprueba cada resultado antes de usarlo. Llegar a EOF significa que no quedan caracteres disponibles; no indica por sí solo una avería ni decide si el formato era completo. El lector devuelve su resultado lógico para comunicar la aceptación. Después, `bad()` permite separar una avería de lectura del rechazo normal de la muestra.\n\nNo borres las banderas para continuar después de una extracción inválida: cambiar el estado del flujo no añade el cierre o el número que falta. Cada `ifstream` local puede cerrar su conexión al salir de su bloque. Para los archivos que escribes con `ofstream`, comprueba la inserción antes de llamar a `close()` y comprueba de nuevo el flujo después del cierre. Así puedes distinguir el fallo de escritura del fallo de cierre.",
           "emphasis": [
             {
               "text": "EOF"
@@ -231,11 +231,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye ahora dos ensayos pequeños e independientes del analizador del formato. En el primero abre ensayo_escritura.txt y comprueba la apertura; ciérralo correctamente y comprueba ese cierre; intenta después escribir PRUEBA. Observa !escritura inmediatamente tras la inserción, antes de cualquier otro close(), para atribuir el fallo a la operación que lo produjo. En el segundo abre ensayo_cierre.txt, escribe PRUEBA y comprueba la escritura; cierra y comprueba ese primer cierre; llama otra vez a close() y observa entonces !cierre. Anticipa por separado el estado de cada flujo y el contenido de cada archivo."
+          "text": "Construye dos ensayos pequeños que permitan distinguir operaciones diferentes. No necesitan el analizador del formato Conjunto.\n\nPrimer ensayo: abre ensayo_escritura.txt y comprueba la apertura. El modo de salida utilizado crea o vacía ese archivo de prueba. Ciérralo y comprueba que ese primer cierre fue correcto. Después intenta insertar PRUEBA en ese mismo flujo, cuya conexión ya está cerrada. Guarda inmediatamente el resultado de `!escritura`, antes de llamar otra vez a `close()`. Así el indicador observa la inserción que acabas de intentar.\n\nSegundo ensayo: abre ensayo_cierre.txt y comprueba la apertura. Inserta PRUEBA, comprueba la escritura, cierra y comprueba ese primer cierre. Llama entonces otra vez a `close()` sobre el mismo flujo y guarda el resultado de `!cierre`. Aquí observas el segundo cierre, después de haber comprobado que las operaciones anteriores fueron correctas.\n\nReabre cada archivo para leerlo en esta misma ejecución. En el primero comprueba que se alcanzó el final sin avería y que el texto está vacío. En el segundo exige recuperar la cadena PRUEBA y llegar al final sin avería. No atribuyas a la operación provocada un fallo que ya existía al preparar el ensayo."
         },
         {
           "type": "paragraph",
-          "text": "Escribe ambos ensayos desde este editor mínimo. Reabre sus archivos con ifstream dentro de la misma ejecución y comprueba lo que quedó guardado. Presenta dos líneas: Escritura: B;Vacio: B y Cierre: B;Conservado: B, con un salto entre ellas y sin salto final. Cada B es el bool real observado; Conservado compara el texto con PRUEBA. Comprueba las etapas previas antes de continuar. Pulsa Compilar, ejecutar y comprobar: los cuatro indicadores deben ser uno. Un fallo de preparación es un problema técnico y no acredita el experimento; no limpies banderas para ocultarlo.",
+          "text": "Escribe ambos ensayos en el editor mínimo. Los archivos y las cadenas se preparan dentro del programa; deja Entrada vacía.\n\nEn la primera línea muestra el resultado lógico observado después de intentar escribir en el flujo cerrado y si el archivo releído está vacío. En la segunda muestra el resultado lógico del segundo cierre y si la lectura recuperó PRUEBA. Utiliza los valores observados, sin sustituirlos por unos escritos directamente.\n\nLa salida requerida es:\nEscritura: 1;Vacio: 1\nCierre: 1;Conservado: 1\n\nHay un salto entre ambas líneas y ninguno al final de la segunda. Conserva los espacios después de los dos puntos y los puntos y coma entre indicadores. Pulsa Compilar, ejecutar y comprobar. El editor actual reúne los dos ensayos en un caso declarado: sólo su primera comprobación correcta es necesaria para avanzar. No limpies las banderas para ocultar un fallo de preparación.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -279,7 +279,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor independiente usa el lector del conjunto completo y la comparación de datos. Como preparación, crea inspecciones_salida.txt con MARCA y comprueba apertura, escritura y cierre. Después intenta leer desde istringstream { conjunto { grupo rojo 0[1;0] }, que carece de cierre exterior, sobre el estado previo verde con 9[6;2]. Al rechazar no abras la salida para escribir. Reábrela sólo para leer, recupera MARCA y comprueba EOF sin avería. Muestra Entrada rechazada, Estado conservado: B y Marca conservada: B, en tres líneas con salto final. Pulsa Compilar, ejecutar y comprobar. Ambos indicadores deben ser uno. Usa sólo ese archivo de prueba creado en la misma ejecución.",
+          "text": "En este editor independiente comprueba dos conservaciones distintas: la del conjunto en memoria y la de una salida que ya existía. Construye el lector completo y la comparación de datos estudiados; el editor sólo proporciona las cabeceras y un `main` mínimo. Deja Entrada vacía.\n\n1. Crea inspecciones_salida.txt con el texto MARCA. Comprueba apertura, escritura y cierre. Ese archivo pertenece a esta prueba y se prepara antes de analizar la muestra.\n2. Prepara el estado previo verde con 9[6;2] y conserva una copia. Utiliza un `istringstream` con esta cadena incompleta:\n{ conjunto { grupo rojo 0[1;0] }\n3. Intenta leer la muestra completa sobre el estado actual. Falta la llave del conjunto: exige el rechazo y comprueba que no hubo avería de lectura. Compara todos los datos del estado con la copia previa.\n4. No abras la salida para escribir en la ruta de rechazo. Ábrela sólo para leer, recupera MARCA y comprueba que se alcanzó el final sin avería. Compara el texto recuperado con esa marca.\n\nMuestra el rechazo y los dos resultados lógicos observados. La salida requerida es:\nEntrada rechazada\nEstado conservado: 1\nMarca conservada: 1\n\nTodas las líneas terminan con salto. Pulsa Compilar, ejecutar y comprobar; la primera comprobación correcta de este caso es la necesaria para avanzar. Esta prueba comprueba que no se inició el guardado de datos rechazados; no reproduce una escritura parcial ni la restaura.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -328,7 +328,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta este programa ya preparado. Conserva la muestra válida y la ruta que atraviesa inspecciones_entrada.txt como si fuera una carpeta. Ese componente es un archivo regular creado y cerrado por la misma ejecución. La observación requerida es Error al abrir salida y retorno uno: la lectura ya había aceptado la muestra. Esta actividad diagnostica esa etapa; no debe producir un veredicto de salida incorrecta ni presentarse como rechazo de datos."
+          "text": "Ejecuta este programa ya preparado sin cambiar su muestra válida ni su ruta de salida. Deja Entrada vacía. Primero crea y cierra inspecciones_entrada.txt como archivo regular; después acepta y compone los datos. Al guardar utiliza la ruta:\ninspecciones_entrada.txt/inspecciones_salida.txt\n\nPara recorrer esa ruta, el primer componente tendría que ser una carpeta. En esta ejecución es el archivo que acabas de crear. La apertura de salida debe fallar, aunque los datos ya sean válidos.\n\nSalida esperada:\nError al abrir salida\n\nNo hay salto final. El programa termina con código uno. Pulsa Compilar, ejecutar y comprobar: este caso espera ese mensaje y ese código, por lo que obtenerlos es la comprobación correcta del diagnóstico. No se pide corregir la ruta aquí ni presentar el problema como rechazo del formato."
         },
         {
           "type": "cpp_compiler",
@@ -380,7 +380,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye mismos_datos y una batería de siete comparaciones. Base contiene rojo con 7[0;0] 2[3;1] seguido de azul vacío. Compárala, en orden, con su copia; con la misma muestra cambiando sólo rechazados del registro 2 a dos; con los dos registros intercambiados; con azul antes de rojo; y con azul ausente. Compara después un conjunto inválido rojo con 2[11;0] consigo mismo, y finalmente dos conjuntos vacíos válidos. Muestra Comparaciones: y los siete bool separados por dos puntos, con un salto final. Pulsa Compilar, ejecutar y comprobar: sólo la copia inicial y los dos vacíos son iguales según este contrato.",
+          "text": "Recupera `mismos_datos` y construye en `main` siete comparaciones con datos preparados directamente. La función no imprime ni modifica los conjuntos. Primero rechaza cualquier objeto inválido; después compara las cantidades de grupos y registros antes de acceder a sus posiciones. Para cada posición comprueba los identificadores y ambas cantidades. Sólo una coincidencia completa de dos conjuntos válidos devuelve `true`.\n\nPrepara la base con rojo y sus registros 7[0;0] y 2[3;1], en ese orden, seguido de azul vacío. Cada variante parte de esa misma base; no acumules los cambios de una comparación en la siguiente.\n\nCompara en este orden:\nLa base con una copia idéntica.\nLa base con una variante que sólo cambia los rechazados del registro dos, de uno a dos.\nLa base con una variante que intercambia los dos registros de rojo.\nLa base con una variante que coloca azul antes de rojo.\nLa base con una variante que elimina azul vacío.\nUn conjunto rojo con 2[11;0] consigo mismo: sus campos coinciden, pero la cantidad es inválida.\nDos conjuntos sin grupos: ambos son válidos y no hay datos distintos.\n\nDeja Entrada vacía. Presenta el rótulo y los siete resultados lógicos reales, separados por dos puntos:\nComparaciones:1:0:0:0:0:0:1\n\nTermina con un salto. Pulsa Compilar, ejecutar y comprobar. El caso actual del editor reúne las siete parejas; sólo su primera comprobación correcta es necesaria para avanzar. Construir esta batería permite contrastar tu comparación, pero un resultado aislado no demuestra que observe todos los campos exigidos.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -458,7 +458,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la transferencia propuesta antes: el grupo mayor es el que tiene la mayor SUMA de aceptados de todos sus registros. No se compara el mayor registro individual ni se suman los rechazados. Cada grupo tiene como máximo diez registros y cada cantidad aceptada está en 0..10: su suma está en 0..100 y cabe en int. El conjunto ya debe ser válido antes de llamar a la selección."
+          "text": "El nuevo informe responde qué grupo reúne más aceptados en total. En la muestra Base, verde tiene un registro con cinco aceptados; rojo tiene dos, con tres aceptados cada uno. Para rojo se suma tres más tres y se obtiene seis. Por eso gana rojo, aunque ninguno de sus registros supere individualmente los cinco de verde.\n\nCalcula una suma independiente para cada grupo. Empieza esa suma en cero y añade los aceptados de todos sus registros; no añadas rechazados ni arrastres la suma del grupo anterior. Cada grupo tiene como máximo diez registros y cada cantidad aceptada está entre cero y diez: su suma está entre cero y cien y cabe en `int`. Esta justificación requiere que el conjunto sea válido antes de llamar a la selección."
         },
         {
           "type": "paragraph",
@@ -474,11 +474,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye seleccionar_mayor(const Conjunto& conjunto), que devuelve el Informe_mayor declarado en el editor y no imprime ni modifica los datos. Con algún grupo devuelve hay_grupo=true, su ID y la suma de sus aceptados. Sin grupos devuelve hay_grupo=false, id=-1 y aceptados=0. El editor aporta modelos, lectores, compositor, comparación y las etapas de archivo ya conocidas; no entrega el cuerpo de selección ni la presentación del informe. Define la función fuera de main."
+          "text": "Construye `seleccionar_mayor(const Conjunto& conjunto)`, fuera de `main`. Recibe un conjunto válido por referencia constante y devuelve el `Informe_mayor` declarado en el editor. No imprime ni modifica grupos o registros.\n\nLos tres campos del resultado tienen este significado:\n`hay_grupo` indica si existe un grupo elegido.\n`id` identifica ese grupo: cero corresponde a rojo, uno a verde y dos a azul.\n`aceptados` guarda la suma de aceptados de ese grupo, no la suma de todo el conjunto.\n\nSi no hay grupos, devuelve `hay_grupo=false`, `id=-1` y `aceptados=0`. Si hay al menos uno, el resultado debe indicar su presencia incluso cuando su suma sea cero. Durante el recorrido, el primer grupo proporciona una elección inicial. Cada grupo posterior sustituye esa elección sólo si su suma es mayor; si la iguala, se conserva el primero.\n\nEl editor aporta modelos, lectores, compositor, comparación y etapas de archivo conocidas. Tú construyes el cuerpo de selección y la presentación del informe. Conserva en el archivo todos los grupos y registros: informar de un ganador no autoriza a eliminar o reordenar los demás."
         },
         {
           "type": "paragraph",
-          "text": "Organiza la batería en probar(texto_entrada). Cada llamada prepara su estado previo, carga una muestra completa y, si la acepta, compone, guarda y relee sus datos. Antes de seleccionar el grupo mayor, conserva una copia del conjunto y compón su texto. Calcula el informe y vuelve a componer el conjunto: compara todos los datos con la copia anterior y compara ambos textos para comprobar que la selección no los cambió. Compara además el conjunto con el recuperado del archivo para comprobar la ida y vuelta. main presenta Caso: nombre y llama una vez por cada muestra del puzzle, en su orden, deteniéndose ante retorno uno.\n\nSi acepta, presenta seis líneas: Entrada aceptada; Grupos: N; Mayor: nombre; Aceptados del grupo: N; Datos conservados: B; Verificacion: B. Usa un espacio después de cada etiqueta con valor y termina todas las líneas con salto. Sin grupos, el nombre es ninguno y su suma es cero. No codifiques respuestas para textos particulares: la selección y las comparaciones deben consultar los datos de cada muestra."
+          "text": "Organiza cada ejecución en `probar(texto_entrada)`. Recupera la preparación de entrada y estado previo, la carga completa, la composición, el guardado y la relectura. Comprueba cada resultado antes de continuar. Si se rechaza una muestra, conserva el estado previo y no abras la salida para escribir.\n\nEn la ruta aceptada realiza además estas comprobaciones del informe:\n1. Conserva una copia completa del conjunto cargado y compón su texto antes de seleccionar.\n2. Llama a la selección para obtener su resultado. No cambies el conjunto para colocar al ganador primero.\n3. Vuelve a componer el conjunto y compara sus datos con la copia anterior. Compara también el texto anterior con el posterior. Las dos comparaciones deben ser verdaderas para mostrar `Datos conservados: 1`.\n4. Compara el conjunto con el recuperado del archivo mediante `mismos_datos`. Ese resultado decide el indicador `Verificacion:`. Comprobar el ganador no sustituye ninguna de estas comparaciones.\n\nEl cliente convierte el ID elegido a su nombre mediante la función conocida. Cuando no hay grupo, presenta ninguno y cero aceptados; no utiliza el ID menos uno para acceder a la tabla de nombres. Presenta una línea por resultado y termina cada una con salto.\n\nEn `main`, muestra `Caso:` con su nombre antes de llamar a cada muestra, en el orden solicitado. Detente ante el retorno uno de una llamada. Los cálculos y comparaciones deben utilizar los datos de la muestra, sin escribir directamente los resultados esperados."
         },
         {
           "type": "math_puzzle",
@@ -581,7 +581,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en main los ocho textos del puzzle con el formato Conjunto ya conocido, usando sus mismos nombres de caso y su orden. El último contiene los registros 0[10;0] hasta 9[10;0] en rojo. Pulsa Compilar, ejecutar y comprobar para verificar la batería completa. Datos conservados y Verificacion deben valer uno en las ocho muestras. El empate se resuelve por orden de entrada y los grupos vacíos y registros cero siguen en el archivo.",
+          "text": "Construye en `main` los ocho textos siguientes. No los escribas en Entrada: este editor ejecuta las muestras preparadas por el propio programa. Mantén sus nombres y este orden:\n\nBase:\n{ conjunto { grupo verde 2[5;1] } { grupo rojo 4[3;0] 8[3;2] } { grupo azul } }\n\nVacio:\n{ conjunto }\n\nPresente vacio:\n{ conjunto { grupo verde } }\n\nEmpate:\n{ conjunto { grupo verde 8[4;0] } { grupo rojo 1[4;3] } { grupo azul 0[1;0] } }\n\nEmpate invertido:\n{ conjunto { grupo rojo 1[4;3] } { grupo verde 8[4;0] } { grupo azul 0[1;0] } }\n\nCeros:\n{ conjunto { grupo azul } { grupo verde 7[0;2] } { grupo rojo 1[0;0] } }\n\nVacio antes de positivo:\n{ conjunto { grupo rojo } { grupo verde 1[2;0] } }\n\nMaximo:\n{ conjunto { grupo rojo 0[10;0] 1[10;0] 2[10;0] 3[10;0] 4[10;0] 5[10;0] 6[10;0] 7[10;0] 8[10;0] 9[10;0] } }\n\nLa salida completa requerida es:\nCaso: Base\nEntrada aceptada\nGrupos: 3\nMayor: rojo\nAceptados del grupo: 6\nDatos conservados: 1\nVerificacion: 1\nCaso: Vacio\nEntrada aceptada\nGrupos: 0\nMayor: ninguno\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1\nCaso: Presente vacio\nEntrada aceptada\nGrupos: 1\nMayor: verde\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1\nCaso: Empate\nEntrada aceptada\nGrupos: 3\nMayor: verde\nAceptados del grupo: 4\nDatos conservados: 1\nVerificacion: 1\nCaso: Empate invertido\nEntrada aceptada\nGrupos: 3\nMayor: rojo\nAceptados del grupo: 4\nDatos conservados: 1\nVerificacion: 1\nCaso: Ceros\nEntrada aceptada\nGrupos: 3\nMayor: azul\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1\nCaso: Vacio antes de positivo\nEntrada aceptada\nGrupos: 2\nMayor: verde\nAceptados del grupo: 2\nDatos conservados: 1\nVerificacion: 1\nCaso: Maximo\nEntrada aceptada\nGrupos: 1\nMayor: rojo\nAceptados del grupo: 100\nDatos conservados: 1\nVerificacion: 1\n\nTodas las líneas terminan con salto. Deja Entrada vacía y pulsa Compilar, ejecutar y comprobar. El caso actual del editor reúne estas ocho ejecuciones; sólo su primera comprobación correcta es necesaria para avanzar. Conserva el recorrido de archivo y las comparaciones anteriores y posteriores al informe en cada llamada.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -629,7 +629,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia utiliza otros datos: rojo con 6[4;2], verde con 8[3;1] 1[3;0] y azul vacío. La suma de verde es seis y supera el cuatro de rojo. Se esperan Entrada aceptada, Grupos: 3, Mayor: verde, Aceptados del grupo: 6, Datos conservados: 1 y Verificacion: 1, una etiqueta por línea. El orden de los registros 8 y 1 y el grupo azul vacío siguen en los datos guardados."
+          "text": "Esta referencia utiliza otros datos: rojo con 6[4;2], verde con 8[3;1] y 1[3;0], y azul vacío. La suma de verde es seis y supera los cuatro aceptados de rojo. Su salida es:\nEntrada aceptada\nGrupos: 3\nMayor: verde\nAceptados del grupo: 6\nDatos conservados: 1\nVerificacion: 1\n\nHay un salto entre líneas y ninguno después de la última en esta referencia de una sola muestra. El orden de los registros ocho y uno y el grupo azul vacío siguen en los datos guardados. La referencia posterior de ocho muestras añade el rótulo de cada caso y un salto final a cada informe."
         },
         {
           "type": "code",
@@ -720,11 +720,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe 1 en Entrada y pulsa Compilar, ejecutar y comprobar. La base contiene rojo con 7[2;1] y 2[3;0], seguido de azul vacío. La variante grupo cambia sólo el identificador del grupo vacío a verde; registro cambia sólo el identificador del primer registro rojo a 8; reparto cambia los aceptados de rojo a 1 y 4, manteniendo su suma. La salida requerida es:\n\nBase:1:0:5\ncopia|Datos:1|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\ngrupo|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nregistro|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nreparto|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\n\nTodas las líneas terminan con salto de línea."
+          "text": "Comienza con esta entrada:\n1\n\nCompleta las dos funciones y pulsa Compilar, ejecutar y comprobar. La primera comprobación correcta de este primer caso declarado es la necesaria para avanzar. El selector dos es un ensayo opcional con la misma implementación.\n\nLa base contiene rojo con 7[2;1] y 2[3;0], seguido de azul vacío. El cliente conserva esa base y prepara cuatro variantes independientes:\nCopia conserva todos sus datos.\nGrupo cambia sólo el identificador del grupo vacío, de azul a verde.\nRegistro cambia sólo el identificador del primer registro rojo, de siete a ocho.\nReparto cambia los aceptados de rojo a uno y cuatro, manteniendo su suma de cinco.\n\nCada variante se compara con la misma base recuperada, sin arrastrar la modificación anterior. La salida requerida es:\nBase:1:0:5\ncopia|Datos:1|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\ngrupo|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nregistro|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nreparto|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\n\nTodas las líneas terminan con salto. Los campos del informe son presencia, ID y suma. Coincidir en esos tres campos no autoriza a devolver verdadero al comparar conjuntos completos."
         },
         {
           "type": "paragraph",
-          "text": "Después cambia Entrada a 2 y vuelve a ejecutar. La base contiene azul vacío, rojo con 9[0;3] y verde con 5[0;0], en ese orden. La variante orden coloca rojo antes de azul; presencia conserva sólo azul vacío; vacio elimina todos los grupos. La salida requerida es:\n\nBase:1:2:0\ncopia|Datos:1|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\norden|Datos:0|Informe:1:0:0|Mismo informe:0|Ida y vuelta:1\npresencia|Datos:0|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\nvacio|Datos:0|Informe:0:-1:0|Mismo informe:0|Ida y vuelta:1\n\nTodas las líneas terminan con salto de línea."
+          "text": "Ensayo opcional. Utiliza la misma implementación con esta entrada:\n2\n\nLa base contiene azul vacío, rojo con 9[0;3] y verde con 5[0;0], en ese orden. El cliente conserva esa base y prepara estas variantes independientes:\nCopia conserva todos sus datos.\nOrden coloca rojo antes de azul y conserva verde al final.\nPresencia conserva sólo azul vacío.\nVacio elimina todos los grupos.\n\nLa salida requerida es:\nBase:1:2:0\ncopia|Datos:1|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\norden|Datos:0|Informe:1:0:0|Mismo informe:0|Ida y vuelta:1\npresencia|Datos:0|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\nvacio|Datos:0|Informe:0:-1:0|Mismo informe:0|Ida y vuelta:1\n\nTodas las líneas terminan con salto. Orden cambia el ganador porque todos los grupos suman cero y gana el primero. Presencia conserva el ganador azul, pero elimina datos. Vacio ya no tiene ganador y debe mostrar los tres campos reales de ausencia. No necesitas completar este ensayo opcional para avanzar."
         },
         {
           "type": "cpp_compiler",
@@ -2468,6 +2468,101 @@
         "id": "block_0009_0003",
         "beforeSha256": "18904318d4d72dbfe2078e3d5b9f5192b00a6eeb18fd6ba69cdf5ac1fd267921",
         "afterSha256": "bb8141b70719074b2fb384b1b9c4c80453d0d9b103e9d55b58784cef2aed72b0"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "78cb261772f5b6a35bf1145d304a70312ffbd8dc0d5b39b8a50ed4925aeac0d2",
+        "afterSha256": "6031be1ee49c73a6e7c79bbc08ec0401171998e141deae4e071e5cd86af76d02"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "3e096723f9400b9e2f9501b934b724435f370fe23f5452da245527edb8a35504",
+        "afterSha256": "6ee910c46ccd830b02e7a0bedd9f2d38ae46e1b540efde8828f63979a6419382"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "7c89397c91234aa1b80c2cd16958fcecd3f752d9c8b717c24bdfa8b56fa4d5a7",
+        "afterSha256": "6e2f840c2e752fcb6e94b3a6277bc216fc8430a303db6f5bbd84b5620931107d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "91f9fdd093856aa9954e863159aeb625f638254fe56952c8d9ab7066c660871d",
+        "afterSha256": "5064974a370f41bb76c9e9581cffdfc25034101289e4597335e77c34328db3ef"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "42fd7100b0b675aa9178bacf334d65b9181a7b7ba11ee2e9045a1bd4bd7497a5",
+        "afterSha256": "2070ff2861434c6f232b43ab842eec310b255bdb834630d02327f85e3a4af5c3"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b2684c3889e6a27793e0ceca91fe56a80e3fedd71465c4e13887e71d7553c441",
+        "afterSha256": "f26f930e04a86b0232ec203950372b86517d042f410a380212fbc22c20b8a430"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e26bbcf23d3303b9eba17ffbfc8db5084e69a6858d3f5c6ef7e2a05427bdf13b",
+        "afterSha256": "6c9006992d7ffc636f70052ebadd86141491f35018941c589b09a4f83d49b325"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "533a683c66b5bd66283019bc8073bf2e79ee40aa452fd2fa656b5ddc5a201525",
+        "afterSha256": "1591463430a5cc64f12621ddd22fe18341cfe74b554e5d041f2f4cb92d55c6cf"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "5c4d503ab9ae214ed2fb5f539903fd0a2269f4b9e87e82434968bf5d4d98dbb5",
+        "afterSha256": "74a6b33ceccd0fb4f9e7b73108fa5d9e1b7c22a5ef7b00228dd8c848dc2a9436"
+      },
+      {
+        "id": "block_0004_0011",
+        "beforeSha256": "0d390b7851a4be32b3958790d63436f9d9f7cdc53de478a269cc7ed3e259755a",
+        "afterSha256": "69d222f1ca5de421d03b0e6f1f1f821aa4fd39d1551d79237d691f5148e850a4"
+      },
+      {
+        "id": "block_0004_0016",
+        "beforeSha256": "13df52055963f45a84dd0e5e95a0d980d4d60dfb1288d7ddec56aadb77792440",
+        "afterSha256": "b8c82811120a34de3c43fda6176b6b39e3483493eb77f1ef8a35c57df2605cb0"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "9d06294a63cd1cb367078ee09b02cbbc91b95bc4788728a1c8a26d7b789bb9b1",
+        "afterSha256": "db9630aad9f6825af14d8984829f74450cceaa4ce6b828f72c074850e8a6ff09"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "cda754aa9b09c2d1122be4710d9dc2349cac030abc4355e25b5853e86c79b3ac",
+        "afterSha256": "a11362a692ff225bcbf03042ff2241e5ce7b049c9c75ace9fc90eb81221cccbe"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "21a3eee50e8dca8685bb79b59a5bd9626a0776e5c962dff964b8b81229db7d26",
+        "afterSha256": "fa8669ca86f060a6f638aa68a16849827ee7ccfc588498507bb878b7253bff2c"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "5a3ec476b753b0021e6a5d383bbe408b903715560f88d2819eb7bbc3bebe1bb2",
+        "afterSha256": "fbc03ef9240fce2a58d711c61d5cd7a8116bcaedbb6ec50a4f717dfe1a0c2464"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "1c6426df107994935abdabe8c90ae813094527060d1295af06a17c44b8f596a7",
+        "afterSha256": "432dacb79abcc2ec7b53427e41adb454fa4810313a777fe88f0d4a52fd55abe0"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "766e49c96f6ca118a5ccf571a93091d0dea6908f5bd2d128f691807f4bf486dc",
+        "afterSha256": "cbac94f766c4af64908e54f17eb62bef7418ba966c4eb1b5c6218b8ea8a56818"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_caso_1",
+        "beforeSha256": "e0fdc9a76f783dd030b37bd330f0c7918538c8e03af797d5ebcc93d938ea97b0",
+        "afterSha256": "90b49693e2eef8feef7adf05aa2e24759019011f784544e427b7b790537bf661"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_caso_2",
+        "beforeSha256": "d80f14af5bbd6bbfd1c3880e1ad7e32ca3d0dfddb8598eed15c24ecb9a561764",
+        "afterSha256": "ef76ffa1f0493a0ecc369b104ef1573857f21acebd43b9d5919dee6191bcdd27"
       }
     ]
   },
@@ -2490,123 +2585,81 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "571b1dbee8137c9fff501afc7f5cb8d2fea3b0a05bb8a4f522ddd28886893824",
+        "sourceSha256": "251f0797b8d3cd2f1245d99da154faf9cd46f5e70cb6d1bc3a70dbc425715649",
         "spans": [
           {
-            "start": 15,
-            "end": 23,
+            "start": 42,
+            "end": 50,
             "text": "Conjunto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 48,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
+            "start": 88,
+            "end": 93,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 50,
-            "end": 55,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 58,
-            "end": 62,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 123,
-            "end": 124,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 127,
-            "end": 128,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 173,
-            "end": 174,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 177,
-            "end": 179,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 273,
-            "end": 277,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
+            "start": 151,
+            "end": 159,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "4b53229577f4bafdaee8e44570cacbf72d1664f72fa8bc29db434a9ff64d33db",
+        "sourceSha256": "4cf7a81b71039bd78ebe6e4a32d134901e6a300e2f232f57d7c632c45cef7220",
         "spans": [
           {
-            "start": 28,
-            "end": 52,
+            "start": 57,
+            "end": 81,
             "text": "inspecciones_entrada.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 154,
+            "start": 105,
+            "end": 161,
             "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 271,
-            "end": 276,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 279,
-            "end": 285,
+            "start": 484,
+            "end": 490,
             "text": "9[6;2]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 354,
-            "end": 377,
+            "start": 825,
+            "end": 848,
             "text": "inspecciones_salida.txt",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 910,
+            "end": 915,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "5a2e48d988df02306d09e4934a30bfa11403754c1b9fed59c095847a79b28223",
+        "sourceSha256": "367bc0f29e6bdf53f12b48a6d5c7115f7664640de7d548f65012431b1595cfd3",
         "spans": [
           {
-            "start": 86,
-            "end": 109,
+            "start": 286,
+            "end": 309,
             "text": "inspecciones_salida.txt",
             "role": "data",
             "reading": "natural"
@@ -2622,14 +2675,70 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "c9e4426eaabd74f709ea4a946c3db55ef6ec69880cd736fe55ef84bfa1713056",
+        "sourceSha256": "9be9bf29f3a57259643f52d37cfb2d5ea837a719cc86eb3b4b05f4f63ddac813",
         "spans": [
           {
-            "start": 249,
-            "end": 254,
+            "start": 55,
+            "end": 59,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 183,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 217,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 588,
+            "end": 609,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 768,
+            "end": 785,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 860,
+            "end": 864,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 874,
+            "end": 878,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1167,
+            "end": 1179,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1380,
+            "end": 1385,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2706,159 +2815,75 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "c9ce536e614e31d69f6890d8d09b62c2ece6622de177992925a5f87b6680d5e0",
+        "sourceSha256": "944e2f51d30a41d60921873f2439b0c26d1ff6e7f435b3bec7bbab407d4488fd",
         "spans": [
           {
-            "start": 22,
-            "end": 26,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 77,
-            "end": 81,
-            "text": "Base",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 87,
-            "end": 143,
+            "start": 212,
+            "end": 268,
             "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 146,
-            "end": 151,
-            "text": "Vacio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 157,
-            "end": 169,
+            "start": 276,
+            "end": 288,
             "text": "{ conjunto }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 172,
-            "end": 186,
-            "text": "Presente vacio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 192,
-            "end": 219,
+            "start": 305,
+            "end": 332,
             "text": "{ conjunto { grupo rojo } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 222,
-            "end": 230,
-            "text": "ID local",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 236,
-            "end": 292,
+            "start": 343,
+            "end": 399,
             "text": "{ conjunto { grupo rojo 7[1;0] } { grupo azul 7[2;1] } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 382,
-            "end": 396,
-            "text": "Grupo repetido",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 402,
-            "end": 444,
+            "start": 664,
+            "end": 706,
             "text": "{ conjunto { grupo rojo } { grupo rojo } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 447,
-            "end": 464,
-            "text": "Registro repetido",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 470,
-            "end": 511,
+            "start": 726,
+            "end": 767,
             "text": "{ conjunto { grupo rojo 7[1;0] 7[2;1] } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 514,
-            "end": 531,
-            "text": "Cantidad invalida",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 537,
-            "end": 572,
+            "start": 787,
+            "end": 822,
             "text": "{ conjunto { grupo rojo 7[11;0] } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 576,
-            "end": 592,
-            "text": "Segundo truncado",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 598,
-            "end": 643,
+            "start": 841,
+            "end": 886,
             "text": "{ conjunto { grupo rojo } { grupo azul 2[1;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 646,
-            "end": 661,
-            "text": "Texto posterior",
+            "start": 904,
+            "end": 916,
+            "text": "{ conjunto }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 667,
-            "end": 685,
-            "text": "{ conjunto } resto",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 688,
-            "end": 707,
-            "text": "Sin cierre exterior",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 713,
-            "end": 745,
+            "start": 944,
+            "end": 976,
             "text": "{ conjunto { grupo rojo 0[1;0] }",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 754,
-            "end": 758,
-            "text": "seis",
             "role": "data",
             "reading": "natural"
           }
@@ -2943,320 +2968,61 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "1cd4ac47ada11b82721f417a7f0457a6f25b8e3389f34951b31d702c34c89d76",
+        "sourceSha256": "82e166235cdd78f7dc9904966d3ee05b6d3e1e90976f1b888f382f125d4b7386",
         "spans": [
           {
-            "start": 74,
-            "end": 75,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 113,
-            "end": 134,
-            "text": "probar(texto_entrada)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 214,
-            "end": 219,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 234,
-            "end": 240,
-            "text": "9[6;2]",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 476,
-            "end": 477,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 505,
-            "end": 511,
-            "text": "probar",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 564,
-            "end": 568,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 679,
-            "end": 682,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 684,
-            "end": 688,
+            "start": 137,
+            "end": 141,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 697,
-            "end": 703,
+            "start": 257,
+            "end": 278,
+            "text": "probar(texto_entrada)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 494,
+            "end": 500,
+            "text": "9[6;2]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1137,
+            "end": 1149,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1421,
+            "end": 1427,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 713,
-            "end": 717,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 787,
-            "end": 790,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 823,
-            "end": 835,
-            "text": "Caso: nombre",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 838,
-            "end": 839,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 875,
-            "end": 891,
-            "text": "Entrada aceptada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 893,
-            "end": 902,
-            "text": "Grupos: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 904,
-            "end": 916,
-            "text": "Aceptados: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 918,
-            "end": 931,
-            "text": "Rechazados: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 934,
-            "end": 949,
-            "text": "Verificacion: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1000,
-            "end": 1017,
-            "text": "Entrada rechazada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1020,
-            "end": 1040,
-            "text": "Estado conservado: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1078,
-            "end": 1079,
-            "text": "N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1115,
-            "end": 1116,
-            "text": "B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1120,
-            "end": 1124,
-            "text": "bool",
+            "start": 1713,
+            "end": 1717,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1195,
-            "end": 1201,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
+            "start": 1763,
+            "end": 1769,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1224,
-            "end": 1229,
-            "text": "Base:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1230,
-            "end": 1238,
-            "text": "2 grupos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1240,
-            "end": 1251,
-            "text": "3 aceptados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1254,
-            "end": 1265,
-            "text": "1 rechazado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1267,
-            "end": 1273,
-            "text": "Vacio:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1274,
-            "end": 1282,
-            "text": "0 grupos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1284,
-            "end": 1295,
-            "text": "0 aceptados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1298,
-            "end": 1310,
-            "text": "0 rechazados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1312,
-            "end": 1327,
-            "text": "Presente vacio:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1328,
-            "end": 1335,
-            "text": "1 grupo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1337,
-            "end": 1348,
-            "text": "0 aceptados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1351,
-            "end": 1363,
-            "text": "0 rechazados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1365,
-            "end": 1374,
-            "text": "ID local:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1375,
-            "end": 1383,
-            "text": "2 grupos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1385,
-            "end": 1396,
-            "text": "3 aceptados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1399,
-            "end": 1410,
-            "text": "1 rechazado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1422,
-            "end": 1426,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1500,
-            "end": 1512,
-            "text": "Verificacion",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1515,
-            "end": 1532,
-            "text": "Estado conservado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1545,
-            "end": 1548,
-            "text": "uno",
+            "start": 2084,
+            "end": 2796,
+            "text": "Caso: Base\nEntrada aceptada\nGrupos: 2\nAceptados: 3\nRechazados: 1\nVerificacion: 1\nCaso: Vacio\nEntrada aceptada\nGrupos: 0\nAceptados: 0\nRechazados: 0\nVerificacion: 1\nCaso: Presente vacio\nEntrada aceptada\nGrupos: 1\nAceptados: 0\nRechazados: 0\nVerificacion: 1\nCaso: ID local\nEntrada aceptada\nGrupos: 2\nAceptados: 3\nRechazados: 1\nVerificacion: 1\nCaso: Grupo repetido\nEntrada rechazada\nEstado conservado: 1\nCaso: Registro repetido\nEntrada rechazada\nEstado conservado: 1\nCaso: Cantidad invalida\nEntrada rechazada\nEstado conservado: 1\nCaso: Segundo truncado\nEntrada rechazada\nEstado conservado: 1\nCaso: Texto posterior\nEntrada rechazada\nEstado conservado: 1\nCaso: Sin cierre exterior\nEntrada rechazada\nEstado conservado: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -3265,33 +3031,33 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "863ca997832bd9ef3ff7f07166519a1b15249cfd80cb3f75d0cce34050034131",
+        "sourceSha256": "05949fa600a7c9d34b4d2362fa38878b9629a467065b1c7391b9fc934a440ea4",
         "spans": [
           {
-            "start": 129,
-            "end": 134,
+            "start": 253,
+            "end": 258,
             "text": "bad()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 216,
-            "end": 224,
+            "start": 483,
+            "end": 491,
             "text": "ifstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 307,
-            "end": 314,
-            "text": "close()",
+            "start": 583,
+            "end": 591,
+            "text": "ofstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 323,
-            "end": 331,
-            "text": "ofstream",
+            "start": 636,
+            "end": 643,
+            "text": "close()",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3731,145 +3497,89 @@
       {
         "block": "block_0004_0006",
         "path": "/text",
-        "sourceSha256": "8e3045c45750290fd8743ef47fd110f2e1940758d5791b1f870ba4a6d482916f",
+        "sourceSha256": "3a70fa688a47c33d0336bf8edd7731eb0993c20064f07b144c88630985e01fe3",
         "spans": [
           {
-            "start": 16,
-            "end": 19,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 101,
-            "end": 121,
+            "start": 149,
+            "end": 169,
             "text": "ensayo_escritura.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 219,
-            "end": 225,
+            "start": 341,
+            "end": 347,
             "text": "PRUEBA",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 235,
-            "end": 245,
+            "start": 438,
+            "end": 448,
             "text": "!escritura",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 304,
-            "end": 311,
+            "start": 479,
+            "end": 486,
             "text": "close()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 386,
-            "end": 403,
+            "start": 573,
+            "end": 590,
             "text": "ensayo_cierre.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 413,
-            "end": 419,
+            "start": 624,
+            "end": 630,
             "text": "PRUEBA",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 501,
-            "end": 508,
+            "start": 721,
+            "end": 728,
             "text": "close()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 528,
-            "end": 535,
+            "start": 777,
+            "end": 784,
             "text": "!cierre",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 1081,
+            "end": 1087,
+            "text": "PRUEBA",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0007",
         "path": "/text",
-        "sourceSha256": "19efe192c4182720260cbd9c90482596d0788a7f578f8452c3f01713a46fff64",
+        "sourceSha256": "9d31de374f671dce73cd6713265202b26f7cad5a81826a9323d27b1fe4a445e6",
         "spans": [
           {
-            "start": 72,
-            "end": 80,
-            "text": "ifstream",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 154,
-            "end": 157,
-            "text": "dos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 166,
-            "end": 187,
-            "text": "Escritura: B;Vacio: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 190,
-            "end": 213,
-            "text": "Cierre: B;Conservado: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 264,
-            "end": 265,
-            "text": "B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 276,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 293,
-            "end": 303,
-            "text": "Conservado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 325,
-            "end": 331,
+            "start": 353,
+            "end": 359,
             "text": "PRUEBA",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 424,
-            "end": 430,
-            "text": "cuatro",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 453,
-            "end": 456,
-            "text": "uno",
+            "start": 467,
+            "end": 512,
+            "text": "Escritura: 1;Vacio: 1\nCierre: 1;Conservado: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -3947,89 +3657,61 @@
       {
         "block": "block_0004_0011",
         "path": "/text",
-        "sourceSha256": "efa5cbf0e5424879864597000da4ba55bdb79387b650e953f35bc599d95567fa",
+        "sourceSha256": "1d2386a94a919795ba71871677db9a014f709d55d70df437a7d8c7c4be7ba81b",
         "spans": [
           {
-            "start": 115,
-            "end": 138,
+            "start": 245,
+            "end": 249,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 311,
             "text": "inspecciones_salida.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 148,
+            "start": 325,
+            "end": 330,
             "text": "MARCA",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 231,
-            "text": "istringstream",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 232,
-            "end": 264,
-            "text": "{ conjunto { grupo rojo 0[1;0] }",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 320,
-            "end": 325,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 330,
-            "end": 336,
+            "start": 489,
+            "end": 495,
             "text": "9[6;2]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 418,
-            "end": 423,
+            "start": 530,
+            "end": 543,
+            "text": "istringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 573,
+            "end": 605,
+            "text": "{ conjunto { grupo rojo 0[1;0] }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 902,
+            "end": 907,
             "text": "MARCA",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 460,
-            "end": 477,
-            "text": "Entrada rechazada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 479,
-            "end": 499,
-            "text": "Estado conservado: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 502,
-            "end": 521,
-            "text": "Marca conservada: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 526,
-            "end": 530,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 621,
-            "end": 624,
-            "text": "uno",
+            "start": 1084,
+            "end": 1142,
+            "text": "Entrada rechazada\nEstado conservado: 1\nMarca conservada: 1",
             "role": "output",
             "reading": "natural"
           }
@@ -4077,26 +3759,19 @@
       {
         "block": "block_0004_0016",
         "path": "/text",
-        "sourceSha256": "3b9520d1044119f03cc3749732cc5cb827ad28667f913aa98cd58801acc102e3",
+        "sourceSha256": "42439c7f7c21efe88d1202cd163ee7fe194b3b6e3648c1c6196f24e9b13dbcb5",
         "spans": [
           {
-            "start": 87,
-            "end": 111,
-            "text": "inspecciones_entrada.txt",
+            "start": 240,
+            "end": 288,
+            "text": "inspecciones_entrada.txt/inspecciones_salida.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 266,
+            "start": 504,
+            "end": 525,
             "text": "Error al abrir salida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 277,
-            "end": 280,
-            "text": "uno",
             "role": "output",
             "reading": "natural"
           }
@@ -4234,7 +3909,7 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "1f1b2e701d3008d6020c45256bde32e01ba1090fc81b1f08c268128e3b7370b1",
+        "sourceSha256": "f7e490e0f33d194177881ab22cbf027a66f4575a40bac71eedb028d6b0dedad9",
         "spans": [
           {
             "start": 10,
@@ -4245,142 +3920,44 @@
           },
           {
             "start": 40,
-            "end": 45,
-            "text": "siete",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 61,
-            "end": 65,
-            "text": "Base",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 75,
-            "end": 79,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 84,
-            "end": 97,
-            "text": "7[0;0] 2[3;1]",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 109,
-            "end": 113,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 192,
-            "end": 202,
-            "text": "rechazados",
+            "end": 44,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 216,
-            "end": 217,
-            "text": "2",
+            "start": 416,
+            "end": 420,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 465,
+            "end": 471,
+            "text": "7[0;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 223,
-            "text": "dos",
+            "start": 474,
+            "end": 480,
+            "text": "2[3;1]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 233,
-            "end": 236,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 267,
-            "end": 271,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 281,
-            "end": 285,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 293,
-            "end": 297,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 344,
-            "end": 348,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 353,
-            "end": 360,
+            "start": 956,
+            "end": 963,
             "text": "2[11;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 389,
-            "end": 392,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 427,
-            "end": 441,
-            "text": "Comparaciones:",
+            "start": 1206,
+            "end": 1233,
+            "text": "Comparaciones:1:0:0:0:0:0:1",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 448,
-            "end": 453,
-            "text": "siete",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 454,
-            "end": 458,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 473,
-            "end": 476,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 571,
-            "end": 574,
-            "text": "dos",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4537,32 +4114,11 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "daa2c777f65509a70084fae0a11572bec6bc21e9cf472c860fcf4959cfaaea77",
+        "sourceSha256": "602a0176f9c039a2c29033a18fd67dae723295400d099367209f8b4eb3b14aa6",
         "spans": [
           {
-            "start": 225,
-            "end": 229,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 273,
-            "end": 278,
-            "text": "0..10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 296,
-            "end": 302,
-            "text": "0..100",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 313,
-            "end": 316,
+            "start": 638,
+            "end": 641,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -4600,54 +4156,68 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "676fba7909b0aaba8374da13318d5378ef6e7f623dd94d64f53cc28a231d1407",
+        "sourceSha256": "8ebb6a4d0c1845cd0c99316ead98e1d3d00a4a71e0d3a9085e0d3bdd80c5316c",
         "spans": [
           {
-            "start": 10,
-            "end": 53,
+            "start": 11,
+            "end": 54,
             "text": "seleccionar_mayor(const Conjunto& conjunto)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 71,
-            "end": 84,
+            "start": 67,
+            "end": 71,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 153,
             "text": "Informe_mayor",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 183,
-            "text": "hay_grupo=true",
+            "start": 279,
+            "end": 288,
+            "text": "hay_grupo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 239,
-            "end": 254,
+            "start": 326,
+            "end": 328,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 404,
+            "end": 413,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 518,
+            "end": 533,
             "text": "hay_grupo=false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 261,
+            "start": 537,
+            "end": 542,
             "text": "id=-1",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 264,
-            "end": 275,
+            "start": 547,
+            "end": 558,
             "text": "aceptados=0",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 468,
-            "end": 472,
-            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -4656,96 +4226,47 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "84940f4b795a2e2f03f0d8e51cc7a4bc3eeaf0550a296b1c2dbd0041692e1a23",
+        "sourceSha256": "70de903fc51712035273ff013200c4dc3921dc8d21aa8af48cab0d044b1a767b",
         "spans": [
           {
-            "start": 23,
-            "end": 44,
+            "start": 28,
+            "end": 49,
             "text": "probar(texto_entrada)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 509,
-            "end": 513,
+            "start": 755,
+            "end": 775,
+            "text": "Datos conservados: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 841,
+            "end": 853,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 891,
+            "end": 904,
+            "text": "Verificacion:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1238,
+            "end": 1242,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 523,
-            "end": 535,
-            "text": "Caso: nombre",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 620,
-            "end": 623,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 646,
-            "end": 650,
-            "text": "seis",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 659,
-            "end": 675,
-            "text": "Entrada aceptada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 677,
-            "end": 686,
-            "text": "Grupos: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 688,
-            "end": 701,
-            "text": "Mayor: nombre",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 703,
-            "end": 725,
-            "text": "Aceptados del grupo: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 727,
-            "end": 747,
-            "text": "Datos conservados: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 749,
-            "end": 764,
-            "text": "Verificacion: B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 879,
-            "end": 886,
-            "text": "ninguno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 900,
-            "end": 904,
-            "text": "cero",
+            "start": 1254,
+            "end": 1259,
+            "text": "Caso:",
             "role": "output",
             "reading": "natural"
           }
@@ -5229,76 +4750,76 @@
       {
         "block": "block_0007_0006",
         "path": "/text",
-        "sourceSha256": "aafe321d64b56bf8888a9ccc7d7e85fcb668e0e03673be204c8fd2975b132a71",
+        "sourceSha256": "526794d6a991d3267975fdd142a715d782b53dd7a036d44b9dee20901deb97c0",
         "spans": [
           {
-            "start": 13,
-            "end": 17,
+            "start": 14,
+            "end": 18,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 22,
-            "end": 26,
-            "text": "ocho",
+            "start": 184,
+            "end": 263,
+            "text": "{ conjunto { grupo verde 2[5;1] } { grupo rojo 4[3;0] 8[3;2] } { grupo azul } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 168,
-            "text": "0[10;0]",
+            "start": 272,
+            "end": 284,
+            "text": "{ conjunto }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 175,
-            "end": 182,
-            "text": "9[10;0]",
+            "start": 302,
+            "end": 330,
+            "text": "{ conjunto { grupo verde } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 186,
-            "end": 190,
-            "text": "rojo",
+            "start": 340,
+            "end": 419,
+            "text": "{ conjunto { grupo verde 8[4;0] } { grupo rojo 1[4;3] } { grupo azul 0[1;0] } }",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 265,
-            "end": 282,
-            "text": "Datos conservados",
+            "start": 439,
+            "end": 518,
+            "text": "{ conjunto { grupo rojo 1[4;3] } { grupo verde 8[4;0] } { grupo azul 0[1;0] } }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 599,
+            "text": "{ conjunto { grupo azul } { grupo verde 7[0;2] } { grupo rojo 1[0;0] } }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 626,
+            "end": 676,
+            "text": "{ conjunto { grupo rojo } { grupo verde 1[2;0] } }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 686,
+            "end": 793,
+            "text": "{ conjunto { grupo rojo 0[10;0] 1[10;0] 2[10;0] 3[10;0] 4[10;0] 5[10;0] 6[10;0] 7[10;0] 8[10;0] 9[10;0] } }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 828,
+            "end": 1762,
+            "text": "Caso: Base\nEntrada aceptada\nGrupos: 3\nMayor: rojo\nAceptados del grupo: 6\nDatos conservados: 1\nVerificacion: 1\nCaso: Vacio\nEntrada aceptada\nGrupos: 0\nMayor: ninguno\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1\nCaso: Presente vacio\nEntrada aceptada\nGrupos: 1\nMayor: verde\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1\nCaso: Empate\nEntrada aceptada\nGrupos: 3\nMayor: verde\nAceptados del grupo: 4\nDatos conservados: 1\nVerificacion: 1\nCaso: Empate invertido\nEntrada aceptada\nGrupos: 3\nMayor: rojo\nAceptados del grupo: 4\nDatos conservados: 1\nVerificacion: 1\nCaso: Ceros\nEntrada aceptada\nGrupos: 3\nMayor: azul\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1\nCaso: Vacio antes de positivo\nEntrada aceptada\nGrupos: 2\nMayor: verde\nAceptados del grupo: 2\nDatos conservados: 1\nVerificacion: 1\nCaso: Maximo\nEntrada aceptada\nGrupos: 1\nMayor: rojo\nAceptados del grupo: 100\nDatos conservados: 1\nVerificacion: 1",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 285,
-            "end": 297,
-            "text": "Verificacion",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 310,
-            "end": 313,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 321,
-            "end": 325,
-            "text": "ocho",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 411,
-            "end": 415,
-            "text": "cero",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5352,15 +4873,8 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "6eae34bf78dbb5cd58d09eb976f15cda3fa74178345b1d12e9b5318829b0e307",
+        "sourceSha256": "a250114cc0bfd61619a60a176ada261cb04122f1e1d2701e11090e9286e4dab0",
         "spans": [
-          {
-            "start": 37,
-            "end": 41,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
           {
             "start": 46,
             "end": 52,
@@ -5369,115 +4883,24 @@
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 59,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 64,
-            "end": 77,
-            "text": "8[3;1] 1[3;0]",
+            "end": 70,
+            "text": "8[3;1]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 80,
-            "end": 84,
-            "text": "azul",
+            "start": 73,
+            "end": 79,
+            "text": "1[3;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 108,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 116,
-            "text": "seis",
+            "start": 173,
+            "end": 272,
+            "text": "Entrada aceptada\nGrupos: 3\nMayor: verde\nAceptados del grupo: 6\nDatos conservados: 1\nVerificacion: 1",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 129,
-            "end": 135,
-            "text": "cuatro",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 139,
-            "end": 143,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 156,
-            "end": 172,
-            "text": "Entrada aceptada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 174,
-            "end": 183,
-            "text": "Grupos: 3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 185,
-            "end": 197,
-            "text": "Mayor: verde",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 199,
-            "end": 221,
-            "text": "Aceptados del grupo: 6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 223,
-            "end": 243,
-            "text": "Datos conservados: 1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 246,
-            "end": 261,
-            "text": "Verificacion: 1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 313,
-            "end": 314,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 317,
-            "end": 318,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 330,
-            "end": 334,
-            "text": "azul",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5958,74 +5381,25 @@
       {
         "block": "u12_integrador_informe_y_datos_recuperados_caso_1",
         "path": "/text",
-        "sourceSha256": "5c622cdcfe849a9cc82e90c54f616a69943e035032bea58fda153e686248df7e",
+        "sourceSha256": "7819e2de529d443398f1a86cf7e062bbdd83957e521debabd2d8e62d993cf1b0",
         "spans": [
           {
-            "start": 8,
-            "end": 9,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 87,
-            "end": 93,
+            "start": 284,
+            "end": 290,
             "text": "7[2;1]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 102,
+            "start": 293,
+            "end": 299,
             "text": "2[3;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 139,
-            "end": 144,
-            "text": "grupo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 199,
-            "end": 207,
-            "text": "registro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 264,
-            "end": 265,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 267,
-            "end": 274,
-            "text": "reparto",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 306,
-            "end": 307,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 310,
-            "end": 311,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 359,
-            "end": 610,
+            "start": 781,
+            "end": 1032,
             "text": "Base:1:0:5\ncopia|Datos:1|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\ngrupo|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nregistro|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nreparto|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1",
             "role": "output",
             "reading": "natural"
@@ -6035,53 +5409,25 @@
       {
         "block": "u12_integrador_informe_y_datos_recuperados_caso_2",
         "path": "/text",
-        "sourceSha256": "69ddc943a405e27526d8c8d42eb128ff0b477a72945b43bdadc1b42849689598",
+        "sourceSha256": "a453f6db3478fb4437bc5e0fc98a969fe4146e94589c7ac8171539f6aa796c09",
         "spans": [
           {
-            "start": 25,
-            "end": 26,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 92,
+            "start": 108,
+            "end": 114,
             "text": "9[0;3]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 105,
-            "end": 111,
+            "start": 127,
+            "end": 133,
             "text": "5[0;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 139,
-            "end": 144,
-            "text": "orden",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 172,
-            "end": 181,
-            "text": "presencia",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 208,
-            "end": 213,
-            "text": "vacio",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 265,
-            "end": 516,
+            "start": 404,
+            "end": 655,
             "text": "Base:1:2:0\ncopia|Datos:1|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\norden|Datos:0|Informe:1:0:0|Mismo informe:0|Ida y vuelta:1\npresencia|Datos:0|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\nvacio|Datos:0|Informe:0:-1:0|Mismo informe:0|Ida y vuelta:1",
             "role": "output",
             "reading": "natural"

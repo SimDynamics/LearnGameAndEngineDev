@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los grupos admitidos son rojo, verde y azul, cada uno presente como máximo una vez. Un grupo puede faltar o estar presente sin registros: esos estados significan cosas distintas. Cada registro tiene un identificador de 0 a 9, único dentro de su grupo, y dos cantidades de 0 a 10: aceptados y rechazados. Conservaremos el orden de los grupos y de sus registros."
+          "text": "Conservaremos el acuerdo de los datos que has trabajado durante la unidad:\nLos únicos grupos admitidos son rojo, verde y azul. Cada uno aparece como máximo una vez en el conjunto.\nCada registro tiene un identificador entero de cero a nueve. Ese identificador sólo debe ser único dentro de su grupo: puede existir un registro siete en rojo y otro siete en azul.\nCada registro guarda dos cantidades enteras, aceptados y rechazados. Cada cantidad está entre cero y diez, incluidos ambos extremos.\nSe conserva el orden en que aparecen los grupos y, dentro de cada grupo, el orden de sus registros.\n\nFaltar y estar vacío son situaciones distintas. Si no aparece azul, ese grupo está ausente. Si aparece azul con sus delimitadores pero sin registros, el grupo está presente y vacío. Tampoco se elimina un registro porque sus dos cantidades sean cero. Los tipos y las funciones del proyecto deben conservar esas diferencias."
         },
         {
           "type": "paragraph",
@@ -22,7 +22,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta muestra conserva dos grupos y dos registros en el primero. El registro 7[0;0] está presente aunque no sume inspecciones; el grupo azul está presente aunque no tenga registros. El informe debe mostrar 3 aceptados y 1 rechazado. Su grupo con más aceptados es rojo, con 3."
+          "text": "Lee la muestra de izquierda a derecha. Primero aparece rojo, con dos registros:\n`7[0;0]` identifica el registro siete, con cero aceptados y cero rechazados. Está presente, aunque no aumente los totales.\n`2[3;1]` identifica el registro dos, con tres aceptados y uno rechazado.\nDespués aparece azul con su cierre inmediato: está presente, pero no tiene registros. Verde no aparece.\n\nPara obtener los totales se suman las cantidades de los registros: los aceptados son cero más tres y los rechazados, cero más uno. El informe debe mostrar tres aceptados y uno rechazado. Rojo tiene la mayor suma de aceptados, tres; azul participa con suma cero. Estos totales no sustituyen los datos originales: no permiten recuperar por sí solos la presencia del registro siete ni del grupo azul."
         },
         {
           "type": "multiple_choice",
@@ -46,7 +46,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Continúa en la consola de herramientas nativas x64 que ya comprobaste con where cl y el programa de entorno. La carpeta siguiente se crea dentro de tu perfil de Windows y no requiere una unidad de disco adicional. %USERPROFILE% se sustituye por la carpeta de tu usuario. Ejecuta cada orden por separado."
+          "text": "Utiliza la misma consola de herramientas nativas x64 que comprobaste con `where cl` y con el programa de entorno. Estas órdenes son para el Símbolo del sistema, cmd; escríbelas una por vez y pulsa Intro después de cada una.\n\nLa carpeta del proyecto se creará dentro de tu perfil de Windows. `%USERPROFILE%` se sustituye por la ruta de tu usuario; no debes copiar el nombre de usuario de una captura ni disponer de una unidad E:. Puedes empezar desde la carpeta actual de esa consola, porque ambas órdenes indican la ubicación a partir de tu perfil.\n\nLa primera orden crea la carpeta. La segunda sitúa la consola dentro de ella. Conserva esa ventana y esa ubicación para editar, construir y ejecutar las partes del proyecto."
         },
         {
           "type": "paragraph",
@@ -58,11 +58,11 @@
         },
         {
           "type": "paragraph",
-          "text": "mkdir crea la carpeta y los directorios intermedios que falten. cd /d cambia la carpeta actual y también la unidad si es necesario. Las comillas mantienen la ruta como un único argumento si contiene espacios. Si la carpeta ya existe, comprueba su contenido y continúa allí; no elimines tu trabajo. Todos los comandos de construcción de estas lecciones se ejecutan desde esta raíz."
+          "text": "`mkdir` crea la carpeta InspectionLog y los directorios intermedios que falten. Si termina sin mostrar un mensaje de error, puede limitarse a devolver el indicador de la consola. Si avisa de que la carpeta ya existe, comprueba su contenido antes de reutilizarla; conserva los archivos que ya hayas creado.\n\n`cd /d` cambia el directorio de trabajo y, si hace falta, también la unidad de disco. Las comillas mantienen toda la ruta como un solo argumento aunque tenga espacios. Después de esa orden, el indicador debe terminar en `LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog>`, precedido por tu ruta personal.\n\nEn estas lecciones llamaremos raíz del proyecto a esa carpeta InspectionLog. Cuando una orden utilice un nombre relativo, como `modelo.cpp`, lo buscará desde ella. Crear la carpeta no te sitúa automáticamente dentro: por eso son necesarias las dos órdenes."
         },
         {
           "type": "paragraph",
-          "text": "Crearemos inspection_log.h para los tipos y contratos; modelo.cpp para su implementación; y prueba_modelo.cpp para una primera comprobación que no utiliza disco. Esta separación recupera el trabajo de la unidad de funciones: cada archivo fuente incluye la cabecera que declara lo que necesita, y el enlazador reúne las definiciones en un programa."
+          "text": "El modelo es la parte que representa los grupos y registros y realiza las operaciones sobre ellos. Lo separaremos en estos tres archivos:\n`inspection_log.h`: define los tipos compartidos y declara las funciones que podrán utilizar los otros archivos.\n`modelo.cpp`: contiene las definiciones de esas funciones, con las instrucciones de lectura, validación, comparación y composición.\n`prueba_modelo.cpp`: contiene un programa de comprobación con su propio main. Utiliza el modelo con textos preparados en memoria, sin abrir archivos de inspecciones en el disco.\n\nCada fuente incluye la misma cabecera para conocer los tipos y las declaraciones. Al construir, el compilador traduce los dos archivos cpp y el enlazador reúne sus partes. Incluir la cabecera permite comprobar las llamadas; no incorpora por sí solo las definiciones guardadas en el otro archivo cpp (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
@@ -70,7 +70,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si el editor pregunta si deseas crear el archivo, confirma su creación. Escribe la cabecera en la actividad de la página siguiente y guarda con Ctrl+S. Conserva exactamente la extensión .h; no añadas .txt. Después abre los otros dos archivos con estas órdenes, escribe sus contenidos cuando corresponda y guárdalos con sus nombres completos."
+          "text": "Si Bloc de notas pregunta si deseas crear el archivo, acepta. La orden anterior lo abre dentro de la raíz del proyecto porque la consola ya está situada allí. En la página siguiente escribirás la cabecera a partir de sus contratos; guarda ese texto en `inspection_log.h`.\n\nUtiliza el proceso de guardado practicado con el programa de entorno: Ctrl+S o Archivo → Guardar. Si necesitas comprobar nombre, carpeta o codificación, abre Archivo → Guardar como. Conserva el nombre completo terminado en `.h`, el filtro Todos los archivos cuando se ofrezca y la codificación UTF-8. El archivo no debe terminar en `.h.txt`.\n\nAbre después `modelo.cpp` y `prueba_modelo.cpp` con las órdenes siguientes, cada una en la misma consola. Escribirás y guardarás sus contenidos al llegar a las actividades correspondientes. Utiliza exactamente esos nombres, sin añadir `.txt`. Abrir una ventana del editor todavía no guarda el contenido ni construye el programa."
         },
         {
           "type": "paragraph",
@@ -102,15 +102,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En inspection_log.h define las cinco estructuras con estos miembros, conservando sus nombres y tipos:\nRecuento contiene int aceptados e int rechazados.\nRegistro contiene int id y Recuento recuento.\nGrupo contiene int id y std::vector<Registro> registros.\nConjunto contiene std::vector<Grupo> grupos.\nInforme_mayor contiene bool hay_grupo, int id e int aceptados.\n\nIncluye <istream>, <string> y <vector>, porque las declaraciones utilizan esos tipos. Protege la cabecera con #ifndef, #define y #endif bajo el nombre INSPECTION_LOG_H, como ya practicaste al separar interfaces."
+          "text": "En `inspection_log.h` define las cinco estructuras siguientes. Conserva los nombres, los tipos y el orden de sus miembros para que los demás archivos puedan utilizarlas de la misma manera:\n`Recuento`: contiene `int aceptados` e `int rechazados`. Guarda las dos cantidades de una inspección.\n`Registro`: contiene `int id` y `Recuento recuento`. Une el identificador del registro con sus cantidades.\n`Grupo`: contiene `int id` y `std::vector<Registro> registros`. Une la identidad del grupo con su colección ordenada de registros.\n`Conjunto`: contiene `std::vector<Grupo> grupos`. Conserva la colección ordenada de grupos, incluidos los que estén vacíos.\n`Informe_mayor`: contiene `bool hay_grupo`, `int id` e `int aceptados`. Expresa si se encontró un grupo y, en ese caso, cuál fue y cuántos aceptados sumó.\n\nEl identificador del grupo usa esta correspondencia: cero para rojo, uno para verde y dos para azul. No confundas esa identidad con su posición dentro del vector. Azul puede ser el primer grupo de la muestra y seguir teniendo identificador dos.\n\nIncluye las cabeceras `<istream>`, `<string>` y `<vector>`, porque la interfaz utiliza sus tipos. Protege el contenido con `#ifndef`, `#define` y `#endif`, bajo el nombre `INSPECTION_LOG_H`, como practicaste al separar interfaces. La protección evita incorporar de nuevo el mismo contenido al incluir esa cabecera varias veces durante la compilación de un mismo archivo fuente; no elimina la necesidad de incluirla desde cada fuente que la utiliza (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
-          "text": "Declara las seis funciones de la interfaz. Sus nombres permiten que los otros archivos llamen a las definiciones que escribirás en modelo.cpp.\n\nnombre_grupo devuelve bool y recibe int id y std::string& destino, en ese orden. Para los ID 0, 1 y 2 entrega los nombres rojo, verde y azul, respectivamente; ante otro ID devuelve false y conserva la cadena anterior.\n\nconjunto_valido devuelve bool y recibe const Conjunto& conjunto. Comprueba los dominios y las repeticiones acordadas: como máximo tres grupos distintos y, dentro de cada uno, diez registros con ID distintos y cantidades admitidas."
+          "text": "Declara las seis funciones de la interfaz. Una declaración indicará el tipo del resultado, el nombre de la función y los parámetros, en el orden acordado. Las instrucciones que cumplen estos contratos se escribirán en `modelo.cpp`.\n\n`nombre_grupo` devuelve `bool` y recibe `int id` y `std::string& destino`, en ese orden. Busca el nombre que corresponde al identificador: cero significa rojo, uno verde y dos azul. Si el identificador es válido, escribe ese nombre en la cadena destino y devuelve `true`. Si no es válido, devuelve `false` y deja la cadena tal como estaba. La referencia permite entregar el nombre mediante esa cadena; el resultado booleano comunica si se pudo obtener.\n\n`conjunto_valido` devuelve `bool` y recibe `const Conjunto& conjunto`. Revisa las condiciones de los datos:\nNo hay más de tres grupos y todos tienen un identificador admitido.\nNo se repite la identidad de un grupo dentro del conjunto.\nCada grupo tiene como máximo diez registros, con identificadores entre cero y nueve, sin repetir dentro de ese grupo.\nLas dos cantidades de cada registro están entre cero y diez.\n\nDevuelve true sólo si se cumplen todas esas condiciones. Un conjunto sin grupos y un grupo sin registros también pueden ser válidos. La referencia constante permite consultar los datos sin modificarlos."
         },
         {
           "type": "paragraph",
-          "text": "leer_muestra_completa devuelve bool y recibe std::istream& entrada y Conjunto& destino. Lee del primero y sólo sustituye el segundo si acepta todo el texto. El flujo cambia al consumir caracteres; por eso este parámetro no es una referencia constante.\n\ncomponer_conjunto devuelve bool y recibe const Conjunto& conjunto y std::string& destino. Conserva la cadena anterior si el conjunto es inválido. mismos_datos también devuelve bool; recibe const Conjunto& primero y const Conjunto& segundo. Sólo acepta dos conjuntos válidos que coincidan en todos sus datos y en su orden.\n\nseleccionar_mayor recibe const Conjunto& conjunto y devuelve Informe_mayor. Requiere datos válidos y elige el grupo con mayor suma de aceptados; conserva el primero ante un empate. Si hay un grupo, hay_grupo será true, id identificará ese grupo y aceptados guardará su suma. Sin grupos, el resultado acordado tiene hay_grupo igual a false, id igual a -1 y aceptados igual a 0; el identificador reservado no representa un grupo admitido."
+          "text": "Las otras cuatro funciones completan estas operaciones:\n\n`leer_muestra_completa` devuelve `bool` y recibe `std::istream& entrada` y `Conjunto& destino`. Interpreta los caracteres del flujo. Sólo sustituye el conjunto destino cuando acepta toda la muestra: apertura, contenido, cierre exterior y únicamente blancos hasta el fin del texto. Si rechaza, conserva el conjunto anterior. El flujo sí avanza al leer caracteres; conservar el conjunto no significa devolver el flujo a su posición inicial. Por eso entrada es una referencia que permite modificar el flujo.\n\n`componer_conjunto` devuelve `bool` y recibe `const Conjunto& conjunto` y `std::string& destino`. Comprueba la validez de los datos y construye el texto con sus grupos y registros en el mismo orden. Si acepta, sustituye la cadena destino por ese texto. Si el conjunto es inválido, devuelve false y conserva la cadena anterior. Todavía no guarda en un archivo de disco.\n\n`mismos_datos` devuelve `bool` y recibe `const Conjunto& primero` y `const Conjunto& segundo`. Devuelve true sólo si ambos conjuntos son válidos y coinciden en todos los datos: grupos presentes, orden de los grupos, registros presentes, orden de los registros, identificadores y las dos cantidades de cada registro. Comparar sólo los totales no cumple este contrato. Los dos parámetros son constantes porque la comparación debe conservar ambos conjuntos.\n\n`seleccionar_mayor` recibe `const Conjunto& conjunto` y devuelve `Informe_mayor`. El llamador debe proporcionarle un conjunto válido. La función suma los aceptados de cada grupo y elige el de mayor suma; si empatan, conserva el primero en el orden del conjunto.\nSi existe al menos un grupo, hay_grupo será true, id identificará al elegido y aceptados guardará su suma.\nSi no existe ninguno, hay_grupo será false, id será menos uno y aceptados será cero. Ese identificador reservado acompaña al estado sin grupo; no representa un cuarto grupo admitido."
         },
         {
           "type": "paragraph",
@@ -147,7 +147,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El guardado de esta cabecera permite que cada fuente conozca la misma interfaz. <istream> aporta la declaración del flujo de entrada utilizado por la carga. Las funciones de informe y los archivos de disco se incorporarán mediante otra cabecera cuando construyamos esa parte; este modelo todavía no depende de una ruta ni de la consola."
+          "text": "La cabecera permite que los dos fuentes conozcan los mismos tipos y declaraciones. `<istream>` hace disponible el tipo del flujo de entrada que utiliza la carga; `<string>` aporta el tipo de cadena y `<vector>`, las colecciones. Cada fuente que necesite esa interfaz incluirá `inspection_log.h` (Stroustrup, 2024).\n\nEste modelo puede trabajar con un flujo de cadena preparado en memoria. Sus funciones no necesitan decidir una ruta de disco ni escribir un mensaje en la consola. Las operaciones de informe y de archivos se incorporarán mediante otra cabecera al construir esa parte del programa. Separarlas permite comprobar primero la interpretación de los datos."
         }
       ]
     },
@@ -159,19 +159,19 @@
         },
         {
           "type": "paragraph",
-          "text": "En modelo.cpp incluye inspection_log.h, <ostream> y <sstream>. Recupera los procedimientos que construiste en la integración de carga y guardado: buscar el nombre del grupo, validar un recuento, leer sus delimitadores, leer cada grupo y luego el conjunto. Las estructuras ya están en la cabecera; no vuelvas a definirlas en el fuente."
+          "text": "En `modelo.cpp` incluye `inspection_log.h`, `<ostream>` y `<sstream>`. La cabecera propia aporta los tipos y contratos; las otras dos permiten utilizar la salida de un recuento y los flujos de cadena. No vuelvas a definir las estructuras: sus definiciones compartidas ya están en la cabecera.\n\nOrganiza la implementación a partir de las operaciones practicadas en la unidad:\nRelacionar un nombre de grupo con su identificador y obtener el nombre a partir del identificador.\nComprobar las dos cantidades de un recuento y leer su escritura entre corchetes con el separador acordado.\nLeer los registros de un grupo, sin identificadores repetidos, hasta su cierre.\nLeer los grupos del conjunto, sin grupos repetidos, hasta el cierre exterior.\nAceptar la muestra completa, componer su texto, comparar los datos y seleccionar el grupo con mayor suma.\n\nLas funciones auxiliares que necesites pueden estar en este fuente. No tienes que añadirlas a la cabecera si los otros archivos no las utilizan. Las seis funciones públicas sí deben coincidir con las declaraciones acordadas."
         },
         {
           "type": "paragraph",
-          "text": "Cada lector construye un candidato local. Sólo lo asigna a su destino al comprobar sus delimitadores, dominio y unicidad. leer_muestra_completa añade una condición: después del cierre exterior únicamente quedan blancos hasta fin de archivo. Por ello, { conjunto } resto debe fallar sin sustituir el estado previo. Consumir caracteres del flujo y modificar el destino son operaciones diferentes; el contrato conserva el objeto, no retrocede el flujo."
+          "text": "Para conservar el destino ante un error, cada lector prepara primero un candidato local. Por ejemplo, al leer un grupo, añade sus registros al grupo candidato. Si detecta un identificador repetido o llega al fin del texto sin el cierre, devuelve el rechazo sin sustituir el grupo destino. Sólo entrega el candidato al comprobar el cierre y las condiciones de todos sus registros.\n\nEl conjunto sigue el mismo criterio con sus grupos. Aun así, cerrar el conjunto no basta para aceptar una muestra completa. En `{ conjunto } resto`, el cierre es correcto, pero queda la palabra resto. `leer_muestra_completa` debe rechazar ese texto y conservar el conjunto anterior. Si después del cierre sólo quedan espacios, tabuladores o saltos de línea hasta el fin, esa condición sí se cumple.\n\nEl lector ya habrá consumido caracteres al descubrir un rechazo. Son cambios distintos: uno afecta a la posición y el estado del flujo; otro, a los datos del conjunto destino. El contrato conserva el conjunto, pero no promete retroceder el flujo."
         },
         {
           "type": "paragraph",
-          "text": "La composición recorre los grupos y registros en su orden y conserva incluso los vacíos. Antes de escribir en el flujo de cadena, conjunto_valido comprueba todos los datos. mismos_datos compara las dos cantidades de cada registro, los identificadores, las posiciones y la presencia. El informe máximo suma aceptados por grupo, participa aunque esté vacío y sólo sustituye al mejor cuando encuentra un total estrictamente mayor."
+          "text": "Antes de componer el texto, `conjunto_valido` debe revisar todos los datos. Después, la composición recorre los grupos y registros en el orden almacenado. Escribe también los grupos vacíos y los registros con cantidades cero. La cadena destino se sustituye cuando se ha podido preparar el texto; rechazar un conjunto inválido debe conservarla.\n\n`mismos_datos` compara los datos que se pueden recuperar, no sólo un informe numérico. Dos conjuntos con los mismos totales pueden diferir porque uno perdió un grupo vacío, cambió el orden de dos registros o intercambió sus cantidades. Cualquiera de esas diferencias debe producir una comparación falsa.\n\nPara elegir el grupo mayor, suma por separado los aceptados de cada grupo. Un grupo vacío participa con suma cero. Conserva el primer grupo cuando una suma posterior sea igual; sustituye al elegido sólo cuando encuentre una suma mayor. Esta elección no cambia los grupos ni sus registros."
         },
         {
           "type": "paragraph",
-          "text": "El editor siguiente proporciona la cabecera y prueba_modelo.cpp, un comprobador de diez muestras. Lee sus esperados: las cuatro válidas tienen un conjunto construido directamente en C++, distinto del texto que debe interpretarse. Las seis rechazadas deben dejar verde con el registro 9[6;2]. Completa modelo.cpp; conserva el comprobador y pulsa Compilar, ejecutar y comprobar. Una implementación correcta produce diez líneas que terminan en OK y devuelve 0.\n\nEste comprobador llama a la carga, la comparación y la composición. Todavía no llama a seleccionar_mayor: su resultado se utilizará al construir el informe y se comprobará directamente en la batería posterior del proyecto."
+          "text": "El editor proporciona `inspection_log.h` y `prueba_modelo.cpp`. Revisa esas pestañas y completa `modelo.cpp` con la implementación; conserva el comprobador proporcionado. Sus diez llamadas preparan muestras distintas:\nLas cuatro válidas deben aceptarse. Cada una tiene un conjunto esperado construido directamente en C++, antes de interpretar el texto.\nLas seis inválidas deben rechazarse. Después del intento debe seguir presente verde con el registro `9[6;2]`, que es el estado con el que empieza cada llamada.\n\nPara una muestra válida, el comprobador compara los datos leídos con los esperados. Después compone su texto, vuelve a leerlo y compara los datos recuperados. Para una inválida, compara el destino con el estado que tenía antes. No utiliza Entrada: los textos están preparados dentro del comprobador.\n\nPulsa Compilar, ejecutar y comprobar. Una implementación correcta produce las diez líneas previstas, terminadas en `OK`, y devuelve cero. En una muestra inválida, OK significa que se rechazó correctamente y se conservó el conjunto; no significa que se aceptaran sus datos. `FALLO` indica que alguna observación no coincidió con lo esperado.\n\nEste comprobador utiliza la carga, la comparación y la composición. No llama a `seleccionar_mayor`: esa función debe cumplir su contrato, pero estas diez líneas no comprueban su resultado. Sus casos se utilizarán al construir el informe y en la batería posterior del proyecto."
         },
         {
           "type": "cpp_compiler",
@@ -222,7 +222,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia mantiene la construcción por candidatos. Observa las dos asignaciones finales: una acepta el cierre del conjunto y otra acepta la muestra completa. Por eso no basta con cerrar una parte interior. Los auxiliares que sólo utiliza este archivo están definidos antes de sus llamadas; la cabecera reserva las funciones que necesitan los demás fuentes."
+          "text": "La referencia conserva los candidatos en dos niveles. Sigue las asignaciones finales:\n`leer_conjunto` asigna su candidato al destino cuando ha comprobado los grupos y el cierre exterior.\n`leer_muestra_completa` llama a ese lector con otro candidato local. Después comprueba que sólo queden blancos hasta el fin. Sólo entonces sustituye el destino que recibió del llamador.\n\nAsí, en la muestra con texto posterior, el cierre puede haber terminado correctamente la lectura interior y aun así rechazarse la muestra completa sin cambiar el destino del llamador. Lo que se conserva es ese destino final.\n\nLos auxiliares que usa este fuente están definidos antes de sus llamadas. La cabecera conserva las seis funciones que necesitan los demás fuentes. Esto permite reunir la implementación en un archivo y utilizarla desde los comprobadores y, más adelante, desde la aplicación."
         },
         {
           "type": "code",
@@ -231,7 +231,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El máximo empieza sin grupo. El primer grupo válido se acepta incluso con total cero; después se utiliza >, de modo que una igualdad conserva el primero. Reemplazarlo por >= cambiaría el desempate. Con hasta tres grupos y diez registros de diez aceptados, el total general no supera 300."
+          "text": "El resultado inicial del máximo indica que todavía no se ha encontrado un grupo. Por eso el primer grupo se acepta incluso si está vacío y su suma es cero. Un conjunto sin grupos conserva el resultado sin grupo; no se inventa un ganador.\n\nDespués del primero, la comparación utiliza `>`. Supón que rojo suma tres aceptados y aparece antes que azul, que también suma tres. Tres no es mayor que tres, así que se conserva rojo. Con `>=`, la igualdad permitiría sustituirlo por azul y cambiaría la regla del empate.\n\nLos límites de los datos también acotan las sumas: cada grupo tiene como máximo diez registros y cada registro aporta hasta diez aceptados. Un grupo puede sumar como máximo cien aceptados. Con hasta tres grupos, el total general de aceptados no supera trescientos."
         }
       ]
     },
@@ -243,7 +243,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada llamada comienza con el mismo estado anterior y recoge su propio resultado. La variable correcto acumula fallos sin saltarse las llamadas siguientes. Para una muestra aceptada se compara contra un objeto esperado independiente; la ida y vuelta añade otra comprobación, pero por sí sola no detectaría que lector y compositor compartieran el mismo error."
+          "text": "Cada llamada a `probar` crea de nuevo el estado previo: verde con el registro nueve y las cantidades seis y dos. Por eso una muestra no depende de la que se ensayó antes.\n\nLa función comprueba primero si aceptar o rechazar coincidió con lo solicitado. Si esperaba aceptar, compara el conjunto leído con el objeto esperado y comprueba también la composición seguida de una lectura nueva. Si esperaba rechazar, compara el destino con el estado previo. Todas esas observaciones pertenecen al mismo caso.\n\nEn main, `correcto` comienza siendo verdadero. Cada llamada se ejecuta aunque una anterior falle; si alguna devuelve falso, correcto pasa a falso y se mantiene así hasta terminar. Esto permite ver las diez líneas y obtener un retorno de error si hubo al menos una discrepancia.\n\nEl objeto esperado se construye por separado del texto que se lee. La ida y vuelta aporta otra observación, pero no demuestra por sí sola que ambos procedimientos sean correctos: un lector y un compositor que intercambiaran siempre las mismas dos cantidades podrían deshacer mutuamente ese error. Además, la comparación depende de que `mismos_datos` cumpla su propio contrato. Obtener OK en estas muestras no sustituye comprobar las demás funciones y condiciones del proyecto."
         },
         {
           "type": "code",
@@ -268,7 +268,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda los tres archivos. Desde la raíz de InspectionLog, dentro de la consola de desarrollo, ejecuta esta orden. cl compila los dos fuentes y entrega sus objetos al enlazador. La cabecera se incorpora mediante #include; no se enumera como si fuera otro fuente (Microsoft, 2025b)."
+          "text": "Guarda `inspection_log.h`, `modelo.cpp` y `prueba_modelo.cpp`. Regresa a la consola de desarrollo y comprueba que sigues en la raíz de InspectionLog; los nombres de la orden siguiente son relativos a esa carpeta.\n\nEscribe la orden completa y pulsa Intro. `cl` invoca el compilador. Los dos nombres cpp indican los archivos fuente que se traducirán; sus objetos se entregarán después al enlazador para formar un solo programa. Esta orden construye, pero todavía no ejecuta el comprobador.\n\nLa cabecera se incorpora a cada fuente mediante `#include`; no se enumera como si fuera un tercer fuente. Tampoco se incorpora modelo.cpp con una inclusión desde el comprobador: se compila una vez como indica la orden (Microsoft, 2025b)."
         },
         {
           "type": "paragraph",
@@ -276,11 +276,11 @@
         },
         {
           "type": "paragraph",
-          "text": "/W4 solicita el nivel de advertencias que ya utilizaste; /EHsc conserva el modelo de excepciones estándar de C++. /Fe:prueba_modelo.exe elige el nombre del ejecutable. Sin esa opción, el nombre predeterminado procedería del primer fuente. Se crean también modelo.obj y prueba_modelo.obj, productos intermedios de compilación (Microsoft, 2025c)."
+          "text": "Las opciones de la orden cumplen estos propósitos:\n`/W4` pide el nivel de advertencias utilizado en la prueba del entorno. Revisa las advertencias; su ausencia no garantiza que los cálculos sean correctos.\n`/EHsc` conserva la preparación para el manejo de excepciones estándar de C++ de esa receta.\n`/Fe:prueba_modelo.exe` elige el nombre del ejecutable. El texto después de los dos puntos es el nombre de salida; sin esa opción, el predeterminado procede del primer archivo fuente (Microsoft, 2025c).\n\nLa compilación crea también `modelo.obj` y `prueba_modelo.obj`, las partes traducidas que recibe el enlazador. Son resultados de construcción; no reemplazan a las fuentes que debes conservar. La cabecera sigue siendo necesaria al reconstruir, aunque no produzca por separado un ejecutable."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba que la construcción termina sin errores. Si hay un diagnóstico, identifica el archivo y la línea, corrige, guarda y repite la misma orden. Una compilación fallida no acredita el ejecutable que pueda quedar de una revisión anterior. Después ejecuta:"
+          "text": "Cuando termine la construcción, consulta inmediatamente `echo %ERRORLEVEL%` en esa misma consola, como una línea aparte. Se espera cero, que indica que cl terminó sin errores (Microsoft, 2025a). La construcción y la ejecución comunicarán resultados distintos, en momentos distintos.\n\nSi hay un diagnóstico, lee el archivo y la línea que señala, junto con el contexto del mensaje. Corrige la causa, guarda y repite la orden completa de construcción. Si falta una definición durante el enlace, revisa también que se hayan incluido ambos fuentes. No uses un ejecutable de una revisión anterior como prueba de una construcción fallida.\n\nDespués de una construcción correcta, ejecuta las dos órdenes siguientes por separado: primero el comprobador y después la consulta inmediata de su código de terminación."
         },
         {
           "type": "paragraph",
@@ -292,7 +292,7 @@
         },
         {
           "type": "paragraph",
-          "text": ".\\ señala la carpeta actual. La primera orden debe presentar las diez líneas esperadas. Ejecuta echo %ERRORLEVEL% inmediatamente después para ver el código de terminación: 0 significa que este comprobador no detectó una discrepancia; 1 indica al menos un caso fallido. Los nombres de los casos permiten localizar el primero que debes estudiar."
+          "text": "En la primera orden, `.\\` señala la carpeta actual y `prueba_modelo.exe` identifica el ejecutable recién construido. Debe presentar las diez líneas mostradas en la referencia. El nombre de cada línea permite identificar la muestra; OK comunica que sus observaciones coincidieron con lo esperado.\n\nIntroduce después `echo %ERRORLEVEL%` como una línea independiente, antes de ejecutar otra herramienta. Esta vez consulta el resultado del comprobador:\nCero significa que no detectó discrepancias en sus diez muestras.\nUno significa que al menos una muestra falló.\n\nSi aparece FALLO, localiza esa llamada por su nombre en prueba_modelo.cpp y revisa el texto, la decisión esperada y los datos que compara. Corrige modelo.cpp, guarda, construye de nuevo y vuelve a ejecutar. No cambies el esperado para hacer coincidir un defecto de la implementación."
         },
         {
           "type": "multiple_choice",
@@ -976,6 +976,116 @@
         "id": "block_0007_0003",
         "beforeSha256": "be5beab822ca77eb67b30e3aab010353ab0065283964050d69845eb703b00458",
         "afterSha256": "90ec119a43688dcd8bc25bd952d4d6c7fa33fb811845b35e834bee69dd6449d6"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "277137825c9dfdfcd17ff2437631a30a1c9353cfc4ca724fad73b9ea7b349286",
+        "afterSha256": "9fc3a9a4bb37cd1864398ea1ca8f9e1318b5ec01c0d3cb9d07962e443ab92dbd"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "51040ce755ac010e2f74ba557ab65412d8fc9c6d6748f6111c6eb6e1670182d9",
+        "afterSha256": "ba240636f400b3bfb185d6f70fa21ec657f0b19c79c29c7403612a5010357022"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "369f08a61814085c32f896f278beb5071587080c6d59b50a04be045924033a5e",
+        "afterSha256": "35b0f03f2f9b703927bdbdb69878cf718ec1cab5383488668db18e23a2442965"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "6a04f8689c6d8bce6817a5ef23f0f0970c2ab725ee493a350ee4117b356aa611",
+        "afterSha256": "7da0e792e90c9f33ace670f579056216db6b1a3cee12dbe990ca98dd451d277d"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "efefd936efae367991ec70ef51cfb84bb8e9ffe7a85fd977da687cde661fcc76",
+        "afterSha256": "7c9d131962f4ea160acce37e5dfa30d6d701f82bd36832baf6b46e275d63a900"
+      },
+      {
+        "id": "block_0001_0007",
+        "beforeSha256": "49ae1d97328ed6211155a7066a5d20d75b3aedfd0b0cbbfdba4dc33090bb1657",
+        "afterSha256": "f7d2fa4513fdf15cdf9c767dd771a485c26b4c6ba576ee75187b98b87355bc93"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "429234a8ab1b95e3b7b1eb4c44fc3dd3132fc89d7f7b9c7ef6c58985122c6263",
+        "afterSha256": "dd3a8fa219a214e6ddd5d0d9a835756aac9d154fa5103273f1847ca1b046b5e7"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "b0b8c7b59b197f3b6f89115678d8cd8865ad3ff33758a4330f7f2a300b57e306",
+        "afterSha256": "d518ffbca2399fc9a4f2f86fa29485029114aa34582ca50ed7b839330348d41a"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "c6f5717b061e886b5e252999a6d20334940faae819be51468149b72658a9ae02",
+        "afterSha256": "7889a24c405d8e9941de45c61e431c1f4bd4eccb0119303a87ded4faddf6a33b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "6ccbe599caf861d3eb1869f05cf7973d3bb3768b4bc81440369cb4425a2660d8",
+        "afterSha256": "db9e43d6f6352e1f258bfcb2de8d182e2d79cae16ef0b4f05ad8c1989a606edb"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "b0f4489fad8c0f736f7d48dbe6f0bbcbbdb7b0b8ac774863a5ffbb27528443df",
+        "afterSha256": "2ae95c58ec5b172f7d8f6c70e1aec1bd630ade3f60c1f4c075a25e9d4520f737"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "81af7dff562b5cdfa2a25f16be2a863426cc3ca43f645891579143394ccf0a16",
+        "afterSha256": "81b4fd09ce0cd7892567c16d445ff036450df39ee5bd5036fd8504994e310693"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "c0e371bc708c8cec29f5d0a1c5502fb03996f4acd7bcfa2cae6b1c44dea481a3",
+        "afterSha256": "0956265cdf52d3b0cfd9cd4be7c2318215e2090cd4d59948394d48a89ebc30d6"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "4860b919a132f9dd1961752d4e56d035dfe79597b2ac2644c5860eaeb63f00da",
+        "afterSha256": "741480034712788856a865cbf99a9052884b44cc98d754ceaf514fa310af2aa7"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f2e2999599a4f584f292fd6839c479b593be7d0b3e326ecca54060c21e7beb05",
+        "afterSha256": "d367d0ebb02bcd1f7189a2d939b34ded5afc6b4214a83fa185722696368f63cf"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "01c3c753e9ff835656e43393074ca2fbf41253f115e858169b4355ea86391968",
+        "afterSha256": "d65624d281fccdb939ddc7f21b29ba37c51343fdc51dd5dd077678fdce25ab1f"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "95a118e0765e9fca480d086faea93487dcc0e7650d3e3dfb5860f7e5c02bf3ad",
+        "afterSha256": "303738574d33eefdbd5d780520fd50a9a359165d7090f65924019963f7804e5d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "552e40371481a881ee803c1ec7e58928b0439bdcceec6d6b03b60a2e52b1bd40",
+        "afterSha256": "752c341d5b73bea86578ef328c9a543f1a67027fb033b078ac8b13203e0f5261"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "90ec119a43688dcd8bc25bd952d4d6c7fa33fb811845b35e834bee69dd6449d6",
+        "afterSha256": "e876c8ff5210dae93d93f749c4e426749897dcee25bd5e8516a1b8a1798a75d5"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "f2928ea94e792433536ee83a4f444a65558568c04f943cdce53b34feb2b424c6",
+        "afterSha256": "8bb268632388c262263fea26ecafe6bf5f3b1cf1cf7ccd851f0bf22d62ede1fd"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "bc461fa7e22db0c775dc700f44d2010fe4ebe842facb9e0e9114cac030d72af2",
+        "afterSha256": "e9f0a6777e992b9792572e2a5e1cb91f72775e160c1558bcf1e280e2e8f43d2b"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "dd3a8fa219a214e6ddd5d0d9a835756aac9d154fa5103273f1847ca1b046b5e7",
+        "afterSha256": "fc17c9ec1dc50d2fb4e228664287c08c46f7c802433a6955c1ad1108e800a2b1"
       }
     ]
   },
@@ -1005,58 +1115,8 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "a7dbaaa106842fd33642bdd2fb40eb9f41b757688ccc7485e909b158dd8f0642",
-        "spans": [
-          {
-            "start": 25,
-            "end": 29,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 31,
-            "end": 36,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 39,
-            "end": 43,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 219,
-            "end": 220,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 223,
-            "end": 224,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 273,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 276,
-            "end": 278,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "dca770b77fe68cb6ece4930303dc393aecf62cdcc6f9990c38b0a6b64788df60",
+        "spans": []
       },
       {
         "block": "block_0000_0003",
@@ -1075,49 +1135,19 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "03872e2c873ac8b4f961fd435d0decdd19a2da9dcaed4d7b2447d4b179fc1e9d",
+        "sourceSha256": "d45e4074e66665a9e83e3c8a6afcb8c0fe85d34527fb5413cf6c5b1c9e873fd9",
         "spans": [
           {
-            "start": 76,
-            "end": 82,
+            "start": 81,
+            "end": 87,
             "text": "7[0;0]",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 135,
-            "end": 139,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 206,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 219,
-            "end": 220,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 262,
-            "end": 266,
-            "text": "rojo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 273,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
+            "start": 204,
+            "end": 210,
+            "text": "2[3;1]",
+            "role": "data"
           }
         ]
       },
@@ -1220,21 +1250,19 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "875d5e263b2c8c6e68c208b48faca73596a5a9576567ef422bbfa8d4344af872",
+        "sourceSha256": "71a5c155282ed4088a77271325bf4707780cd0b37ac217c7fafeb2d95b71c045",
         "spans": [
           {
             "start": 74,
             "end": 82,
             "text": "where cl",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 214,
-            "end": 227,
+            "start": 292,
+            "end": 305,
             "text": "%USERPROFILE%",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           }
         ]
       },
@@ -1269,48 +1297,62 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "36a6eeccc38be0f4ad1b66558573387161edad06b9d60f1f9532d992423dd449",
+        "sourceSha256": "fc4e5a6df8513b08a3d5039f1bdf15d0314afbe234f775f56ac3ec877a4b9bd6",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
+            "start": 1,
+            "end": 6,
             "text": "mkdir",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 64,
-            "end": 69,
+            "start": 308,
+            "end": 313,
             "text": "cd /d",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
+          },
+          {
+            "start": 528,
+            "end": 588,
+            "text": "LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog>",
+            "role": "output"
+          },
+          {
+            "start": 752,
+            "end": 762,
+            "text": "modelo.cpp",
+            "role": "data"
           }
         ]
       },
       {
         "block": "block_0001_0005",
         "path": "/text",
-        "sourceSha256": "56e290386a8b77756b5991be97fc9b027a2c933ba325d28a69eece3b8e211ff9",
+        "sourceSha256": "9c53946bb702440a02b9609957a101b6b92edfa6c1f383f917fd025bbd6b5340",
         "spans": [
           {
-            "start": 10,
-            "end": 26,
+            "start": 139,
+            "end": 155,
             "text": "inspection_log.h",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 55,
-            "end": 65,
+            "start": 252,
+            "end": 262,
             "text": "modelo.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 92,
-            "end": 109,
+            "start": 384,
+            "end": 401,
             "text": "prueba_modelo.cpp",
-            "role": "data",
+            "role": "data"
+          },
+          {
+            "start": 861,
+            "end": 879,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -1332,28 +1374,43 @@
       {
         "block": "block_0001_0007",
         "path": "/text",
-        "sourceSha256": "adf9181878ee3b1b7f644db96c37afde1bae24cde8874d239e2a9a34c7162d5b",
+        "sourceSha256": "5f59b5ff4f110cf12981cdb09c8f9f3c361e9ec76cd410d0a7cbdcd5b0dc2602",
         "spans": [
           {
-            "start": 144,
-            "end": 150,
-            "text": "Ctrl+S",
-            "role": "data",
-            "reading": "natural"
+            "start": 253,
+            "end": 269,
+            "text": "inspection_log.h",
+            "role": "data"
           },
           {
-            "start": 186,
-            "end": 188,
+            "start": 497,
+            "end": 499,
             "text": ".h",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 200,
-            "end": 204,
+            "start": 606,
+            "end": 612,
+            "text": ".h.txt",
+            "role": "data"
+          },
+          {
+            "start": 630,
+            "end": 640,
+            "text": "modelo.cpp",
+            "role": "data"
+          },
+          {
+            "start": 645,
+            "end": 662,
+            "text": "prueba_modelo.cpp",
+            "role": "data"
+          },
+          {
+            "start": 852,
+            "end": 856,
             "text": ".txt",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           }
         ]
       },
@@ -1443,462 +1500,316 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "f63ae9d91853d94b44bd90898397abce3e9b93b303abd75fad06c27576e980b4",
+        "sourceSha256": "e75877c82910e98863db7e95ae8428fea28f587d845ea553a5a1748e27d32d8c",
         "spans": [
           {
-            "start": 3,
-            "end": 19,
+            "start": 4,
+            "end": 20,
             "text": "inspection_log.h",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 102,
-            "end": 110,
+            "start": 190,
+            "end": 198,
             "text": "Recuento",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 120,
-            "end": 133,
+            "start": 211,
+            "end": 224,
             "text": "int aceptados",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 136,
-            "end": 150,
+            "start": 229,
+            "end": 243,
             "text": "int rechazados",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 152,
-            "end": 160,
+            "start": 292,
+            "end": 300,
             "text": "Registro",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 170,
-            "end": 176,
+            "start": 313,
+            "end": 319,
             "text": "int id",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 179,
-            "end": 196,
+            "start": 324,
+            "end": 341,
             "text": "Recuento recuento",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 198,
-            "end": 203,
+            "start": 399,
+            "end": 404,
             "text": "Grupo",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 213,
-            "end": 219,
+            "start": 417,
+            "end": 423,
             "text": "int id",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 222,
-            "end": 253,
+            "start": 428,
+            "end": 459,
             "text": "std::vector<Registro> registros",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 255,
-            "end": 263,
+            "start": 530,
+            "end": 538,
             "text": "Conjunto",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 273,
-            "end": 298,
+            "start": 551,
+            "end": 576,
             "text": "std::vector<Grupo> grupos",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 300,
-            "end": 313,
+            "start": 654,
+            "end": 667,
             "text": "Informe_mayor",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 323,
-            "end": 337,
+            "start": 680,
+            "end": 694,
             "text": "bool hay_grupo",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 339,
-            "end": 345,
+            "start": 698,
+            "end": 704,
             "text": "int id",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 348,
-            "end": 361,
+            "start": 709,
+            "end": 722,
             "text": "int aceptados",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 372,
-            "end": 381,
+            "start": 1078,
+            "end": 1087,
             "text": "<istream>",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 383,
-            "end": 391,
+            "start": 1091,
+            "end": 1099,
             "text": "<string>",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 394,
-            "end": 402,
+            "start": 1104,
+            "end": 1112,
             "text": "<vector>",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 474,
-            "end": 481,
+            "start": 1179,
+            "end": 1186,
             "text": "#ifndef",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 483,
-            "end": 490,
+            "start": 1190,
+            "end": 1197,
             "text": "#define",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 493,
-            "end": 499,
+            "start": 1202,
+            "end": 1208,
             "text": "#endif",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 515,
-            "end": 531,
+            "start": 1227,
+            "end": 1243,
             "text": "INSPECTION_LOG_H",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
+          },
+          {
+            "start": 1503,
+            "end": 1521,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "50472f976511745c8eaf133c5fdfc0acad3aaf908c2801fc3d1b61cadd8130c7",
+        "sourceSha256": "f7a32634a28d1bacab033f5778b3625b92b20417a72647485fcfa99412a6e884",
         "spans": [
           {
-            "start": 131,
-            "end": 141,
+            "start": 219,
+            "end": 229,
             "text": "modelo.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 144,
-            "end": 156,
+            "start": 234,
+            "end": 246,
             "text": "nombre_grupo",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 166,
-            "end": 170,
+            "start": 258,
+            "end": 262,
             "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 180,
-            "end": 186,
+            "start": 274,
+            "end": 280,
             "text": "int id",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 189,
-            "end": 209,
+            "start": 285,
+            "end": 305,
             "text": "std::string& destino",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 237,
-            "end": 238,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
+            "start": 498,
+            "end": 502,
+            "text": "true",
+            "role": "cpp"
           },
           {
-            "start": 240,
-            "end": 241,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 244,
-            "end": 245,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 266,
-            "end": 270,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 277,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 280,
-            "end": 284,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 325,
-            "end": 330,
+            "start": 532,
+            "end": 537,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 363,
-            "end": 378,
+            "start": 688,
+            "end": 703,
             "text": "conjunto_valido",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 388,
-            "end": 392,
+            "start": 715,
+            "end": 719,
             "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 402,
-            "end": 426,
+            "start": 731,
+            "end": 755,
             "text": "const Conjunto& conjunto",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "715e82723c6aeb90164fc413cc2890c3fb59dd392800a168d59111e37aa1d3ed",
+        "sourceSha256": "778685163661ff8967d737d3290315f47483b51de3c5b63a10cbf74bd7280328",
         "spans": [
           {
-            "start": 0,
-            "end": 21,
+            "start": 58,
+            "end": 79,
             "text": "leer_muestra_completa",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 31,
-            "end": 35,
+            "start": 91,
+            "end": 95,
             "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 45,
-            "end": 66,
+            "start": 107,
+            "end": 128,
             "text": "std::istream& entrada",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 69,
-            "end": 86,
+            "start": 133,
+            "end": 150,
             "text": "Conjunto& destino",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 253,
-            "end": 270,
+            "start": 564,
+            "end": 581,
             "text": "componer_conjunto",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 280,
-            "end": 284,
+            "start": 593,
+            "end": 597,
             "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 294,
-            "end": 318,
+            "start": 609,
+            "end": 633,
             "text": "const Conjunto& conjunto",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 321,
-            "end": 341,
+            "start": 638,
+            "end": 658,
             "text": "std::string& destino",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 399,
-            "end": 411,
+            "start": 934,
+            "end": 946,
             "text": "mismos_datos",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 429,
-            "end": 433,
+            "start": 958,
+            "end": 962,
             "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 442,
-            "end": 465,
+            "start": 974,
+            "end": 997,
             "text": "const Conjunto& primero",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 468,
-            "end": 491,
+            "start": 1002,
+            "end": 1025,
             "text": "const Conjunto& segundo",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 576,
-            "end": 593,
+            "start": 1390,
+            "end": 1407,
             "text": "seleccionar_mayor",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 601,
-            "end": 625,
+            "start": 1417,
+            "end": 1441,
             "text": "const Conjunto& conjunto",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 637,
-            "end": 650,
+            "start": 1455,
+            "end": 1468,
             "text": "Informe_mayor",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 774,
-            "end": 783,
-            "text": "hay_grupo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 789,
-            "end": 793,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 795,
-            "end": 797,
-            "text": "id",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 823,
-            "end": 832,
-            "text": "aceptados",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 891,
-            "end": 900,
-            "text": "hay_grupo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 909,
-            "end": 914,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 916,
-            "end": 918,
-            "text": "id",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 927,
-            "end": 929,
-            "text": "-1",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 932,
-            "end": 941,
-            "text": "aceptados",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 950,
-            "end": 951,
-            "text": "0",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           }
         ]
       },
@@ -2028,14 +1939,38 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "b0ab40fa56f8719d941f1f711fdb27dd3141b48eb645551d6bfb5c87346701dc",
+        "sourceSha256": "8c85e875d2bfa6f25d3155ad1100a0171b84d294ce3b1f9373dde01b612ab2e2",
         "spans": [
           {
-            "start": 80,
-            "end": 89,
+            "start": 84,
+            "end": 93,
             "text": "<istream>",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
+          },
+          {
+            "start": 163,
+            "end": 171,
+            "text": "<string>",
+            "role": "cpp"
+          },
+          {
+            "start": 201,
+            "end": 209,
+            "text": "<vector>",
+            "role": "cpp"
+          },
+          {
+            "start": 277,
+            "end": 293,
+            "text": "inspection_log.h",
+            "role": "data"
+          },
+          {
+            "start": 295,
+            "end": 313,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -2048,140 +1983,118 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "c54f75aadc38fcea34a0a69ba23bfd680f1eb39241ce54cb1bb8f47ef0e54eb1",
+        "sourceSha256": "2d30f28f37a03ed6cfb40459237593aa90f2afea61451ef58995bc42add3e8e5",
         "spans": [
           {
-            "start": 3,
-            "end": 13,
+            "start": 4,
+            "end": 14,
             "text": "modelo.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 22,
-            "end": 38,
+            "start": 25,
+            "end": 41,
             "text": "inspection_log.h",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 40,
-            "end": 49,
+            "start": 45,
+            "end": 54,
             "text": "<ostream>",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           },
           {
-            "start": 52,
-            "end": 61,
+            "start": 59,
+            "end": 68,
             "text": "<sstream>",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "c448d5ffcc06ce5fadb1b48338e3f91d86df7c02676ee05b1bf91c023f1005a6",
+        "sourceSha256": "b85bea3f10efc9dab86538ff7c6d3ebd2c4f193cdece721df6cce7f5be72f794",
         "spans": [
           {
-            "start": 122,
-            "end": 143,
-            "text": "leer_muestra_completa",
-            "role": "cpp",
-            "reading": "auto"
+            "start": 509,
+            "end": 527,
+            "text": "{ conjunto } resto",
+            "role": "data"
           },
           {
-            "start": 251,
-            "end": 269,
-            "text": "{ conjunto } resto",
-            "role": "data",
-            "reading": "natural"
+            "start": 583,
+            "end": 604,
+            "text": "leer_muestra_completa",
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "9cffa8ffe3d75fca4b316d4b92e95d2126955d5edf62e9556ede8be470997e04",
+        "sourceSha256": "e423061df3564a1831ffc8b3fb01f1bcb22b91caa15391987c488f0c9c0bf603",
         "spans": [
           {
-            "start": 130,
-            "end": 145,
+            "start": 29,
+            "end": 44,
             "text": "conjunto_valido",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           },
           {
-            "start": 173,
-            "end": 185,
+            "start": 346,
+            "end": 358,
             "text": "mismos_datos",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "307a8fcd94d0114625c64b8256a03a2cecae824e04ea01d74e146a6ad9383679",
+        "sourceSha256": "cd5d7f420ef83edae89425ec687f1d2f6f77ffae918ae087810555fb9a285327",
         "spans": [
           {
-            "start": 46,
-            "end": 63,
+            "start": 23,
+            "end": 39,
+            "text": "inspection_log.h",
+            "role": "data"
+          },
+          {
+            "start": 44,
+            "end": 61,
             "text": "prueba_modelo.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 262,
-            "end": 267,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 284,
-            "end": 290,
-            "text": "9[6;2]",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 301,
-            "end": 311,
+            "start": 97,
+            "end": 107,
             "text": "modelo.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 345,
-            "end": 375,
-            "text": "Compilar, ejecutar y comprobar",
-            "role": "data",
-            "reading": "natural"
+            "start": 454,
+            "end": 460,
+            "text": "9[6;2]",
+            "role": "data"
           },
           {
-            "start": 441,
-            "end": 443,
+            "start": 931,
+            "end": 933,
             "text": "OK",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 455,
-            "end": 456,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "start": 1089,
+            "end": 1094,
+            "text": "FALLO",
+            "role": "output"
           },
           {
-            "start": 546,
-            "end": 563,
+            "start": 1237,
+            "end": 1254,
             "text": "seleccionar_mayor",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           }
         ]
       },
@@ -2236,34 +2149,38 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "600e3223e7f008dfc275ff648641e52ee4177e95116041c4e580bf6af6b548b5",
-        "spans": []
+        "sourceSha256": "186b1678e58d9620e5f2992897ebff8de0327121052277cad25fdf1eb8a08059",
+        "spans": [
+          {
+            "start": 87,
+            "end": 100,
+            "text": "leer_conjunto",
+            "role": "cpp"
+          },
+          {
+            "start": 188,
+            "end": 209,
+            "text": "leer_muestra_completa",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "09f1106f55ade5a673c6049fdd6392232c7f08b50d7096f9b7b2ac6e46943f8d",
+        "sourceSha256": "179af6a6f6805f454f8bddd03fb270394577dbfe01d160485b1300d89c6585ed",
         "spans": [
           {
-            "start": 105,
-            "end": 106,
+            "start": 284,
+            "end": 285,
             "text": ">",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           },
           {
-            "start": 171,
-            "end": 173,
+            "start": 430,
+            "end": 432,
             "text": ">=",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 283,
-            "end": 286,
-            "text": "300",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp"
           }
         ]
       },
@@ -2276,14 +2193,25 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "ff1ce50aec069c60e175deef74a85f8c701017726d5c6d8afbf2afd569134fda",
+        "sourceSha256": "385dcb994dfb1057c694ec0c2dc7822041487246d1e6afdeba275c4171e8c231",
         "spans": [
           {
-            "start": 93,
-            "end": 101,
+            "start": 16,
+            "end": 22,
+            "text": "probar",
+            "role": "cpp"
+          },
+          {
+            "start": 512,
+            "end": 520,
             "text": "correcto",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
+          },
+          {
+            "start": 1117,
+            "end": 1129,
+            "text": "mismos_datos",
+            "role": "cpp"
           }
         ]
       },
@@ -2332,32 +2260,41 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "a2f853390c729ead565d15dd7f049fb4f7fffd82fed91cedfed909bd9179a250",
+        "sourceSha256": "e84d495d305e9d8afa1c777e2f80f7b2b33cbaa4e113ddb268bb4b6e0a3fef7b",
         "spans": [
           {
+            "start": 8,
+            "end": 24,
+            "text": "inspection_log.h",
+            "role": "data"
+          },
+          {
+            "start": 28,
+            "end": 38,
+            "text": "modelo.cpp",
+            "role": "data"
+          },
+          {
             "start": 43,
-            "end": 56,
-            "text": "InspectionLog",
-            "role": "data",
-            "reading": "natural"
+            "end": 60,
+            "text": "prueba_modelo.cpp",
+            "role": "data"
           },
           {
-            "start": 114,
-            "end": 116,
+            "start": 256,
+            "end": 258,
             "text": "cl",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 211,
-            "end": 219,
+            "start": 538,
+            "end": 546,
             "text": "#include",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           },
           {
-            "start": 261,
-            "end": 279,
+            "start": 707,
+            "end": 725,
             "text": "(Microsoft, 2025b)",
             "role": "citation",
             "reading": "natural"
@@ -2381,57 +2318,66 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "eca15c8df27956609048593bf420ff7c55f32e69da57e40f682978529fbafac1",
+        "sourceSha256": "3280ea263582fa908ac2ce20e430503b8e3041ab505c0f2f87c0d4dd1e4c919e",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
+            "start": 52,
+            "end": 55,
             "text": "/W4",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 57,
-            "end": 62,
+            "start": 207,
+            "end": 212,
             "text": "/EHsc",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 114,
-            "end": 135,
+            "start": 300,
+            "end": 321,
             "text": "/Fe:prueba_modelo.exe",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 256,
-            "end": 266,
-            "text": "modelo.obj",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 269,
-            "end": 286,
-            "text": "prueba_modelo.obj",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 325,
-            "end": 343,
+            "start": 482,
+            "end": 500,
             "text": "(Microsoft, 2025c)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 532,
+            "end": 542,
+            "text": "modelo.obj",
+            "role": "data"
+          },
+          {
+            "start": 547,
+            "end": 564,
+            "text": "prueba_modelo.obj",
+            "role": "data"
           }
         ]
       },
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "d6d3d1c28d66c5fb47bb01bbf8867fdd18ef44b3bfc149d977743041b4f759e5",
-        "spans": []
+        "sourceSha256": "116c9e746d023bbafc0f016f099cb0a82898f57775a23ebdd26c6f78b98d0348",
+        "spans": [
+          {
+            "start": 57,
+            "end": 74,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data"
+          },
+          {
+            "start": 175,
+            "end": 193,
+            "text": "(Microsoft, 2025a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
@@ -2464,35 +2410,25 @@
       {
         "block": "block_0007_0007",
         "path": "/text",
-        "sourceSha256": "0d1306fe558012f3919a031ccfc1724f04d94d471591da0ddb857d0aafe4a8f3",
+        "sourceSha256": "d97fe067574804fe510a214ab609e7588d921d6ae11d0df11405e66280d25308",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
+            "start": 22,
+            "end": 24,
             "text": ".\\",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 96,
-            "end": 113,
+            "start": 54,
+            "end": 71,
+            "text": "prueba_modelo.exe",
+            "role": "data"
+          },
+          {
+            "start": 316,
+            "end": 333,
             "text": "echo %ERRORLEVEL%",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 172,
-            "end": 173,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 234,
-            "end": 235,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "role": "data"
           }
         ]
       },

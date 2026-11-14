@@ -2,7 +2,10 @@
   "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete",
   "title": "Resto y asociación en el intérprete",
   "orderVisualSeparators": [
-    {"activity": "block_0002_0002", "count": 1}
+    {
+      "activity": "block_0002_0002",
+      "count": 1
+    }
   ],
   "pages": [
     {
@@ -13,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El inspector de tokens de esta unidad ya reconoce `%`. En nuestro lenguaje entero, ese signo calculará el resto de una división entre enteros. Por ejemplo, `17%5` produce 2: 17 contiene tres grupos completos de cinco y deja dos unidades. Reconocer el signo y definir la operación que realizará son pasos distintos (Stroustrup, 2024, sección 6.5).\n\nEn el nivel de término, `*`, `/` y `%` tienen la misma prioridad y se agrupan desde la izquierda. El resultado de la primera pareja se utiliza como operando izquierdo de la operación siguiente (Köppe et al., 2023).\n\nLos literales enteros siguen comprendidos entre 0 y 99. Una unidad también puede contener signos unarios o una expresión entre paréntesis, como ya ocurría en el intérprete anterior. Cada resultado parcial debe permanecer entre -100 y 100; esta ampliación conserva esos límites.",
+          "text": "El inspector de tokens de esta unidad ya reconoce el carácter %. Ahora ampliaremos el intérprete para que ese signo calcule el resto de una división entre enteros. Por ejemplo, en 17%5, el dividendo es 17 y el divisor es 5. Podemos formar 3 grupos completos de 5, que reúnen 15 unidades; quedan 2 unidades sin agrupar. Ese 2 es el resto. Reconocer el signo en el texto y calcular la operación son tareas distintas (Stroustrup, 2024).\n\nEl resto pertenece al nivel de término, junto con * y /. Los tres operadores tienen la misma prioridad y se agrupan desde la izquierda. En 17%5*2, primero se calcula 17%5, con resultado 2; ese resultado se multiplica después por 2 y se obtiene 4. Cada cálculo utiliza como operando izquierdo el resultado acumulado hasta ese momento (Köppe et al., 2023).\n\nConservamos los límites del intérprete:\nLiterales enteros: de 0 a 99.\nResultados parciales: de -100 a 100.\nUna unidad puede ser un número, un signo unario seguido de otra unidad o una expresión entre paréntesis. Los signos y los paréntesis conservan el límite de anidamiento ya establecido.",
           "emphasis": [
             {
               "text": "resto de una división entre enteros",
@@ -27,7 +30,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada sigue siendo una cadena `std::string` de hasta 120 caracteres ASCII. El lector omite espacio, tabulador y salto de línea entre los elementos del lenguaje. Cada operación debe terminar en `;`.\n\nConservamos la regla del historial: sólo se registra el resultado de una operación completa. Poder calcular una expresión no basta si falta su punto y coma. Ante un rechazo, se conserva el descarte hasta el terminador para poder intentar la operación siguiente."
+          "text": "La entrada sigue siendo una cadena std::string de hasta 120 caracteres ASCII. El lector omite espacio, tabulador y salto de línea entre los elementos del lenguaje. Cada operación debe terminar en ;.\n\nSólo se añade un resultado al historial después de aceptar la operación completa, incluido su terminador. Por ejemplo, calcular la expresión de 17%5 no basta para registrar el resultado si el texto termina ahí: falta el punto y coma. Ante un rechazo se descarta el resto de esa operación hasta su terminador, o hasta el final del texto si no hay otro terminador. Así puede intentarse la operación siguiente sin conservar un resultado incompleto."
         },
         {
           "type": "multiple_choice",
@@ -103,7 +106,7 @@
         },
         {
           "type": "paragraph",
-          "text": "C++ no define un resultado para `/` o `%` con divisor cero. Nuestro intérprete comprueba el divisor y, si vale 0, lanza una excepción con el mensaje \"Divisor cero\" antes de ejecutar el operador (Köppe et al., 2023; Stroustrup, 2024, sección 6.5).\n\nEjecutar `throw` abandona ese cálculo y transfiere el control al `catch` que trata el rechazo. El mensaje comunica la causa; es el lanzamiento de la excepción el que impide llegar a la operación.\n\nLos límites elegidos también permiten calcular los candidatos antes de comprobar la banda. Con operandos entre -100 y 100, una multiplicación tiene magnitud máxima 10000 y una suma o resta, 200. Dividir por -1 produce como máximo una magnitud de 100. Esos candidatos caben en el rango mínimo garantizado para `int`, ya estudiado; después se comprueba si el resultado pertenece al dominio del intérprete (Köppe et al., 2023).",
+          "text": "C++ no define un resultado para `/` o `%` con divisor cero. Nuestro intérprete comprueba el divisor y, si vale 0, lanza una excepción con el mensaje \"Divisor cero\" antes de ejecutar el operador (Köppe et al., 2023; Stroustrup, 2024).\n\nEjecutar `throw` abandona ese cálculo y transfiere el control al `catch` que trata el rechazo. El mensaje comunica la causa; es el lanzamiento de la excepción el que impide llegar a la operación.\n\nLos límites elegidos también permiten calcular los candidatos antes de comprobar la banda. Con operandos entre -100 y 100, una multiplicación tiene magnitud máxima 10000 y una suma o resta, 200. Dividir por -1 produce como máximo una magnitud de 100. Esos candidatos caben en el rango mínimo garantizado para `int`, ya estudiado; después se comprueba si el resultado pertenece al dominio del intérprete (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "antes de ejecutar el operador",
@@ -132,7 +135,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función `leer_token` reconoce en el texto el carácter `%` y lo convierte en un token; esta tarea corresponde al analizador léxico o lexer. `token_valido` también debe admitir ese token para que la reserva pueda conservarlo cuando otra regla lo devuelve. Después, `leer_termino` realiza la operación con sus dos operandos.\n\nAñadir el signo sólo al lexer dejaría un token reconocido que la gramática todavía no sabe utilizar como operador. Hay que coordinar el reconocimiento, la validación de la reserva y el cálculo del término."
+          "text": "La ampliación requiere coordinar tres funciones ya conocidas:\n\nleer_token reconoce el carácter % en el texto y lo convierte en un token. Esta tarea corresponde al analizador léxico o lexer.\n\ntoken_valido admite ese token para que la reserva pueda conservarlo cuando otra regla lo devuelve.\n\nleer_termino obtiene los operandos y calcula el resto en el mismo recorrido que la multiplicación y la división.\n\nSi sólo se modifica leer_token, el lector puede reconocer el signo, pero el término todavía no lo utiliza para calcular. Si la validación no admite el token, devolverlo a la reserva provoca un rechazo antes de que la regla correspondiente pueda leerlo."
         }
       ]
     },
@@ -144,11 +147,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia en este editor el intérprete con historial que construiste en la lección anterior y amplía el nivel multiplicativo para aceptar `%`. Esta práctica integra la regla nueva en los componentes ya estudiados; el código inicial no contiene su implementación.\n\nConserva los signos unarios, los paréntesis, la profundidad máxima de ocho, la banda de cada resultado parcial, la reserva de un único token y el descarte hasta `;`. Cada ensayo debe crear su propio lector, historial y contador de rechazos."
+          "text": "Copia en este editor el intérprete con historial que construiste en la lección anterior y amplía el nivel multiplicativo para aceptar %. El código inicial deja esa implementación a tu cargo.\n\nConserva las reglas anteriores:\nSignos unarios y paréntesis, con un máximo de ocho niveles de anidamiento.\nCada resultado parcial dentro de la banda de -100 a 100.\nReserva de un único token y descarte hasta ; tras un rechazo.\nHistorial actualizado sólo después de aceptar una operación completa.\n\nCada ensayo comienza con su propio lector, historial vacío y contador de rechazos en cero. Las operaciones de un mismo texto comparten esos objetos: por eso su historial permite comprobar qué se conservó después de un error."
         },
         {
           "type": "paragraph",
-          "text": "Agrupa doce ensayos en un programa mediante `probar(texto)`. Desde `main`, llama a esa función con los siguientes textos, en este orden:\n\n1. `\"22%6;-22%6;17/3%4;\"`\n2. `\"23%7%3;\"`\n3. `\"23%(7%3);\"`\n4. `\"9%0;6;\"`\n5. `\"0%7;\"`\n6. `\"(-99-1)%-1;\"`\n7. `\"99*2%3;\"`\n8. `\"8%-3;\"`\n9. `\"(99+2)%3;4;\"`\n10. `\"-14/5;\"`\n11. `\"2+3*4;\"`\n12. `\"(((((((((1)))))))));\"`\n\nLos tres ensayos añadidos recuperan contratos anteriores. La división `-14/5` debe producir -2; `2+3*4` debe producir 14, respetando la prioridad de la multiplicación. La última entrada contiene nueve aperturas de paréntesis y supera la profundidad máxima de ocho: debe rechazarse con Error: Anidamiento excesivo. Su informe conserva cero aceptadas, una rechazada, suma cero e historial vacío.\n\nLa primera entrada debe guardar los resultados 4, -4 y 1: tres aceptadas, cero rechazadas y suma 1. En su último término, `17/3%4`, primero se obtiene el cociente entero 5 y después el resto 1.\n\nAntes de cada llamada escribe la cabecera de salida Caso N, numerando los ensayos desde 1. Conserva las etiquetas Valor:, Error: Divisor cero, Error: Resultado fuera de dominio, Error: Anidamiento excesivo y el resumen Aceptadas:, Rechazadas:, Suma: e Historial: de la construcción anterior. Cada línea, incluida la del historial, debe terminar con salto; no añadas líneas vacías.\n\nUsa Compilar, ejecutar y comprobar con la batería completa de doce informes.",
+          "text": "Prepara doce ensayos mediante probar(texto). Desde main, llama a esa función con estos textos, en el orden indicado. Cada renglón muestra el literal que debes proporcionar:\n\nEnsayo 1: \"22%6;-22%6;17/3%4;\"\nEnsayo 2: \"23%7%3;\"\nEnsayo 3: \"23%(7%3);\"\nEnsayo 4: \"9%0;6;\"\nEnsayo 5: \"0%7;\"\nEnsayo 6: \"(-99-1)%-1;\"\nEnsayo 7: \"99*2%3;\"\nEnsayo 8: \"8%-3;\"\nEnsayo 9: \"(99+2)%3;4;\"\nEnsayo 10: \"-14/5;\"\nEnsayo 11: \"2+3*4;\"\nEnsayo 12: \"(((((((((1)))))))));\"\n\nLa primera entrada contiene tres operaciones. Sus resultados aceptados son 4, -4 y 1. En la última, 17/3%4, se obtiene primero el cociente entero 5 y después el resto 1. Su resumen debe indicar 3 aceptadas, 0 rechazadas, suma 1 e historial 4 -4 1.\n\nLos ensayos finales vuelven a comprobar reglas anteriores:\n-14/5: cociente entero -2, obtenido al descartar la fracción hacia cero.\n2+3*4: resultado 14, porque la multiplicación se calcula antes de la suma.\n\"(((((((((1)))))))));\": nueve aperturas de paréntesis superan el máximo de ocho. Se presenta Error: Anidamiento excesivo, sin aceptaciones, con una rechazada, suma cero e historial vacío.\n\nAntes de cada llamada escribe la cabecera Caso N, comenzando por Caso 1. Conserva los rótulos de la construcción anterior:\nValor:, seguido por el resultado aceptado.\nError:, seguido por el diagnóstico.\nAceptadas:, Rechazadas:, Suma: e Historial:, con sus valores correspondientes.\n\nCada línea, incluida la del historial, termina con un salto; no se añaden líneas vacías. Usa Compilar, ejecutar y comprobar con los doce informes del programa actual.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -175,7 +178,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de comprobar, revisa que el signo se reconozca y pueda reservarse, que se respeten prioridad, asociación y profundidad máxima, que el divisor se compruebe antes de operar y que cada resultado parcial cumpla la banda. Registra un resultado en el historial sólo después de aceptar su operación completa, incluido `;`.\n\nUna implementación diferente es válida si cumple esos contratos. La comprobación compara los doce informes de consola; no inspecciona por sí sola cómo separaste las responsabilidades ni sustituye revisar la comprobación previa del divisor."
+          "text": "Antes de comprobar tu programa, revisa estas condiciones:\n\nEl lector reconoce el signo y permite reservar su token.\nEl término respeta la prioridad común y la asociación desde la izquierda.\nLos signos unarios y los paréntesis respetan la profundidad máxima.\nEl divisor se comprueba antes de dividir o calcular un resto.\nCada resultado parcial cumple la banda del intérprete.\nEl historial se actualiza después de aceptar la operación completa, incluido ;.\n\nUna implementación diferente es válida si cumple esas reglas. La comprobación compara los doce informes de consola; por sí sola no inspecciona la separación de responsabilidades ni demuestra que se compruebe el divisor antes de operar."
         },
         {
           "type": "cpp_compiler",
@@ -197,7 +200,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia tus tipos y funciones del intérprete, incluida probar, antes del main proporcionado. Conserva una implementación común para todos los casos. El cliente mantiene los doce ensayos anteriores y añade tres sesiones que utilizan los mismos contratos.\n\nLa primera añade 8*3%5;18%5*2;29%8/2;. Respeta el orden desde la izquierda de los operadores del nivel multiplicativo y registra las tres operaciones. La segunda utiliza -17%-5;: conserva el significado del resto cuando ambos operandos son negativos. La tercera utiliza 0%(4-4);6;: comprueba el divisor obtenido de los paréntesis antes de decidir si puede aceptarse el resto y continúa con la operación siguiente tras el rechazo.\n\nMantén las cabeceras Caso N, los diagnósticos y todos los campos del resumen, incluidos el orden del historial y los saltos finales. Pulsa «Compilar, ejecutar y comprobar» con el cliente completo. Si corriges una función, vuelve a ejecutar los quince casos con esa misma versión.",
+          "text": "Copia tus tipos y funciones del intérprete, incluida probar, antes del main proporcionado. Conserva una implementación común para todos los casos. El cliente mantiene los doce ensayos anteriores y añade estas tres sesiones:\n\n8*3%5;18%5*2;29%8/2;\nAplica los operadores del nivel multiplicativo desde la izquierda y registra las tres operaciones.\n\n-17%-5;\nConserva el significado del resto cuando ambos operandos son negativos.\n\n0%(4-4);6;\nComprueba el divisor obtenido de los paréntesis antes de aceptar el resto. Tras el rechazo, continúa con la operación siguiente.\n\nMantén las cabeceras Caso N, los diagnósticos y todos los campos del resumen, incluidos el orden del historial y los saltos finales. Pulsa «Compilar, ejecutar y comprobar» con el cliente completo. Si corriges una función, vuelve a ejecutar los quince casos con esa misma versión.",
           "emphasis": [
             {
               "text": "una implementación común",
@@ -260,16 +263,16 @@
         },
         {
           "type": "paragraph",
-          "text": "Este modelo procesa una sola entrada, `\"19%6;-19%6;25/4%3;\"`, y guarda los resultados 1, -1 y 0. Permite comparar los contratos del lexer, de la reserva y del término. La división y el resto comparten la comprobación previa del divisor; los resultados parciales respetan la banda.\n\nNo es el programa de los doce ensayos. La referencia de esa batería aparece al final de la lección, con sus cabeceras y saltos de línea."
+          "text": "Este modelo procesa el texto \"19%6;-19%6;25/4%3;\". Sigue las operaciones en su orden:\n\n19%6;: el resto es 1 y se guarda como primer resultado.\n-19%6;: el resto es -1 y se añade después del anterior.\n25/4%3;: la división entera da 6; el resto de dividir ese valor entre 3 es 0, que también se guarda.\n\nCompara cómo colaboran el reconocimiento de tokens, la reserva y el cálculo del término. La división y el resto comparten la comprobación previa del divisor; los resultados parciales respetan la banda.\n\nEste programa presenta una sola sesión. La referencia de los doce ensayos, con sus cabeceras y saltos de línea, aparece al final de la lección."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"19%6;-19%6;25/4%3;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '/')\n                izquierda = resultado_en_dominio(izquierda / derecha);\n            else\n                izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"19%6;-19%6;25/4%3;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La suma es 0 y el historial contiene tres entradas. Un resto cero sigue siendo un resultado aceptado. Tampoco una suma cero permite deducir que no hubo operaciones: los valores positivos y negativos pueden compensarse. El resumen conserva su dominio propio, distinto de la banda de cada expresión."
+          "text": "El historial contiene 1 -1 0: hay tres entradas y su suma es 0. El último resto es cero y cuenta como una operación aceptada; los resultados 1 y -1 se compensan al sumarlos.\n\nPor eso la suma no indica cuántas operaciones se aceptaron. Esa cantidad se obtiene del tamaño del historial. La suma reúne resultados ya aceptados y conserva su dominio propio, distinto de la banda exigida a cada expresión."
         }
       ]
     },
@@ -283,7 +286,7 @@
           "type": "output_prediction",
           "question": "Predice toda la salida de una sesión con agrupación y recuperación.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"18%5*2;8%0;18%(5*2);\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '/')\n                izquierda = resultado_en_dominio(izquierda / derecha);\n            else\n                izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"18%5*2;8%0;18%(5*2);\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
           "answers": [
             "Valor: 6\nError: Divisor cero\nValor: 8\nAceptadas: 2\nRechazadas: 1\nSuma: 14\nHistorial: 6 8"
           ],
@@ -293,11 +296,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Las entradas `\"8%-3;\"` y `\"(99+2)%3;4;\"` contrastan un divisor negativo y un operando calculado fuera de banda. La entrada `\"8%-3;\"` produce el resto 2. En `\"(99+2)%3;4;\"`, el candidato de la suma es 101: ese parcial se rechaza antes de aplicar el resto y la recuperación conserva la operación siguiente, cuyo resultado es 4. Esta ampliación mantiene el lenguaje entero y no incorpora el operador de asignación compuesta `%=`."
+          "text": "Compara estas entradas y el motivo de sus resultados:\n\n\"8%-3;\"\nEl divisor es -3. El resto es 2, con el signo del dividendo positivo.\n\n\"(99+2)%3;4;\"\nLa suma entre paréntesis produce el candidato 101, fuera de la banda del intérprete. Se rechaza esa operación antes de calcular el resto. El descarte llega a su terminador y permite aceptar la operación siguiente, con resultado 4.\n\nEsta ampliación mantiene el lenguaje entero y no incorpora el operador de asignación compuesta %=."
         },
         {
           "type": "note",
-          "text": "Incorporar el resto requiere reconocer el signo y definir qué operandos admite la operación; no basta con añadir el carácter a la lectura de tokens. Un divisor cero debe detectarse antes de efectuar el cálculo (Stroustrup, 2024, sección 6.5). Este intérprete conserva operandos enteros y trata el resto en el nivel de los términos, con el orden de asociación y los límites aritméticos ya establecidos."
+          "text": "Para incorporar el resto hay que reconocer el signo, obtener sus operandos enteros y comprobar el divisor antes de operar. Por ejemplo, en 0%(4-4);, los paréntesis producen el divisor 0. El dividendo 0 no convierte esa operación en válida: debe rechazarse antes de calcular el resto (Stroustrup, 2024). El término conserva la asociación desde la izquierda y los límites aritméticos del intérprete."
         }
       ]
     },
@@ -318,7 +321,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En 8*3%5, el producto es 24 y su resto entre 5 es 4. En 18%5*2, el resto 3 se multiplica después por 2, dando 6. En 29%8/2, el resto 5 se divide después entre 2, con cociente entero 2. Dar prioridad a la multiplicación y la división frente al resto cambiaría los dos últimos resultados a 8 y 1.\n\nPara -17%-5, el cociente es 3 y el resto -2 reconstruye el dividendo: -17 = 3 × (-5) + (-2). Convertir ambos operandos en positivos produciría 2, perdiendo el signo requerido. El ensayo anterior (-99-1)%-1; terminaba en resto 0, por lo que no podía mostrar esa diferencia.\n\nEn 0%(4-4);6;, los paréntesis producen un divisor 0. La guardia debe lanzar Divisor cero aunque el dividendo también sea cero. Tras recuperar hasta el terminador, se acepta 6: una aceptación, un rechazo e historial 6. Aceptar antes el cero dejaría la misma suma, pero añadiría una entrada indebida al historial.\n\nLa referencia completa anterior satisface también estos contrastes. Sustituye únicamente su main por el cliente de quince casos proporcionado en la práctica; conserva sus tipos y funciones. El recorrido de leer_termino aplica cada operador al resultado izquierdo acumulado y comprueba el divisor antes de utilizar / o %."
+          "text": "Las mezclas del caso 13 permiten comparar el orden de los cálculos:\n\n8*3%5\nPrimero se obtiene el producto 24. Su resto entre 5 es 4.\n\n18%5*2\nPrimero se obtiene el resto 3. Después se multiplica por 2, con resultado 6. Si se multiplicara antes el divisor, se obtendría incorrectamente 8.\n\n29%8/2\nPrimero se obtiene el resto 5. Después se divide entre 2, con cociente entero 2. Dividir antes el divisor cambiaría el resultado a 1.\n\nEl caso 14 comprueba -17%-5. El cociente es 3 y el resto -2 reconstruye el dividendo:\n-17 = 3 × (-5) + (-2)\nConvertir ambos operandos en positivos daría 2, con un signo incorrecto para ese resto. El ensayo anterior (-99-1)%-1; terminaba en resto 0: cambiar su signo no producía ninguna diferencia observable.\n\nEn el caso 15, 0%(4-4);6;, los paréntesis producen un divisor 0. La comprobación debe lanzar Divisor cero aunque el dividendo también sea cero. Tras descartar hasta el terminador, se acepta 6: hay una aceptación, un rechazo e historial 6. Aceptar también el cero dejaría la misma suma 6, pero produciría dos aceptaciones, cero rechazos e historial 0 6.\n\nLa referencia anterior permite comprobar estos contrastes sustituyendo su main por el cliente de los quince casos de la práctica. Conserva los tipos y las funciones. El recorrido de leer_termino aplica cada operador al resultado izquierdo acumulado y comprueba el divisor antes de utilizar / o %."
         }
       ]
     }
@@ -1248,6 +1251,81 @@
         "id": "block_0005_0001",
         "beforeSha256": "2ebad9651a5baeb29792a93a2c799f18d91409ece67bab46f9a956b5f72958a8",
         "afterSha256": "8ea60ec062fb020f182c7c6885a3e010d4f434e4034e9ca06efac26107fe51d9"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "20fdc3ce6e3971f3a7bd4f5ac69c037fbb161ffbe2e9d0e1d51f6ece5e97b0d6",
+        "afterSha256": "8b459a532ed5b726eafc7cf3c1164c9c59c4f6fae1cf7e3728cc0ff6a3335b15"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "d3ceb0a981ce309a67de50d2c403e408362ca109c079c79f99cadbff0104b46b",
+        "afterSha256": "671eccf48d61eda46870e161ace9d49b22547e19c3adb96bf0965a01692068bf"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "61cc9724832eb124dde40ac555a76ca231eecbb8f6b4b8150391b4437692aaae",
+        "afterSha256": "fdab2050fb7c5b8fea13286b78654402601993b69e5c65b7635d14d35f3d7b45"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "b59c2da531692d0bd9382a0b44b9ec9c7972001c99ca1b12e9a9634a021eab53",
+        "afterSha256": "67f62fed4c29046b98429fab2dac6de939db1d1ac4306f9abb743e187525467b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "3d5d527be3ffd6d8596abdc5302ce24ddf9cc5d5db062ce60ab3e9f7430b2445",
+        "afterSha256": "fe7a0cfdfc1db0e80d1e319b9d5080b007b3b237a29fd2a8661a2b8103460e11"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "fd3e484c6db2db073be8a7ae44c496f506256b4d064a241a8244811fdfeeae9e",
+        "afterSha256": "75687d4b1aab4d5ee9a55f84c5c9d37eb99e3829b181241c87b74e7dcdadc58b"
+      },
+      {
+        "id": "u11_resto_mixto_signo_y_divisor_calculado_consigna",
+        "beforeSha256": "527798dd51fdc66b42d5ae5e2711672a426bbd6634404ed88ded639fe33eb682",
+        "afterSha256": "9c0fa6a4a0029b6f25557e6c2bf063afb3b31bd7fbb37ba07d4ff44824cea44c"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "9ac212d479dd90dee954fbb9cf7f6ddfe45e1b45b32a5e776744fe4562c34196",
+        "afterSha256": "efa24bcc27891efe57c0a051be7bcdc0b8d3c0523515b1261927fded98700f84"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "c2a64eef35841bf05cff24b72d3462f234465cf8ba19ea30362bb80e4ed220c0",
+        "afterSha256": "f58976d93f18a25be1ab2d9fdc79b22a056707882e4e69e48dcfec843af478e4"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "5b56cacfdb3672cb3187344f14b4e771dd4d7c22b67625dd72edb000576c1df4",
+        "afterSha256": "fb33e5783436b163ceb6b269ab76ca2297af4cbf5d8040176daabc85d9ae0299"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "8ea60ec062fb020f182c7c6885a3e010d4f434e4034e9ca06efac26107fe51d9",
+        "afterSha256": "2e762027317c8b8c7324da6ded43e0a008bda2d846d7c08503cebf6797e153db"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "2b0f36b6acaff1363dd704d3a4f28eee94b0077014020c9e41dc03fa0833dbf7",
+        "afterSha256": "88b4cd54d57f1878df08d2a9817dfd6ee18690c537b3de0938d09cbf06c3394d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "2f8b8ebf77b29d0da30d4aabab74c3ef149f5a5ab48fffd6711e556df009be91",
+        "afterSha256": "c36471c5d582eb8359edc26579241a00271d73f4c5579592b85e7a5afbf30fc7"
+      },
+      {
+        "id": "u11_resto_mixto_signo_y_divisor_calculado_referencia_razonamiento",
+        "beforeSha256": "6d7cf4d3f3030b9c15d9d691581dc5943ac1546d9ebec1e78dab60459b6de031",
+        "afterSha256": "cb45afe76a809a8f311d3b0a27ea0cd03fb8eae758619f13f6a0232d0402a458"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "90e89b257a2c692159ff77a1f7d53aa627db167753bf41fb817de3272f43b527",
+        "afterSha256": "c5658bc6aae083ac704fe309f88c566346d940334dd8354259fdd602192ce0f0"
       }
     ],
     "compilerRevisions": [
@@ -1278,6 +1356,31 @@
           }
         ]
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"19%6;-19%6;25/4%3;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice toda la salida de una sesión con agrupación y recuperación.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flujo irrecuperable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Fallo al recuperar\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Anidamiento excesivo\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"18%5*2;8%0;18%(5*2);\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valor: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Recuperacion detenida: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Aceptadas: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Suma: \" << suma << \"\\nHistorial:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Valor: 6\nError: Divisor cero\nValor: 8\nAceptadas: 2\nRechazadas: 1\nSuma: 14\nHistorial: 6 8"
+          ],
+          "explanation": "La operación 18%5*2; obtiene primero el resto 3 y después lo multiplica por 2, por lo que acepta 6. En 8%0;, la guardia detecta el divisor cero y lanza la excepción antes de ejecutar el resto. La recuperación consume su terminador y permite continuar.\n\nEn 18%(5*2);, los paréntesis calculan primero el divisor 10 y el resto exterior es 8. El historial conserva 6 8: 2 aceptaciones, 1 rechazo y suma 14. La operación rechazada no añade ningún resultado.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e05",
+          "reviewFeedback": "Separa las operaciones por su terminador. Sigue primero las agrupaciones, comprueba cada divisor antes de usar el resto y registra únicamente las operaciones completas que llegan a aceptarse."
+        }
+      }
     ]
   },
   "textSemantics": {
@@ -1286,116 +1389,158 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "777417f4d0d5f7672afb7a95d7fb1343b47b652c5634f43e31608df3bb9d63c7",
+        "sourceSha256": "a18d1e929b1b73231e49bd84e0b9338a151b0567c089ebbea1f2f5d527a09bfe",
         "spans": [
           {
-            "start": 51,
-            "end": 52,
+            "start": 62,
+            "end": 63,
             "text": "%",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 157,
-            "end": 161,
+            "start": 180,
+            "end": 184,
             "text": "17%5",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 171,
-            "end": 172,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 174,
-            "end": 176,
+            "start": 202,
+            "end": 204,
             "text": "17",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 186,
-            "end": 190,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 211,
-            "end": 216,
-            "text": "cinco",
+            "start": 221,
+            "end": 222,
+            "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 224,
-            "end": 227,
-            "text": "dos",
+            "start": 239,
+            "end": 240,
+            "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 314,
-            "end": 345,
-            "text": "(Stroustrup, 2024, sección 6.5)",
+            "start": 261,
+            "end": 262,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 277,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 296,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 324,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 414,
+            "end": 432,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 373,
-            "end": 374,
+            "start": 485,
+            "end": 486,
             "text": "*",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 378,
-            "end": 379,
+            "start": 489,
+            "end": 490,
             "text": "/",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 384,
-            "end": 385,
-            "text": "%",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 574,
+            "end": 580,
+            "text": "17%5*2",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 541,
-            "end": 561,
+            "start": 601,
+            "end": 605,
+            "text": "17%5",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 621,
+            "end": 622,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 664,
+            "end": 665,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 679,
+            "end": 680,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 768,
+            "end": 788,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 612,
-            "end": 613,
+            "start": 853,
+            "end": 854,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 616,
-            "end": 618,
+            "start": 857,
+            "end": 859,
             "text": "99",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 791,
-            "end": 795,
+            "start": 886,
+            "end": 890,
             "text": "-100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 798,
-            "end": 801,
+            "start": 893,
+            "end": 896,
             "text": "100",
             "role": "data",
             "reading": "natural"
@@ -1534,7 +1679,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "9bec68aebc0d8da693c99f45c629310e973f2dece9055e1327099facee17d782",
+        "sourceSha256": "7afd8f7795b41db61fadbb9d9e8c565f13215f574f9aa2171fccfeae159d2677",
         "spans": [
           {
             "start": 33,
@@ -1573,77 +1718,77 @@
           },
           {
             "start": 194,
-            "end": 245,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024, sección 6.5)",
+            "end": 232,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 258,
-            "end": 263,
+            "start": 245,
+            "end": 250,
             "text": "throw",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 314,
-            "end": 319,
+            "start": 301,
+            "end": 306,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 556,
-            "end": 560,
+            "start": 543,
+            "end": 547,
             "text": "-100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 563,
-            "end": 566,
+            "start": 550,
+            "end": 553,
             "text": "100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 609,
-            "end": 614,
+            "start": 596,
+            "end": 601,
             "text": "10000",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 635,
-            "end": 638,
+            "start": 622,
+            "end": 625,
             "text": "200",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 652,
-            "end": 654,
+            "start": 639,
+            "end": 641,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 691,
-            "end": 694,
+            "start": 678,
+            "end": 681,
             "text": "100",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 755,
-            "end": 758,
+            "start": 742,
+            "end": 745,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 848,
-            "end": 868,
+            "start": 835,
+            "end": 855,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1659,25 +1804,33 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "47c3b4c8d3d4ee226ba44c40c22a3a85a54d103ebb337d310aeb26d2b874832d",
+        "sourceSha256": "de03cf062b9dc007468dde3df0be47b5ec87aed57ea0dfcf9b83be115791f6b9",
         "spans": [
           {
-            "start": 36,
-            "end": 47,
+            "start": 35,
+            "end": 46,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 61,
+            "start": 56,
+            "end": 59,
             "text": "120",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 200,
+            "start": 196,
+            "end": 197,
             "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 344,
+            "end": 348,
+            "text": "17%5",
             "role": "data",
             "reading": "characters"
           }
@@ -1890,8 +2043,7 @@
             "start": 57,
             "end": 71,
             "text": "16 = 3 × 5 + 1",
-            "role": "math",
-            "reading": "technical"
+            "role": "math"
           },
           {
             "start": 78,
@@ -1918,8 +2070,7 @@
             "start": 145,
             "end": 166,
             "text": "-16 = (-3) × 5 + (-1)",
-            "role": "math",
-            "reading": "technical"
+            "role": "math"
           },
           {
             "start": 197,
@@ -1946,8 +2097,7 @@
             "start": 241,
             "end": 261,
             "text": "16 = (-3) × (-5) + 1",
-            "role": "math",
-            "reading": "technical"
+            "role": "math"
           },
           {
             "start": 291,
@@ -2045,19 +2195,43 @@
         "block": "block_0001_0003",
         "path": "/options/0",
         "sourceSha256": "47d07cf74da8ac99d73c6c76c25e3282253b6090ab86e04be463ee0ee5876de1",
-        "spans": []
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/options/1",
         "sourceSha256": "ab38e2d73efc6348450bbc56217add20ba81e1da83010ee96db74fe62dc4cf5c",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/options/2",
         "sourceSha256": "88a68ecddd44c6c8a9da19a5a54128b8afb9cff560ab9af534d41d5742d5c348",
-        "spans": []
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -2092,13 +2266,15 @@
             "start": 54,
             "end": 63,
             "text": "izquierda",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 66,
             "end": 73,
             "text": "derecha",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 77,
@@ -2111,7 +2287,8 @@
             "start": 89,
             "end": 109,
             "text": "resultado_en_dominio",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2180,32 +2357,49 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "1f0a23ca27a55feefb31c1f189945f89a4d08454527f480dc68d8334abc9eb63",
+        "sourceSha256": "371931134b7753fd1277d27d818b3977e59974994505d469f4429f5727a352c7",
         "spans": [
           {
-            "start": 12,
-            "end": 22,
-            "text": "leer_token",
-            "role": "cpp"
+            "start": 33,
+            "end": 37,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 58,
-            "end": 59,
+            "start": 63,
+            "end": 73,
+            "text": "leer_token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 96,
             "text": "%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 143,
-            "end": 155,
+            "start": 191,
+            "end": 203,
             "text": "token_valido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 267,
-            "end": 279,
+            "start": 291,
+            "end": 303,
             "text": "leer_termino",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 435,
+            "text": "leer_token",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2218,265 +2412,454 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "0244841487439edfa717b647ec872af8e8aea0940830304b66100db09b3e04ff",
+        "sourceSha256": "e6f44de114aba868680f5d12532a0df8499d97ae438b61c77fc29a7c14974b43",
         "spans": [
           {
-            "start": 135,
-            "end": 136,
+            "start": 134,
+            "end": 135,
             "text": "%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 422,
-            "end": 423,
+            "start": 270,
+            "end": 274,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 348,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 354,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 400,
             "text": ";",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 574,
+            "end": 578,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "20f864904e9f9ef9d34cc12a89c0dc45173c387577909f0e31ca7e8b741fb84f",
+        "sourceSha256": "22761894a668925e53c9cd669a8b88c2901ec048985f8b83f82b6da6491b1aab",
         "spans": [
           {
-            "start": 45,
-            "end": 58,
+            "start": 8,
+            "end": 12,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 43,
             "text": "probar(texto)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 72,
+            "start": 51,
+            "end": 55,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 162,
+            "start": 181,
+            "end": 182,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 204,
             "text": "\"22%6;-22%6;17/3%4;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 168,
-            "end": 177,
+            "start": 212,
+            "end": 213,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 224,
             "text": "\"23%7%3;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 183,
-            "end": 194,
+            "start": 232,
+            "end": 233,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 246,
             "text": "\"23%(7%3);\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 200,
-            "end": 208,
+            "start": 254,
+            "end": 255,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 265,
             "text": "\"9%0;6;\"",
-            "role": "string"
-          },
-          {
-            "start": 214,
-            "end": 220,
-            "text": "\"0%7;\"",
-            "role": "string"
-          },
-          {
-            "start": 226,
-            "end": 239,
-            "text": "\"(-99-1)%-1;\"",
-            "role": "string"
-          },
-          {
-            "start": 245,
-            "end": 254,
-            "text": "\"99*2%3;\"",
-            "role": "string"
-          },
-          {
-            "start": 260,
-            "end": 267,
-            "text": "\"8%-3;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 273,
-            "end": 286,
-            "text": "\"(99+2)%3;4;\"",
-            "role": "string"
+            "end": 274,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 282,
+            "text": "\"0%7;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 293,
-            "end": 301,
+            "end": 306,
+            "text": "\"(-99-1)%-1;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 315,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 326,
+            "text": "\"99*2%3;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 335,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 344,
+            "text": "\"8%-3;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 353,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 368,
+            "text": "\"(99+2)%3;4;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 378,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 388,
             "text": "\"-14/5;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 308,
-            "end": 316,
+            "start": 396,
+            "end": 398,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 408,
             "text": "\"2+3*4;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 323,
-            "end": 345,
-            "text": "\"(((((((((1)))))))));\"",
-            "role": "string"
-          },
-          {
-            "start": 419,
-            "end": 424,
-            "text": "-14/5",
+            "start": 416,
+            "end": 418,
+            "text": "12",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
-            "start": 440,
+            "start": 420,
             "end": 442,
-            "text": "-2",
-            "role": "output",
-            "reading": "natural"
+            "text": "\"(((((((((1)))))))));\"",
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 445,
-            "end": 450,
-            "text": "2+3*4",
+            "start": 472,
+            "end": 476,
+            "text": "tres",
             "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 466,
-            "end": 468,
-            "text": "14",
-            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 633,
-            "end": 660,
-            "text": "Error: Anidamiento excesivo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 790,
-            "end": 791,
+            "start": 519,
+            "end": 520,
             "text": "4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 793,
-            "end": 795,
+            "start": 522,
+            "end": 524,
             "text": "-4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 798,
-            "end": 799,
+            "start": 527,
+            "end": 528,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 840,
-            "end": 841,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 866,
-            "end": 872,
+            "start": 544,
+            "end": 550,
             "text": "17/3%4",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 913,
-            "end": 914,
+            "start": 590,
+            "end": 591,
             "text": "5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 934,
-            "end": 935,
+            "start": 611,
+            "end": 612,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 990,
-            "end": 996,
-            "text": "Caso N",
+            "start": 638,
+            "end": 639,
+            "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1026,
-            "end": 1027,
+            "start": 651,
+            "end": 652,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 670,
+            "end": 671,
             "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 684,
+            "end": 690,
+            "text": "4 -4 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 752,
+            "end": 757,
+            "text": "-14/5",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 775,
+            "end": 777,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 825,
+            "end": 830,
+            "text": "2+3*4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 842,
+            "end": 844,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 900,
+            "end": 922,
+            "text": "\"(((((((((1)))))))));\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 924,
+            "end": 929,
+            "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1052,
-            "end": 1058,
-            "text": "Valor:",
-            "role": "output",
+            "start": 975,
+            "end": 979,
+            "text": "ocho",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1060,
-            "end": 1079,
-            "text": "Error: Divisor cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1081,
-            "end": 1114,
-            "text": "Error: Resultado fuera de dominio",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1116,
-            "end": 1143,
+            "start": 993,
+            "end": 1020,
             "text": "Error: Anidamiento excesivo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1157,
-            "end": 1167,
+            "start": 1044,
+            "end": 1047,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1064,
+            "end": 1068,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1131,
+            "end": 1137,
+            "text": "Caso N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1154,
+            "end": 1160,
+            "text": "Caso 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1212,
+            "end": 1218,
+            "text": "Valor:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1255,
+            "end": 1261,
+            "text": "Error:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1291,
+            "end": 1301,
             "text": "Aceptadas:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1169,
-            "end": 1180,
+            "start": 1303,
+            "end": 1314,
             "text": "Rechazadas:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1182,
-            "end": 1187,
+            "start": 1316,
+            "end": 1321,
             "text": "Suma:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1190,
-            "end": 1200,
+            "start": 1324,
+            "end": 1334,
             "text": "Historial:",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1503,
+            "end": 1507,
+            "text": "doce",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2677,14 +3060,21 @@
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "cbd33cac438c650682a74ad0d110aad5519b1858e207c757c45d247a86ec8276",
+        "sourceSha256": "e5b561653257bc5fe54d87f6fde3c7c67a1cb91f8aba047735406c3a7a45f224",
         "spans": [
           {
-            "start": 318,
-            "end": 319,
+            "start": 452,
+            "end": 453,
             "text": ";",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 546,
+            "end": 550,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2697,33 +3087,76 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "0150d87e2818bd05a1f534615ea919cf462f7841792588abffa1f652d2b34d55",
+        "sourceSha256": "600dd93202f3ba01966f0b59fe20ac9a24e224fe6c7faf26bcc7a592e2ad4705",
         "spans": [
           {
-            "start": 39,
-            "end": 59,
+            "start": 29,
+            "end": 49,
             "text": "\"19%6;-19%6;25/4%3;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 87,
+            "start": 87,
+            "end": 92,
+            "text": "19%6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 106,
+            "end": 107,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 91,
+            "start": 143,
+            "end": 149,
+            "text": "-19%6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 163,
+            "end": 165,
             "text": "-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 94,
-            "end": 95,
+            "start": 199,
+            "end": 206,
+            "text": "25/4%3;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 230,
+            "end": 231,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 275,
             "text": "0",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 565,
+            "end": 569,
+            "text": "doce",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2731,12 +3164,47 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "cadb384e0424e0c3deafbefc6c8944c08d837123ae328992fd323fedf6bbfe91",
+        "sourceSha256": "e8335c69b2c8a4ce091753847be1689b3ace4ab80c044c94332b4802d2b30c39",
         "spans": [
           {
-            "start": 11,
-            "end": 12,
+            "start": 22,
+            "end": 28,
+            "text": "1 -1 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
             "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 147,
+            "text": "-1",
             "role": "output",
             "reading": "natural"
           }
@@ -2854,70 +3322,89 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "330a06aa9f3c08cc1b08291bbdd500592852f273fe88069b8af79c9d52afc0bc",
+        "sourceSha256": "741b7db68887a903db0555531c4d1e927be7a1208789902fcd8b609c3c8373f5",
         "spans": [
           {
-            "start": 14,
-            "end": 21,
+            "start": 55,
+            "end": 62,
             "text": "\"8%-3;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 26,
-            "end": 39,
-            "text": "\"(99+2)%3;4;\"",
-            "role": "string"
+            "start": 77,
+            "end": 79,
+            "text": "-3",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 124,
-            "end": 131,
-            "text": "\"8%-3;\"",
-            "role": "string"
-          },
-          {
-            "start": 150,
-            "end": 151,
+            "start": 93,
+            "end": 94,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 170,
+            "start": 134,
+            "end": 147,
             "text": "\"(99+2)%3;4;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 200,
-            "end": 203,
+            "start": 194,
+            "end": 197,
             "text": "101",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 323,
-            "end": 324,
+            "start": 376,
+            "end": 377,
             "text": "4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 422,
-            "end": 424,
+            "start": 475,
+            "end": 477,
             "text": "%=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "cf7efa8ee4a1772c6f5d60fb5ad6ca8668b8aeb00baea8cbe2c0b685c4578f9e",
+        "sourceSha256": "921a161f46f83223829d1872351eb4e5344f00137b849341f11ee6f189a2286b",
         "spans": [
           {
-            "start": 210,
-            "end": 241,
-            "text": "(Stroustrup, 2024, sección 6.5)",
+            "start": 139,
+            "end": 147,
+            "text": "0%(4-4);",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 201,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 301,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2938,7 +3425,7 @@
       {
         "block": "u11_resto_mixto_signo_y_divisor_calculado_consigna",
         "path": "/text",
-        "sourceSha256": "f2db924dbd7d8f6b147e8b9bfc109cbc625f3ade930d42d132b68bed6d6d3e14",
+        "sourceSha256": "0e8c15183d1b28b571ed5b036285520f514c2c6d9ca82d4e950d71fe77af0f7d",
         "spans": [
           {
             "start": 53,
@@ -2955,31 +3442,59 @@
             "reading": "technical"
           },
           {
-            "start": 270,
-            "end": 290,
+            "start": 171,
+            "end": 175,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 213,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 245,
             "text": "8*3%5;18%5*2;29%8/2;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 423,
-            "end": 430,
+            "start": 327,
+            "end": 331,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 346,
+            "end": 353,
             "text": "-17%-5;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 523,
-            "end": 533,
+            "start": 427,
+            "end": 437,
             "text": "0%(4-4);6;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 705,
-            "end": 711,
+            "start": 589,
+            "end": 595,
             "text": "Caso N",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 812,
+            "end": 818,
+            "text": "quince",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3063,6 +3578,27 @@
             "start": 272,
             "end": 273,
             "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 306,
+            "text": "una entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 322,
+            "text": "una aceptación",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 335,
+            "text": "un rechazo",
             "role": "output",
             "reading": "natural"
           }
@@ -3161,8 +3697,7 @@
             "start": 134,
             "end": 155,
             "text": "-17 = 3 × (-5) + (-2)",
-            "role": "math",
-            "reading": "technical"
+            "role": "math"
           },
           {
             "start": 222,
@@ -3224,214 +3759,297 @@
       {
         "block": "u11_resto_mixto_signo_y_divisor_calculado_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "49891eb9a964edc7fd45a9f80dd8cdeb59d08980784af1443d336c2712d1a131",
+        "sourceSha256": "0b26275b4892a4353c48673af7c4b1fc6565dc310b825c67b0fc81c3c05567f5",
         "spans": [
           {
-            "start": 3,
-            "end": 8,
+            "start": 21,
+            "end": 23,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 74,
             "text": "8*3%5",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 25,
-            "end": 27,
+            "start": 106,
+            "end": 108,
             "text": "24",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 46,
+            "start": 125,
+            "end": 126,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 50,
-            "end": 51,
+            "start": 130,
+            "end": 131,
             "text": "4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 62,
+            "start": 134,
+            "end": 140,
             "text": "18%5*2",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 73,
-            "end": 74,
+            "start": 169,
+            "end": 170,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 101,
-            "end": 102,
+            "start": 198,
+            "end": 199,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 110,
-            "end": 111,
+            "start": 215,
+            "end": 216,
             "text": "6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 116,
-            "end": 122,
-            "text": "29%8/2",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 133,
-            "end": 134,
-            "text": "5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 159,
-            "end": 160,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 182,
-            "end": 183,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 288,
-            "end": 289,
+            "start": 284,
+            "end": 285,
             "text": "8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 292,
-            "end": 293,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 301,
-            "end": 307,
-            "text": "-17%-5",
+            "start": 288,
+            "end": 294,
+            "text": "29%8/2",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 324,
-            "end": 325,
-            "text": "3",
+            "start": 323,
+            "end": 324,
+            "text": "5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 337,
-            "end": 339,
-            "text": "-2",
-            "role": "output",
+            "start": 350,
+            "end": 351,
+            "text": "2",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 366,
-            "end": 387,
-            "text": "-17 = 3 × (-5) + (-2)",
-            "role": "math",
-            "reading": "technical"
-          },
-          {
-            "start": 439,
-            "end": 440,
+            "start": 373,
+            "end": 374,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 491,
-            "end": 502,
+            "start": 426,
+            "end": 427,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 440,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 457,
+            "text": "-17%-5",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 474,
+            "end": 475,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 487,
+            "end": 489,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 516,
+            "end": 537,
+            "text": "-17 = 3 × (-5) + (-2)",
+            "role": "math"
+          },
+          {
+            "start": 583,
+            "end": 584,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 656,
             "text": "(-99-1)%-1;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 522,
-            "end": 523,
+            "start": 676,
+            "end": 677,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 573,
-            "end": 583,
+            "start": 751,
+            "end": 753,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 755,
+            "end": 765,
             "text": "0%(4-4);6;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 620,
-            "end": 621,
+            "start": 802,
+            "end": 803,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 646,
-            "end": 658,
+            "start": 833,
+            "end": 845,
             "text": "Divisor cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 743,
-            "end": 744,
+            "start": 878,
+            "end": 882,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 930,
+            "end": 931,
             "text": "6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 785,
-            "end": 786,
+            "start": 937,
+            "end": 940,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 953,
+            "end": 955,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 976,
+            "end": 977,
             "text": "6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 975,
-            "end": 979,
+            "start": 998,
+            "end": 1002,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1025,
+            "end": 1026,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1044,
+            "end": 1047,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1062,
+            "end": 1066,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1088,
+            "end": 1091,
+            "text": "0 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1168,
+            "end": 1172,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1089,
-            "end": 1101,
+            "start": 1195,
+            "end": 1201,
+            "text": "quince",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1276,
+            "end": 1288,
             "text": "leer_termino",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1197,
-            "end": 1198,
+            "start": 1384,
+            "end": 1385,
             "text": "/",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1201,
-            "end": 1202,
+            "start": 1388,
+            "end": 1389,
             "text": "%",
             "role": "cpp",
             "reading": "technical"

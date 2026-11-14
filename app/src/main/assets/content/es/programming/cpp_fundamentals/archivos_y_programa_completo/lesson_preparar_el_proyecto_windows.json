@@ -14,11 +14,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El contrato de los datos sigue siendo el conocido: grupos rojo, verde y azul, cada uno presente como máximo una vez; identificadores de registro de cero a nueve, únicos dentro de su grupo; y cantidades de cero a diez. El orden de los grupos y el de sus registros forman parte de la información. Un grupo vacío sigue presente, y un registro con cantidades cero no se elimina."
+          "text": "El contrato de los datos sigue siendo el conocido. Conserva estas condiciones al reunir los componentes del proyecto:\nLos grupos admitidos son rojo, verde y azul. Cada uno puede aparecer como máximo una vez dentro del conjunto.\nLos registros tienen identificadores de cero a nueve. Un identificador no se repite dentro de su grupo; el mismo número puede aparecer en otro grupo.\nCada registro contiene dos cantidades: aceptados y rechazados, ambas entre cero y diez.\nEl orden de los grupos y el orden de los registros de cada grupo forman parte de la información.\n\nTambién se conserva la presencia. Un grupo azul sin registros debe seguir apareciendo como grupo azul vacío; no se elimina. Un registro con cantidades cero y cero también sigue presente con su identificador. Las sumas del informe no permiten recuperar por sí solas esas diferencias."
         },
         {
           "type": "paragraph",
-          "text": "Al cargar una muestra completa válida, el programa podrá sustituir el estado anterior. Si la muestra se rechaza, deberá conservar ese estado y evitar abrir la salida para escribir. El informe calculará los totales y el grupo con mayor suma de aceptados, conservando el primero en orden de entrada ante un empate. Al guardar y recuperar, comparará todos los datos, no sólo el informe numérico."
+          "text": "Al cargar una muestra completa válida, el programa sustituye todo el estado anterior por los datos leídos. Si la muestra se rechaza, conserva el estado previo y termina esa ruta sin abrir la salida para escribir. Obtener un primer grupo válido no basta: deben haberse comprobado también los demás grupos, el cierre exterior y la ausencia de texto posterior que no sea blanco.\n\nEl informe calcula las sumas de aceptados y rechazados a partir de los registros. Para elegir el grupo con más aceptados, suma todos los aceptados de cada grupo. Si varios grupos empatan, conserva el primero en el orden de entrada. Un grupo vacío participa con suma cero; un conjunto sin grupos no tiene ganador.\n\nAl guardar, el programa compone primero el texto y comprueba después la apertura, la escritura y el cierre del archivo. Lo reabre, interpreta sus caracteres y compara todos los datos recuperados con los que intentó guardar: identidades, cantidades, presencia y ambos órdenes. Obtener los mismos totales no sustituye esa comparación.\n\nEsta versión procesa una muestra por ejecución. Aceptar la carga y terminar el guardado son etapas distintas: si los datos ya se aceptaron y después falla el guardado, ese fallo no deshace automáticamente la carga ni restaura un archivo parcialmente escrito. Por eso cada etapa debe comprobar su propio resultado."
         },
         {
           "type": "multiple_choice",
@@ -47,11 +47,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El código fuente es el texto de C++ que escribes y modificas con un editor. El compilador analiza ese texto y lo traduce; en el entorno Windows que prepararemos puede producir un archivo objeto con extensión .obj. Aquí archivo objeto significa un fichero con código traducido, no uno de los objetos que tu programa utiliza al ejecutarse. El enlazador combina las partes necesarias, incluidas las de las bibliotecas, para formar el ejecutable, habitualmente con extensión .exe (Stroustrup, 2024).",
+          "text": "El código fuente es el texto de C++ que escribes y guardas con un editor. Por ejemplo, un archivo llamado `ejemplo.cpp` puede contener las instrucciones de un programa. Guardar ese archivo conserva el texto; todavía no lo convierte en un programa listo para ejecutarse.\n\nEl compilador analiza y traduce el código fuente. En el entorno Windows que prepararemos puede producir un archivo objeto, por ejemplo `ejemplo.obj`. La extensión `.obj` identifica aquí un fichero con código traducido. Ese archivo objeto es distinto de los objetos de C++ que existen mientras se ejecuta tu programa, como un `Conjunto` o una variable entera.\n\nDespués, el enlazador combina las partes traducidas y las partes necesarias de las bibliotecas para formar el ejecutable. En este ejemplo podría llamarse `ejemplo.exe`. Windows puede iniciar ese archivo para ejecutar el programa. Los nombres de este ejemplo ilustran las etapas; construiremos los archivos concretos del proyecto en las lecciones correspondientes (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "código fuente",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "archivo objeto",
@@ -66,7 +67,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guardar una modificación del archivo fuente no actualiza por sí solo un ejecutable anterior. Por ejemplo, puedes corregir el cálculo de un total y seguir viendo el resultado viejo si ejecutas la construcción anterior. Para relacionar una observación con tu cambio, necesitarás construir la versión actual y ejecutar el resultado que le corresponde. Esa relación entre fuente, construcción y ejecución seguirá siendo necesaria aunque una herramienta coordine las etapas con un botón (Stroustrup, 2024)."
+          "text": "Supón que una construcción anterior del programa mostraba `Total: 3`. Cambias el código fuente para corregir el cálculo y ahora esperas `Total: 5`. Guardar esa modificación no cambia los caracteres ni las instrucciones de un ejecutable que ya existía.\n\nPara probar la corrección debes construir con las fuentes actuales, comprobar que la construcción terminó correctamente y ejecutar el resultado de esa construcción. Si ejecutas el archivo anterior, todavía puedes observar el tres, aunque el editor ya muestre el código corregido.\n\nRelaciona siempre estas tres cosas: el texto guardado, la construcción que lo utilizó y el ejecutable que estás probando. Una herramienta puede coordinar las etapas mediante un botón, pero siguen siendo acciones diferentes. Observar un resultado sólo permite valorar tu cambio cuando corresponde a la versión que acabas de construir (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
@@ -155,11 +156,12 @@
         },
         {
           "type": "paragraph",
-          "text": "SDK abrevia la expresión inglesa software development kit, que traducimos como kit de desarrollo de software. En este recorrido con las herramientas de Microsoft, el SDK de Windows aporta cabeceras, bibliotecas y herramientas de la plataforma Windows. No es el editor ni sustituye al compilador. Los recursos de la biblioteca estándar de C++ y los recursos de la plataforma tienen funciones propias dentro de la preparación del entorno; usar este SDK forma parte de nuestra elección de herramientas para Windows, no de una obligación universal del lenguaje C++ (Microsoft, 2026b).",
+          "text": "SDK abrevia la expresión inglesa software development kit, que traducimos como kit de desarrollo de software. Un SDK reúne elementos que ayudan a construir programas para una plataforma. En este recorrido utilizaremos el SDK de Windows junto con las herramientas de C++ de Microsoft.\n\nEl SDK de Windows proporciona cabeceras, bibliotecas y herramientas de esa plataforma. Las cabeceras contienen declaraciones que se utilizan al compilar; las bibliotecas aportan partes que pueden necesitarse al enlazar. El SDK no es el editor ni sustituye al compilador. Tener instalada una de esas piezas no demuestra que las demás estén disponibles (Microsoft, 2026b).\n\nTampoco son lo mismo la biblioteca estándar de C++, que aporta nombres ya conocidos como `std::string`, y los recursos de la plataforma Windows. Nuestra preparación reúne lo que necesitan estas herramientas para construir el proyecto en Windows. Utilizar ese SDK forma parte de la elección de entorno de este curso; el lenguaje C++ no obliga a todos sus programas a utilizar el SDK de Windows.",
           "emphasis": [
             {
               "text": "SDK de Windows",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "software development kit",
@@ -186,7 +188,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un depurador permite observar el programa mientras se ejecuta: puede detenerlo en un punto elegido y mostrar los valores pertinentes. Lo utilizaremos para comprobar hipótesis sobre un fallo. Por ejemplo, si sospechamos que una suma se reinicia dentro de un recorrido, necesitamos observar cómo cambia el acumulador al pasar por esas iteraciones. El depurador aporta observaciones; interpretar su causa y comprobar la corrección siguen siendo tareas de programación (Microsoft, 2025d).",
+          "text": "Un depurador permite observar el programa durante su ejecución. Puede detenerlo en un punto elegido, mostrar los valores de las variables y permitir que continúes por las instrucciones pertinentes. Utilizaremos esas observaciones para comprobar una hipótesis concreta sobre un fallo (Microsoft, 2025d, 2025e).\n\nPor ejemplo, imagina un total que debe sumar dos aceptados del primer registro y tres del segundo. El acumulador empieza en cero; después del primero debe valer dos y después del segundo debe valer cinco. Si sospechas que se reinicia dentro del recorrido, observa su valor al comenzar y terminar cada vuelta. Ver cero donde debía conservar el dos permite localizar cuándo se perdió aquella suma.\n\nEl depurador muestra lo que ocurrió; no decide por sí solo cuál era el resultado correcto ni corrige el programa. Debes relacionar los valores observados con las instrucciones ejecutadas, corregir la causa y volver a comprobar el cálculo. Que el programa termine normalmente o repita el mismo resultado no demuestra que ese resultado sea correcto.",
           "emphasis": [
             {
               "text": "depurador",
@@ -222,11 +224,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El Laboratorio ya ha creado y leído archivos reales. Al pasar al proyecto externo habrá que controlar también dónde están las fuentes, desde qué carpeta se construye y ejecuta, y qué archivos recibe o produce cada ejecución. La ruta relativa se interpreta desde el directorio de trabajo correspondiente; no basta con que dos archivos tengan el mismo nombre para afirmar que son el mismo archivo."
+          "text": "El Laboratorio ya ha creado y leído archivos reales. En el proyecto externo controlarás también dónde están las fuentes, desde qué carpeta construyes y ejecutas y dónde se encuentran las entradas y salidas.\n\nUna ruta relativa se interpreta desde el directorio de trabajo de la ejecución. Por ejemplo, si el programa intenta abrir `entrada.txt` y trabaja en `C:\\Ejemplos\\InspectionLog`, buscará `C:\\Ejemplos\\InspectionLog\\entrada.txt`. Si lo ejecutas con `C:\\Pruebas` como directorio de trabajo, esa misma ruta relativa señala `C:\\Pruebas\\entrada.txt`. Son ubicaciones distintas aunque los archivos tengan el mismo nombre.\n\nEl directorio de trabajo es la carpeta desde la que se resuelven esas rutas en la ejecución. No supongas que siempre será la carpeta del archivo fuente ni la del ejecutable. Las próximas lecciones indicarán dónde situarte antes de cada orden y qué archivos debe crear o leer."
         },
         {
           "type": "paragraph",
-          "text": "La entrega reunirá el programa, las instrucciones para preparar sus herramientas y reproducir su construcción, las pruebas con sus entradas y resultados, y la explicación de las decisiones que afectan al contrato. Una prueba de rechazo deberá mostrar qué permaneció intacto; una prueba de guardado deberá comparar los datos completos recuperados. El registro de construcción debe corresponder a las fuentes y al ejecutable de la versión que se está comprobando."
+          "text": "La entrega reunirá lo necesario para que otra persona pueda construir y comprobar el proyecto. Cada parte cumple un propósito:\nCódigo fuente: permite estudiar y construir la versión entregada.\nInstrucciones de preparación: indican cómo obtener y configurar las herramientas y dependencias necesarias.\nInstrucciones de construcción y ejecución: muestran las órdenes completas, la carpeta desde la que se ejecutan y los archivos que producen.\nPruebas: identifican las entradas, los resultados esperados y lo observado en los casos normales, límites y rechazos.\nDecisiones: explican las condiciones del formato, el orden, los empates y las demás elecciones que afectan al resultado.\n\nPara comprobar un rechazo, observa qué estado y qué archivo permanecieron intactos. Para comprobar un guardado, compara todos los datos recuperados con los originales. Conserva también la información de la construcción que permite relacionar esas ejecuciones con sus fuentes y con su ejecutable.\n\nLas lecciones del proyecto enseñarán a preparar esos elementos durante su construcción. La referencia del autor permite contrastarlos; la entrega propia necesita tus archivos, decisiones y resultados reproducibles."
         },
         {
           "type": "paragraph",
@@ -625,6 +627,56 @@
         "id": "block_0002_0004",
         "beforeSha256": "31cc5c4ad31ddf03f33292be96327034fe000cf03b105a566527b95db3bc5cbe",
         "afterSha256": "78699223eb79662624c3c7945e06b4df19247035c2dabf138ffb97d013e62996"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "1ec4ee6ed54498132c9a1bc6eedc70e4afa24c4be3b7af3e81528f07a306a338",
+        "afterSha256": "d6c5eddd5531695989b5e2105e73b543fcc82d8cedcff4c0e7745845789366c5"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5c3c13c0395d9e00cb044b4e8192fc4d0ef968360db047532be7b5288ef1a46e",
+        "afterSha256": "76f615fa625d1a9c7aafbf6ec26937338f92de0d44aa000c4966eb0727c5546a"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "49d3414b266bd95de40a02f94e5b4db0e6d0c1a6eb702a8ff2dbc592d14c85c3",
+        "afterSha256": "893056bce520130f67d13f8872477eecbcde42bac023d3c43a7a6aa22a45d640"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "bcf45aa1ab67be596ee1b6f79c07923f75b25cb56eb33468d3ef746fd9f80ea3",
+        "afterSha256": "be630eced2ac38560946a0add53f559fd743548c7888d7ed71da3a3cdf48dc65"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "5d24016e7ea147642cb0074f5c7d3e09d84e2ae368c5d18e05bca9b0d1572f25",
+        "afterSha256": "e36ad6437aefbba91f5f58706c950d25cd20261fbc0c465c9f10fe0dac519051"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "78699223eb79662624c3c7945e06b4df19247035c2dabf138ffb97d013e62996",
+        "afterSha256": "c72861485592ef985d33d622300700f97f8cd57a2ef0f3331f3c5989b509e6d4"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "be3d702cd89312f8af1748702810ae7505dc77efbf4f1beb6e9914cda5a15c8c",
+        "afterSha256": "39f740cd82309ddaee15d22682f1c6596a21a4e1145d59877e50ac230373d188"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "d786540698be3139991771f15c0ecd9e112ae2c60734ae1f84ef766aa35bf71e",
+        "afterSha256": "beb2ad92110b370c4aa45fd201e5dba996b1742ae289899b26620c801648504b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "893056bce520130f67d13f8872477eecbcde42bac023d3c43a7a6aa22a45d640",
+        "afterSha256": "4967d9ba26c546e52adbce505d70bb631492657bd2098ca88c5f8e1dd8ab08b1"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e36ad6437aefbba91f5f58706c950d25cd20261fbc0c465c9f10fe0dac519051",
+        "afterSha256": "07343547fbdc954335f94115a8f9723ed973efd42d23e693906fcfdefb66a67e"
       }
     ]
   },
@@ -646,77 +698,13 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "6d8943513e5884d60bb9a84a915073932804396caa513e427d4d29467125c194",
-        "spans": [
-          {
-            "start": 58,
-            "end": 62,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 64,
-            "end": 69,
-            "text": "verde",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 72,
-            "end": 76,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 108,
-            "end": 111,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 148,
-            "end": 152,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 155,
-            "end": 160,
-            "text": "nueve",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 209,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 212,
-            "end": 216,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 355,
-            "end": 359,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "3b5bf4ccc4ab394c90729749b2e13d899d6f60dc37a60d1d7464349f8dd91335",
+        "spans": []
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "656ee481ab4bac39742d072d6f458e92f6dac596903e384ce8648ed374499e32",
+        "sourceSha256": "5f0fb37321223bfdd92f2d3964113e448cb5a057122a175026eb81f4b8a99900",
         "spans": []
       },
       {
@@ -776,25 +764,41 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "d41fb683cc6728809a7c6ff600f50a53d257e34f5d65db50f9fe0197191cde10",
+        "sourceSha256": "9ac63a21f84eec09609b6fcff263888fd806ad15a3c724b305fa2b26f5b85299",
         "spans": [
           {
-            "start": 208,
-            "end": 212,
+            "start": 107,
+            "end": 118,
+            "text": "ejemplo.cpp",
+            "role": "data"
+          },
+          {
+            "start": 407,
+            "end": 418,
+            "text": "ejemplo.obj",
+            "role": "data"
+          },
+          {
+            "start": 435,
+            "end": 439,
             "text": ".obj",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 471,
-            "end": 475,
-            "text": ".exe",
-            "role": "data",
-            "reading": "natural"
+            "start": 597,
+            "end": 605,
+            "text": "Conjunto",
+            "role": "cpp"
           },
           {
-            "start": 476,
-            "end": 494,
+            "start": 786,
+            "end": 797,
+            "text": "ejemplo.exe",
+            "role": "data"
+          },
+          {
+            "start": 994,
+            "end": 1012,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -804,11 +808,23 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "cb900d1687cd2607adb17a158d923d1ee49655fadf5f8a88cb94432a9e3b93b0",
+        "sourceSha256": "9895bed3870e034f2575bbdacbc99fdba6d6589edfea1f7d72dd9a2c59b1e694",
         "spans": [
           {
-            "start": 482,
-            "end": 500,
+            "start": 59,
+            "end": 67,
+            "text": "Total: 3",
+            "role": "output"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "Total: 5",
+            "role": "output"
+          },
+          {
+            "start": 867,
+            "end": 885,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -918,14 +934,20 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "598c26137c6fe78fdfa1200bd4f8e70cb4d6ca75a92cc46aeaf96b1f90889ae6",
+        "sourceSha256": "62ecd7a7a1025a8cda7aad4f5e3f95e183de6e891fa0d09a8d0422ebca4b63db",
         "spans": [
           {
-            "start": 561,
-            "end": 579,
+            "start": 636,
+            "end": 654,
             "text": "(Microsoft, 2026b)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 747,
+            "end": 758,
+            "text": "std::string",
+            "role": "cpp"
           }
         ]
       },
@@ -980,12 +1002,12 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "baa0e14a5a5044646540d4beca66bb0ec85b6edc97b6424a1f7745e639eee01b",
+        "sourceSha256": "ae7a9aef75a3455269d240953eb080f7e3133cb305ec57275f7402bb25ce4f5a",
         "spans": [
           {
-            "start": 465,
-            "end": 483,
-            "text": "(Microsoft, 2025d)",
+            "start": 283,
+            "end": 308,
+            "text": "(Microsoft, 2025d, 2025e)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1056,13 +1078,44 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "c2e6752fed4add494c22273e3fbb50ec2dcbb2eec7984c1969b66978ef951dc6",
-        "spans": []
+        "sourceSha256": "6b8f2308e3c15b03e620a1879b798a97113ed29a9a4eeba0509969e65bc548da",
+        "spans": [
+          {
+            "start": 331,
+            "end": 342,
+            "text": "entrada.txt",
+            "role": "data"
+          },
+          {
+            "start": 358,
+            "end": 383,
+            "text": "C:\\Ejemplos\\InspectionLog",
+            "role": "data"
+          },
+          {
+            "start": 395,
+            "end": 432,
+            "text": "C:\\Ejemplos\\InspectionLog\\entrada.txt",
+            "role": "data"
+          },
+          {
+            "start": 455,
+            "end": 465,
+            "text": "C:\\Pruebas",
+            "role": "data"
+          },
+          {
+            "start": 527,
+            "end": 549,
+            "text": "C:\\Pruebas\\entrada.txt",
+            "role": "data"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "c1b47ce772e06907fe0075651dfb4f564c5c62981d045ea09948bcc344880ac6",
+        "sourceSha256": "fd98c7dd7ed56278cdfe7aee7f06d543b725835225e9d40ce5b1559e81db018c",
         "spans": []
       },
       {

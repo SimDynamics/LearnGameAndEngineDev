@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Un informe puede decir Rojo: dos registros. Ese texto no conserva todos los ID y cantidades ni usa la gramática del lector. Para guardar los objetos y recuperarlos después debemos escribir aperturas, etiquetas, nombres, registros y cierres que el lector acepte. Esta operación transforma una representación en memoria en un formato de datos."
+          "text": "Supón que rojo contiene los registros `7[0;0]` y `2[3;1]`. El informe `Rojo: dos registros` permite conocer su cantidad, pero no permite recuperar los identificadores ni las cantidades de cada registro. Tampoco indica si había otros grupos presentes sin registros.\n\nPara guardar y recuperar los datos necesitamos el formato que ya reconoce nuestro lector. Por ejemplo, `{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }` conserva los dos registros de rojo y la presencia de azul vacío. Las llaves delimitan cada nivel; las palabras, los nombres y los recuentos permiten reconstruir los miembros correspondientes.\n\nAhora realizaremos el recorrido inverso al de la lectura: consultaremos los objetos en memoria para producir esos caracteres. Componer la cadena y escribirla posteriormente en un archivo son operaciones distintas. El compositor de esta lección prepara primero un texto completo; el llamador decidirá dónde utilizarlo."
         },
         {
           "type": "paragraph",
-          "text": "Definimos componer_conjunto: recibe el conjunto mediante una referencia a const Conjunto y el parámetro destino mediante una referencia a std::string. Así puede consultar los datos del conjunto sin modificarlos y sustituir el texto de destino. Si todos los grupos y registros son válidos y no se repiten según sus ámbitos, produce un texto completo; si devuelve false, conserva destino. El texto respeta el orden de grupos y registros, incluye los grupos vacíos y usa nombres exactos y enteros decimales sin + ni ceros iniciales."
+          "text": "La función tiene la interfaz `bool componer_conjunto(const Conjunto& conjunto, std::string& destino)`. El parámetro `conjunto` permite consultar el objeto sin copiarlo ni modificarlo a través de esa referencia constante. El parámetro `destino` se refiere a la cadena del llamador y permite sustituir sus caracteres. El resultado devuelto es un `bool`: informa si se consiguió la composición, no transporta la cadena.\n\nAl devolver `true`, `destino` contiene todo el texto nuevo. Al devolver `false`, conserva exactamente el texto que tenía antes de esa llamada. No se borra ni se sustituye por un prefijo. El conjunto de origen también conserva todos sus grupos, registros y cantidades.\n\nSólo se aceptan estructuras cuyos datos estén dentro de sus intervalos y sin identificadores repetidos donde se prohíben: grupos dentro del conjunto y registros dentro de su propio grupo. El texto mantiene el orden de ambos vectores e incluye los grupos vacíos. Escribe los nombres exactos y los enteros en decimal, sin signo positivo añadido ni ceros iniciales. Se elige una forma estable para representar los valores; no se intenta reproducir la escritura original con la que se leyeron."
         },
         {
           "type": "multiple_choice",
@@ -55,7 +55,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para esta práctica componemos los datos sobre un ostringstream nuevo, con su formato decimal habitual, y devolvemos su string. El formato del informe que posteriormente use cout no modifica esos caracteres. No intentamos reparar a ciegas todos los manipuladores de un flujo ajeno ni prometemos preservar un estado que hemos cambiado."
+          "text": "En el contraejemplo, el valor diez se insertó en un flujo configurado en hexadecimal y apareció como una letra. Para preparar nuestro formato decimal, `componer_conjunto` crea su propio `std::ostringstream` nuevo y compone allí el texto. Así no utiliza la configuración de un flujo ajeno para escribir los enteros.\n\nDespués de completar las inserciones y comprobar el flujo, obtiene sus caracteres mediante `str()` y los asigna a `destino`. La función devuelve `true` para comunicar la aceptación. Si una comprobación provoca el retorno `false`, la asignación al destino no se realiza.\n\nEl texto ya compuesto contiene caracteres concretos, por ejemplo los dígitos `10`. Si el llamador inserta esa cadena en `std::cout`, la base de ese flujo no vuelve a interpretar aquellos caracteres como un entero. La cadena en memoria y el formato de la inserción posterior son cuestiones separadas (Köppe et al., 2023)."
         },
         {
           "type": "multiple_choice",
@@ -76,7 +76,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La forma de los objetos públicos no evita que otro código cree datos inválidos. Valida IDs, cantidades, tamaños y duplicados antes de usar un nombre por índice o insertar los recuentos. Como los dominios son pequeños, una búsqueda de coincidencias es suficiente aquí; su coste no se generaliza a colecciones enormes."
+          "text": "Los miembros de estos tipos se pueden proporcionar directamente al construir los objetos. El tipo `int` permite almacenar el valor tres en el identificador de un grupo, aunque nuestro formato sólo admita cero, uno y dos. Por ejemplo, `Grupo{3, {}}` puede existir como objeto y, aun así, ser rechazado por el compositor. Tampoco guardar registros en un vector impide que dos elementos tengan el mismo identificador.\n\nPor eso se comprueban los intervalos, los tamaños y los duplicados antes de convertir un identificador en un nombre o insertar recuentos. No se corrigen los datos silenciosamente ni se elimina una aparición repetida para producir algún texto. Los dominios pequeños de esta práctica permiten recorrer las colecciones y comparar sus identificadores; esa elección no demuestra que el mismo coste sea adecuado para colecciones enormes."
         },
         {
           "type": "multiple_choice",
@@ -105,15 +105,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Define grupo_valido y conjunto_valido. Comprueba ID de grupo 0..2 y hasta diez registros, ID de registro 0..9 y cantidades 0..10. Cada ID de registro presente tiene exactamente una aparición en su grupo; cada ID de grupo presente tiene exactamente una aparición en el conjunto. Un grupo vacío y un conjunto vacío son válidos."
+          "text": "Define `bool grupo_valido(const Grupo& grupo)`. Primero comprueba que el identificador del grupo esté entre cero y dos, incluidos ambos extremos, y que su vector tenga como máximo diez registros. Después recorre esos registros: cada identificador debe estar entre cero y nueve y su `Recuento` debe superar `recuento_valido`, que comprueba ambas cantidades entre cero y diez. Un grupo sin registros también necesita un identificador válido.\n\nLa comprobación de repetidos se hace dentro del grupo que estás validando. Una posibilidad consiste en elegir cada registro y contar cuántos elementos de ese mismo vector tienen su identificador. La cuenta incluye al propio registro: una aparición es la esperada; dos o más indican una repetición. Por ejemplo, `7[0;0]` y `7[3;1]` no forman dos registros válidos del mismo grupo porque repiten siete, aunque sus cantidades sean diferentes. Puedes organizar la búsqueda de otra manera si conserva esta condición.\n\nDefine después `bool conjunto_valido(const Conjunto& conjunto)`. Comprueba que haya como máximo tres grupos y que cada uno supere `grupo_valido`. Cuenta o busca las apariciones de cada identificador de grupo dentro del conjunto: cada grupo presente debe aparecer una sola vez, incluso si está vacío.\n\nLos identificadores de registro no se comparan entre grupos distintos. El registro uno puede aparecer en rojo y en verde porque pertenece a dos colecciones diferentes. Un conjunto sin grupos es válido; un grupo válido sin registros también lo es. Estas comprobaciones sólo consultan los objetos y devuelven un resultado booleano, sin imprimir ni cambiar los datos."
         },
         {
           "type": "paragraph",
-          "text": "Define componer_conjunto. Valida antes de componer; crea un ostringstream nuevo; escribe { conjunto; por grupo, escribe un blanco, { grupo, otro blanco y su nombre; por registro, un blanco, su ID y su Recuento; cierra cada grupo y el conjunto con un blanco antes de }. Sólo asigna la cadena final al destino después de comprobar el flujo. Mantén el orden de los vectores."
+          "text": "Define `componer_conjunto`. Comienza por comprobar todo el objeto mediante `conjunto_valido`. Si se rechaza, devuelve `false` antes de cambiar `destino`. Si se acepta, crea un `std::ostringstream` local nuevo, cuyo formato inicial escribe los enteros en decimal.\n\nEscribe primero `{ conjunto`. Recorre los grupos en el orden de su vector. Para cada uno, obtén el nombre mediante `nombre_grupo` y comprueba su resultado. Escribe un espacio, la apertura y la palabra de grupo, otro espacio y ese nombre: por ejemplo, ` { grupo rojo`. Ese espacio posterior a la palabra permite que el lector la separe del nombre.\n\nDentro de cada grupo recorre sus registros en el orden recibido. Antes de cada registro escribe un espacio; después, su identificador y su `Recuento`. Por ejemplo, el identificador siete seguido del recuento cero y cero produce ` 7[0;0]`. El operador de salida del recuento ya escribe sus corchetes y su punto y coma.\n\nAl terminar los registros, escribe ` }` para cerrar ese grupo, también cuando esté vacío. Ese espacio separa el nombre del cierre de un grupo sin registros. Después de terminar todos los grupos, escribe otro ` }` para cerrar el conjunto. Si el conjunto está vacío, la apertura y ese cierre producen `{ conjunto }`.\n\nComprueba el estado del flujo después de todas las inserciones. Sólo si la composición está completa y el flujo no indica fallo, obtén la cadena con `str()`, asígnala a `destino` y devuelve `true`. No añadas rótulos ni un salto final a la cadena de datos: el llamador decide cómo presentar sus informes. Mantén el orden de los vectores durante todo el recorrido."
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería con estas cinco etapas, en este orden:\n\n1. Compón un conjunto con un grupo rojo que contiene 7[0;0] y 2[3;1], y un grupo azul vacío. El destino inicial contiene previo. Presenta el bool y el texto compuesto en líneas distintas.\n2. Añade un grupo rojo vacío al conjunto de la primera etapa. Vuelve a componer sobre el mismo string y presenta el bool y el texto que conserva el destino.\n3. En una prueba independiente, compón un conjunto vacío con destino inicial anterior. Presenta el bool y el texto resultante.\n4. En otra prueba independiente, compón un conjunto con un grupo rojo que contiene 1[11;0], con destino inicial reserva. Presenta el bool y el texto que conserva el destino.\n5. Usa un conjunto con un grupo rojo que contiene 1[10;8]. Compón en otro ostringstream un informe hexadecimal de ambas cantidades y muestra Hex:a:8. Llama al compositor de datos y muestra el bool y su texto en líneas distintas. Finalmente muestra Conservado:10:8 consultando los miembros originales.\n\nTodas las líneas terminan con salto y no se añaden líneas vacías. Usa Compilar, ejecutar y comprobar con la batería completa.",
+          "text": "Construye una batería con las cinco etapas siguientes, en este orden. Las dos primeras utilizan el mismo objeto y la misma cadena para observar qué ocurre al rechazar después de un éxito. Las etapas tercera, cuarta y quinta preparan sus propios destinos. Los datos se construyen dentro de `main`; no se escriben en Entrada.\n\nEtapa 1. Prepara rojo con `7[0;0]` y `2[3;1]`, seguido de azul vacío. La cadena de destino empieza con `previo`. Compón el conjunto y muestra el resultado booleano y la cadena en líneas distintas.\nSalida esperada:\n1\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\n\nEtapa 2. Añade rojo vacío al conjunto de la etapa anterior. Vuelve a componer sobre la misma cadena, sin restablecerla. El grupo repetido debe provocar el rechazo y conservar todo el texto válido anterior.\nSalida esperada:\n0\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\n\nEtapa 3. En una prueba independiente, utiliza un conjunto vacío y una cadena que inicialmente contenga `anterior`. Muestra el resultado booleano y el texto que queda.\nSalida esperada:\n1\n{ conjunto }\n\nEtapa 4. En otra prueba independiente, utiliza rojo con `1[11;0]` y una cadena que inicialmente contenga `reserva`. La cantidad once está fuera del intervalo: se rechaza el objeto completo.\nSalida esperada:\n0\nreserva\n\nEtapa 5. Prepara rojo con `1[10;8]`. En un `std::ostringstream` independiente, compón un informe hexadecimal de ambas cantidades y muéstralo. Llama al compositor de datos con otra cadena de destino y muestra su resultado booleano y su texto decimal. Después consulta los miembros del objeto original para mostrar las dos cantidades que conserva.\nSalida esperada:\nHex:a:8\n1\n{ conjunto { grupo rojo 1[10;8] } }\nConservado:10:8\n\nNo imprimas los títulos Etapa ni Salida esperada de estas instrucciones. Todas las líneas del programa terminan con un salto y no se añaden líneas vacías. La comprobación de este editor compara las cinco etapas en una sola ejecución. Usa Compilar, ejecutar y comprobar con la batería completa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -162,11 +162,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe 1 en Entrada, compila y ejecuta. Primero se compone un conjunto en orden azul, verde y rojo; el identificador 1 aparece válidamente en dos grupos distintos. Después se prueban un duplicado local, un conjunto vacío, una cantidad negativa, un grupo con recuento cero y un grupo repetido. La salida requerida es:\n\n1:{ conjunto { grupo azul } { grupo verde 8[10;0] 1[0;0] } { grupo rojo 1[0;4] } }\nOrigen:3|2:0|1:2 8[10;0] 1[0;0]|0:1 1[0;4]\n0:{ conjunto { grupo azul } { grupo verde 8[10;0] 1[0;0] } { grupo rojo 1[0;4] } }\nOrigen:1|1:2 3[2;0] 3[0;1]\n1:{ conjunto }\nOrigen:0\n0:{ conjunto }\nOrigen:1|2:1 4[-1;0]\n1:{ conjunto { grupo azul 9[0;0] } }\nOrigen:1|2:1 9[0;0]\n0:{ conjunto { grupo azul 9[0;0] } }\nOrigen:2|2:0|2:1 5[1;0]\n\nCada línea termina con un salto de línea."
+          "text": "La Entrada inicial contiene `1`. Completa las funciones y conserva el cliente de `main`. La primera comprobación correcta de esta entrada es obligatoria para avanzar. Puedes rodear el selector con espacios, tabulaciones o saltos de línea; los objetos de cada intento ya están preparados en el cliente.\n\nPrimero se compone un conjunto en orden azul, verde y rojo; el identificador uno aparece válidamente en dos grupos distintos. Después se prueban un duplicado local, un conjunto vacío, una cantidad negativa, un grupo con recuento cero y un grupo repetido. Se conserva la misma cadena entre estas llamadas: cada rechazo debe mantener el último texto aceptado.\n\nEntrada obligatoria:\n`1`\nSalida esperada:\n1:{ conjunto { grupo azul } { grupo verde 8[10;0] 1[0;0] } { grupo rojo 1[0;4] } }\nOrigen:3|2:0|1:2 8[10;0] 1[0;0]|0:1 1[0;4]\n0:{ conjunto { grupo azul } { grupo verde 8[10;0] 1[0;0] } { grupo rojo 1[0;4] } }\nOrigen:1|1:2 3[2;0] 3[0;1]\n1:{ conjunto }\nOrigen:0\n0:{ conjunto }\nOrigen:1|2:1 4[-1;0]\n1:{ conjunto { grupo azul 9[0;0] } }\nOrigen:1|2:1 9[0;0]\n0:{ conjunto { grupo azul 9[0;0] } }\nOrigen:2|2:0|2:1 5[1;0]\n\nCada línea termina con un salto. Pulsa Compilar, ejecutar y comprobar con este recorrido."
         },
         {
           "type": "paragraph",
-          "text": "Después cambia Entrada a 2. La primera llamada debe conservar reserva_2 por un identificador de registro negativo. La segunda acepta tres grupos en orden rojo, azul y verde. Los cinco intentos restantes deben conservar esa última cadena frente a identificadores y cantidades fuera de su dominio. La salida requerida es:\n\n0:reserva_2\nOrigen:1|0:1 -1[0;0]\n1:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:3|0:2 9[10;10] 0[0;0]|2:0|1:1 9[0;2]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|0:2 2[1;0] 10[0;2]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|3:0\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|-1:0\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|2:1 4[0;11]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|1:1 0[0;-1]\n\nCada línea termina con un salto de línea."
+          "text": "El selector `2` es un ensayo opcional; no necesitas comprobarlo para avanzar ni para consultar la referencia. Puedes cambiar Entrada y ejecutarlo con la misma implementación.\n\nLa primera llamada rechaza un identificador de registro negativo y debe conservar `reserva_2`. La segunda acepta tres grupos en orden rojo, azul y verde. Los cinco intentos restantes deben mantener esa última cadena frente a identificadores y cantidades fuera de su intervalo. Cada intento sigue mostrando el objeto de origen para comprobar sus campos y su orden.\n\nEntrada opcional:\n`2`\nSalida esperada:\n0:reserva_2\nOrigen:1|0:1 -1[0;0]\n1:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:3|0:2 9[10;10] 0[0;0]|2:0|1:1 9[0;2]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|0:2 2[1;0] 10[0;2]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|3:0\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|-1:0\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|2:1 4[0;11]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|1:1 0[0;-1]\n\nCada línea termina con un salto de línea."
         },
         {
           "type": "cpp_compiler",
@@ -288,7 +288,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor conserva los tipos y el compositor ya estudiados. Construye main para componer rojo con 7[0;0] y 2[3;1] y azul vacío. Sólo después de aceptar la composición abre la muestra relativa conjunto_compuesto_lgp.txt, escribe el string y comprueba apertura, cierre y escritura. Abre después un ifstream, lee su única línea y preséntala con salto final. Si una etapa falla, presenta su diagnóstico y termina con código 1 sin afirmar que se guardó correctamente. La muestra se crea en esta ejecución. Usa Compilar, ejecutar y comprobar para contrastar los caracteres leídos de ella.",
+          "text": "El editor proporciona los tipos y el compositor ya estudiados. Construye `main` para crear rojo con los registros `7[0;0]` y `2[3;1]`, seguido de azul vacío. Prepara una cadena y llama a `componer_conjunto`. Si rechaza el objeto, muestra el diagnóstico y termina con código uno antes de abrir el archivo de salida.\n\nSi la composición se acepta, abre la muestra relativa `conjunto_compuesto_lgp.txt` con un `std::ofstream` y comprueba la apertura. Escribe en ella la cadena compuesta, cierra el flujo con `close()` y comprueba su estado después del cierre. El archivo se crea en esta misma ejecución; su ruta relativa se resuelve en la carpeta de trabajo del programa.\n\nAbre después ese mismo archivo con un `std::ifstream` nuevo y comprueba la apertura. Obtén su única línea mediante `std::getline`, comprueba que se pudo leer y que el flujo no indica una avería, y muestra la cadena recuperada con un salto final. Si falla una etapa, muestra un diagnóstico que la identifique y termina con código uno.\n\nSalida esperada:\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\n\nLa línea anterior termina con un salto en la consola. La comprobación compara esa salida; tu programa debe obtenerla del archivo, no imprimir directamente la cadena compuesta en lugar de la recuperada. Usa Compilar, ejecutar y comprobar para contrastar los caracteres leídos de la muestra.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -1197,6 +1197,56 @@
         "id": "block_0004_0001",
         "beforeSha256": "cc68fe79d3b7e490be250a4b0f4cabe9ef6bb554dee1573d0574e40ba3415659",
         "afterSha256": "a5b45db0e9d83b7110c82c3a8ef85efe7ffb3869a0a91514e1da957c5a78b03a"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "5394a7ebae119a091664e07ee7b9f3ad3c92566978006eff12dc484bb3528f8c",
+        "afterSha256": "ff5df2e53d0e6701051ee99601def6697054db8cef6a268374f19ff9930fde0d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "711fc16a932b46c20d01beca2df483b703623b52d7af9be8be6f7e22c3deaec2",
+        "afterSha256": "625b141c99d1a3e05aff9e7ef047980651d0aaec73e9edf0b008f0bfbc766856"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "eb7249da9f33241282bbd55095aaef69e2eb84ca49e0575a4d8458d50d67a4b6",
+        "afterSha256": "f61d62d0100bbf96f66bb761d7f6d2b718547e4f6e7b04aad066f8b4c16c4aba"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "d24f5bb5f61aa541bbef1819f7669879caee654db17a22cf5badddfe29d13088",
+        "afterSha256": "9b94aeeadc0531ed657aa3c5a1f68d36efa77c27c357ff0ae1b3ef3bb95f8abe"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a17792a9e68660ea0fc47caf55f98a02a5ed83e7a17b337a67c878a89e8e8b9f",
+        "afterSha256": "d044277681e2704d7d344d038016ac86b66565cded78695023686da5f91e86d6"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "6a87b7f1485ef4abad6f1fa989360d413907fb40e9df130b51bc5c045fdd9e8d",
+        "afterSha256": "c53935f9f9a263796bb1e48261c9c225ebd2d0293a752018d439365829056be6"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "e88dfc7cb8d0370297f933b5ee24ad607c2b68e7f444d3323829d524fffbd572",
+        "afterSha256": "9248218338d921e1859cb0ca96c08a586b422829b532472a86e3c5590c431481"
+      },
+      {
+        "id": "u12_escritura_orden_dominio_y_estado_caso_1",
+        "beforeSha256": "68a46429d7d0bbda57caf4a4dc84b3fba184284fcf71702de24ee7413010e9f2",
+        "afterSha256": "02eee13de088e2cb9e0491fe695a50dec95463089ce4970528c3031e105e688a"
+      },
+      {
+        "id": "u12_escritura_orden_dominio_y_estado_caso_2",
+        "beforeSha256": "516a9e6e9d8a79f233f223ae6e346339045154ab6ad11583663c8f5412f86ed9",
+        "afterSha256": "4a0cc35148acc1e2b4d0e5be77280a8ebaf44ed7ce1a95d98e3ae6d174cdaeed"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8103d152d6c3daaf37f40acfac7ec9f6669056c52e202e62f812d15ba4ea141a",
+        "afterSha256": "a2b15644724b6d8a5578175cc07e387068ef88f645730d88d7ef97466d675f86"
       }
     ]
   },
@@ -1212,12 +1262,33 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "e34c1136ecb6fd612c05f0eb99e713dd8e7f819d8038470fc9503c952a5328d7",
+        "sourceSha256": "9309252104ea09a30d3ba48196a045d7e4d1d9a36461709d897d176531403d76",
         "spans": [
           {
-            "start": 23,
-            "end": 42,
+            "start": 39,
+            "end": 45,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 56,
+            "text": "2[3;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 90,
             "text": "Rojo: dos registros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 426,
+            "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
             "role": "output",
             "reading": "natural"
           }
@@ -1226,33 +1297,19 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "6bb78226d25a8c88c7a284a8b6ab1a5c05bdfa4b20d0d00e908f4274c5277dc6",
+        "sourceSha256": "ccb944fabccb04668a671feda2f6367e8d6e442ff83b62f79a0b50f79a47f172",
         "spans": [
           {
-            "start": 10,
-            "end": 27,
-            "text": "componer_conjunto",
+            "start": 30,
+            "end": 100,
+            "text": "bool componer_conjunto(const Conjunto& conjunto, std::string& destino)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 88,
-            "text": "const Conjunto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 104,
-            "end": 111,
-            "text": "destino",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 138,
-            "end": 149,
-            "text": "std::string",
+            "start": 117,
+            "end": 125,
+            "text": "conjunto",
             "role": "cpp",
             "reading": "technical"
           },
@@ -1264,32 +1321,32 @@
             "reading": "technical"
           },
           {
-            "start": 362,
-            "end": 367,
-            "text": "false",
+            "start": 345,
+            "end": 349,
+            "text": "bool",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 378,
-            "end": 385,
+            "start": 431,
+            "end": 435,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 439,
+            "end": 446,
             "text": "destino",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 508,
-            "end": 509,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 513,
-            "end": 518,
-            "text": "ceros",
-            "role": "data",
-            "reading": "natural"
+            "start": 491,
+            "end": 496,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1537,28 +1594,70 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "4a562f6fabcb82186cd3c6a5664129fc062790a8189fe78ab179a1204928453e",
+        "sourceSha256": "d8f16e190d53cad7c9778873d431210a8d5f30ce7014a9c7a3bd245f81a015d3",
         "spans": [
           {
-            "start": 49,
-            "end": 62,
-            "text": "ostringstream",
+            "start": 152,
+            "end": 169,
+            "text": "componer_conjunto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 125,
-            "text": "string",
+            "start": 187,
+            "end": 205,
+            "text": "std::ostringstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 173,
-            "end": 177,
-            "text": "cout",
+            "start": 408,
+            "end": 413,
+            "text": "str()",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 431,
+            "end": 438,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 462,
+            "end": 466,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 538,
+            "end": 543,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 665,
+            "end": 667,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 708,
+            "end": 717,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 886,
+            "end": 906,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1718,8 +1817,23 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "d3ee5e38fb017a8fb4f7eb67e1b866b7e5229245f81fefc6599c4c247d63b256",
-        "spans": []
+        "sourceSha256": "2430e647cdbc815bfc5a404901ac8828f4e59fd0c21df031d31172894414e0f2",
+        "spans": [
+          {
+            "start": 99,
+            "end": 102,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 247,
+            "text": "Grupo{3, {}}",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0005",
@@ -1833,152 +1947,173 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "8a8d765bb6506a0b763571277995519414a68dde7e998f78e09c86bc76bc32a1",
+        "sourceSha256": "e56b389383759eae18cbe26630851c0be8983e569618bacc40375585525a848a",
         "spans": [
           {
-            "start": 7,
-            "end": 19,
+            "start": 8,
+            "end": 45,
+            "text": "bool grupo_valido(const Grupo& grupo)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 283,
+            "end": 291,
+            "text": "Recuento",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 322,
+            "text": "recuento_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 753,
+            "end": 759,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 764,
+            "end": 770,
+            "text": "7[3;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 970,
+            "end": 1016,
+            "text": "bool conjunto_valido(const Conjunto& conjunto)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1085,
+            "end": 1097,
             "text": "grupo_valido",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 22,
-            "end": 37,
-            "text": "conjunto_valido",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 61,
-            "end": 65,
-            "text": "0..2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 78,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 105,
-            "end": 109,
-            "text": "0..9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 123,
-            "end": 128,
-            "text": "0..10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 177,
-            "end": 180,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 248,
-            "end": 251,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "e45286211cc14ff336dfba07b4c12043ef87a0afc41725435ae04cdeb9083ce1",
+        "sourceSha256": "b7dd39ba91ef0dc153b2cc0fb3bb139d539701ffce815b2a24cb36ba9fe80d48",
         "spans": [
           {
-            "start": 7,
-            "end": 24,
+            "start": 8,
+            "end": 25,
             "text": "componer_conjunto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 73,
-            "text": "ostringstream",
+            "start": 76,
+            "end": 91,
+            "text": "conjunto_valido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 89,
-            "end": 90,
-            "text": "{",
-            "role": "output",
-            "reading": "characters"
+            "start": 119,
+            "end": 124,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 99,
-            "text": " conjunto",
-            "role": "output",
-            "reading": "natural"
+            "start": 144,
+            "end": 151,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 122,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
+            "start": 177,
+            "end": 195,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 132,
-            "text": "{",
-            "role": "output",
-            "reading": "characters"
-          },
-          {
-            "start": 132,
-            "end": 138,
-            "text": " grupo",
+            "start": 281,
+            "end": 291,
+            "text": "{ conjunto",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 181,
-            "text": "un",
-            "role": "data",
+            "start": 380,
+            "end": 392,
+            "text": "nombre_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 516,
+            "end": 529,
+            "text": " { grupo rojo",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 201,
-            "end": 209,
+            "start": 752,
+            "end": 760,
             "text": "Recuento",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 247,
-            "end": 249,
-            "text": "un",
-            "role": "data",
+            "start": 841,
+            "end": 848,
+            "text": " 7[0;0]",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 267,
-            "text": "}",
-            "role": "data",
-            "reading": "characters"
+            "start": 967,
+            "end": 969,
+            "text": " }",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 300,
-            "end": 307,
+            "start": 1140,
+            "end": 1142,
+            "text": " }",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1231,
+            "end": 1243,
+            "text": "{ conjunto }",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1397,
+            "end": 1402,
+            "text": "str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1417,
+            "end": 1424,
             "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1438,
+            "end": 1442,
+            "text": "true",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1987,208 +2122,103 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "85edb3d7afc9311e98a01285ee1d50fd740f239097bc40832e8c63375f700891",
+        "sourceSha256": "37c6ecf53c2e5cdaac82d72e410b1a68805ac40ff0a85634638f020f7c8a8a39",
         "spans": [
           {
-            "start": 37,
-            "end": 42,
-            "text": "cinco",
-            "role": "data",
-            "reading": "natural"
+            "start": 290,
+            "end": 294,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 69,
-            "text": "1.",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 102,
-            "end": 106,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 120,
-            "end": 126,
+            "start": 352,
+            "end": 358,
             "text": "7[0;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 129,
-            "end": 135,
+            "start": 363,
+            "end": 369,
             "text": "2[3;1]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 148,
-            "end": 152,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 188,
-            "end": 194,
+            "start": 429,
+            "end": 435,
             "text": "previo",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 208,
-            "end": 212,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 255,
-            "end": 257,
-            "text": "2.",
-            "role": "data",
+            "start": 539,
+            "end": 597,
+            "text": "1\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 277,
-            "text": "rojo",
-            "role": "data",
+            "start": 822,
+            "end": 880,
+            "text": "0\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 302,
-            "end": 309,
-            "text": "primera",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 350,
-            "end": 356,
-            "text": "string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 371,
-            "end": 375,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 412,
-            "end": 414,
-            "text": "3.",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 489,
-            "end": 497,
+            "start": 986,
+            "end": 994,
             "text": "anterior",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 511,
-            "end": 515,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 539,
-            "end": 541,
-            "text": "4.",
-            "role": "data",
+            "start": 1066,
+            "end": 1080,
+            "text": "1\n{ conjunto }",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 604,
-            "end": 608,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 622,
-            "end": 629,
+            "start": 1139,
+            "end": 1146,
             "text": "1[11;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 651,
-            "end": 658,
+            "start": 1188,
+            "end": 1195,
             "text": "reserva",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 672,
-            "end": 676,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 713,
-            "end": 715,
-            "text": "5.",
-            "role": "data",
+            "start": 1289,
+            "end": 1298,
+            "text": "0\nreserva",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 745,
-            "end": 749,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 763,
-            "end": 770,
+            "start": 1327,
+            "end": 1334,
             "text": "1[10;8]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 787,
-            "end": 800,
-            "text": "ostringstream",
+            "start": 1344,
+            "end": 1362,
+            "text": "std::ostringstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 827,
-            "end": 832,
-            "text": "ambas",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 854,
-            "end": 861,
-            "text": "Hex:a:8",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 905,
-            "end": 909,
-            "text": "bool",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 961,
-            "end": 976,
-            "text": "Conservado:10:8",
+            "start": 1663,
+            "end": 1724,
+            "text": "Hex:a:8\n1\n{ conjunto { grupo rojo 1[10;8] } }\nConservado:10:8",
             "role": "output",
             "reading": "natural"
           }
@@ -2715,75 +2745,75 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "285f0c46bf7c2d0eec3f86d0d001b6c2c48974c10f86a14d540a8101c7cad84e",
+        "sourceSha256": "3b727d1c5674bc87c4f9a702f545bb25156b7504461440869ee200930e0578b7",
         "spans": [
           {
-            "start": 70,
-            "end": 74,
+            "start": 74,
+            "end": 78,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 89,
-            "end": 93,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 98,
-            "end": 104,
+            "start": 115,
+            "end": 121,
             "text": "7[0;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 113,
+            "start": 126,
+            "end": 132,
             "text": "2[3;1]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 116,
-            "end": 120,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
+            "start": 188,
+            "end": 205,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 192,
-            "end": 218,
+            "start": 371,
+            "end": 397,
             "text": "conjunto_compuesto_lgp.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 231,
-            "end": 237,
-            "text": "string",
+            "start": 407,
+            "end": 420,
+            "text": "std::ofstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 296,
-            "end": 304,
-            "text": "ifstream",
+            "start": 505,
+            "end": 512,
+            "text": "close()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 313,
-            "end": 318,
-            "text": "única",
-            "role": "data",
-            "reading": "natural"
+            "start": 708,
+            "end": 721,
+            "text": "std::ifstream",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 420,
-            "end": 421,
-            "text": "1",
+            "start": 785,
+            "end": 797,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1021,
+            "end": 1077,
+            "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
             "role": "output",
             "reading": "natural"
           }
@@ -2986,25 +3016,32 @@
       {
         "block": "u12_escritura_orden_dominio_y_estado_caso_1",
         "path": "/text",
-        "sourceSha256": "abd8abc5cc0b77356c94da42dbe8e3ba4d8353c360babf91bbeee70ba337e187",
+        "sourceSha256": "88d4f5f663f21848b540b1d8741db2065d10b26e3cb37c662b0fbcdf3237bac4",
         "spans": [
           {
-            "start": 8,
-            "end": 9,
+            "start": 29,
+            "end": 30,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 118,
-            "end": 119,
+            "start": 82,
+            "end": 86,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 684,
+            "end": 685,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 319,
-            "end": 732,
+            "start": 704,
+            "end": 1117,
             "text": "1:{ conjunto { grupo azul } { grupo verde 8[10;0] 1[0;0] } { grupo rojo 1[0;4] } }\nOrigen:3|2:0|1:2 8[10;0] 1[0;0]|0:1 1[0;4]\n0:{ conjunto { grupo azul } { grupo verde 8[10;0] 1[0;0] } { grupo rojo 1[0;4] } }\nOrigen:1|1:2 3[2;0] 3[0;1]\n1:{ conjunto }\nOrigen:0\n0:{ conjunto }\nOrigen:1|2:1 4[-1;0]\n1:{ conjunto { grupo azul 9[0;0] } }\nOrigen:1|2:1 9[0;0]\n0:{ conjunto { grupo azul 9[0;0] } }\nOrigen:2|2:0|2:1 5[1;0]",
             "role": "output",
             "reading": "natural"
@@ -3014,25 +3051,32 @@
       {
         "block": "u12_escritura_orden_dominio_y_estado_caso_2",
         "path": "/text",
-        "sourceSha256": "7884da7e7d251ba977cc29578b0a0d5f34af73eec81d9a91321ce756ea6b8a58",
+        "sourceSha256": "8417378d560d9b3070c96a044b355fd878454852d214e207abf30d8dc6b6428b",
         "spans": [
           {
-            "start": 25,
-            "end": 26,
+            "start": 13,
+            "end": 14,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 71,
+            "start": 259,
+            "end": 268,
             "text": "reserva_2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 321,
-            "end": 998,
+            "start": 560,
+            "end": 561,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 580,
+            "end": 1257,
             "text": "0:reserva_2\nOrigen:1|0:1 -1[0;0]\n1:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:3|0:2 9[10;10] 0[0;0]|2:0|1:1 9[0;2]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|0:2 2[1;0] 10[0;2]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|3:0\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|-1:0\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|2:1 4[0;11]\n0:{ conjunto { grupo rojo 9[10;10] 0[0;0] } { grupo azul } { grupo verde 9[0;2] } }\nOrigen:1|1:1 0[0;-1]",
             "role": "output",
             "reading": "natural"

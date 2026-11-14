@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Nuestra política parcial admite un subconjunto de las líneas: descarta las vacías, las mal formadas, las que incumplen el dominio y las repetidas. Cada línea descartada cuenta una sola vez, aunque incumpla más de una condición. Los registros admitidos conservan su orden de aparición.\n\nParcial se refiere a admitir datos válidos dentro de una muestra que también puede contener líneas rechazadas. Los resultados sólo se entregan cuando se completa la lectura permitida; un fallo del origen o superar el límite de líneas conserva ambos resultados anteriores. Un archivo vacío se acepta como colección vacía. Las cantidades cero son datos presentes y válidos, no una señal de ausencia.",
+          "text": "Nuestra política parcial admite los registros válidos de una muestra que también puede contener líneas rechazadas. Descarta las vacías, las mal formadas, las que incumplen el dominio y las repetidas. Cada línea descartada cuenta una sola vez, aunque incumpla más de una condición. Los registros admitidos conservan su orden de aparición.\n\nLa carga produce dos resultados: la colección de registros admitidos y un contador de líneas descartadas. Los resultados sólo se entregan cuando se completa la lectura permitida. Si falla el origen o se supera el límite de líneas, la colección y el contador del llamador conservan sus valores anteriores.\n\nUn archivo vacío se acepta como colección vacía y deja el contador de descartes en cero. Las cantidades cero de un registro son datos presentes y válidos, no una señal de ausencia.",
           "emphasis": [
             {
               "text": "Cada línea descartada cuenta una sola vez",
@@ -117,7 +117,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El contrato permite procesar como máximo veinte líneas obtenidas por `getline`, incluidas las inválidas y las repetidas. El contador local de líneas se comprueba antes de incrementarlo. Si ya se procesaron veinte y se obtiene otra línea, la función devuelve `false` sin publicar sus resultados locales.\n\nEn una carga aceptada, el número de descartes queda entre cero y veinte. Los identificadores permitidos van de `0` a `9`, por lo que puede haber como máximo diez registros guardados; las cantidades de cada recuento se comprueban por separado.",
+          "text": "Hay dos contadores locales distintos. `lineas` cuenta todas las líneas obtenidas para procesarlas, incluidas las inválidas y las repetidas. `nuevas_descartadas` cuenta sólo las líneas que la política descarta. Un registro admitido aumenta el primero, pero no el segundo.\n\nSe permite procesar hasta veinte líneas. Si ya se procesaron veinte y `getline` obtiene otra, el control del límite devuelve `false` antes de incrementar `lineas` y antes de analizar esa nueva línea. Las asignaciones a `destino` y `descartadas` todavía no se han ejecutado: el cargador sale sin publicar sus resultados locales y conserva los dos resultados anteriores del llamador.\n\nLa línea que permitió detectar el exceso ya fue obtenida del origen. Conservar los resultados no la devuelve ni reinicia la lectura.\n\nEn una carga aceptada, el número de descartes queda entre cero y veinte. Los identificadores permitidos van de `0` a `9`, por lo que puede haber como máximo diez registros guardados. Los límites de las cantidades de cada recuento se comprueban por separado.",
           "emphasis": [
             {
               "text": "incluidas las inválidas y las repetidas",
@@ -281,7 +281,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con las dependencias del inicial, implementa `contiene_id` y esta función:\n`bool cargar_lineas(std::istream& origen, std::vector<Registro>& destino, int& descartadas)`\n\n`origen` es el flujo del que se obtienen las líneas; se recibe por referencia porque leer cambia su posición y su estado. `destino` es la colección que se reemplazará si la carga se acepta. `descartadas` es el contador del llamador, recibido por referencia para actualizarlo al aceptar. La función devuelve si pudo completar la carga de acuerdo con la política.\n\nUtiliza una colección candidata inicialmente vacía y contadores locales. Una línea válida sólo se inserta después de comprobar que su identificador no está guardado en esos candidatos. Devuelve `false` sin cambiar los dos resultados ante un fallo del origen o si se supera el límite de veinte líneas. Completar la carga devuelve `true` aunque algunas líneas se hayan descartado.",
+          "text": "El código inicial proporciona los tipos `Recuento` y `Registro`, la comprobación `recuento_valido`, el operador de extracción y el lector `leer_linea` ya estudiado. Implementa la búsqueda `contiene_id` y esta función:\n`bool cargar_lineas(std::istream& origen, std::vector<Registro>& destino, int& descartadas)`\n\n`origen` es el flujo del que se obtienen las líneas; se recibe por referencia porque leer cambia su posición y su estado. `destino` es la colección que se reemplazará si la carga se acepta. `descartadas` es el contador del llamador, recibido por referencia para actualizarlo al aceptar. La función devuelve si pudo completar la carga de acuerdo con la política.\n\nUtiliza una colección candidata inicialmente vacía y contadores locales. Una línea válida sólo se inserta después de comprobar que su identificador no está guardado en esos candidatos. Devuelve `false` sin cambiar los dos resultados ante un fallo del origen o si se supera el límite de veinte líneas. Completar la carga devuelve `true` aunque algunas líneas se hayan descartado.",
           "emphasis": [
             {
               "text": "una colección candidata inicialmente vacía",
@@ -295,7 +295,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea la muestra relativa `registros_lgp.txt` con estas cuatro líneas, en orden: `\"3 [2;1]\"`, `\"3 [4;0]\"`, `\"8 [0;0]\"` y `\"8 [0;0] extra\"`. Escribe un salto después de cada una. Comprueba la apertura, cierra el archivo después de escribir y comprueba su estado. Abre después un `std::ifstream` para leer la muestra; comprueba esa apertura antes de llamar a `cargar_lineas`.\n\nEl informe empieza con `Guardados=2;Descartados=2`, sin punto y coma final. Después muestra `3:2:1` y `8:0:0`, cada registro en su propia línea. Son los dos registros admitidos en su orden de aparición. Si no se puede completar la carga, muestra `Carga incompleta` y termina con código `1`.\n\nPulsa Compilar, ejecutar y comprobar. Este editor comprueba esa carga de archivo; admite el informe terminado en `8:0:0` con o sin salto final. La batería de fronteras y conservación tiene otro editor posterior.",
+          "text": "Crea la muestra relativa `registros_lgp.txt` con estas cuatro líneas, en este orden:\n\n3 [2;1]\n3 [4;0]\n8 [0;0]\n8 [0;0] extra\n\nEscribe un salto después de cada línea, incluida la última. Comprueba la apertura del archivo de salida, escribe la muestra, ciérralo y comprueba su estado. Abre después un `std::ifstream` para leer ese mismo archivo y comprueba su apertura antes de llamar a `cargar_lineas`.\n\nEl informe requerido es:\n\nGuardados=2;Descartados=2\n3:2:1\n8:0:0\n\nLa primera línea es la cabecera, sin punto y coma final. Las otras dos muestran los registros admitidos en su orden de aparición. Si no se puede completar la carga, muestra `Carga incompleta` y termina con código `1`.\n\nPulsa Compilar, ejecutar y comprobar. Este editor comprueba esa carga de archivo y admite el informe terminado en `8:0:0` con o sin salto final. La práctica de fronteras y conservación tiene otro editor posterior.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -426,7 +426,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una batería del mismo `cargar_lineas` usando `std::istringstream` para aislar su política de las operaciones de archivo. Cada llamada de prueba crea un origen nuevo, reinicia la colección en `{{9, {1, 1}}}` y pone el contador `descartadas` en `7`.\n\nPrueba, en este orden: el texto vacío; un salto de línea `\"\\n\"`; veinte líneas `\"4 [0;2]\"`, todas terminadas con salto; veintiuna líneas iguales; `\"4 [0;2]\"` sin salto final; y `\"4 [0;\"`, truncada.\n\nPara cada caso muestra una línea con `Carga:` y el resultado booleano, y después el informe de la colección y el contador obtenidos: `Guardados=G;Descartados=D`, seguido de los registros como `ID:aceptados:rechazados`. G es el número de registros y D el contador de descartes; esas letras son marcadores del formato, no texto que debas imprimir. Cada línea termina con salto, sin títulos ni líneas vacías adicionales.\n\nEn el caso de veintiuna líneas, el resultado `false` es el rechazo esperado del cargador: deben conservarse los dos resultados iniciales. La batería continúa con los casos siguientes y termina normalmente con código `0`. Pulsa Compilar, ejecutar y comprobar con las seis llamadas.",
+          "text": "Construye las seis pruebas del mismo `cargar_lineas` con `std::istringstream`. Cada llamada crea un origen nuevo, reinicia la colección en `{{9, {1, 1}}}` y pone `descartadas` en `7`. Así cada prueba comienza con los mismos resultados anteriores.\n\nUsa estas muestras en el orden mostrado. En las cadenas escritas dentro del código, `\\n` representa un salto de línea; las comillas no forman parte del texto que analiza el cargador.\n\nTexto vacío: la cadena `\"\"`, sin caracteres.\nSalida esperada:\nCarga:1\nGuardados=0;Descartados=0\n\nUna línea vacía: la cadena `\"\\n\"`, que contiene sólo un salto de línea.\nSalida esperada:\nCarga:1\nGuardados=0;Descartados=1\n\nVeinte líneas iguales: repite veinte veces `\"4 [0;2]\\n\"`.\nSalida esperada:\nCarga:1\nGuardados=1;Descartados=19\n4:0:2\n\nVeintiuna líneas iguales: repite veintiuna veces `\"4 [0;2]\\n\"`.\nSalida esperada:\nCarga:0\nGuardados=1;Descartados=7\n9:1:1\n\nUna línea válida sin salto final: la cadena `\"4 [0;2]\"`.\nSalida esperada:\nCarga:1\nGuardados=1;Descartados=0\n4:0:2\n\nUna línea incompleta sin salto final: la cadena `\"4 [0;\"`.\nSalida esperada:\nCarga:1\nGuardados=0;Descartados=1\n\nCada línea de salida, incluida la última de cada informe, termina con un salto. No añadas títulos ni líneas vacías. La línea que empieza con `Carga:` presenta el resultado de la función; las siguientes presentan la colección y el contador que quedaron después de la llamada.\n\nEn la prueba de veintiuna líneas, `false` es el rechazo esperado: deben conservarse los dos resultados iniciales. El programa continúa con las muestras restantes y termina normalmente con código `0`. Pulsa Compilar, ejecutar y comprobar con las seis llamadas.",
           "emphasis": [
             {
               "text": "deben conservarse los dos resultados iniciales",
@@ -466,7 +466,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las llamadas posteriores vuelven a superar el límite tras una aceptación, prueban la igualdad numérica de identificadores con ceros iniciales, aceptan una muestra vacía y distinguen veinte de veintiuna líneas inválidas. La última vuelve a aceptar un registro. Consulta las ocho cadenas en el cliente proporcionado.\n\nCada informe comienza por Aceptado o Rechazado, incluye ;Descartados= seguido del contador actual y muestra cada registro como |ID:aceptados:rechazados, en su orden. Termina con un salto. Completa la función y comprueba ambos casos sin cambiar el cliente. Un rechazo esperado es un resultado del cargador; el programa de pruebas continúa y termina normalmente con código cero.\n\nEntrada comienza con el primer caso. Después sustitúyela por 8 12 y vuelve a compilar y comprobar. Se permiten espacios, tabulaciones o saltos entre los enteros y después de ellos; no alteran las muestras del cliente.\n\nSalida requerida del primer caso, con un salto al final de cada línea:\nRechazado;Descartados=7|3:6:4|4:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3\n\nEn el segundo caso sólo cambia la primera línea, que debe ser Rechazado;Descartados=12|8:6:4|9:0:3. Las demás líneas coinciden."
+          "text": "Las llamadas posteriores vuelven a superar el límite tras una aceptación, comparan identificadores escritos con ceros iniciales, aceptan una muestra vacía y distinguen veinte de veintiuna líneas inválidas. La última vuelve a aceptar un registro. Las ocho muestras están en el cliente proporcionado.\n\nCompleta la función y conserva ese cliente. Comienza con Entrada `3 7` y pulsa «Compilar, ejecutar y comprobar». La primera comprobación correcta de ese caso es la necesaria para avanzar. Entrada `8 12` es un ensayo opcional con otro estado inicial. Se permiten espacios, tabulaciones o saltos entre los enteros y después de ellos; esos blancos no cambian las muestras del cliente.\n\nCada caso ejecuta ocho cargas sobre la misma colección y el mismo contador. Mantén juntas y en su orden las ocho líneas de cada salida esperada. Una aceptación cambia los resultados que debe conservar un rechazo posterior. Cada línea, incluida la última, termina con un salto.\n\nEntrada obligatoria:\n3 7\nSalida esperada:\nRechazado;Descartados=7|3:6:4|4:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3\n\nEntrada opcional:\n8 12\nSalida esperada:\nRechazado;Descartados=12|8:6:4|9:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3"
         },
         {
           "type": "cpp_compiler",
@@ -1450,6 +1450,41 @@
         "id": "block_0005_0002",
         "beforeSha256": "ebb11fdd7f1acfc8f81058c6e100175fa0357b598ff2d13cceb7b8717e2f3961",
         "afterSha256": "4674c6b5dbf5cba67f87194c16d15a1b3ee675e4da677a78562c73a139a96888"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "db113a686a89c4695e5ef0210342910041fdb4cf7b708c5beb97c9f6b140ccdd",
+        "afterSha256": "1860b05d6bc49b2d05da5c275a51d176f975bc72668a4e7f8e24428da649da3a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "3ed0c9736a695911ca9eaa94b267f8c5615d1db0a62c2a00923bbb283766a554",
+        "afterSha256": "05a76326498da8ac65dac59a15e09b35f4ef0057a8b1816cf55e125a4ad3677d"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d957472a9fa28dcf41e6c896ade3ec0e2f460d4d19bc6e116e34f32b9fca0562",
+        "afterSha256": "b93823355a7d1af0593ba3b034436f08a6d879d82c5e46ae1683b40f561c92d2"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a923a649a4680791ecde95482ffca5b5676ae86d6a1f7d0d1dd8f17c67a65596",
+        "afterSha256": "2054db72526ebd93bfcd4c0351e6fb8da00186ce55356649bc65e6baf848f44c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "15fa90b0284e8f4bee7a18d72fd728f69886a22ef252434a194c1e60b5e9b22e",
+        "afterSha256": "32843272add6cbcd7cf9f46c6f273936dfd49754cce5a946796a4c92fd907f84"
+      },
+      {
+        "id": "u12_parcial_recargas_casos",
+        "beforeSha256": "290532c23a32fcd49ec80019fd1ecfcfa8d3fd67de838a051db01e324570caff",
+        "afterSha256": "d4bf3cfcee797c05a8ea80bd2aed8fb28e825dd820d29162a5df1846b7145573"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "05a76326498da8ac65dac59a15e09b35f4ef0057a8b1816cf55e125a4ad3677d",
+        "afterSha256": "23556eb9a9b6f33436e1db9f18206184b61fbb014e51a9ae48a7a8cd28448edd"
       }
     ]
   },
@@ -1541,7 +1576,7 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "2d2458b6dbc6fb5443f3bae1fdf8b23b6e9f17fc349b3d383ac0e0d2db902485",
+        "sourceSha256": "a6a79b57b366ae803bf9d5422808343c66326a8d007ca2012565e038809c0942",
         "spans": []
       },
       {
@@ -1828,33 +1863,61 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "279fa3b1470a19797953a80db3706858cda8ba82f1985ad457e79d29a5f24e19",
+        "sourceSha256": "054d79bb13c43d3c3a37ddc4c55c15aa9b7cc78974049965a5c61c6f6fb531e9",
         "spans": [
           {
-            "start": 70,
-            "end": 77,
+            "start": 39,
+            "end": 45,
+            "text": "lineas",
+            "role": "cpp"
+          },
+          {
+            "start": 141,
+            "end": 159,
+            "text": "nuevas_descartadas",
+            "role": "cpp"
+          },
+          {
+            "start": 343,
+            "end": 350,
             "text": "getline",
             "role": "cpp"
           },
           {
-            "start": 259,
-            "end": 264,
+            "start": 398,
+            "end": 403,
             "text": "false",
             "role": "cpp"
           },
           {
-            "start": 416,
-            "end": 417,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
+            "start": 427,
+            "end": 433,
+            "text": "lineas",
+            "role": "cpp"
           },
           {
-            "start": 422,
-            "end": 423,
+            "start": 492,
+            "end": 499,
+            "text": "destino",
+            "role": "cpp"
+          },
+          {
+            "start": 504,
+            "end": 515,
+            "text": "descartadas",
+            "role": "cpp"
+          },
+          {
+            "start": 901,
+            "end": 902,
+            "text": "0",
+            "role": "data"
+          },
+          {
+            "start": 907,
+            "end": 908,
             "text": "9",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           }
         ]
       },
@@ -2307,47 +2370,71 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "8f9d40a671fd695a95fec24b4744d0e0790cb7a3166a1082f8f3807daa66126c",
+        "sourceSha256": "f6d73b4189a81b5017a47b5331318581ccf2aed2694d8669b63e8d179e6e3818",
         "spans": [
           {
-            "start": 46,
-            "end": 57,
+            "start": 41,
+            "end": 49,
+            "text": "Recuento",
+            "role": "cpp"
+          },
+          {
+            "start": 54,
+            "end": 62,
+            "text": "Registro",
+            "role": "cpp"
+          },
+          {
+            "start": 82,
+            "end": 97,
+            "text": "recuento_valido",
+            "role": "cpp"
+          },
+          {
+            "start": 139,
+            "end": 149,
+            "text": "leer_linea",
+            "role": "cpp"
+          },
+          {
+            "start": 189,
+            "end": 200,
             "text": "contiene_id",
             "role": "cpp"
           },
           {
-            "start": 76,
-            "end": 166,
+            "start": 219,
+            "end": 309,
             "text": "bool cargar_lineas(std::istream& origen, std::vector<Registro>& destino, int& descartadas)",
             "role": "cpp"
           },
           {
-            "start": 170,
-            "end": 176,
+            "start": 313,
+            "end": 319,
             "text": "origen",
             "role": "cpp"
           },
           {
-            "start": 292,
-            "end": 299,
+            "start": 435,
+            "end": 442,
             "text": "destino",
             "role": "cpp"
           },
           {
-            "start": 360,
-            "end": 371,
+            "start": 503,
+            "end": 514,
             "text": "descartadas",
             "role": "cpp"
           },
           {
-            "start": 727,
-            "end": 732,
+            "start": 870,
+            "end": 875,
             "text": "false",
             "role": "cpp"
           },
           {
-            "start": 862,
-            "end": 866,
+            "start": 1005,
+            "end": 1009,
             "text": "true",
             "role": "cpp"
           }
@@ -2356,96 +2443,57 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "2b1e8e08e41b8c88c95e0eab96f9ac751a9376eab91932aa800e9d2529eb88d4",
+        "sourceSha256": "1dc807b08d3912bec4def83bc5baa498910f637d76809cd617a92533f40a6677",
         "spans": [
           {
             "start": 26,
             "end": 43,
             "text": "registros_lgp.txt",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 81,
-            "end": 90,
-            "text": "\"3 [2;1]\"",
+            "start": 86,
+            "end": 123,
+            "text": "3 [2;1]\n3 [4;0]\n8 [0;0]\n8 [0;0] extra",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 94,
-            "end": 103,
-            "text": "\"3 [4;0]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 107,
-            "end": 116,
-            "text": "\"8 [0;0]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 121,
-            "end": 136,
-            "text": "\"8 [0;0] extra\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 278,
-            "end": 291,
+            "start": 299,
+            "end": 312,
             "text": "std::ifstream",
             "role": "cpp"
           },
           {
-            "start": 357,
-            "end": 370,
+            "start": 385,
+            "end": 398,
             "text": "cargar_lineas",
             "role": "cpp"
           },
           {
-            "start": 398,
-            "end": 423,
-            "text": "Guardados=2;Descartados=2",
+            "start": 428,
+            "end": 465,
+            "text": "Guardados=2;Descartados=2\n3:2:1\n8:0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 467,
-            "end": 472,
-            "text": "3:2:1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 477,
-            "end": 482,
-            "text": "8:0:0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 621,
-            "end": 637,
+            "start": 641,
+            "end": 657,
             "text": "Carga incompleta",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 661,
-            "end": 662,
+            "start": 681,
+            "end": 682,
             "text": "1",
-            "role": "data",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 780,
-            "end": 785,
+            "start": 801,
+            "end": 806,
             "text": "8:0:0",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           }
         ]
       },
@@ -2701,114 +2749,139 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "b462c32111bf01f3c1c6d963f5f4a362b16c3e0d7f154a17a1b79e3739c89267",
+        "sourceSha256": "4958d9fc35c9b07a4567362d7bfc269716cc6bd12465ff3adcefdc26f90d038e",
         "spans": [
           {
-            "start": 33,
-            "end": 46,
+            "start": 38,
+            "end": 51,
             "text": "cargar_lineas",
             "role": "cpp"
           },
           {
-            "start": 56,
-            "end": 74,
+            "start": 58,
+            "end": 76,
             "text": "std::istringstream",
             "role": "cpp"
           },
           {
-            "start": 202,
-            "end": 215,
+            "start": 140,
+            "end": 153,
             "text": "{{9, {1, 1}}}",
             "role": "cpp"
           },
           {
-            "start": 237,
-            "end": 248,
+            "start": 163,
+            "end": 174,
             "text": "descartadas",
             "role": "cpp"
           },
           {
-            "start": 254,
-            "end": 255,
+            "start": 180,
+            "end": 181,
             "text": "7",
-            "role": "data",
+            "role": "data"
+          },
+          {
+            "start": 333,
+            "end": 335,
+            "text": "\\n",
+            "role": "string"
+          },
+          {
+            "start": 456,
+            "end": 458,
+            "text": "\"\"",
+            "role": "string"
+          },
+          {
+            "start": 494,
+            "end": 527,
+            "text": "Carga:1\nGuardados=0;Descartados=0",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 317,
-            "end": 321,
+            "start": 557,
+            "end": 561,
             "text": "\"\\n\"",
-            "role": "data",
-            "reading": "technical"
+            "role": "string"
           },
           {
-            "start": 339,
-            "end": 348,
-            "text": "\"4 [0;2]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 406,
-            "end": 415,
-            "text": "\"4 [0;2]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 437,
-            "end": 444,
-            "text": "\"4 [0;\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 496,
-            "end": 502,
-            "text": "Carga:",
+            "start": 618,
+            "end": 651,
+            "text": "Carga:1\nGuardados=0;Descartados=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 592,
-            "end": 617,
-            "text": "Guardados=G;Descartados=D",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 651,
-            "end": 674,
-            "text": "ID:aceptados:rechazados",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 677,
-            "end": 678,
-            "text": "G",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 707,
+            "start": 697,
             "end": 708,
-            "text": "D",
-            "role": "data",
+            "text": "\"4 [0;2]\\n\"",
+            "role": "string"
+          },
+          {
+            "start": 728,
+            "end": 768,
+            "text": "Carga:1\nGuardados=1;Descartados=19\n4:0:2",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 923,
-            "end": 928,
+            "start": 820,
+            "end": 831,
+            "text": "\"4 [0;2]\\n\"",
+            "role": "string"
+          },
+          {
+            "start": 851,
+            "end": 890,
+            "text": "Carga:0\nGuardados=1;Descartados=7\n9:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 937,
+            "end": 946,
+            "text": "\"4 [0;2]\"",
+            "role": "string"
+          },
+          {
+            "start": 966,
+            "end": 1005,
+            "text": "Carga:1\nGuardados=1;Descartados=0\n4:0:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1056,
+            "end": 1063,
+            "text": "\"4 [0;\"",
+            "role": "string"
+          },
+          {
+            "start": 1083,
+            "end": 1116,
+            "text": "Carga:1\nGuardados=0;Descartados=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1260,
+            "end": 1266,
+            "text": "Carga:",
+            "role": "output"
+          },
+          {
+            "start": 1429,
+            "end": 1434,
             "text": "false",
             "role": "cpp"
           },
           {
-            "start": 1094,
-            "end": 1095,
+            "start": 1590,
+            "end": 1591,
             "text": "0",
-            "role": "data",
-            "reading": "natural"
+            "role": "output"
           }
         ]
       },
@@ -2904,54 +2977,45 @@
       {
         "block": "u12_parcial_recargas_casos",
         "path": "/text",
-        "sourceSha256": "cbed547eb0e5b27155548abbdfe6b1bb8e18a915ff2c8d768afd04147c51eed1",
+        "sourceSha256": "5d8f71f6853db4e9eacd5501ef45161f5288f4211f57faace082dbede4b68887",
         "spans": [
           {
-            "start": 342,
-            "end": 350,
-            "text": "Aceptado",
-            "role": "output",
-            "reading": "natural"
+            "start": 366,
+            "end": 369,
+            "text": "3 7",
+            "role": "data"
           },
           {
-            "start": 353,
-            "end": 362,
-            "text": "Rechazado",
-            "role": "output",
-            "reading": "natural"
+            "start": 497,
+            "end": 501,
+            "text": "8 12",
+            "role": "data"
           },
           {
-            "start": 372,
-            "end": 385,
-            "text": ";Descartados=",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 443,
-            "end": 467,
-            "text": "|ID:aceptados:rechazados",
-            "role": "output",
+            "start": 982,
+            "end": 985,
+            "text": "3 7",
+            "role": "data",
             "reading": "characters"
           },
           {
-            "start": 755,
-            "end": 759,
-            "text": "8 12",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 984,
-            "end": 1238,
+            "start": 1003,
+            "end": 1257,
             "text": "Rechazado;Descartados=7|3:6:4|4:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1302,
-            "end": 1338,
-            "text": "Rechazado;Descartados=12|8:6:4|9:0:3",
+            "start": 1277,
+            "end": 1281,
+            "text": "8 12",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1299,
+            "end": 1554,
+            "text": "Rechazado;Descartados=12|8:6:4|9:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3",
             "role": "output",
             "reading": "natural"
           }

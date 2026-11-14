@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La llamada `salida.close();` intenta completar la escritura pendiente y cerrar el archivo asociado. Después de esa llamada, el objeto `salida` sigue existiendo: la condición `if (!salida)` permite comprobar si la escritura o el cierre han fallado. Una llamada a `close()` no elimina el objeto del programa.\n\nEn el programa de la página siguiente, cada objeto `salida` está definido dentro de un bloque entre llaves. Cuando termina ese bloque, el objeto deja de existir. Si aún tiene un archivo abierto, la biblioteca intenta cerrarlo automáticamente al destruir el objeto. Este cierre automático permite liberar la conexión, pero no sustituye la comprobación explícita que hacemos antes de terminar el bloque (Stroustrup, 2024, sección 9.3.1, p. 256).",
+          "text": "La llamada `salida.close();` intenta completar la escritura pendiente y cerrar el archivo asociado. Después de esa llamada, el objeto `salida` sigue existiendo: la condición `if (!salida)` permite comprobar si la escritura o el cierre han fallado. Una llamada a `close()` no elimina el objeto del programa.\n\nEn el programa de la página siguiente, cada objeto `salida` está definido dentro de un bloque entre llaves. Cuando termina ese bloque, el objeto deja de existir. Si aún tiene un archivo abierto, la biblioteca intenta cerrarlo automáticamente al destruir el objeto. Este cierre automático permite liberar la conexión, pero no sustituye la comprobación explícita que hacemos antes de terminar el bloque (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "sigue existiendo",
@@ -66,11 +66,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La primera etapa escribe el texto 1 2 y comprueba el cierre. La segunda apertura, con `std::ios::app`, conserva ese texto. La instrucción `salida << \" 3\";` añade una cadena cuyo primer carácter es un espacio y cuyo siguiente carácter es 3. Por eso el archivo termina conteniendo el texto 1 2 3: el separador procede de la cadena escrita, no del modo de apertura.\n\nEl lector extrae `1`, `2` y `3` hacia `a`, `b` y `c`, respectivamente. Después de comprobar las tres extracciones, la consola muestra Total=6, sin salto final.\n\nLos dos objetos llamados `salida` son distintos porque sus definiciones pertenecen a bloques diferentes. El primero deja de existir antes de que se construya el segundo; ambas aperturas se refieren al mismo archivo serie_lgp.txt. Cada apertura, escritura y cierre se comprueba en su etapa.",
+          "text": "La primera etapa escribe el texto 1 2 y comprueba el cierre. La segunda apertura utiliza `std::ios::app` para conservar ese texto. Después, `salida << \" 3\";` añade una cadena cuyo primer carácter es un espacio y cuyo siguiente carácter es 3.\n\nEl recorrido de los datos es:\n\nArchivo después de la primera escritura: 1 2.\nArchivo después de añadir la segunda cadena: 1 2 3.\nValores extraídos hacia `a`, `b` y `c`: 1, 2 y 3, respectivamente.\nSalida de consola: Total=6, sin salto final.\n\nEl separador procede de la cadena escrita, no del modo de apertura. Los dos objetos llamados `salida` son distintos porque sus definiciones pertenecen a bloques diferentes. El primero deja de existir antes de que se construya el segundo; ambas aperturas se refieren al mismo archivo serie_lgp.txt. Cada apertura, escritura y cierre se comprueba en su etapa.",
           "emphasis": [
             {
               "text": "primer carácter es un espacio",
@@ -108,7 +108,7 @@
           "id": "segunda_apertura_reemplaza",
           "question": "Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible.",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
           "answers": [
             "Lectura incompleta"
           ],
@@ -178,7 +178,7 @@
         },
         {
           "type": "note",
-          "text": "Trabaja con la muestra serie_lgp.txt creada por tu programa en esta ejecución. Tras completar la comprobación, contrasta tu implementación con la referencia. Revisa que el programa escriba la muestra, añada el nuevo dato y calcule desde los tres enteros extraídos: una consola coincidente no demuestra por sí sola ese recorrido."
+          "text": "La muestra serie_lgp.txt se crea durante esta ejecución. Al contrastar tu programa con la referencia, identifica las instrucciones que preparan la muestra, añaden el nuevo dato y calculan desde los tres enteros extraídos. Una consola coincidente no demuestra por sí sola ese recorrido."
         }
       ]
     },
@@ -191,11 +191,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia comienza escribiendo el texto 3 4. Después de comprobar su escritura y cierre, abre el mismo archivo con `std::ios::app` y añade la cadena `\" 5\"`, cuyo primer carácter es un espacio. El archivo queda con el texto 3 4 5. El lector obtiene tres enteros y el programa calcula Total=12 desde esos valores, sin salto final.\n\nEl modo de apertura y el separador resuelven requisitos distintos. Si se omite `std::ios::app` en la segunda apertura y ésta tiene éxito, el contenido anterior se descarta: después de escribir la misma cadena sólo queda un espacio seguido de 5, que permite extraer un entero. Si se conserva `std::ios::app` pero se escribe `\"5\"` sin el espacio, el texto queda unido como 3 45, que permite extraer dos enteros.\n\nEn ambos cambios, si se mantiene la comprobación de tres extracciones de esta referencia, el programa muestra Lectura incompleta y termina con código `1`, sin sumar los destinos. El modo no introduce separadores y un espacio nuevo no recupera caracteres descartados al abrir.\n\nAl comparar tu construcción, localiza la preparación de la muestra, las dos comprobaciones posteriores a `close()`, la apertura del lector y el cálculo desde los valores extraídos. Otros nombres o una distribución diferente en funciones son válidos si conservan esos comportamientos."
+          "text": "La referencia primero escribe el texto 3 4. Comprueba la escritura y el cierre; después abre el mismo archivo con `std::ios::app` y escribe la cadena `\" 5\"`, cuyo primer carácter es un espacio. El lector obtiene tres enteros del texto resultante, 3 4 5, y calcula Total=12 desde esos valores, sin salto final.\n\nCompara por separado estos cambios:\n\nSin `std::ios::app` en la segunda apertura, una apertura con éxito descarta lo anterior. Después de escribir `\" 5\"` sólo queda un espacio seguido de 5: se puede extraer un entero.\nCon `std::ios::app`, pero escribiendo `\"5\"` sin espacio, se conserva lo anterior y se unen los caracteres. Queda 3 45: se pueden extraer dos enteros.\n\nEn ambos casos, la comprobación de tres extracciones falla. El programa muestra Lectura incompleta y termina con código 1, sin sumar los destinos. El modo no introduce separadores, y añadir un espacio no recupera los caracteres descartados al abrir.\n\nAl revisar tu construcción, localiza la preparación de la muestra, las dos comprobaciones posteriores a `close()`, la apertura del lector y el cálculo desde los valores extraídos. Otros nombres o una distribución diferente en funciones son válidos si conservan esos comportamientos."
         },
         {
           "type": "multiple_choice",
@@ -241,7 +241,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa este editor para reparar el modo de la segunda apertura del archivo. Recupera lo aprendido sobre conservar el contenido anterior al añadir datos; mantén la primera apertura, las cadenas escritas y las comprobaciones del programa.\n\nPrimero ejecuta el programa inicial con Compilar, ejecutar y comprobar. Si las aperturas, escrituras y cierres tienen éxito, la consola muestra Lectura incompleta y el programa termina con código `1`. Esta ejecución permite observar el fallo; todavía no completa el objetivo de reparación. Si aparece otro diagnóstico, identifica primero la etapa que indica.\n\nModifica únicamente el modo de la segunda apertura. La primera debe seguir preparando la muestra con el texto 3 4 en cada ejecución. Conserva la cadena `\" 5\"` de la segunda escritura, con su espacio inicial, los cierres y las comprobaciones de apertura, escritura y extracción.\n\nTras la reparación, el archivo debe contener el texto 3 4 5. El programa debe extraer tres enteros, comprobar que esa lectura tuvo éxito y calcular su suma desde los valores leídos. La consola debe mostrar exactamente Total=12, sin títulos ni líneas vacías, y el programa debe terminar con código `0`. Se admite ese texto sin salto final o con un único salto de línea al final.\n\nVuelve a usar Compilar, ejecutar y comprobar. Al completar el objetivo podrás consultar la referencia posterior: contrasta la segunda apertura y comprueba que la primera sigue preparando la muestra. Una consola coincidente no demuestra por sí sola que la suma proceda de los datos extraídos del archivo.",
+          "text": "Usa este editor para reparar el modo de la segunda apertura del archivo. Recupera lo aprendido sobre conservar el contenido anterior al añadir datos; mantén la primera apertura, las cadenas escritas y las comprobaciones del programa.\n\nPrimero ejecuta el programa inicial con Compilar, ejecutar y comprobar. Si las aperturas, escrituras y cierres tienen éxito, la consola muestra Lectura incompleta y el programa termina con código `1`. Esta ejecución permite observar el fallo; todavía no completa el objetivo de reparación. Si aparece otro diagnóstico, identifica primero la etapa que indica.\n\nModifica únicamente el modo de la segunda apertura. La primera debe seguir preparando la muestra con el texto 3 4 en cada ejecución. Conserva la cadena `\" 5\"` de la segunda escritura, con su espacio inicial, los cierres y las comprobaciones de apertura, escritura y extracción.\n\nTras la reparación, el archivo debe contener el texto 3 4 5. El programa debe extraer tres enteros, comprobar que esa lectura tuvo éxito y calcular su suma desde los valores leídos. La consola debe mostrar exactamente Total=12, sin títulos ni líneas vacías, y el programa debe terminar con código `0`. Se admite ese texto sin salto final o con un único salto de línea al final.\n\nVuelve a usar Compilar, ejecutar y comprobar. En la referencia posterior, contrasta la segunda apertura y comprueba que la primera sigue preparando la muestra. Una consola coincidente no demuestra por sí sola que la suma proceda de los datos extraídos del archivo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -257,7 +257,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -310,7 +310,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor, conserva ambas aperturas y repara únicamente la cadena de la segunda escritura. La primera escritura debe seguir preparando el texto 3 4 en cada ejecución; la segunda apertura debe conservar su modo de adición.\n\nPrimero ejecuta el programa inicial con Compilar, ejecutar y comprobar. Si las aperturas, escrituras y cierres tienen éxito, la consola muestra Lectura incompleta y el programa termina con código 1. Ese diagnóstico permite observar el fallo; todavía no completa el objetivo de reparación. Si obtienes otro diagnóstico, identifica la etapa que señala antes de continuar.\n\nModifica los caracteres de la segunda cadena para que el archivo permita extraer tres enteros separados, en este orden: 3, 4 y 5. Conserva los cierres, las comprobaciones de apertura, escritura y extracción, y el cálculo de la suma a partir de los valores leídos. No cambies el modo de apertura para corregir un problema de separación entre los datos.\n\nEl programa reparado debe mostrar exactamente Total=12 en la consola, sin títulos ni líneas vacías, y terminar con código 0. Se admite ese texto sin salto final o con un único salto de línea al final. Vuelve a usar Compilar, ejecutar y comprobar después de tu modificación.\n\nAl completar el objetivo podrás consultar la referencia posterior. Compara los caracteres de la segunda cadena y comprueba que ambas aperturas conservan su función. El veredicto comprueba la salida solicitada; revisa además que el programa conserve las tres extracciones comprobadas y calcule desde esos datos.",
+          "text": "En este editor, conserva ambas aperturas y repara únicamente la cadena de la segunda escritura. La primera escritura debe seguir preparando el texto 3 4 en cada ejecución; la segunda apertura debe conservar su modo de adición.\n\nPrimero ejecuta el programa inicial con Compilar, ejecutar y comprobar. Si las aperturas, escrituras y cierres tienen éxito, la consola muestra Lectura incompleta y el programa termina con código 1. Ese diagnóstico permite observar el fallo; todavía no completa el objetivo de reparación. Si obtienes otro diagnóstico, identifica la etapa que señala antes de continuar.\n\nModifica los caracteres de la segunda cadena para que el archivo permita extraer tres enteros separados, en este orden: 3, 4 y 5. Conserva los cierres, las comprobaciones de apertura, escritura y extracción, y el cálculo de la suma a partir de los valores leídos. No cambies el modo de apertura para corregir un problema de separación entre los datos.\n\nEl programa reparado debe mostrar exactamente Total=12 en la consola, sin títulos ni líneas vacías, y terminar con código 0. Se admite ese texto sin salto final o con un único salto de línea al final. Vuelve a usar Compilar, ejecutar y comprobar después de tu modificación.\n\nEn la referencia posterior, compara los caracteres de la segunda cadena y comprueba que ambas aperturas conservan su función. El veredicto comprueba la salida solicitada; revisa además que el programa conserve las tres extracciones comprobadas y calcule desde esos datos.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -326,7 +326,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \"5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << \"5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -345,7 +345,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una variante de tu programa con una misma implementación para las cuatro entradas. Cada entrada proporciona tres enteros entre -10 y 10, ambos incluidos, mediante std::cin. Comprueba que se obtengan los tres antes de preparar el archivo.\n\nComienza serie_lgp.txt con los dos primeros valores separados por un espacio, reemplazando cualquier contenido anterior. Cierra y comprueba ese flujo. Abre después el mismo archivo con std::ios::app para añadir un espacio seguido del tercer valor. Comprueba también la apertura y el cierre de esta etapa.\n\nAbre un lector y extrae tres enteros en variables distintas de las que recibieron la entrada estándar. Comprueba las extracciones. Muestra, desde esos valores leídos, los tres campos en su orden y su suma, con el formato Leidos=A,B,C;Total=S. Las letras representan los números correspondientes; no forman parte del resultado. Termina cada resultado con un salto de línea.\n\nSi falla la entrada o alguna etapa del archivo, muestra un diagnóstico y termina con código 1, sin continuar el cálculo. Las entradas de la batería cumplen el intervalo; no se pide aceptar otros valores. En los casos correctos termina con código 0. Conserva el recorrido por el archivo: imprimir directamente los argumentos no realiza esta construcción.",
+          "text": "Construye una variante que pueda procesar cualquiera de las entradas descritas mediante una misma implementación. Cada entrada proporciona tres enteros entre -10 y 10, ambos incluidos, mediante std::cin. Comprueba que se obtengan los tres antes de preparar el archivo.\n\nComienza serie_lgp.txt con los dos primeros valores separados por un espacio, reemplazando cualquier contenido anterior. Cierra y comprueba ese flujo. Abre después el mismo archivo con std::ios::app para añadir un espacio seguido del tercer valor. Comprueba también la apertura y el cierre de esta etapa.\n\nAbre un lector y extrae tres enteros en variables distintas de las que recibieron la entrada estándar. Comprueba las extracciones. Muestra, desde esos valores leídos, los tres campos en su orden y su suma, con el formato Leidos=A,B,C;Total=S. Las letras representan los números correspondientes; no forman parte del resultado. Termina cada resultado con un salto de línea.\n\nSi falla la entrada o alguna etapa del archivo, muestra un diagnóstico y termina con código 1, sin continuar el cálculo. Las entradas de la batería cumplen el intervalo; no se pide aceptar otros valores. En los casos correctos termina con código 0. Conserva el recorrido por el archivo: imprimir directamente los argumentos no realiza esta construcción.",
           "emphasis": [
             {
               "text": "una misma implementación",
@@ -359,7 +359,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Usa «Compilar, ejecutar y comprobar» una vez por cada entrada, manteniendo el mismo programa y cambiando únicamente «Entrada». Puedes separar los enteros con espacios, tabulaciones o saltos de línea. La salida no admite espacios añadidos y lleva un salto final.\n\nEntrada 1: 3 4 5\nSalida:\nLeidos=3,4,5;Total=12\n\nEntrada 2: 0 7 -7\nSalida:\nLeidos=0,7,-7;Total=0\n\nEntrada 3: -4 10 0\nSalida:\nLeidos=-4,10,0;Total=6\n\nEntrada 4: 8 -3 2\nSalida:\nLeidos=8,-3,2;Total=7",
+          "text": "La primera comprobación correcta de la entrada 1 permite avanzar. Las entradas 2, 3 y 4 quedan como ensayos opcionales para contrastar ceros y valores negativos. Conserva la misma implementación y cambia únicamente «Entrada» para el ensayo que elijas.\n\nUsa «Compilar, ejecutar y comprobar» para contrastar cada ejecución con su resultado. Puedes separar los enteros de entrada mediante espacios, tabulaciones o saltos de línea. La salida no admite espacios añadidos y debe terminar con un salto de línea.\n\nEntrada 1: 3 4 5\nSalida:\nLeidos=3,4,5;Total=12\n\nEntrada 2: 0 7 -7\nSalida:\nLeidos=0,7,-7;Total=0\n\nEntrada 3: -4 10 0\nSalida:\nLeidos=-4,10,0;Total=6\n\nEntrada 4: 8 -3 2\nSalida:\nLeidos=8,-3,2;Total=7",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -461,7 +461,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    int tercero{0};\n    if (!(std::cin >> primero >> segundo >> tercero)) {\n        std::cout << \"Error entrada\";\n        return 1;\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << primero << ' ' << segundo;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << ' ' << tercero;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Leidos=\" << a << \",\" << b << \",\" << c\n              << \";Total=\" << a + b + c << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    int tercero{0};\n\n    if (!(std::cin >> primero >> segundo >> tercero)) {\n        std::cout << \"Error entrada\";\n        return 1;\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n\n        salida << primero << ' ' << segundo;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n\n        salida << ' ' << tercero;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n\n    int a{0};\n    int b{0};\n    int c{0};\n\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n\n    std::cout << \"Leidos=\" << a << \",\" << b << \",\" << c\n              << \";Total=\" << a + b + c << \"\\n\";\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1341,6 +1341,152 @@
         "id": "block_0007_0001",
         "beforeSha256": "0623f7b364b8a64e7d50375576b197278f75f016602f06ff5cc42658d349101b",
         "afterSha256": "96f2126e2243923c94504d65704e0c920ed79d9339b6fc868eac488eb7b742cd"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "47a9da92d72c63dd78ebd26d68c64f5b40fc0986119ebe7a5add28ffb3fedb3c",
+        "afterSha256": "2343a77a4c1c4a9037a19146b61acde9e4672e9cf6ccfe6e05e361d50f683aca"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "33300fcec48cf13a680af9237f66d71dc45dc6617206b2be3580cda68f8519cd",
+        "afterSha256": "29ab720352996a398dd6e4959114ee207a0f057f20558e65aa06fddcec99e91a"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "5e3743d14494e7819b5f56add3472b54723f934c64f7cb37dbda89d7d5eed869",
+        "afterSha256": "3af2bd37882441062e08127784ec3ad85eaf3fd4dce9f2d4500d1d02c08b5d5d"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "acd49b067fdb6e59348420b9c39a9eeb0b3fbac0a58ce1b499baa6077fc29c37",
+        "afterSha256": "711fa43c2a4f178d18876d2395798690e27c2842f270487aad4aa69c128d65dd"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "8862987a96139ba33fd9ba1d1aa97dd2adf9378a38028beb15a738697512988d",
+        "afterSha256": "17a3e554b520f0b8b5611fe7b3bf2930c75e0932a467f7ee0bf5bbeaa9003449"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "2bfb96456242bb5f43977bcc21c8aaa4a9657394095c8b1a89b87fba3c7a6ac2",
+        "afterSha256": "8ec5f7ba31f6a082541f808fb463d996026e1c0d031c414def1e8c8eb963aa6b"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_consigna",
+        "beforeSha256": "fad4069bb58affefea117bdf14d44b1fe2a365ea578159bd6cacf171a5f1e318",
+        "afterSha256": "80ecd9425b6ccbe63e6031a7f84e61803f2cdcf62d21861a1461c48b0c702e24"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_casos",
+        "beforeSha256": "b223903d4b36f614511c4eda93e7fdaaf0eb59021dfd19b4641eeac067154872",
+        "afterSha256": "0be89f9f016e455037be08985c78ad06cc01a3bbb000c1c67ba6b3bf40294fc7"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "ba1993cdd2625be5bcccca00c37e655375cb05363d9964b2a18567fca64052d3",
+        "afterSha256": "3e7899e14c21c42867344ea68c69f027310b5846752bb9a09a0f8c902dde9ecb"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "c08c306030cca0fb91bad60eb5f3f59e932af53d133f9ff364d56d69db6e8e35",
+        "afterSha256": "6dcf7d64fb18e534b9610de98f3d42731d06439c1ac2a5a31c8caca9d4571c6d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "531e81421ec49683b942880d02737cbb4d2c17867501351fea5f1820c4b46498",
+        "afterSha256": "fcd1cf0e8489696ac467f6be264d5a078fe6548d658605040ab276e7d7d745f8"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "9021fc3aaa9ef44faa54441aaa3f5f3ab90d7b2b55517eb9d95c24e298af3af6",
+        "afterSha256": "b5155da3b57cd589ad40b7f0af99756be2b45163d9243de60b1a90eb2e704684"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "f90282c01a954786771ef24f46892aa6247570cd4768460787b2b79de4ffb07b",
+        "afterSha256": "458ebbd545daa099f0bb6604118803f137e63ee57e6e38fe26746c12d9fca7bd"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_referencia_codigo",
+        "beforeSha256": "57e10748d71ef0c0ea2920d9c07c2ac852a220389c774cea9ac548d14fd8c92f",
+        "afterSha256": "bb9f41255d94afe5d57a33e1cddb5e87d2cc7dbe19444641ed9e6a7e7f9565de"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "segunda_apertura_reemplaza",
+          "question": "Supón que las aperturas, escrituras y cierres tienen éxito. Esta versión omite std::ios::app en la segunda apertura. Predice el diagnóstico visible.",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "answers": [
+            "Lectura incompleta"
+          ],
+          "explanation": "La segunda apertura de salida, al tener éxito sin std::ios::app, descarta el texto anterior. La escritura posterior deja un espacio seguido de 3. Ese espacio inicial no impide leer el primer entero, pero ya no existen otros dos valores.\n\nLa comprobación conjunta de entrada >> a >> b >> c falla. El programa entra en la rama que muestra Lectura incompleta y termina con código 1; no alcanza la suma."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total=12",
+                  "Total=12\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \"5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total=12",
+                  "Total=12\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    int tercero{0};\n    if (!(std::cin >> primero >> segundo >> tercero)) {\n        std::cout << \"Error entrada\";\n        return 1;\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << primero << ' ' << segundo;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << ' ' << tercero;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Leidos=\" << a << \",\" << b << \",\" << c\n              << \";Total=\" << a + b + c << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1397,41 +1543,6 @@
     "version": 1,
     "fields": [
       {
-        "block": "block_0001_0001",
-        "path": "/text",
-        "sourceSha256": "7d8475d44961e09e61fc800fe223c21344c329c480579ba198466ccae290153c",
-        "spans": [
-          {
-            "start": 73,
-            "end": 111,
-            "text": "std::ofstream salida{\"serie_lgp.txt\"};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 370,
-            "end": 423,
-            "text": "std::ofstream salida{\"serie_lgp.txt\", std::ios::app};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 449,
-            "end": 462,
-            "text": "std::ios::app",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 698,
-            "end": 718,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
         "block": "block_0000_0000",
         "path": "/text",
         "sourceSha256": "a3807c2acec3fa8e2214b86e34460075f17606e27e2efe21fd2f6a6fc31daf40",
@@ -1440,7 +1551,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "d7b5afc2ef465bf9126d7bec8e543cabab8408d65cea9fb60c07b50262bdb11e",
+        "sourceSha256": "2e00f2fe034cc53a0619f019541943d1f01eb5675a966a4bee369649d1466687",
         "spans": [
           {
             "start": 12,
@@ -1474,8 +1585,8 @@
           },
           {
             "start": 709,
-            "end": 750,
-            "text": "(Stroustrup, 2024, sección 9.3.1, p. 256)",
+            "end": 727,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1584,9 +1695,44 @@
         "spans": []
       },
       {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "7d8475d44961e09e61fc800fe223c21344c329c480579ba198466ccae290153c",
+        "spans": [
+          {
+            "start": 73,
+            "end": 111,
+            "text": "std::ofstream salida{\"serie_lgp.txt\"};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 370,
+            "end": 423,
+            "text": "std::ofstream salida{\"serie_lgp.txt\", std::ios::app};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 449,
+            "end": 462,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 698,
+            "end": 718,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "e5c882e62f1ae4901fa358fda6e2976de12e3403c078f7890f08fdee5fe2396d",
+        "sourceSha256": "3428b343c8554b4afc5855860948fa97dbbc12310bfc5b486059f3739b024e6e",
         "spans": [
           {
             "start": 34,
@@ -1596,86 +1742,99 @@
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 100,
+            "start": 90,
+            "end": 103,
             "text": "std::ios::app",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 154,
+            "start": 141,
+            "end": 156,
             "text": "salida << \" 3\";",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 237,
-            "end": 238,
+            "start": 239,
+            "end": 240,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 288,
-            "end": 293,
+            "start": 315,
+            "end": 318,
+            "text": "1 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 370,
             "text": "1 2 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 382,
-            "end": 383,
+            "start": 397,
+            "end": 398,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 402,
+            "end": 403,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 413,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 387,
-            "end": 388,
+            "start": 415,
+            "end": 416,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 393,
-            "end": 394,
+            "start": 419,
+            "end": 420,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 403,
-            "end": 404,
-            "text": "a",
-            "role": "cpp"
-          },
-          {
-            "start": 408,
-            "end": 409,
-            "text": "b",
-            "role": "cpp"
-          },
-          {
-            "start": 414,
-            "end": 415,
-            "text": "c",
-            "role": "cpp"
-          },
-          {
-            "start": 498,
-            "end": 505,
+            "start": 458,
+            "end": 465,
             "text": "Total=6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 551,
-            "end": 557,
+            "start": 579,
+            "end": 585,
             "text": "salida",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 740,
-            "end": 753,
+            "start": 768,
+            "end": 781,
             "text": "serie_lgp.txt",
             "role": "data",
             "reading": "natural"
@@ -1712,21 +1871,21 @@
             "start": 38,
             "end": 41,
             "text": "1 2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 81,
             "end": 82,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 102,
             "end": 103,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2060,14 +2219,14 @@
             "start": 47,
             "end": 50,
             "text": "3 4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 110,
             "end": 111,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2163,11 +2322,11 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "c1695f1dad08333806f8fc8aa1ff557d4d5b6ddbaedec61bcf67abe7fba3c4c2",
+        "sourceSha256": "d935d3f600878badb09049ac0d6db45e255de5ca6343cd476ad1564f20ac8182",
         "spans": [
           {
-            "start": 23,
-            "end": 36,
+            "start": 11,
+            "end": 24,
             "text": "serie_lgp.txt",
             "role": "data",
             "reading": "natural"
@@ -2183,92 +2342,105 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "fe14068c79890e96092b226fc189cb06bf268034b064b180126af490ce877e4b",
+        "sourceSha256": "0a5d73ed007cd0094dbb5ab80b2e404e6ec1b0921d1723118d17d22e6702c4e9",
         "spans": [
           {
-            "start": 46,
-            "end": 49,
+            "start": 39,
+            "end": 42,
             "text": "3 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 135,
+            "start": 115,
+            "end": 128,
             "text": "std::ios::app",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 156,
-            "end": 160,
+            "start": 151,
+            "end": 155,
             "text": "\" 5\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 229,
-            "end": 234,
+            "start": 247,
+            "end": 252,
             "text": "3 4 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 289,
-            "end": 297,
+            "start": 264,
+            "end": 272,
             "text": "Total=12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 416,
-            "end": 429,
+            "start": 353,
+            "end": 366,
             "text": "std::ios::app",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 578,
-            "end": 579,
+            "start": 458,
+            "end": 462,
+            "text": "\" 5\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 497,
+            "end": 498,
             "text": "5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 628,
-            "end": 641,
+            "start": 533,
+            "end": 546,
             "text": "std::ios::app",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 660,
-            "end": 663,
+            "start": 567,
+            "end": 570,
             "text": "\"5\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 707,
-            "end": 711,
+            "start": 641,
+            "end": 645,
             "text": "3 45",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 857,
-            "end": 875,
+            "start": 759,
+            "end": 777,
             "text": "Lectura incompleta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 898,
-            "end": 899,
+            "start": 799,
+            "end": 800,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1130,
-            "end": 1137,
+            "start": 1035,
+            "end": 1042,
             "text": "close()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2294,7 +2466,7 @@
             "start": 34,
             "end": 37,
             "text": "3 4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2308,14 +2480,14 @@
             "start": 118,
             "end": 119,
             "text": "4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 130,
             "end": 131,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2427,7 +2599,7 @@
             "start": 67,
             "end": 70,
             "text": "3 4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2491,6 +2663,13 @@
             "end": 5,
             "text": "close",
             "role": "cpp"
+          },
+          {
+            "start": 28,
+            "end": 32,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2540,7 +2719,7 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "7eedbee1ce843b8a86bd137605f73876084c4fff294cd6eb82b4b8c5d15e8065",
+        "sourceSha256": "d50db3891abdd84288732018fcd1842417231ae0f1c75d14dc50e301d1d1793e",
         "spans": [
           {
             "start": 379,
@@ -2646,7 +2825,7 @@
             "start": 39,
             "end": 42,
             "text": "3 4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2660,7 +2839,7 @@
             "start": 114,
             "end": 115,
             "text": "4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2722,14 +2901,14 @@
             "start": 16,
             "end": 17,
             "text": "4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 29,
             "end": 30,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2782,7 +2961,7 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "b1fd8197c4748998c7d2e3e9b48d957210c9f34c7813b5a4262f90273052980e",
+        "sourceSha256": "2a5e867194ef03a63e919346978478fef984a58ff6921ab46fb1d99daea7face",
         "spans": [
           {
             "start": 149,
@@ -2809,21 +2988,21 @@
             "start": 719,
             "end": 720,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 722,
             "end": 723,
             "text": "4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 726,
             "end": 727,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2843,12 +3022,6 @@
         ]
       },
       {
-        "block": "block_0008_0000",
-        "path": "/text",
-        "sourceSha256": "e8902f8f3edbda744204dc00aec43e77f8d987aed197b9a8c2aec457a14a8254",
-        "spans": []
-      },
-      {
         "block": "u12_archivo_orden_y_suma_titulo",
         "path": "/text",
         "sourceSha256": "afde2eb76d0ac207b16ac417f49e1cd2ace9df576409938b1a5819a704e8d53d",
@@ -2857,60 +3030,60 @@
       {
         "block": "u12_archivo_orden_y_suma_consigna",
         "path": "/text",
-        "sourceSha256": "81dc07650ac700a96110b656ce3bc20955ce107fddff95fd4827cd619fc87e07",
+        "sourceSha256": "41aca0963539b5cfb9c1f63ca02e6a9840e3fa37743180645fa7f6e866753f00",
         "spans": [
           {
-            "start": 137,
-            "end": 140,
+            "start": 158,
+            "end": 161,
             "text": "-10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 145,
+            "start": 164,
+            "end": 166,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 173,
-            "end": 181,
+            "start": 194,
+            "end": 202,
             "text": "std::cin",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 258,
-            "end": 271,
+            "start": 279,
+            "end": 292,
             "text": "serie_lgp.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 434,
-            "end": 447,
+            "start": 455,
+            "end": 468,
             "text": "std::ios::app",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 776,
-            "end": 796,
+            "start": 797,
+            "end": 817,
             "text": "Leidos=A,B,C;Total=S",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1021,
-            "end": 1022,
+            "start": 1042,
+            "end": 1043,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1175,
-            "end": 1176,
+            "start": 1196,
+            "end": 1197,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2920,71 +3093,121 @@
       {
         "block": "u12_archivo_orden_y_suma_casos",
         "path": "/text",
-        "sourceSha256": "eb7f9d5580e33f31dba7ecc3ba323b1c46c1830de64b0a3f36b9649695630d93",
+        "sourceSha256": "b3c32b3acf37248a6d474e30e73e211f69fb0263609bb684849a893faba539fa",
         "spans": [
           {
-            "start": 274,
-            "end": 279,
+            "start": 47,
+            "end": 48,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 87,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 515,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 522,
             "text": "3 4 5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 288,
-            "end": 309,
+            "start": 531,
+            "end": 552,
             "text": "Leidos=3,4,5;Total=12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 322,
-            "end": 328,
+            "start": 562,
+            "end": 563,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 565,
+            "end": 571,
             "text": "0 7 -7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 337,
-            "end": 358,
+            "start": 580,
+            "end": 601,
             "text": "Leidos=0,7,-7;Total=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 371,
-            "end": 378,
+            "start": 611,
+            "end": 612,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 614,
+            "end": 621,
             "text": "-4 10 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 387,
-            "end": 409,
+            "start": 630,
+            "end": 652,
             "text": "Leidos=-4,10,0;Total=6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 422,
-            "end": 428,
+            "start": 662,
+            "end": 663,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 665,
+            "end": 671,
             "text": "8 -3 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 437,
-            "end": 458,
+            "start": 680,
+            "end": 701,
             "text": "Leidos=8,-3,2;Total=7",
             "role": "output",
             "reading": "natural"
           }
         ]
-      },
-      {
-        "block": "u12_archivo_orden_y_suma_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
-        "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
-        "spans": []
       },
       {
         "block": "u12_archivo_orden_y_suma_comprobacion",
@@ -3044,7 +3267,7 @@
       },
       {
         "block": "u12_archivo_orden_y_suma_comprobacion",
-        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
         "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
         "spans": []
       },
@@ -3085,7 +3308,7 @@
       },
       {
         "block": "u12_archivo_orden_y_suma_comprobacion",
-        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
         "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
         "spans": []
       },
@@ -3121,12 +3344,19 @@
             "text": "6",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 61,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "u12_archivo_orden_y_suma_comprobacion",
-        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
         "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
         "spans": []
       },
@@ -3164,6 +3394,18 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "e8902f8f3edbda744204dc00aec43e77f8d987aed197b9a8c2aec457a14a8254",
+        "spans": []
       },
       {
         "block": "u12_archivo_orden_y_suma_referencia_titulo",

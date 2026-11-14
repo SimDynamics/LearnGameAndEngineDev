@@ -14,15 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En Windows, cada proceso utiliza un entorno: un conjunto de valores que, entre otras cosas, indica dónde buscar herramientas, cabeceras y bibliotecas. La consola de desarrollo prepara esos valores para MSVC. Una consola ordinaria puede no encontrar el compilador aunque esté instalado. Microsoft recomienda abrir el acceso directo de consola de desarrollo correspondiente a la instalación que vas a utilizar (Microsoft, 2026d)."
+          "text": "Que el compilador esté instalado significa que sus archivos están disponibles en el equipo. Para utilizarlo desde una ventana de comandos también hay que preparar esa ventana: debe poder localizar el compilador, las cabeceras y las bibliotecas que necesita.\n\nCada proceso utiliza un entorno, un conjunto de valores que indica, entre otras cosas, esas ubicaciones. Por ejemplo, una consola ordinaria puede no encontrar cl aunque el archivo del compilador ya exista. La consola de desarrollo prepara los valores para MSVC; esa preparación no instala herramientas que falten. Microsoft recomienda abrir el acceso de consola de desarrollo de la instalación que vas a utilizar (Microsoft, 2026d)."
         },
         {
           "type": "paragraph",
-          "text": "Las órdenes de esta práctica están escritas para cmd, el intérprete que recibe las líneas en el Símbolo del sistema. Abre Inicio y busca x64 Native Tools Command Prompt for VS 2026. Selecciona el acceso de la instalación que elegiste; el nombre puede estar traducido. Identifica la consola de herramientas nativas x64, el destino de 64 bits que usaremos. El acceso Developer PowerShell abre otro intérprete: para seguir estas órdenes utiliza el que dice Command Prompt.\n\nConserva esa ventana durante la práctica. Abrir después una consola ordinaria no garantiza que tenga preparado el mismo entorno."
+          "text": "Las órdenes de esta práctica son para cmd, el intérprete que recibe y ejecuta las líneas del Símbolo del sistema. No son instrucciones de C++: las escribirás en la consola, no en el archivo del programa.\n\n1. Abre Inicio y busca x64 Native Tools Command Prompt for VS 2026.\n2. Selecciona el acceso correspondiente a la instalación que revisaste. Su nombre puede estar traducido. Herramientas nativas x64 identifica aquí el entorno para el destino de 64 bits que utilizaremos.\n3. Espera a que se abra y termine su preparación. Conserva esa misma ventana para las órdenes siguientes.\n\nEl acceso Developer PowerShell abre otro intérprete. Para reproducir estas líneas, elige Command Prompt. La ventana puede presentarse dentro de Windows Terminal: el aspecto exterior no decide qué intérprete recibe las órdenes. Tampoco basta con abrir después un Símbolo del sistema ordinario, porque esa otra ventana puede no tener preparado el mismo entorno."
         },
         {
           "type": "paragraph",
-          "text": "En esa ventana escribe las dos órdenes siguientes, una por vez, y pulsa Enter después de cada una. where cl busca el ejecutable en las ubicaciones de búsqueda de esa consola. cl, sin un archivo fuente, presenta la identificación y el uso del compilador; todavía no construye nuestro programa.\n\nEscribe sólo la orden mostrada. La ruta seguida de > que aparece a su izquierda en la captura es el indicador de la consola: señala la carpeta actual y no forma parte de lo que debes introducir."
+          "text": "En esa consola de desarrollo puedes realizar la consulta desde la carpeta con la que se haya abierto. Las dos órdenes siguientes no crean ni modifican el programa. Escríbelas una por vez y pulsa Enter después de cada una.\n\nwhere cl muestra las ubicaciones en las que encuentra el nombre del compilador. El resultado esperado incluye una ruta de cl.exe dentro de la instalación que elegiste. Esa consulta localiza archivos; no compila una fuente. Si no obtiene una ruta, revisa la preparación de la consola y los componentes de esa instalación antes de continuar.\n\ncl, sin nombre de archivo, muestra la identificación y el uso del compilador, como en la captura. Lee su versión y el destino x64. Ver esos datos comprueba que se pudo invocar esa herramienta; todavía no comprueba la construcción de nuestro programa (Microsoft, 2026d).\n\nIntroduce sólo la orden. La ruta seguida de > a la izquierda es el indicador de la consola: muestra la carpeta actual y no forma parte de lo que debes escribir. Al terminar una orden, vuelve a aparecer ese indicador para introducir la siguiente."
         },
         {
           "type": "paragraph",
@@ -70,7 +70,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Separaremos este programa pequeño en una carpeta propia. En la consola de desarrollo ejecuta las dos órdenes siguientes. %USERPROFILE% se sustituye por la ruta de tu carpeta de usuario. Las comillas conservan la ruta como un solo argumento aunque contenga espacios. LGAED_Pruebas y ComprobarEntorno son nombres de carpetas para este ejercicio."
+          "text": "Usaremos una carpeta propia para no mezclar esta prueba con las fuentes de InspectionLog. Ejecuta las dos órdenes siguientes en la misma consola de desarrollo, una por vez. Puedes comenzar desde su carpeta actual: ambas indican la ubicación a partir de tu carpeta de usuario.\n\nEn cmd, %USERPROFILE% se sustituye por esa ruta personal. No escribas el nombre de usuario de la captura ni reemplaces esa expresión por la carpeta del autor. A continuación se añaden los nombres LGAED_Pruebas y ComprobarEntorno. Las comillas mantienen la ruta como un solo argumento aunque contenga espacios.\n\nLa primera orden crea la carpeta; la segunda sitúa la consola dentro de ella. Crear una carpeta no cambia por sí solo el lugar desde el que se ejecutarán las órdenes posteriores."
         },
         {
           "type": "paragraph",
@@ -82,11 +82,11 @@
         },
         {
           "type": "paragraph",
-          "text": "mkdir crea la carpeta y las carpetas intermedias que falten. Si ya existe, identifica si contiene una prueba anterior antes de reutilizar sus archivos. cd cambia el directorio de trabajo; /d permite cambiar también de unidad. Estas órdenes no compilan. Los nombres relativos que emplearemos después, como comprobar_entorno.cpp, se interpretan desde esta carpeta."
+          "text": "mkdir crea ComprobarEntorno y las carpetas intermedias que falten. Si termina correctamente, puede no mostrar un mensaje de éxito: vuelve el indicador de la consola. Si avisa de que la carpeta ya existe, comprueba si contiene una prueba anterior antes de reutilizar sus archivos. Si comunica otro problema, resuelve su causa antes de continuar.\n\ncd cambia el directorio de trabajo, es decir, la carpeta que la consola utiliza para interpretar los nombres relativos. La opción /d permite cambiar también la unidad. Después de esa segunda orden, el indicador debe terminar en LGAED_Pruebas\\ComprobarEntorno>, precedido por tu ruta personal.\n\nEstas órdenes no crean todavía la fuente ni construyen un ejecutable. A partir de ahora, el nombre comprobar_entorno.cpp sin una ruta completa designará el archivo de esta carpeta. Conserva esta ubicación durante la edición, la construcción y la ejecución."
         },
         {
           "type": "paragraph",
-          "text": "Escribe la siguiente orden en la misma ventana. Abre Bloc de notas para editar el archivo indicado. Si pregunta si deseas crear un archivo nuevo, acepta. Mantén el nombre completo comprobar_entorno.cpp: la extensión .cpp identifica aquí un archivo fuente de C++ (Microsoft, 2026d)."
+          "text": "Con la consola situada en ComprobarEntorno, escribe la orden siguiente. notepad abre Bloc de notas y comprobar_entorno.cpp identifica el archivo que editarás dentro de la carpeta actual. Si pregunta si deseas crear el archivo porque aún no existe, acepta.\n\nSi ya existía, el editor mostrará su contenido: revisa que sea la fuente de esta prueba antes de modificarla. Mantén el nombre completo comprobar_entorno.cpp. La extensión .cpp identifica el archivo que MSVC tratará aquí como fuente de C++ (Microsoft, 2026d). Abrir el editor todavía no guarda el programa que vas a escribir."
         },
         {
           "type": "paragraph",
@@ -128,7 +128,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda con Ctrl+S o con Archivo → Guardar. Si aparece Guardar como, elige la carpeta ComprobarEntorno, escribe comprobar_entorno.cpp y selecciona Todos los archivos cuando el editor ofrezca ese filtro. Comprueba que el nombre no haya terminado en .cpp.txt. El aspecto de Bloc de notas puede variar entre versiones de Windows; las acciones relevantes siguen siendo editar ese archivo y guardar su contenido (Microsoft, 2026d)."
+          "text": "Guarda el contenido con Ctrl+S o Archivo → Guardar. Para revisar el nombre, la carpeta y la codificación, abre Archivo → Guardar como. Si ese cuadro ya apareció al guardar por primera vez, utiliza el mismo. Revisa estas decisiones:\n1. Elige la carpeta de usuario LGAED_Pruebas\\ComprobarEntorno que acabas de preparar, no la carpeta de la captura.\n2. Escribe comprobar_entorno.cpp como nombre completo.\n3. Selecciona Todos los archivos cuando se ofrezca ese filtro. Así evitas que el guardado añada .txt al nombre de la fuente (Microsoft, 2026d).\n4. En la selección de codificación, elige UTF-8 y guarda el archivo.\n\nComprueba el nombre completo: debe terminar en .cpp, no en .cpp.txt. En la captura, la barra de título identifica comprobar_entorno.cpp y la barra de estado muestra UTF-8. La codificación indica cómo se representan los caracteres guardados; elegirla no convierte el texto en un ejecutable.\n\nLa interfaz de Bloc de notas puede variar entre versiones de Windows. Los resultados que necesitas son el archivo en la carpeta indicada, con su nombre real completo, el contenido del programa y la codificación UTF-8. La consulta desde la consola que sigue comprobará el archivo guardado, no sólo lo que permanece visible en el editor."
         },
         {
           "type": "image",
@@ -139,7 +139,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Regresa a la consola de desarrollo y ejecuta la siguiente orden. type muestra el texto del archivo guardado. Compara cada línea con tu editor; así compruebas el archivo que recibirá el compilador, no sólo un cambio todavía visible en la pantalla del editor."
+          "text": "Regresa a la misma consola de desarrollo, que debe seguir en ComprobarEntorno, y ejecuta la orden siguiente. type lee el archivo de texto nombrado y muestra su contenido; no compila ni modifica ese archivo.\n\nEl resultado debe contener las mismas líneas del programa que acabas de guardar: la inclusión de iostream, la definición de main, la escritura de la frase y la terminación con cero. Compara también comillas, llaves, punto y coma y la secuencia de escape del salto de línea.\n\nSi no encuentra comprobar_entorno.cpp, revisa la carpeta y la extensión real del archivo. Si muestra una versión anterior, revisa el guardado y que Bloc de notas esté editando ese mismo archivo. Continúa cuando la consulta coincida con el programa previsto: ése será el texto que recibirá el compilador."
         },
         {
           "type": "paragraph",
@@ -172,7 +172,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la misma carpeta y en la misma consola de desarrollo, ejecuta esta orden completa. cl recibe el archivo fuente. /W4 solicita un nivel amplio de advertencias del compilador. /EHsc selecciona el comportamiento de manejo de excepciones estándar de C++; mantenemos esa opción también en esta prueba pequeña. La orden traduce la fuente y llama al enlazador para obtener el ejecutable (Microsoft, 2026d)."
+          "text": "Ejecuta la orden completa siguiente desde ComprobarEntorno y en la misma consola de desarrollo. Sus elementos cumplen estas funciones:\n\ncl invoca el compilador de Microsoft.\n/W4 solicita un nivel amplio de advertencias para señalar posibles problemas que conviene revisar; no garantiza que el programa carezca de defectos.\n/EHsc selecciona el soporte de manejo de excepciones estándar de C++ de esta receta. Mantenemos esa opción también en la prueba pequeña.\ncomprobar_entorno.cpp es el nombre de la fuente guardada en la carpeta actual.\n\nEsta orden coordina dos etapas: primero traduce la fuente y después llama al enlazador para formar el ejecutable con las partes necesarias de las bibliotecas. No ejecuta el programa. Las opciones y el recorrido de compilación y enlace corresponden a las herramientas de MSVC que estamos comprobando (Microsoft, 2026d)."
         },
         {
           "type": "paragraph",
@@ -180,11 +180,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En una construcción correcta aparecen los mensajes del compilador y del enlazador. Se crean comprobar_entorno.obj, con el código objeto, y comprobar_entorno.exe, el programa ejecutable. El nombre de un archivo en esos mensajes no es todavía la salida del programa: hasta ahora lo estamos construyendo."
+          "text": "En una construcción correcta aparecen primero la identificación y los mensajes del compilador y después los del enlazador. En la carpeta se obtienen dos archivos distintos:\ncomprobar_entorno.obj contiene el código objeto traducido.\ncomprobar_entorno.exe es el ejecutable que se podrá iniciar.\n\nLa orden utiliza la fuente comprobar_entorno.cpp, sin sustituirla por ninguno de esos resultados. El nombre del archivo fuente y los nombres .obj y .exe que ves en los mensajes pertenecen a la construcción. Estos mensajes todavía no son la salida de main. La línea Entorno preparado que debes comprobar se producirá al ejecutar el programa.\n\nPara atribuir el ejecutable a la fuente actual necesitas que esta construcción termine correctamente. Si ya había un .exe de un intento anterior, su mera presencia no demuestra que el intento nuevo haya tenido éxito."
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar el programa, comprueba cómo terminó la construcción. En la misma ventana, justo después de la orden de cl, introduce la orden siguiente. En cmd, %ERRORLEVEL% permite consultar el código de salida que dejó la operación anterior y echo lo muestra."
+          "text": "Cuando vuelva el indicador después de la orden de construcción, consulta inmediatamente su resultado con la orden siguiente, en la misma ventana. Introduce esa consulta como una línea independiente, antes de ejecutar el programa o cualquier otra herramienta.\n\nEn cmd, %ERRORLEVEL% se sustituye por el código de salida disponible en ese momento. echo muestra el valor resultante en la consola. Por tanto, escribes la expresión con sus signos de porcentaje para consultar el resultado real: escribir echo 0 sólo mostraría un cero elegido por ti, sin consultar cómo terminó cl."
         },
         {
           "type": "paragraph",
@@ -196,7 +196,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si la construcción termina sin errores, ejecuta la siguiente orden. El prefijo .\\ identifica el ejecutable dentro del directorio actual. Esta operación utiliza el archivo construido; no vuelve a compilar la fuente."
+          "text": "Si la construcción terminó sin errores, ejecuta la orden siguiente desde ComprobarEntorno. El prefijo .\\ significa que el archivo se toma del directorio actual; comprobar_entorno.exe nombra el ejecutable que acaba de obtenerse allí.\n\nEsta operación inicia ese programa y su main. No lee de nuevo el archivo .cpp para reconstruirlo: si editas la fuente, antes tendrás que guardarla y construirla otra vez para ejecutar el cambio. Mantener la carpeta permite relacionar la fuente revisada con el archivo que construyes y ejecutas."
         },
         {
           "type": "paragraph",
@@ -212,7 +212,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Inmediatamente después de ejecutar .\\comprobar_entorno.exe, vuelve a introducir echo %ERRORLEVEL%. Ahora consultas el código de salida del programa que acabas de ejecutar, no el de la construcción anterior. Aquí se espera 0, por la instrucción return 0;. Consulta ese valor antes de ejecutar otra herramienta que pueda reemplazarlo."
+          "text": "Justo después de ejecutar .\\comprobar_entorno.exe, introduce otra vez echo %ERRORLEVEL%, como una línea independiente. Ahora el valor corresponde al programa que acabas de ejecutar; no es el resultado de la construcción consultado antes.\n\nLa frase Entorno preparado aparece por la instrucción de salida de main. El cero se espera por return 0; y lo muestra la consulta con echo. Son dos observaciones diferentes: el texto escrito por el programa y su código de terminación. Consulta ese código antes de ejecutar otra herramienta que pueda reemplazarlo.\n\nEn la captura automatizada aparece echo 0 porque la receta ya había sustituido el valor. Para consultar tu ejecución, escribe siempre la expresión completa echo %ERRORLEVEL%; no copies ese cero de la imagen."
         },
         {
           "type": "paragraph",
@@ -252,7 +252,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Lee el primer diagnóstico pertinente y relaciónalo con la operación que acabas de realizar. Si la consola no reconoce cl, revisa el entorno de desarrollo. Si no encuentra comprobar_entorno.cpp, revisa el nombre, la extensión y la carpeta. Si identifica una línea de C++ con un error, revisa esa línea y su contexto, guarda la corrección y construye de nuevo. No continúes ejecutando una construcción anterior como prueba de una corrección que aún no se pudo construir."
+          "text": "Relaciona el primer diagnóstico pertinente con la etapa en que apareció:\n\nLa consola no reconoce cl: todavía no ha empezado a analizar tu C++. Revisa que sea la consola de desarrollo de la instalación elegida y que sus componentes estén preparados.\n\nEl compilador no encuentra comprobar_entorno.cpp: revisa el nombre completo, la extensión real y la carpeta actual. Es un problema para localizar la fuente que debe recibir.\n\nEl diagnóstico señala una línea de C++: revisa esa línea y su contexto en el archivo correcto. Guarda la corrección, comprueba el contenido con type y construye de nuevo. Una indicación de línea ayuda a buscar la causa; no convierte todos los mensajes posteriores en defectos independientes.\n\nLa construcción devuelve un valor distinto de cero: lee los mensajes del compilador o del enlazador antes de continuar. No ejecutes una construcción anterior como prueba de una corrección que todavía no se pudo construir.\n\nEl programa termina, pero su frase no corresponde a la fuente actual: comprueba qué guardaste, si la construcción nueva tuvo éxito y qué ejecutable acabas de iniciar. Repetir la ejecución anterior no incorpora la edición."
         },
         {
           "type": "math_puzzle",
@@ -331,7 +331,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el archivo de esta práctica, cambia únicamente el texto entre comillas para que el programa escriba Entorno comprobado. Conserva el salto de línea y la terminación con cero. Guarda, verifica el archivo con type y vuelve a ejecutar la orden de construcción. Consulta su retorno antes de continuar; si hay un error, corrígelo, guarda y construye de nuevo. Después ejecuta el programa obtenido y comprueba la nueva línea y el código de salida de esa ejecución."
+          "text": "En comprobar_entorno.cpp cambia sólo las palabras Entorno preparado por Entorno comprobado dentro de la cadena. Conserva las comillas, la secuencia de escape \\n, el punto y coma y return 0;. No cambies el nombre del archivo ni las demás instrucciones.\n\nRepite el recorrido en este orden, desde ComprobarEntorno y en la misma consola preparada:\n1. Guarda la modificación en Bloc de notas.\n2. Ejecuta type comprobar_entorno.cpp y comprueba que la fuente guardada ya contiene la frase nueva.\n3. Ejecuta cl /W4 /EHsc comprobar_entorno.cpp. Cuando termine, consulta echo %ERRORLEVEL% en una línea aparte. Si hay un error, corrígelo, guarda y construye de nuevo antes de ejecutar.\n4. Tras una construcción correcta, ejecuta .\\comprobar_entorno.exe. Debe mostrar la línea indicada a continuación, terminada con un salto.\n5. Consulta inmediatamente echo %ERRORLEVEL% en otra línea. Debe mostrar cero: es el retorno de esta ejecución.\n\nLa frase nueva permite observar que estás ejecutando la construcción de la fuente modificada. El código de salida comprueba cómo terminó ese programa. Ninguno de los dos resultados sustituye la comprobación anterior de que la construcción terminó sin errores."
         },
         {
           "type": "paragraph",
@@ -1003,6 +1003,91 @@
         "id": "block_0004_0003",
         "beforeSha256": "35e7ab7e89c0c96aefd0ca0ec26627116fd118c424d0e04435606bbc4736afcf",
         "afterSha256": "c25f20270667cf7d85044bd3230d1b34beaaf4f8408011201360cc16217657b0"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4a1879f6bc9d33ad3b62d7b10790e43e943191ea6bfb9e53f385dc956f382366",
+        "afterSha256": "34f3cb43fdbe3fefbb75bd3c40ed59f9bc3e700e693f5fdd1c6b16a1ff220665"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "280fc78aee20d9489212ce0324dd969afda436ed0939d62c0edc6bc2a4cf8d91",
+        "afterSha256": "cbdefb5c84bc2388944464eb1fe5806ea14f9deaf6add6f58876257c9aca0ec1"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "4d5824f31d92a98f51a703759ec4b180f17cdb5e20361f353d2cf8f28891598b",
+        "afterSha256": "c40dc320cdad7e578d4580cf64e2ebe5a8701f10bef50996be8763daea1755fd"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "b307c211c70878d548d8503532a78a8da686b251aac3245eb6ecc95ca1da8377",
+        "afterSha256": "a42d412193bbc5c471118d9d81a6ada4921709a7d1c357cc389d843c301b72af"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "6089b10d5170a71bbf0186314232ca68a7f7b8997217d9a06cc55d8a3efb2896",
+        "afterSha256": "5e9acae9f891069af57f960bfeeb975f98fda11cac8af2bf18c4f0579701e39e"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "fcfbbc53aee686442dd6bdbec439ea564bb151bedaaa06ba09ada8ef56273257",
+        "afterSha256": "548205b569161b8fcf6a72639f238a38c6cf647feb99993ddf1384966a1248a4"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "152349c5ad6a6351026a0f7499d21e3cfdfbbed5f4851537494e79ceb9d35d76",
+        "afterSha256": "da57b7a3ab95ee8a3bfb93d39381f13ffa3de8e2146813c6e23eac65f66617d4"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "7faa76f5c40799698c356f15720c8cb159f412d903bd73813023af5d22b90230",
+        "afterSha256": "2b27b38e2320060d8fc7bc67e0b6d1ac7ae1498d2eb17cd903cf9e58212a1f0b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "58838a850633241f358f0d4138480781194e12a7ddfa1c7d9c7fff3676fd4ab8",
+        "afterSha256": "87f87415e46ef3693527056a0e0a2cdb300c31235d054387311165235b5c1a77"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "6e206d6ca6a7651f87c8656dbdccffc23899e852fed2ccec72ec8d786db03cd8",
+        "afterSha256": "57b6e8b8a8992a88c396576beecf6d6a7d25930ab72ebfd7ea2245075bd87907"
+      },
+      {
+        "id": "u12_consola_retorno_construccion_intro",
+        "beforeSha256": "54cbfe5d8759b0b4cadedb14ed9a64fb1b0426fa70539fb25767957956114e59",
+        "afterSha256": "3b5fc07fe5517734e7ae168e1a20a04914f0be2ff010f2fc111960eb921f38ef"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "e283834d023864adbb342163145de7c197afc423295de3e9fc07a10ca163da30",
+        "afterSha256": "cf668f657ad91db290d6c2292d77a4ba864159bfd0ad8fa3ce088b59f8bfa4f4"
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "075762719b6ff6d31fbe455f943bfeea7e8a0cf07fb2bacd26137135d5f879d1",
+        "afterSha256": "badb72f01b003a72a6ba8c7496fb0d41f201d6133ba5493c16896046e98b575a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "ac733e1d7abcc80d662211021bf1620743222a9c89896692542bbf519fb3fa5d",
+        "afterSha256": "d1480bd949a8ccc3a8a2eabec2852687e8707c5d7f90edfef35dc3ed4fe208a8"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "173dfeaab5aa9c21908d42d9bfa52b672a0c7f44aba1042357a4e207585188fb",
+        "afterSha256": "92eb7ced63421e160f0d548f7535a74221c82617e75a17d719a1cf8d3e132043"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "da57b7a3ab95ee8a3bfb93d39381f13ffa3de8e2146813c6e23eac65f66617d4",
+        "afterSha256": "866402757990f98b71fa48ded9f559bb195c170d7ca27914932c7171669a5e09"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "57b6e8b8a8992a88c396576beecf6d6a7d25930ab72ebfd7ea2245075bd87907",
+        "afterSha256": "4ba65a8a57c93ee8f820092561c194a3d82e1d8d02322da3941606823bae568a"
       }
     ]
   },
@@ -1032,18 +1117,25 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "c4b5d487ea47ebe277ab17c9421547a552a980be14303f9eb410d8f764afd425",
+        "sourceSha256": "726907ddacad12948b584b2c7022bef17312801c446e3a547a615b56f2b57609",
         "spans": [
           {
-            "start": 202,
-            "end": 206,
+            "start": 418,
+            "end": 420,
+            "text": "cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 515,
+            "end": 519,
             "text": "MSVC",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 408,
-            "end": 426,
+            "start": 672,
+            "end": 690,
             "text": "(Microsoft, 2026d)",
             "role": "citation",
             "reading": "natural"
@@ -1053,47 +1145,54 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "89078600d463f71503143f2ac12918aac43248e478dcaebefbac107df82d2ce6",
+        "sourceSha256": "b5ca3e09a33677ad6abf55b6878357e0c67f75dec7da805a22dbd64f02207b0c",
         "spans": [
           {
-            "start": 49,
-            "end": 52,
+            "start": 38,
+            "end": 41,
             "text": "cmd",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 180,
+            "start": 228,
+            "end": 271,
             "text": "x64 Native Tools Command Prompt for VS 2026",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 314,
-            "end": 317,
+            "start": 399,
+            "end": 402,
             "text": "x64",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 333,
-            "end": 340,
+            "start": 449,
+            "end": 456,
             "text": "64 bits",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 365,
-            "end": 385,
+            "start": 592,
+            "end": 612,
             "text": "Developer PowerShell",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 454,
-            "end": 468,
+            "start": 671,
+            "end": 685,
             "text": "Command Prompt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 726,
+            "end": 742,
+            "text": "Windows Terminal",
             "role": "data",
             "reading": "natural"
           }
@@ -1102,25 +1201,46 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "5e760afebc3335b5e2f526846c502f447be88c8aec118953e0169c9502987d0d",
+        "sourceSha256": "4ef5a6e3a1b0aa51838e4c8e9ce9cb209ae7006e3cd0594443414da4bb0c8212",
         "spans": [
           {
-            "start": 99,
-            "end": 107,
+            "start": 223,
+            "end": 231,
             "text": "where cl",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 175,
-            "end": 177,
+            "start": 345,
+            "end": 351,
+            "text": "cl.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 566,
             "text": "cl",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 345,
-            "end": 346,
+            "start": 690,
+            "end": 693,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 814,
+            "end": 832,
+            "text": "(Microsoft, 2026d)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 879,
+            "end": 880,
             "text": ">",
             "role": "data",
             "reading": "characters"
@@ -1369,25 +1489,39 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "23919cabc638a3d401a0c5c186a88ec91adb469c71689978fc3d0ccb9e50e7af",
+        "sourceSha256": "0138917dd15f38f8ece9d66afd407cd530c3bf71c49e129eeceb8d0d704199fb",
         "spans": [
           {
-            "start": 121,
-            "end": 134,
-            "text": "%USERPROFILE%",
+            "start": 75,
+            "end": 88,
+            "text": "InspectionLog",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 279,
+            "start": 280,
+            "end": 283,
+            "text": "cmd",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 298,
+            "text": "%USERPROFILE%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 473,
+            "end": 486,
             "text": "LGAED_Pruebas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 282,
-            "end": 298,
+            "start": 489,
+            "end": 505,
             "text": "ComprobarEntorno",
             "role": "data",
             "reading": "natural"
@@ -1425,32 +1559,46 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "148306b427411257e1789e99d855fe98ee89c21a98edcb6f9bb054e6d3712bcf",
+        "sourceSha256": "6babc8f3d78461f993b1d1f71755a6c2c7976f71bd024a82254f2227eabe8fe6",
         "spans": [
           {
             "start": 0,
             "end": 5,
             "text": "mkdir",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 11,
+            "end": 27,
+            "text": "ComprobarEntorno",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 152,
-            "end": 154,
+            "start": 346,
+            "end": 348,
             "text": "cd",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 188,
-            "end": 190,
+            "start": 476,
+            "end": 478,
             "text": "/d",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 574,
+            "end": 605,
+            "text": "LGAED_Pruebas\\ComprobarEntorno>",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 305,
-            "end": 326,
+            "start": 739,
+            "end": 760,
             "text": "comprobar_entorno.cpp",
             "role": "data",
             "reading": "natural"
@@ -1460,25 +1608,53 @@
       {
         "block": "block_0001_0005",
         "path": "/text",
-        "sourceSha256": "504883a97c5a3dfaa46c2c8890593801c0a8858ab1a0d6a0f3b33d39a0f794b1",
+        "sourceSha256": "d22950101412fa1f1c5647b9d4e5be2ce1374ed9e11c721bf56ad32cb7274092",
         "spans": [
           {
-            "start": 180,
-            "end": 201,
+            "start": 26,
+            "end": 42,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 79,
+            "text": "notepad",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 101,
+            "end": 122,
             "text": "comprobar_entorno.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 220,
+            "start": 393,
+            "end": 414,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 433,
             "text": ".cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 262,
-            "end": 280,
+            "start": 460,
+            "end": 464,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 515,
             "text": "(Microsoft, 2026d)",
             "role": "citation",
             "reading": "natural"
@@ -1599,62 +1775,104 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "603d0006e7a3cda9dc59a73ba144cfe4e400eeb01dee3cd44d77947fabd8acca",
+        "sourceSha256": "62199aca475b7aade72d36fbdd05bad9e609500da2c6624aec5332edb0b6d1b5",
         "spans": [
           {
-            "start": 11,
-            "end": 17,
+            "start": 24,
+            "end": 30,
             "text": "Ctrl+S",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 24,
-            "end": 41,
+            "start": 33,
+            "end": 50,
             "text": "Archivo → Guardar",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 66,
-            "text": "Guardar como",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 85,
-            "end": 101,
-            "text": "ComprobarEntorno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 111,
-            "end": 132,
+            "end": 133,
+            "text": "Archivo → Guardar como",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 293,
+            "text": "LGAED_Pruebas\\ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 379,
             "text": "comprobar_entorno.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 146,
-            "end": 164,
+            "start": 416,
+            "end": 434,
             "text": "Todos los archivos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 247,
-            "end": 255,
+            "start": 498,
+            "end": 502,
+            "text": ".txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 526,
+            "end": 544,
+            "text": "(Microsoft, 2026d)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 588,
+            "end": 593,
+            "text": "UTF-8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 663,
+            "end": 667,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 675,
+            "end": 683,
             "text": ".cpp.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 406,
-            "end": 424,
-            "text": "(Microsoft, 2026d)",
-            "role": "citation",
+            "start": 730,
+            "end": 751,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 781,
+            "end": 786,
+            "text": "UTF-8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1118,
+            "end": 1123,
+            "text": "UTF-8",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1725,12 +1943,40 @@
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "26a159aa0d3f0a89a72a99ce0c355ddf4e0e5e72054154e6c0cac92722da1d67",
+        "sourceSha256": "8d0e76fa316c809740b6470b596df05c5373eaf823e784bd9d528795ac2f08a5",
         "spans": [
           {
-            "start": 65,
-            "end": 69,
+            "start": 61,
+            "end": 77,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
             "text": "type",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 305,
+            "end": 313,
+            "text": "iostream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 332,
+            "end": 336,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 499,
+            "end": 520,
+            "text": "comprobar_entorno.cpp",
             "role": "data",
             "reading": "natural"
           }
@@ -1823,32 +2069,53 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "c395569c511b8f730360b57748415c483266a709c7901efe0e67ce45a895a8f7",
+        "sourceSha256": "16b8d5f00b8368d4e068e98dd150c72155df776b3dffb47536ce39de3b72ecd6",
         "spans": [
           {
-            "start": 89,
-            "end": 91,
+            "start": 42,
+            "end": 58,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 138,
             "text": "cl",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 118,
-            "end": 121,
+            "start": 174,
+            "end": 177,
             "text": "/W4",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 179,
-            "end": 184,
+            "start": 323,
+            "end": 328,
             "text": "/EHsc",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 460,
+            "end": 481,
+            "text": "comprobar_entorno.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 385,
-            "end": 403,
+            "start": 810,
+            "end": 814,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 839,
+            "end": 857,
             "text": "(Microsoft, 2026d)",
             "role": "citation",
             "reading": "natural"
@@ -1872,19 +2139,61 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "3f7a0fb328d25955eef04bc3a6ca6c1338ce06e79b6942b2493b3bfb0da26d29",
+        "sourceSha256": "098df6401fec990ee21465ee1061ff95fa7490fb2b82097fc946a6a3387fc26e",
         "spans": [
           {
-            "start": 92,
-            "end": 113,
+            "start": 173,
+            "end": 194,
             "text": "comprobar_entorno.obj",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 139,
-            "end": 160,
+            "start": 232,
+            "end": 253,
             "text": "comprobar_entorno.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 342,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 439,
+            "text": ".obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 446,
+            "text": ".exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 548,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 559,
+            "end": 576,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 757,
+            "text": ".exe",
             "role": "data",
             "reading": "natural"
           }
@@ -1893,8 +2202,44 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "08ad072ea64713bd0804793debec72800d3c98cc8c391296bd7bf963762987a6",
-        "spans": []
+        "sourceSha256": "0492949978e7a67f73c3958589866fb269019b179215d9f223a80da6c75110c2",
+        "spans": [
+          {
+            "start": 73,
+            "end": 89,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "text": ".\\",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 161,
+            "end": 182,
+            "text": "comprobar_entorno.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 278,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 311,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0005",
@@ -1933,35 +2278,77 @@
       {
         "block": "block_0003_0008",
         "path": "/text",
-        "sourceSha256": "b6165467721dcf8572d2aa74c2c563106c5881343b5eeb6aa594374505be6f6a",
+        "sourceSha256": "22f0344d49b5fa2e016e90c115aa774998bd1e4060d911667640c5a49e270768",
         "spans": [
           {
-            "start": 35,
-            "end": 58,
+            "start": 26,
+            "end": 49,
             "text": ".\\comprobar_entorno.exe",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 80,
-            "end": 97,
+            "start": 70,
+            "end": 87,
             "text": "echo %ERRORLEVEL%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 222,
-            "end": 223,
-            "text": "0",
+            "start": 248,
+            "end": 265,
+            "text": "Entorno preparado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 244,
-            "end": 253,
+            "start": 306,
+            "end": 310,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 319,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 343,
             "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 377,
+            "text": "echo",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 589,
+            "end": 595,
+            "text": "echo 0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 710,
+            "end": 727,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 743,
+            "end": 747,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2178,20 +2565,34 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "c6a720270608f03cc2a06b9587ea6c0ce6a139850ef4b0d29eb9c6375f7b7123",
+        "sourceSha256": "80b64e5b15edab385c74538ba41ab3ac7c16bc42df88743a7a15285573f8593b",
         "spans": [
           {
-            "start": 118,
-            "end": 120,
+            "start": 97,
+            "end": 99,
             "text": "cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 277,
+            "end": 298,
+            "text": "comprobar_entorno.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 192,
-            "text": "comprobar_entorno.cpp",
+            "start": 569,
+            "end": 573,
+            "text": "type",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 764,
+            "end": 768,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2324,27 +2725,90 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "5012a415109d26a6ef314341d41b44334d42ccb0889ae5d059691a770f66a4b4",
+        "sourceSha256": "dc19452c29800b1be6250aee4cf9b43d37e49b10a4ae9739569a2436c07a1bb4",
         "spans": [
           {
-            "start": 103,
-            "end": 121,
-            "text": "Entorno comprobado",
-            "role": "output",
+            "start": 3,
+            "end": 24,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 175,
+            "start": 50,
+            "end": 67,
+            "text": "Entorno preparado",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 90,
+            "text": "Entorno comprobado",
+            "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 160,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 189,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 310,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 425,
+            "text": "type comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 500,
+            "end": 534,
+            "text": "cl /W4 /EHsc comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 561,
+            "end": 578,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 718,
+            "end": 741,
+            "text": ".\\comprobar_entorno.exe",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 841,
+            "end": 858,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 887,
+            "end": 891,
             "text": "cero",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 209,
-            "end": 213,
-            "text": "type",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2500,35 +2964,49 @@
       {
         "block": "u12_consola_retorno_construccion_intro",
         "path": "/text",
-        "sourceSha256": "e4bcfffc4c8c6073461252f3b7f56dfe639e77b96134dcd8475631290cfb0061",
+        "sourceSha256": "366709925eff4df87138e55f0dd5ff6778bbdd510fcf4d2783ab00c1967ace3b",
         "spans": [
           {
-            "start": 121,
-            "end": 123,
-            "text": "cl",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 158,
-            "end": 161,
+            "start": 263,
+            "end": 266,
             "text": "cmd",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 163,
-            "end": 175,
+            "start": 268,
+            "end": 280,
             "text": "%ERRORLEVEL%",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 247,
-            "end": 251,
+            "start": 345,
+            "end": 349,
             "text": "echo",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 498,
+            "end": 504,
+            "text": "echo 0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 523,
+            "end": 527,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 571,
+            "end": 573,
+            "text": "cl",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },

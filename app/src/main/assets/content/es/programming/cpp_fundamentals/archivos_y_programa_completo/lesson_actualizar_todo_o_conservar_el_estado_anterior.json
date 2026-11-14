@@ -141,7 +141,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa `bool cargar_sin_descartes(std::istream& origen, std::vector<Registro>& destino)`. El primer parámetro es el flujo prestado que se va a leer; el segundo es la colección del llamador que sólo se reemplazará al aceptar. Utiliza un origen con las condiciones iniciales indicadas al comienzo de la lección.\n\nPrepara una colección candidata independiente. Para cada línea obtenida, usa `leer_linea` y `contiene_id`, proporcionados en el inicial. Rechaza inmediatamente si la línea es inválida o si el identificador ya está entre los candidatos. Después del bucle comprueba cómo terminó la lectura. Solo una carga completa aceptada sustituye todo `destino` y devuelve `true`; los retornos `false` conservan la colección previa.",
+          "text": "Implementa `bool cargar_sin_descartes(std::istream& origen, std::vector<Registro>& destino)`. El primer parámetro es el flujo prestado que se va a leer; el segundo es la colección del llamador que sólo se reemplazará al aceptar. Utiliza un origen con las condiciones iniciales indicadas al comienzo de la lección.\n\nPrepara una colección candidata independiente. Para cada línea obtenida, usa `leer_linea` y `contiene_id`, proporcionados en el código inicial del editor. Rechaza inmediatamente si la línea es inválida o si el identificador ya está entre los candidatos. Después del bucle comprueba cómo terminó la lectura: el origen debe haber alcanzado el final y no indicar una avería. En esta secuencia se consulta `origen.eof()` para el final y `origen.bad()` para la avería. Solo una carga completa aceptada sustituye todo `destino` y devuelve `true`; los retornos `false` conservan la colección previa.",
           "emphasis": [
             {
               "text": "colección candidata independiente",
@@ -155,7 +155,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería mediante `probar(texto)`. Cada llamada crea un `std::istringstream` nuevo y un destino inicial `{{9, {1, 1}}}`. Desde `main`, utiliza estas siete cadenas, en este orden:\n`\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"`\n`\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"`\n`\"\"`\n`\"1 [2;0]\\n4 [3;1]\\n2 [0;\"`\n`\"1 [2;0]\\n\\n2 [0;0]\"`\n`\"1 [2;11]\"`\n`\"2 [0;0]\\n4 [3;1]\\n1 [2;0]\"`\n\nCada informe empieza por `Aceptado` o `Rechazado`, según el valor devuelto. Después presenta todos los registros del destino como `|ID:aceptados:rechazados`. Termina cada informe con un salto, sin títulos ni líneas vacías adicionales. Al aceptar el texto vacío, sólo se imprime `Aceptado` y el salto, porque el destino queda vacío.\n\nResuelve primero el puzzle de la página anterior y pulsa Compilar, ejecutar y comprobar con las siete llamadas, usando la misma función en todos los casos.",
+          "text": "Construye una batería de siete pruebas mediante `probar(texto)` para comprobar la aceptación completa y la conservación del destino ante un rechazo. Cada llamada crea un `std::istringstream` nuevo y un destino inicial `{{9, {1, 1}}}`. El resultado de una llamada no se utiliza como destino inicial de la siguiente. Desde `main`, utiliza estas siete cadenas, en este orden. Las comillas delimitan las cadenas del código y `\\n` representa un salto de línea; la tercera cadena no contiene caracteres.\n\nMuestra 1: `\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"`\nSalida esperada: `Rechazado|9:1:1`\n\nMuestra 2: `\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"`\nSalida esperada: `Aceptado|1:2:0|4:3:1|2:0:0`\n\nMuestra 3: `\"\"`\nSalida esperada: `Aceptado`\n\nMuestra 4: `\"1 [2;0]\\n4 [3;1]\\n2 [0;\"`\nSalida esperada: `Rechazado|9:1:1`\n\nMuestra 5: `\"1 [2;0]\\n\\n2 [0;0]\"`\nSalida esperada: `Rechazado|9:1:1`\n\nMuestra 6: `\"1 [2;11]\"`\nSalida esperada: `Rechazado|9:1:1`\n\nMuestra 7: `\"2 [0;0]\\n4 [3;1]\\n1 [2;0]\"`\nSalida esperada: `Aceptado|2:0:0|4:3:1|1:2:0`\n\nCada informe empieza por `Aceptado` o `Rechazado`, según el valor devuelto. Después presenta todos los registros del destino como `|ID:aceptados:rechazados`. Termina cada informe con un salto, sin títulos ni líneas vacías adicionales. Al aceptar el texto vacío, sólo se imprime `Aceptado` y el salto, porque el destino queda vacío.\n\nLa comprobación de este editor compara los siete informes de la batería en una sola ejecución. Pulsa Compilar, ejecutar y comprobar con las siete llamadas, usando la misma función en todas ellas.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -187,7 +187,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Completa cargar_sin_descartes para el cliente proporcionado. Mantiene una única colección durante diez llamadas y crea un std::istringstream nuevo para cada muestra. Todo el vector cambia al aceptar; cualquier línea inválida o repetida rechaza toda la muestra y conserva exactamente el destino que recibió esa llamada.\n\nEl inicial proporciona los tipos, leer_linea y contiene_id. Completa la función sin imprimir ni modificar el cliente. Los identificadores de una colección anterior no se consideran duplicados de una muestra nueva: la unicidad se comprueba entre los candidatos de esa nueva muestra."
+          "text": "Completa cargar_sin_descartes para el cliente proporcionado. Mantiene una única colección durante diez llamadas y crea un std::istringstream nuevo para cada muestra. Todo el vector cambia al aceptar; cualquier línea inválida o repetida rechaza toda la muestra y conserva exactamente el destino que recibió esa llamada.\n\nEl código inicial del editor proporciona los tipos, leer_linea y contiene_id. Completa la función sin imprimir ni modificar el cliente. Los identificadores de una colección anterior no se consideran duplicados de una muestra nueva: la unicidad se comprueba entre los candidatos de esa nueva muestra."
         },
         {
           "type": "paragraph",
@@ -195,7 +195,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las diez cadenas están visibles en el cliente. Las llamadas restantes alternan muestras vacías aceptadas, un registro de ceros, una línea vacía intermedia, una colección válida de tres registros y un texto inválido. Al aceptar una muestra vacía, el destino queda vacío; un rechazo posterior debe conservar también ese estado vacío.\n\nDespués de cada llamada el cliente muestra Aceptado o Rechazado y todos los registros actuales como |ID:aceptados:rechazados, con un salto al final. Compila y comprueba los dos valores de Entrada. Los rechazos esperados no terminan la batería: el programa continúa hasta mostrar sus diez informes y devuelve cero.\n\nEntrada comienza con el primer caso. Después sustitúyela por 6 y vuelve a compilar y comprobar. Se permiten espacios, tabulaciones o saltos entre los enteros y después de ellos; no alteran las muestras del cliente.\n\nSalida requerida del primer caso, con un salto al final de cada línea:\nRechazado|8:1:2|1:0:0|9:4:1\nAceptado|9:0:0|2:4:1\nRechazado|9:0:0|2:4:1\nAceptado\nAceptado|0:0:0\nRechazado|0:0:0\nAceptado|9:10:10|1:0:0|0:3:2\nRechazado|9:10:10|1:0:0|0:3:2\nAceptado\nRechazado\n\nEn el segundo caso sólo cambia la primera línea, que debe ser Rechazado|6:1:2|1:0:0|9:4:1. Las demás líneas coinciden."
+          "text": "Las diez cadenas están visibles en el cliente. Las llamadas restantes alternan muestras vacías aceptadas, un registro de ceros, una línea vacía intermedia, una colección válida de tres registros y un texto inválido. Al aceptar una muestra vacía, el destino queda vacío; un rechazo posterior debe conservar también ese estado vacío.\n\nDespués de cada llamada el cliente muestra Aceptado o Rechazado y todos los registros actuales como |ID:aceptados:rechazados, con un salto al final. Los rechazos esperados no terminan la secuencia: el programa continúa hasta mostrar sus diez informes y devuelve cero.\n\nLa Entrada inicial contiene 8. Completa la función, conserva el cliente de main y pulsa Compilar, ejecutar y comprobar. La primera comprobación correcta con esa entrada es obligatoria para avanzar. La entrada 6 es un ensayo opcional; no necesitas comprobarla para avanzar ni para consultar la referencia. Puedes rodear el único entero con espacios, tabulaciones o saltos de línea; esos blancos no alteran las muestras del cliente. Dentro de cada ejecución, conserva las diez llamadas y su orden: cada rechazo protege el estado que dejó la última aceptación.\n\nEntrada obligatoria:\n8\nSalida esperada, con un salto al final de cada línea:\nRechazado|8:1:2|1:0:0|9:4:1\nAceptado|9:0:0|2:4:1\nRechazado|9:0:0|2:4:1\nAceptado\nAceptado|0:0:0\nRechazado|0:0:0\nAceptado|9:10:10|1:0:0|0:3:2\nRechazado|9:10:10|1:0:0|0:3:2\nAceptado\nRechazado\n\nEntrada opcional:\n6\nSalida esperada, con un salto al final de cada línea:\nRechazado|6:1:2|1:0:0|9:4:1\nAceptado|9:0:0|2:4:1\nRechazado|9:0:0|2:4:1\nAceptado\nAceptado|0:0:0\nRechazado|0:0:0\nAceptado|9:10:10|1:0:0|0:3:2\nRechazado|9:10:10|1:0:0|0:3:2\nAceptado\nRechazado"
         },
         {
           "type": "cpp_compiler",
@@ -494,7 +494,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El inicial proporciona el cargador ya construido. Completa `main` para crear la muestra relativa `carga_completa_lgp.txt` con `\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"`: hay saltos entre los registros y ninguno después del último. Comprueba la apertura de salida, escribe, cierra con `close()` y comprueba su estado. Después abre y comprueba un `std::ifstream` nuevo.\n\nCarga sobre el destino previo `{{9, {1, 1}}}`. La salida debe ser `Aceptado|1:2:0|4:3:1|2:0:0`, seguida de un salto final. Si falla una etapa de archivo o se rechaza la carga, conserva el diagnóstico y termina con código `1`. Pulsa Compilar, ejecutar y comprobar para contrastar este caso válido de archivo.",
+          "text": "El código inicial del editor proporciona el cargador ya construido. Completa `main` para crear la muestra relativa `carga_completa_lgp.txt` con este contenido:\n`\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"`\n\nHay saltos entre los registros y ninguno después del último. Comprueba la apertura de salida, escribe, cierra con `close()` y comprueba su estado. Después abre y comprueba un `std::ifstream` nuevo. Carga sobre el destino previo `{{9, {1, 1}}}`.\n\nSalida esperada:\n`Aceptado|1:2:0|4:3:1|2:0:0`\n\nEscribe un salto final después del informe. Si falla una etapa de archivo o se rechaza la carga, muestra el diagnóstico correspondiente y termina con código `1`. Pulsa Compilar, ejecutar y comprobar para contrastar este caso válido de archivo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -1445,6 +1445,31 @@
         "id": "block_0004_0001",
         "beforeSha256": "089ad8764e02f0a1b528922ba2252dba3fe65e19a7a1a353704f4ff2b1514283",
         "afterSha256": "f51c8fd5513cd927312f50acceaa66c218271b57f10a394ea312dccad6c5ec5e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "162f0a95f5135ad3fac833a332844c88a717f2ef1cfc9859553a6d72a6dd9e7e",
+        "afterSha256": "4e56e1f7b9973f73251633bb70a76771b36ca06482c560a056d2522f42e4635a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "53ed7b1dfbcb2cb6d60a8082bf8602d4ff0aebcce5fb9197629786bacff68cec",
+        "afterSha256": "b599e3c73b49c490f4dfa14d7600e34ef82333795db239466f525084dda9f036"
+      },
+      {
+        "id": "u12_completa_recargas_contrato",
+        "beforeSha256": "f5b0f500a91225e5b008451a40882fb60b35991172447383117a5f754b6f85ed",
+        "afterSha256": "411f783a014265eb2170903a0b5f4b98176c63f16264b0c9ad27b3e1302f2c3e"
+      },
+      {
+        "id": "u12_completa_recargas_casos",
+        "beforeSha256": "680a9cba32592c166c742c729cb8656b988c19458c73353b0d20f5f5a30cfcc4",
+        "afterSha256": "b1d2bc318eee14f77e5485891c6e0567b201f6405b48e7f5d7644f36a1bdc778"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "1ed4757e4249eee6bc3e6684278e8870a0c1044b52ea7b9b09243ef889324343",
+        "afterSha256": "aa16cad9f898c90fa8251999bdae3b26d6ae3e40d253dc496bd963cfa926aff9"
       }
     ]
   },
@@ -1966,7 +1991,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "0cc93e4df04aa656d67db716b7dc7f73fb28899dcc05467cf6537be7de48034b",
+        "sourceSha256": "06152e78ff3beb42860d3df1a77af3b712d7286149c95065f4f2f7a525656b09",
         "spans": [
           {
             "start": 12,
@@ -1987,20 +2012,32 @@
             "role": "cpp"
           },
           {
-            "start": 653,
-            "end": 660,
+            "start": 718,
+            "end": 730,
+            "text": "origen.eof()",
+            "role": "cpp"
+          },
+          {
+            "start": 749,
+            "end": 761,
+            "text": "origen.bad()",
+            "role": "cpp"
+          },
+          {
+            "start": 828,
+            "end": 835,
             "text": "destino",
             "role": "cpp"
           },
           {
-            "start": 674,
-            "end": 678,
+            "start": 849,
+            "end": 853,
             "text": "true",
             "role": "cpp"
           },
           {
-            "start": 695,
-            "end": 700,
+            "start": 870,
+            "end": 875,
             "text": "false",
             "role": "cpp"
           }
@@ -2009,105 +2046,161 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "5a9840f3624669cb97515d099248e0bd9434c8d51078191890b941db0d76a066",
+        "sourceSha256": "a154039034ecd16266c8a8b1c259dee189b0527baffb3a745521b8f14eae550a",
         "spans": [
           {
-            "start": 37,
-            "end": 50,
+            "start": 49,
+            "end": 62,
             "text": "probar(texto)",
             "role": "cpp"
           },
           {
-            "start": 75,
-            "end": 93,
+            "start": 171,
+            "end": 189,
             "text": "std::istringstream",
             "role": "cpp"
           },
           {
-            "start": 123,
-            "end": 136,
+            "start": 219,
+            "end": 232,
             "text": "{{9, {1, 1}}}",
             "role": "cpp"
           },
           {
-            "start": 146,
-            "end": 150,
+            "start": 322,
+            "end": 326,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 198,
-            "end": 225,
+            "start": 422,
+            "end": 424,
+            "text": "\\n",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 511,
+            "end": 538,
             "text": "\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 228,
-            "end": 255,
+            "start": 558,
+            "end": 573,
+            "text": "Rechazado|9:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 588,
+            "end": 615,
             "text": "\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 258,
-            "end": 260,
+            "start": 635,
+            "end": 661,
+            "text": "Aceptado|1:2:0|4:3:1|2:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 676,
+            "end": 678,
             "text": "\"\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 288,
-            "text": "\"1 [2;0]\\n4 [3;1]\\n2 [0;\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 291,
-            "end": 311,
-            "text": "\"1 [2;0]\\n\\n2 [0;0]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 314,
-            "end": 324,
-            "text": "\"1 [2;11]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 327,
-            "end": 354,
-            "text": "\"2 [0;0]\\n4 [3;1]\\n1 [2;0]\"",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 383,
-            "end": 391,
+            "start": 698,
+            "end": 706,
             "text": "Aceptado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 396,
-            "end": 405,
+            "start": 721,
+            "end": 746,
+            "text": "\"1 [2;0]\\n4 [3;1]\\n2 [0;\"",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 766,
+            "end": 781,
+            "text": "Rechazado|9:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 796,
+            "end": 816,
+            "text": "\"1 [2;0]\\n\\n2 [0;0]\"",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 836,
+            "end": 851,
+            "text": "Rechazado|9:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 866,
+            "end": 876,
+            "text": "\"1 [2;11]\"",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 896,
+            "end": 911,
+            "text": "Rechazado|9:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 926,
+            "end": 953,
+            "text": "\"2 [0;0]\\n4 [3;1]\\n1 [2;0]\"",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 973,
+            "end": 999,
+            "text": "Aceptado|2:0:0|4:3:1|1:2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1028,
+            "end": 1036,
+            "text": "Aceptado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1041,
+            "end": 1050,
             "text": "Rechazado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 488,
-            "end": 512,
+            "start": 1133,
+            "end": 1157,
             "text": "|ID:aceptados:rechazados",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 636,
-            "end": 644,
+            "start": 1281,
+            "end": 1289,
             "text": "Aceptado",
             "role": "output",
             "reading": "natural"
@@ -2522,56 +2615,56 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "f577480c879ad98cd70d0494a8266525509d4558fee03426223d2e3c3409b1b4",
+        "sourceSha256": "eb6547a2a0bab8a9245c9999ab06dfcbd3f6d7b22461902cc7d334a79261fd9a",
         "spans": [
           {
-            "start": 60,
-            "end": 64,
+            "start": 78,
+            "end": 82,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 98,
-            "end": 120,
+            "start": 116,
+            "end": 138,
             "text": "carga_completa_lgp.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 154,
+            "start": 161,
+            "end": 188,
             "text": "\"1 [2;0]\\n4 [3;1]\\n2 [0;0]\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 272,
-            "end": 279,
+            "start": 306,
+            "end": 313,
             "text": "close()",
             "role": "cpp"
           },
           {
-            "start": 333,
-            "end": 346,
+            "start": 367,
+            "end": 380,
             "text": "std::ifstream",
             "role": "cpp"
           },
           {
-            "start": 387,
-            "end": 400,
+            "start": 420,
+            "end": 433,
             "text": "{{9, {1, 1}}}",
             "role": "cpp"
           },
           {
-            "start": 423,
-            "end": 449,
+            "start": 455,
+            "end": 481,
             "text": "Aceptado|1:2:0|4:3:1|2:0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 578,
-            "end": 579,
+            "start": 642,
+            "end": 643,
             "text": "1",
             "role": "data",
             "reading": "natural"
@@ -2600,7 +2693,7 @@
       {
         "block": "u12_completa_recargas_contrato",
         "path": "/text",
-        "sourceSha256": "2b5965faa4739fd0efb6019260a81211883a3d4eb224899fab28825179b289db",
+        "sourceSha256": "46183bf84f7ae9599eb4de8d3e5e752c355ea22ef3127d7f848b57166b94fd64",
         "spans": [
           {
             "start": 9,
@@ -2617,15 +2710,15 @@
             "reading": "technical"
           },
           {
-            "start": 354,
-            "end": 364,
+            "start": 372,
+            "end": 382,
             "text": "leer_linea",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 367,
-            "end": 378,
+            "start": 385,
+            "end": 396,
             "text": "contiene_id",
             "role": "cpp",
             "reading": "technical"
@@ -2656,7 +2749,7 @@
       {
         "block": "u12_completa_recargas_casos",
         "path": "/text",
-        "sourceSha256": "ddeeb7a8c19eb1f3d1e7d97f1cb9e996b2a2aa699362584196b83d5382333804",
+        "sourceSha256": "8048ea6aa09e50ebe36cf83e982e30b4659b13654ca997c38a30ec05b916d529",
         "spans": [
           {
             "start": 376,
@@ -2680,23 +2773,23 @@
             "reading": "characters"
           },
           {
-            "start": 709,
-            "end": 710,
+            "start": 811,
+            "end": 812,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 935,
-            "end": 1123,
+            "start": 1238,
+            "end": 1426,
             "text": "Rechazado|8:1:2|1:0:0|9:4:1\nAceptado|9:0:0|2:4:1\nRechazado|9:0:0|2:4:1\nAceptado\nAceptado|0:0:0\nRechazado|0:0:0\nAceptado|9:10:10|1:0:0|0:3:2\nRechazado|9:10:10|1:0:0|0:3:2\nAceptado\nRechazado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1187,
-            "end": 1214,
-            "text": "Rechazado|6:1:2|1:0:0|9:4:1",
+            "start": 1502,
+            "end": 1690,
+            "text": "Rechazado|6:1:2|1:0:0|9:4:1\nAceptado|9:0:0|2:4:1\nRechazado|9:0:0|2:4:1\nAceptado\nAceptado|0:0:0\nRechazado|0:0:0\nAceptado|9:10:10|1:0:0|0:3:2\nRechazado|9:10:10|1:0:0|0:3:2\nAceptado\nRechazado",
             "role": "output",
             "reading": "natural"
           }
