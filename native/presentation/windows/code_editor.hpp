@@ -38,6 +38,9 @@ public:
     // The parent forwards EN_CHANGE. Reentrant changes made by this adapter
     // are guarded, and each real edit creates one complete undo transaction.
     void capture_change();
+    // Reconcile native scroll with the final viewport after the parent updates
+    // RichEdit's formatting rectangle; never changes source or saved grades.
+    void normalize_viewport();
     [[nodiscard]] EditorDocument document() const;
     // Replaces the document/history without EN_CHANGE; the owner handles reset.
     void reset(EditorDocument document);

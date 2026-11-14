@@ -990,6 +990,11 @@ CodeEditor::~CodeEditor() {
 }
 
 void CodeEditor::capture_change() { impl_->capture(); }
+void CodeEditor::normalize_viewport() {
+    if(!impl_||!impl_->window||!IsWindow(impl_->window)||impl_->applying)return;
+    impl_->restore_top_when_all_lines_fit();
+    impl_->cursor_snapshot();
+}
 EditorDocument CodeEditor::document() const {
     impl_->capture();
     impl_->cursor_snapshot();

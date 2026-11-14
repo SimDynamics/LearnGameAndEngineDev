@@ -181,6 +181,22 @@ int main(){
         POINT expanded_view{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&expanded_view));
         check(expanded_view.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
             "Returning to fullscreen retained a stale compact-viewport scroll");
+        // Lesson reflow may change only EM_SETRECTNP, without WM_SIZE. Verify
+        // the new parent-facing normalization after such a formatting change.
+        RECT narrow{};GetClientRect(edit,&narrow);narrow.bottom=160;
+        SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&narrow));
+        POINT pushed{0,180};
+        SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&pushed));
+        POINT offset_before{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset_before));
+        check(offset_before.y>0,"A narrowed formatting viewport failed to establish a scroll");
+        RECT wide{};GetClientRect(edit,&wide);
+        SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&wide));
+        editor->normalize_viewport();pump();
+        POINT offset_after{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset_after));
+        check(offset_after.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+            "Parent layout reintroduced the fullscreen scroll without resizing RichEdit");
+        check(editor->document().text==shortened,
+            "Normalizing the parent formatting rectangle changed the student source");
     }
     editor_window=nullptr;editor.reset();DestroyWindow(host);OleUninitialize();FreeLibrary(rich);
     std::cout<<assertions<<" actual Win32 editor checks, "<<failed<<" failures\n";return failed?1:0;
