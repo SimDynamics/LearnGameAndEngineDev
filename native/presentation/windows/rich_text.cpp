@@ -496,6 +496,26 @@ COLORREF cpp_color(HWND edit, CppInk category, bool semantic_background=false) {
     }
     return reader_theme::foreground(edit);
 }
+// A raw C++ literal is one lexical string token, including its R/u8R prefix
+// and delimiter. Quotes, // and /* inside the body are literal data, never
+// separate comments or keywords. The syntax coloring must not rewrite it.
+std::optional<std::size_t> cpp_raw_literal_end(std::wstring_view text,std::size_t at) {
+    constexpr std::wstring_view prefixes[]{L"u8R\"",L"uR\"",L"UR\"",L"LR\"",L"R\""};
+    for(const auto prefix:prefixes) {
+        if(!text.substr(at).starts_with(prefix))continue;
+        const auto marker_start=at+prefix.size();
+        const auto opening=text.find(L'(',marker_start);
+        if(opening==text.npos||opening-marker_start>16)return {};
+        const auto marker=text.substr(marker_start,opening-marker_start);
+        if(std::ranges::any_of(marker,[](wchar_t ch){
+            return ch==L' '||ch==L'\t'||ch==L'\r'||ch==L'\n'||
+                ch==L'\\'||ch==L'('||ch==L')';}))return {};
+        const auto closing=L")"+std::wstring(marker)+L"\"";
+        const auto found=text.find(closing,opening+1);
+        return found==text.npos?text.size():found+closing.size();
+    }
+    return {};
+}
 std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_background=false) {
     const auto identifier_color = cpp_color(edit,CppInk::identifier,semantic_background);
     const auto keyword_color = cpp_color(edit,CppInk::keyword,semantic_background);
@@ -518,6 +538,10 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_backgro
         } else if (include_header && text[index] == L'<') {
             const auto end = text.find_first_of(L">\r\n", index + 1); index = end == text.npos ? text.size() : end + (text[end] == L'>');
             result.push_back({start,index,string_color}); include_header = false;
+        } else if(const auto raw=cpp_raw_literal_end(text,index);raw) {
+            index=*raw;
+            result.push_back({start,index,string_color});
+            include_header=false;
         } else if (text[index] == L'"' || text[index] == L'\'') {
             const auto quote = text[index++];
             while (index < text.size()) { const auto c = text[index++]; if (c == L'\\' && index < text.size()) ++index; else if (c == quote) break; }
