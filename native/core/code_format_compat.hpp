@@ -163,12 +163,15 @@ inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view sou
 inline bool equivalent(std::string_view before,std::string_view after,Language language) {
     if(before==after)return true;
     if(language==Language::immutable||physical_splice(before)||physical_splice(after))return false;
-    // Physical line positions can affect actual output, not just diagnostics.
-    // Until a compiler-aware source-map proof exists, reject all such edits.
-    if(language==Language::cpp&&(before.find("__LINE__")!=before.npos||
-        after.find("__LINE__")!=after.npos||
-        before.find("source_location")!=before.npos||
-        after.find("source_location")!=after.npos))return false;
+    // Physical line and column positions may change runtime values, not merely
+    // diagnostics. Preserve them until a compiler-aware source-map proof exists.
+    if(language==Language::cpp) {
+        constexpr std::string_view position_queries[]{
+            "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"
+        };
+        for(const auto marker:position_queries)
+            if(before.find(marker)!=before.npos||after.find(marker)!=after.npos)return false;
+    }
     if(language==Language::cmake&&(before.find("CMAKE_CURRENT_LIST_LINE")!=before.npos||
         after.find("CMAKE_CURRENT_LIST_LINE")!=after.npos))return false;
     const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
