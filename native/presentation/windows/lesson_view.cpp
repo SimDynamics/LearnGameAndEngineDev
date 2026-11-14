@@ -1073,6 +1073,28 @@ struct LessonView {
             }
             if(changed)archives.push_back(std::move(archived));
         }
+        // Prompt-only math reviews keep their original source and authoring.
+        // Preserve current controls/anchors and every response region; the
+        // archive offers only this exact public prompt to the reader.
+        previous_scripts=archives;
+        previous_scripts.push_back({identity,reading_regions()});
+        for(auto& archived:previous_scripts){bool changed=false;
+            for(const auto& revision:lesson.state_layout.math_text_revisions){
+                const auto at=curriculum::stable_block_position(lesson,revision.id);if(!at||at->page!=page)continue;
+                const auto key=lesson.id+'/'+lesson.locale+'/'+lesson.pages[page].stable_id+'/'+revision.id+"/prompt";
+                const auto exact=[&](const auto& region){return region.key==key&&!region.feedback&&region.source_text==block(at->block).prompt;};
+                if(std::ranges::count_if(archived.regions,exact)!=1)continue;
+                const auto previous=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(revision.raw_json));
+                auto found=std::ranges::find_if(archived.regions,exact);
+                const auto previous_prompt=winrt::to_string(previous.GetNamedString(L"prompt"));
+                // An explicit return can already display the original source
+                // and authoring. That identical region has no reading revision.
+                if(found->source_text==previous_prompt&&found->text_semantics==revision.semantic_before)continue;
+                found->source_text=previous_prompt;
+                found->text_semantics=revision.semantic_before;archived.revised_regions.push_back(key);changed=true;
+            }
+            if(changed)archives.push_back(std::move(archived));
+        }
         // A reviewed choice owns a complete authenticated original, including
         // its old response slot. Rebuild its spoken script independently of
         // any newer selection; the historical summary is new UI, not old audio.
@@ -2429,7 +2451,7 @@ struct LessonView {
                 }catch(...){rejected_math.insert(identity);continue;}
                 request.generation=math_answer_generations[identity];
                 request.restore_generation=restore_generation;request.entry_generation=deferred_entry.generation();
-                pending.push_back(std::move(request));originals.push_back(b.raw_json);
+                pending.push_back(std::move(request));originals.emplace_back(curriculum::math_evaluation_source(b));
             }
         }
         if(pending.empty()){(void)finish_entry(deferred_entry.generation());return;}
@@ -2565,7 +2587,7 @@ struct LessonView {
         if(!may_evaluate())return;
         cancel_math();auto& vm=controls.at(index);++math_answer_generations[key(index)];capture_composition(index);
         state::put_response(data, lesson, block(index), vm.response);mark_dirty();flush();
-        const auto revision=vm.revision;const auto raw=block(index).raw_json,answers=vm.math->answers_json(),locale=lesson.locale;
+        const auto revision=vm.revision;const auto raw=std::string(curriculum::math_evaluation_source(block(index))),answers=vm.math->answers_json(),locale=lesson.locale;
         auto evaluate=hooks.validate_math;checking_math=index;
         EnableWindow(find_item(control_id(index,3)),FALSE);
         math_worker=std::jthread([this,index,revision,raw,answers,locale,evaluate](std::stop_token stop){

@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'WasiRunner', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'WasiRunner', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -86,6 +86,15 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_compiler_first_case_view_tests'
             )
             Results = 'reader-build'
+        }
+    }
+    'MathEditorial' {
+        @{
+            Directory = 'math-editorial-ci'
+            CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
+            Targets = @('lgaed_editorial_matching_view_tests')
+            Results = 'math-editorial'
+            Tests = @('native.assetcheck_prompt_editorial')
         }
     }
     'WasiRunner' {
@@ -280,7 +289,7 @@ $qaPython = (Get-Command python.exe -CommandType Application -ErrorAction Stop |
 $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $qaRuntimeOptions = ''
 $qaRuntimePaths = @()
-if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
+if ($Suite -in @('MathEditorial', 'NarrationWorker', 'U12Reader', 'U11EditorialReader',
     'CompilerHistoricalReader', 'U6DiagnosticReader')) {
     # This job uses a new checkout with no restored runtime or audio caches.
     # Existing QA/user data is never removed to manufacture a first generation.
@@ -291,7 +300,7 @@ if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
         (Join-Path $qaRoot 'out\qa\narration-worker-tests')
     )) {
         if (Test-Path -LiteralPath $qaFreshPath) {
-            throw "Real synthesis CI requires a fresh destination; existing data is preserved: $qaFreshPath"
+            throw "Real worker CI requires a fresh destination; existing data is preserved: $qaFreshPath"
         }
     }
     New-Item -ItemType Directory -Path $qaBuild | Out-Null
@@ -311,6 +320,9 @@ if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
         "`"-DLGAED_NARRATION_RESOURCES=$qaKokoro`"",
         "`"-DLGAED_ENGLISH_RESOURCES=$qaEnglish`""
     ) -join ' '
+}
+if ($Suite -eq 'MathEditorial') {
+    $qaRuntimeOptions += ' -DLGAED_MATH_EDITORIAL_QA_ONLY=ON'
 }
 foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPython, $qaGit) + $qaRuntimePaths) {
     if ($qaPath -match '["%!?&|<>^;\r\n]') { throw "Unsupported command metacharacter in native QA path: $qaPath" }

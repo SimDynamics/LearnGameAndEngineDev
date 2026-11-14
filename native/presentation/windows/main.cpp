@@ -441,7 +441,7 @@ LRESULT CALLBACK window_procedure(HWND window, UINT message, WPARAM wparam, LPAR
                                 !saved.HasKey(L"responses")||!saved.HasKey(L"contentFingerprint"))return false;
                             const auto fingerprint=saved.GetNamedString(L"contentFingerprint");
                             if(fingerprint.empty())return false;
-                            const auto reply=JsonObject::Parse(winrt::to_hstring(backend->validate_math(block.raw_json,
+                            const auto reply=JsonObject::Parse(winrt::to_hstring(backend->validate_math(lgaed::curriculum::math_evaluation_source(block),
                                 winrt::to_string(saved.GetNamedObject(L"responses").Stringify()),locale)));
                             return reply.GetNamedBoolean(L"evaluable",false)&&reply.GetNamedBoolean(L"correct",false)&&
                                 fingerprint==reply.GetNamedString(L"contentFingerprint",L"missing");

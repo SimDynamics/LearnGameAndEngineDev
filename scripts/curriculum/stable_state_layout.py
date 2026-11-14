@@ -38,7 +38,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
@@ -873,6 +873,133 @@ def _choice_revisions(document: dict) -> dict[str, dict]:
     return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("choiceRevisions", [])}
 
 
+def _math_text_revisions(document: dict) -> dict[str, dict]:
+    return {item["id"]: item for item in
+            document.get("stateLayout", {}).get("mathTextRevisions", [])}
+
+
+def _math_ordered_json(value: object) -> str:
+    """Keep mathematical insertion order and numeric types, unlike a state SHA."""
+    try:
+        fingerprint(value)  # Also enforces finite numbers, Unicode and depth.
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError, RecursionError) as exc:
+        raise LayoutError("Invalid ordered mathematical JSON source") from exc
+
+
+def _math_prompt_original(item: dict) -> dict:
+    raw = item.get("rawJson")
+    require(type(raw) is str, "A math prompt archive needs its original JSON string")
+    try:
+        require(len(raw.encode("utf-8")) <= 32 * 1024 * 1024,
+                "The archived mathematical source exceeds the document limit")
+        original = parse_json(raw)  # Reject duplicate keys and non-finite literals.
+        _math_ordered_json(original)
+        def runtime_numbers(node: object) -> None:
+            # Windows v2 currently requires integer JSON tokens in its exact
+            # content adapter. An embedded string must not bypass that guard.
+            require(type(node) is not float,
+                    "Decimal JSON values require an exact decimal content adapter")
+            if type(node) is int:
+                require(abs(node) <= 9_007_199_254_740_991,
+                        "Mathematical JSON integer exceeds the runtime's exact range")
+            elif type(node) is dict:
+                for value in node.values():
+                    runtime_numbers(value)
+            elif type(node) is list:
+                for value in node:
+                    runtime_numbers(value)
+        runtime_numbers(original)
+    except (TypeError, ValueError, RecursionError) as exc:
+        raise LayoutError("Invalid original JSON in math prompt archive") from exc
+    require(type(original) is dict and original.get("type") == "math_puzzle"
+            and type(original.get("prompt")) is str and bool(original["prompt"].strip())
+            and "question" not in original,
+            "A math prompt archive needs a complete math_puzzle with one nonblank prompt")
+    return original
+
+
+def _math_prompt_projection(item: dict, block: dict, *, historical: bool = False) -> dict:
+    """Project only /prompt; all other JSON order, types and values remain exact."""
+    original = _math_prompt_original(item)
+    require(type(block) is dict and block.get("type") == "math_puzzle"
+            and type(block.get("prompt")) is str and bool(block["prompt"].strip())
+            and "question" not in block,
+            "A math prompt revision must keep its complete active mathematical owner")
+    restored = deepcopy(block)
+    restored["prompt"] = original["prompt"]
+    before, after = original, restored
+    if historical:
+        # Older reading snapshots may precede the already authenticated closed
+        # label refinements. They never authorize a new label or answer change.
+        before, after = historical_math_payload(before), historical_math_payload(after)
+    require(_math_ordered_json(before) == _math_ordered_json(after),
+            "A math prompt revision changed another field, JSON key order or numeric value/type")
+    return original
+
+
+def _math_prompt_semantic_entry(document: dict, identity: str) -> dict | None:
+    overlay = document.get(text_semantics.ROOT_FIELD)
+    if overlay is None:
+        return None
+    require(type(overlay) is dict and type(overlay.get("fields")) is list,
+            "Malformed semantic overlay for a math prompt revision")
+    matches = [entry for entry in overlay["fields"] if type(entry) is dict
+               and entry.get("block") == identity and entry.get("path") == "/prompt"]
+    require(len(matches) <= 1, "Duplicate semantic source for revised mathematical prompt")
+    return matches[0] if matches else None
+
+
+def _historical_math_text_contract(document: dict, identity: str, block: dict,
+                                   *, reading_snapshot: bool = False) -> dict:
+    item = _math_text_revisions(document).get(identity)
+    if item is None:
+        return block
+    if reading_snapshot:
+        nodes = {proof[field] for proof in document["stateLayout"]["editorial"]
+                 if proof["id"] == identity for field in ("beforeSha256", "afterSha256")}
+        require(fingerprint(block) in nodes,
+                "A historical math prompt must be an authenticated editorial source")
+    return _math_prompt_projection(item, block, historical=reading_snapshot)
+
+
+def _math_prompt_semantic_projection(document: dict, overlay: dict | None,
+                                      *, identities: set[str] | None = None) -> dict | None:
+    """Restore original prompt descriptors without borrowing a newer text SHA."""
+    result = deepcopy(overlay)
+    if result is None:
+        return None
+    for item in document.get("stateLayout", {}).get("mathTextRevisions", []):
+        if identities is not None and item["id"] not in identities:
+            continue
+        fields = result["fields"]
+        matches = [index for index, field in enumerate(fields)
+                   if field.get("block") == item["id"] and field.get("path") == "/prompt"]
+        require(len(matches) == 1, "A revised math prompt lost its explicit semantic source")
+        if item["semanticBefore"] is None:
+            fields.pop(matches[0])
+        else:
+            fields[matches[0]] = deepcopy(item["semanticBefore"])
+    # Absence and an explicitly empty overlay both mean no authored descriptors.
+    # Normalize only this presentation view, never an immutable state signature.
+    return result if result["fields"] or result.get("rootFields") else None
+
+
+def _require_math_prompt_authorship(previous: dict, current: dict, identity: str) -> None:
+    def fields(document: dict) -> dict:
+        return {entry["path"]: entry for entry in
+                document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+                if type(entry) is dict and entry.get("block") == identity}
+    before, after = fields(previous), fields(current)
+    require("/prompt" in after, "A math prompt revision needs explicit authored semantics")
+    require({path: field for path, field in before.items() if path != "/prompt"}
+            == {path: field for path, field in after.items() if path != "/prompt"},
+            "A math prompt revision repainted another public field")
+    old = before.get("/prompt")
+    require(old is None or not old["spans"] or bool(after["/prompt"]["spans"]),
+            "A revised marked prompt cannot silently lose all its authored highlights")
+
+
 def _general_choice_revision(document: dict, identity: str) -> dict | None:
     return next((item for item in document.get("stateLayout", {}).get("choiceRevisions", [])
                  if item["id"] == identity and "optionIndex" in item), None)
@@ -1216,6 +1343,40 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     require(type(revisions) is list and len(revisions) <= 100_000,
             "Malformed source format history")
     active_blocks = _blocks(document)
+    math_texts = {}
+    math_revisions = meta.get("mathTextRevisions", [])
+    require(type(math_revisions) is list and len(math_revisions) <= 100_000,
+            "Malformed mathematical text archive")
+    require("mathTextRevisions" not in meta or meta["locale"] == "es",
+            "Math prompt revisions require their Spanish historical family")
+    for item in math_revisions:
+        require(type(item) is dict and set(item) == {"id", "field", "rawJson", "semanticBefore"}
+                and item["field"] == "/prompt",
+                "A math text revision needs its owner, /prompt, original JSON and semantic descriptor")
+        identity = _identity(item["id"])
+        require(identity in storage and identity in active_blocks and identity not in math_texts,
+                "Unknown, inactive or duplicate math prompt owner")
+        original = _math_prompt_original(item)
+        require(state_fingerprint(original) == digests[identity],
+                "The math prompt archive differs from its owner's immutable original contract")
+        _math_prompt_projection(item, active_blocks[identity])
+        semantic_before = item["semanticBefore"]
+        if semantic_before is not None:
+            require(type(semantic_before) is dict and set(semantic_before) == {
+                "block", "path", "sourceSha256", "spans"}
+                and semantic_before["block"] == identity and semantic_before["path"] == "/prompt",
+                "The archived math descriptor must belong to this original prompt")
+            try:
+                text_semantics._descriptor(semantic_before, original["prompt"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise LayoutError("Archived math prompt semantics are invalid") from exc
+        semantic_after = _math_prompt_semantic_entry(document, identity)
+        require(semantic_after is not None,
+                "A revised math prompt needs its explicit current semantic descriptor")
+        require(semantic_before is None or not semantic_before["spans"]
+                or bool(semantic_after.get("spans")),
+                "A revised marked prompt cannot silently lose all its authored highlights")
+        math_texts[identity] = item
     for entry in revisions:
         require(type(entry) is dict and set(entry) == {"id", "block"},
                 "A source format revision needs its identity and complete original block")
@@ -1356,7 +1517,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         for b, identity in enumerate(record["blocks"]):
             identity = _identity(identity)
             require(identity in storage, "Unknown block identity")
-            reviewed_math = reviewed_math_label(pages[p]["blocks"][b])
+            math_source = (_math_prompt_projection(math_texts[identity], pages[p]["blocks"][b])
+                           if identity in math_texts else pages[p]["blocks"][b])
+            reviewed_math = reviewed_math_label(math_source)
             if reviewed_math is not None:
                 require(meta["locale"] == "es"
                         and MATH_LABEL_REVISIONS.get((document.get("id"), identity)) == reviewed_math,
@@ -1386,6 +1549,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             projected = order_contract_projection(source, refined[identity]) if identity in refined else source
             if identity in general_choices:
                 projected = _general_choice_projection(general_choices[identity], projected)
+            if identity in math_texts:
+                projected = _math_prompt_projection(math_texts[identity], projected)
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
             seen_blocks.append(identity)
@@ -1458,9 +1623,13 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             previous_block = target["previousBlock"]
             require(type(previous_block) is dict and fingerprint(previous_block) == before,
                     "An editorial return must archive its complete exact previous block")
-            require(state_fingerprint(previous_block) == state_fingerprint(
-                    code_format.source_projection(actual[identity], formatted[identity])
-                    if identity in formatted else actual[identity]),
+            protected_previous = (_math_prompt_projection(math_texts[identity], previous_block)
+                                  if identity in math_texts else previous_block)
+            protected_current = (code_format.source_projection(actual[identity], formatted[identity])
+                                 if identity in formatted else actual[identity])
+            if identity in math_texts:
+                protected_current = _math_prompt_projection(math_texts[identity], protected_current)
+            require(state_fingerprint(protected_previous) == state_fingerprint(protected_current),
                     "An editorial return previous block cannot change its protected owner contract")
             if "compileCheck" in previous_block:
                 require("compileCheck" in actual[identity]
@@ -1492,6 +1661,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         chains[identity].append(after)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
+    for identity, item in math_texts.items():
+        require(fingerprint(_math_prompt_original(item)) in chains.get(identity, [])[:-1],
+                "A math prompt archive needs an authentic outgoing original editorial edge")
     for identity, original in formatted.items():
         require(fingerprint(original) in chains.get(identity, []),
                 "A source format archive needs an authentic exact editorial predecessor")
@@ -1515,9 +1687,13 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                     for index in range(len(chain) - 1)),
                 "A compiler reference needs its exact original-to-reviewed editorial edge")
     for identity, block in actual.items():
-        reviewed_math = reviewed_math_label(block)
+        source = _math_prompt_original(math_texts[identity]) if identity in math_texts else block
+        reviewed_math = reviewed_math_label(source)
         if reviewed_math is not None:
-            require(chains.get(identity) == [reviewed_math["before"], reviewed_math["after"]],
+            edge = [reviewed_math["before"], reviewed_math["after"]]
+            chain = chains.get(identity, [])
+            require((any(chain[index:index + 2] == edge for index in range(len(chain) - 1))
+                     if identity in math_texts else chain == edge),
                     "The reviewed mathematical label needs its exact published editorial proof")
     return mapping
 
@@ -1603,6 +1779,16 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
                     result["stateLayout"].setdefault("sourceFormatRevisions", []).append(
                         {"id": identity, "block": deepcopy(block)})
                     recorded.add(identity)
+            math_archives = _math_text_revisions(result)
+            for identity, block in before.items():
+                if (block.get("type") != "math_puzzle" or identity not in after
+                        or block.get("prompt") == after[identity].get("prompt")
+                        or identity in math_archives):
+                    continue
+                entry = {"id": identity, "field": "/prompt", "rawJson": _math_ordered_json(block),
+                         "semanticBefore": deepcopy(_math_prompt_semantic_entry(previous, identity))}
+                _math_prompt_projection(entry, after[identity])
+                result["stateLayout"].setdefault("mathTextRevisions", []).append(entry)
             for identity, block in before.items():
                 require(identity in after, "An existing activity was removed")
                 if fingerprint(block) != fingerprint(after[identity]):
@@ -1858,6 +2044,9 @@ def _validate_retirement_history(document: dict) -> None:
                             "A historical revised compiler reference requires its matching active revision archive")
                 old_reading = _historical_choice_contract(document, block_id, block)
                 active_reading = _historical_choice_contract(document, block_id, protected_available[block_id])
+                old_reading = _historical_math_text_contract(
+                    document, block_id, old_reading, reading_snapshot=True)
+                active_reading = _historical_math_text_contract(document, block_id, active_reading)
                 require(state_fingerprint(_historical_order_contract(document, block_id, old_reading, allow_original=True))
                         == state_fingerprint(_historical_order_contract(document, block_id, active_reading)),
                         "Historical reading snapshot changed a response/code contract")
@@ -2831,6 +3020,71 @@ def refine_order_lines(document: dict, identity: str) -> dict:
     return result
 
 
+def revise_math_prompt_editorial(document: dict, identity: str, prompt: str, *,
+                                 spans: list, return_to: int | None = None) -> dict:
+    """Author /prompt while preserving the complete original mathematical source.
+
+    Spans are explicit UTF-16 selections. The immutable raw JSON archive is
+    created once; subsequent prompt editions append ordinary editorial edges.
+    A return to a previously published full block requires its explicit revision.
+    """
+    validate(document)
+    require(document.get("stateLayout", {}).get("version") == 2
+            and document["stateLayout"].get("locale") == "es",
+            "Math prompt editorial revision requires a published Spanish v2 lesson")
+    _identity(identity)
+    original = _blocks(document).get(identity)
+    require(type(original) is dict and original.get("type") == "math_puzzle"
+            and type(original.get("prompt")) is str and bool(original["prompt"].strip())
+            and "question" not in original,
+            "Math prompt revisions belong to existing active math_puzzle prompt owners")
+    require(type(prompt) is str and bool(prompt.strip()) and prompt != original["prompt"],
+            "A math prompt revision needs different nonblank wording")
+    require(type(spans) is list,
+            "Author an explicit semantic span list, including [] for unmarked prose")
+    require(return_to is None or (type(return_to) is int and return_to >= 0),
+            "An editorial return must name an explicit nonnegative revision")
+    result = deepcopy(document)
+    meta = result["stateLayout"]
+    if identity not in _math_text_revisions(result):
+        meta.setdefault("mathTextRevisions", []).append({
+            "id": identity, "field": "/prompt", "rawJson": _math_ordered_json(original),
+            "semanticBefore": deepcopy(_math_prompt_semantic_entry(document, identity))})
+    revised = _blocks(result)[identity]
+    revised["prompt"] = prompt
+    overlay = result.setdefault(text_semantics.ROOT_FIELD, {"version": 1, "fields": []})
+    marker = text_semantics.make_field(result, identity, "/prompt", spans)
+    old_marker = _math_prompt_semantic_entry(result, identity)
+    if old_marker is None:
+        overlay["fields"].append(marker)
+    else:
+        require(not old_marker["spans"] or bool(spans),
+                "A revised marked prompt cannot silently lose all its authored highlights")
+        old_marker.clear()
+        old_marker.update(marker)
+    try:
+        text_semantics.validate(result)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LayoutError("Invalid authored mathematical prompt semantics") from exc
+    proof = {"id": identity, "beforeSha256": fingerprint(original),
+             "afterSha256": fingerprint(revised)}
+    history = document["stateLayout"]["editorial"]
+    prior = [edge for edge in history if edge["id"] == identity]
+    nodes = ([prior[0]["beforeSha256"]] + [edge["afterSha256"] for edge in prior]) if prior else []
+    eligible = [index for index, digest in enumerate(nodes[:-1]) if digest == proof["afterSha256"]]
+    if eligible:
+        require(return_to in eligible,
+                "This prompt restores a published block: declare its exact return_to revision")
+        proof["returnTo"] = {"revision": return_to, "historySha256": fingerprint({
+            "lessonId": result["id"], "locale": "es", "editorial": history}),
+            "previousBlock": deepcopy(original)}
+    else:
+        require(return_to is None, "An explicit editorial return must restore an earlier full block")
+    meta["editorial"].append(proof)
+    validate_transition(document, result)
+    return result
+
+
 def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dict:
     """Author one or two question/explanation fields under an existing v2 owner.
 
@@ -3175,6 +3429,25 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(retired[:len(old_retired)] == old_retired,
             "Retired activity archives are append-only and cannot be restored or rewritten")
     before, after = _all_blocks(baseline), _all_blocks(current)
+    old_math = old_meta.get("mathTextRevisions", []) if old_v2 else []
+    math_revisions = meta.get("mathTextRevisions", [])
+    require(math_revisions[:len(old_math)] == old_math,
+            "Math prompt archives are append-only and their original JSON cannot be rewritten")
+    new_math_ids = set()
+    for item in math_revisions[len(old_math):]:
+        identity = item["id"]
+        require(old_v2 and identity in before and identity in _blocks(baseline),
+                "A math prompt archive must retain an already published active v2 owner")
+        require(_math_ordered_json(_math_prompt_original(item)) == _math_ordered_json(before[identity]),
+                "A new math prompt archive must retain the exact complete published block and JSON order")
+        require(item["semanticBefore"] == _math_prompt_semantic_entry(baseline, identity),
+                "The math prompt semantic archive differs from its exact published predecessor")
+        new_math_ids.add(identity)
+    for item in math_revisions:
+        identity = item["id"]
+        if identity in before and identity in after and (identity in new_math_ids
+                or before[identity].get("prompt") != after[identity].get("prompt")):
+            _require_math_prompt_authorship(baseline, current, identity)
     old_refinements = old_meta.get("orderRefinements", []) if old_v2 else []
     refinements = meta.get("orderRefinements", [])
     require(refinements[:len(old_refinements)] == old_refinements,
@@ -3323,12 +3596,14 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 baseline, current, identity, block, actual)
         previous_review = _historical_choice_contract(baseline, identity, previous_source)
         current_review = _historical_choice_contract(current, identity, protected)
+        previous_review = _historical_math_text_contract(baseline, identity, previous_review)
+        current_review = _historical_math_text_contract(current, identity, current_review)
         require(state_fingerprint(_historical_order_contract(baseline, identity, previous_review))
                 == state_fingerprint(_historical_order_contract(current, identity, current_review)),
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
-            serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-            require(serialize(historical_math_payload(block)) == serialize(historical_math_payload(actual)),
+            require(_math_ordered_json(historical_math_payload(previous_review))
+                    == _math_ordered_json(historical_math_payload(current_review)),
                     "Mathematical payloads must preserve their historical JSON key order and values")
         old_hash, new_hash = fingerprint(block), fingerprint(actual)
         proofs = appended.get(identity, [])
@@ -3510,8 +3785,18 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     old_compilers = _compiler_revisions(old) | _compiler_references(old)
     blocks = {identity: _historical_compiler_contract(current, identity, block)
               if identity not in old_compilers else block for identity, block in blocks.items()}
+    new_math_ids = _math_text_revisions(current).keys() - _math_text_revisions(old).keys()
+    blocks = {identity: _historical_math_text_contract(current, identity, block)
+              if identity in new_math_ids else block for identity, block in blocks.items()}
     page_by_id = {record["id"]: page for page, record in zip(current["pages"], current["stateLayout"]["current"])}
     result = deepcopy(current)
+    if new_math_ids and text_semantics.ROOT_FIELD in result:
+        overlay = _math_prompt_semantic_projection(
+            current, result[text_semantics.ROOT_FIELD], identities=new_math_ids)
+        if overlay is None:
+            result.pop(text_semantics.ROOT_FIELD)
+        else:
+            result[text_semantics.ROOT_FIELD] = overlay
     result["pages"] = [{**deepcopy(page_by_id[record["id"]]),
                         "blocks": [deepcopy(blocks[i]) for i in record["blocks"]]}
                        for record in old["stateLayout"]["current"]]
@@ -3531,11 +3816,16 @@ def original_projection(document: dict) -> dict:
     blocks = {identity: _historical_order_contract(document, identity, block) for identity, block in blocks.items()}
     blocks = {identity: _historical_choice_contract(document, identity, block) for identity, block in blocks.items()}
     blocks = {identity: _historical_compiler_contract(document, identity, block) for identity, block in blocks.items()}
+    blocks = {identity: _historical_math_text_contract(document, identity, block) for identity, block in blocks.items()}
     shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
               for page, record in zip(document["pages"], document["stateLayout"]["current"])}
     result = deepcopy(_without_layout(document))
     if text_semantics.ROOT_FIELD in result:
-        result[text_semantics.ROOT_FIELD] = _general_choice_semantic_projection(document)
+        overlay = _math_prompt_semantic_projection(document, _general_choice_semantic_projection(document))
+        if overlay is None:
+            result.pop(text_semantics.ROOT_FIELD)
+        else:
+            result[text_semantics.ROOT_FIELD] = overlay
     result["pages"] = [{**deepcopy(shells[record["id"]]),
                         "blocks": [deepcopy(blocks[block["id"]]) for block in record["blocks"]]}
                        for record in document["stateLayout"]["origin"]]
@@ -3823,7 +4113,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-compiler-cases", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -3834,16 +4124,25 @@ def main() -> None:
                         help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
     parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
-    parser.add_argument("--replacement", help="Exact revised nonblank choice text; answers and other fields are preserved")
+    parser.add_argument("--replacement", help="Exact revised nonblank choice or math prompt text")
+    parser.add_argument("--semantic-spans", type=Path,
+                        help="Explicit JSON list of UTF-16 spans for revise-math-prompt-editorial")
+    parser.add_argument("--return-to", type=int,
+                        help="Explicit earlier full-block revision for a mathematical prompt return")
     parser.add_argument("--editorial-fields", type=Path,
                         help='JSON {"question":{"text":"...","spans":[...]},"explanation":{...},"returnTo":3}; optional explicit return')
     parser.add_argument("--editorial-return", action="append", default=[], metavar="ID:REVISION",
                         help="Explicit earlier payload of the same identity; prepare with --locale and Git --base-ref only")
     args = parser.parse_args()
     try:
-        require(args.action == "revise-choice-editorial" or
-                (args.option_index is None and args.replacement is None),
-                "Choice editorial parameters are only valid for revise-choice-editorial")
+        require(args.action == "revise-choice-editorial" or args.option_index is None,
+                "An option index is only valid for revise-choice-editorial")
+        require(args.action in {"revise-choice-editorial", "revise-math-prompt-editorial"}
+                or args.replacement is None,
+                "Replacement text belongs to a choice or mathematical prompt revision")
+        require(args.action == "revise-math-prompt-editorial"
+                or (args.semantic_spans is None and args.return_to is None),
+                "Semantic spans and return-to belong only to revise-math-prompt-editorial")
         require(args.action == "revise-ordinary-editorial" or args.editorial_fields is None,
                 "The authored public fields belong only to revise-ordinary-editorial")
         editorial_returns = {}
@@ -3905,6 +4204,14 @@ def main() -> None:
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = revise_choice_editorial(baseline, args.identity,
                                              args.option_index, args.replacement)
+        elif args.action == "revise-math-prompt-editorial":
+            require(args.identity is not None and args.replacement is not None
+                    and args.semantic_spans is not None and args.plan is None and args.additions is None,
+                    "revise-math-prompt-editorial requires --identity, --replacement and "
+                    "--semantic-spans without move/addition plans")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_math_prompt_editorial(baseline, args.identity, args.replacement,
+                                                  spans=load(args.semantic_spans), return_to=args.return_to)
         elif args.action == "revise-ordinary-editorial":
             require(args.identity is not None and args.editorial_fields is not None
                     and args.plan is None and args.additions is None,

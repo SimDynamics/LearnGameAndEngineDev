@@ -168,6 +168,9 @@ struct Block {
     BlockType type{};
     std::string stable_id, id, text, question, code, initial_code, language;
     std::string explanation, review_feedback, raw_json;
+    // The exact published math source owns saved answers and evaluation. The
+    // current raw_json and prompt remain the visible, authored presentation.
+    std::string math_evaluation_raw_json;
     std::string code_template, prompt, math_type;
     std::optional<ImageResource> image;
     std::vector<Emphasis> emphasis;
@@ -272,6 +275,10 @@ struct StatePositionalReadingPage {
 struct SourceFormatRevision {
     std::string id, raw_json, sha256;
 };
+struct MathTextRevision {
+    std::string id, field, raw_json, sha256;
+    std::optional<TextSemantics> semantic_before;
+};
 struct StateLayout {
     int version = 0;
     std::string locale;
@@ -285,6 +292,7 @@ struct StateLayout {
     std::vector<StateRetirementHistory> retirement_history;
     std::vector<OrderRefinement> order_refinements;
     std::vector<SourceFormatRevision> source_format_revisions;
+    std::vector<MathTextRevision> math_text_revisions;
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
     std::vector<StateEditorialReturn> editorial_returns;
@@ -335,6 +343,10 @@ void validate_activity_relationships(const Lesson&);
 // not change an ordering draft's representation. The platform hashes this frame.
 [[nodiscard]] std::string order_representation_frame(const Block&);
 [[nodiscard]] std::string choice_representation_frame(const Block&);
+
+// Only an authenticated prompt revision supplies an alternate evaluation
+// source. All callers share this fallback to the ordinary authored JSON.
+[[nodiscard]] std::string_view math_evaluation_source(const Block&);
 
 // These keys deliberately retain the Android lesson identity and original slots.
 [[nodiscard]] std::string exercise_key(const Lesson&, const Block&);

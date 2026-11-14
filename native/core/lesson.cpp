@@ -493,6 +493,11 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     return result;
 }
 
+std::string_view math_evaluation_source(const Block& block) {
+    return block.math_evaluation_raw_json.empty() ? std::string_view(block.raw_json)
+        : std::string_view(block.math_evaluation_raw_json);
+}
+
 std::string exercise_key(const Lesson& lesson, const Block& block) {
     const auto& address = block.address;
     return "exercise_" + lesson.id + (address.addition_namespace.empty() ? "" : "_state_v2_" + address.addition_namespace) +

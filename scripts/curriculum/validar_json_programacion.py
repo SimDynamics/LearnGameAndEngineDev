@@ -1507,9 +1507,66 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         return False
 
 
+def preserves_math_prompt_editorial_revision(relative, pn, bn, old, current, *,
+                                             previous_document=None, current_document=None,
+                                             course_id="cpp_fundamentals"):
+    """Bind a /prompt revision to its complete published Spanish v2 owner.
+
+    The archive authorizes explanatory text only. The exact path, historical
+    coordinates, ordered mathematical payload and full editorial transition
+    must all describe the supplied old/current blocks.
+    """
+    if (course_id not in STRUCTURAL_COURSES or type(pn) is not int or type(bn) is not int
+            or pn < 0 or bn < 0 or type(previous_document) is not dict
+            or type(current_document) is not dict or type(old) is not dict
+            or type(current) is not dict or old.get("type") != "math_puzzle"
+            or current.get("type") != "math_puzzle"):
+        return False
+    prefix = PurePosixPath("app/src/main/assets/content/es/programming") / course_id
+    try:
+        lesson_path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(prefix)
+        if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                or lesson_path.suffix != ".json" or not lesson_path.stem.startswith("lesson_")
+                or not lesson_path.stem[7:]):
+            return False
+        lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
+        meta, old_meta = current_document.get("stateLayout"), previous_document.get("stateLayout")
+        if (type(meta) is not dict or type(old_meta) is not dict
+                or meta.get("version") != 2 or old_meta.get("version") != 2
+                or meta.get("locale") != "es" or old_meta.get("locale") != "es"
+                or previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id):
+            return False
+        baseline = _state_layout.prepare(previous_document)
+        storage = _state_layout.validate(baseline)
+        identities = [baseline["stateLayout"]["current"][page]["blocks"][block]
+                      for (page, block), position in storage.items() if position == (pn, bn)]
+        if len(identities) != 1:
+            return False
+        identity = identities[0]
+        if (_state_layout._math_ordered_json(_state_layout._blocks(baseline).get(identity))
+                != _state_layout._math_ordered_json(old)):
+            return False
+        archives = meta.get("mathTextRevisions", [])
+        if type(archives) is not list or not any(type(entry) is dict
+                and entry.get("id") == identity for entry in archives):
+            return False
+        _state_layout.validate_transition(previous_document, current_document)
+        if (_state_layout._math_ordered_json(_state_layout._blocks(current_document).get(identity))
+                != _state_layout._math_ordered_json(current)):
+            return False
+        _state_layout._historical_math_text_contract(current_document, identity, current)
+        return True
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError):
+        return False
+
+
 def preserves_previous_exercise(relative, pn, bn, old, current, *,
                                 previous_document=None, current_document=None,
                                 course_id="cpp_fundamentals"):
+    if preserves_math_prompt_editorial_revision(
+            relative, pn, bn, old, current, previous_document=previous_document,
+            current_document=current_document, course_id=course_id):
+        return True
     if preserves_source_format_revision(relative, pn, bn, old, current,
                                         previous_document=previous_document,
                                         current_document=current_document,
