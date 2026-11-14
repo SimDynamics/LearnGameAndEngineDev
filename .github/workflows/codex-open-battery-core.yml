@@ -1,0 +1,50 @@
+name: Codex open CMake battery portable core
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - native/core/open_battery_check.hpp
+      - native/core/open_battery_check_tests.cpp
+      - .github/workflows/codex-open-battery-core.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile strictly in C++23
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/open_battery_check_tests.cpp -o "${RUNNER_TEMP}/open_battery_core"
+      - name: Run portable mutation and provenance tests
+        run: '"${RUNNER_TEMP}/open_battery_core"'
+
+  msvc:
+    runs-on: windows-2022
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile portable C++23 core with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\open_battery_check_tests.cpp /Fe:"%RUNNER_TEMP%\open_battery_core.exe"
+      - name: Run MSVC core mutation tests
+        shell: cmd
+        run: '"%RUNNER_TEMP%\open_battery_core.exe"'
