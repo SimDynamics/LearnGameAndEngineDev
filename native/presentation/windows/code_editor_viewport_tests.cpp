@@ -107,20 +107,23 @@ int main(){
         // Fullscreen reproduction: add many rows, pan downward, then delete
         // the added rows. The native first visible line must return to zero,
         // rather than leaving an empty bottom viewport that cannot pan up.
+        MoveWindow(host,30,30,900,1080,TRUE);
         MoveWindow(edit,0,0,650,950,TRUE);
         SendMessageW(edit,EM_SETZOOM,100,100);
         std::string expanded;
         for(int row=0;row<110;++row)
             expanded+="int row_"+std::to_string(row)+" = "+std::to_string(row)+";\n";
         editor->reset(windows::predefined_code_document(expanded));
-        POINT far_down{0,900};
-        SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&far_down));
-        POINT saved{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
-        check(saved.y>0,"Fullscreen regression failed to scroll inside its long source");
         const auto cut=SendMessageW(edit,EM_LINEINDEX,18,0);
         check(cut>0,"Fullscreen regression has no eighteenth native line");
         CHARRANGE tail{static_cast<LONG>(cut),-1};
         SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&tail));
+        // Select the removable tail first, then preserve an actual native
+        // scrolled viewport as the Undo predecessor.
+        POINT far_down{0,900};
+        SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&far_down));
+        POINT saved{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
+        check(saved.y>0,"Fullscreen regression failed to scroll inside its long source");
         SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L""));
         pump();
         POINT trimmed{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&trimmed));
