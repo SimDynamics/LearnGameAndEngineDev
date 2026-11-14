@@ -523,7 +523,7 @@ void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures) 
           catalog.state_layout.lineage==after.state_layout.lineage&&
           catalog.pages.at(0).blocks.at(3).stable_id==revised.stable_id,
           "The progress-only Windows loader lost the reviewed U7L3 owner");
-    for(const auto forged:{"changed-answer","stale-question","forged-source"})
+    for(const auto forged:{"changed-answer","stale-question","unmarked-question","forged-source"})
         must_reject(fixtures/(std::string("u7-question.")+forged+".json"));
 }
 

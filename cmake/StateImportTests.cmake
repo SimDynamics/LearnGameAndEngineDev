@@ -100,7 +100,7 @@ list(APPEND LGAED_CODE_FORMAT_FIXTURES
     "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.changed-answer.json"
     "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.forged-archive.json")
 # Real U7L3 question+explanation and physical spacing; originals stay in assets.
-foreach(u7_name IN ITEMS before after changed-answer stale-question forged-source)
+foreach(u7_name IN ITEMS before after changed-answer stale-question unmarked-question forged-source)
     list(APPEND LGAED_CODE_FORMAT_FIXTURES
         "${LGAED_CODE_FORMAT_FIXTURE_DIR}/u7-question.${u7_name}.json")
 endforeach()

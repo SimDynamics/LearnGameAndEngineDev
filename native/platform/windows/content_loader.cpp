@@ -393,6 +393,33 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
     }
     return projected;
 }
+
+// A physical reformat may accompany editorial wording, but the new question
+// must carry its own authored presentation/narration marker. Optional markers
+// are valid for unchanged questions; changed ones may not silently inherit
+// old reading coverage or acquire technical tint from contextual heuristics.
+void require_formatted_question_semantics(const JsonObject& root,
+        std::string_view identity,const JsonObject& original,const JsonObject& current) {
+    require(original.HasKey(L"question")==current.HasKey(L"question"),
+        "Source formatting cannot add or remove a published question");
+    if(!original.HasKey(L"question"))return;
+    const auto previous=text(original,"question"),revised=text(current,"question");
+    if(previous==revised)return;
+    require(!trimmed(previous).empty()&&!trimmed(revised).empty(),
+        "Combined source/question revision needs nonblank public wording");
+    require(root.HasKey(L"textSemantics"),
+        "Formatted question needs an explicit semantic descriptor");
+    const auto semantics=root.GetNamedObject(L"textSemantics");
+    std::size_t count=0;
+    for(const auto& value:array(semantics,"fields")) {
+        const auto field=value.GetObject();
+        if(text(field,"block")!=identity||text(field,"path")!="/question")continue;
+        ++count;
+        require(text(field,"sourceSha256")==sha256(revised),
+            "Formatted question has stale authored semantic source");
+    }
+    require(count==1,"Formatted question needs exactly one authored source marker");
+}
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
     const auto type = text(value, "type");
@@ -1830,6 +1857,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             }
             const auto projected=source_format_originals.contains(id)?
                 source_format_projection(block,source_format_originals.at(id)):block;
+            if(const auto prior=source_format_originals.find(id);
+                    prior!=source_format_originals.end())
+                require_formatted_question_semantics(root,id,prior->second,block);
             const auto general=general_choice_revisions.find(id);
             const auto normalized_choice=general!=general_choice_revisions.end()?
                 general_choice_projection(projected,general->second):projected;

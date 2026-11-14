@@ -427,7 +427,9 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(layout.validate(before), layout.validate(after))
         layout.validate_transition(before, after)
         for forged in ("u7-question.changed-answer",
-                       "u7-question.stale-question", "u7-question.forged-source"):
+                       "u7-question.stale-question",
+                       "u7-question.unmarked-question",
+                       "u7-question.forged-source"):
             with self.subTest(forged=forged), self.assertRaises(layout.LayoutError):
                 layout.validate(documents[forged])
 

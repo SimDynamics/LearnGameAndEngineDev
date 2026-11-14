@@ -97,6 +97,11 @@ def real_question_spacing_fixtures() -> dict[str, dict]:
     new_marker = next(item for item in stale_marker["textSemantics"]["fields"]
                       if item["block"] == identity and item["path"] == "/question")
     new_marker["sourceSha256"] = old_marker["sourceSha256"]
+    unmarked_question = deepcopy(after)
+    unmarked_question["textSemantics"]["fields"] = [
+        entry for entry in unmarked_question["textSemantics"]["fields"]
+        if not (entry["block"] == identity and entry["path"] == "/question")
+    ]
     forged_source = deepcopy(after)
     forged_source["pages"][0]["blocks"][3]["code"] = (
         forged_source["pages"][0]["blocks"][3]["code"].replace(
@@ -106,6 +111,7 @@ def real_question_spacing_fixtures() -> dict[str, dict]:
         "u7-question.after": after,
         "u7-question.changed-answer": wrong_answer,
         "u7-question.stale-question": stale_marker,
+        "u7-question.unmarked-question": unmarked_question,
         "u7-question.forged-source": forged_source,
     }
 
