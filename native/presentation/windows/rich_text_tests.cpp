@@ -1419,8 +1419,8 @@ int main(int argc,char** argv) {
             validate_ink(L"equipos",RGB(184,151,244));
             validate_ink(L"for",RGB(248,166,200));
             validate_ink(L"3",RGB(241,162,117));
-            validate_ink(L"\\\"Revision=\\\"",RGB(131,209,151));
-            validate_ink(L"\\\"\\n\\\"",RGB(131,209,151));
+            validate_ink(L"\"Revision=\"",RGB(131,209,151));
+            validate_ink(L"'\\n'",RGB(131,209,151));
             validate_ink(L"{",RGB(245,245,245));
             check(reader_theme::background(syntax_sample.value)==colors.field,
                 "Syntax recoloring changed the existing editor background");
