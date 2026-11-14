@@ -432,6 +432,91 @@ class SourceFormatTest(unittest.TestCase):
                 layout.validate(documents[forged])
 
 
+    def test_real_u9_l3_three_source_and_explanation_revisions(self):
+        """The reported enum-class slots can change spacing with authored prose.
+
+        Nothing is written back to Work's lessons. All three published blocks
+        keep their answers, owners, and authored spans in memory.
+        """
+        import hashlib
+        import json
+        import validar_json_programacion as contract
+
+        root = Path(__file__).resolve().parents[2]
+        relative = ("programming/cpp_fundamentals/datos_propios_y_estado_valido/"
+                    "lesson_nombrar_alternativas_con_enum_class.json")
+        family = {
+            locale: json.loads((root / "app/src/main/assets/content" /
+                                locale / relative).read_text(encoding="utf-8"))
+            for locale in ("es", "en", "fr")
+        }
+        before = family["es"]
+        layout.validate(before)
+        positions = ((1, 2, "block_0001_0002"),
+                     (2, 2, "block_0002_0002"),
+                     (4, 3, "block_0004_0003"))
+        original_archives = len(before["stateLayout"].get("sourceFormatRevisions", []))
+        changed = deepcopy(before)
+        original_sources = {}
+        for page, index, identity in positions:
+            self.assertEqual(before["stateLayout"]["current"][page]["blocks"][index], identity)
+            initial = before["pages"][page]["blocks"][index]
+            updated = changed["pages"][page]["blocks"][index]
+            self.assertIn(initial["type"], ("fill_code", "output_prediction"))
+            before_code = "    std::cout"
+            self.assertEqual(initial["code"].count(before_code), 1)
+            updated["code"] = initial["code"].replace(
+                before_code, "\n    std::cout", 1)
+            updated["explanation"] += (
+                " El valor conserva el tipo Estado hasta que el ejemplo "
+                "realiza la operación indicada.")
+            marker = next(item for item in changed["textSemantics"]["fields"]
+                          if item["block"] == identity and item["path"] == "/explanation")
+            self.assertTrue(marker["spans"])
+            marker["sourceSha256"] = hashlib.sha256(
+                updated["explanation"].encode("utf-8")).hexdigest()
+            original_sources[identity] = initial["code"]
+            self.assertTrue(fmt.require_source_lexical(initial, updated))
+            self.assertEqual(initial["answers"], updated["answers"])
+
+        reviewed = layout.prepare_v2(changed, "es", family, before)
+        layout.validate_transition(before, reviewed)
+        self.assertEqual(layout.validate(before), layout.validate(reviewed))
+        self.assertEqual(before["stateLayout"]["origin"], reviewed["stateLayout"]["origin"])
+        self.assertEqual(before["stateLayout"]["family"], reviewed["stateLayout"]["family"])
+        self.assertEqual(before["stateLayout"]["current"], reviewed["stateLayout"]["current"])
+        new_archives = reviewed["stateLayout"]["sourceFormatRevisions"][original_archives:]
+        self.assertEqual([identity for _, _, identity in positions],
+                         [item["id"] for item in new_archives])
+        path = "app/src/main/assets/content/es/" + relative
+        for page, index, identity in positions:
+            previous_block = before["pages"][page]["blocks"][index]
+            revised_block = reviewed["pages"][page]["blocks"][index]
+            archive = next(item for item in new_archives if item["id"] == identity)
+            self.assertEqual(archive["block"], previous_block)
+            self.assertEqual(previous_block["code"], original_sources[identity])
+            self.assertEqual(previous_block["answers"], revised_block["answers"])
+            self.assertTrue(contract.preserves_previous_exercise(
+                path, page, index, previous_block, revised_block,
+                previous_document=before, current_document=reviewed))
+            self.assertTrue(contract.preserves_source_format_revision(
+                path, page, index, previous_block, revised_block,
+                previous_document=before, current_document=reviewed))
+        tampered = deepcopy(reviewed)
+        tampered["pages"][2]["blocks"][2]["answers"] = ["4"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(before, tampered)
+        tampered = deepcopy(reviewed)
+        tampered["pages"][4]["blocks"][3]["code"] = (
+            tampered["pages"][4]["blocks"][3]["code"].replace(
+                "Estado::cancelado", "Estado::preparado", 1))
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(before, tampered)
+        for language in ("es", "en", "fr"):
+            self.assertEqual(json.loads((root / "app/src/main/assets/content" /
+                                         language / relative).read_text(encoding="utf-8")),
+                             family[language])
+
     def test_real_u10_l4_combined_format_and_authored_guide(self):
         """Authenticate a real published compiler owner without editing its JSON."""
         import hashlib
