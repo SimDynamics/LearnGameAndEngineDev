@@ -110,6 +110,18 @@ void rejected_semantics() {
             balances(interval,"Revise"),RejectionOperation::balance,balance_facts).correct,
             "A missing, contradictory or unbound min/max statement was accepted");
     }
+    for(const auto contradictory:{
+        "rango 0..9; mínimo 1, máximo 9",
+        "rango [0, 9]; mínimo 0 y máximo 10",
+        "rango 0 - 9; mínimo 0, máximo 8",
+        "rango de 0 a 9; límite inferior 1",
+        "rango de 0 a 9; límite superior 10"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            balances(contradictory,"Revise"),
+            RejectionOperation::balance,balance_facts).correct,
+            "An authentic interval masked contradictory explicit lower or upper bounds");
+    }
     const auto unlabelled=std::string(
         "Cajas, petición 1, piezas=-1: 0 - 20, revise.\n"
         "Cajas, petición 3, piezas=21: 0 - 20, revise.\n");
