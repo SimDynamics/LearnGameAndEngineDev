@@ -382,5 +382,85 @@ class SourceFormatTest(unittest.TestCase):
             layout.validate_transition(published, incorrect)
 
 
+
+    def test_real_u11_l11_combined_format_and_review_feedback(self):
+        """A published prediction keeps its answer and original guide spans."""
+        import hashlib
+        import json
+        import validar_json_programacion as contract
+
+        root = Path(__file__).resolve().parents[2]
+        relative = ("programming/cpp_fundamentals/texto_interpretacion_y_flujos/"
+                    "lesson_una_gramatica_para_sumar_y_restar.json")
+        family = {
+            locale: json.loads((root / "app/src/main/assets/content" /
+                                locale / relative).read_text(encoding="utf-8"))
+            for locale in ("es", "en", "fr")
+        }
+        published = family["es"]
+        layout.validate(published)
+        identity = "block_0002_0001"
+        self.assertEqual(published["stateLayout"]["current"][2]["blocks"][1], identity)
+        original = published["pages"][2]["blocks"][1]
+        self.assertEqual(original["type"], "output_prediction")
+        self.assertFalse(any(item["id"] == identity for item in
+                             published["stateLayout"].get("sourceFormatRevisions", [])))
+        before_code = "    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();"
+        after_code = "    const int resultado = leer_expresion(lector);\n\n    const Token fin = lector.leer();"
+        self.assertEqual(original["code"].count(before_code), 1)
+
+        updated = deepcopy(published)
+        puzzle = updated["pages"][2]["blocks"][1]
+        puzzle["code"] = puzzle["code"].replace(before_code, after_code, 1)
+        puzzle["reviewFeedback"] += (
+            "\nEl terminador recuperado pertenece a la misma operación.")
+        marker = next(field for field in updated["textSemantics"]["fields"]
+                      if field["block"] == identity and
+                      field["path"] == "/reviewFeedback")
+        self.assertEqual(len(marker["spans"]), 2)
+        marker["sourceSha256"] = hashlib.sha256(
+            puzzle["reviewFeedback"].encode("utf-8")).hexdigest()
+        reviewed = layout.prepare_v2(updated, "es", family, published)
+        layout.validate_transition(published, reviewed)
+        self.assertEqual(layout.validate(published), layout.validate(reviewed))
+        self.assertEqual(reviewed["stateLayout"]["origin"],
+                         published["stateLayout"]["origin"])
+        self.assertEqual(reviewed["stateLayout"]["current"],
+                         published["stateLayout"]["current"])
+        self.assertEqual(reviewed["stateLayout"]["family"],
+                         published["stateLayout"]["family"])
+        archives = [item for item in reviewed["stateLayout"]["sourceFormatRevisions"]
+                    if item["id"] == identity]
+        self.assertEqual(len(archives), 1)
+        self.assertEqual(archives[0]["block"], original)
+        self.assertEqual(puzzle["answers"], original["answers"])
+        revised_marker = next(field for field in reviewed["textSemantics"]["fields"]
+                              if field["block"] == identity and
+                              field["path"] == "/reviewFeedback")
+        published_marker = next(field for field in published["textSemantics"]["fields"]
+                                if field["block"] == identity and
+                                field["path"] == "/reviewFeedback")
+        self.assertEqual(revised_marker["spans"], published_marker["spans"])
+        full_path = "app/src/main/assets/content/es/" + relative
+        self.assertTrue(contract.preserves_source_format_revision(
+            full_path, 2, 1, original, reviewed["pages"][2]["blocks"][1],
+            previous_document=published, current_document=reviewed))
+        self.assertTrue(contract.preserves_previous_exercise(
+            full_path, 2, 1, original, reviewed["pages"][2]["blocks"][1],
+            previous_document=published, current_document=reviewed))
+
+        forged = deepcopy(reviewed)
+        forged["pages"][2]["blocks"][1]["answers"] = ["Resultado falsificado"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(published, forged)
+        stale = deepcopy(reviewed)
+        marker = next(field for field in stale["textSemantics"]["fields"]
+                      if field["block"] == identity and
+                      field["path"] == "/reviewFeedback")
+        marker["sourceSha256"] = published_marker["sourceSha256"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(published, stale)
+
+
 if __name__ == "__main__":
     unittest.main()
