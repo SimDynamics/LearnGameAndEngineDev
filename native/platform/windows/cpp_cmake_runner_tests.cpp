@@ -1335,6 +1335,228 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
             "Matching output was credited without the requested include scope");
     }
     std::cout<<"PASS four U2L4 MSVC editors: public/private propagation, source repairs, first case and history, fake scopes rejected\n";
+    // U3L2: two existing projects must really create their static library
+    // inside a child CMakeLists. A flat root build with the same stdout
+    // remains an incorrect solution even if the files and targets match.
+    constexpr auto subproject_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json";
+    const auto subproject_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/subproject_relative);
+    const auto& boxes_before=subproject_original.pages.at(6).blocks.at(3);
+    const auto& batches_before=subproject_original.pages.at(8).blocks.at(3);
+    check(boxes_before.stable_id=="block_0006_0003"&&
+        batches_before.stable_id=="block_0008_0003"&&
+        boxes_before.cmake&&batches_before.cmake&&
+        boxes_before.output_check&&batches_before.output_check&&
+        !boxes_before.cmake_graph_check&&!batches_before.cmake_graph_check,
+        "The original U3L2 CMake project owners changed");
+    std::string subproject_json=subproject_original.raw_json;
+    const auto subproject_at=subproject_json.find(anchor);
+    check(subproject_at!=subproject_json.npos&&
+        subproject_json.find(anchor,subproject_at+1)==subproject_json.npos,
+        "U3L2 state map moved");
+    subproject_json.insert(subproject_at,R"json(  "compilerCmakeGraphChecks":[
+      {"activity":"block_0006_0003","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],
+          "sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0008_0003","project":"LotesLocales",
+       "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"verificar_lotes","type":"EXECUTABLE",
+          "sources":["pruebas/lotes_casos.cpp"],"linksTo":["lotes"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"consultar_lotes","type":"EXECUTABLE",
+          "sources":["programa/consulta.cpp"],"linksTo":["lotes"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"lotes","type":"STATIC_LIBRARY",
+          "sources":["codigo/lotes/motor/cantidad.cpp"],
+          "sourceDirectory":"codigo/lotes",
+          "publicIncludeRoots":["codigo/lotes/publico"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true}
+       ]}
+    ],
+)json");
+    const auto subproject_mapped=lgaed::windows::parse_lesson_json(
+        subproject_json,"es");
+    const auto subproject_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        subproject_json,"es");
+    check(subproject_mapped.state_layout.lineage==
+            subproject_original.state_layout.lineage&&
+        subproject_mapped.state_layout.signatures==
+            subproject_original.state_layout.signatures&&
+        subproject_metadata.state_layout.lineage==
+            subproject_original.state_layout.lineage,
+        "U3L2 root declaration changed original state signatures");
+    std::uint64_t subproject_id=1901;
+    for(const auto [page,block]:{
+            std::pair{6U,3U},std::pair{8U,3U}}) {
+        const bool boxes=page==6;
+        const auto& original_block=subproject_original.pages.at(page).blocks.at(block);
+        const auto& mapped_block=subproject_mapped.pages.at(page).blocks.at(block);
+        const auto& meta_block=subproject_metadata.pages.at(page).blocks.at(block);
+        check(mapped_block.cmake_graph_check&&
+            mapped_block.cmake_graph_check==meta_block.cmake_graph_check&&
+            mapped_block.project_files==original_block.project_files&&
+            curriculum::exercise_key(subproject_original,original_block)==
+                curriculum::exercise_key(subproject_mapped,mapped_block)&&
+            curriculum::draft_key("programming",subproject_original,original_block)==
+                curriculum::draft_key("programming",subproject_mapped,mapped_block)&&
+            curriculum::reference_objective_frame(subproject_original,original_block)!=
+                curriculum::reference_objective_frame(subproject_mapped,mapped_block),
+            "U3L2 root rubric altered existing project identity, files or draft");
+        CppRunRequest request;
+        request.request_id=subproject_id;
+        request.revision=subproject_id++;
+        request.project_key="qa/p2-u3-subproject/"+mapped_block.stable_id;
+        request.projects_directory=environment.paths.projects;
+        request.project_files=mapped_block.project_files;
+        request.cmake=mapped_block.cmake;
+        request.cmake_graph_check=mapped_block.cmake_graph_check;
+        request.capture_cmake_graph=true;
+        request.action=CppRunRequest::Action::compile_run;
+        bool repaired=false;
+        for(auto& file:request.project_files) {
+            if(boxes&&file.first=="componente/CMakeLists.txt") {
+                const auto fix=[](std::string& code,
+                        std::string_view from,std::string_view to) {
+                    const auto at=code.find(from);
+                    check(at!=code.npos,"U3L2 child CMake fixture changed");
+                    code.replace(at,from.size(),to);
+                };
+                fix(file.second,"componente/src/cajas.cpp","src/cajas.cpp");
+                fix(file.second,"componente/publico","publico");
+                repaired=true;
+            } else if(!boxes&&file.first=="CMakeLists.txt") {
+                check(file.second.find("add_subdirectory")==std::string::npos,
+                    "U3L2 Lotes root already has a subdirectory");
+                file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(LotesLocales LANGUAGES CXX)
+add_subdirectory(codigo/lotes)
+add_executable(consultar_lotes programa/consulta.cpp)
+add_executable(verificar_lotes pruebas/lotes_casos.cpp)
+target_link_libraries(consultar_lotes PRIVATE lotes)
+target_link_libraries(verificar_lotes PRIVATE lotes)
+target_compile_features(consultar_lotes PRIVATE cxx_std_20)
+target_compile_features(verificar_lotes PRIVATE cxx_std_20)
+set_target_properties(consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+                repaired=true;
+            } else if(!boxes&&file.first=="codigo/lotes/CMakeLists.txt") {
+                check(file.second.empty(),
+                    "U3L2 Lotes initial child description is no longer empty");
+                file.second=R"cmake(add_library(lotes STATIC motor/cantidad.cpp)
+target_include_directories(lotes PUBLIC publico)
+target_compile_features(lotes PRIVATE cxx_std_20)
+set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+            }
+        }
+        check(repaired&&compiler_runtime_request_allowed(mapped_block,request),
+            "U3L2 valid child CMake project cannot enter original editor");
+        const auto native_build=run_cpp(request);
+        ran(native_build);
+        const auto fresh=capture_cpp_execution(request,native_build);
+        const auto expected=mapped_block.output_check->cases.front().outputs.front();
+        check(native_build.execution.stdout_bytes==expected&&
+            native_build.execution.stderr_bytes.empty()&&
+            fresh.cmake_graph_correct&&native_build.cmake_graph&&
+            evaluate_cpp_output_check(*mapped_block.output_check,fresh,
+                request.revision).verdict==curriculum::OutputVerdict::correct,
+            "Original U3L2 child CMake target failed real MSVC execution");
+        const auto& graph=*native_build.cmake_graph;
+        const auto child_name=boxes?"envios":"lotes";
+        const auto child=std::ranges::find_if(graph.targets,
+            [&](const auto& target){return target.name==child_name;});
+        check(child!=graph.targets.end()&&
+            child->source_directory==(boxes?"componente":"codigo/lotes"),
+            "CMake File API did not place the library in its original child");
+        auto history_request=request;
+        history_request.capture_cmake_graph=false;
+        history_request.cmake_graph_check.reset();
+        const auto history_capture=capture_cpp_execution(
+            history_request,native_build);
+        state::StateData saved;
+        state::prepare_lesson_state(saved,subproject_original);
+        check(record_compiler_puzzle_case(saved,subproject_original,
+                original_block,history_request,history_capture,
+                "Salida histórica")&&
+            compiler_puzzle_completed(saved,subproject_original,original_block)&&
+            !compiler_puzzle_completed(saved,subproject_mapped,mapped_block),
+            "U3L2 new structural credit inherited a historical stdout receipt");
+        state::prepare_lesson_state(saved,subproject_mapped);
+        check(record_compiler_puzzle_case(saved,subproject_mapped,mapped_block,
+                request,fresh,"Biblioteca en subdirectorio")&&
+            compiler_puzzle_completed(saved,subproject_mapped,mapped_block)&&
+            compiler_puzzle_case_count(saved,subproject_mapped,mapped_block)==1,
+            "U3L2 correct first case failed to unlock its structure");
+        const auto persisted=state::decode(state::encode(saved));
+        check(compiler_puzzle_completed(persisted,subproject_original,original_block)&&
+            compiler_puzzle_completed(persisted,subproject_mapped,mapped_block),
+            "U3L2 historical and new receipts did not survive reopening");
+        // Construct the same sources, links and interface completely in the
+        // root. The correct output is real, but the child file is bypassed.
+        auto flat=request;
+        flat.request_id=subproject_id;
+        flat.revision=subproject_id++;
+        flat.project_key+="/flat-library";
+        for(auto& file:flat.project_files) {
+            if(file.first=="CMakeLists.txt") {
+                if(boxes) {
+                    constexpr auto root="add_subdirectory(componente)";
+                    const auto at=file.second.find(root);
+                    check(at!=file.second.npos,"U3L2 root subdirectory moved");
+                    file.second.replace(at,std::char_traits<char>::length(root),
+                        "add_library(envios STATIC componente/src/cajas.cpp)\n"
+                        "target_include_directories(envios PUBLIC componente/publico)\n"
+                        "target_compile_features(envios PRIVATE cxx_std_20)\n"
+                        "set_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)");
+                }else {
+                    constexpr auto root="add_subdirectory(codigo/lotes)";
+                    const auto at=file.second.find(root);
+                    check(at!=file.second.npos,"U3L2 Lotes subdirectory moved");
+                    file.second.replace(at,std::char_traits<char>::length(root),
+                        "add_library(lotes STATIC codigo/lotes/motor/cantidad.cpp)\n"
+                        "target_include_directories(lotes PUBLIC codigo/lotes/publico)\n"
+                        "target_compile_features(lotes PRIVATE cxx_std_20)\n"
+                        "set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)");
+                }
+            }else if(file.first==(boxes?"componente/CMakeLists.txt":
+                                            "codigo/lotes/CMakeLists.txt"))
+                file.second.clear();
+        }
+        const auto flat_result=run_cpp(flat);
+        ran(flat_result);
+        const auto flat_capture=capture_cpp_execution(flat,flat_result);
+        check(flat_result.execution.stdout_bytes==expected&&
+            evaluate_cpp_output_check(*mapped_block.output_check,flat_capture,
+                flat.revision).verdict==curriculum::OutputVerdict::correct&&
+            !flat_capture.cmake_graph_correct&&
+            !record_compiler_puzzle_case(saved,subproject_mapped,mapped_block,
+                flat,flat_capture,"Biblioteca solo en la raíz"),
+            "Root-only U3L2 CMake build earned credit with matching stdout");
+    }
+    std::cout<<"PASS original U3L2 child CMake owners: File API directories, real source/link, correct first case and historic receipts; flat root rejected\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";

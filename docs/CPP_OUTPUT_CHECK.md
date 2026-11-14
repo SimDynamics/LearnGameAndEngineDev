@@ -1053,6 +1053,24 @@ se incorporan en la raíz de la lección sin cambiar los proyectos, direcciones,
 borradores o recibos históricos. El primer caso correcto continúa siendo
 suficiente para avanzar, siempre que incluya la evidencia estructural.
 
+### Biblioteca definida en un subdirectorio CMake original
+
+Para las lecciones U3L2, el objetivo estático admite la propiedad opcional
+`"sourceDirectory": "componente"` o, según el proyecto,
+`"sourceDirectory": "codigo/lotes"`. La ruta debe identificar un
+`CMakeLists.txt` de subdirectorio presente en los archivos originales.
+El objetivo debe aparecer en ese directorio del grafo generado por CMake.
+
+La comprobación se fundamenta en el índice `directoryIndex` de **File API
+codemodel v2**, no en el nombre de los archivos de código fuente ni en una
+cadena mostrada por el programa. Una biblioteca declarada solo en la raíz
+se rechaza aunque compile exactamente los mismos archivos, enlace a los
+mismos consumidores y produzca las mismas salidas. La sintaxis específica
+de `add_subdirectory` puede variar siempre que el árbol generado demuestre
+la estructura solicitada. La verificación del orden de mensajes de
+configuración es un requisito distinto y todavía no queda acreditado por
+esta propiedad.
+
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas
