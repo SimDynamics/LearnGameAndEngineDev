@@ -457,6 +457,48 @@ void capacity() {
         int cajas_para(int piezas) {
             const int capacidad{4};
             return (piezas + 3) / 4 +
+                   (capacidad > 0 && capacidad < 8 && false);
+        })cpp",rules,false,
+        "An && false suffix cannot make earlier references productive");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 && capacidad < 8 && (false));
+        })cpp",rules,false,
+        "Parenthesized false at the end still makes the whole conjunction false");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 || capacidad < 8 || true) - 1;
+        })cpp",rules,false,
+        "An || true suffix cannot credit earlier named references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 || capacidad < 8 || (1)) - 1;
+        })cpp",rules,false,
+        "An integral true at the end forces an OR-only result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad > 0 && false);
+        })cpp",rules,true,
+        "A constant-false suffix must not invalidate a separate real calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad > 0 || true) - 1;
+        })cpp",rules,true,
+        "A constant-true suffix must not invalidate a separate real calculation");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
                    (true || capacidad || capacidad) - 1;
         })cpp",rules,false,"A true || prefix cannot establish two uses");
     verify(R"cpp(
