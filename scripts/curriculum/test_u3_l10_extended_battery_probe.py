@@ -68,6 +68,17 @@ class U3L10ExtendedTest(unittest.TestCase):
                 self.assertFalse(result.accepted)
                 self.assertIn("changed", result.reason)
 
+    def test_temporary_msvc_warning_translation_never_edits_student_cmake(self):
+        source = probe.published_files()["CMakeLists.txt"]
+        self.assertEqual(probe.qa_cmake_toolchain_options(source, "g++"), source)
+        self.assertEqual(probe.qa_cmake_toolchain_options(source, "clang++"), source)
+        adapted = probe.qa_cmake_toolchain_options(source, "cl")
+        self.assertNotEqual(adapted, source)
+        self.assertEqual(adapted.count("if(MSVC)"), 3)
+        self.assertEqual(adapted.count("PRIVATE /W4"), 3)
+        self.assertEqual(adapted.count("PRIVATE -Wall -Wextra -Wpedantic"), 3)
+        self.assertEqual(probe.published_files()["CMakeLists.txt"], source)
+
     def test_no_mutation_identity_is_exposed_as_an_argument_or_environment(self):
         original = probe.published_files()[probe.LIBRARY]
         baseline = probe.instrument(original, "baseline")

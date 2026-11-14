@@ -63,6 +63,29 @@ def published_files() -> dict[str, str]:
     raise ValueError("Original U3L10 owner not found")
 
 
+def qa_cmake_toolchain_options(original: str, cxx: str) -> str:
+    """Translate only GCC warning flags for the disposable MSVC CI workspace.
+
+    The published student's CMakeLists.txt remains protected byte-for-byte.
+    This isolated QA adapter cannot establish that the curricular CMake
+    description is already MSVC-compatible. Work must author that correction.
+    """
+    if Path(cxx).name.lower() not in {"cl", "cl.exe"}:
+        return original
+    adapted = original
+    for name in ("ajustes", "consultar_ajustes", "comprobar_ajustes"):
+        old = f"target_compile_options({name} PRIVATE -Wall -Wextra -Wpedantic)"
+        if adapted.count(old) != 1:
+            raise ValueError("Published CMake warning flags changed")
+        new = ("if(MSVC)\n"
+               f"    target_compile_options({name} PRIVATE /W4)\n"
+               "else()\n"
+               f"    {old}\n"
+               "endif()")
+        adapted = adapted.replace(old, new)
+    return adapted
+
+
 def check_files(candidate: Mapping[str, str]) -> dict[str, str]:
     original = published_files()
     if set(candidate) != set(original):
@@ -150,6 +173,12 @@ def audit(candidate: Mapping[str, str], cxx: str) -> Audit:
                 dest.write_text(contents, encoding="utf-8")
             env = os.environ.copy()
             env["CXX"] = cxx
+            # This separate CI workspace may translate diagnostic flags for
+            # cl.exe; submitted CMake bytes and their protected provenance
+            # are never modified or credited as a Windows-ready project.
+            (source / "CMakeLists.txt").write_text(
+                qa_cmake_toolchain_options(files["CMakeLists.txt"], cxx),
+                encoding="utf-8")
             command(["cmake", "-S", str(source), "-B", str(build), "-G", "Ninja",
                      "-DCMAKE_BUILD_TYPE=Debug"], source, env)
             command(["cmake", "--build", str(build), "--target", "consultar_ajustes"],
