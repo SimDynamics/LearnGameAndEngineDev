@@ -871,10 +871,12 @@ void run_assetcheck_prompt(windows::NarrationWorker& worker,
         response.raw_json = utf8(payload.Stringify()); response.correct = std::string_view(mode) == "correct";
         if (std::string_view(mode) == "incorrect") state::mark_response_reviewed(response, old);
         state::put_response(initial, before, old, response);
-        state::save_current_page(initial, before, 2);
+        // This field is real arrival coverage, not an arbitrary reading mark.
+        // Visit the QA pages in order and retain every generated block identity.
+        for (std::size_t page = 0; page <= 2; ++page)
+            state::save_current_page(initial, before, page);
         initial.preferences["assetcheck_prompt_qa"]["opaque"] = std::string(" original\t\r\n datos ");
         const auto read_key = "lesson_" + before.id + "_read_blocks_v2_es";
-        initial.preferences["learning_progress"][read_key] = std::vector<std::string>{"block_0000_0001", "block_0002_0004"};
         narration::History bookmark;
         // Storage-only source-bound marker. No synthesis or audio playback is claimed.
         bookmark.entries.push_back({state::sha256(old.raw_json), old.stable_id, {2, 730, 1, false}, before.pages[2].stable_id});
@@ -953,7 +955,8 @@ void run_assetcheck_prompt(windows::NarrationWorker& worker,
                 // they finish entry synchronously. Correct/reviewed receipts
                 // must complete one real hook validation on every new view.
                 const int expected_validations = partial ? 0 : mounted.openings;
-                wait_for([&] {
+                std::string diagnostic;
+                try { wait_for([&] {
                     const auto page = lesson_page_state(mounted.view);
                     const auto feedback = descendant(mounted.view, 1504);
                     const auto check = descendant(mounted.view, 1503);
@@ -964,13 +967,28 @@ void run_assetcheck_prompt(windows::NarrationWorker& worker,
                     const auto targets = std::ranges::count_if(regions, [](const auto& region) {
                         return region.block_index == 5 && region.key.find("relaciones/target/") != std::string::npos;
                     });
-                    return mounted.validations.load() == expected_validations
+                    const auto validations = mounted.validations.load();
+                    const bool check_enabled = check && IsWindowEnabled(check);
+                    const bool feedback_matches = feedback && edit_text(feedback) == expected_feedback;
+                    std::ostringstream status;
+                    status << "mode=" << mode << " route=" << (imported ? "import" : "native")
+                        << " page=" << page.index << " openings=" << mounted.openings
+                        << " validations=" << validations << "/" << expected_validations
+                        << " can_previous=" << page.can_previous << " can_next=" << page.can_next
+                        << " check_present=" << static_cast<bool>(check) << " check_enabled=" << check_enabled
+                        << " sources=" << sources << " targets=" << targets
+                        << " feedback_present=" << static_cast<bool>(feedback) << " feedback_matches=" << feedback_matches;
+                    diagnostic = status.str();
+                    return validations == expected_validations
                         && page.index == 2 && page.can_previous
                         && page.can_next == (std::string_view(mode) == "correct")
-                        && check && static_cast<bool>(IsWindowEnabled(check)) == (std::string_view(mode) != "correct")
+                        && check && check_enabled == (std::string_view(mode) != "correct")
                         && sources == 4 && targets == 4
-                        && feedback && edit_text(feedback) == expected_feedback;
-                }, "The AssetCheck view did not finish its real receipt/draft restoration");
+                        && feedback_matches;
+                }, "The AssetCheck view did not finish its real receipt/draft restoration"); }
+                catch (const std::exception& error) {
+                    throw std::runtime_error(std::string(error.what()) + " [" + diagnostic + "]");
+                }
                 preserved();
             };
             restored(); mounted.reopen(); restored();
