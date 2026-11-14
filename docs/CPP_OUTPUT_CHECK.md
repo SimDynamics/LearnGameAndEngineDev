@@ -269,6 +269,10 @@ inferior 0, límite superior 9», con esos mismos valores obligatorios.
 Un solo límite no basta, ni puede darse por válido otro mínimo o máximo
 contradictorio. Si el mismo mensaje incluye «rango 0..9, mínimo 1»,
 se rechaza la contradicción aunque también aparezca un intervalo correcto.
+La declaración debe comunicar el dominio **admitido**, no negar su vigencia:
+«rango no permitido de 0 a 9» y «rango 0..9 no válido» no acreditan el objetivo.
+En cambio, «no se permite 21; rango permitido de 0 a 9» conserva la
+distinción entre un dato rechazado y el intervalo autorizado.
 Una coma aislada entre datos no acredita un intervalo:
 la notación con coma exige ambos corchetes de un intervalo cerrado.
 Tampoco se acepta cambiar un límite, intercambiar cobros y devoluciones
