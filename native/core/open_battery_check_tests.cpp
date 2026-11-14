@@ -33,11 +33,13 @@ std::vector<OpenBatteryRun> correct(OpenBatteryCall added) {
     runs[0].program_frame="project-fingerprint";
     runs[0].compiled=runs[0].executed=true;
     runs[0].exit_code=0;
+    runs[0].stdout_bytes="Fallos=0\n";
     runs[0].calls.assign(originals.begin(),originals.end());
     runs[0].calls.push_back(added);
     for(std::size_t i=1;i<runs.size();++i) {
         runs[i]=runs[0];
         runs[i].exit_code=1;
+        runs[i].stdout_bytes="Fallos=1\n";
         runs[i].mutation=i==originals.size()+2?
             OpenBatteryMutation::corrupt_destination:
             OpenBatteryMutation::invert_acceptance;
@@ -108,6 +110,18 @@ void specification() {
     verify(!open_battery_probe_spec_valid(forged),
            "A test target accepted shell metacharacters");
 }
+void reporting() {
+    const std::string stderr_text=
+        "Revisión=OK\nLGAED_OPEN_BATTERY_CALL:3,3,7,59\r\n"
+        "Se conservó el destino\n";
+    verify(open_battery_student_stderr(stderr_text)==
+           "Revisión=OK\nSe conservó el destino\n",
+           "Private per-call witness leaked into observable student output");
+    verify(open_battery_student_stderr("LGAED_OPEN_BATTERY_CALL:3,3,7,59\n").empty(),
+           "A private trace was mistaken for student reporting");
+    verify(open_battery_student_stderr("Fallo detectado\n")=="Fallo detectado\n",
+           "Ordinary student diagnostics were changed");
+}
 void agreement() {
     verify(open_battery_expected({2,3,7,59})==std::pair{true,1},
            "Below interval expected +1");
@@ -151,6 +165,19 @@ void judgments() {
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A pre-mutated baseline counted as a clean original");
     runs=correct({3,3,7,59});
+    runs.back().stdout_bytes=runs.front().stdout_bytes;
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "A silent destination failure passed without its contrast");
+    runs=correct({3,3,7,59});
+    runs[originals.size()+1].stdout_bytes=runs.front().stdout_bytes;
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "A fixed new-case label passed without reporting the acceptance error");
+    runs=correct({3,3,7,59});
+    runs.front().stdout_bytes.clear();
+    runs.front().stderr_bytes.clear();
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "A silent baseline was accepted without a report");
+    runs=correct({3,3,7,59});
     runs[1].program_frame="another-source";
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A different submission borrowed progress");
@@ -175,7 +202,7 @@ void judgments() {
 }
 }
 int main()try{
-    generated();parsing();specification();agreement();judgments();
+    generated();parsing();specification();reporting();agreement();judgments();
     std::cout<<"PASS open-battery portable core: original, new, mutation and provenance\n";
     return 0;
 }catch(const std::exception& error){

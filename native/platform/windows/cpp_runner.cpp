@@ -1904,6 +1904,9 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
         if(phase.executed)
             phase.exit_code=static_cast<int>(*observed.execution.exit_code);
         phase.calls=*calls;
+        phase.stdout_bytes=observed.execution.stdout_bytes;
+        phase.stderr_bytes=curriculum::open_battery_student_stderr(
+            observed.execution.stderr_bytes);
         evidence.runs.push_back(std::move(phase));
         return evidence.runs.back().compiled&&evidence.runs.back().executed;
     };

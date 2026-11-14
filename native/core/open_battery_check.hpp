@@ -35,6 +35,8 @@ struct OpenBatteryRun {
     OpenBatteryMutation mutation=OpenBatteryMutation::baseline;
     std::optional<OpenBatteryCall> target;
     std::vector<OpenBatteryCall> calls;
+    // Student-visible streams without private witness lines.
+    std::string stdout_bytes, stderr_bytes;
 };
 struct OpenBatteryVerdict {
     bool accepted=false;
@@ -127,6 +129,23 @@ inline std::optional<std::string> open_battery_mutated_library(
     result+="    return aceptado;\n}\n";
     return result;
 }
+// Remove only the runtime-owned call markers from stderr; real student
+// diagnostics must remain byte-exact for the independent reporting check.
+inline std::string open_battery_student_stderr(std::string_view all) {
+    constexpr std::string_view marker="LGAED_OPEN_BATTERY_CALL:";
+    std::string visible;
+    for(std::size_t position=0;position<all.size();) {
+        auto end=all.find('\n',position);
+        if(end==all.npos)end=all.size();
+        const auto line=all.substr(position,end-position);
+        if(!line.starts_with(marker)) {
+            visible.append(line);
+            if(end<all.size())visible.push_back('\n');
+        }
+        position=end<all.size()?end+1:end;
+    }
+    return visible;
+}
 inline std::optional<std::vector<OpenBatteryCall>> open_battery_parse_calls(
         std::string_view stderr_bytes) {
     constexpr std::string_view marker="LGAED_OPEN_BATTERY_CALL:";
@@ -177,6 +196,8 @@ inline OpenBatteryVerdict open_battery_verify(
        runs.front().mutation!=OpenBatteryMutation::baseline||
        runs.front().target.has_value())
         return {false,"La biblioteca original no pasó su ejecución sin mutación.",{}};
+    if(runs.front().stdout_bytes.empty()&&runs.front().stderr_bytes.empty())
+        return {false,"La batería no comunicó ningún resultado observable.",{}};
     auto baseline=runs.front().calls;
     const auto order=[](const auto& a,const auto& b) {
         return std::tie(a.value,a.lower,a.upper,a.initial)<
@@ -207,6 +228,12 @@ inline OpenBatteryVerdict open_battery_verify(
             return {false,"La mutación no corresponde a su caso original o nuevo.",extra};
         if(runs[i].exit_code!=1)
             return {false,"Una mutación no cambió el resultado final.",extra};
+        // The new comparison must communicate both kinds of failure. A
+        // changing exit status with a fixed printed label is insufficient.
+        if(i>original.size()&&
+           runs[i].stdout_bytes==runs.front().stdout_bytes&&
+           runs[i].stderr_bytes==runs.front().stderr_bytes)
+            return {false,"La nueva comparación no comunicó su contraste.",extra};
         auto calls=runs[i].calls;
         std::ranges::sort(calls,order);
         if(calls!=baseline)
