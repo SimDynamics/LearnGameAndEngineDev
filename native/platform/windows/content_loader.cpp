@@ -2663,7 +2663,8 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     for(const auto& record:records) {
         const auto item=record.GetObject();
         allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
-            "optionSelection"});
+            "optionSelection","sourceIntegrity","configureMessageOrder",
+            "targetList"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2692,6 +2693,30 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 requirement.minimum_cmake_version).has_value(),
                 "CMake minimum requires a numeric major.minor version");
         }
+        if(item.HasKey(L"configureMessageOrder")) {
+            const auto messages=array(item,"configureMessageOrder");
+            require(messages.Size()>0&&messages.Size()<=16,
+                "CMake order needs 1..16 original STATUS messages");
+            for(const auto& raw:messages) {
+                const auto value=raw.GetObject();
+                allowed_keys(value,{"path","text"},true);
+                const auto path=text(value,"path");
+                const auto expected=text(value,"text");
+                require(!expected.empty()&&expected.size()<=256&&
+                        std::ranges::all_of(expected,[](unsigned char c) {
+                            return c>=32&&c!=127;
+                        })&&
+                        std::ranges::any_of(owner->project_files,
+                            [&](const auto& file) {
+                                return file.first==path&&
+                                    (path=="CMakeLists.txt"||
+                                     path.ends_with("/CMakeLists.txt")||
+                                     path.ends_with(".cmake"));
+                            }),
+                    "STATUS message must belong to an original CMake file");
+                requirement.configure_message_order.emplace_back(path,expected);
+            }
+        }
         const auto targets=array(item,"targets");
         require(targets.Size()>0&&targets.Size()<=16,
             "CMake graph requires 1..16 generated targets");
@@ -2700,7 +2725,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             const auto source=t.GetObject();
             allowed_keys(source,{"name","type","sources","linksTo","exactSources",
                 "explicitCxx20","explicitCxxExtensionsOff",
-                "publicIncludeRoots","privateIncludeRoots"});
+                "publicIncludeRoots","privateIncludeRoots","sourceDirectory"});
             require(source.HasKey(L"name")&&source.HasKey(L"type"),
                 "Each CMake graph target requires a name and type");
             CmakeRequiredTarget wanted;
@@ -2793,6 +2818,28 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 require(std::ranges::find(wanted.private_include_roots,root)==
                     wanted.private_include_roots.end(),
                     "CMake root cannot be simultaneously PUBLIC and PRIVATE");
+            if(source.HasKey(L"sourceDirectory")) {
+                wanted.source_directory=text(source,"sourceDirectory");
+                const auto path=wanted.source_directory;
+                require(wanted.type=="STATIC_LIBRARY"&&!path.empty()&&
+                        path.size()<=256&&path.front()!='/'&&path.back()!='/'&&
+                        std::ranges::all_of(path,[](unsigned char ch) {
+                            return (ch>='a'&&ch<='z')||
+                                (ch>='A'&&ch<='Z')||
+                                (ch>='0'&&ch<='9')||
+                                ch=='_'||ch=='-'||ch=='.'||ch=='+'||
+                                ch=='.'||ch=='/';
+                        })&&
+                        std::ranges::none_of(std::filesystem::path(path),
+                            [](const auto& part) {
+                                return part=="."||part=="..";
+                            })&&
+                        std::ranges::any_of(owner->project_files,
+                            [&](const auto& file) {
+                                return file.first==path+"/CMakeLists.txt";
+                            }),
+                    "CMake target sourceDirectory must be an original subproject");
+            }
             requirement.targets.push_back(std::move(wanted));
         }
         for(const auto& library:requirement.targets)if(
@@ -2804,6 +2851,30 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                         std::ranges::find(consumer.links_to,library.name)!=
                             consumer.links_to.end();
                 }),"Include scopes require an explicitly linked executable");
+        if(item.HasKey(L"targetList")) {
+            const auto list=item.GetNamedObject(L"targetList");
+            allowed_keys(list,{"targets","requireAppend"},true);
+            CmakeTargetListRequirement goal;
+            goal.targets=strings(array(list,"targets"),true,false);
+            require(goal.targets.size()>=2&&goal.targets.size()<=16,
+                "CMake list requires at least two executable consumers");
+            const auto flag=list.GetNamedValue(L"requireAppend");
+            require(flag.ValueType()==JsonValueType::Boolean,
+                "CMake requireAppend must be Boolean");
+            goal.require_append=flag.GetBoolean();
+            std::set<std::string> seen_members;
+            for(const auto& name:goal.targets) {
+                require(seen_members.insert(name).second,
+                    "CMake list must not duplicate consumers");
+                const auto it=std::ranges::find_if(requirement.targets,
+                    [&](const auto& t){return t.name==name;});
+                require(it!=requirement.targets.end()&&
+                        it->type=="EXECUTABLE"&&
+                        it->require_explicit_extensions_off,
+                    "CMake list must name executable targets with explicit OFF");
+            }
+            requirement.target_list=std::move(goal);
+        }
         const auto selected=std::ranges::find_if(requirement.targets,
             [&](const auto& target){return target.name==owner->cmake->target;});
         require(selected!=requirement.targets.end()&&selected->type=="EXECUTABLE",
@@ -2847,6 +2918,42 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 "Binary option must switch between distinct original library files");
             requirement.option_selection=CmakeOptionSelectionRequirement{
                 name,target,off_source,off_output};
+        }
+        if(item.HasKey(L"sourceIntegrity")) {
+            const auto integrity=item.GetNamedObject(L"sourceIntegrity");
+            allowed_keys(integrity,{"preserveNonCmake","removePrefix"});
+            require(integrity.HasKey(L"preserveNonCmake")&&
+                    integrity.GetNamedValue(L"preserveNonCmake").ValueType()==
+                        JsonValueType::Boolean&&
+                    integrity.GetNamedBoolean(L"preserveNonCmake"),
+                "CMake source integrity must explicitly preserve original files");
+            std::string removal_path,removal;
+            if(integrity.HasKey(L"removePrefix")) {
+                const auto edit=integrity.GetNamedObject(L"removePrefix");
+                allowed_keys(edit,{"path","text"},true);
+                removal_path=text(edit,"path");removal=text(edit,"text");
+                require(is_cpp_source_file(removal_path)&&
+                        !removal.empty()&&removal.size()<=512,
+                    "CMake source repair must remove a short original C++ prefix");
+                const auto found=std::ranges::find_if(owner->project_files,
+                    [&](const auto& file){return file.first==removal_path;});
+                require(found!=owner->project_files.end()&&
+                        found->second.starts_with(removal),
+                    "CMake allowed removal must match the published source prefix");
+            }
+            bool found_removal=removal_path.empty();
+            for(const auto& [path,source]:owner->project_files) {
+                const auto at=path.find_last_of('/');
+                const auto filename=path.substr(at==path.npos?0:at+1);
+                if(filename=="CMakeLists.txt"||path.ends_with(".cmake"))continue;
+                const bool edited=path==removal_path;
+                if(edited)found_removal=true;
+                requirement.source_integrity.emplace_back(path,
+                    sha256(edited?std::string_view(source).substr(removal.size()):
+                        std::string_view(source)));
+            }
+            require(found_removal&&!requirement.source_integrity.empty(),
+                "CMake source integrity needs original non-CMake files");
         }
         owner->cmake_graph_check=std::move(requirement);
     }

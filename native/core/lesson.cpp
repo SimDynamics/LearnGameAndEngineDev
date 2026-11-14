@@ -403,6 +403,10 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(target.require_explicit_cxx20)token("authored-cxx20-v1");
             if(target.require_explicit_extensions_off)
                 token("authored-extensions-off-v1");
+            if(!target.source_directory.empty()) {
+                token("cmake-generated-source-directory-v1");
+                token(target.source_directory);
+            }
             if(!target.public_include_roots.empty()||
                !target.private_include_roots.empty()) {
                 token("cmake-public-private-includes-v1");
@@ -410,6 +414,26 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 for(const auto& root:target.public_include_roots)token(root);
                 token(std::to_string(target.private_include_roots.size()));
                 for(const auto& root:target.private_include_roots)token(root);
+            }
+        }
+        if(!graph.configure_message_order.empty()) {
+            token("cmake-authored-message-order-v1");
+            token(std::to_string(graph.configure_message_order.size()));
+            for(const auto& [path,status]:graph.configure_message_order) {
+                token(path);token(status);
+            }
+        }
+        if(graph.target_list) {
+            token("cmake-executed-target-list-v1");
+            token(graph.target_list->require_append?"must-append":"set-list");
+            token(std::to_string(graph.target_list->targets.size()));
+            for(const auto& name:graph.target_list->targets)token(name);
+        }
+        if(!graph.source_integrity.empty()) {
+            token("cmake-source-integrity-v1");
+            token(std::to_string(graph.source_integrity.size()));
+            for(const auto& [path,digest]:graph.source_integrity) {
+                token(path);token(digest);
             }
         }
         if(graph.option_selection) {

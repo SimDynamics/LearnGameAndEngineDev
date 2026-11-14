@@ -2186,7 +2186,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
                 {"activity", "project", "minimumCmakeVersion", "targets",
-                 "optionSelection"},
+                 "optionSelection", "sourceIntegrity", "configureMessageOrder",
+                 "targetList"},
                 "CMake graph owner needs bounded optional requirements")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
@@ -2209,6 +2210,52 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) and
                     all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
                     "CMake minimum must be a numeric major.minor version")
+        if "configureMessageOrder" in entry:
+            messages = entry["configureMessageOrder"]
+            source_cmake = {f.get("path") for f in block["projectFiles"]
+                            if type(f) is dict and type(f.get("path")) is str
+                            and (f["path"] == "CMakeLists.txt" or
+                                 f["path"].endswith("/CMakeLists.txt") or
+                                 f["path"].endswith(".cmake"))}
+            require(type(messages) is list and 0 < len(messages) <= 16 and
+                    all(type(item) is dict and
+                        set(item) == {"path", "text"} and
+                        type(item["path"]) is str and
+                        item["path"] in source_cmake and
+                        type(item["text"]) is str and
+                        0 < len(item["text"]) <= 256 and
+                        all(ord(c) >= 32 and ord(c) != 127
+                            for c in item["text"])
+                        for item in messages),
+                    "CMake STATUS order needs original CMake files and text")
+        if "sourceIntegrity" in entry:
+            integrity = entry["sourceIntegrity"]
+            require(type(integrity) is dict and
+                    {"preserveNonCmake"} <= set(integrity) <=
+                    {"preserveNonCmake", "removePrefix"} and
+                    integrity["preserveNonCmake"] is True and
+                    any(type(path) is str and
+                        not (path.endswith("/CMakeLists.txt") or
+                             path == "CMakeLists.txt" or
+                             path.endswith(".cmake"))
+                        for path in (f.get("path") for f in block["projectFiles"]
+                                     if type(f) is dict)),
+                    "CMake source integrity requires preserved non-CMake files")
+            if "removePrefix" in integrity:
+                removal = integrity["removePrefix"]
+                require(type(removal) is dict and
+                        set(removal) == {"path", "text"} and
+                        type(removal["path"]) is str and
+                        removal["path"].lower().endswith(
+                            (".cpp", ".cc", ".cxx", ".c++")) and
+                        type(removal["text"]) is str and
+                        0 < len(removal["text"]) <= 512 and
+                        any(type(f) is dict and
+                            f.get("path") == removal["path"] and
+                            type(f.get("initialCode")) is str and
+                            f["initialCode"].startswith(removal["text"])
+                            for f in block["projectFiles"]),
+                        "CMake repair can only remove an authentic source prefix")
         targets = entry["targets"]
         require(type(targets) is list and 0 < len(targets) <= 16,
                 "CMake graph needs 1..16 targets")
@@ -2220,7 +2267,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     {"name", "type"} <= set(target) <=
                     {"name", "type", "sources", "linksTo", "exactSources",
                      "explicitCxx20", "explicitCxxExtensionsOff",
-                     "publicIncludeRoots", "privateIncludeRoots"},
+                     "publicIncludeRoots", "privateIncludeRoots",
+                     "sourceDirectory"},
                     "CMake target requires a name, type and bounded optional rules")
             name, kind = target["name"], target["type"]
             require(type(name) is str and len(name) <= 128 and
@@ -2249,6 +2297,18 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                 if key in target:
                     require(type(target[key]) is bool,
                             "CMake explicit requirements must be Boolean")
+            if "sourceDirectory" in target:
+                source_dir = target["sourceDirectory"]
+                require(kind == "STATIC_LIBRARY" and
+                        type(source_dir) is str and
+                        0 < len(source_dir) <= 256 and
+                        re.fullmatch(
+                            r"[A-Za-z0-9_.+-]+(?:/[A-Za-z0-9_.+-]+)*",
+                            source_dir) and
+                        all(part not in (".", "..") for part in
+                            source_dir.split("/")) and
+                        source_dir + "/CMakeLists.txt" in original_paths,
+                        "CMake sourceDirectory must identify an original child")
             for key in ("publicIncludeRoots", "privateIncludeRoots"):
                 if key not in target:
                     continue
@@ -2275,6 +2335,22 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                             library["name"] in consumer.get("linksTo", [])
                             for consumer in targets),
                         "CMake include scopes need a linked executable")
+        if "targetList" in entry:
+            list_goal = entry["targetList"]
+            require(type(list_goal) is dict and
+                    set(list_goal) == {"targets", "requireAppend"} and
+                    type(list_goal["targets"]) is list and
+                    2 <= len(list_goal["targets"]) <= 16 and
+                    all(type(name) is str for name in list_goal["targets"]) and
+                    len(set(list_goal["targets"])) ==
+                    len(list_goal["targets"]) and
+                    type(list_goal["requireAppend"]) is bool and
+                    all(name in targets_by_name and
+                        targets_by_name[name]["type"] == "EXECUTABLE" and
+                        targets_by_name[name].get(
+                            "explicitCxxExtensionsOff") is True
+                        for name in list_goal["targets"]),
+                    "CMake target list needs declared executables with authored OFF")
         selected = block["cmake"].get("target")
         require(selected in targets_by_name and
                 targets_by_name[selected]["type"] == "EXECUTABLE",

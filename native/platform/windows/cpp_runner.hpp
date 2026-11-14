@@ -144,12 +144,18 @@ struct CppCmakeTargetEvidence {
     std::vector<std::string> authored_public_include_directories;
     std::vector<std::string> authored_private_include_directories;
 };
+struct CppCmakeTargetListApplication {
+    std::vector<std::string> targets;
+    bool used_append=false;
+};
 struct CppCmakeGraphEvidence {
     std::string project_fingerprint, configuration_fingerprint, project_name;
     std::vector<CppCmakeTargetEvidence> targets;
     // New fields are appended so historical aggregate initializations stay valid.
     std::string minimum_cmake_version;
     std::vector<std::pair<std::string,std::string>> authored_option_defaults;
+    std::vector<std::pair<std::string,std::string>> authored_status_messages;
+    std::vector<CppCmakeTargetListApplication> authored_target_lists;
 };
 // This separately compiled result is bound to the OFF configuration fingerprint.
 struct CppCmakeOptionProbe {

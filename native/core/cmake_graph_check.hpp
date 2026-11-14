@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace lgaed::curriculum {
@@ -48,6 +49,9 @@ struct CmakeRequiredTarget {
     // PUBLIC paths must be received by actual linked consumers. PRIVATE
     // paths must be restricted to the owning library's compilation.
     std::vector<std::string> public_include_roots,private_include_roots;
+    // Optional authored subproject location, confirmed by CMake's actual
+    // codemodel directoryIndex, not by printed messages or source filenames.
+    std::string source_directory;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
 // A binary option exercise verifies ON and an independent default-OFF build
@@ -56,6 +60,13 @@ struct CmakeOptionSelectionRequirement {
     std::string name, library_target, disabled_source, disabled_stdout;
     bool operator==(const CmakeOptionSelectionRequirement&) const = default;
 };
+// Require a genuinely authored variable/list used to set properties on the
+// declared consumers. CMake's inherited toolchain values do not suffice.
+struct CmakeTargetListRequirement {
+    std::vector<std::string> targets;
+    bool require_append=false;
+    bool operator==(const CmakeTargetListRequirement&) const = default;
+};
 struct CmakeGraphRequirement {
     std::string project_name;
     std::vector<CmakeRequiredTarget> targets;
@@ -63,6 +74,12 @@ struct CmakeGraphRequirement {
     // generated codemodel root directory. Does not imply compiler features.
     std::string minimum_cmake_version;
     std::optional<CmakeOptionSelectionRequirement> option_selection;
+    // SHA-256 of every original non-CMake file after any specifically
+    // allowed source repair. Generated from the immutable original lesson.
+    std::vector<std::pair<std::string,std::string>> source_integrity;
+    // Ordered status markers bound to the exact original CMake source file.
+    std::vector<std::pair<std::string,std::string>> configure_message_order;
+    std::optional<CmakeTargetListRequirement> target_list;
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 

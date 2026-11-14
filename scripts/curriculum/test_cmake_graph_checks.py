@@ -328,6 +328,13 @@ class OriginalCmakeIncludeScopeTest(unittest.TestCase):
                 "activity": owner,
                 **({} if aforo else {"project": "Tiempos"}),
                 "minimumCmakeVersion": "3.20",
+                "sourceIntegrity": {
+                    "preserveNonCmake": True,
+                    **({"removePrefix": {
+                        "path": "app/main.cpp",
+                        "text": '#include "ajuste.h"\n',
+                    }} if owner == "block_0007_0011" else {}),
+                },
                 "targets": [
                     {"name": "consultar_aforo" if aforo else "medir",
                      "type": "EXECUTABLE",
@@ -387,6 +394,28 @@ class OriginalCmakeIncludeScopeTest(unittest.TestCase):
         with self.assertRaises(state.LayoutError):
             state.validate(candidate)
 
+    def test_non_cmake_source_integrity_is_original_and_immutable(self):
+        baseline = self.after["compilerCmakeGraphChecks"]
+        for value in (None, {}, {"preserveNonCmake": False},
+                      {"preserveNonCmake": 1},
+                      {"preserveNonCmake": True, "unknown": 1},
+                      {"preserveNonCmake": True, "removePrefix": {
+                          "path": "app/main.cpp", "text": "not-a-prefix"}}):
+            altered = deepcopy(self.after)
+            altered["compilerCmakeGraphChecks"][2]["sourceIntegrity"] = value
+            with self.subTest(invalid=value):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(altered)
+        self.assertEqual(
+            baseline[2]["sourceIntegrity"]["removePrefix"]["text"],
+            '#include "ajuste.h"\n')
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][2]["sourceIntegrity"] = {
+            "preserveNonCmake": True}
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
+
     def test_published_public_private_contracts_are_immutable(self):
         changed = deepcopy(self.after)
         changed["compilerCmakeGraphChecks"][1]["targets"][1].pop(
@@ -399,6 +428,247 @@ class OriginalCmakeIncludeScopeTest(unittest.TestCase):
             "publicIncludeRoots"] = ["src"]
         with self.assertRaises(state.LayoutError):
             state.validate(changed)
+
+
+
+# U3L2 requires a real child CMakeLists rather than a root-only library
+# that happens to print the same seven case results.
+REORGANIZE_LESSON = ROOT / (
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json"
+)
+
+
+class OriginalCmakeSubdirectoryTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = json.loads(REORGANIZE_LESSON.read_text(encoding="utf-8"))
+        self.after = deepcopy(self.before)
+        self.after["compilerCmakeGraphChecks"] = [
+            {
+                "activity": "block_0006_0003",
+                "project": "EnviosComprobables",
+                "minimumCmakeVersion": "3.20",
+                "sourceIntegrity": {"preserveNonCmake": True},
+                "configureMessageOrder": [
+                    {"path": "CMakeLists.txt", "text": "raiz_antes"},
+                    {"path": "componente/CMakeLists.txt", "text": "componente"},
+                    {"path": "CMakeLists.txt", "text": "raiz_despues"},
+                ],
+                "targets": [
+                    {"name": "comprobar_cajas", "type": "EXECUTABLE",
+                     "sources": ["pruebas/cajas_casos.cpp"],
+                     "linksTo": ["envios"], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": "consultar_cajas", "type": "EXECUTABLE",
+                     "sources": ["app/consulta.cpp"], "linksTo": ["envios"],
+                     "exactSources": True, "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": "envios", "type": "STATIC_LIBRARY",
+                     "sources": ["componente/src/cajas.cpp"],
+                     "sourceDirectory": "componente",
+                     "publicIncludeRoots": ["componente/publico"],
+                     "exactSources": True, "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                ],
+            },
+            {
+                "activity": "block_0008_0003",
+                "project": "LotesLocales",
+                "minimumCmakeVersion": "3.20",
+                "sourceIntegrity": {"preserveNonCmake": True},
+                "targets": [
+                    {"name": "verificar_lotes", "type": "EXECUTABLE",
+                     "sources": ["pruebas/lotes_casos.cpp"],
+                     "linksTo": ["lotes"], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": "consultar_lotes", "type": "EXECUTABLE",
+                     "sources": ["programa/consulta.cpp"],
+                     "linksTo": ["lotes"], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": "lotes", "type": "STATIC_LIBRARY",
+                     "sources": ["codigo/lotes/motor/cantidad.cpp"],
+                     "sourceDirectory": "codigo/lotes",
+                     "publicIncludeRoots": ["codigo/lotes/publico"],
+                     "exactSources": True, "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                ],
+            },
+        ]
+
+    def test_original_subproject_owners_preserve_blocks_and_history(self):
+        state.validate(self.before)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_child_directory_must_be_real_original_cmake(self):
+        for invalid in ("", ".", "..", "../componente", "/componente",
+                        "componente/", "componente/..", "otro",
+                        "componente/src", "componente//"):
+            edited = deepcopy(self.after)
+            edited["compilerCmakeGraphChecks"][0]["targets"][2][
+                "sourceDirectory"] = invalid
+            with self.subTest(directory=invalid):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(edited)
+        for invalid in (None, 1, [], True):
+            edited = deepcopy(self.after)
+            edited["compilerCmakeGraphChecks"][0]["targets"][2][
+                "sourceDirectory"] = invalid
+            with self.subTest(type_value=invalid):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(edited)
+        edited = deepcopy(self.after)
+        edited["compilerCmakeGraphChecks"][0]["targets"][0][
+            "sourceDirectory"] = "componente"
+        with self.assertRaises(state.LayoutError):
+            state.validate(edited)
+
+    def test_status_message_order_is_bounded_and_immutable(self):
+        invalid_messages = (
+            None, [],
+            [{"path": "CMakeLists.txt", "text": ""}],
+            [{"path": "CMakeLists.txt", "text": 1}],
+            [{"path": "CMakeLists.txt", "text": "a\n"}],
+            [{"path": "inexistente/CMakeLists.txt", "text": "componente"}],
+            [{"path": "CMakeLists.txt", "text": "raiz_antes",
+              "unknown": 1}],
+        )
+        for value in invalid_messages:
+            changed = deepcopy(self.after)
+            changed["compilerCmakeGraphChecks"][0][
+                "configureMessageOrder"] = value
+            with self.subTest(value=value):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(changed)
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][0][
+            "configureMessageOrder"].reverse()
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
+
+    def test_source_directory_cannot_change_after_publication(self):
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][0]["targets"][2].pop(
+            "sourceDirectory")
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][1]["targets"][2][
+            "sourceDirectory"] = "componente"
+        with self.assertRaises(state.LayoutError):
+            state.validate(changed)
+
+
+# U3L4 teaches real CMake variable/list propagation. Compiler defaults
+# already set extensions OFF, so stdout and property values are insufficient.
+TARGET_LIST_LESSON = ROOT / (
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "comprobaciones_repetibles/lesson_datos_y_listas_de_objetivos.json"
+)
+
+
+class OriginalCmakeTargetListTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = json.loads(TARGET_LIST_LESSON.read_text(encoding="utf-8"))
+        self.after = deepcopy(self.before)
+        owners = [
+            ("block_0003_0004", False, False),
+            ("block_0004_0007", False, False),
+            ("block_0006_0004", True, False),
+            ("block_0008_0004", False, True),
+        ]
+        checks = []
+        for owner, append, lots in owners:
+            consumer = "consultar_lotes" if lots else "consultar_cajas"
+            checker = "verificar_lotes" if lots else "comprobar_cajas"
+            library = "lotes" if lots else "envios"
+            checks.append({
+                "activity": owner,
+                "project": "LotesLocales" if lots else "EnviosComprobables",
+                "minimumCmakeVersion": "3.20",
+                "sourceIntegrity": {"preserveNonCmake": True},
+                "targets": [
+                    {"name": checker, "type": "EXECUTABLE",
+                     "sources": ["pruebas/lotes_casos.cpp" if lots else
+                                 "pruebas/cajas_casos.cpp"],
+                     "linksTo": [library], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": consumer, "type": "EXECUTABLE",
+                     "sources": ["programa/consulta.cpp" if lots else
+                                 "app/consulta.cpp"],
+                     "linksTo": [library], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": library, "type": "STATIC_LIBRARY",
+                     "sources": ["codigo/lotes/motor/cantidad.cpp" if lots else
+                                 "componente/src/cajas.cpp"],
+                     "sourceDirectory": "codigo/lotes" if lots else "componente",
+                     "publicIncludeRoots": [
+                         "codigo/lotes/publico" if lots else "componente/publico"],
+                     "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                ],
+                "targetList": {
+                    "targets": [consumer, checker], "requireAppend": append,
+                },
+            })
+        self.after["compilerCmakeGraphChecks"] = checks
+
+    def test_append_only_rubrics_preserve_all_four_original_editors(self):
+        state.validate(self.before)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_list_contract_rejects_invalid_targets_and_flags(self):
+        errors = [
+            lambda c: c.update(targetList={"targets": [], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": ["consultar_cajas"],
+                                          "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "consultar_cajas"], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "envios"], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "externo"], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "comprobar_cajas"], "requireAppend": "yes"}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "comprobar_cajas"], "requireAppend": False,
+                                          "unknown": True}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "comprobar_cajas"], "requireAppend": None}),
+            lambda c: c["targets"][1].update(explicitCxxExtensionsOff=False),
+        ]
+        for change in errors:
+            candidate = deepcopy(self.after)
+            change(candidate["compilerCmakeGraphChecks"][0])
+            with self.subTest(change=change):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(candidate)
+
+    def test_append_requirement_cannot_be_silently_removed(self):
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][2]["targetList"][
+            "requireAppend"] = False
+        state.validate(candidate)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, candidate)
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][2].pop("targetList")
+        state.validate(candidate)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, candidate)
 
 
 if __name__ == "__main__":

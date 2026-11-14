@@ -1026,10 +1026,98 @@ o la publicación de `interno`, no se acreditan aunque la salida coincida.
 
 La comprobación admite rutas relativas al archivo CMake y rutas absolutas
 equivalentes de la fuente. Los valores dinámicos no atribuibles con certeza
-al objetivo no conceden crédito por mera coincidencia. Los nuevos objetivos
+al objetivo no conceden crédito por mera coincidencia.
+
+Para conservar también los archivos C++ originales, el propietario puede
+declarar `"sourceIntegrity": {"preserveNonCmake": true}`. La raíz
+complementaria fija la huella SHA-256 de cada archivo no CMake del editor,
+sin impedir que el alumno repare `CMakeLists.txt`. En la actividad cuyo
+enunciado solicita **retirar únicamente una inclusión experimental**, es
+posible declarar una eliminación precisa de prefijo:
+
+```json
+"sourceIntegrity": {
+  "preserveNonCmake": true,
+  "removePrefix": {
+    "path": "app/main.cpp",
+    "text": "#include \"ajuste.h\"\n"
+  }
+}
+```
+
+El editor continúa mostrando y guardando su código inicial original. El
+nuevo objetivo acepta solamente el contenido esperado tras esa eliminación,
+más los demás archivos sin cambios. Un programa con salida idéntica pero
+fuentes modificadas fuera de ese permiso no obtiene la acreditación. Los nuevos objetivos
 se incorporan en la raíz de la lección sin cambiar los proyectos, direcciones,
 borradores o recibos históricos. El primer caso correcto continúa siendo
 suficiente para avanzar, siempre que incluya la evidencia estructural.
+
+### Biblioteca definida en un subdirectorio CMake original
+
+Para las lecciones U3L2, el objetivo estático admite la propiedad opcional
+`"sourceDirectory": "componente"` o, según el proyecto,
+`"sourceDirectory": "codigo/lotes"`. La ruta debe identificar un
+`CMakeLists.txt` de subdirectorio presente en los archivos originales.
+El objetivo debe aparecer en ese directorio del grafo generado por CMake.
+
+La comprobación se fundamenta en el índice `directoryIndex` de **File API
+codemodel v2**, no en el nombre de los archivos de código fuente ni en una
+cadena mostrada por el programa. Una biblioteca declarada solo en la raíz
+se rechaza aunque compile exactamente los mismos archivos, enlace a los
+mismos consumidores y produzca las mismas salidas. La sintaxis específica
+de `add_subdirectory` puede variar siempre que el árbol generado demuestre
+la estructura solicitada. Una rúbrica puede añadir la propiedad independiente
+`configureMessageOrder`, que observa los mensajes `STATUS` realmente
+ejecutados y los archivos CMake originales donde se emitieron:
+
+```json
+"configureMessageOrder": [
+  {"path": "CMakeLists.txt", "text": "raiz_antes"},
+  {"path": "componente/CMakeLists.txt", "text": "componente"},
+  {"path": "CMakeLists.txt", "text": "raiz_despues"}
+]
+```
+
+Se utiliza la traza JSON de CMake, que registra el orden de ejecución y
+el archivo de origen, no una búsqueda literal de mensajes en los archivos
+ni solamente el registro de salida. Una solución que imprime
+`componente` desde la raíz sin ejecutarlo dentro del archivo del hijo
+se rechaza, incluso si su biblioteca y los resultados son correctos.
+Se permiten otros mensajes intermedios, pero no omitir ni reordenar los
+hitos declarados.
+
+### Lista de objetivos aplicada a las propiedades CMake
+
+Los ejercicios U3L4 pueden incorporar un contrato en la raíz de la lección:
+
+```json
+"targetList": {
+  "targets": ["consultar_cajas", "comprobar_cajas"],
+  "requireAppend": false
+}
+```
+
+El contrato exige que una **variable real de CMake**, creada durante la
+configuración, contenga exactamente los ejecutables declarados y se use
+sin comillas como lista de argumentos en una aplicación ejecutada de
+`CXX_EXTENSIONS OFF`. No se exige un nombre particular para la variable.
+La evidencia combina el evento de la traza JSON (con argumentos expandidos)
+con el primer argumento original de ese mismo comando y la variable creada
+mediante `set`. La ubicación y la revisión de la fuente quedan vinculadas
+a la configuración compilada. No basta declarar la variable, imprimir su
+contenido, asignar `OFF` con nombres literales ni heredar el valor del
+perfil Windows.
+
+Con `"requireAppend": true`, la lista debe haberse ampliado mediante
+`list(APPEND)` **antes** de utilizarla para establecer la propiedad a los
+dos consumidores. Se admite aplicar la propiedad después de ampliar la lista
+o volver a aplicarla posteriormente con la lista completa. Una ampliación
+tardía sin reaplicación no acredita esa consigna, aunque los programas
+conserven las mismas salidas. También se admite `set_property(TARGET ...)`
+cuando la lista se utiliza y la propiedad se observa en los objetivos
+correspondientes. Las otras condiciones de estructura, compilación y salida
+continúan vigentes; basta un primer caso correcto con todas ellas satisfechas.
 
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,
