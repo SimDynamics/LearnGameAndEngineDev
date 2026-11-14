@@ -955,6 +955,27 @@ target_link_libraries(cotizar PRIVATE tarifas)
         evaluate_cpp_output_check(*option_after.output_check,option_fresh,
             option_request.revision).verdict==curriculum::OutputVerdict::correct,
         "Real CMake/MSVC failed U2L3's independent ON and default-OFF projects");
+    // Neither a forged OFF run nor a receipt from a different source
+    // revision may complete the existing editor, even with correct ON stdout.
+    auto forged_off=option_run;
+    check(forged_off.cmake_option_probe.has_value(),
+        "The independent OFF probe must carry bound result evidence");
+    forged_off.cmake_option_probe->project_fingerprint="0";
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted an OFF result from an unrelated project fingerprint");
+    forged_off=option_run;
+    forged_off.cmake_option_probe->execution.stdout_bytes="0:4:10";
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted ON stdout as evidence of OFF selection");
+    forged_off=option_run;
+    forged_off.cmake_option_probe->graph.reset();
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted OFF stdout without a generated project graph");
+    auto mismatched_option=option_request;
+    for(auto& file:mismatched_option.project_files)
+        if(file.first=="CMakeLists.txt")file.second+="\n# revision distinta\n";
+    check(!capture_cpp_execution(mismatched_option,option_run).cmake_graph_correct,
+        "U2L3 reused previous ON/OFF graph evidence after changing source");
     auto original_option_request=option_request;
     original_option_request.capture_cmake_graph=false;
     original_option_request.cmake_graph_check.reset();
