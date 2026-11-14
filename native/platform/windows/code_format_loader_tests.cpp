@@ -579,9 +579,11 @@ void verify_real_u12_editorials(const std::filesystem::path& fixtures) {
             const auto& current_returns=after.state_layout.editorial_returns;
             check(current_returns.size()==old_returns.size()+1,
                   "U12L6 must explicitly return to its earlier full editorial payload");
-            const auto entry=std::find_if(current_returns.begin(),current_returns.end(),
+            // This owner already has an earlier explicit return. Inspect
+            // the most recent one, not the first historical predecessor.
+            const auto entry=std::find_if(current_returns.rbegin(),current_returns.rend(),
                 [&](const auto& value){return value.id==sample.id;});
-            check(entry!=current_returns.end()&&
+            check(entry!=current_returns.rend()&&
                   entry->previous_raw_json.find("texto << hex << 31")!=std::string::npos,
                   "The native loader lost the original abbreviated U12L6 reading");
         }else {

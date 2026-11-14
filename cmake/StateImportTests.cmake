@@ -109,7 +109,7 @@ endforeach()
 foreach(u12_kind IN ITEMS formatting group)
     foreach(u12_side IN ITEMS before after changed-answer stale-semantic forged-proof)
         list(APPEND LGAED_CODE_FORMAT_FIXTURES
-            "\${LGAED_CODE_FORMAT_FIXTURE_DIR}/u12-\${u12_kind}.\${u12_side}.json")
+            "${LGAED_CODE_FORMAT_FIXTURE_DIR}/u12-${u12_kind}.${u12_side}.json")
     endforeach()
 endforeach()
 add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
