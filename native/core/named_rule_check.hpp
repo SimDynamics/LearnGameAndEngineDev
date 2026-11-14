@@ -593,12 +593,16 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     // still propagate when there is no inner shadowing declaration.
     struct Alias { std::string name; std::size_t count,depth; };
     std::vector<Alias> aliases;
+    // An inner declaration with the same spelling as the required rule
+    // temporarily hides the outer rule; it does not invalidate that rule.
+    std::vector<std::size_t> named_rule_shadows;
     const auto uses=[&](std::size_t first,std::size_t last) {
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
             if(absorbed_by_boolean_literal(t,i,first,last)||
                !productive(t,i,bounds.open+1))continue;
-            std::size_t contribution=id(t[i],name)?1:0;
+            std::size_t contribution=
+                named_rule_shadows.empty()&&id(t[i],name)?1:0;
             for(auto alias=aliases.rbegin();alias!=aliases.rend();++alias)
                 if(id(t[i],alias->name)) {
                     contribution=alias->count;
@@ -660,6 +664,9 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             if(nesting) {
                 std::erase_if(aliases,[&](const Alias& alias){
                     return alias.depth==nesting;
+                });
+                std::erase_if(named_rule_shadows,[&](std::size_t depth){
+                    return depth==nesting;
                 });
                 --nesting;
             }
@@ -776,8 +783,16 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=initializer+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name) {
-                if(declared)return 0; // Ambiguous shadowing of the named rule.
-                declared=true;
+                if(nesting==0) {
+                    // Two declarations in one function scope are not an
+                    // authenticated local agreement.
+                    if(declared)return 0;
+                    declared=true;
+                }else {
+                    // C++ permits a nested shadow. It can neither borrow
+                    // nor destroy the outer constant's source evidence.
+                    named_rule_shadows.push_back(nesting);
+                }
             }else {
                 const auto count=uses(initializer+1,last);
                 // A declaration within braces shadows rather than updating

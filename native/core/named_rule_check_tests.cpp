@@ -163,6 +163,52 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            {
+                const int capacidad{8};
+                (void)capacidad;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "An unused inner constant shadow must not erase a valid outer capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            {
+                const int capacidad{8};
+                {
+                    const int capacidad{2};
+                    (void)capacidad;
+                }
+                (void)capacidad;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Nested shadowing scopes must restore the original constant on exit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                const int capacidad{4};
+                total = (piezas + capacidad - 1) / capacidad;
+            }
+            return total;
+        })cpp",rules,false,
+        "An inner shadow cannot manufacture uses of an unused outer capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total = (piezas + capacidad - 1) / capacidad;
+            {
+                const int capacidad{8};
+                (void)capacidad;
+            }
+            return total;
+        })cpp",rules,true,
+        "A valid outer alias survives an unrelated same-named inner constant");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             int total{0};
             {
                 const int total = capacidad + capacidad;
