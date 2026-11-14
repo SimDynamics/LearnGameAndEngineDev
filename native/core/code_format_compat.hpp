@@ -189,13 +189,37 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
     constexpr std::string_view names[]{
         "CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE"
     };
+    const auto command=[](std::string_view token,std::string_view name) {
+        if(!token.starts_with("word:"))return false;
+        token.remove_prefix(5);
+        if(token.size()!=name.size())return false;
+        for(std::size_t i=0;i<name.size();++i) {
+            const auto ch=token[i];
+            if((ch>='A'&&ch<='Z'?ch-'A'+'a':ch)!=name[i])return false;
+        }
+        return true;
+    };
+    // Bracket arguments ordinarily have no variable expansion, but can be
+    // consumed later by string(CONFIGURE). Even a template first stored via
+    // set() can become position-dependent when it reaches that command.
+    bool configures_bracket_arguments=false;
+    for(std::size_t i=0;i+2<tokens.size();++i) {
+        if(command(tokens[i],"string")&&tokens[i+1]=="paren:("&&
+           command(tokens[i+2],"configure"))configures_bracket_arguments=true;
+        if(i+4<tokens.size()&&command(tokens[i],"cmake_language")&&
+           tokens[i+1]=="paren:("&&command(tokens[i+2],"call")&&
+           command(tokens[i+3],"string")&&command(tokens[i+4],"configure"))
+            configures_bracket_arguments=true;
+    }
     for(const auto& token:tokens) {
-        if(!token.starts_with("word:")&&!token.starts_with("quoted:"))continue;
+        const bool argument=token.starts_with("word:")||token.starts_with("quoted:");
+        const bool configurable_bracket=configures_bracket_arguments&&
+            token.starts_with("bracket:")&&!token.starts_with("bracket:#");
+        if(!argument&&!configurable_bracket)continue;
         for(const auto name:names) {
-            // ${VAR} is evaluated in ordinary arguments. @VAR@ can also be
-            // substituted by string(CONFIGURE) and by older CMake policies.
-            // Reject both when the physical command position changes.
-            if(token==std::string("word:")+std::string(name)||
+            // ${VAR} expands in ordinary arguments; @VAR@ can be substituted
+            // during string(CONFIGURE) or by older CMake parsing policies.
+            if((argument&&token==std::string("word:")+std::string(name))||
                token.find("${"+std::string(name)+"}")!=std::string::npos||
                token.find("@"+std::string(name)+"@")!=std::string::npos)
                 return true;
