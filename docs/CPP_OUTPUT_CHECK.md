@@ -1026,7 +1026,29 @@ o la publicación de `interno`, no se acreditan aunque la salida coincida.
 
 La comprobación admite rutas relativas al archivo CMake y rutas absolutas
 equivalentes de la fuente. Los valores dinámicos no atribuibles con certeza
-al objetivo no conceden crédito por mera coincidencia. Los nuevos objetivos
+al objetivo no conceden crédito por mera coincidencia.
+
+Para conservar también los archivos C++ originales, el propietario puede
+declarar `"sourceIntegrity": {"preserveNonCmake": true}`. La raíz
+complementaria fija la huella SHA-256 de cada archivo no CMake del editor,
+sin impedir que el alumno repare `CMakeLists.txt`. En la actividad cuyo
+enunciado solicita **retirar únicamente una inclusión experimental**, es
+posible declarar una eliminación precisa de prefijo:
+
+```json
+"sourceIntegrity": {
+  "preserveNonCmake": true,
+  "removePrefix": {
+    "path": "app/main.cpp",
+    "text": "#include \"ajuste.h\"\n"
+  }
+}
+```
+
+El editor continúa mostrando y guardando su código inicial original. El
+nuevo objetivo acepta solamente el contenido esperado tras esa eliminación,
+más los demás archivos sin cambios. Un programa con salida idéntica pero
+fuentes modificadas fuera de ese permiso no obtiene la acreditación. Los nuevos objetivos
 se incorporan en la raíz de la lección sin cambiar los proyectos, direcciones,
 borradores o recibos históricos. El primer caso correcto continúa siendo
 suficiente para avanzar, siempre que incluya la evidencia estructural.

@@ -328,6 +328,13 @@ class OriginalCmakeIncludeScopeTest(unittest.TestCase):
                 "activity": owner,
                 **({} if aforo else {"project": "Tiempos"}),
                 "minimumCmakeVersion": "3.20",
+                "sourceIntegrity": {
+                    "preserveNonCmake": True,
+                    **({"removePrefix": {
+                        "path": "app/main.cpp",
+                        "text": '#include "ajuste.h"\n',
+                    }} if owner == "block_0007_0011" else {}),
+                },
                 "targets": [
                     {"name": "consultar_aforo" if aforo else "medir",
                      "type": "EXECUTABLE",
@@ -386,6 +393,28 @@ class OriginalCmakeIncludeScopeTest(unittest.TestCase):
             "linksTo"] = []
         with self.assertRaises(state.LayoutError):
             state.validate(candidate)
+
+    def test_non_cmake_source_integrity_is_original_and_immutable(self):
+        baseline = self.after["compilerCmakeGraphChecks"]
+        for value in (None, {}, {"preserveNonCmake": False},
+                      {"preserveNonCmake": 1},
+                      {"preserveNonCmake": True, "unknown": 1},
+                      {"preserveNonCmake": True, "removePrefix": {
+                          "path": "app/main.cpp", "text": "not-a-prefix"}}):
+            altered = deepcopy(self.after)
+            altered["compilerCmakeGraphChecks"][2]["sourceIntegrity"] = value
+            with self.subTest(invalid=value):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(altered)
+        self.assertEqual(
+            baseline[2]["sourceIntegrity"]["removePrefix"]["text"],
+            '#include "ajuste.h"\n')
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][2]["sourceIntegrity"] = {
+            "preserveNonCmake": True}
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
 
     def test_published_public_private_contracts_are_immutable(self):
         changed = deepcopy(self.after)

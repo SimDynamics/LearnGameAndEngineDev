@@ -1087,6 +1087,7 @@ target_link_libraries(cotizar PRIVATE tarifas)
     include_json.insert(include_at,R"json(  "compilerCmakeGraphChecks":[
       {"activity":"block_0004_0002","project":"Tiempos",
        "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
        "targets":[
          {"name":"medir","type":"EXECUTABLE",
           "sources":["app/main.cpp"],"exactSources":true,
@@ -1099,6 +1100,7 @@ target_link_libraries(cotizar PRIVATE tarifas)
        ]},
       {"activity":"block_0007_0008","project":"Tiempos",
        "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
        "targets":[
          {"name":"medir","type":"EXECUTABLE",
           "sources":["app/main.cpp"],"exactSources":true,
@@ -1111,6 +1113,9 @@ target_link_libraries(cotizar PRIVATE tarifas)
        ]},
       {"activity":"block_0007_0011","project":"Tiempos",
        "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true,
+         "removePrefix":{"path":"app/main.cpp",
+                         "text":"#include \"ajuste.h\"\n"}},
        "targets":[
          {"name":"medir","type":"EXECUTABLE",
           "sources":["app/main.cpp"],"exactSources":true,
@@ -1122,6 +1127,7 @@ target_link_libraries(cotizar PRIVATE tarifas)
           "explicitCxx20":true,"explicitCxxExtensionsOff":true}
        ]},
       {"activity":"block_0009_0004","minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
        "targets":[
          {"name":"consultar_aforo","type":"EXECUTABLE",
           "sources":["programas/consulta.cpp"],"exactSources":true,
@@ -1224,6 +1230,28 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
             evaluate_cpp_output_check(*after.output_check,fresh,request.revision)
                 .verdict==curriculum::OutputVerdict::correct,
             "Actual MSVC U2L4 project did not prove correct PUBLIC/PRIVATE roots");
+        if(page==7&&block==11) {
+            // The original experimental include may be removed, but the
+            // student's own unrelated source edits cannot hide in a matching
+            // runtime output. Execute the modified source for real.
+            auto modified=request;
+            modified.request_id=include_request_id;
+            modified.revision=include_request_id++;
+            modified.project_key+="/extra-cpp-edit";
+            bool edited=false;
+            for(auto& file:modified.project_files)
+                if(file.first=="app/main.cpp") {
+                    file.second+="// Edición adicional no autorizada\n";
+                    edited=true;
+                }
+            check(edited,"U2L4 repaired client source disappeared");
+            const auto altered=run_cpp(modified);
+            ran(altered);
+            const auto altered_capture=capture_cpp_execution(modified,altered);
+            check(altered.execution.stdout_bytes==expected_stdout&&
+                !altered_capture.cmake_graph_correct,
+                "An unrelated C++ edit incorrectly earned the original U2L4 goal");
+        }
         auto original_request=request;
         original_request.capture_cmake_graph=false;
         original_request.cmake_graph_check.reset();
