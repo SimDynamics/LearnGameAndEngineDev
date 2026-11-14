@@ -973,6 +973,70 @@ Cada contrato ya publicado permanece inmutable. Es posible añadir
 nuevos propietarios al final de la declaración mediante una transición
 autenticada, sin modificar ni reordenar los anteriores.
 
+### Opciones de compilación declaradas y efectivas por objetivo
+
+Los ejercicios que enseñan avisos del compilador pueden exigir opciones
+concretas mediante `"authoredCompileOptions"`, dentro de cada objetivo
+de `compilerCmakeGraphChecks`:
+
+```json
+{
+  "name": "cantidades",
+  "type": "STATIC_LIBRARY",
+  "sources": ["cantidad.cpp"],
+  "exactSources": true,
+  "authoredCompileOptions": ["/W4", "/permissive-"]
+}
+```
+
+La lista acepta entre una y ocho opciones distintas y sencillas, iniciadas
+con `/` o `-`, sin expresiones arbitrarias ni instrucciones incrustadas.
+Este contrato se añade sólo al crear la declaración estructural del
+propietario: una rúbrica ya publicada no se puede reescribir para exigir
+nuevas opciones a aciertos históricos.
+
+La evidencia consta de **dos comprobaciones independientes**. La traza
+privada de CMake debe mostrar que el alumno ejecutó
+`target_compile_options(cantidades PRIVATE /W4 /permissive-)`, u otra
+declaración equivalente `PRIVATE`/`PUBLIC` del objetivo correcto. Además,
+los fragmentos de compilación generados por **CMake File API codemodel v2**
+deben contener esas opciones para el mismo objetivo. Recibir `/W4` desde
+el perfil Windows, declararlo en otro objetivo o escribir una cadena sin
+ejecutar no satisface el contrato. Tampoco sirve
+`target_compile_options(cantidades INTERFACE /W4 /permissive-)` para exigir
+opciones de **compilación de la propia biblioteca**: `INTERFACE` transmite
+requisitos a consumidores, pero no los aplica a `cantidades`. En cambio,
+`PUBLIC` sí puede ser válido, porque se aplica tanto a la biblioteca como
+a los consumidores.
+
+La segunda comprobación rechaza también la simulación de una declaración
+correcta cuyo efecto se borra posteriormente, por ejemplo, con
+`set_property(TARGET cantidades PROPERTY COMPILE_OPTIONS "")`. Aunque la
+traza documente la llamada original y las salidas sigan siendo correctas,
+las opciones no llegaron a la compilación del objetivo. Cada contraejemplo
+utiliza un proyecto aislado y conserva las fuentes y los recibos históricos.
+Los argumentos dinámicos que no puedan atribuirse de forma segura no
+conceden crédito.
+
+Para enseñar las mismas intenciones con compiladores distintos, CMake puede
+seleccionar opciones apropiadas en sus ramas de configuración:
+
+```cmake
+if(MSVC)
+  target_compile_options(cantidades PRIVATE /W4 /permissive-)
+else()
+  target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+```
+
+Esto verifica que se **declararon y recibieron las opciones**, pero no
+sustituye el diagnóstico realmente emitido ni demuestra por sí solo que el
+programa maneje bien los casos límite. U3L7 exige observar la construcción
+defectuosa, reparar la condición y ejecutar la batería original; U3L10
+comprueba también la biblioteca enlazada, los once casos y la conservación
+de los programas. El éxito se acredita sólo con las evidencias exigidas por
+cada objetivo, no mediante una mera salida coincidente.
+
 ### Opción binaria con construcción independiente por defecto
 
 Para las prácticas que seleccionan una biblioteca con una opción booleana, el

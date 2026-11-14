@@ -1921,6 +1921,799 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             "U3L4 credited inherited OFF or an unused/incomplete list");
     }
     std::cout<<"PASS U3L4 four original CMake target-list editors: actual MSVC, APPEND order, historical receipts, spoofed applications rejected\n";
+    // U3L7: exercise the original warning/repair lesson with actual MSVC.
+    // Its published GCC flags remain untouched. A compiler-specific CMake
+    // fixture must emit a diagnostic from cantidad.cpp before the correction.
+    constexpr auto warning_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_leer_avisos_sin_sustituir_las_pruebas.json";
+    const auto warning_lesson=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/warning_relative);
+    const auto& warning_block=warning_lesson.pages.at(2).blocks.at(4);
+    check(warning_block.stable_id=="block_0002_0004"&&warning_block.cmake&&
+        warning_block.output_check&&warning_block.output_check->cases.size()==1&&
+        warning_block.project_files.size()==4,
+        "Original U3L7 warning/repair lesson no longer matches its source");
+    const auto warning_original=warning_block.project_files;
+    CppRunRequest warning_request;
+    warning_request.projects_directory=environment.paths.projects;
+    warning_request.project_key="qa/p2-u3-warning-repair/original-owner";
+    warning_request.request_id=3301;
+    warning_request.revision=3301;
+    warning_request.project_files=warning_original;
+    warning_request.cmake=warning_block.cmake;
+    warning_request.action=CppRunRequest::Action::compile_run;
+    const auto warning_replace=[](std::string& source,
+            std::string_view from,std::string_view to) {
+        const auto at=source.find(from);
+        check(at!=source.npos&&source.find(from,at+from.size())==source.npos,
+            "An original U3L7 source fragment changed");
+        source.replace(at,from.size(),to);
+    };
+    bool adapted_warning_flags=false;
+    for(auto& file:warning_request.project_files)
+        if(file.first=="CMakeLists.txt") {
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)",
+                "if(MSVC)\n"
+                "  target_compile_options(cantidades PRIVATE /W4 /permissive-)\n"
+                "else()\n"
+                "  target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\n"
+                "endif()");
+            adapted_warning_flags=true;
+        }
+    check(adapted_warning_flags&&
+        warning_request.project_files!=warning_original,
+        "U3L7 platform-specific CMake flags were not prepared");
+    CppCmakeGraphRequirement warning_options{
+        "AvisosYContrato",{
+            {"comprobar_cantidad","EXECUTABLE",
+                {"comprobar.cpp"},{"cantidades"},true},
+            {"cantidades","STATIC_LIBRARY",{"cantidad.cpp"},{},true}
+        }};
+    warning_options.minimum_cmake_version="3.20";
+    warning_options.targets.back().authored_compile_options={
+        "/W4","/permissive-"};
+    warning_request.cmake_graph_check=warning_options;
+    warning_request.capture_cmake_graph=true;
+    const auto faulty_warning_run=run_cpp(warning_request);
+    const auto warning_output=
+        faulty_warning_run.compilation.stdout_bytes+
+        faulty_warning_run.compilation.stderr_bytes;
+    // Record the *emitted* MSVC warning code, never an assumed GCC warning
+    // or a fixed diagnostic inferred from the lesson's faulty expression.
+    const auto warning_at=warning_output.find("warning C");
+    const auto warning_first=warning_at==std::string::npos?
+        std::string::npos:warning_output.rfind('\n',warning_at);
+    const auto warning_line_start=warning_first==std::string::npos?0:
+        warning_first+1;
+    const std::string_view warning_line(warning_output.data()+warning_line_start,
+        warning_at==std::string::npos?0:warning_at-warning_line_start);
+    const bool diagnostic_code=warning_at!=std::string::npos&&
+        warning_at+13<=warning_output.size()&&
+        std::ranges::all_of(std::string_view(warning_output).substr(
+            warning_at+9,4),[](unsigned char ch) {
+                return ch>='0'&&ch<='9';
+            });
+    check(diagnostic_code&&warning_line.find("cantidad.cpp")!=
+            std::string_view::npos,
+        "U3L7 MSVC did not emit a source-owned warning with its numeric code");
+    const auto warning_code=warning_output.substr(warning_at+8,5);
+    const auto actual_warning_graph=evaluate_cmake_graph(
+        warning_request,faulty_warning_run,warning_options);
+    check(actual_warning_graph.correct&&
+        faulty_warning_run.error_utf8.empty()&&
+        faulty_warning_run.configuration.succeeded()&&
+        faulty_warning_run.compilation.succeeded()&&
+        faulty_warning_run.execution.status==CppPhaseStatus::completed&&
+        faulty_warning_run.execution.exit_code==1&&
+        faulty_warning_run.execution.stdout_bytes.find("Bateria: ERROR")!=
+            std::string::npos&&
+        warning_output.find("cantidad.cpp")!=std::string::npos&&
+        warning_output.find("warning C")!=std::string::npos&&
+        warning_output.find("D9002")==std::string::npos,
+        "U3L7 did not compile with real MSVC options, report the original "
+        "source warning and reveal the failing boundary checks");
+    const auto actual_commands=read(
+        inspect_cpp_project(warning_request).workspace/L"compile_commands.json");
+    check(actual_commands.find("cantidad.cpp")!=std::string::npos&&
+        actual_commands.find("/W4")!=std::string::npos&&
+        actual_commands.find("/permissive-")!=std::string::npos,
+        "The selected MSVC warning options did not reach the build command");
+    bool warning_repaired=false;
+    for(auto& file:warning_request.project_files)
+        if(file.first=="cantidad.cpp") {
+            warning_replace(file.second,"return (0 <= dato) <= 20;",
+                "return dato >= 0 && dato <= 20;");
+            warning_repaired=true;
+        }
+    check(warning_repaired,"U3L7 original defective function disappeared");
+    warning_request.request_id=3302;
+    ++warning_request.revision;
+    const auto corrected_warning_run=run_cpp(warning_request);
+    ran(corrected_warning_run);
+    const auto expected_warning_output=
+        warning_block.output_check->cases.front().outputs.front();
+    check(matches_native_console_output(
+            corrected_warning_run.execution.stdout_bytes,
+            expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            capture_cpp_execution(warning_request,corrected_warning_run),
+            warning_request.revision).verdict==curriculum::OutputVerdict::correct,
+        "U3L7 repaired inclusive condition did not pass all original cases");
+    // PUBLIC is a valid target-owned declaration: the library receives the
+    // options itself and may also propagate them to its consumers.
+    auto public_warning=warning_request;
+    public_warning.project_key+="/public-library-warning";
+    public_warning.request_id=3307;
+    ++public_warning.revision;
+    for(auto& file:public_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(cantidades PUBLIC /W4 /permissive-)");
+    const auto public_run=run_cpp(public_warning);
+    ran(public_run);
+    const auto public_capture=capture_cpp_execution(public_warning,public_run);
+    const auto public_graph=evaluate_cmake_graph(
+        public_warning,public_run,warning_options);
+    check(public_graph.correct&&public_capture.cmake_graph_correct&&
+        matches_native_console_output(
+            public_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            public_capture,public_warning.revision).verdict==
+                curriculum::OutputVerdict::correct,
+        "U3L7 failed to accept effective PUBLIC compiler options on the library: "+
+        public_graph.reason);
+    // The same warning flags applied to the checker instead of cantidades
+    // cannot satisfy a library-scoped compiler contract.
+    auto misplaced_warning=warning_request;
+    misplaced_warning.project_key+="/checker-options-instead-of-library";
+    misplaced_warning.request_id=3308;
+    ++misplaced_warning.revision;
+    for(auto& file:misplaced_warning.project_files)
+        if(file.first=="CMakeLists.txt") {
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "# The library has no target-owned warning flags");
+            // CMake requires the executable to exist before attaching its
+            // options. Preserve that ordering in this negative control.
+            warning_replace(file.second,
+                "add_executable(comprobar_cantidad comprobar.cpp)",
+                "add_executable(comprobar_cantidad comprobar.cpp)\n"
+                "target_compile_options(comprobar_cantidad PRIVATE /W4 /permissive-)");
+        }
+    const auto misplaced_run=run_cpp(misplaced_warning);
+    ran(misplaced_run);
+    const auto misplaced_capture=capture_cpp_execution(
+        misplaced_warning,misplaced_run);
+    const auto misplaced_graph=evaluate_cmake_graph(
+        misplaced_warning,misplaced_run,warning_options);
+    check(matches_native_console_output(
+            misplaced_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            misplaced_capture,misplaced_warning.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !misplaced_graph.correct&&!misplaced_capture.cmake_graph_correct&&
+        misplaced_graph.reason.find("target_compile_options")!=std::string::npos,
+        "U3L7 wrongly credited executable-only options to the static library");
+    // A global /W4 default must not replace an authored library setting.
+    auto inherited=warning_request;
+    inherited.project_key+="/inherited-warning-only";
+    inherited.request_id=3304;
+    ++inherited.revision;
+    for(auto& file:inherited.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "# Deliberately no target-specific MSVC option");
+    const auto inherited_run=run_cpp(inherited);
+    ran(inherited_run);
+    const auto inherited_capture=capture_cpp_execution(
+        inherited,inherited_run);
+    const auto inherited_goal=evaluate_cmake_graph(
+        inherited,inherited_run,warning_options);
+    check(matches_native_console_output(
+            inherited_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            inherited_capture,inherited.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !inherited_goal.correct&&!inherited_capture.cmake_graph_correct&&
+        inherited_goal.reason.find("target_compile_options")!=std::string::npos,
+        "Inherited /W4 incorrectly credited an authored CMake warning");
+    // An INTERFACE-only flag reaches consumers but never proves that the
+    // library itself was configured to compile with that warning level.
+    auto interface_only=warning_request;
+    interface_only.project_key+="/interface-warning-only";
+    interface_only.request_id=3305;
+    ++interface_only.revision;
+    for(auto& file:interface_only.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(cantidades INTERFACE /W4 /permissive-)");
+    const auto interface_run=run_cpp(interface_only);
+    ran(interface_run);
+    const auto interface_capture=capture_cpp_execution(
+        interface_only,interface_run);
+    const auto interface_goal=evaluate_cmake_graph(
+        interface_only,interface_run,warning_options);
+    check(matches_native_console_output(
+            interface_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            interface_capture,interface_only.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !interface_goal.correct&&!interface_capture.cmake_graph_correct&&
+        interface_goal.reason.find("target_compile_options")!=std::string::npos,
+        "An INTERFACE-only option incorrectly counted as a library compile flag");
+    // Even an executed target_compile_options is not proof of *effective*
+    // compiler flags if the student subsequently replaces COMPILE_OPTIONS.
+    // The File API compile fragments, not the authored trace, must reject it.
+    auto erased_options=warning_request;
+    erased_options.project_key+="/options-cleared-after-declaration";
+    erased_options.request_id=3306;
+    ++erased_options.revision;
+    for(auto& file:erased_options.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)\n"
+                "  set_property(TARGET cantidades PROPERTY COMPILE_OPTIONS \"\")");
+    const auto erased_run=run_cpp(erased_options);
+    ran(erased_run);
+    const auto erased_capture=capture_cpp_execution(
+        erased_options,erased_run);
+    const auto erased_graph=evaluate_cmake_graph(
+        erased_options,erased_run,warning_options);
+    check(matches_native_console_output(
+            erased_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            erased_capture,erased_options.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        erased_run.cmake_graph&&
+        !erased_graph.correct&&!erased_capture.cmake_graph_correct&&
+        erased_graph.reason.find("La opción no llegó")!=std::string::npos,
+        "U3L7 credited an authored flag erased before actual compilation: "+
+            erased_graph.reason);
+    auto exclusive=warning_request;
+    exclusive.request_id=3303;
+    ++exclusive.revision;
+    // The negative control owns an independent CMake workspace. A reused
+    // previously linked executable must never hide the upper-bound defect.
+    exclusive.project_key+="/exclusive-upper-bound";
+    bool exclusive_source_changed=false;
+    for(auto& file:exclusive.project_files)
+        if(file.first=="cantidad.cpp") {
+            warning_replace(file.second,"return dato >= 0 && dato <= 20;",
+                "return dato >= 0 && dato < 20;");
+            exclusive_source_changed=true;
+        }
+    check(exclusive_source_changed&&
+        exclusive.project_files!=warning_request.project_files,
+        "U3L7 exclusive control did not modify the original source");
+    const auto exclusive_run=run_cpp(exclusive);
+    const auto exclusive_evidence=capture_cpp_execution(exclusive,exclusive_run);
+    const auto exclusive_verdict=evaluate_cpp_output_check(
+        *warning_block.output_check,exclusive_evidence,exclusive.revision);
+    check(exclusive_run.error_utf8.empty()&&
+        exclusive_run.configuration.succeeded()&&
+        exclusive_run.compilation.succeeded()&&
+        exclusive_run.execution.status==CppPhaseStatus::completed&&
+        exclusive_run.execution.exit_code==1&&
+        exclusive_run.execution.stdout_bytes.find("dato=20")!=std::string::npos&&
+        exclusive_run.execution.stdout_bytes.find("Bateria: ERROR")!=
+            std::string::npos&&
+        exclusive_verdict.verdict!=curriculum::OutputVerdict::correct,
+        "U3L7 failed to reject an exclusive upper bound: error="+
+        exclusive_run.error_utf8+
+        "; configure="+std::to_string(static_cast<int>(
+            exclusive_run.configuration.status))+
+        "; compile="+std::to_string(static_cast<int>(
+            exclusive_run.compilation.status))+
+        "; run="+std::to_string(static_cast<int>(
+            exclusive_run.execution.status))+
+        "; exit="+std::to_string(
+            exclusive_run.execution.exit_code.value_or(999))+
+        "; stdout="+exclusive_run.execution.stdout_bytes+
+        "; stderr="+exclusive_run.execution.stderr_bytes+
+        "; verdict="+std::to_string(static_cast<int>(
+            exclusive_verdict.verdict)));
+    check(warning_block.project_files==warning_original&&
+        warning_request.project_files!=exclusive.project_files,
+        "U3L7 platform adaptation changed the historical source or final repair");
+    std::cout<<"PASS U3L7 actual MSVC diagnostic "<<warning_code<<
+        ": target-owned compiler flags, defective boundary, inclusive repair "
+        "and exclusive-bound rejection\n";
+    // U3L10: validate the published eleven-case checker under real MSVC
+    // without modifying its original CMake or the intentionally faulty source.
+    constexpr auto adjustments_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json";
+    const auto adjustments_lesson=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/adjustments_relative);
+    const auto& adjustments_before=adjustments_lesson.pages.at(6).blocks.at(6);
+    check(adjustments_before.stable_id=="block_0006_0008"&&
+        adjustments_before.cmake&&adjustments_before.output_check&&
+        adjustments_before.output_check->cases.size()==1&&
+        adjustments_before.project_files.size()==5,
+        "U3L10 original eleven-case checker or its stable owner changed");
+    const auto adjustments_files=adjustments_before.project_files;
+    CppRunRequest adjustments;
+    adjustments.projects_directory=environment.paths.projects;
+    adjustments.project_key="qa/p2-u3-adjustments/eleven-original-cases";
+    adjustments.request_id=3501;
+    adjustments.revision=3501;
+    adjustments.project_files=adjustments_files;
+    adjustments.cmake=adjustments_before.cmake;
+    adjustments.capture_cmake_graph=true;
+    adjustments.action=CppRunRequest::Action::compile_run;
+    const auto adjustments_replace=[](std::string& source,
+            std::string_view old_text,std::string_view new_text) {
+        const auto at=source.find(old_text);
+        check(at!=source.npos&&source.find(old_text,at+old_text.size())==source.npos,
+            "U3L10 published source no longer matches its expected repair");
+        source.replace(at,old_text.size(),new_text);
+    };
+    bool adjustments_options=false;
+    for(auto& file:adjustments.project_files)
+        if(file.first=="CMakeLists.txt") {
+            for(const auto name:{"ajustes","consultar_ajustes","comprobar_ajustes"}) {
+                const auto original=std::string("target_compile_options(")+name+
+                    " PRIVATE -Wall -Wextra -Wpedantic)";
+                const auto compatible=std::string("if(MSVC)\n  target_compile_options(")+
+                    name+" PRIVATE /W4 /permissive-)\nelse()\n  "+original+"\nendif()";
+                adjustments_replace(file.second,original,compatible);
+            }
+            adjustments_options=true;
+        }
+    check(adjustments_options&&adjustments.project_files!=adjustments_files,
+        "U3L10 MSVC-specific options were not prepared safely");
+    // U3L10's earlier CMake-construction owner starts with a blank
+    // description and unfinished C++ implementations. Its graph can be
+    // compiled and checked independently, but it has no outputCheck and
+    // must not be credited as an accomplished open programming exercise.
+    const auto& first_adjustments=adjustments_lesson.pages.at(2).blocks.at(3);
+    check(first_adjustments.stable_id=="block_0002_0003"&&
+        first_adjustments.cmake&&
+        !first_adjustments.output_check&&!first_adjustments.compile_check&&
+        first_adjustments.project_files.size()==5&&
+        first_adjustments.project_files.front().first=="CMakeLists.txt"&&
+        first_adjustments.project_files.front().second.empty(),
+        "U3L10 original empty CMake task was replaced or pre-credited");
+    auto initial_build=adjustments;
+    initial_build.request_id=3401;
+    initial_build.revision=3401;
+    initial_build.project_key="qa/p2-u3-adjustments/initial-cmake-only";
+    initial_build.project_files=first_adjustments.project_files;
+    initial_build.cmake=first_adjustments.cmake;
+    initial_build.project_files.front().second=
+        adjustments.project_files.front().second;
+    CppCmakeGraphRequirement built_structure{
+        "AjustesConEvidencia",{
+            {"consultar_ajustes","EXECUTABLE",
+             {"app/consulta.cpp"},{"ajustes"},true},
+            {"comprobar_ajustes","EXECUTABLE",
+             {"pruebas/casos.cpp"},{"ajustes"},true},
+            {"ajustes","STATIC_LIBRARY",{"src/ajuste.cpp"},{},true}
+        }};
+    built_structure.minimum_cmake_version="3.20";
+    // Even this initial, intentionally unfinished program must prove that
+    // warnings are declared on every target and reach its actual MSVC build.
+    // Inherited defaults cannot stand in for the CMake work being taught.
+    for(auto& target:built_structure.targets) {
+        target.require_explicit_cxx20=true;
+        target.require_explicit_extensions_off=true;
+        target.authored_compile_options={"/W4","/permissive-"};
+    }
+    built_structure.targets.back().public_include_roots={"publico"};
+    initial_build.cmake_graph_check=built_structure;
+    for(const auto& file:first_adjustments.project_files)
+        if(file.first!="CMakeLists.txt")
+            initial_build.cmake_graph_check->source_integrity.emplace_back(
+                file.first,state::sha256(file.second));
+    const auto original_blank_files=first_adjustments.project_files;
+    const auto initial_build_result=run_cpp(initial_build);
+    const auto valid_build_graph=evaluate_cmake_graph(
+        initial_build,initial_build_result,built_structure);
+    check(initial_build_result.error_utf8.empty()&&
+        initial_build_result.configuration.succeeded()&&
+        initial_build_result.compilation.succeeded()&&
+        initial_build_result.execution.status==CppPhaseStatus::completed&&
+        initial_build_result.execution.exit_code==1&&
+        initial_build_result.execution.stderr_bytes.find(
+            "PENDIENTE: cliente sin implementar")!=std::string::npos&&
+        valid_build_graph.correct&&
+        initial_build_result.cmake_graph&&
+        first_adjustments.project_files==original_blank_files,
+        "U3L10 initial CMake could not build both targets and preserve the "
+        "intentionally unfinished C++ exercise: "+valid_build_graph.reason);
+    // The learner's initial CMake stage declares *two* executables. File API
+    // describes both, but selecting the client alone does not compile the
+    // checker. Build and execute that independent target with real MSVC.
+    // Its deliberately unfinished main must remain incomplete, not credited.
+    auto initial_checker_build=initial_build;
+    initial_checker_build.cmake->target="comprobar_ajustes";
+    initial_checker_build.request_id=3404;
+    ++initial_checker_build.revision;
+    const auto initial_checker_run=run_cpp(initial_checker_build);
+    const auto initial_checker_graph=evaluate_cmake_graph(
+        initial_checker_build,initial_checker_run,built_structure);
+    check(initial_checker_run.error_utf8.empty()&&
+        // The target switch reuses the same verified CMake configuration:
+        // cpp_project_frame(configuration_only) intentionally excludes target.
+        initial_checker_run.configuration.status==CppPhaseStatus::not_started&&
+        initial_checker_run.compilation.succeeded()&&
+        initial_checker_run.execution.status==CppPhaseStatus::completed&&
+        initial_checker_run.execution.exit_code==1&&
+        initial_checker_run.executable=="comprobar_ajustes"&&
+        initial_checker_run.execution.stderr_bytes.find(
+            "PENDIENTE: comprobador sin implementar")!=std::string::npos&&
+        initial_checker_graph.correct&&
+        first_adjustments.project_files==original_blank_files,
+        "U3L10 initial CMake did not really compile its separate checker "
+        "without falsely completing the original exercise: "+
+        initial_checker_graph.reason);
+    // The CMake-only stage must not inherit warning credit from MSVC's
+    // toolchain profile when the student omitted a client's own declaration.
+    // The unfinished executable still emits the same intentional diagnostic.
+    auto initial_missing_warning=initial_build;
+    initial_missing_warning.project_key+="/client-without-authored-warnings";
+    initial_missing_warning.request_id=3403;
+    ++initial_missing_warning.revision;
+    for(auto& file:initial_missing_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            adjustments_replace(file.second,
+                "target_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)",
+                "# No client-owned MSVC options in this negative control");
+    const auto initial_missing_run=run_cpp(initial_missing_warning);
+    // Exit 1 is intentional here: ran() requires a successful executable.
+    const auto initial_missing_graph=evaluate_cmake_graph(
+        initial_missing_warning,initial_missing_run,built_structure);
+    const auto initial_missing_capture=capture_cpp_execution(
+        initial_missing_warning,initial_missing_run);
+    check(initial_missing_run.error_utf8.empty()&&
+        initial_missing_run.configuration.succeeded()&&
+        initial_missing_run.compilation.succeeded()&&
+        initial_missing_run.execution.status==CppPhaseStatus::completed&&
+        initial_missing_run.execution.exit_code==1&&
+        initial_missing_run.execution.stderr_bytes==
+            initial_build_result.execution.stderr_bytes&&
+        !initial_missing_graph.correct&&!initial_missing_capture.cmake_graph_correct&&
+        initial_missing_graph.reason.find("target_compile_options")!=
+            std::string::npos&&
+        initial_missing_graph.reason.find("consultar_ajustes")!=
+            std::string::npos,
+        "U3L10 initial CMake stage incorrectly accepted inherited warning flags: "+
+        initial_missing_graph.reason);
+    state::StateData initial_build_state;
+    state::prepare_lesson_state(initial_build_state,adjustments_lesson);
+    const auto original_initial_state=state::encode(initial_build_state);
+    const auto initial_capture=capture_cpp_execution(
+        initial_build,initial_build_result);
+    const auto initial_checker_capture=capture_cpp_execution(
+        initial_checker_build,initial_checker_run);
+    check(!curriculum::has_compiler_objective(first_adjustments)&&
+        !record_compiler_puzzle_case(initial_build_state,adjustments_lesson,
+            first_adjustments,initial_checker_build,initial_checker_capture,
+            "Comprobador aún sin implementar")&&
+        !compiler_puzzle_completed(initial_build_state,adjustments_lesson,
+            first_adjustments)&&
+        state::encode(initial_build_state)==original_initial_state,
+        "Building the unfinished second executable falsely advanced U3L10");
+    check(!curriculum::has_compiler_objective(first_adjustments)&&
+        !record_compiler_puzzle_case(initial_build_state,adjustments_lesson,
+            first_adjustments,initial_build,initial_capture,
+            "CMake construido, programa aún pendiente")&&
+        !compiler_puzzle_completed(initial_build_state,adjustments_lesson,
+            first_adjustments)&&
+        state::encode(initial_build_state)==original_initial_state,
+        "The incomplete U3L10 program received a false progress receipt");
+    // Identical client behaviour can be obtained by compiling the component
+    // directly into the executable; that is not the requested library link.
+    auto flattened_build=initial_build;
+    flattened_build.request_id=3402;
+    ++flattened_build.revision;
+    flattened_build.project_key+="/direct-source-instead-of-library";
+    for(auto& file:flattened_build.project_files)
+        if(file.first=="CMakeLists.txt") {
+            adjustments_replace(file.second,
+                "add_executable(consultar_ajustes app/consulta.cpp)",
+                "add_executable(consultar_ajustes app/consulta.cpp src/ajuste.cpp)");
+            adjustments_replace(file.second,
+                "add_executable(comprobar_ajustes pruebas/casos.cpp)",
+                "add_executable(comprobar_ajustes pruebas/casos.cpp src/ajuste.cpp)");
+            adjustments_replace(file.second,
+                "target_link_libraries(consultar_ajustes PRIVATE ajustes)",
+                "target_include_directories(consultar_ajustes PRIVATE publico)");
+            adjustments_replace(file.second,
+                "target_link_libraries(comprobar_ajustes PRIVATE ajustes)",
+                "target_include_directories(comprobar_ajustes PRIVATE publico)");
+        }
+    const auto flattened_result=run_cpp(flattened_build);
+    const auto flattened_graph=evaluate_cmake_graph(
+        flattened_build,flattened_result,built_structure);
+    check(flattened_result.error_utf8.empty()&&
+        flattened_result.compilation.succeeded()&&
+        flattened_result.execution.status==CppPhaseStatus::completed&&
+        flattened_result.execution.exit_code==1&&
+        flattened_result.execution.stderr_bytes==
+            initial_build_result.execution.stderr_bytes&&
+        !flattened_graph.correct&&
+        first_adjustments.project_files==original_blank_files,
+        "U3L10 incorrectly credited direct source compilation as a library");
+    std::cout<<"PASS U3L10 initial empty CMake task: real project graph and "
+        "MSVC build, unimplemented client remains uncredited, direct-source "
+        "bypass refused, unchanged learner state\n";
+    const auto faulty_adjustments=run_cpp(adjustments);
+    check(faulty_adjustments.error_utf8.empty()&&
+        faulty_adjustments.configuration.succeeded()&&
+        faulty_adjustments.compilation.succeeded()&&
+        faulty_adjustments.execution.status==CppPhaseStatus::completed&&
+        faulty_adjustments.execution.exit_code==1&&
+        faulty_adjustments.execution.stdout_bytes.find(
+            "Caso=3 Acepta=1 Ajuste=2")!=std::string::npos&&
+        faulty_adjustments.execution.stdout_bytes.find(
+            "Caso=6 Acepta=1 Ajuste=40")!=std::string::npos&&
+        faulty_adjustments.execution.stdout_bytes.find("Fallos=2")!=
+            std::string::npos&&
+        faulty_adjustments.execution.stderr_bytes.empty()&&
+        faulty_adjustments.cmake_graph,
+        "U3L10 actual MSVC did not expose both original adjustment errors");
+    const auto& adjustment_graph=*faulty_adjustments.cmake_graph;
+    const auto& adjustment_library=find_target(adjustment_graph,"ajustes");
+    const auto& adjustment_client=find_target(adjustment_graph,"consultar_ajustes");
+    const auto& adjustment_checker=find_target(adjustment_graph,"comprobar_ajustes");
+    check(adjustment_graph.project_name=="AjustesConEvidencia"&&
+        adjustment_library.type=="STATIC_LIBRARY"&&
+        contains(adjustment_library.compiled_sources,"src/ajuste.cpp")&&
+        adjustment_client.type=="EXECUTABLE"&&
+        contains(adjustment_client.compiled_sources,"app/consulta.cpp")&&
+        contains(adjustment_client.build_dependencies,"ajustes")&&
+        links(adjustment_client,"ajustes.lib")&&
+        adjustment_checker.type=="EXECUTABLE"&&
+        contains(adjustment_checker.compiled_sources,"pruebas/casos.cpp")&&
+        contains(adjustment_checker.build_dependencies,"ajustes")&&
+        links(adjustment_checker,"ajustes.lib"),
+        "U3L10 generated graph did not preserve the shared library and two consumers");
+    const auto actual_adjustment_commands=read(
+        inspect_cpp_project(adjustments).workspace/L"compile_commands.json");
+    check(actual_adjustment_commands.find("src/ajuste.cpp")!=std::string::npos&&
+        actual_adjustment_commands.find("/W4")!=std::string::npos&&
+        actual_adjustment_commands.find("/permissive-")!=std::string::npos&&
+        actual_adjustment_commands.find("-Wpedantic")==std::string::npos,
+        "U3L10 MSVC command did not apply the selected compiler warning options");
+    // Changing only the erroneous subtraction must turn the very same
+    // eleven checks green; the published original and saved progress remain.
+    bool repaired_adjustment=false;
+    for(auto& file:adjustments.project_files)
+        if(file.first=="src/ajuste.cpp") {
+            adjustments_replace(file.second,"ajuste = valor - superior;",
+                "ajuste = superior - valor;");
+            repaired_adjustment=true;
+        }
+    check(repaired_adjustment,"U3L10 faulty function was replaced unexpectedly");
+    adjustments.request_id=3502;
+    ++adjustments.revision;
+    const auto correct_adjustments=run_cpp(adjustments);
+    ran(correct_adjustments);
+    const auto adjustments_expected=
+        adjustments_before.output_check->cases.front().outputs.front();
+    const auto adjustments_capture=capture_cpp_execution(
+        adjustments,correct_adjustments);
+    check(matches_native_console_output(
+            correct_adjustments.execution.stdout_bytes,adjustments_expected)&&
+        correct_adjustments.execution.stderr_bytes.empty()&&
+        evaluate_cpp_output_check(*adjustments_before.output_check,
+            adjustments_capture,adjustments.revision).verdict==
+                curriculum::OutputVerdict::correct,
+        "U3L10 corrected library failed the published eleven original cases");
+    state::StateData adjustments_saved;
+    state::prepare_lesson_state(adjustments_saved,adjustments_lesson);
+    check(record_compiler_puzzle_case(adjustments_saved,adjustments_lesson,
+            adjustments_before,adjustments,adjustments_capture,
+            "Once comprobaciones reales")&&
+        compiler_puzzle_completed(adjustments_saved,adjustments_lesson,
+            adjustments_before)&&
+        compiler_puzzle_case_count(adjustments_saved,adjustments_lesson,
+            adjustments_before)==1,
+        "U3L10 correct original case did not obtain its authentic first-case receipt");
+    const auto adjustments_reopened=state::decode(state::encode(adjustments_saved));
+    check(compiler_puzzle_completed(adjustments_reopened,adjustments_lesson,
+            adjustments_before)&&
+        adjustments_before.project_files==adjustments_files,
+        "U3L10 reopened completion or original project sources were changed");
+    // The preceding stdout is a historical achievement, not proof that the
+    // student's checker still links to ajustes. Project an authenticated
+    // structure rubric into the original stable owner without changing its
+    // JSON, stateLayout, source, options or old completion receipt.
+    std::string adjustments_projected=adjustments_lesson.raw_json;
+    const auto adjustments_anchor=adjustments_projected.find(anchor);
+    check(adjustments_anchor!=adjustments_projected.npos&&
+        adjustments_projected.find(anchor,adjustments_anchor+1)==
+            adjustments_projected.npos,
+        "U3L10 source state map moved before graph projection");
+    adjustments_projected.insert(adjustments_anchor,R"json(
+  "compilerCmakeGraphChecks":[
+    {"activity":"block_0006_0008",
+     "project":"AjustesConEvidencia",
+     "minimumCmakeVersion":"3.20",
+     "targets":[
+       {"name":"comprobar_ajustes","type":"EXECUTABLE",
+        "sources":["pruebas/casos.cpp"],"linksTo":["ajustes"],
+        "exactSources":true,"explicitCxx20":true,
+        "explicitCxxExtensionsOff":true,
+        "authoredCompileOptions":["/W4","/permissive-"]},
+       {"name":"consultar_ajustes","type":"EXECUTABLE",
+        "sources":["app/consulta.cpp"],"linksTo":["ajustes"],
+        "exactSources":true,"explicitCxx20":true,
+        "explicitCxxExtensionsOff":true,
+        "authoredCompileOptions":["/W4","/permissive-"]},
+       {"name":"ajustes","type":"STATIC_LIBRARY",
+        "sources":["src/ajuste.cpp"],"publicIncludeRoots":["publico"],
+        "exactSources":true,"explicitCxx20":true,
+        "explicitCxxExtensionsOff":true,
+        "authoredCompileOptions":["/W4","/permissive-"]}
+     ]}
+  ],
+)json");
+    const auto adjustments_mapped=lgaed::windows::parse_lesson_json(
+        adjustments_projected,"es");
+    const auto adjustments_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        adjustments_projected,"es");
+    const auto& adjustments_reviewed=adjustments_mapped.pages.at(6).blocks.at(6);
+    const auto& adjustments_meta=adjustments_metadata.pages.at(6).blocks.at(6);
+    check(!adjustments_before.cmake_graph_check&&
+        adjustments_reviewed.cmake_graph_check&&
+        adjustments_reviewed.cmake_graph_check==
+            adjustments_meta.cmake_graph_check&&
+        adjustments_reviewed.project_files==adjustments_files&&
+        adjustments_mapped.state_layout.lineage==
+            adjustments_lesson.state_layout.lineage&&
+        adjustments_mapped.state_layout.signatures==
+            adjustments_lesson.state_layout.signatures&&
+        adjustments_metadata.state_layout.signatures==
+            adjustments_lesson.state_layout.signatures&&
+        curriculum::exercise_key(adjustments_lesson,adjustments_before)==
+            curriculum::exercise_key(adjustments_mapped,adjustments_reviewed)&&
+        curriculum::draft_key("programming",adjustments_lesson,adjustments_before)==
+            curriculum::draft_key("programming",adjustments_mapped,adjustments_reviewed)&&
+        curriculum::reference_objective_frame(
+            adjustments_lesson,adjustments_before)!=
+            curriculum::reference_objective_frame(
+                adjustments_mapped,adjustments_reviewed),
+        "U3L10 graph requirements did not preserve original exercise and draft");
+    auto adjustments_checked=adjustments;
+    adjustments_checked.request_id=3511;
+    ++adjustments_checked.revision;
+    adjustments_checked.project_key+="/graph-verified";
+    adjustments_checked.cmake_graph_check=adjustments_reviewed.cmake_graph_check;
+    check(compiler_runtime_request_allowed(adjustments_reviewed,adjustments_checked),
+        "U3L10 original checker cannot run its published graph rubric");
+    const auto checked_adjustments=run_cpp(adjustments_checked);
+    ran(checked_adjustments);
+    const auto checked_capture=capture_cpp_execution(
+        adjustments_checked,checked_adjustments);
+    const auto checked_structure=evaluate_cmake_graph(
+        adjustments_checked,checked_adjustments,
+        *adjustments_reviewed.cmake_graph_check);
+    check(checked_capture.cmake_graph_correct&&checked_structure.correct&&
+        evaluate_cpp_output_check(*adjustments_reviewed.output_check,
+            checked_capture,adjustments_checked.revision).verdict==
+                curriculum::OutputVerdict::correct,
+        "Corrected original eleven-case checker lost its actual MSVC CMake "
+        "library, consumers, include propagation or authored C++ requirements: "+
+        checked_structure.reason);
+    state::prepare_lesson_state(adjustments_saved,adjustments_mapped);
+    check(compiler_puzzle_completed(adjustments_saved,adjustments_lesson,
+            adjustments_before)&&
+        !compiler_puzzle_completed(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed),
+        "U3L10 historical stdout proof incorrectly granted structural credit");
+    check(record_compiler_puzzle_case(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed,adjustments_checked,checked_capture,
+            "Enlace CMake comprobado")&&
+        compiler_puzzle_completed(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed)&&
+        compiler_puzzle_case_count(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed)==1,
+        "U3L10 real linked graph failed to unlock only its first case");
+    const auto mapped_reopened=state::decode(state::encode(adjustments_saved));
+    check(compiler_puzzle_completed(mapped_reopened,adjustments_lesson,
+            adjustments_before)&&
+        compiler_puzzle_completed(mapped_reopened,adjustments_mapped,
+            adjustments_reviewed),
+        "U3L10 old and structural CMake achievements were not both preserved");
+    // U3L10: inheriting /W4 from the native profile and preserving all
+    // eleven correct rows cannot replace authored options on the checker.
+    auto missing_checker_warning=adjustments_checked;
+    missing_checker_warning.project_key+="/inherited-checker-warning";
+    missing_checker_warning.request_id=3513;
+    ++missing_checker_warning.revision;
+    for(auto& file:missing_checker_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            adjustments_replace(file.second,
+                "target_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)",
+                "# The checker deliberately does not declare MSVC options");
+    const auto inherited_checker_result=run_cpp(missing_checker_warning);
+    ran(inherited_checker_result);
+    const auto inherited_checker_capture=capture_cpp_execution(
+        missing_checker_warning,inherited_checker_result);
+    const auto inherited_checker_structure=evaluate_cmake_graph(
+        missing_checker_warning,inherited_checker_result,
+        *adjustments_reviewed.cmake_graph_check);
+    check(matches_native_console_output(
+            inherited_checker_result.execution.stdout_bytes,
+            adjustments_expected)&&
+        evaluate_cpp_output_check(*adjustments_reviewed.output_check,
+            inherited_checker_capture,missing_checker_warning.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !inherited_checker_structure.correct&&
+        !inherited_checker_capture.cmake_graph_correct&&
+        inherited_checker_structure.reason.find(
+            "target_compile_options")!=std::string::npos&&
+        inherited_checker_structure.reason.find(
+            "comprobar_ajustes")!=std::string::npos&&
+        !record_compiler_puzzle_case(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed,missing_checker_warning,
+            inherited_checker_capture,"Avisos heredados, no declarados"),
+        "U3L10 credited the checker with inherited but unauthored MSVC flags");
+    // A counterfeit checker compiling the same library implementation
+    // directly emits the expected eleven OK lines, but does not link ajustes.
+    auto unlinked_adjustments=adjustments_checked;
+    unlinked_adjustments.request_id=3512;
+    ++unlinked_adjustments.revision;
+    unlinked_adjustments.project_key+="/checker-direct-source";
+    for(auto& file:unlinked_adjustments.project_files)
+        if(file.first=="CMakeLists.txt") {
+            adjustments_replace(file.second,
+                "add_executable(comprobar_ajustes pruebas/casos.cpp)",
+                "add_executable(comprobar_ajustes pruebas/casos.cpp src/ajuste.cpp)");
+            adjustments_replace(file.second,
+                "target_link_libraries(comprobar_ajustes PRIVATE ajustes)",
+                "target_include_directories(comprobar_ajustes PRIVATE publico)");
+        }
+    const auto unlinked_result=run_cpp(unlinked_adjustments);
+    ran(unlinked_result);
+    const auto unlinked_capture=capture_cpp_execution(
+        unlinked_adjustments,unlinked_result);
+    const auto unlinked_structure=evaluate_cmake_graph(
+        unlinked_adjustments,unlinked_result,
+        *adjustments_reviewed.cmake_graph_check);
+    check(matches_native_console_output(
+            unlinked_result.execution.stdout_bytes,adjustments_expected)&&
+        evaluate_cpp_output_check(*adjustments_reviewed.output_check,
+            unlinked_capture,unlinked_adjustments.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !unlinked_structure.correct&&!unlinked_capture.cmake_graph_correct&&
+        !record_compiler_puzzle_case(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed,unlinked_adjustments,unlinked_capture,
+            "Fuente directa sin enlace"),
+        "U3L10 gave credit for the right output from a checker bypassing its library");
+    // After the fix the client is still a different executable. Its
+    // six requests include two rejections that must keep stderr separate.
+    auto adjustments_client_request=adjustments;
+    adjustments_client_request.request_id=3503;
+    ++adjustments_client_request.revision;
+    adjustments_client_request.cmake->target="consultar_ajustes";
+    adjustments_client_request.stdin_utf8=
+        "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n";
+    const auto adjustments_client_run=run_cpp(adjustments_client_request);
+    check(adjustments_client_run.error_utf8.empty()&&
+        adjustments_client_run.compilation.succeeded()&&
+        adjustments_client_run.execution.status==CppPhaseStatus::completed&&
+        adjustments_client_run.execution.exit_code==1&&
+        adjustments_client_run.executable=="consultar_ajustes"&&
+        adjustments_client_run.execution.stdout_bytes.find(
+            "Aceptadas=4 Rechazadas=2 Suma=-1")!=std::string::npos&&
+        adjustments_client_run.execution.stderr_bytes.find(
+            "Rechazo: peticion=4")!=std::string::npos&&
+        adjustments_client_run.execution.stderr_bytes.find(
+            "Rechazo: peticion=6")!=std::string::npos&&
+        adjustments_before.project_files==adjustments_files,
+        "U3L10 external client did not preserve accepted and rejected requests");
+    std::cout<<"PASS U3L10 actual MSVC eleven-case regression: source-dependent "
+        "library/client/checker, warning options, two initial failures, "
+        "isolated repair, first-case history and six-request client\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";

@@ -2725,7 +2725,8 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             const auto source=t.GetObject();
             allowed_keys(source,{"name","type","sources","linksTo","exactSources",
                 "explicitCxx20","explicitCxxExtensionsOff",
-                "publicIncludeRoots","privateIncludeRoots","sourceDirectory"});
+                "publicIncludeRoots","privateIncludeRoots","sourceDirectory",
+                "authoredCompileOptions"});
             require(source.HasKey(L"name")&&source.HasKey(L"type"),
                 "Each CMake graph target requires a name and type");
             CmakeRequiredTarget wanted;
@@ -2818,6 +2819,28 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 require(std::ranges::find(wanted.private_include_roots,root)==
                     wanted.private_include_roots.end(),
                     "CMake root cannot be simultaneously PUBLIC and PRIVATE");
+            if(source.HasKey(L"authoredCompileOptions")) {
+                wanted.authored_compile_options=strings(
+                    array(source,"authoredCompileOptions"),false,false);
+                require(!wanted.authored_compile_options.empty()&&
+                        wanted.authored_compile_options.size()<=8,
+                    "CMake requires 1..8 authored compiler options");
+                std::set<std::string> seen_options;
+                for(const auto& option:wanted.authored_compile_options)
+                    require(option.size()>=2&&option.size()<=64&&
+                            (option.front()=='/'||option.front()=='-')&&
+                            ((option[1]>='a'&&option[1]<='z')||
+                             (option[1]>='A'&&option[1]<='Z'))&&
+                            std::ranges::all_of(option.substr(2),
+                                [](unsigned char c) {
+                                    return (c>='a'&&c<='z')||
+                                        (c>='A'&&c<='Z')||
+                                        (c>='0'&&c<='9')||
+                                        c=='_'||c=='.'||c==':'||
+                                        c=='+'||c=='-';
+                                })&&seen_options.insert(option).second,
+                        "CMake compiler options must be distinct safe flags");
+            }
             if(source.HasKey(L"sourceDirectory")) {
                 wanted.source_directory=text(source,"sourceDirectory");
                 const auto path=wanted.source_directory;

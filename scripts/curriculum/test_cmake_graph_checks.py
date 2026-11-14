@@ -98,6 +98,28 @@ class CmakeGraphChecksTest(unittest.TestCase):
             with self.subTest(mutate=mutate), self.assertRaises(state.LayoutError):
                 state.validate(changed)
 
+    def test_authored_compiler_flags_are_bounded_and_additive(self):
+        reviewed = deepcopy(self.after)
+        reviewed["compilerCmakeGraphChecks"][0]["targets"][1][
+            "authoredCompileOptions"] = ["/W4", "/permissive-"]
+        state.validate(reviewed)
+        # New requirements may be published with the initial root rubric.
+        state.validate_transition(self.before, reviewed)
+        # They cannot be injected later into an already published rubric:
+        # that would redefine the student's historical completion contract.
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, reviewed)
+        self.assertEqual(reviewed["pages"], self.before["pages"])
+        self.assertEqual(reviewed["stateLayout"], self.before["stateLayout"])
+        for bad in ([], ["/W4", "/W4"], [""], ["W4"], [" /W4"],
+                    ["SHELL:/W4"], ["/W4;message(FATAL_ERROR)"],
+                    ["/W4"] * 9, [10], "not-an-array"):
+            changed = deepcopy(reviewed)
+            changed["compilerCmakeGraphChecks"][0]["targets"][1][
+                "authoredCompileOptions"] = bad
+            with self.subTest(bad=bad), self.assertRaises(state.LayoutError):
+                state.validate(changed)
+
     def test_existing_graph_cannot_be_removed_or_redefined(self):
         removed = deepcopy(self.after)
         removed.pop("compilerCmakeGraphChecks")

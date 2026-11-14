@@ -727,6 +727,67 @@ def state_fingerprint(block: dict) -> str:
     return fingerprint(state_payload(block))
 
 
+def require_source_format_with_editorial(original: dict, current: dict) -> bool:
+    """Authenticate physical source spacing alongside a separate prose correction.
+
+    Only code tokens may be reformatted. The restored source must retain the
+    entire earlier answer/evaluation contract; other changes need the normal
+    append-only editorial proof, checked by validate_transition().
+    """
+    changed = code_format.require_source_lexical(original, current)
+    projected = code_format.source_projection(current, original)
+
+    def restore_feedback(before: object, after: object) -> object:
+        if type(before) is str and type(after) is str:
+            require(before == after or bool(before.strip() and after.strip()),
+                    "Revised feedback must retain nonblank authored text")
+            return before
+        if type(before) is list and type(after) is list:
+            require(len(before) == len(after),
+                    "An editorial correction cannot add or remove feedback choices")
+            return [restore_feedback(a, b) for a, b in zip(before, after)]
+        if type(before) is dict and type(after) is dict:
+            require(before.keys() == after.keys(),
+                    "A reviewed guide cannot add or remove feedback fields")
+            restored = deepcopy(after)
+            for key, value in before.items():
+                if key == "text":
+                    restored[key] = restore_feedback(value, after[key])
+                else:
+                    require(value == after[key],
+                            "A reviewed guide changed nontext feedback metadata")
+            return restored
+        require(before == after, "A reviewed guide changed its data type or contract")
+        return deepcopy(before)
+
+    def restore_guides(before: dict, after: dict) -> None:
+        for key in ("explanation", "reviewFeedback"):
+            if key not in before and key not in after:
+                continue
+            require(key in before and key in after,
+                    "A combined review cannot add or remove guidance fields")
+            after[key] = restore_feedback(before[key], after[key])
+
+    restore_guides(original, projected)
+    for field in ("compileCheck", "outputCheck"):
+        older, newer = original.get(field), projected.get(field)
+        if type(older) is dict and type(newer) is dict:
+            restore_guides(older, newer)
+            if field == "outputCheck":
+                earlier_cases, current_cases = older.get("cases"), newer.get("cases")
+                if type(earlier_cases) is list and type(current_cases) is list:
+                    require(len(earlier_cases) == len(current_cases),
+                            "An editorial review cannot change the number of cases")
+                    for before_case, current_case in zip(earlier_cases, current_cases):
+                        if type(before_case) is dict and type(current_case) is dict:
+                            restore_guides(before_case, current_case)
+    require(projected == original,
+            "A combined source/prose revision changed a question, file, answer or non-guide field")
+    require(state_fingerprint(projected) == state_fingerprint(original),
+            "A combined source/prose revision changed a response or code contract")
+    return changed
+
+
 def order_line_expansion(block: dict) -> tuple[list[str], list[list[int]], list[int]]:
     """Derive independent source lines without changing any code token.
 
@@ -1476,7 +1537,7 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
                 if identity in recorded or code_format.code_slots(block) == code_format.code_slots(after[identity]):
                     continue
                 try:
-                    changed = code_format.require_source_format(block, after[identity])
+                    changed = require_source_format_with_editorial(block, after[identity])
                 except code_format.SourceFormatError as exc:
                     raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
                 if changed:
@@ -1519,7 +1580,7 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
     for identity, block in before.items():
         if code_format.code_slots(block) != code_format.code_slots(after[identity]):
             try:
-                changed = code_format.require_source_format(block, after[identity])
+                changed = require_source_format_with_editorial(block, after[identity])
             except code_format.SourceFormatError as exc:
                 raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
             if changed:
@@ -2268,7 +2329,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     {"name", "type", "sources", "linksTo", "exactSources",
                      "explicitCxx20", "explicitCxxExtensionsOff",
                      "publicIncludeRoots", "privateIncludeRoots",
-                     "sourceDirectory"},
+                     "sourceDirectory", "authoredCompileOptions"},
                     "CMake target requires a name, type and bounded optional rules")
             name, kind = target["name"], target["type"]
             require(type(name) is str and len(name) <= 128 and
@@ -2297,6 +2358,14 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                 if key in target:
                     require(type(target[key]) is bool,
                             "CMake explicit requirements must be Boolean")
+            if "authoredCompileOptions" in target:
+                options = target["authoredCompileOptions"]
+                require(type(options) is list and 0 < len(options) <= 8 and
+                        all(type(option) is str and
+                            re.fullmatch(r"[/-][A-Za-z][A-Za-z0-9_.:+-]{0,62}",
+                                         option) for option in options) and
+                        len(set(options)) == len(options),
+                        "CMake authored compile options must be distinct safe flags")
             if "sourceDirectory" in target:
                 source_dir = target["sourceDirectory"]
                 require(kind == "STATIC_LIBRARY" and
@@ -2817,10 +2886,26 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     archived = {entry["id"] for entry in old_formats}
     for entry in current_formats[len(old_formats):]:
         identity = entry["id"]
-        require(identity in before and identity not in archived and entry["block"] == before[identity],
-                "A new source-format archive must copy its exact published predecessor")
+        require(identity in before and identity not in archived,
+                "A new source-format archive must retain its original active owner")
+        # A reader may import directly across an intermediate prose-only
+        # release. Its actual pre-format snapshot is a later editorial node,
+        # not necessarily the first published block, but its code is unchanged.
+        predecessor = entry["block"]
+        if predecessor != before[identity]:
+            try:
+                require(not code_format.require_source_lexical(
+                            before[identity], predecessor),
+                        "An intermediate review cannot format its source before archiving")
+                require_source_format_with_editorial(before[identity], predecessor)
+            except code_format.SourceFormatError as exc:
+                raise LayoutError(f"Unsafe intermediate source for {identity}: {exc}") from exc
+            require(fingerprint(predecessor) in {
+                        proof["afterSha256"] for proof in meta["editorial"]
+                        if proof["id"] == identity},
+                    "An intermediate source snapshot lacks its authenticated editorial node")
         try:
-            require(code_format.require_source_format(before[identity], after[identity]),
+            require(require_source_format_with_editorial(predecessor, after[identity]),
                     "Source formatting archive did not change any source")
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc

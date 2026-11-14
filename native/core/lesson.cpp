@@ -403,6 +403,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(target.require_explicit_cxx20)token("authored-cxx20-v1");
             if(target.require_explicit_extensions_off)
                 token("authored-extensions-off-v1");
+            if(!target.authored_compile_options.empty()) {
+                token("cmake-authored-compiler-options-v1");
+                token(std::to_string(target.authored_compile_options.size()));
+                for(const auto& option:target.authored_compile_options)
+                    token(option);
+            }
             if(!target.source_directory.empty()) {
                 token("cmake-generated-source-directory-v1");
                 token(target.source_directory);

@@ -52,6 +52,9 @@ struct CmakeRequiredTarget {
     // Optional authored subproject location, confirmed by CMake's actual
     // codemodel directoryIndex, not by printed messages or source filenames.
     std::string source_directory;
+    // Verify options authored on this target and present in its generated
+    // compiler command, rather than flags inherited from the MSVC profile.
+    std::vector<std::string> authored_compile_options;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
 // A binary option exercise verifies ON and an independent default-OFF build
