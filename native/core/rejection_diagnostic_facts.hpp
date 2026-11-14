@@ -262,7 +262,33 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                 interval=true;
             if(interval)end=i+1;
         }
-        if(interval&&describes_range(i,end))return true;
+        if(interval&&describes_range(i,end)) {
+            // The qualifier can follow the written bounds:
+            // "rango 0..9 no válido" contradicts "permitido 0..9".
+            // Do not confuse this with "0..9; no se permite 21":
+            // only deny an immediate adjective about the interval.
+            const auto prohibited=[](std::string_view value) {
+                return one_of(value,{"prohibido","prohibida","prohibidos",
+                    "prohibidas","invalido","invalida","invalidos",
+                    "invalidas","incorrecto","incorrecta","incorrectos",
+                    "incorrectas","excluido","excluida"});
+            };
+            const auto qualified=[](std::string_view value) {
+                return one_of(value,{"permitido","permitida","permitidos",
+                    "permitidas","valido","valida","validos","validas",
+                    "admitido","admitida","aceptado","aceptada"});
+            };
+            if(end+1<words.size()&&prohibited(words[end+1].text))
+                return false;
+            if(end+2<words.size()&&
+                    one_of(words[end+1].text,{"no","nunca","jamas"})&&
+                    (qualified(words[end+2].text)||
+                     (end+3<words.size()&&
+                      one_of(words[end+2].text,{"es","esta","son","estan"})&&
+                      qualified(words[end+3].text))))
+                return false;
+            return true;
+        }
     }
     return lower_found&&upper_found;
 }
