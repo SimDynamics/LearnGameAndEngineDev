@@ -69,6 +69,29 @@ void lexical_safety(){
             "int main(){return __builtin_COLUMN();}",
             "int main(){ return __builtin_COLUMN();}",Language::cpp),
         "Source __builtin_COLUMN() changed value after token-equivalent spacing");
+    check(code_format::equivalent(
+        R"code(// __LINE__ is documented, not evaluated.
+const char* label = "__builtin_COLUMN source_location";
+const char* raw = R"tag(__builtin_LINE __LINE__)tag";
+int main(){return label[0]=='_' && raw[0]=='_';}
+)code",
+        R"code(// __LINE__ is documented, not evaluated.
+const char* label = "__builtin_COLUMN source_location";
+const char* raw = R"tag(__builtin_LINE __LINE__)tag";
+
+int main() {
+    return label[0]=='_' && raw[0]=='_';
+}
+)code",Language::cpp),
+        "Harmless strings, raw literals and comments falsely blocked code spacing");
+    check(code_format::equivalent(
+            "int count__LINE__marker=1;int main(){return count__LINE__marker;}",
+            "int count__LINE__marker=1;\nint main(){return count__LINE__marker;}",Language::cpp),
+        "A longer identifier containing a macro spelling was treated as a positional macro");
+    check(!code_format::equivalent(
+            "#define SOURCE_LINE __LINE__\nint line=SOURCE_LINE;",
+            "#define SOURCE_LINE __LINE__\n\nint line=SOURCE_LINE;",Language::cpp),
+        "A position-sensitive macro directive gained an unverified formatting exception");
     check(!code_format::equivalent(R"qa(auto s="abc"_length;)qa",
             R"qa(auto s="abc" _length;)qa",Language::cpp),
         "Adjacent user-defined literal suffix was detached");
