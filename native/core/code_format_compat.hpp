@@ -192,8 +192,12 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
     for(const auto& token:tokens) {
         if(!token.starts_with("word:")&&!token.starts_with("quoted:"))continue;
         for(const auto name:names) {
+            // ${VAR} is evaluated in ordinary arguments. @VAR@ can also be
+            // substituted by string(CONFIGURE) and by older CMake policies.
+            // Reject both when the physical command position changes.
             if(token==std::string("word:")+std::string(name)||
-               token.find("${"+std::string(name)+"}")!=std::string::npos)
+               token.find("${"+std::string(name)+"}")!=std::string::npos||
+               token.find("@"+std::string(name)+"@")!=std::string::npos)
                 return true;
         }
     }
