@@ -351,32 +351,41 @@ struct CodeEditor::Impl {
         const auto room=static_cast<std::int64_t>(format.bottom)-format.top;
         const auto count=SendMessageW(window,EM_GETLINECOUNT,0,0);
         if(room<=0||count<=0)return;
-        std::int64_t story_height=0;
-        if(count==1) {
-            CHARFORMAT2W font{};font.cbSize=sizeof(font);
-            SendMessageW(window,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&font));
-            if(font.yHeight<=0)return;
-            // The one-line path still respects native font scaling.
-            story_height=MulDiv(font.yHeight,static_cast<int>(GetDpiForWindow(window)),1440);
-            int numerator=0,denominator=0;
-            SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
-                reinterpret_cast<LPARAM>(&denominator));
-            if(numerator>0&&denominator>0)
-                story_height=MulDiv(static_cast<int>(story_height),numerator,denominator);
-        }else{
-            const auto first=SendMessageW(window,EM_LINEINDEX,0,0);
-            const auto second=SendMessageW(window,EM_LINEINDEX,1,0);
-            const auto last=SendMessageW(window,EM_LINEINDEX,count-1,0);
-            if(first<0||second<0||last<0)return;
-            POINTL top{},next{},bottom{};
-            SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&top),first);
-            SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),second);
-            SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&bottom),last);
-            const auto row=static_cast<std::int64_t>(next.y)-top.y;
-            if(row<=0||bottom.y<top.y)return;
-            story_height=static_cast<std::int64_t>(bottom.y)-top.y+row;
+        // A trailing newline creates a real, empty final visual row.
+        // EM_POSFROMCHAR on its insertion position can return -1, and an
+        // offscreen character may have negative client coordinates. Neither
+        // is a trustworthy document-bottom measurement. Use the count of
+        // native visual rows and their uniform code-editor line spacing.
+        CHARFORMAT2W font{};font.cbSize=sizeof(font);
+        SendMessageW(window,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&font));
+        if(font.yHeight<=0)return;
+        std::int64_t row=MulDiv(font.yHeight,static_cast<int>(GetDpiForWindow(window)),1440);
+        int numerator=0,denominator=0;
+        SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+            reinterpret_cast<LPARAM>(&denominator));
+        if(numerator>0&&denominator>0)
+            row=MulDiv(static_cast<int>(row),numerator,denominator);
+        if(row<=0)return;
+        if(count>1) {
+            // Measure consecutive visible lines when possible. This matches
+            // actual RichEdit leading and zoom, without depending on an empty
+            // or distant last-line character that may not have coordinates.
+            const auto visible=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+            const auto sample=std::clamp<LRESULT>(visible,0,count-2);
+            const auto first=SendMessageW(window,EM_LINEINDEX,sample,0);
+            const auto second=SendMessageW(window,EM_LINEINDEX,sample+1,0);
+            if(first>=0&&second>=0) {
+                POINTL at{},next{};
+                SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&at),first);
+                SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),second);
+                const auto measured=static_cast<std::int64_t>(next.y)-at.y;
+                // A sentinel (-1,-1) or a stale layout is not an actual
+                // line-height measurement. Keep the base font estimate then.
+                if(measured>=std::max<std::int64_t>(1,row/2)&&
+                   measured<=row*2)row=measured;
+            }
         }
-        if(story_height<=0)return;
+        const auto story_height=static_cast<std::int64_t>(count)*row;
         // Removing rows can invalidate an old fullscreen bottom offset even
         // when the shortened document still slightly overflows. Clamp against
         // the current measured story, not yesterday's native scrollbar range.
