@@ -181,18 +181,38 @@ inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens
     }
     return false;
 }
+// CMake bracket arguments and both forms of comments never expand variables.
+// Ordinary quoted and unquoted arguments can, and conditions can read a bare
+// variable name. Keep those position-dependent expressions protected while
+// allowing source spacing beside inert comments and bracket literals.
+inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& tokens) {
+    constexpr std::string_view names[]{
+        "CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE"
+    };
+    for(const auto& token:tokens) {
+        if(!token.starts_with("word:")&&!token.starts_with("quoted:"))continue;
+        for(const auto name:names) {
+            if(token==std::string("word:")+std::string(name)||
+               token.find("${"+std::string(name)+"}")!=std::string::npos)
+                return true;
+        }
+    }
+    return false;
+}
 inline bool equivalent(std::string_view before,std::string_view after,Language language) {
     if(before==after)return true;
     if(language==Language::immutable||physical_splice(before)||physical_splice(after))return false;
-    if(language==Language::cmake&&(before.find("CMAKE_CURRENT_LIST_LINE")!=before.npos||
-        after.find("CMAKE_CURRENT_LIST_LINE")!=after.npos))return false;
     const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
     const auto b=language==Language::cmake?cmake_tokens(after):cpp_tokens(after);
     if(!a||!b)return false;
     // A physical spacing review must not change observable line/column values.
-    // Only executable/source directive tokens count, not quoted explanations.
+    // Only executable/source argument tokens count, not quoted explanations or
+    // CMake bracket literals that never expand their contents.
     if(language==Language::cpp&&
        (cpp_position_sensitive_tokens(*a)||cpp_position_sensitive_tokens(*b)))
+        return false;
+    if(language==Language::cmake&&
+       (cmake_position_sensitive_tokens(*a)||cmake_position_sensitive_tokens(*b)))
         return false;
     return *a==*b;
 }
