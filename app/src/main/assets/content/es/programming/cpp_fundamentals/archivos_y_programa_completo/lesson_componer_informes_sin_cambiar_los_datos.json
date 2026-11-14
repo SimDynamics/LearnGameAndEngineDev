@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reúne lo aprendido sobre `struct`, `std::vector`, parámetros por referencia `const` y composición mediante un flujo local. Define `Registro` con los miembros `codigo` de tipo `std::string`, `cantidad` de tipo `int` y `medida` de tipo `double`.\n\nEl llamador proporciona como máximo veinte registros. Cada código contiene de cero a ocho caracteres ASCII imprimibles; esto admite el código vacío y excluye saltos de línea o tabuladores dentro de la etiqueta. Las cantidades van de cero a mil y las medidas de cero a veinte, incluidos los extremos. Son condiciones de entrada de este ejercicio: no se pide escribir un validador. La suma de cantidades no supera veinte mil y cabe en `int`.\n\nEl total suma las cantidades. La media simple suma las medidas originales y divide esa suma por el número de registros: cada medida interviene una vez. Una cantidad igual a cero no elimina su registro ni cambia el peso de su medida. Para una colección vacía no se calcula la media, porque no hay registros entre los que dividir.",
+          "text": "Reúne lo aprendido sobre `struct`, `std::vector`, parámetros por referencia `const` y composición mediante un flujo local. Define `Registro` con estos miembros:\n\n`codigo`, de tipo `std::string`.\n\n`cantidad`, de tipo `int`.\n\n`medida`, de tipo `double`.\n\nEl llamador proporciona datos que cumplen estas condiciones:\n\nComo máximo, veinte registros.\n\nCada código contiene de cero a ocho caracteres ASCII imprimibles. Se admite el código vacío, pero no saltos de línea ni tabuladores dentro del código.\n\nLas cantidades van de cero a mil, incluidos los extremos.\n\nLas medidas van de cero a veinte, incluidos los extremos.\n\nNo se pide escribir un validador: son condiciones de entrada de este ejercicio. Con esos límites, la suma de cantidades no supera veinte mil y cabe en `int`.\n\nEl informe calcula dos resultados distintos. El total suma las cantidades. La media simple suma las medidas originales y divide esa suma por el número de registros: cada medida interviene una vez, con independencia de la cantidad.\n\nPor ejemplo, con cantidades 4 y 0 y medidas 2.5 y 5.5, el total es 4. La media usa ambas medidas: (2.5 + 5.5) / 2 = 4. El registro de cantidad cero sigue aportando su medida 5.5.\n\nEl peso de una medida indica cuánto cuenta al obtener el promedio. Usar pesos para decidir esa aportación se llama ponderar; el resultado es una media ponderada. Este contrato usa la media simple: cada medida cuenta por igual, sin usar las cantidades como pesos.\n\nPara una colección vacía no se calcula la media: no hay registros entre los que dividir.",
           "emphasis": [
             {
               "text": "La media simple",
@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada fila tiene la forma [CODIGO]|[CANTIDAD]|[MEDIDA]. El código pide un mínimo de seis posiciones, contenido a la izquierda y espacios después. La cantidad pide un mínimo de cuatro posiciones, contenido a la derecha y representación decimal. La medida usa `std::fixed` y dos cifras tras el punto. Los contenidos largos se conservan completos. Son las reglas de presentación que ya estudiaste; los manipuladores se aplicarán al flujo local de cada composición (Köppe et al., 2023).\n\nTras las filas se escribe Total:T;Media:M. T representa la suma de cantidades y M la media simple de las medidas, presentada también con dos decimales. Para una colección vacía se escribe Total:0;Sin medidas. Los marcadores T y M describen los lugares de los valores; no se copian como letras en el informe."
+          "text": "Cada fila tiene la forma [CODIGO]|[CANTIDAD]|[MEDIDA]. Aplica estas reglas a sus campos:\n\nEl código se alinea a la izquierda en un mínimo de seis posiciones. Si es más corto, se añaden espacios después.\n\nLa cantidad se presenta en decimal y se alinea a la derecha en un mínimo de cuatro posiciones. Si es más corta, se añaden espacios antes.\n\nLa medida usa `std::fixed` y dos cifras después del punto.\n\nLos contenidos que superan la anchura mínima se conservan completos. Los manipuladores actúan sobre el flujo local de cada composición (Köppe et al., 2023).\n\nDespués de las filas se escribe el resumen Total:T;Media:M. El marcador T indica dónde irá la suma de cantidades; M, dónde irá la media simple de las medidas, también con dos decimales. Estos marcadores describen posiciones: no se copian como letras en el informe.\n\nPara una colección vacía, el resumen es Total:0;Sin medidas. En ese caso no hay filas ni se calcula una media."
         }
       ]
     },
@@ -36,7 +36,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe `componer_fila(const Registro&)` y `componer_informe(const std::vector<Registro>&)`, ambas con resultado `std::string`. Deben devolver el texto, sin imprimir ni modificar los registros. Cada llamada empieza con su propio `std::ostringstream` vacío; el formato del llamador no decide el de esa composición. La composición local devuelve caracteres que después puede utilizar quien llamó a la función (Stroustrup, 2024, sección 9.11).\n\nLa función de fila devuelve sólo una fila, sin salto final. El informe añade un salto después de cada fila y sitúa el resumen al final, sin añadir un salto después de ese resumen. `main` decide mostrar el resultado; este primer cotejo admite también un salto al terminar su salida.\n\nUsa los registros {\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375} y {\"Pasillo\", 0, 0.0}, en ese orden. Antes de construir el programa, completa el resumen y elige la presentación de las filas en el puzzle siguiente. Después construye el modelo y las dos funciones en el editor; pulsa Compilar, ejecutar y comprobar cuando el programa esté listo.",
+          "text": "Escribe estas funciones, ambas con resultado `std::string`:\n\n`componer_fila(const Registro&)` devuelve una fila, sin salto final.\n\n`componer_informe(const std::vector<Registro>&)` devuelve las filas y el resumen. Añade un salto después de cada fila, pero no después del resumen final.\n\nAmbas devuelven texto, sin imprimir ni modificar los registros. Cada llamada empieza con su propio `std::ostringstream` vacío: configura ese flujo local en lugar de depender del formato del llamador (Stroustrup, 2024).\n\nEn `main`, usa estos registros en el orden indicado:\n\n`{\"A\", 5, 4.3125}`\n\n`{\"Sala\", 7, 6.9375}`\n\n`{\"Pasillo\", 0, 0.0}`\n\nAntes de construir el programa, completa el resumen y elige la presentación de las filas en el puzzle siguiente. Después construye el modelo y las dos funciones en el editor. `main` debe mostrar el informe devuelto; este primer cotejo admite también un salto al terminar su salida. Pulsa Compilar, ejecutar y comprobar cuando el programa esté listo.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -171,7 +171,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -199,11 +199,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{{\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375}, {\"Pasillo\", 0, 0.0}};\n    std::cout << componer_informe(registros);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n              << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n              << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n\n    texto << \"Total:\" << std::dec << total << \";\";\n\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{\n        {\"A\", 5, 4.3125},\n        {\"Sala\", 7, 6.9375},\n        {\"Pasillo\", 0, 0.0}\n    };\n    std::cout << componer_informe(registros);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Las filas son [A     ]|[   5]|[4.31], [Sala  ]|[   7]|[6.94] y [Pasillo]|[   0]|[0.00]; el resumen es Total:12;Media:3.75. Las medidas originales suman 11.25 y se dividen entre los tres registros para obtener la media.\n\nCriterios: asociación y orden conservados; ancho aplicado a cada campo; cantidades decimales; cálculo con los datos originales; formato utilizado sólo para componer texto; vacío sin división. Las funciones devuelven la composición y dejan intactos sus argumentos. Se aceptan otras implementaciones que cumplan esos contratos."
+          "text": "El informe completo es:\n\n[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]\nTotal:12;Media:3.75\n\nEl total se obtiene con las cantidades: 5 + 7 + 0 = 12. Para la media se suman las medidas originales, 4.3125 + 6.9375 + 0 = 11.25, y se divide por los tres registros: 11.25 / 3 = 3.75. La medida cero del último registro también participa.\n\nComprueba estos criterios en tu programa:\n\nCada código sigue unido a su cantidad y su medida, y las filas mantienen el orden del vector.\n\nLa anchura se solicita para cada campo. Las cantidades se presentan en decimal.\n\nLos cálculos utilizan los datos originales; el formato sólo se aplica para componer texto.\n\nLa colección vacía no provoca una división.\n\nLas funciones devuelven las cadenas y dejan intactos sus argumentos.\n\nSe aceptan otras implementaciones que cumplan esos contratos."
         },
         {
           "type": "paragraph",
@@ -221,7 +221,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", 3, 8.8125}};\n    std::string fila = componer_fila(registros.at(0));\n    std::cout << fila << \"\\n\" << std::defaultfloat << std::setprecision(6)\n        << registros.at(0).medida * 16;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n              << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n              << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n\n    texto << \"Total:\" << std::dec << total << \";\";\n\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n\n    return texto.str();\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", 3, 8.8125}};\n    std::string fila = componer_fila(registros.at(0));\n    std::cout << fila << \"\\n\" << std::defaultfloat << std::setprecision(6)\n              << registros.at(0).medida * 16;\n\n    return 0;\n}\n",
           "answers": [
             "[R     ]|[   3]|[8.81]\n141"
           ],
@@ -246,7 +246,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con otros datos, sustituir cada medida por su escritura redondeada antes de promediar puede cambiar incluso los dos decimales de la media final. Conserva las medidas originales para sumar y dividir, y aplica el formato al resultado del cálculo. La práctica siguiente compara ambos procedimientos con datos que sí permiten ver esa diferencia. No se pide volver a interpretar las cadenas compuestas."
+          "text": "Redondear cada medida antes de sumarla introduce un cambio en los datos del cálculo. Ese cambio puede llegar a verse también en la media final. Veámoslo con tres medidas distintas de las del siguiente puzzle:\n\nMedidas originales: 0.09375, 0.09375 y 0.34375.\n\nSu suma es 0.53125. Al dividirla por tres se obtiene aproximadamente 0.1770833, que se presenta con dos decimales como 0.18.\n\nSi antes sustituimos cada medida por su escritura de dos decimales, sumaríamos 0.09 + 0.09 + 0.34 = 0.52. Dividir esa suma por tres da aproximadamente 0.1733333 y se presentaría como 0.17.\n\nLa diferencia está en qué se suma, no en el formato del resumen. Conserva las medidas originales para sumar y dividir; aplica el formato después. La práctica siguiente permite comprobar esta diferencia con otro conjunto de datos. No se pide volver a interpretar las cadenas compuestas."
         },
         {
           "type": "math_puzzle",
@@ -354,7 +354,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una función que reciba `numero`, de tipo `int`, entre cero y mil incluidos, y devuelva un `std::string` con la forma muestra_NNNN.txt. La parte numérica se presenta en decimal, con un mínimo de cuatro posiciones y ceros iniciales. Para siete debe devolver muestra_0007.txt; para mil, muestra_1000.txt.\n\nCada llamada compone y devuelve un nombre nuevo, sin imprimir ni cambiar `std::cout`. Formar ese texto no abre ni escribe un archivo. En `main`, presenta las llamadas para `7`, `23`, `0` y `1000`, en ese orden, con un salto después de cada nombre, incluido el último. Usa Compilar, ejecutar y comprobar cuando las cuatro llamadas pertenezcan al mismo programa.",
+          "text": "Construye una función que reciba `numero`, de tipo `int`, entre cero y mil incluidos. Debe devolver un `std::string` con la forma muestra_NNNN.txt. La parte numérica se presenta en decimal, con un mínimo de cuatro posiciones y ceros iniciales.\n\nCada llamada compone y devuelve un nombre nuevo, sin imprimir ni cambiar `std::cout`. Formar ese texto no abre ni escribe un archivo.\n\nEn `main`, presenta estas llamadas en el orden indicado, con un salto después de cada nombre, incluido el último:\n\nArgumento 7: muestra_0007.txt\n\nArgumento 23: muestra_0023.txt\n\nArgumento 0: muestra_0000.txt\n\nArgumento 1000: muestra_1000.txt\n\nUsa Compilar, ejecutar y comprobar cuando las cuatro llamadas pertenezcan al mismo programa.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -364,7 +364,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -391,11 +391,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\" << componer_nombre(23) << \"\\n\"\n        << componer_nombre(0) << \"\\n\" << componer_nombre(1000);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\"\n              << componer_nombre(23) << \"\\n\"\n              << componer_nombre(0) << \"\\n\"\n              << componer_nombre(1000);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Esta primera referencia presenta los cuatro nombres, pero omite el salto después del último. Por eso no satisface todavía la salida literal del editor anterior. La referencia completa al final de esta página conserva las mismas cuatro llamadas y añade ese salto final.\n\nLos nombres son muestra_0007.txt, muestra_0023.txt, muestra_0000.txt y muestra_1000.txt. Criterios: prefijo y sufijo constantes; número tomado del argumento, presentado en decimal y rellenado hasta cuatro posiciones; composición nueva por llamada; nombre completo devuelto sin imprimir ni crear el archivo. Otra organización que cumpla el contrato es válida.",
+          "text": "Esta primera referencia presenta los cuatro nombres, pero omite el salto después del último. Por eso no satisface todavía la salida literal del editor anterior. La referencia completa al final de esta página conserva las mismas llamadas y añade ese salto final.\n\nLos nombres aparecen en este orden:\n\nmuestra_0007.txt\n\nmuestra_0023.txt\n\nmuestra_0000.txt\n\nmuestra_1000.txt\n\nCompara los criterios de tu función:\n\nEl prefijo y el sufijo son constantes.\n\nEl número procede del argumento y se presenta en decimal, con ceros hasta alcanzar cuatro posiciones.\n\nCada llamada empieza una composición nueva y devuelve el nombre completo.\n\nLa función no imprime ni crea el archivo.\n\nOtra organización que cumpla el contrato es válida.",
           "emphasis": [
             {
               "text": "omite el salto después del último",
@@ -405,7 +405,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La unidad ya enseñó a elegir el destino de una cadena. Si más adelante se utiliza el nombre para abrir un archivo, habrá que comprobar la apertura y las operaciones de escritura correspondientes. Componer el nombre como texto no comprueba que el archivo pueda abrirse; son operaciones distintas (Stroustrup, 2024, sección 9.11)."
+          "text": "La unidad ya enseñó a elegir el destino de una cadena. El nombre devuelto es sólo texto. Para utilizarlo como nombre de archivo hay que ejecutar, además, la operación de apertura y comprobar si tuvo éxito; las operaciones de escritura requieren sus propias comprobaciones. Componer el nombre no realiza ninguna de esas operaciones (Stroustrup, 2024)."
         },
         {
           "type": "paragraph",
@@ -414,7 +414,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\" << componer_nombre(23) << \"\\n\"\n        << componer_nombre(0) << \"\\n\" << componer_nombre(1000) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\"\n              << componer_nombre(23) << \"\\n\"\n              << componer_nombre(0) << \"\\n\"\n              << componer_nombre(1000) << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -428,7 +428,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    const std::vector<Registro> registros;\n    std::cout << componer_informe(registros) << \"|\" << 26;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n              << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n              << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n\n    texto << \"Total:\" << std::dec << total << \";\";\n\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    const std::vector<Registro> registros;\n    std::cout << componer_informe(registros) << \"|\" << 26;\n\n    return 0;\n}\n",
           "answers": [
             "Total:0;Sin medidas|1a"
           ],
@@ -437,7 +437,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La construcción siguiente retoma datos, cálculo, formato y presentación en otro editor. Conserva los criterios: argumentos intactos, media simple de medidas originales, colección vacía sin división, formato elegido explícitamente y composición local nueva por resultado. Usa los datos nuevos para comprobar la misma lógica, sin modificar el editor del informe inicial."
+          "text": "La construcción siguiente retoma los mismos contratos con otros datos. Conserva las medidas originales para calcular, no dividas cuando la colección esté vacía y empieza una composición local nueva en cada llamada. Trabaja en el nuevo editor, sin modificar el informe inicial.\n\nConviene distinguir la media simple de otra operación que podría pedir un contrato diferente. A veces queremos que unas medidas cuenten más que otras. Se asigna a cada medida un peso: un número que multiplica su aportación a la suma. Se suman esos productos y, si la suma de pesos es positiva, se divide entre esa suma. El resultado se llama media ponderada.\n\nPor ejemplo, para las medidas 2 y 6, con pesos 3 y 1:\n\nLa medida 2 aporta 2 × 3 = 6.\n\nLa medida 6 aporta 6 × 1 = 6.\n\nLos productos suman 12 y los pesos suman 4; la media ponderada es 12 / 4 = 3.\n\nLa media simple de esas mismas medidas sería (2 + 6) / 2 = 4. En la simple, cada medida cuenta una vez; en la ponderada, los pesos deciden cuánto cuenta cada una. El informe de esta lección pide la media simple: las cantidades se suman para el total y no se utilizan como pesos."
         }
       ]
     },
@@ -466,7 +466,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye en este editor `Registro`, `componer_fila` y `componer_informe` con los contratos definidos al principio. Conserva la separación de saltos: la fila devuelta no lleva salto; el informe añade un salto después de cada fila y deja su resumen sin salto final; `main` añade un salto al mostrar cada informe completo. Así no aparecen líneas vacías entre resultados.\n\nDentro del mismo programa, presenta tres llamadas en este orden: colección vacía; el registro {\"O\", 0, 2.0}; y la colección {\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}. Cada función devuelve texto sin imprimir ni modificar los registros. Usa Compilar, ejecutar y comprobar con las tres llamadas y consulta después la referencia.",
+          "text": "Reconstruye en este editor `Registro`, `componer_fila` y `componer_informe` con los contratos definidos al principio.\n\nConserva esta organización de los saltos:\n\nLa fila devuelta no lleva salto final.\n\nEl informe añade un salto después de cada fila y deja su resumen sin salto final.\n\n`main` añade un salto al mostrar cada informe completo.\n\nAsí no aparecen líneas vacías entre resultados. Dentro del mismo programa, presenta tres llamadas en este orden:\n\nUna colección vacía.\n\nUna colección con el registro `{\"O\", 0, 2.0}`.\n\nUna colección con los registros `{\"Taller\", 1000, 12.0}` y `{\"N\", 2, 1.0}`, en ese orden.\n\nCada función devuelve texto sin imprimir ni modificar los registros. Usa Compilar, ejecutar y comprobar con las tres llamadas.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -476,7 +476,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -494,11 +494,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en el Laboratorio las funciones std::string componer_fila(const Registro&) y std::string componer_informe(const std::vector<Registro>&). Cada Registro contiene codigo, de tipo std::string; cantidad, de tipo int; y medida, de tipo double. El contrato admite hasta veinte registros, códigos de cero a ocho caracteres ASCII imprimibles, cantidades entre 0 y 1000 y medidas entre 0 y 20.\n\nCada fila tiene la forma [CODIGO]|[CANTIDAD]|[MEDIDA]: código alineado a la izquierda con anchura mínima seis y espacios, cantidad decimal alineada a la derecha con anchura mínima cuatro y espacios, y medida fija con dos decimales. Una cadena más larga que su anchura se conserva completa. La fila no termina en salto de línea. Las funciones devuelven cadenas sin imprimir, sin cambiar los registros y sin cambiar el formato de std::cout."
+          "text": "Construye en el Laboratorio estas funciones:\n\n`std::string componer_fila(const Registro&)`\n\n`std::string componer_informe(const std::vector<Registro>&)`\n\nCada `Registro` contiene los miembros `codigo`, de tipo `std::string`; `cantidad`, de tipo `int`; y `medida`, de tipo `double`. El contrato admite:\n\nHasta veinte registros.\n\nCódigos de cero a ocho caracteres ASCII imprimibles.\n\nCantidades entre 0 y 1000.\n\nMedidas entre 0 y 20.\n\nCada fila tiene la forma [CODIGO]|[CANTIDAD]|[MEDIDA] y utiliza estos campos:\n\nCódigo alineado a la izquierda, con anchura mínima de seis posiciones y relleno de espacios.\n\nCantidad decimal alineada a la derecha, con anchura mínima de cuatro posiciones y relleno de espacios.\n\nMedida en modo fijo, con dos decimales.\n\nUna cadena más larga que su anchura se conserva completa. La fila no termina en salto de línea. Las funciones devuelven cadenas sin imprimir, sin cambiar los registros y sin cambiar el formato de `std::cout`."
         },
         {
           "type": "paragraph",
-          "text": "Prepara un vector constante con estos tres registros, en este orden:\n1. Código vacío, cantidad 12 y medida 0.0625.\n2. Código M, cantidad 300 y medida 0.0625.\n3. Código Largo123, cantidad 0 y medida 0.3125.\n\nEl informe contiene cada fila seguida de un salto de línea y termina con Total:T;Media:M, sin otro salto. Suma las cantidades para el total y calcula la media simple con las medidas originales de los tres registros, incluido el de cantidad cero. Presenta esa media con dos decimales. Un vector vacío produce exactamente Total:0;Sin medidas.",
+          "text": "Prepara un vector constante con estos tres registros, en este orden:\n\nCódigo vacío; cantidad 12; medida 0.0625.\n\nCódigo M; cantidad 300; medida 0.0625.\n\nCódigo Largo123; cantidad 0; medida 0.3125.\n\nEl informe contiene cada fila seguida de un salto de línea y termina con Total:T;Media:M, sin otro salto. Suma las cantidades para el total y calcula la media simple con las medidas originales de los tres registros, incluido el de cantidad cero. Presenta esa media con dos decimales.\n\nUn vector vacío produce exactamente Total:0;Sin medidas.",
           "emphasis": [
             {
               "text": "medidas originales",
@@ -508,7 +508,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En main, configura std::cout en hexadecimal con std::hex y guarda el informe del vector. Muestra la cadena guardada y un salto de línea; después inserta la etiqueta \"Exterior:\", el entero 26 y otro salto. Ese entero permite observar si componer el informe ha conservado el formato del llamador.\n\nConfigura después std::cout con std::dec, std::defaultfloat y std::setprecision(6). Muestra \"Originales:\" y las tres medidas del vector multiplicadas por 16, separadas por comas y seguidas de un salto de línea. Por último, muestra el informe de un vector vacío y vuelve a componer el del vector original, con un salto después de cada informe. No leas entrada ni añadas mensajes. Compila, ejecuta y compara la salida completa.",
+          "text": "Realiza estas operaciones en `main`, en el orden indicado:\n\n1. Configura `std::cout` en hexadecimal con `std::hex` y guarda el informe del vector. Muestra la cadena guardada y un salto de línea. Después inserta la etiqueta `\"Exterior:\"`, el entero `26` y otro salto. Ese entero permite observar si componer el informe ha conservado el formato del llamador.\n\n2. Configura `std::cout` con `std::dec`, `std::defaultfloat` y `std::setprecision(6)`. Muestra `\"Originales:\"` y las tres medidas del vector multiplicadas por 16. Sepáralas mediante comas y termina con un salto. Estos productos permiten comprobar que se siguen utilizando las medidas originales.\n\n3. Muestra el informe de un vector vacío y un salto de línea.\n\n4. Por último, vuelve a componer el informe del vector original y muéstralo con un salto final. Esta repetición permite comprobar que una llamada no conserva filas ni sumas de las anteriores.\n\nNo leas entrada ni añadas mensajes. Compila, ejecuta y compara la salida completa.",
           "emphasis": [
             {
               "text": "vuelve a componer",
@@ -522,7 +522,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -562,7 +562,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe({{\"O\", 0, 2.0}}) << \"\\n\";\n    std::cout << componer_informe({{\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}}) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n              << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n              << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n\n    texto << \"Total:\" << std::dec << total << \";\";\n\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe({{\"O\", 0, 2.0}}) << \"\\n\";\n    std::cout << componer_informe({{\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}}) << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -571,11 +571,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{\n        {\"\", 12, 0.0625}, {\"M\", 300, 0.0625}, {\"Largo123\", 0, 0.3125}\n    };\n    std::cout << std::hex;\n    const std::string primero = componer_informe(registros);\n    std::cout << primero << \"\\n\" << \"Exterior:\" << 26 << \"\\n\";\n    std::cout << std::dec << std::defaultfloat << std::setprecision(6)\n        << \"Originales:\" << registros.at(0).medida * 16 << \",\"\n        << registros.at(1).medida * 16 << \",\" << registros.at(2).medida * 16 << \"\\n\";\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe(registros) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n              << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n              << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n\n    texto << \"Total:\" << std::dec << total << \";\";\n\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{\n        {\"\", 12, 0.0625}, {\"M\", 300, 0.0625}, {\"Largo123\", 0, 0.3125}\n    };\n    std::cout << std::hex;\n    const std::string primero = componer_informe(registros);\n    std::cout << primero << \"\\n\" << \"Exterior:\" << 26 << \"\\n\";\n    std::cout << std::dec << std::defaultfloat << std::setprecision(6)\n              << \"Originales:\" << registros.at(0).medida * 16 << \",\"\n              << registros.at(1).medida * 16 << \",\" << registros.at(2).medida * 16 << \"\\n\";\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe(registros) << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La acumulación usa registro.medida directamente. La fila se construye como cadena en otra operación; sus dos cifras decimales no se convierten de nuevo en la medida que se suma. El registro con cantidad cero también cuenta en la media simple porque sigue siendo uno de los tres registros.\n\nCada llamada construye sus flujos locales y comienza con el total y la suma en cero. La llamada con el vector vacío no hereda filas, y la siguiente llamada recupera exactamente el informe inicial. Los manipuladores actúan sobre texto, por lo que la configuración hexadecimal de std::cout sobrevive hasta que main decide cambiarla.\n\nLa batería observa estos casos concretos. No inspecciona el algoritmo: una salida coincidente no sustituye la revisión de que las funciones respeten el contrato para los demás valores admitidos."
+          "text": "La acumulación utiliza directamente `registro.medida`. En este caso se suman 0.0625 + 0.0625 + 0.3125 = 0.4375. Dividir por los tres registros da aproximadamente 0.1458333; el resumen presenta Media:0.15. El registro de cantidad cero también cuenta, porque la media simple incluye una medida por registro.\n\nLas filas se construyen como cadenas en otra operación. Sumar sus escrituras redondeadas daría 0.06 + 0.06 + 0.31 = 0.43 y una media presentada como Media:0.14. Ese resultado incumple el contrato: habría cambiado los valores sumados antes de calcular la media.\n\nLa comprobación posterior muestra Originales:1,1,5. Son los productos de las medidas por 16; permiten observar que las funciones no sustituyeron los datos por las escrituras de las filas.\n\nCada llamada crea sus flujos locales y comienza con el total y la suma en cero. El informe del vector vacío no hereda filas. Al repetir después la llamada con el vector original, se obtiene de nuevo el mismo informe, sin texto ni totales acumulados.\n\nLos manipuladores actúan sobre el flujo local llamado `texto`. Por eso `std::cout` conserva su configuración hexadecimal hasta que `main` la cambia expresamente. La línea Exterior:1a permite observar esa conservación.\n\nEstas comprobaciones observan casos concretos; no inspeccionan el algoritmo. Revisa también que las funciones respeten el contrato para los demás valores admitidos."
         }
       ]
     }
@@ -1564,6 +1564,292 @@
         "id": "block_0003_0002",
         "beforeSha256": "26b7043c102a6bd42e7ce79f0ee9043b6cb8692a3e2234c7c1dd369df55c8b15",
         "afterSha256": "6bf1537b2d0ab2f4de542a0a49767776e6735a874ab10b4bf797b03f7e49db4f"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "171db37b96b083c02c691fcbca9eb51a2d1b29662121f4d361ad16f2f5a8dbf5",
+        "afterSha256": "72190b3f1f1297c17a465feb818ed303c4632bd66fe9e7769a9a722f37db1304"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "750625d7965aa245a83d23af2cf7bfdc78fea183d2dbdfa63fb0b24453054b52",
+        "afterSha256": "c244fb46cd3c03f3ad3e22d14b45d53a10484e7d377289b95ee2b4c31b421201"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "b116f4b00f37619667b5e235a20fb5c22c8de585f8b56aa594392cfb126c6284",
+        "afterSha256": "252b0b9c1306987cfbb118779660ffb8694eab03b6a45a8b110aef5d6d812a1f"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "17177a4d7075897492f23cfca9fd8661a0bc1fdd1dba4f8741d0a5668723f37e",
+        "afterSha256": "4bf78b4b84623de9dd060803e810241d40ec2a54c1c6a89a7f7fa95c0ad2f2ea"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "51ea791dc2a01e624777a50e9cdce26c2eef8a56ef85c9dbb2962b1fd40cc8be",
+        "afterSha256": "6a2391b1dffc564dd7a1cf9fc8543b633248a4d77ed3b801dd0797597a32ef68"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "fef7e95a3ce833cd5ad3a7551ced4671aed8a2af72ca0dd31ab5a3882e2cbcc6",
+        "afterSha256": "2242bc2f6a109bdb13dc235002cb75a7df52e29a31da3abc2c63b73f7740bab9"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "46d40f67e86b5d89939d64b2781b88f0ec0f6e285eac075a010e35487a98d80b",
+        "afterSha256": "31c26e7c6719574dc4cb9252734cc074f1172cc38f4f1d69b6b105bca94daefc"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "0c9bc1ec4191efc5edd552e542393afb24ed84d1e378995affa90c66e086838b",
+        "afterSha256": "2dd032e9fbe9f0b1803f5d7e80fbc703d7789d962bc86ec43b70de47fc7dd885"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "d72f583f121b584c2b0b91a1139971708af6b6090a358df71844e6e0866f9ba8",
+        "afterSha256": "00fe398887c816d2bb9b66af173a6beb2ce3e39a10ea16849a2d83009059aa9f"
+      },
+      {
+        "id": "u12_informe_medidas_originales_contrato",
+        "beforeSha256": "2939d8e67401c8e263586301cff8b933fbf159409709edac86035f8ea13331d2",
+        "afterSha256": "1381e3b318541b3c5013b18cdd5d94552a337236b887804680ca5ad4402793e5"
+      },
+      {
+        "id": "u12_informe_medidas_originales_datos",
+        "beforeSha256": "c19ee8726891fc09d5ff6f99b8f595671b5f94849c1c8fcfea4390e4075650e2",
+        "afterSha256": "a183073e6ff38618f77edbe5146cc1f03083ec244b2af9fec84b07ac03ebfe6d"
+      },
+      {
+        "id": "u12_informe_medidas_originales_comprobaciones",
+        "beforeSha256": "d04b3db151bbc4ad810acd0b9ddd5cc4aaff295ad3826ac3ddb3681ca5482fee",
+        "afterSha256": "f57a219135be8a0822ce0fa7b6b65da48c2623aec228b30953aa1b250c218f87"
+      },
+      {
+        "id": "u12_informe_medidas_originales_referencia_razonamiento",
+        "beforeSha256": "30ba7ae1f3dfb56974fa35e2ca897215e716f6d8cc005b9a6c836dba7b6ae4bd",
+        "afterSha256": "e485179c8f2ec56f507ad64ee62c9980aacf238534e78bb25507b1a46ece864d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "79ca4530b66ea2b3e32dec9a2748bdfda353f4484b61696be833b73322206b24",
+        "afterSha256": "9d6b3aad9ee0a0348c26ec19f4282ac3a3c027169e3a95097a96a9acb8278d92"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "59cff2a0e714cd6aa318b78af20dd0fd7e9cd4cddf667f32a63a9377ae3e060b",
+        "afterSha256": "8b2bdcda63d570ae3b6cb84bb0c495e55d81837bdf0445d968ddc25fabd297a2"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "7a3e676935940c6901d5a144391e98ff75b748fbc47a253294d945315d4d0038",
+        "afterSha256": "eab28b2c45592bd7b7f259d6f1ca3c2efdf335c737f666040927c154b04ad4ac"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "630dd457a65fb6db86db12736360a1029820842560549b22d5f6004f0faccbd8",
+        "afterSha256": "0148de059807c63a12604d38fc17cb22b22d0483d4b4e3c514eed10c98d7243f"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "3609aabdac599abb4a7486dcecaf00731996253719e6cced02d6eaa8d81c1a57",
+        "afterSha256": "74da40db49997f51e50bf0b679faee8541411e585b5d927a1d62c494d02d6922"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "5bfaa1a2491908c19be67a68c3e1ce66e8f5b99755e6fe8af69699b01b7a3f26",
+        "afterSha256": "2ce662bc65dd4a6b7d5d5b65482524059f70b61fe7a6fe9b334cf8d3bf522770"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "2ccfcb5445919322b2f46cd8d104f471676f350f00092855a665576cc551d0b8",
+        "afterSha256": "ef3f69cdf7cf30b0a06a7b05e6004773f52b99afe26ec6144578b36b8dfb31d6"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "4f5623c2bb3fc2a8f9d0254d88e294a3b803231c39644a5cd78ff2b2a2ea7575",
+        "afterSha256": "ddf5a32acdd118b02e193a30e8c6d85977783fb2572e15d66f7526413c2ea809"
+      },
+      {
+        "id": "u12_informe_medidas_originales_construccion",
+        "beforeSha256": "15783554732b16c8d4f269b85e7a74d235de5870ebd33fa483c314786701305d",
+        "afterSha256": "b5b47046ae042f414d3514e3d6ec69d2650efe89f862707bb44478d70f4c67b3"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "d5dea6abf9f6cbbb1263d128df4ef499f1e408b74cb2385281aba27ca62e6e26",
+        "afterSha256": "2c32e8911d998b5156d42af3d6e3b8cc5907ca73bb827b6b2b320b493e75328b"
+      },
+      {
+        "id": "u12_informe_medidas_originales_referencia_codigo",
+        "beforeSha256": "c5d151047a415c616e3f910ffc81f9c8bf7a6ce153e28cf9576f6d9d7e78be0c",
+        "afterSha256": "5f46bcc5b93613409119cb25844ca994cf8534186e76f5c6909b3b5df8beb028"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "32743f099b8152dfa9b708695cdc91a62876b613dd712b55e55a41db464785a2",
+        "afterSha256": "59386891132782459ce8848700d28e94adc08c4d524593b3c2066a084c2980b2"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "72190b3f1f1297c17a465feb818ed303c4632bd66fe9e7769a9a722f37db1304",
+        "afterSha256": "761ae3929464945a8c2c464e4df69be9479b99dcc692702d75af5b97193f52eb"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]\nTotal:12;Media:3.75",
+                  "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]\nTotal:12;Media:3.75\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{{\"A\", 5, 4.3125}, {\"Sala\", 7, 6.9375}, {\"Pasillo\", 0, 0.0}};\n    std::cout << componer_informe(registros);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", 3, 8.8125}};\n    std::string fila = componer_fila(registros.at(0));\n    std::cout << fila << \"\\n\" << std::defaultfloat << std::setprecision(6)\n        << registros.at(0).medida * 16;\n    return 0;\n}\n",
+          "answers": [
+            "[R     ]|[   3]|[8.81]\n141"
+          ],
+          "explanation": "Al componer la fila, std::fixed y std::setprecision(2) producen el texto 8.81. Ese formato actúa sobre la representación: el miembro registros.at(0).medida conserva 8.8125.\n\nLa multiplicación posterior utiliza ese valor original: 8.8125 * 16 = 141. Por eso la segunda línea muestra 141. Sustituir la medida por el número redondeado antes de multiplicar cambiaría el cálculo a 8.81 * 16 = 140.96.",
+          "reviewFeedback": "Distingue la escritura de dos decimales del valor que conserva el miembro. Sigue después el cálculo que usa ese dato original y el formato de su propia salida."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "muestra_0007.txt\nmuestra_0023.txt\nmuestra_0000.txt\nmuestra_1000.txt\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\" << componer_nombre(23) << \"\\n\"\n        << componer_nombre(0) << \"\\n\" << componer_nombre(1000);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\" << componer_nombre(23) << \"\\n\"\n        << componer_nombre(0) << \"\\n\" << componer_nombre(1000) << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    const std::vector<Registro> registros;\n    std::cout << componer_informe(registros) << \"|\" << 26;\n    return 0;\n}\n",
+          "answers": [
+            "Total:0;Sin medidas|1a"
+          ],
+          "explanation": "El vector vacío no aporta filas ni medidas. El flujo local del informe compone Total:0;Sin medidas y evita dividir por un número de registros igual a cero. Insertar esa cadena en std::cout copia sus caracteres.\n\nEl entero 26 se inserta después directamente en std::cout, que conserva la base hexadecimal, y aparece como 1a. Por eso la salida completa es Total:0;Sin medidas|1a. El cero del total, por sí solo, no permitiría distinguir una representación decimal de una hexadecimal.",
+          "reviewFeedback": "Sigue por separado el flujo local del informe y std::cout. Decide qué base recibe el entero insertado directamente después de la cadena devuelta."
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total:0;Sin medidas\n[O     ]|[   0]|[2.00]\nTotal:0;Media:2.00\n[Taller]|[1000]|[12.00]\n[N     ]|[   2]|[1.00]\nTotal:1002;Media:6.50\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_informe_medidas_originales_construccion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Reconstruye el modelo, las funciones y las tres pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[      ]|[  12]|[0.06]\n[M     ]|[ 300]|[0.06]\n[Largo123]|[   0]|[0.31]\nTotal:312;Media:0.15\nExterior:1a\nOriginales:1,1,5\nTotal:0;Sin medidas\n[      ]|[  12]|[0.06]\n[M     ]|[ 300]|[0.06]\n[Largo123]|[   0]|[0.31]\nTotal:312;Media:0.15\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La suma de las medidas originales es 0.0625 + 0.0625 + 0.3125 = 0.4375. Dividir por tres produce aproximadamente 0.1458333, que se presenta como 0.15. Sumar primero las tres representaciones redondeadas daría 0.06 + 0.06 + 0.31 = 0.43 y una media presentada como 0.14.\n\nEl total es 312; el código vacío conserva su campo y Largo123 no se recorta. Exterior:1a conserva el formato hexadecimal del llamador y Originales:1,1,5 observa las medidas originales. El informe vacío seguido de la repetición comprueba que las llamadas no acumulen texto ni totales anteriores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "[      ]|[  12]|[0.06]\n[M     ]|[ 300]|[0.06]\n[Largo123]|[   0]|[0.31]\nTotal:312;Media:0.14\nExterior:1a\nOriginales:1,1,5\nTotal:0;Sin medidas\n[      ]|[  12]|[0.06]\n[M     ]|[ 300]|[0.06]\n[Largo123]|[   0]|[0.31]\nTotal:312;Media:0.14\n"
+                    ],
+                    "text": "Las dos medias aparecen como 0.14, mientras las filas y las medidas originales coinciden. Ese resultado se obtiene si se suman 0.06, 0.06 y 0.31 en lugar de los miembros originales. Revisa la acumulación: la presentación de cada fila no debe sustituir los valores usados para calcular la media."
+                  },
+                  {
+                    "outputs": [
+                      "[      ]|[  12]|[0.06]\n[M     ]|[ 300]|[0.06]\n[Largo123]|[   0]|[0.31]\nTotal:312;Media:0.15\nExterior:26\nOriginales:1,1,5\nTotal:0;Sin medidas\n[      ]|[  12]|[0.06]\n[M     ]|[ 300]|[0.06]\n[Largo123]|[   0]|[0.31]\nTotal:312;Media:0.15\n"
+                    ],
+                    "text": "El informe coincide, pero aparece Exterior:26 en vez de Exterior:1a. El entero exterior ha perdido la representación hexadecimal que configuró main. Revisa si las funciones de composición cambian std::cout; los manipuladores del informe deben actuar sobre su flujo local."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe({{\"O\", 0, 2.0}}) << \"\\n\";\n    std::cout << componer_informe({{\"Taller\", 1000, 12.0}, {\"N\", 2, 1.0}}) << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u12_informe_medidas_originales_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"Sin medidas\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Media:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{\n        {\"\", 12, 0.0625}, {\"M\", 300, 0.0625}, {\"Largo123\", 0, 0.3125}\n    };\n    std::cout << std::hex;\n    const std::string primero = componer_informe(registros);\n    std::cout << primero << \"\\n\" << \"Exterior:\" << 26 << \"\\n\";\n    std::cout << std::dec << std::defaultfloat << std::setprecision(6)\n        << \"Originales:\" << registros.at(0).medida * 16 << \",\"\n        << registros.at(1).medida * 16 << \",\" << registros.at(2).medida * 16 << \"\\n\";\n    std::cout << componer_informe({}) << \"\\n\";\n    std::cout << componer_informe(registros) << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1634,80 +1920,210 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "37f307c64f74406d73a9737eb83ee887bb80266aa5bda1a9e225e8d8ac87db5c",
+        "sourceSha256": "4b86416c958a9bcf9a46fe6504eddf5ce42d2367fdf528e576ba33f4d7fdc2bc",
         "spans": [
           {
             "start": 26,
             "end": 32,
             "text": "struct",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 36,
             "end": 47,
             "text": "std::vector",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 77,
             "end": 82,
             "text": "const",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 131,
             "end": 139,
             "text": "Registro",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 159,
-            "end": 165,
+            "start": 163,
+            "end": 169,
             "text": "codigo",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 187,
+            "start": 181,
+            "end": 192,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 191,
-            "end": 199,
+            "start": 197,
+            "end": 205,
             "text": "cantidad",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 210,
-            "end": 213,
+            "start": 217,
+            "end": 220,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 224,
+            "start": 225,
+            "end": 231,
             "text": "medida",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 241,
+            "start": 243,
+            "end": 249,
             "text": "double",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 679,
-            "end": 682,
+            "start": 328,
+            "end": 334,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 375,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 382,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 525,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 528,
+            "end": 531,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 577,
+            "end": 581,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 584,
+            "end": 590,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 747,
+            "end": 757,
+            "text": "veinte mil",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 769,
+            "end": 772,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 795,
+            "end": 798,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1036,
+            "end": 1037,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1040,
+            "end": 1041,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1052,
+            "end": 1055,
+            "text": "2.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1058,
+            "end": 1061,
+            "text": "5.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1075,
+            "end": 1076,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1106,
+            "end": 1125,
+            "text": "(2.5 + 5.5) / 2 = 4",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 1151,
+            "end": 1155,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1182,
+            "end": 1185,
+            "text": "5.5",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "99858891da692ef47332d736a0f3c2575c258cd553a8bc8163cbca0f358ac4c8",
+        "sourceSha256": "e051f121738ef9e3f59cc6c7afb05611f9ee244fe0e1bf3835a9509d59028029",
         "spans": [
           {
             "start": 25,
@@ -1717,57 +2133,72 @@
             "reading": "natural"
           },
           {
-            "start": 258,
-            "end": 268,
-            "text": "std::fixed",
-            "role": "cpp"
+            "start": 141,
+            "end": 145,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 460,
-            "end": 480,
+            "start": 280,
+            "end": 286,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 368,
+            "text": "std::fixed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 372,
+            "end": 375,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 558,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 509,
-            "end": 524,
+            "start": 604,
+            "end": 619,
             "text": "Total:T;Media:M",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 526,
-            "end": 527,
+            "start": 633,
+            "end": 634,
             "text": "T",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 563,
-            "end": 564,
+            "start": 675,
+            "end": 676,
             "text": "M",
             "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 732,
+            "end": 735,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 671,
-            "end": 690,
+            "start": 867,
+            "end": 886,
             "text": "Total:0;Sin medidas",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 707,
-            "end": 708,
-            "text": "T",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 711,
-            "end": 712,
-            "text": "M",
             "role": "output",
             "reading": "natural"
           }
@@ -1782,62 +2213,91 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "d5ed158a314da2c1f11acd98ed4fa03ef807160530273dd5152d602cffcbe9ba",
+        "sourceSha256": "f6a97c1f6e3bd56477b697ee517d205f4c10c440f8995a07fbe68c999c8c1ad5",
         "spans": [
           {
-            "start": 9,
-            "end": 39,
-            "text": "componer_fila(const Registro&)",
-            "role": "cpp"
-          },
-          {
-            "start": 44,
-            "end": 90,
-            "text": "componer_informe(const std::vector<Registro>&)",
-            "role": "cpp"
-          },
-          {
-            "start": 114,
-            "end": 125,
+            "start": 46,
+            "end": 57,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 230,
-            "end": 248,
+            "start": 62,
+            "end": 92,
+            "text": "componer_fila(const Registro&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 178,
+            "text": "componer_informe(const std::vector<Registro>&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 404,
             "text": "std::ostringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 407,
-            "end": 439,
-            "text": "(Stroustrup, 2024, sección 9.11)",
+            "start": 485,
+            "end": 503,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 623,
-            "end": 627,
+            "start": 510,
+            "end": 514,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 743,
-            "end": 759,
+            "start": 561,
+            "end": 577,
             "text": "{\"A\", 5, 4.3125}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 761,
-            "end": 780,
+            "start": 581,
+            "end": 600,
             "text": "{\"Sala\", 7, 6.9375}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 783,
-            "end": 802,
+            "start": 604,
+            "end": 623,
             "text": "{\"Pasillo\", 0, 0.0}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 773,
+            "end": 776,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 802,
+            "end": 806,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1850,19 +2310,57 @@
             "start": 74,
             "end": 90,
             "text": "{\"A\", 5, 4.3125}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 92,
             "end": 111,
             "text": "{\"Sala\", 7, 6.9375}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 114,
             "end": 133,
             "text": "{\"Pasillo\", 0, 0.0}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 269,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 357,
+            "end": 361,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 404,
+            "end": 410,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 427,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1893,10 +2391,31 @@
             "reading": "natural"
           },
           {
+            "start": 173,
+            "end": 176,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 203,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 215,
             "end": 222,
             "text": "Pasillo",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 241,
+            "text": "siete",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1930,7 +2449,15 @@
         "block": "block_0001_0004",
         "path": "/responses/0/fields/2/label",
         "sourceSha256": "ba0bef1a5a4bc4b4a992ae596fed426120c71bb3888a26ea56e702863f630a13",
-        "spans": []
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2026,7 +2553,36 @@
         "block": "block_0001_0003",
         "path": "/text",
         "sourceSha256": "3e19fd6dc02a2573b152231348f4d4487b6e4bc996e61506a04707b886a96aca",
-        "spans": []
+        "spans": [
+          {
+            "start": 58,
+            "end": 62,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 228,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 251,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 279,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -2037,40 +2593,47 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "bb3c19161f404b1a1b1a3d12ab5ea41b7dccc88d940a4b655666381b45a4e787",
+        "sourceSha256": "382ede9a76f51f0dd76dc7e99b4e81e93019fbb6255dec9ab92f7536ace5a3d1",
         "spans": [
           {
-            "start": 14,
-            "end": 36,
-            "text": "[A     ]|[   5]|[4.31]",
+            "start": 25,
+            "end": 114,
+            "text": "[A     ]|[   5]|[4.31]\n[Sala  ]|[   7]|[6.94]\n[Pasillo]|[   0]|[0.00]\nTotal:12;Media:3.75",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 60,
-            "text": "[Sala  ]|[   7]|[6.94]",
-            "role": "output",
+            "start": 156,
+            "end": 170,
+            "text": "5 + 7 + 0 = 12",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 219,
+            "end": 246,
+            "text": "4.3125 + 6.9375 + 0 = 11.25",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 268,
+            "end": 272,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 63,
-            "end": 86,
-            "text": "[Pasillo]|[   0]|[0.00]",
-            "role": "output",
-            "reading": "natural"
+            "start": 284,
+            "end": 300,
+            "text": "11.25 / 3 = 3.75",
+            "role": "math",
+            "reading": "auto"
           },
           {
-            "start": 102,
-            "end": 121,
-            "text": "Total:12;Media:3.75",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 152,
-            "end": 157,
-            "text": "11.25",
+            "start": 312,
+            "end": 316,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -2089,9 +2652,23 @@
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 187,
-            "text": "\"Taller\"",
+            "start": 133,
+            "end": 137,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 186,
+            "text": "Taller",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 205,
+            "text": "mil",
             "role": "data",
             "reading": "natural"
           }
@@ -2146,7 +2723,7 @@
             "start": 165,
             "end": 171,
             "text": "8.8125",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2154,7 +2731,7 @@
             "end": 247,
             "text": "8.8125 * 16 = 141",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 282,
@@ -2168,7 +2745,7 @@
             "end": 394,
             "text": "8.81 * 16 = 140.96",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           }
         ]
       },
@@ -2176,7 +2753,15 @@
         "block": "block_0003_0001",
         "path": "/reviewFeedback",
         "sourceSha256": "8577d17d1f8e6706ee1398d0d9bc91256532a2f78ee6dfc40ea1ee54edb58680",
-        "spans": []
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2195,6 +2780,13 @@
             "text": "medida",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 280,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2208,7 +2800,15 @@
         "block": "block_0003_0002",
         "path": "/options/1",
         "sourceSha256": "93318d99abcf9808e082d54dc324542e57e896ae96b75fb88dff743181e075f1",
-        "spans": []
+        "spans": [
+          {
+            "start": 45,
+            "end": 48,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2237,8 +2837,107 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "077ad31a669d2bc4c6365af51aaa9d425e47b4ab0924ac178efa6e9fac741799",
-        "spans": []
+        "sourceSha256": "9278ee074b6468f67adfff307a986b68d7fe869c24ea467920700adee23ca680",
+        "spans": [
+          {
+            "start": 157,
+            "end": 161,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 237,
+            "text": "0.09375",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 246,
+            "text": "0.09375",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 256,
+            "text": "0.34375",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 277,
+            "text": "0.53125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 337,
+            "text": "0.1770833",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 362,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 382,
+            "text": "0.18",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 441,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 464,
+            "end": 489,
+            "text": "0.09 + 0.09 + 0.34 = 0.52",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 512,
+            "end": 516,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 545,
+            "text": "0.1733333",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 572,
+            "text": "0.17",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contrastar_media_antes_de_formatear",
@@ -2246,23 +2945,44 @@
         "sourceSha256": "a0ddc2122e19f76a3708586327dfbfb3744e76879d8f4f4a9933f8760f353129",
         "spans": [
           {
+            "start": 22,
+            "end": 26,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 53,
             "end": 59,
             "text": "0.0625",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 61,
             "end": 67,
             "text": "0.0625",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 70,
             "end": 76,
             "text": "0.3125",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 193,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -2270,20 +2990,34 @@
             "start": 215,
             "end": 219,
             "text": "0.06",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 221,
             "end": 225,
             "text": "0.06",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 228,
             "end": 232,
             "text": "0.31",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 275,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 365,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           }
@@ -2302,6 +3036,13 @@
             "reading": "natural"
           },
           {
+            "start": 60,
+            "end": 64,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 84,
             "end": 92,
             "text": "0.145833",
@@ -2313,6 +3054,13 @@
             "end": 125,
             "text": "Media:0.15",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 148,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2342,7 +3090,22 @@
         "block": "contrastar_media_antes_de_formatear",
         "path": "/feedback/incorrect",
         "sourceSha256": "aa763e15d59e66f7dc29c3b14e6cb518305ef377283a017ef34a87006ab7f248",
-        "spans": []
+        "spans": [
+          {
+            "start": 199,
+            "end": 203,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 243,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "contrastar_media_antes_de_formatear",
@@ -2417,84 +3180,201 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "0bf7d9ece22a24a84e06ef0dc737c21f42a559ede6c8a09cfa908d1a9762c717",
+        "sourceSha256": "a7cd4bde1802cd7ae244790f9d53c9095e1beb5e3b8014ae9b8bd8690dfb54da",
         "spans": [
           {
             "start": 34,
             "end": 40,
             "text": "numero",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 52,
             "end": 55,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 112,
+            "start": 64,
+            "end": 68,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 115,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 143,
-            "text": "muestra_NNNN.txt",
+            "start": 130,
+            "end": 138,
+            "text": "muestra_",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 282,
-            "text": "muestra_0007.txt",
+            "start": 138,
+            "end": 142,
+            "text": "NNNN",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 142,
+            "end": 146,
+            "text": ".txt",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 294,
-            "end": 310,
-            "text": "muestra_1000.txt",
-            "role": "output",
+            "start": 207,
+            "end": 213,
+            "text": "cuatro",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 387,
-            "end": 396,
+            "start": 319,
+            "end": 328,
             "text": "std::cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 451,
-            "end": 455,
+            "start": 384,
+            "end": 388,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 486,
-            "end": 487,
+            "start": 505,
+            "end": 506,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 491,
-            "end": 493,
+            "start": 508,
+            "end": 516,
+            "text": "muestra_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 516,
+            "end": 520,
+            "text": "0007",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 520,
+            "end": 524,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 538,
             "text": "23",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 497,
-            "end": 498,
+            "start": 540,
+            "end": 548,
+            "text": "muestra_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 548,
+            "end": 552,
+            "text": "0023",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 552,
+            "end": 556,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 569,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 503,
-            "end": 507,
+            "start": 571,
+            "end": 579,
+            "text": "muestra_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 579,
+            "end": 583,
+            "text": "0000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 583,
+            "end": 587,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 599,
+            "end": 603,
             "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 605,
+            "end": 613,
+            "text": "muestra_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 613,
+            "end": 617,
+            "text": "1000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 617,
+            "end": 621,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 669,
+            "end": 675,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           }
@@ -2505,6 +3385,20 @@
         "path": "/text",
         "sourceSha256": "55f83766b53ed7d07c7a4fdf66b6e529a891eace2cd933b49d13ba3ce54a9d83",
         "spans": [
+          {
+            "start": 21,
+            "end": 25,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 42,
+            "text": "mil",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 55,
             "end": 63,
@@ -2537,34 +3431,104 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "28e17f9cc5bfac0ef9d7379a422b2f815b2b50b68492ef0242fc70b6cfb96f74",
+        "sourceSha256": "15c3f50d4379b93225b2056f558934823b909194db89abaa53498132a055c6a3",
         "spans": [
           {
-            "start": 286,
-            "end": 302,
-            "text": "muestra_0007.txt",
+            "start": 37,
+            "end": 43,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 308,
+            "text": "muestra_",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 304,
-            "end": 320,
-            "text": "muestra_0023.txt",
+            "start": 308,
+            "end": 312,
+            "text": "0007",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 312,
+            "end": 316,
+            "text": ".txt",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 322,
-            "end": 338,
-            "text": "muestra_0000.txt",
+            "start": 318,
+            "end": 326,
+            "text": "muestra_",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 341,
-            "end": 357,
-            "text": "muestra_1000.txt",
+            "start": 326,
+            "end": 330,
+            "text": "0023",
             "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 330,
+            "end": 334,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 336,
+            "end": 344,
+            "text": "muestra_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 348,
+            "text": "0000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 348,
+            "end": 352,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 362,
+            "text": "muestra_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 366,
+            "text": "1000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 366,
+            "end": 370,
+            "text": ".txt",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 539,
+            "text": "cuatro",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2572,12 +3536,12 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "09cfa24244e8094387aefdc000cb475b1ecf23f4c460a0b8e28ef568af366cfa",
+        "sourceSha256": "e32b4b5f2b072bc45ef877bdcfb611371c32dbf59fab9219b0a55e483137193a",
         "spans": [
           {
-            "start": 295,
-            "end": 327,
-            "text": "(Stroustrup, 2024, sección 9.11)",
+            "start": 331,
+            "end": 349,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2587,7 +3551,15 @@
         "block": "block_0005_0004",
         "path": "/text",
         "sourceSha256": "e11831faf6193d38d8142b7ef268b7000919d2bdc625d22f1de49196dcfd933f",
-        "spans": []
+        "spans": [
+          {
+            "start": 67,
+            "end": 73,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0000",
@@ -2610,6 +3582,13 @@
             "start": 79,
             "end": 98,
             "text": "Total:0;Sin medidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 154,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
@@ -2647,6 +3626,13 @@
             "text": "Total:0;Sin medidas|1a",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 385,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2659,15 +3645,101 @@
             "start": 48,
             "end": 57,
             "text": "std::cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "3c0c3f47532f38191caf6a02b49b79dbe0463fd349d08fbd37da1d0a1f4268a7",
-        "spans": []
+        "sourceSha256": "41c8f7d40671ebd8c39a9deaadce6844f3dbd27d2b73f8b989f16ebb177dfd0a",
+        "spans": [
+          {
+            "start": 668,
+            "end": 669,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 672,
+            "end": 673,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 685,
+            "end": 686,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 689,
+            "end": 690,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 703,
+            "end": 704,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 712,
+            "end": 721,
+            "text": "2 × 3 = 6",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 734,
+            "end": 735,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 743,
+            "end": 752,
+            "text": "6 × 1 = 6",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 775,
+            "end": 777,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 796,
+            "end": 797,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 821,
+            "end": 831,
+            "text": "12 / 4 = 3",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 879,
+            "end": 894,
+            "text": "(2 + 6) / 2 = 4",
+            "role": "math",
+            "reading": "auto"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -2684,28 +3756,28 @@
             "start": 16,
             "end": 20,
             "text": "12.0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 23,
             "end": 26,
             "text": "1.0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 44,
             "end": 48,
             "text": "1000",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 51,
             "end": 52,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2716,11 +3788,32 @@
         "sourceSha256": "df7b5131aaff67876c7c82b22ea7c7ea86a860a73053779bb6ffeff05606f309",
         "spans": [
           {
+            "start": 67,
+            "end": 70,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 95,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 97,
             "end": 119,
             "text": "(12.0 + 1.0) / 2 = 6.5",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
+          },
+          {
+            "start": 134,
+            "end": 137,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 172,
@@ -2734,7 +3827,7 @@
             "end": 244,
             "text": "1000 + 2 = 1002",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           }
         ]
       },
@@ -2793,57 +3886,72 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "5cba765c3218cb5b577501607d235aa753c0df68301fb87402af624121f1c582",
+        "sourceSha256": "1dc1bc681fccc0f34d830da9cfdcf5c3b068bcaf658f92d1a87afab0168463e4",
         "spans": [
           {
             "start": 28,
             "end": 36,
             "text": "Registro",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 40,
             "end": 53,
             "text": "componer_fila",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 58,
             "end": 74,
             "text": "componer_informe",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 268,
-            "end": 272,
+            "start": 286,
+            "end": 290,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 466,
-            "end": 479,
+            "start": 426,
+            "end": 430,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 522,
             "text": "{\"O\", 0, 2.0}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 496,
-            "end": 518,
+            "start": 559,
+            "end": 581,
             "text": "{\"Taller\", 1000, 12.0}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 520,
-            "end": 533,
+            "start": 586,
+            "end": 599,
             "text": "{\"N\", 2, 1.0}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 729,
+            "end": 733,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           }
         ]
-      },
-      {
-        "block": "block_0008_0000",
-        "path": "/text",
-        "sourceSha256": "3c030788e9e89c0068848e4d52ae76a5bfb9f042201dbeb52332872736492f04",
-        "spans": []
       },
       {
         "block": "u12_informe_medidas_originales_titulo",
@@ -2854,109 +3962,151 @@
       {
         "block": "u12_informe_medidas_originales_contrato",
         "path": "/text",
-        "sourceSha256": "d3936226a255f0468ff642b48714ff055abfaece2d789f78fd7fb0c29190cb38",
+        "sourceSha256": "fe91623580cf44623e7d78e3cea53e3064f9d0b9fac1ef9ab0dec617d691cd94",
         "spans": [
           {
-            "start": 42,
-            "end": 84,
+            "start": 47,
+            "end": 89,
             "text": "std::string componer_fila(const Registro&)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 87,
-            "end": 145,
+            "start": 93,
+            "end": 151,
             "text": "std::string componer_informe(const std::vector<Registro>&)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 152,
-            "end": 160,
+            "start": 160,
+            "end": 168,
             "text": "Registro",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 176,
+            "start": 193,
+            "end": 199,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 186,
-            "end": 197,
+            "start": 211,
+            "end": 222,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 207,
+            "start": 226,
+            "end": 234,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 217,
-            "end": 220,
+            "start": 246,
+            "end": 249,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 224,
-            "end": 230,
+            "start": 255,
+            "end": 261,
             "text": "medida",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 246,
+            "start": 273,
+            "end": 279,
             "text": "double",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 361,
-            "end": 362,
+            "start": 309,
+            "end": 315,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 343,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 346,
+            "end": 350,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 400,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 365,
-            "end": 369,
+            "start": 403,
+            "end": 407,
             "text": "1000",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 386,
-            "end": 387,
+            "start": 424,
+            "end": 425,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 390,
-            "end": 392,
+            "start": 428,
+            "end": 430,
             "text": "20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 420,
-            "end": 448,
+            "start": 458,
+            "end": 486,
             "text": "[CODIGO]|[CANTIDAD]|[MEDIDA]",
             "role": "output",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
-            "start": 823,
-            "end": 832,
+            "start": 566,
+            "end": 570,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 668,
+            "end": 674,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 735,
+            "end": 738,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 948,
+            "end": 957,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
@@ -2966,74 +4116,102 @@
       {
         "block": "u12_informe_medidas_originales_datos",
         "path": "/text",
-        "sourceSha256": "49f0db5977d76cac5498cb2ef2187d942b3e1a35f62845c6aecb73b10cde810f",
+        "sourceSha256": "011f5b87e8ddc9f692a8873bf47d82fb7fdddb747c851200e2012b8de7b9717a",
         "spans": [
           {
-            "start": 95,
-            "end": 97,
+            "start": 38,
+            "end": 42,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 95,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 113,
+            "start": 104,
+            "end": 110,
             "text": "0.0625",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 126,
+            "start": 120,
+            "end": 121,
             "text": "M",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 140,
+            "start": 132,
+            "end": 135,
             "text": "300",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 156,
+            "start": 144,
+            "end": 150,
             "text": "0.0625",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 176,
+            "start": 160,
+            "end": 168,
             "text": "Largo123",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 187,
-            "end": 188,
+            "start": 179,
+            "end": 180,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 204,
+            "start": 189,
+            "end": 195,
             "text": "0.3125",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 280,
-            "end": 295,
+            "start": 271,
+            "end": 286,
             "text": "Total:T;Media:M",
             "role": "output",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
-            "start": 527,
-            "end": 546,
+            "start": 398,
+            "end": 402,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 442,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 470,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 538,
             "text": "Total:0;Sin medidas",
             "role": "output",
             "reading": "natural"
@@ -3043,84 +4221,119 @@
       {
         "block": "u12_informe_medidas_originales_comprobaciones",
         "path": "/text",
-        "sourceSha256": "9a977cc741a199f4c5eb295be58d04fb02bb91356c61e5c2205c6b7db9634392",
+        "sourceSha256": "8d72a75d7957a19cb3a820d83352d6f0fcfb77895708f1aeb8dd4f84e727215f",
         "spans": [
           {
-            "start": 3,
-            "end": 7,
+            "start": 30,
+            "end": 34,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 19,
-            "end": 28,
+            "start": 60,
+            "end": 61,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 83,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 48,
-            "end": 56,
+            "start": 105,
+            "end": 113,
             "text": "std::hex",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 176,
+            "start": 224,
+            "end": 235,
             "text": "\"Exterior:\"",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 190,
+            "start": 249,
+            "end": 251,
             "text": "26",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 314,
-            "end": 323,
+            "start": 358,
+            "end": 359,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 381,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 328,
-            "end": 336,
+            "start": 388,
+            "end": 396,
             "text": "std::dec",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 338,
-            "end": 355,
+            "start": 400,
+            "end": 417,
             "text": "std::defaultfloat",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 358,
-            "end": 378,
+            "start": 422,
+            "end": 442,
             "text": "std::setprecision(6)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 388,
-            "end": 401,
+            "start": 454,
+            "end": 467,
             "text": "\"Originales:\"",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 450,
-            "end": 452,
+            "start": 475,
+            "end": 479,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 519,
             "text": "16",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 655,
+            "end": 656,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 719,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3148,14 +4361,21 @@
             "end": 70,
             "text": "0.0625 + 0.0625 + 0.3125 = 0.4375",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 113,
             "end": 122,
             "text": "0.1458333",
-            "role": "math",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 145,
@@ -3165,11 +4385,18 @@
             "reading": "natural"
           },
           {
+            "start": 169,
+            "end": 173,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 209,
             "end": 234,
             "text": "0.06 + 0.06 + 0.31 = 0.43",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 263,
@@ -3214,6 +4441,13 @@
         "sourceSha256": "fe239dcedf031ae6ce23b63238badae7f20b3f896b26307bd798c05f7d83f681",
         "spans": [
           {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 29,
             "end": 33,
             "text": "0.14",
@@ -3224,21 +4458,21 @@
             "start": 127,
             "end": 131,
             "text": "0.06",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 133,
             "end": 137,
             "text": "0.06",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 140,
             "end": 144,
             "text": "0.31",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3279,6 +4513,12 @@
         ]
       },
       {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "3c030788e9e89c0068848e4d52ae76a5bfb9f042201dbeb52332872736492f04",
+        "spans": []
+      },
+      {
         "block": "u12_informe_medidas_originales_referencia_titulo",
         "path": "/text",
         "sourceSha256": "c1566b6b42924654a7c149a260d07d9add6456b2fb2d232a4dcd15268373ce40",
@@ -3287,35 +4527,112 @@
       {
         "block": "u12_informe_medidas_originales_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "b588947a8c93033fcbdd727d37501ee8de34a556916bdd2a82e485f8c2bb812f",
+        "sourceSha256": "27d8f6b51dbe0bb369208115269fb022af39d666825ce0492bf311fbaca4f8ac",
         "spans": [
           {
-            "start": 19,
-            "end": 34,
+            "start": 37,
+            "end": 52,
             "text": "registro.medida",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 518,
-            "end": 523,
+            "start": 77,
+            "end": 110,
+            "text": "0.0625 + 0.0625 + 0.3125 = 0.4375",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 128,
+            "end": 132,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 171,
+            "text": "0.1458333",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 203,
+            "text": "Media:0.15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 233,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 427,
+            "text": "0.06 + 0.06 + 0.31 = 0.43",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 456,
+            "end": 466,
+            "text": "Media:0.14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 603,
+            "end": 619,
+            "text": "Originales:1,1,5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 658,
+            "end": 660,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 832,
+            "end": 836,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1064,
+            "end": 1069,
             "text": "texto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 568,
-            "end": 577,
+            "start": 1081,
+            "end": 1090,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 598,
-            "end": 602,
+            "start": 1141,
+            "end": 1145,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 1180,
+            "end": 1191,
+            "text": "Exterior:1a",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       }

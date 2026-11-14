@@ -20,7 +20,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La base indica cuántas unidades de una posición forman una unidad de la siguiente: en decimal, diez unidades forman una decena. Al presentar un mismo entero en otra base cambia su escritura, mientras el objeto conserva su valor. Para interpretar una escritura también necesitamos conocer su base.\n\nEn esta lección usaremos enteros no negativos de cero a mil. Estudiaremos los dígitos que se escriben y su significado; no necesitamos introducir la representación en memoria ni los bits.",
+          "text": "La base indica cuántas unidades de una posición forman una unidad de la siguiente: en decimal, diez unidades forman una decena. Al presentar un mismo entero en otra base cambia su escritura, mientras el objeto conserva su valor. Para interpretar una escritura también necesitamos conocer su base.\n\nEn esta lección usaremos enteros no negativos de cero a mil. Nos centraremos en los caracteres que se escriben y en la cantidad que representan. Más adelante estudiaremos cómo se almacenan los valores en la memoria del equipo.",
           "emphasis": [
             {
               "text": "el objeto conserva su valor",
@@ -54,7 +54,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El sistema octal tiene base ocho y usa los dígitos 0, 1, 2, 3, 4, 5, 6 y 7. Desde la derecha, la primera posición cuenta unidades; la siguiente, grupos de ocho; la tercera, grupos de ocho por ocho, es decir, de sesenta y cuatro.\n\nNo existe el dígito octal 8. Después de 7 se escribe 10 en octal: un grupo de ocho y cero unidades. Esa escritura representa ocho unidades, aunque sus caracteres coincidan con los de diez en decimal.",
+          "text": "El sistema octal tiene base ocho y usa únicamente los dígitos de 0 a 7. Desde la derecha, cada posición cuenta grupos de este tamaño:\n\nPrimera posición: unidades.\nSegunda posición: grupos de ocho.\nTercera posición: grupos de ocho por ocho, es decir, de sesenta y cuatro.\n\nNo existe el dígito octal 8. Después de 7 se escribe 10 en octal: un grupo de ocho y cero unidades. Esos caracteres representan ocho unidades, aunque coincidan con los que utilizamos para escribir diez en decimal.",
           "emphasis": [
             {
               "text": "Desde la derecha",
@@ -64,7 +64,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La escritura 52 en octal representa cinco grupos de ocho y dos unidades: en total, cuarenta y dos. La escritura 106 en octal representa un grupo de sesenta y cuatro, cero grupos de ocho y seis unidades: en total, setenta.\n\nEl cero de la posición intermedia mantiene el lugar de los grupos de ocho. No se puede quitar sin cambiar lo que representa la escritura: 16 en octal tiene sólo dos posiciones.",
+          "text": "La escritura 52 en octal contiene dos posiciones:\n\nEl dígito 5 cuenta cinco grupos de ocho.\nEl dígito 2 cuenta dos unidades.\nLa cantidad representada es 5 × 8 + 2 = 42 en decimal.\n\nLa escritura 106 en octal contiene tres posiciones:\n\nEl dígito 1 cuenta un grupo de sesenta y cuatro.\nEl dígito 0 cuenta cero grupos de ocho.\nEl dígito 6 cuenta seis unidades.\nLa cantidad representada es 1 × 64 + 0 × 8 + 6 = 70 en decimal.\n\nEl cero de la posición intermedia mantiene el lugar de los grupos de ocho. Si lo quitamos, queda 16 en octal: ahora el 1 cuenta un grupo de ocho, no de sesenta y cuatro. La cantidad cambia a 1 × 8 + 6 = 14 en decimal.",
           "emphasis": [
             {
               "text": "El cero de la posición intermedia mantiene el lugar",
@@ -210,7 +210,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El sistema hexadecimal tiene base dieciséis. Sus dígitos son 0 a 9 y después a, b, c, d, e y f, que representan las cantidades diez, once, doce, trece, catorce y quince. Las letras A a F también pueden utilizarse con esos mismos valores.\n\nDesde la derecha, la primera posición cuenta unidades; la siguiente, grupos de dieciséis; la tercera, grupos de dieciséis por dieciséis, es decir, de doscientos cincuenta y seis.",
+          "text": "El sistema hexadecimal tiene base dieciséis. Utiliza los dígitos de 0 a 9 y seis dígitos adicionales escritos con letras:\n\n`a` o `A`: diez.\n`b` o `B`: once.\n`c` o `C`: doce.\n`d` o `D`: trece.\n`e` o `E`: catorce.\n`f` o `F`: quince.\n\nDesde la derecha, cada posición cuenta grupos de este tamaño:\n\nPrimera posición: unidades.\nSegunda posición: grupos de dieciséis.\nTercera posición: grupos de dieciséis por dieciséis, es decir, de doscientos cincuenta y seis.",
           "emphasis": [
             {
               "text": "base dieciséis",
@@ -246,7 +246,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En los ejemplos anteriores conservamos la cantidad y cambiamos su escritura. También puede ocurrir lo contrario: unos mismos caracteres se interpretan de forma diferente según la base indicada. La escritura 10 en decimal representa diez unidades; en octal, ocho; en hexadecimal, dieciséis. Por eso conocer los caracteres no basta: necesitamos saber con qué base se interpretan.",
+          "text": "En los ejemplos anteriores conservamos la cantidad y cambiamos su escritura. También puede ocurrir lo contrario: los mismos caracteres representan cantidades distintas según la base indicada.\n\nLa escritura 10 en decimal representa diez unidades.\nLa escritura 10 en octal representa ocho unidades.\nLa escritura 10 en hexadecimal representa dieciséis unidades.\n\nEn cada caso hay un grupo de la base correspondiente y cero unidades adicionales. Por eso conocer los caracteres no basta: necesitamos saber con qué base se interpretan.",
           "emphasis": [
             {
               "text": "según la base indicada",
@@ -339,7 +339,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`std::dec`, `std::hex` y `std::oct` son manipuladores: al insertarlos en un flujo, seleccionan la base que ese flujo utilizará para presentar los enteros siguientes. Se escriben en una inserción con `<<`, como muestra el programa. No escriben por sí mismos los nombres decimal, hexadecimal u octal (Stroustrup, 2024, sección 9.10.1).\n\nEn este ejemplo, la variable `cantidad` conserva el valor cuarenta y dos. Cada aparición de `cantidad` consulta ese mismo valor; el manipulador situado antes selecciona cómo escribirlo. La salida es 42|2a|52, sin salto final. Los caracteres | proceden de las cadenas separadoras del programa.",
+          "text": "`std::dec`, `std::hex` y `std::oct` son manipuladores: al insertarlos en un flujo, seleccionan la base que ese flujo utilizará para presentar los enteros siguientes. Se escriben en una inserción con `<<`, como muestra el programa. No escriben por sí mismos los nombres decimal, hexadecimal u octal (Stroustrup, 2024).\n\nEn este ejemplo, la variable `cantidad` conserva el valor cuarenta y dos. Cada aparición de `cantidad` consulta ese mismo valor; el manipulador situado antes selecciona cómo escribirlo. La salida es 42|2a|52, sin salto final. Los caracteres | proceden de las cadenas separadoras del programa.",
           "emphasis": [
             {
               "text": "seleccionan la base",
@@ -350,13 +350,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 42;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 42;\n\n    std::cout << std::dec << cantidad\n        << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 26;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 26;\n\n    std::cout << std::dec << cantidad\n        << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n",
           "answers": [
             "26|1a|32"
           ],
@@ -367,7 +367,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el manipulador que presenta el entero en octal.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 17;\n    std::cout << std::___ << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 17;\n\n    std::cout << std::___ << cantidad;\n    return 0;\n}\n",
           "answers": [
             "oct"
           ],
@@ -386,7 +386,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 31;\n    std::cout << std::hex << cantidad << \"|\";\n    cantidad += 1;\n    std::cout << std::dec << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 31;\n\n    std::cout << std::hex << cantidad << \"|\";\n    cantidad += 1;\n\n    std::cout << std::dec << cantidad;\n    return 0;\n}\n",
           "answers": [
             "1f|32"
           ],
@@ -397,7 +397,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 16;\n    std::cout << std::hex << cantidad << \"|\" << \"16\" << \"|\" << std::dec << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 16;\n\n    std::cout << std::hex << cantidad\n        << \"|\" << \"16\"\n        << \"|\" << std::dec << cantidad;\n    return 0;\n}\n",
           "answers": [
             "10|16|16"
           ],
@@ -418,7 +418,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La escritura de un literal entero en el código y el formato de salida son decisiones diferentes. En estos ejemplos, `42` es un literal decimal; `0x2a` usa el prefijo `0x` para indicar hexadecimal; `052` empieza con el cero que señala una escritura octal. Los tres representan el mismo valor, cuarenta y dos, y en estas definiciones tienen tipo `int` (Köppe et al., 2023).\n\nPor eso no añadimos ceros iniciales para decorar un literal decimal: `010` representa ocho. Al insertar después ese valor con `std::dec`, el flujo escribe la representación decimal de ocho; no vuelve a interpretar los caracteres del código fuente.",
+          "text": "La escritura de un literal entero en el código y el formato de salida son decisiones diferentes. Estos tres literales de C++ representan el mismo valor, cuarenta y dos:\n\n`42`: literal decimal.\n`0x2a`: literal hexadecimal, anunciado por el prefijo `0x`.\n`052`: literal octal, anunciado por su cero inicial.\n\nEn las definiciones del ejemplo, los tres tienen tipo `int` (Köppe et al., 2023).\n\nPor eso no añadimos ceros iniciales para decorar un literal decimal: `010` representa ocho. Si después se inserta ese valor con `std::dec`, el flujo escribe ocho en decimal. El manipulador actúa sobre la presentación del valor; no vuelve a interpretar los caracteres del código fuente.",
           "emphasis": [
             {
               "text": "son decisiones diferentes",
@@ -429,13 +429,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int a = 42;\n    int b = 0x2a;\n    int c = 052;\n    std::cout << std::dec << a << \"|\" << b << \"|\" << c;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int a = 42;\n    int b = 0x2a;\n    int c = 052;\n\n    std::cout << std::dec << a << \"|\" << b << \"|\" << c;\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 010;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 010;\n\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad;\n    return 0;\n}\n",
           "answers": [
             "8|8"
           ],
@@ -473,7 +473,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa que presente los valores decimales 0, 8, 15, 64 y 31, en ese orden, con una línea por valor. Cada línea tendrá el formato dec=D;hex=H;oct=O: D, H y O señalan los lugares donde deben aparecer las escrituras decimal, hexadecimal minúscula y octal del mismo entero. No escribas esos tres marcadores como parte del resultado ni añadas prefijos de base. Cada línea termina con un salto.\n\nPuedes usar un vector y un recorrido, o instrucciones separadas. Inserta los valores como enteros y selecciona la base antes de cada campo. Resuelve el puzzle anterior y construye el programa antes de pulsar «Compilar, ejecutar y comprobar». El cotejo automático comprueba la salida solicitada; después contrasta tu organización con los criterios de referencia.",
+          "text": "Construye un programa que presente estos valores decimales, en este orden y con una línea por valor:\n\n0\n8\n15\n64\n31\n\nCada línea tendrá el formato dec=D;hex=H;oct=O. Los marcadores indican qué escritura del mismo entero debe aparecer:\n\nD: decimal.\nH: hexadecimal con letras minúsculas.\nO: octal.\n\nNo escribas esos marcadores como parte del resultado ni añadas prefijos de base. Cada línea termina con un salto.\n\nPuedes usar un vector y un recorrido, o instrucciones separadas. Inserta los valores como enteros y selecciona la base antes de cada campo. Usa «Compilar, ejecutar y comprobar» para contrastar la tabla completa con la salida solicitada. El cotejo comprueba el resultado; la organización del código se contrasta con los criterios de referencia.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -510,11 +510,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::vector<int> cantidades{0, 8, 15, 64};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::vector<int> cantidades{0, 8, 15, 64};\n\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad\n            << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La primera referencia muestra una organización con cuatro de los valores: 0, 8, 15 y 64. Sus líneas son dec=0;hex=0;oct=0, dec=8;hex=8;oct=10, dec=15;hex=f;oct=17 y dec=64;hex=40;oct=100. Ese programa parcial no incluye la quinta línea de la consigna, correspondiente a 31; la referencia completa de cinco valores aparece al final de esta página.\n\nAl contrastar tu construcción, comprueba que cada línea parte de un único entero, que las etiquetas y el orden cumplen el contrato y que se selecciona la base antes de insertar cada campo. Comprueba también la notación de los literales que utilizas en la preparación. Puedes organizar las instrucciones de distintas maneras, siempre que se conserve el resultado y la composición funcione con otros valores del dominio.",
+          "text": "La primera referencia muestra una organización con cuatro valores y estas líneas:\n\nValor decimal 0\ndec=0;hex=0;oct=0\n\nValor decimal 8\ndec=8;hex=8;oct=10\n\nValor decimal 15\ndec=15;hex=f;oct=17\n\nValor decimal 64\ndec=64;hex=40;oct=100\n\nEse programa parcial no incluye la quinta línea de la consigna, correspondiente al valor 31. La referencia completa de cinco valores aparece al final de esta página.\n\nAl contrastar tu construcción, comprueba que cada línea parte de un único entero, que las etiquetas y el orden cumplen el contrato y que se selecciona la base antes de insertar cada campo. Revisa también la notación de los literales utilizados en la preparación. Puedes organizar las instrucciones de distintas maneras, siempre que se conserve el resultado y el programa obtenga las tres escrituras al utilizar otros valores del dominio.",
           "emphasis": [
             {
               "text": "programa parcial",
@@ -526,7 +526,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 24;\n    std::cout << std::oct << cantidad << \"|\" << std::dec << cantidad + 2;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 24;\n\n    std::cout << std::oct << cantidad << \"|\" << std::dec << cantidad + 2;\n    return 0;\n}\n",
           "answers": [
             "30|26"
           ],
@@ -540,7 +540,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    const std::vector<int> cantidades{0, 8, 15, 64, 31};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    const std::vector<int> cantidades{0, 8, 15, 64, 31};\n\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad\n            << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1603,6 +1603,219 @@
         "id": "block_0007_0003",
         "beforeSha256": "d2077943dccc62c7b1ddacbedb0c264452409b70b10de6b4b03af616239c57f6",
         "afterSha256": "42fc78fe4097b076e39e0378f6306db8a548c1ce59c59f0d9e7c5103a78a867e"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "ff9f6952bd2674e5c7881406c57f43ec993d70c9b27a1bf19a023ae5b28d1380",
+        "afterSha256": "05c4a8d4ff3d53817d71f8aa37389fad5c7232a661672e5ad9da81fa5aef33a5"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "d3ecc2889ecead3dcfcba528ac1de5448c2447537bc4fbf50185678fe5c64e72",
+        "afterSha256": "5b65e91b4bf101253eddc3abfad8b9726a744789c24ee930fec770ff342ed8ae"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "6cdfba22a26900c938850e06b64c7af6295f18a33ffafdc545e57da5a4c5efc1",
+        "afterSha256": "3b88e723d49236a5453b0028b0f76f8c5896d312dee6a8aeb582fa19d513c3f1"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ee172c9ad68968d5e8e291d688acbce48f47e7423af42d93950f2425d1247186",
+        "afterSha256": "3eac858af480647dce4bf167b3df52ddb7e2832babfa7dd48984c83693656454"
+      },
+      {
+        "id": "base_interpretada_tambien_importa",
+        "beforeSha256": "4f2cb7ae2654cbd7a81b4c9a1e1c063114e4771da3fca2596b5a9e9697d1ad61",
+        "afterSha256": "c377f257ca8c8c92e0c1a59fd7dc39d5e743e823d9b852c3d205cc4fe06baabe"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "393fbd3093c210892fa914795f1b614bd912520e7bae4844cc22d36d43add978",
+        "afterSha256": "e8a51c7bf03b48032829c75c0cdf43b77ee477d822790dcc662ca89735b6ffe5"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "db5417c3521a1ac7d72af67438d31a9a7042669cb9d3e87d7972fc6fa0af26f3",
+        "afterSha256": "f437f50fb6c92cd3ff7834674c58540cba3a5aae58a13add2ec18a03f2aaa92c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "f1c83a7c26d6601f8dba9a5410bce53b1fd8173d1adcf4e3d5a722279f0bb70f",
+        "afterSha256": "98b5b6a1f70da70a05e70091f35ae0d8c99dd67f65e38cf8aa833eb04a38c151"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "8af0360a6b96cbc9e225fdee665bfb730d05dfbc9f6dfb141b97177c3abc10b5",
+        "afterSha256": "3310c823e01390c5862c01a6647af5457b22eb3592fffdcdf4e004e2909bfc91"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0d5fdbda1ba5b1b80fd57d5db831b2548f842cdcc45bd0a210b07691e87b28b3",
+        "afterSha256": "13d97a01b4c9765b4f6f6e169c3f49c524413d22ce9c440ed0d914f255f2a0de"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "8fafbabd6041b1152b5f04eb337aa9806fe1db028e9e3d1e60ba6f3b283a1d76",
+        "afterSha256": "b5d4ae5ef452add6df65ff6f3c18269ed60ba612dc7f40a78f95f9952ce38de1"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "be836f0a71268a6190e7791bfcb9fb6af86e6fed37da2396682eceebe71b32b1",
+        "afterSha256": "83eec560d0a06e8eb87a53185a218e05b5495264b38336286f0b25c8d23b26d0"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e9c907c97f0dc8b3079d24b6697815616680f5367c83ee622cf8696cdf69ff2b",
+        "afterSha256": "f92e4002c6ee2eb26af1f87010e644dfa4ef92c444705cde5fcafd9f97cdbf55"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "b4748cd5f8f3e0f604ce10571637339dd510c4c74c287284fece82de1520d911",
+        "afterSha256": "e1b804c17abd6e35cfedf5b867c662abb3414b76b82ad532880fffed06939fd3"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "4cfad9d07e9d72131a2536029300f3f0b077e285ff6fb4fca58021f8d9acd2f7",
+        "afterSha256": "e11a84de2d04bdbb2d08bfe6a5ff99872eef775c02988e1b808766353ea20acb"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "1d0a04ddd57882c038942e46e13eaafe8cda68d7565ebe8a268fc17caedae2da",
+        "afterSha256": "725471a9829e0f00fa05643ba2e7cc8506904f2e5dfd94db2b4eb881017953b6"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "479ab9e1be8b7f8d70410b43528b64d233382fa02acca2ea6867dff5019ba003",
+        "afterSha256": "626abb6eb074345d977085335c9b8e42e3aff67d72a8920eda69f2552511e90d"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "42fc78fe4097b076e39e0378f6306db8a548c1ce59c59f0d9e7c5103a78a867e",
+        "afterSha256": "7fbb983279ce5ad35a59096e9a00471a576acd19ad4b9aefb3bf14698b91811d"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "e1f9b98e72ea3ed2fa2b1689135c66db4f7ef9fac2128f70b5987ee29e8b6174",
+        "afterSha256": "19804785fb6d9d507880ffcff7736e84dc503a0d400827d504403c574417c86b"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 42;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 26;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "26|1a|32"
+          ],
+          "explanation": "La variable cantidad conserva 26 durante las tres inserciones. std::dec produce 26. std::hex produce 1a, porque 1 × 16 + 10 = 26 y a representa diez. std::oct produce 32, porque 3 × 8 + 2 = 26.\n\nLas cadenas separadoras añaden los dos caracteres |. Por eso la salida completa es 26|1a|32, sin salto final. Cambian las escrituras del entero, no su valor.",
+          "reviewFeedback": "Sigue la base seleccionada antes de cada inserción del entero. Las cadenas separadoras se insertan literalmente y la variable no cambia de valor."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el manipulador que presenta el entero en octal.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 17;\n    std::cout << std::___ << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "oct"
+          ],
+          "explanation": "El nombre que falta es oct: con el std:: ya escrito se forma std::oct. Ese manipulador selecciona octal antes de insertar cantidad.\n\nEl valor decimal 17 contiene dos grupos de ocho y una unidad: 2 × 8 + 1 = 17. Por eso el flujo presenta 21. El manipulador configura la inserción; no imprime la palabra octal.",
+          "reviewFeedback": "Escribe sólo el nombre situado después de std::. Relaciona la base pedida con el manipulador que la selecciona."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 31;\n    std::cout << std::hex << cantidad << \"|\";\n    cantidad += 1;\n    std::cout << std::dec << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1f|32"
+          ],
+          "explanation": "La primera inserción presenta 31 en hexadecimal como 1f. Después se ejecuta cantidad += 1, que cambia el valor del objeto de 31 a 32.\n\nAntes de la segunda inserción se aplica std::dec, por lo que ese nuevo valor se presenta como 32. La salida es 1f|32. La suma actúa sobre el valor entero; seleccionar hexadecimal no convierte la variable en una cadena.",
+          "reviewFeedback": "Separa la presentación inicial, la actualización de la variable y la selección de base posterior. No confundas el formato con el cálculo."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 16;\n    std::cout << std::hex << cantidad << \"|\" << \"16\" << \"|\" << std::dec << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "10|16|16"
+          ],
+          "explanation": "La primera aparición de cantidad inserta el entero 16 bajo std::hex y produce 10: un grupo de dieciséis y cero unidades. Después, \"16\" inserta directamente los caracteres 16 de la cadena, sin interpretarlos como un entero.\n\nFinalmente, std::dec presenta el valor de cantidad como 16. Las tres partes forman 10|16|16. La cadena mantiene sus caracteres aunque el flujo estuviera configurado en hexadecimal.",
+          "reviewFeedback": "Distingue la inserción de una variable entera de la inserción de una cadena que ya contiene sus caracteres."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int a = 42;\n    int b = 0x2a;\n    int c = 052;\n    std::cout << std::dec << a << \"|\" << b << \"|\" << c;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 010;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "8|8"
+          ],
+          "explanation": "El literal 010 del código utiliza notación octal. Sus posiciones representan 1 × 8 + 0 = 8, de modo que cantidad se inicializa con el valor ocho. Ese paso se determina por la escritura del literal, antes de aplicar los manipuladores de salida.\n\nEl valor ocho se escribe 8 tanto en decimal como en hexadecimal. Por eso las dos inserciones producen 8|8. std::dec no vuelve a interpretar el texto del literal como si fuera diez.",
+          "reviewFeedback": "Interpreta primero el literal del código fuente según su notación; después aplica la base de salida a ese valor."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::vector<int> cantidades{0, 8, 15, 64};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 24;\n    std::cout << std::oct << cantidad << \"|\" << std::dec << cantidad + 2;\n    return 0;\n}\n",
+          "answers": [
+            "30|26"
+          ],
+          "explanation": "La primera inserción usa std::oct para presentar el valor 24. Son tres grupos de ocho y cero unidades, por lo que aparece 30.\n\nDespués se selecciona std::dec y se evalúa cantidad + 2. Esa expresión obtiene 26, que se inserta en decimal. El separador une ambas escrituras como 30|26; el formato no modifica la operación aritmética.",
+          "reviewFeedback": "Sigue el valor del entero y la operación aritmética por separado del formato seleccionado en cada inserción."
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    const std::vector<int> cantidades{0, 8, 15, 64, 31};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1682,13 +1895,20 @@
             "text": "2",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 566,
+            "end": 580,
+            "text": "cuarenta y dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "118c31a08355a3b8ee2601899b6ae97e6ce79e1c3d63e65a1c406e5db49a5a85",
+        "sourceSha256": "84a8064656381b0a78a685d98b5292124de4676071bf0ddecda06e0e7f9d74fe",
         "spans": []
       },
       {
@@ -1772,19 +1992,57 @@
         "block": "block_0000_0003",
         "path": "/options/0",
         "sourceSha256": "99ebe929c617cdcc9223903e81ca75f62328f43b6b49c7eedc61cb6dd1bbdae9",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Seis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
         "path": "/options/1",
         "sourceSha256": "4a42b6d18166535656ca53b3f20cd09ba7ca0a95e40923be722d7a84420f87e8",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Sesenta y tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 29,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
         "path": "/options/2",
         "sourceSha256": "2a2a85937848347c5e94c5b2de2213531c41980063f07cdf7c76282a55ea14a4",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
+            "end": 19,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1813,112 +2071,133 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "c9e4dfa4906d5568b99eddeb85206f2b19784c9660cec76e85a57956f16a9506",
+        "sourceSha256": "b0b931e02c03fcd37ca21b3325fd686db93bfb2f44a112f8509ab2f91b28dfb9",
         "spans": [
           {
-            "start": 51,
-            "end": 52,
+            "start": 65,
+            "end": 66,
             "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 54,
-            "end": 55,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 58,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 60,
-            "end": 61,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 63,
-            "end": 64,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 66,
-            "end": 67,
-            "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 69,
             "end": 70,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 73,
-            "end": 74,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 257,
+            "start": 298,
+            "end": 299,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 271,
+            "start": 312,
+            "end": 313,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 283,
-            "end": 285,
+            "start": 325,
+            "end": 327,
             "text": "10",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "a23d1e794e942f822fe690aafec4be6982b441c124b6769b005cad9baf743126",
+        "sourceSha256": "eed9a612341740be1506aa3ac1b56d05e0b213e9b0632f2893751ff3bc3aa026",
         "spans": [
           {
             "start": 13,
             "end": 15,
             "text": "52",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 115,
+            "start": 61,
+            "end": 62,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 167,
+            "text": "5 × 8 + 2 = 42",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 194,
+            "end": 197,
             "text": "106",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
-            "start": 361,
-            "end": 363,
+            "start": 244,
+            "end": 245,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 294,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 334,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 408,
+            "text": "1 × 64 + 0 × 8 + 6 = 70",
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 519,
+            "end": 521,
             "text": "16",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
+          },
+          {
+            "start": 541,
+            "end": 542,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 613,
+            "end": 627,
+            "text": "1 × 8 + 6 = 14",
+            "role": "math",
+            "reading": "auto"
           }
         ]
       },
@@ -1975,6 +2254,13 @@
             "text": "35",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 291,
+            "text": "veintitrés",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1982,19 +2268,85 @@
         "block": "block_0001_0003",
         "path": "/options/0",
         "sourceSha256": "e6f6557337e8b4bdc4c72bdb96873c417eadaf0b1038af210d07e4138328bd95",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 17,
+            "text": "dieciséis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 26,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 43,
+            "text": "treinta y cinco",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/options/1",
         "sourceSha256": "408814afa4f766ebb957b6700229daeca0cef590e7e4830edab2eeae159d286d",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 12,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 33,
+            "text": "diecinueve",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/options/2",
         "sourceSha256": "db4bed06b7bd404cf4ec4603c947676c4bb27460da22bbc0ce1ffd4eef35c99b",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "Veintitrés",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -2288,74 +2640,102 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "63dea0acd58ddc237d5d184b6a7dde7b7022afbf37feb792d5b431ad932928ed",
+        "sourceSha256": "5509fff8cc552d9598e367fbcfee1d99f8e74550e23288f25cd968031c3d732d",
         "spans": [
           {
-            "start": 61,
-            "end": 62,
+            "start": 68,
+            "end": 69,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 65,
-            "end": 66,
+            "start": 72,
+            "end": 73,
             "text": "9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 77,
-            "end": 78,
+            "start": 124,
+            "end": 125,
             "text": "a",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 80,
-            "end": 81,
+            "start": 130,
+            "end": 131,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 141,
+            "end": 142,
             "text": "b",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 83,
-            "end": 84,
+            "start": 147,
+            "end": 148,
+            "text": "B",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 158,
+            "end": 159,
             "text": "c",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 86,
-            "end": 87,
+            "start": 164,
+            "end": 165,
+            "text": "C",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 175,
+            "end": 176,
             "text": "d",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 89,
-            "end": 90,
-            "text": "e",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 93,
-            "end": 94,
-            "text": "f",
             "role": "data",
             "reading": "characters"
           },
           {
             "start": 181,
             "end": 182,
-            "text": "A",
+            "text": "D",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 185,
-            "end": 186,
+            "start": 193,
+            "end": 194,
+            "text": "e",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "E",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 213,
+            "end": 214,
+            "text": "f",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 219,
+            "end": 220,
             "text": "F",
             "role": "data",
             "reading": "characters"
@@ -2375,11 +2755,25 @@
             "reading": "characters"
           },
           {
+            "start": 83,
+            "end": 97,
+            "text": "cuarenta y dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 123,
             "end": 125,
             "text": "46",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 196,
+            "end": 203,
+            "text": "setenta",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 254,
@@ -2457,19 +2851,106 @@
         "block": "block_0002_0003",
         "path": "/options/0",
         "sourceSha256": "e57f64cea58b3d4fc2651079a65ee25cf836185cfce5c4d64220ac67ff441593",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 12,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 23,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 35,
+            "text": "veintitrés",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
         "path": "/options/1",
         "sourceSha256": "c75f7871275c6a5f865b2e3e8186fe8554e5739e3afc1d8be528f854e44fae0b",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 17,
+            "text": "dieciséis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 28,
+            "text": "quince",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 43,
+            "text": "treinta y uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
         "path": "/options/2",
         "sourceSha256": "3ea4d7e1f2ee03453b7ef40ec86a20a0bb4196d5e021090788ef2b24ddbb72c6",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 17,
+            "text": "dieciséis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 26,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 37,
+            "text": "veintidós",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -2492,14 +2973,49 @@
       {
         "block": "base_interpretada_tambien_importa",
         "path": "/text",
-        "sourceSha256": "9d94a4e79e50f9bc468dc18ef6be7032ca5cfe3f4988a89bd28114d92139fa16",
+        "sourceSha256": "adcd2c398a72bc8b2648529a01d419b5a6702be91afa6e0a18bce89ec641b87c",
         "spans": [
           {
-            "start": 207,
-            "end": 209,
+            "start": 206,
+            "end": 208,
             "text": "10",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 231,
+            "end": 235,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 261,
+            "text": "10",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 282,
+            "end": 286,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 312,
+            "text": "10",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 339,
+            "end": 348,
+            "text": "dieciséis",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2521,7 +3037,29 @@
         "block": "misma_escritura_bases_distintas",
         "path": "/feedback/correct",
         "sourceSha256": "9de6474f6f73c5382785aee1c6de9a47bec55d149b2ab39cb10214968bdbd11d",
-        "spans": []
+        "spans": [
+          {
+            "start": 150,
+            "end": 156,
+            "text": "veinte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 167,
+            "text": "dieciséis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 183,
+            "text": "treinta y dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "misma_escritura_bases_distintas",
@@ -2622,7 +3160,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "8f2793fa9a0959b79d6d8037042c966a447400bef8298fd3481d41f47071e6aa",
+        "sourceSha256": "288ec39c58e43270e08de2c7bab8172d1f87a5b997fec97b903ad8cc3e389f1a",
         "spans": [
           {
             "start": 1,
@@ -2650,33 +3188,40 @@
           },
           {
             "start": 298,
-            "end": 332,
-            "text": "(Stroustrup, 2024, sección 9.10.1)",
+            "end": 316,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 365,
-            "end": 373,
+            "start": 349,
+            "end": 357,
             "text": "cantidad",
             "role": "cpp"
           },
           {
-            "start": 428,
-            "end": 436,
+            "start": 377,
+            "end": 391,
+            "text": "cuarenta y dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 420,
             "text": "cantidad",
             "role": "cpp"
           },
           {
-            "start": 534,
-            "end": 542,
+            "start": 518,
+            "end": 526,
             "text": "42|2a|52",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 576,
-            "end": 577,
+            "start": 560,
+            "end": 561,
             "text": "|",
             "role": "output",
             "reading": "characters"
@@ -2705,7 +3250,7 @@
             "start": 30,
             "end": 32,
             "text": "26",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2836,7 +3381,7 @@
             "start": 150,
             "end": 152,
             "text": "17",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2889,7 +3434,7 @@
             "start": 30,
             "end": 32,
             "text": "31",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2910,7 +3455,7 @@
             "start": 125,
             "end": 127,
             "text": "31",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2971,7 +3516,7 @@
             "start": 51,
             "end": 53,
             "text": "16",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3072,56 +3617,84 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "5d2ad9f66ffbdda75485d7aa15eda1f53dbe73a6d7c33194ebae58bc09ad4010",
+        "sourceSha256": "89dd563012bd4518a166db35a503462b53b9bb77fac5b022058dab5febd4c57a",
         "spans": [
           {
-            "start": 117,
-            "end": 119,
+            "start": 153,
+            "end": 167,
+            "text": "cuarenta y dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 173,
             "text": "42",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 145,
-            "end": 149,
+            "start": 194,
+            "end": 198,
             "text": "0x2a",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 167,
-            "end": 169,
+            "start": 248,
+            "end": 250,
             "text": "0x",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 198,
-            "end": 201,
+            "start": 254,
+            "end": 257,
             "text": "052",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 345,
-            "end": 348,
+            "start": 362,
+            "end": 365,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 350,
-            "end": 370,
+            "start": 367,
+            "end": 387,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 443,
-            "end": 446,
+            "start": 460,
+            "end": 463,
             "text": "010",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 500,
-            "end": 508,
+            "start": 476,
+            "end": 480,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 527,
             "text": "std::dec",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 547,
+            "end": 551,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3158,6 +3731,20 @@
             "reading": "technical"
           },
           {
+            "start": 140,
+            "end": 144,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 258,
+            "text": "ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 270,
             "end": 271,
             "text": "8",
@@ -3177,6 +3764,13 @@
             "text": "std::dec",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 420,
+            "end": 424,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3338,67 +3932,67 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "358f1113c186c7b12cfeb3d7f39069ab74694b647fb1bde7a85083c7e6b0562b",
+        "sourceSha256": "8cc88772394d53db95dc7928af7dfa4a4f3679043ac916e3b698baca38ef9fed",
         "spans": [
           {
-            "start": 57,
-            "end": 58,
+            "start": 102,
+            "end": 103,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 60,
-            "end": 61,
+            "start": 104,
+            "end": 105,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 63,
-            "end": 65,
+            "start": 106,
+            "end": 108,
             "text": "15",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 67,
-            "end": 69,
+            "start": 109,
+            "end": 111,
             "text": "64",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 72,
-            "end": 74,
+            "start": 112,
+            "end": 114,
             "text": "31",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 144,
-            "end": 161,
+            "start": 145,
+            "end": 162,
             "text": "dec=D;hex=H;oct=O",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 163,
-            "end": 164,
+            "start": 234,
+            "end": 235,
             "text": "D",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 167,
+            "start": 246,
+            "end": 247,
             "text": "H",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 170,
-            "end": 171,
+            "start": 284,
+            "end": 285,
             "text": "O",
             "role": "output",
             "reading": "natural"
@@ -3420,69 +4014,69 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "ccdb68946401f6345255ad3dc44a0c958363a43cbe6b8d3749f637b364d033ca",
+        "sourceSha256": "ba1f2a8faf4ca9baaf94ce7ce34e0224fcd31356b5933e4cb06742b6112ba36a",
         "spans": [
           {
-            "start": 74,
-            "end": 75,
+            "start": 97,
+            "end": 98,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 77,
-            "end": 78,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 80,
-            "end": 82,
-            "text": "15",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 85,
-            "end": 87,
-            "text": "64",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 104,
-            "end": 121,
+            "start": 99,
+            "end": 116,
             "text": "dec=0;hex=0;oct=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 141,
+            "start": 132,
+            "end": 133,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 152,
             "text": "dec=8;hex=8;oct=10",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 162,
+            "start": 168,
+            "end": 170,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 190,
             "text": "dec=15;hex=f;oct=17",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 186,
+            "start": 206,
+            "end": 208,
+            "text": "64",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 230,
             "text": "dec=64;hex=40;oct=100",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 272,
+            "start": 321,
+            "end": 323,
             "text": "31",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3509,7 +4103,7 @@
             "start": 58,
             "end": 60,
             "text": "24",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {

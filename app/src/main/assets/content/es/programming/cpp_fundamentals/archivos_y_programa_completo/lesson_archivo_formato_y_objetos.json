@@ -20,7 +20,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El formato establece cómo están organizados los datos y cómo debe interpretarlos el programa (Stroustrup, 2024, sección 9.3, pp. 254–255). En nuestro ejemplo, cada parte que se interpreta como un dato es un campo: el primero representa el turno y el segundo la cantidad de cajas. El acuerdo exige dos enteros decimales, en ese orden y separados por espacio en blanco. El programa debe leerlos hacia los destinos correspondientes y comprobar los requisitos exigidos.\n\nLa extensión .txt forma parte del nombre del archivo. Ese nombre no demuestra que el contenido respete el formato ni que los valores sean válidos para el programa. Para comprobarlo hay que examinar e interpretar sus datos.",
+          "text": "El formato establece cómo están organizados los datos y cómo debe interpretarlos el programa (Stroustrup, 2024). En nuestro ejemplo, cada parte que se interpreta como un dato es un campo: el primero representa el turno y el segundo la cantidad de cajas. El acuerdo exige dos enteros decimales, en ese orden y separados por espacio en blanco. El programa debe leerlos hacia los destinos correspondientes y comprobar los requisitos exigidos.\n\nLa extensión .txt forma parte del nombre del archivo. Ese nombre no demuestra que el contenido respete el formato ni que los valores sean válidos para el programa. Para comprobarlo hay que examinar e interpretar sus datos.",
           "emphasis": [
             {
               "text": "formato",
@@ -56,7 +56,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "La representación puede perder detalles deliberadamente"
+          "text": "Leer un entero no conserva los ceros iniciales"
         },
         {
           "type": "paragraph",
@@ -67,7 +67,7 @@
           "id": "interpretar_ceros_de_presentacion",
           "question": "Predice la salida. ¿Qué caracteres producen los valores enteros leídos?",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 03\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 03\"};\n    int turno{0};\n    int cajas{0};\n\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "7:3"
           ],
@@ -118,7 +118,7 @@
           "id": "texto_no_es_entero",
           "question": "El segundo campo debe ser un entero. Predice la salida cuando llega el texto tres.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 tres\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 tres\"};\n    int turno{0};\n    int cajas{0};\n\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Formato invalido"
           ],
@@ -144,18 +144,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Abrir el archivo permite intentar acceder a sus datos; extraer los campos interpreta sus caracteres y obtiene valores; validar los valores comprueba si cumplen las reglas del programa. Por ejemplo, obtener un entero para el turno no demuestra que ese turno exista en el registro. Esa comprobación requiere información del programa, además del tipo `int`.\n\nEn los ejemplos de esta lección, la condición comprueba que se hayan extraído los dos enteros. Eso no acredita por sí solo todos los requisitos del formato, como que no queden otros campos, ni todas las reglas sobre los valores. Antes de utilizarlos, completa las comprobaciones que exija el problema. En la siguiente lección añadiremos la apertura real y mantendremos separadas estas etapas.",
+          "text": "Para utilizar los datos, el programa realiza acciones diferentes:\n\nAbrir el archivo: intentar acceder a los datos guardados.\nExtraer los campos: interpretar los caracteres y obtener valores.\nValidar los valores: comprobar que cumplen las reglas del programa.\n\nPor ejemplo, obtener un entero para el turno no demuestra que ese turno exista en el registro. Esa comprobación necesita información del programa, además del tipo `int`.\n\nEn los ejemplos de esta lección, la condición comprueba que se hayan extraído los dos enteros. Eso no demuestra por sí solo que se cumpla todo el formato: todavía podrían quedar otros campos. Tampoco demuestra que los valores cumplan todas las reglas del problema. Antes de utilizarlos, completa las comprobaciones necesarias. En la siguiente lección añadiremos la apertura real y mantendremos separadas estas etapas.",
           "emphasis": [
             {
               "text": "Abrir el archivo",
               "style": "bold"
             },
             {
-              "text": "extraer los campos",
+              "text": "Extraer los campos",
               "style": "bold"
             },
             {
-              "text": "validar los valores",
+              "text": "Validar los valores",
               "style": "bold"
             }
           ]
@@ -170,7 +170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta práctica, una ficha tiene dos campos: un código de exactamente cuatro dígitos y una cantidad entera de cajas entre 0 y 20, ambos límites incluidos. El texto 0007 03 identifica el código 0007 y la cantidad 3. Los ceros iniciales pertenecen a la identidad del código; en la cantidad sólo importa el valor.\n\nConstruye bool leer_ficha(const std::string& texto, std::string& codigo, int& cajas). Utiliza un std::istringstream para obtener el código como cadena y la cantidad como entero. Comprueba que el código contiene cuatro caracteres y que cada uno está entre '0' y '9'. Rechaza una cantidad fuera del intervalo o una extracción incompleta. Después de los dos campos sólo se permite espacio en blanco: intenta extraer un carácter adicional y rechaza si lo obtienes.\n\nDevuelve true y actualiza ambos destinos únicamente cuando se cumpla todo el contrato. Ante cualquier rechazo, devuelve false y conserva exactamente los valores que tenían codigo y cajas antes de la llamada. No hace falta abrir un archivo: aquí se comprueba cómo interpretar y aceptar el texto.",
+          "text": "En esta práctica, una ficha tiene dos campos:\n\nCódigo: exactamente cuatro dígitos. Sus ceros iniciales forman parte de su identidad.\nCantidad de cajas: un entero entre 0 y 20, ambos límites incluidos.\n\nAsí, el texto `0007 03` contiene el código 0007 y la cantidad 3. Para el código importa la secuencia completa; para la cantidad importa el valor numérico.\n\nConstruye `bool leer_ficha(const std::string& texto, std::string& codigo, int& cajas)`. Utiliza un `std::istringstream` para leer el código como cadena y la cantidad como entero. Comprueba estas condiciones:\n\nEl código contiene cuatro caracteres y cada uno está entre `'0'` y `'9'`.\nLa cantidad se obtiene correctamente y pertenece al intervalo permitido.\nDespués de los dos campos sólo queda espacio en blanco. Intenta extraer un carácter adicional y rechaza la ficha si lo obtienes.\n\nDevuelve `true` y actualiza ambos destinos únicamente cuando se cumpla todo el contrato. Ante cualquier rechazo, devuelve `false` y conserva exactamente los valores que tenían `codigo` y `cajas` antes de la llamada. La práctica interpreta el texto preparado; todavía no abre un archivo.",
           "emphasis": [
             {
               "text": "dos campos",
@@ -189,7 +189,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe tu función antes de probar, sin cambiar las once llamadas del cliente. Cada llamada prepara de nuevo el código 0999 y la cantidad 19. La línea resultante muestra el indicador de aceptación, el código conservado y la cantidad, separados por dos puntos. El indicador 1 corresponde a true y 0 a false.\n\nLos casos incluyen códigos con ceros, los límites de cantidad, longitud incorrecta, un carácter ajeno a los dígitos, texto que no representa un entero, cantidades fuera del intervalo, un campo sobrante y una ficha incompleta. El último caso separa los mismos dos campos mediante espacios, tabuladores y un salto de línea; esos separadores están permitidos. Pulsa «Compilar, ejecutar y comprobar» con una implementación común para los once casos.",
+          "text": "Escribe tu función antes de probar, sin cambiar las once llamadas del cliente. Cada llamada es una prueba independiente: prepara de nuevo el código 0999 y la cantidad 19, sin heredar los destinos de la llamada anterior. La línea resultante muestra el indicador de aceptación, el código conservado y la cantidad, separados por dos puntos. El indicador 1 corresponde a true y 0 a false.\n\nEstas son las entradas y los informes esperados, en el orden de las llamadas. La entrada se muestra como un literal C++: las comillas delimitan ese literal y no forman parte de los datos.\n\nLlamada 1\nEntrada: `\"0007 03\"`\nResultado: `1:0007:3`\n\nLlamada 2\nEntrada: `\"0123 20\"`\nResultado: `1:0123:20`\n\nLlamada 3\nEntrada: `\"0000 0\"`\nResultado: `1:0000:0`\n\nLlamada 4\nEntrada: `\"7 3\"`\nResultado: `0:0999:19`\n\nLlamada 5\nEntrada: `\"00x7 3\"`\nResultado: `0:0999:19`\n\nLlamada 6\nEntrada: `\"0007 tres\"`\nResultado: `0:0999:19`\n\nLlamada 7\nEntrada: `\"0007 21\"`\nResultado: `0:0999:19`\n\nLlamada 8\nEntrada: `\"0007 -1\"`\nResultado: `0:0999:19`\n\nLlamada 9\nEntrada: `\"0007 3 extra\"`\nResultado: `0:0999:19`\n\nLlamada 10\nEntrada: `\"0007\"`\nResultado: `0:0999:19`\n\nLlamada 11\nEntrada: `\" \\t0007\\n03 \\t\"`\nResultado: `1:0007:3`\n\nEn la última entrada, `\\t` representa un tabulador y `\\n` un salto de línea. El texto comienza con un espacio y un tabulador; después contiene `0007`, un salto de línea, `03`, otro espacio y otro tabulador. Se leen los mismos dos campos que en la primera llamada: esos separadores no cambian el código ni la cantidad.\n\nCada informe termina con un salto de línea, incluido el último. Pulsa «Compilar, ejecutar y comprobar» con una implementación común para las once llamadas del cliente.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -203,7 +203,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -239,11 +239,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_ficha(const std::string& texto, std::string& codigo, int& cajas) {\n    std::istringstream entrada{texto};\n    std::string candidato_codigo;\n    int candidato_cajas{0};\n    if (!(entrada >> candidato_codigo >> candidato_cajas)) return false;\n    if (candidato_codigo.size() != 4) return false;\n    for (char caracter : candidato_codigo) {\n        if (caracter < '0' || caracter > '9') return false;\n    }\n    if (candidato_cajas < 0 || candidato_cajas > 20) return false;\n    char sobrante{};\n    if (entrada >> sobrante) return false;\n    codigo = candidato_codigo;\n    cajas = candidato_cajas;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_ficha(const std::string& texto, std::string& codigo, int& cajas) {\n    std::istringstream entrada{texto};\n    std::string candidato_codigo;\n    int candidato_cajas{0};\n\n    if (!(entrada >> candidato_codigo >> candidato_cajas))\n        return false;\n\n    if (candidato_codigo.size() != 4)\n        return false;\n\n    for (char caracter : candidato_codigo) {\n        if (caracter < '0' || caracter > '9')\n            return false;\n    }\n\n    if (candidato_cajas < 0 || candidato_cajas > 20)\n        return false;\n\n    char sobrante{};\n    if (entrada >> sobrante)\n        return false;\n\n    codigo = candidato_codigo;\n    cajas = candidato_cajas;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia obtiene los dos campos en candidato_codigo y candidato_cajas. El código conserva la secuencia textual; las comprobaciones de longitud y de cada carácter se aplican a esa cadena. La extracción del segundo campo convierte 03 en el valor 3, que sí es la información buscada para la cantidad.\n\nLeer 7 3 obtiene una pareja, pero la longitud del código no cumple el contrato. Leer 00x7 3 conserva cuatro caracteres, pero uno no es un dígito. En 0007 tres no se completa la extracción de la cantidad. Las muestras 0007 21 y 0007 -1 sí producen enteros, pero incumplen el dominio permitido.\n\nLa extracción adicional distingue 0007 3 extra de una ficha completa con sólo espacio en blanco al final. Las asignaciones a los destinos quedan después de todas esas comprobaciones. Por eso una ficha rechazada conserva 0999 y 19, incluso si se alcanzó a leer su primer campo. La aceptación y la conservación se observan en cada línea; el indicador por sí solo no mostraría los cambios indebidos."
+          "text": "La referencia lee los campos hacia `candidato_codigo` y `candidato_cajas`. El primero conserva la secuencia textual; las comprobaciones de longitud y de cada carácter se aplican a esa cadena. La extracción del segundo convierte los caracteres `03` en el valor 3, que sí es la información buscada para la cantidad.\n\nLas muestras permiten distinguir estos rechazos:\n\n`7 3`: se obtienen dos campos, pero el código no tiene cuatro caracteres.\n`00x7 3`: el código tiene cuatro caracteres, pero uno no es un dígito.\n`0007 tres`: no se completa la extracción de la cantidad.\n`0007 21` y `0007 -1`: se obtienen enteros, pero quedan fuera del intervalo permitido.\n`0007 3 extra`: después de los dos campos se encuentra un carácter adicional.\n\nUna ficha completa sí puede terminar con espacio en blanco. La extracción adicional omite ese espacio e intenta encontrar otro carácter; sólo se acepta si no lo obtiene.\n\nLas asignaciones a los destinos quedan después de todas las comprobaciones. Por eso una ficha rechazada conserva 0999 y 19, incluso si se alcanzó a leer el primer campo. Cada informe muestra el indicador de aceptación y ambos destinos; el indicador por sí solo no revelaría que un rechazo los cambió indebidamente."
         }
       ]
     }
@@ -747,6 +747,140 @@
         "id": "block_0002_0002",
         "beforeSha256": "a37721397d388c1380f6bca36e0190cf9eea9158725e85fda9db8d8835df7a4f",
         "afterSha256": "5ae030db1e9957fc147333d28edd8957e04bd0918f5c7b45b922c326f5e3c5f8"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "badcf8b78275dbcd8dbd96f6fa75fbcb1daf4adc73d5b51ef6721cda4eab142e",
+        "afterSha256": "214813f40434df09e83c24861e82236e8494c0250e3a5366088a1ba8ad539c0d"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "cb144540f73a1c2f322182fa62714da4542c6496d3af8aa40f1a48c56e34d588",
+        "afterSha256": "4ab0a52b9e373b36c95c61e3105d09ea437bab79d14c5cc678b1afef4cec7a3d"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "e7a3e7922d3d2eea9676e3634aa8f288ec7ede2d0ed764a0e6ef206f9f70baa9",
+        "afterSha256": "cd9fe7c2f995172d127123d7921363aee5d419d37464b8afcedcaabfbee1769a"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_contrato",
+        "beforeSha256": "477edd44733fbba0f65b6f565afcb910bf94180bab126ff17b3eceb692df3423",
+        "afterSha256": "a72a01bc58d0fd05ff6c4a1bdcc84bb4950ca1cd5c839a571b4d2c88b8b6c84d"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_cliente",
+        "beforeSha256": "ae6f2c76964139e646008bd89ebea597d31c258a78c7c3794b14fd80c2295981",
+        "afterSha256": "97ad9739de74ab9c3a01ce0d4546bbcf2e0760c8c24d7d841aa80a6b7a5158ae"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_razonamiento",
+        "beforeSha256": "d1c81d508dec66f34a7efbc3685262fb6d2ee3f1ddb3b79794e054bf23c75f63",
+        "afterSha256": "fd885cbf59e890800ff4d576785c165d31133e22e5f47e9d758c8c2b461a124e"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "9748d45df70934860916a5b72ab3c9d1fba12bcaae7daf1f82aa08dd73042e08",
+        "afterSha256": "b2ab895716f179e382c64331e599635883ff5cabc7b56afafdaad3c1a461fdaa"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "081eec784d2e6eba6acca1863de3951e61ac17d86c0d285c896fe35815746a46",
+        "afterSha256": "dad1ae41e5bb11186975efae8887f75ab93bbd5f462bf3d353903240139ae143"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_comprobacion",
+        "beforeSha256": "e9e9e1a38dcfb56453c46d50396b6b0f095253203b827ade2f7c6e1070cb3e7b",
+        "afterSha256": "c7a86c4dd58396b38b47a363aa6fe1867122eb55d7a436a7904040b64dca97a5"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_codigo",
+        "beforeSha256": "34b507d972421f0a8e9906522fd887c6c14049189bf0a7e771f67ba8aade800b",
+        "afterSha256": "c705472ccf7ac922c00af2eeb211d7b607a3e8cd5c11dbe217bcee9ef7643006"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "cd9fe7c2f995172d127123d7921363aee5d419d37464b8afcedcaabfbee1769a",
+        "afterSha256": "e5e71898f1a2de5b32c3cb0e665bec55cb4edf33ba1a8c7abf093ece10abee01"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_cliente",
+        "beforeSha256": "97ad9739de74ab9c3a01ce0d4546bbcf2e0760c8c24d7d841aa80a6b7a5158ae",
+        "afterSha256": "0d62beeec3319fbc4d7f6b91ff7eb8b41ceccfdf89179f220f11ca06ce4747fb"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "interpretar_ceros_de_presentacion",
+          "question": "Predice la salida. ¿Qué caracteres producen los valores enteros leídos?",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 03\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "7:3"
+          ],
+          "explanation": "La primera extracción interpreta los caracteres 0007 como el entero 7 y lo guarda en turno. La siguiente interpreta 03 como el entero 3 y lo guarda en cajas. Se completan ambas extracciones, por lo que se ejecuta la rama de salida.\n\nstd::cout recibe el valor de turno, el separador y el valor de cajas: muestra 7:3, sin salto final. Los objetos enteros conservan los valores obtenidos; no conservan cuántos ceros precedían a cada uno en el texto.",
+          "reviewFeedback": "Sigue cada extracción desde los caracteres de la cadena hasta su destino entero. Después revisa qué insertan las dos variables y el separador en la salida; no copies sin interpretar el texto de entrada."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "texto_no_es_entero",
+          "question": "El segundo campo debe ser un entero. Predice la salida cuando llega el texto tres.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 tres\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Formato invalido"
+          ],
+          "explanation": "La extracción hacia turno obtiene el entero 7 a partir de 0007. Al intentar extraer cajas, el flujo encuentra tres y no obtiene el segundo entero solicitado. La condición encadenada falla.\n\nSe ejecuta la rama que muestra Formato invalido, sin salto final. El programa no usa cajas como una cantidad leída correctamente: ni su inicialización ni el éxito de la primera extracción permiten aceptar una pareja incompleta.",
+          "reviewFeedback": "Comprueba por separado si cada extracción obtiene el entero solicitado. Luego decide qué rama de la condición encadenada se ejecuta y localiza su instrucción de salida."
+        }
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:0007:3\n1:0123:20\n1:0000:0\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n1:0007:3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las fichas 0007 03, 0123 20 y 0000 0 conservan sus códigos y obtienen las cantidades 3, 20 y 0. Los siete casos siguientes se rechazan sin cambiar 0999 ni 19. El último caso vuelve a aceptar el código 0007 y la cantidad 3: cambian los separadores, no los dos campos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "1:7:3\n1:123:20\n1:0:0\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n1:7:3\n"
+                    ],
+                    "text": "Las fichas aceptadas muestran los códigos 7, 123 y 0. Se conservó un valor numérico, pero se perdieron los ceros de la secuencia original. El contrato exige conservar 0007, 0123 y 0000 como cadenas de cuatro caracteres; comprueba qué dato asignas al destino codigo."
+                  },
+                  {
+                    "outputs": [
+                      "1:0007:3\n1:0123:20\n1:0000:0\n0:7:3\n0:00x7:3\n0:0007:0\n0:0007:21\n0:0007:-1\n0:0007:3\n0:0007:19\n1:0007:3\n"
+                    ],
+                    "text": "Los casos rechazados muestran cambios en los destinos: por ejemplo, 0:7:3 y 0:0007:21. Devolver false no deshace las asignaciones ya realizadas. Obtén y comprueba los candidatos antes de modificar los destinos; cada rechazo debe conservar el código 0999 y la cantidad 19."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_ficha(const std::string& texto, std::string& codigo, int& cajas) {\n    std::istringstream entrada{texto};\n    std::string candidato_codigo;\n    int candidato_cajas{0};\n    if (!(entrada >> candidato_codigo >> candidato_cajas)) return false;\n    if (candidato_codigo.size() != 4) return false;\n    for (char caracter : candidato_codigo) {\n        if (caracter < '0' || caracter > '9') return false;\n    }\n    if (candidato_cajas < 0 || candidato_cajas > 20) return false;\n    char sobrante{};\n    if (entrada >> sobrante) return false;\n    codigo = candidato_codigo;\n    cajas = candidato_cajas;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -796,18 +930,18 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "e919059aebd7388f43f9532440774be4e80e811b1f9908a2462ec259d0b7b248",
+        "sourceSha256": "1a7ea95b2223881bbdac6f5ec426fa136e7f96336d891d376bcba6e1b9c3fe20",
         "spans": [
           {
             "start": 93,
-            "end": 137,
-            "text": "(Stroustrup, 2024, sección 9.3, pp. 254–255)",
+            "end": 111,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 480,
-            "end": 484,
+            "start": 454,
+            "end": 458,
             "text": ".txt",
             "role": "data",
             "reading": "natural"
@@ -895,7 +1029,7 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "558e1f82d21b9ded706786f5ea1baa34d8ab2c36dcfc3aa665b0ae92974e4e12",
+        "sourceSha256": "68ee6c403dc58ed1f88f0f117eec27b448ac1b323adc6560b698383b35b502c0",
         "spans": []
       },
       {
@@ -1381,13 +1515,14 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "9accf5ad8708bb08d4add4c0bd7e91ce427fddc1aa22c566b8564b1fd1c98f65",
+        "sourceSha256": "9a27ebee9990e65512ea2b65162615297eda9d930ae29f1d68f4f605ebcbd5cf",
         "spans": [
           {
-            "start": 349,
-            "end": 352,
+            "start": 424,
+            "end": 427,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1414,95 +1549,95 @@
       {
         "block": "u12_codigo_textual_y_cantidad_contrato",
         "path": "/text",
-        "sourceSha256": "933cb72bde14065548a62eeea1dd63f43a1ea6a997b8a1f3a10f679a42b28d91",
+        "sourceSha256": "18456dedfc7122d00dc6cad3395c925843718cbca2a059d9dc0f58851413e0db",
         "spans": [
           {
-            "start": 123,
-            "end": 124,
+            "start": 168,
+            "end": 169,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 129,
+            "start": 172,
+            "end": 174,
             "text": "20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 172,
+            "start": 217,
+            "end": 224,
             "text": "0007 03",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 194,
-            "end": 198,
+            "start": 245,
+            "end": 249,
             "text": "0007",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
-            "start": 213,
-            "end": 214,
+            "start": 264,
+            "end": 265,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 323,
-            "end": 397,
+            "start": 369,
+            "end": 443,
             "text": "bool leer_ficha(const std::string& texto, std::string& codigo, int& cajas)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 410,
-            "end": 428,
+            "start": 458,
+            "end": 476,
             "text": "std::istringstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 568,
-            "end": 571,
+            "start": 627,
+            "end": 630,
             "text": "'0'",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 574,
-            "end": 577,
+            "start": 635,
+            "end": 638,
             "text": "'9'",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 784,
-            "end": 788,
+            "start": 854,
+            "end": 858,
             "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 895,
-            "end": 900,
+            "start": 967,
+            "end": 972,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 947,
-            "end": 953,
+            "start": 1021,
+            "end": 1027,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 956,
-            "end": 961,
+            "start": 1032,
+            "end": 1037,
             "text": "cajas",
             "role": "cpp",
             "reading": "technical"
@@ -1512,7 +1647,7 @@
       {
         "block": "u12_codigo_textual_y_cantidad_cliente",
         "path": "/text",
-        "sourceSha256": "964ca354e5fb4f43264fe7a54e108b48e6c60374e2b61c784fa205ff3e801492",
+        "sourceSha256": "e588a3600bd91d9e87de59639b0d208863ed59ee384797caf5782017a029e000",
         "spans": [
           {
             "start": 28,
@@ -1522,46 +1657,459 @@
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 123,
+            "start": 148,
+            "end": 152,
             "text": "0999",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 138,
-            "end": 140,
+            "start": 167,
+            "end": 169,
             "text": "19",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 274,
+            "start": 351,
+            "end": 352,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 289,
-            "end": 293,
+            "start": 367,
+            "end": 371,
             "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 296,
-            "end": 297,
+            "start": 374,
+            "end": 375,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 300,
-            "end": 305,
+            "start": 378,
+            "end": 383,
             "text": "false",
-            "role": "cpp",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 583,
+            "end": 584,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 595,
+            "end": 604,
+            "text": "\"0007 03\"",
+            "role": "string",
             "reading": "technical"
+          },
+          {
+            "start": 618,
+            "end": 620,
+            "text": "1:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 620,
+            "end": 624,
+            "text": "0007",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 624,
+            "end": 626,
+            "text": ":3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 637,
+            "end": 638,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 649,
+            "end": 658,
+            "text": "\"0123 20\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 672,
+            "end": 674,
+            "text": "1:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 674,
+            "end": 678,
+            "text": "0123",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 678,
+            "end": 681,
+            "text": ":20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 692,
+            "end": 693,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 704,
+            "end": 712,
+            "text": "\"0000 0\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 726,
+            "end": 728,
+            "text": "1:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 728,
+            "end": 732,
+            "text": "0000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 732,
+            "end": 734,
+            "text": ":0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 745,
+            "end": 746,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 757,
+            "end": 762,
+            "text": "\"7 3\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 776,
+            "end": 778,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 778,
+            "end": 782,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 782,
+            "end": 785,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 796,
+            "end": 797,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 808,
+            "end": 816,
+            "text": "\"00x7 3\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 830,
+            "end": 832,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 832,
+            "end": 836,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 836,
+            "end": 839,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 850,
+            "end": 851,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 862,
+            "end": 873,
+            "text": "\"0007 tres\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 887,
+            "end": 889,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 889,
+            "end": 893,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 893,
+            "end": 896,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 907,
+            "end": 908,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 919,
+            "end": 928,
+            "text": "\"0007 21\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 942,
+            "end": 944,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 944,
+            "end": 948,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 948,
+            "end": 951,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 962,
+            "end": 963,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 974,
+            "end": 983,
+            "text": "\"0007 -1\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 997,
+            "end": 999,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 999,
+            "end": 1003,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1003,
+            "end": 1006,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1017,
+            "end": 1018,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1029,
+            "end": 1043,
+            "text": "\"0007 3 extra\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1057,
+            "end": 1059,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1059,
+            "end": 1063,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1063,
+            "end": 1066,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1077,
+            "end": 1079,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1090,
+            "end": 1096,
+            "text": "\"0007\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1110,
+            "end": 1112,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1112,
+            "end": 1116,
+            "text": "0999",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1116,
+            "end": 1119,
+            "text": ":19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1130,
+            "end": 1132,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1143,
+            "end": 1159,
+            "text": "\" \\t0007\\n03 \\t\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1173,
+            "end": 1175,
+            "text": "1:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1175,
+            "end": 1179,
+            "text": "0007",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1179,
+            "end": 1181,
+            "text": ":3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1207,
+            "end": 1209,
+            "text": "\\t",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1238,
+            "end": 1240,
+            "text": "\\n",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1328,
+            "end": 1332,
+            "text": "0007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1355,
+            "end": 1357,
+            "text": "03",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -1630,21 +2178,21 @@
             "start": 147,
             "end": 151,
             "text": "0999",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 155,
             "end": 157,
             "text": "19",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 201,
             "end": 205,
             "text": "0007",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
@@ -1686,21 +2234,21 @@
             "start": 167,
             "end": 171,
             "text": "0007",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 173,
             "end": 177,
             "text": "0123",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 180,
             "end": 184,
             "text": "0000",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
@@ -1719,37 +2267,65 @@
         "spans": [
           {
             "start": 68,
-            "end": 73,
-            "text": "0:7:3",
+            "end": 70,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "7",
             "role": "output",
             "reading": "characters"
           },
           {
+            "start": 71,
+            "end": 73,
+            "text": ":3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 76,
-            "end": 85,
-            "text": "0:0007:21",
+            "end": 78,
+            "text": "0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 82,
+            "text": "0007",
             "role": "output",
             "reading": "characters"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": ":21",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 96,
             "end": 101,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 249,
             "end": 253,
             "text": "0999",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 268,
             "end": 270,
             "text": "19",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1763,90 +2339,90 @@
       {
         "block": "u12_codigo_textual_y_cantidad_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "4c5f5bbe763bd1e82bab6bf9178da7ed77ab65f595bebb6409048552d7f8cba6",
+        "sourceSha256": "a4084f6b8c7cb3a87dcfba9b72b2c0f33ffe361bd51058bf028d762e8620d379",
         "spans": [
           {
-            "start": 40,
-            "end": 56,
+            "start": 36,
+            "end": 52,
             "text": "candidato_codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 74,
+            "start": 57,
+            "end": 72,
             "text": "candidato_cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 234,
-            "end": 236,
+            "start": 244,
+            "end": 246,
             "text": "03",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 249,
-            "end": 250,
+            "start": 260,
+            "end": 261,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 309,
-            "end": 312,
+            "start": 366,
+            "end": 369,
             "text": "7 3",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 389,
-            "end": 395,
+            "start": 440,
+            "end": 446,
             "text": "00x7 3",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 453,
-            "end": 462,
+            "start": 511,
+            "end": 520,
             "text": "0007 tres",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 521,
-            "end": 528,
+            "start": 569,
+            "end": 576,
             "text": "0007 21",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 531,
-            "end": 538,
+            "start": 581,
+            "end": 588,
             "text": "0007 -1",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 632,
-            "end": 644,
+            "start": 656,
+            "end": 668,
             "text": "0007 3 extra",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 818,
-            "end": 822,
+            "start": 1018,
+            "end": 1022,
             "text": "0999",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
-            "start": 825,
-            "end": 827,
+            "start": 1025,
+            "end": 1027,
             "text": "19",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
