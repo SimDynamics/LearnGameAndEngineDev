@@ -1,7 +1,7 @@
 """Mutation-based evidence for two original Programming 2 U1 C++ batteries.
 
 This isolated CI oracle checks a candidate's own main across independent
-behavior mutations. It does NOT change lesson assets or grant in-app progress.
+behavior mutations compiled in separate executables. It does NOT change lesson assets or grant in-app progress.
 The future curricular integration must bind evidence to an actual student
 revision and preserve the existing editor identity and stored history.
 """
@@ -49,11 +49,14 @@ def source_for(identity: str) -> str:
 
 
 def instrument(source: str, cases: tuple[tuple[int, int], ...],
-               *, broken_original: bool) -> str:
-    """Replace only the bounded original function; preserve candidate main.
+               *, broken_original: bool, mode: str = "correct",
+               mutant: int | None = None) -> str:
+    """Compile a distinct C++ implementation for every independent mutation.
 
-    This intentionally requires the EXACT two published simple bodies. A
-    general student-code transformation needs a compiler-aware source mapper.
+    No phase switches, hidden arguments, or environment variables are exposed
+    to the candidate's main. Only the exact published original function body
+    may be substituted; other code is preserved byte for byte. This limited
+    instrumenter is not a general-purpose C++ source rewriter.
     """
     if source.count(FUNCTION) != 1:
         raise ValueError("Missing or ambiguous original debe_reponer")
@@ -65,40 +68,27 @@ def instrument(source: str, cases: tuple[tuple[int, int], ...],
         "return disponibles <= minimo;")
     if source[start:end].strip() != baseline:
         raise ValueError("The published function was changed instead of the battery")
-    mutated = " || ".join(
-        f"(disponibles == {a} && minimo == {b} && mutant == {i})"
-        for i, (a, b) in enumerate(cases)
-    )
-    # The QA wrapper reads only runner-owned environment variables. MSVC's
-    # safe CRT uses _dupenv_s; do not disable C4996 (or weaken /WX) globally.
-    env_reader = r"""
-#include <cstdlib>
-#include <string>
-static std::string lgaed_u1_env(const char* name) {
-#if defined(_MSC_VER)
-    char* value = nullptr;
-    std::size_t length = 0;
-    if (_dupenv_s(&value, &length, name) != 0) return {};
-    const std::string result = value ? value : "";
-    std::free(value);
-    return result;
-#else
-    const char* value = std::getenv(name);
-    return value ? value : "";
-#endif
-}
-"""
+    if mode not in ("correct", "mutant", "original-defect"):
+        raise ValueError("Unknown mutation phase")
+    if mode == "mutant":
+        if type(mutant) is not int or not 0 <= mutant < len(cases):
+            raise ValueError("A mutation must identify exactly one original case")
+        available, minimum = cases[mutant]
+        condition = f"(disponibles == {available} && minimo == {minimum})"
+    else:
+        if mutant is not None:
+            raise ValueError("Only a mutant may name a case index")
+        if mode == "original-defect" and not broken_original:
+            raise ValueError("The original defective comparison is not this owner's contract")
+        condition = "false"
+    comparison = "<" if mode == "original-defect" else "<="
     body = (
-        "\n    const bool original_defect = !lgaed_u1_env(\"LGAED_U1_BROKEN\").empty();\n"
-        "    const bool resultado = original_defect "
-        "? disponibles < minimo : disponibles <= minimo;\n"
-        "    const std::string cambio = lgaed_u1_env(\"LGAED_U1_MUTANT\");\n"
-        "    const int mutant = cambio.empty() ? -1 : std::stoi(cambio);\n"
-        f"    const bool invertir = {mutated};\n"
+        f"\n    const bool resultado = disponibles {comparison} minimo;\n"
+        f"    const bool invertir = {condition};\n"
         f'    std::cerr << "{TRACE}" << disponibles << "," << minimo << std::endl;\n'
         "    return invertir ? !resultado : resultado;\n"
     )
-    return env_reader + source[:start] + body + source[end:]
+    return source[:start] + body + source[end:]
 
 
 def compile_candidate(source: str, directory: Path, cxx: str) -> Path:
@@ -118,15 +108,12 @@ def compile_candidate(source: str, directory: Path, cxx: str) -> Path:
     return exe
 
 
-def execute(exe: Path, *, original_defect: bool = False,
-            mutant: int | None = None) -> tuple[int, list[tuple[int, int]]]:
+def execute(exe: Path) -> tuple[int, list[tuple[int, int]]]:
+    # Do not pass mutation selection to a candidate through its environment or
+    # arguments. Every variant is an independently compiled private artifact.
     env = os.environ.copy()
     env.pop("LGAED_U1_BROKEN", None)
     env.pop("LGAED_U1_MUTANT", None)
-    if original_defect:
-        env["LGAED_U1_BROKEN"] = "1"
-    if mutant is not None:
-        env["LGAED_U1_MUTANT"] = str(mutant)
     result = subprocess.run([str(exe)], cwd=exe.parent, env=env,
                             capture_output=True, text=True,
                             errors="replace", timeout=12)
@@ -143,24 +130,29 @@ def execute(exe: Path, *, original_defect: bool = False,
 
 def audit(source: str, cases: tuple[tuple[int, int], ...], cxx: str,
           *, broken_original: bool) -> Audit:
-    """Require every original call even after a mismatch, plus mutation kills.
+    """Require all calls and independent failed mutants in separate binaries.
 
-    A successful stdout or a fixed exit code is NOT proof of comparisons.
-    Every case receives a private wrong-result mutation; the candidate's own
-    main must fail each mutation while passing the correct implementation.
+    The candidate's main must fail each wrong-result implementation, while
+    succeeding with a correct comparator. Distinct compile artifacts prevent
+    candidate code from inspecting the selected mutant through process state.
+    This proof is isolated QA, not a persistent completion or exercise oracle.
     """
     try:
-        compiled = instrument(source, cases, broken_original=broken_original)
         with tempfile.TemporaryDirectory(prefix="lgaed-u1-battery-") as tmp:
-            exe = compile_candidate(compiled, Path(tmp), cxx)
             phases = [("correct", None)]
             phases.extend((f"mutant-{i}", i) for i in range(len(cases)))
             if broken_original:
                 phases.append(("original-defect", None))
             seen = []
-            for label, index in phases:
-                code, observed = execute(
-                    exe, original_defect=label == "original-defect", mutant=index)
+            for ordinal, (label, index) in enumerate(phases):
+                mode = ("original-defect" if label == "original-defect" else
+                        "mutant" if index is not None else "correct")
+                phase = Path(tmp) / f"phase-{ordinal}"
+                phase.mkdir()
+                program = instrument(source, cases, broken_original=broken_original,
+                                     mode=mode, mutant=index)
+                exe = compile_candidate(program, phase, cxx)
+                code, observed = execute(exe)
                 seen.append((label, code))
                 if Counter(observed) != Counter(cases):
                     return Audit(False, label + ": missing, repeated or skipped calls",

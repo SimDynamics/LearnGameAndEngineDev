@@ -80,6 +80,51 @@ class U1OpenBatteryMutationTest(unittest.TestCase):
         self.assertFalse(invalid.accepted)
         self.assertIn("correct", invalid.reason)
 
+    def test_mutation_identity_is_not_visible_through_process_inputs(self):
+        source = probe.six_case_candidate()
+        variants = [
+            probe.instrument(source, probe.SIX, broken_original=False),
+            probe.instrument(source, probe.SIX, broken_original=False,
+                             mode="mutant", mutant=0),
+            probe.instrument(source, probe.SIX, broken_original=False,
+                             mode="mutant", mutant=4),
+        ]
+        for variant in variants:
+            self.assertNotIn("LGAED_U1_MUTANT", variant)
+            self.assertNotIn("LGAED_U1_BROKEN", variant)
+            self.assertNotIn("getenv", variant)
+            self.assertEqual(variant.partition("int main() {")[2],
+                             source.partition("int main() {")[2])
+        self.assertEqual(len(set(variants)), 3)
+        self.assertIn("disponibles == 4 && minimo == 5", variants[1])
+        self.assertIn("disponibles == 8 && minimo == 8", variants[2])
+        with self.assertRaises(ValueError):
+            probe.instrument(source, probe.SIX, broken_original=False,
+                             mode="mutant", mutant=len(probe.SIX))
+        with self.assertRaises(ValueError):
+            probe.instrument(source, probe.SIX, broken_original=False,
+                             mode="original-defect")
+
+    def test_attempt_to_guess_mutant_via_environment_fails(self):
+        # This source calls all six cases but returns success unless the
+        # selected mutant is explicitly exposed in the process environment.
+        # The private compile-time mutation must never reveal that variable.
+        original = probe.source_for("block_0005_0009")
+        candidate = original[:original.index("int main() {")] + r"""
+int main() {
+    (void)debe_reponer(4, 5);
+    (void)debe_reponer(5, 5);
+    (void)debe_reponer(6, 5);
+    (void)debe_reponer(7, 8);
+    (void)debe_reponer(8, 8);
+    (void)debe_reponer(9, 8);
+    return 0;
+}
+"""
+        rejected = probe.audit(candidate, probe.SIX, compiler(), broken_original=False)
+        self.assertFalse(rejected.accepted)
+        self.assertIn("mutant", rejected.reason)
+
     def test_original_student_function_cannot_be_changed(self):
         source = probe.three_case_candidate()
         self.assertEqual(source.count("return disponibles < minimo;"), 1)
