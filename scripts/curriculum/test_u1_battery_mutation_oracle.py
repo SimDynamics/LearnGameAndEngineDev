@@ -106,24 +106,40 @@ class U1OpenBatteryMutationTest(unittest.TestCase):
                              mode="original-defect")
 
     def test_attempt_to_guess_mutant_via_environment_fails(self):
-        # This source calls all six cases but returns success unless the
-        # selected mutant is explicitly exposed in the process environment.
-        # The private compile-time mutation must never reveal that variable.
+        # A dishonest candidate might call every required input but return
+        # failure only when the OLD oracle exposed LGAED_U1_MUTANT in getenv.
+        # This attack passed an environment-selected mutation harness.
+        # Separate compilation must make all such process-side guesses fail.
         original = probe.source_for("block_0005_0009")
-        candidate = original[:original.index("int main() {")] + r"""
-int main() {
+        helper = r"""
+#include <cstdlib>
+bool visible_mutation_hint() {
+#if defined(_MSC_VER)
+    char* selected = nullptr;
+    std::size_t length = 0;
+    const auto status = _dupenv_s(&selected, &length, "LGAED_U1_MUTANT");
+    const bool hint = status == 0 && selected != nullptr;
+    std::free(selected);
+    return hint;
+#else
+    return std::getenv("LGAED_U1_MUTANT") != nullptr;
+#endif
+}
+"""
+        candidate = helper + original[:original.index("int main() {")] + r"""int main() {
     (void)debe_reponer(4, 5);
     (void)debe_reponer(5, 5);
     (void)debe_reponer(6, 5);
     (void)debe_reponer(7, 8);
     (void)debe_reponer(8, 8);
     (void)debe_reponer(9, 8);
-    return 0;
+    return visible_mutation_hint() ? 1 : 0;
 }
 """
         rejected = probe.audit(candidate, probe.SIX, compiler(), broken_original=False)
         self.assertFalse(rejected.accepted)
         self.assertIn("mutant", rejected.reason)
+        self.assertIn("comparison did not drive", rejected.reason)
 
     def test_original_student_function_cannot_be_changed(self):
         source = probe.three_case_candidate()
