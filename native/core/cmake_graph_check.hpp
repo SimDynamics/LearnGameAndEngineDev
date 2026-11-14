@@ -60,6 +60,13 @@ struct CmakeOptionSelectionRequirement {
     std::string name, library_target, disabled_source, disabled_stdout;
     bool operator==(const CmakeOptionSelectionRequirement&) const = default;
 };
+// Require a genuinely authored variable/list used to set properties on the
+// declared consumers. CMake's inherited toolchain values do not suffice.
+struct CmakeTargetListRequirement {
+    std::vector<std::string> targets;
+    bool require_append=false;
+    bool operator==(const CmakeTargetListRequirement&) const = default;
+};
 struct CmakeGraphRequirement {
     std::string project_name;
     std::vector<CmakeRequiredTarget> targets;
@@ -72,6 +79,7 @@ struct CmakeGraphRequirement {
     std::vector<std::pair<std::string,std::string>> source_integrity;
     // Ordered status markers bound to the exact original CMake source file.
     std::vector<std::pair<std::string,std::string>> configure_message_order;
+    std::optional<CmakeTargetListRequirement> target_list;
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 

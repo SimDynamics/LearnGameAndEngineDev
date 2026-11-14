@@ -423,6 +423,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 token(path);token(status);
             }
         }
+        if(graph.target_list) {
+            token("cmake-executed-target-list-v1");
+            token(graph.target_list->require_append?"must-append":"set-list");
+            token(std::to_string(graph.target_list->targets.size()));
+            for(const auto& name:graph.target_list->targets)token(name);
+        }
         if(!graph.source_integrity.empty()) {
             token("cmake-source-integrity-v1");
             token(std::to_string(graph.source_integrity.size()));

@@ -2663,7 +2663,8 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     for(const auto& record:records) {
         const auto item=record.GetObject();
         allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
-            "optionSelection","sourceIntegrity","configureMessageOrder"});
+            "optionSelection","sourceIntegrity","configureMessageOrder",
+            "targetList"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2850,6 +2851,30 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                         std::ranges::find(consumer.links_to,library.name)!=
                             consumer.links_to.end();
                 }),"Include scopes require an explicitly linked executable");
+        if(item.HasKey(L"targetList")) {
+            const auto list=item.GetNamedObject(L"targetList");
+            allowed_keys(list,{"targets","requireAppend"},true);
+            CmakeTargetListRequirement goal;
+            goal.targets=strings(array(list,"targets"),true,false);
+            require(goal.targets.size()>=2&&goal.targets.size()<=16,
+                "CMake list requires at least two executable consumers");
+            const auto flag=list.GetNamedValue(L"requireAppend");
+            require(flag.ValueType()==JsonValueType::Boolean,
+                "CMake requireAppend must be Boolean");
+            goal.require_append=flag.GetBoolean();
+            std::set<std::string> seen_members;
+            for(const auto& name:goal.targets) {
+                require(seen_members.insert(name).second,
+                    "CMake list must not duplicate consumers");
+                const auto it=std::ranges::find_if(requirement.targets,
+                    [&](const auto& t){return t.name==name;});
+                require(it!=requirement.targets.end()&&
+                        it->type=="EXECUTABLE"&&
+                        it->require_explicit_extensions_off,
+                    "CMake list must name executable targets with explicit OFF");
+            }
+            requirement.target_list=std::move(goal);
+        }
         const auto selected=std::ranges::find_if(requirement.targets,
             [&](const auto& target){return target.name==owner->cmake->target;});
         require(selected!=requirement.targets.end()&&selected->type=="EXECUTABLE",

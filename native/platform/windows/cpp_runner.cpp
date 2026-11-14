@@ -576,6 +576,7 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
 bool requires_authored_cmake_trace(const CppRunRequest& request) {
     return request.capture_cmake_graph&&request.cmake_graph_check&&
         (request.cmake_graph_check->option_selection||
+         request.cmake_graph_check->target_list||
          !request.cmake_graph_check->configure_message_order.empty()||
          std::ranges::any_of(request.cmake_graph_check->targets,
             [](const auto& target) {
@@ -592,6 +593,61 @@ bool authored_cmake_path(std::string_view value) {
 std::filesystem::path authored_cmake_trace_path(
         const std::filesystem::path& workspace) {
     return workspace/L"lgaed-authored-cmake-trace.jsonl";
+}
+// An executed CMake trace event pins the actual command line. Only its
+// unquoted first variable argument can establish list-based application.
+std::optional<std::string> raw_cmake_list_reference(
+        std::string_view file,std::size_t line,std::string_view command) {
+    if(!line||line>1000000)return {};
+    std::size_t offset=0;
+    for(std::size_t current=1;current<line;++current) {
+        const auto next=file.find('\n',offset);
+        if(next==file.npos)return {};
+        offset=next+1;
+    }
+    if(offset>=file.size())return {};
+    const auto raw=file.substr(offset,
+        std::min<std::size_t>(file.size()-offset,4096));
+    std::size_t cursor=0;
+    const auto skip=[&] {
+        while(cursor<raw.size()&&(raw[cursor]==' '||raw[cursor]=='\t'||
+            raw[cursor]=='\r'||raw[cursor]=='\n'))++cursor;
+    };
+    const auto word=[&](std::string_view name) {
+        if(raw.size()-cursor<name.size())return false;
+        for(std::size_t i=0;i<name.size();++i) {
+            auto a=static_cast<unsigned char>(raw[cursor+i]);
+            auto b=static_cast<unsigned char>(name[i]);
+            if(a>='A'&&a<='Z')a+=32;
+            if(b>='A'&&b<='Z')b+=32;
+            if(a!=b)return false;
+        }
+        cursor+=name.size();
+        return true;
+    };
+    skip();
+    if(!word(command))return {};
+    skip();
+    if(cursor>=raw.size()||raw[cursor++]!='(')return {};
+    skip();
+    if(command=="set_property") {
+        if(!word("TARGET"))return {};
+        skip();
+    }
+    if(cursor+2>raw.size()||raw[cursor]!='$'||raw[cursor+1]!='{')
+        return {};
+    cursor+=2;
+    const auto first=cursor;
+    if(cursor==raw.size()||!((raw[cursor]>='A'&&raw[cursor]<='Z')||
+        (raw[cursor]>='a'&&raw[cursor]<='z')||raw[cursor]=='_'))return {};
+    while(cursor<raw.size()&&((raw[cursor]>='A'&&raw[cursor]<='Z')||
+        (raw[cursor]>='a'&&raw[cursor]<='z')||
+        (raw[cursor]>='0'&&raw[cursor]<='9')||raw[cursor]=='_'))++cursor;
+    const auto end=cursor;
+    if(cursor==raw.size()||raw[cursor++]!='}')return {};
+    if(cursor==raw.size()||(raw[cursor]!=' '&&raw[cursor]!='\n'&&
+       raw[cursor]!='\r'&&raw[cursor]!='\t'&&raw[cursor]!=')'))return {};
+    return std::string(raw.substr(first,end-first));
 }
 // The JSON CMake trace lists commands actually invoked at configure time,
 // with expanded arguments. Ignore all non-student source locations, including
@@ -623,6 +679,12 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
     auto observed=graph.targets;
     auto observed_options=graph.authored_option_defaults;
     auto observed_messages=graph.authored_status_messages;
+    auto observed_lists=graph.authored_target_lists;
+    struct TracedList {
+        std::vector<std::string> values;
+        bool appended=false;
+    };
+    std::map<std::string,TracedList> variables;
     const auto target_for=[&](std::string_view name)->CppCmakeTargetEvidence* {
         const auto it=std::ranges::find_if(observed,
             [&](const auto& item){return item.name==name;});
@@ -674,6 +736,55 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 }
             }
             if(args.empty())continue;
+            const auto slash=authored_path.rfind('/');
+            const auto scope=authored_path.substr(0,
+                slash==std::string::npos?0:slash+1);
+            const auto list_key=[&](std::string_view name) {
+                return scope+std::string(name);
+            };
+            if(equals(command,"set")&&args.size()>=2) {
+                const auto reserved=std::ranges::find_if(args,
+                    [&](const auto& value) {
+                        return equals(value,"CACHE")||
+                            equals(value,"PARENT_SCOPE");
+                    });
+                if(reserved==args.end())
+                    variables[list_key(args[0])]={
+                        std::vector<std::string>(args.begin()+1,args.end()),false};
+            }else if(equals(command,"list")&&args.size()>=3&&
+                     equals(args[0],"APPEND")) {
+                const auto at=variables.find(list_key(args[1]));
+                if(at!=variables.end()) {
+                    at->second.values.insert(at->second.values.end(),
+                        args.begin()+2,args.end());
+                    at->second.appended=true;
+                }
+            }
+            const auto record_list=[&](std::size_t count,bool off_value,
+                    std::size_t first_argument=0) {
+                if(!off_value||!event.HasKey(L"line"))return;
+                const auto number=event.GetNamedNumber(L"line");
+                if(!std::isfinite(number)||number<1||
+                   std::trunc(number)!=number||number>1000000)return;
+                const auto original=std::ranges::find_if(
+                    request.project_files,[&](const auto& file) {
+                        return file.first==authored_path;
+                    });
+                if(original==request.project_files.end())return;
+                const auto name=raw_cmake_list_reference(
+                    original->second,static_cast<std::size_t>(number),command);
+                if(!name)return;
+                const auto current=variables.find(list_key(*name));
+                if(current==variables.end()||current->second.values.empty()||
+                   current->second.values.size()!=count)return;
+                if(first_argument>args.size()||
+                   args.size()-first_argument<count||
+                   !std::equal(current->second.values.begin(),
+                       current->second.values.end(),
+                       args.begin()+first_argument))return;
+                observed_lists.push_back(
+                    {current->second.values,current->second.appended});
+            };
             if(equals(command,"message")&&args.size()==2&&
                equals(args[0],"STATUS")) {
                 observed_messages.emplace_back(authored_path,args[1]);
@@ -729,9 +840,14 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 if(separator==args.end())continue;
                 const auto pos=static_cast<std::size_t>(separator-args.begin());
                 if(pos==0)continue;
-                for(auto i=pos+1;i+1<args.size();i+=2)
+                bool explicit_off=false;
+                for(auto i=pos+1;i+1<args.size();i+=2) {
+                    if(equals(args[i],"CXX_EXTENSIONS")&&off(args[i+1]))
+                        explicit_off=true;
                     for(std::size_t t=0;t<pos;++t)
                         apply_property(args[t],args[i],args[i+1]);
+                }
+                record_list(pos,explicit_off);
             }else if(equals(command,"set_property")&&args.size()>=5&&
                      equals(args.front(),"TARGET")) {
                 const auto separator=std::ranges::find_if(args,
@@ -746,6 +862,8 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 if(append)continue;
                 for(std::size_t i=1;i<pos;++i)
                     apply_property(args[i],args[pos+1],args[pos+2]);
+                record_list(pos-1,equals(args[pos+1],"CXX_EXTENSIONS")&&
+                    off(args[pos+2]),1);
             }
         }
     }catch(const std::exception&) {
@@ -765,6 +883,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
     }
     graph.authored_option_defaults=std::move(observed_options);
     graph.authored_status_messages=std::move(observed_messages);
+    graph.authored_target_lists=std::move(observed_lists);
 }
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
@@ -1191,6 +1310,20 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     }
     if(required.targets.empty())
         return fail("No hay objetivos de construcción declarados para comprobar.");
+    if(required.target_list) {
+        const auto accept=[&](const CppCmakeTargetListApplication& proof) {
+            auto required_names=required.target_list->targets;
+            auto observed_names=proof.targets;
+            std::sort(required_names.begin(),required_names.end());
+            std::sort(observed_names.begin(),observed_names.end());
+            return required_names==observed_names&&
+                (!required.target_list->require_append||proof.used_append);
+        };
+        if(!std::ranges::any_of(graph.authored_target_lists,accept))
+            return fail(required.target_list->require_append?
+                "Falta aplicar OFF mediante una lista ampliada con APPEND.":
+                "Falta aplicar OFF mediante una variable de lista de objetivos.");
+    }
     auto message=graph.authored_status_messages.cbegin();
     for(const auto& wanted:required.configure_message_order) {
         message=std::find(message,graph.authored_status_messages.cend(),wanted);

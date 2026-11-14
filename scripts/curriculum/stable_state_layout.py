@@ -2186,7 +2186,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
                 {"activity", "project", "minimumCmakeVersion", "targets",
-                 "optionSelection", "sourceIntegrity", "configureMessageOrder"},
+                 "optionSelection", "sourceIntegrity", "configureMessageOrder",
+                 "targetList"},
                 "CMake graph owner needs bounded optional requirements")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
@@ -2334,6 +2335,22 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                             library["name"] in consumer.get("linksTo", [])
                             for consumer in targets),
                         "CMake include scopes need a linked executable")
+        if "targetList" in entry:
+            list_goal = entry["targetList"]
+            require(type(list_goal) is dict and
+                    set(list_goal) == {"targets", "requireAppend"} and
+                    type(list_goal["targets"]) is list and
+                    2 <= len(list_goal["targets"]) <= 16 and
+                    all(type(name) is str for name in list_goal["targets"]) and
+                    len(set(list_goal["targets"])) ==
+                    len(list_goal["targets"]) and
+                    type(list_goal["requireAppend"]) is bool and
+                    all(name in targets_by_name and
+                        targets_by_name[name]["type"] == "EXECUTABLE" and
+                        targets_by_name[name].get(
+                            "explicitCxxExtensionsOff") is True
+                        for name in list_goal["targets"]),
+                    "CMake target list needs declared executables with authored OFF")
         selected = block["cmake"].get("target")
         require(selected in targets_by_name and
                 targets_by_name[selected]["type"] == "EXECUTABLE",
