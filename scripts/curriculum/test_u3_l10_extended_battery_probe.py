@@ -13,9 +13,40 @@ class U3L10ExtendedTest(unittest.TestCase):
         result = probe.audit(probe.candidate_with_new_case((3, 3, 7), 59), compiler())
         self.assertTrue(result.accepted, result.reason)
         self.assertEqual(result.new_call, (3, 3, 7, 59))
-        self.assertEqual(len(result.phases), 14)
+        self.assertEqual(len(result.phases), 25)
+        expected_labels = ["baseline"] + [
+            f"original-{index}-{kind}"
+            for index in range(1, len(probe.ORIGINAL) + 1)
+            for kind in ("flip", "destination")
+        ] + ["new-flip", "new-destination"]
+        self.assertEqual([label for label, _ in result.phases], expected_labels)
         self.assertEqual(result.phases[0], ("baseline", 0))
         self.assertTrue(all(code == 1 for _, code in result.phases[1:]))
+
+    def assert_missing_destination_rejected(self, case_number: int) -> None:
+        files = probe.candidate_with_new_case((3, 3, 7), 59)
+        original = "aceptado == aceptacion_esperada && obtenido == ajuste_esperado"
+        defective = ("aceptado == aceptacion_esperada && "
+                     f"(caso == {case_number} || obtenido == ajuste_esperado)")
+        self.assertEqual(files[probe.BATTERY].count(original), 1)
+        files[probe.BATTERY] = files[probe.BATTERY].replace(original, defective)
+        result = probe.audit(files, compiler())
+        self.assertFalse(result.accepted, result.reason)
+        self.assertEqual(result.new_call, (3, 3, 7, 59))
+        self.assertEqual(result.phases[0], ("baseline", 0))
+        self.assertEqual(result.phases[-2], (f"original-{case_number}-flip", 1))
+        self.assertEqual(result.phases[-1], (f"original-{case_number}-destination", 0))
+        self.assertIn(f"Original case {case_number} missed its destination", result.reason)
+
+    def test_original_accepted_case_must_compare_its_adjustment(self):
+        # Case 1 accepts and writes +1. The bool remains true when only the
+        # destination is damaged; keeping the new case correct cannot hide it.
+        self.assert_missing_destination_rejected(1)
+
+    def test_original_rejected_case_must_preserve_its_destination(self):
+        # Case 7 rejects reversed bounds and must leave the caller's 77 intact.
+        # An unchanged false result does not prove that conservation was tested.
+        self.assert_missing_destination_rejected(7)
 
     def test_new_upper_boundary_is_equally_valid(self):
         result = probe.audit(probe.candidate_with_new_case((7, 3, 7), -13), compiler())

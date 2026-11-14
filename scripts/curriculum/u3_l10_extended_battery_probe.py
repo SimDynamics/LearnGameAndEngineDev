@@ -161,7 +161,12 @@ def execute(exe: Path, standard_input: str = "") -> tuple[int, str, str, tuple[t
 
 
 def audit(candidate: Mapping[str, str], cxx: str) -> Audit:
-    """Only a real twelfth case, sensitive to changed results, passes."""
+    """Require both independent observations for every retained and new case.
+
+    This QA oracle is intentionally stricter than a bool-only historical
+    mutation plan. Passing it does not enable the same checks in the native
+    runner; that worker and its receipt policy must be upgraded separately.
+    """
     try:
         files = check_files(candidate)
         with tempfile.TemporaryDirectory(prefix="lgaed-u3l10-") as tmp:
@@ -219,10 +224,16 @@ def audit(candidate: Mapping[str, str], cxx: str) -> Audit:
                 return Audit(False, "A new input triple, not a repeated label, is required",
                              new, tuple(results))
             for index, item in enumerate(ORIGINAL, 1):
-                status, calls = run_phase("original-" + str(index), "flip", item)
-                if status != 1 or calls != observed:
-                    return Audit(False, "Original case " + str(index) +
-                                 " missed a privately changed result", new, tuple(results))
+                # A retained comparison must still check both the bool and
+                # the output reference. Inverting only the bool cannot detect
+                # a removed destination check, especially on rejected inputs.
+                for kind in ("flip", "destination"):
+                    label = "original-" + str(index) + "-" + kind
+                    status, calls = run_phase(label, kind, item)
+                    if status != 1 or calls != observed:
+                        return Audit(False, "Original case " + str(index) +
+                                     " missed its " + kind + " comparison",
+                                     new, tuple(results))
             for kind in ("flip", "destination"):
                 status, calls = run_phase("new-" + kind, kind, new)
                 if status != 1 or calls != observed:
