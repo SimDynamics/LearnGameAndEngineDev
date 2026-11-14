@@ -916,6 +916,8 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             std::move(observed[i].authored_public_include_directories);
         graph.targets[i].authored_private_include_directories=
             std::move(observed[i].authored_private_include_directories);
+        graph.targets[i].authored_compile_options=
+            std::move(observed[i].authored_compile_options);
     }
     graph.authored_option_defaults=std::move(observed_options);
     graph.authored_status_messages=std::move(observed_messages);
