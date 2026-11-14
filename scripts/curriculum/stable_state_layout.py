@@ -2569,8 +2569,21 @@ def _validate_order_equivalence_groups(document: dict) -> None:
                 sorted(order) == list(range(len(fragments))),
                 "Independent cards require a complete permutation of single physical lines")
         digest = record["sourceSha256"]
-        require(type(digest) is str and re.fullmatch("[0-9a-f]{64}", digest) and
-                digest == state_fingerprint(block),
+        require(type(digest) is str and re.fullmatch("[0-9a-f]{64}", digest),
+                "Order equivalences need a valid source hash")
+        valid_digest = digest == state_fingerprint(block)
+        if not valid_digest:
+            # The root rubric is append-only. A later, independently
+            # authenticated lexical-format revision must not force the author
+            # to rewrite its original source identity just to add whitespace.
+            # _validate_state_layout already checks the complete archive,
+            # token equivalence, original storage signature and editorial edge.
+            formats = [item["block"] for item in meta.get("sourceFormatRevisions", [])
+                       if item["id"] == identity]
+            if len(formats) == 1:
+                restored = code_format.source_projection(block, formats[0])
+                valid_digest = digest == state_fingerprint(restored)
+        require(valid_digest,
                 "Order equivalences do not match their exact evaluated source")
         groups = record["groups"]
         require(type(groups) is list and 0 < len(groups) <= 16,
