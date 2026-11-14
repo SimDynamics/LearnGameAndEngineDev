@@ -835,7 +835,9 @@ int main(int argc,char** argv) {
         actual_named_rule_msvc(lesson,
             environment.paths.projects/L"U3 named rules real MSVC");
         real_independent_cmake_probe(lesson,
-            environment.paths.projects/L"U3 CMake independent function probe");
+            // Keep CMakeScratch/TryCompile and MSVC object paths below the
+            // verified Windows CMAKE_OBJECT_PATH_MAX limit on hosted runners.
+            environment.paths.projects/L"u3-cmake");
         std::cout<<"PASS original named-rule editors: source constraints, historic receipt and draft isolation\n";
         return 0;
     }catch(const std::exception& error){
