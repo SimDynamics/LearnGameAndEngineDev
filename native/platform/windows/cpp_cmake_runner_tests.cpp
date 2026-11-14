@@ -1066,11 +1066,18 @@ target_link_libraries(cotizar PRIVATE tarifas)
         std::filesystem::path(build::source_root)/include_relative);
     const auto& public_before=include_original.pages.at(4).blocks.at(2);
     const auto& private_before=include_original.pages.at(7).blocks.at(8);
+    const auto& edit_before=include_original.pages.at(7).blocks.at(11);
+    const auto& aforo_before=include_original.pages.at(9).blocks.at(4);
     check(public_before.stable_id=="block_0004_0002"&&
         private_before.stable_id=="block_0007_0008"&&
+        edit_before.stable_id=="block_0007_0011"&&
+        aforo_before.stable_id=="block_0009_0004"&&
         public_before.cmake&&private_before.cmake&&
+        edit_before.cmake&&aforo_before.cmake&&
         public_before.output_check&&private_before.output_check&&
-        !public_before.cmake_graph_check&&!private_before.cmake_graph_check,
+        edit_before.output_check&&aforo_before.output_check&&
+        !public_before.cmake_graph_check&&!private_before.cmake_graph_check&&
+        !edit_before.cmake_graph_check&&!aforo_before.cmake_graph_check,
         "The published U2L4 include-scope owners moved");
     std::string include_json=include_original.raw_json;
     const auto include_at=include_json.find(anchor);
@@ -1101,6 +1108,29 @@ target_link_libraries(cotizar PRIVATE tarifas)
           "sources":["src/entrega.cpp"],"exactSources":true,
           "publicIncludeRoots":["include"],"privateIncludeRoots":["interno"],
           "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0007_0011","project":"Tiempos",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"medir","type":"EXECUTABLE",
+          "sources":["app/main.cpp"],"exactSources":true,
+          "linksTo":["preparacion"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"preparacion","type":"STATIC_LIBRARY",
+          "sources":["src/entrega.cpp"],"exactSources":true,
+          "publicIncludeRoots":["include"],"privateIncludeRoots":["interno"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0009_0004","minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"consultar_aforo","type":"EXECUTABLE",
+          "sources":["programas/consulta.cpp"],"exactSources":true,
+          "linksTo":["aforo"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"aforo","type":"STATIC_LIBRARY",
+          "sources":["motor/cupo.cpp"],"exactSources":true,
+          "publicIncludeRoots":["publico"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
        ]}
     ],
 )json");
@@ -1119,7 +1149,8 @@ target_link_libraries(cotizar PRIVATE tarifas)
         "Include-scope check changed historical state layout");
     std::uint64_t include_request_id=1701;
     for(const auto& [page,block]:{
-            std::pair{4U,2U},std::pair{7U,8U}}) {
+            std::pair{4U,2U},std::pair{7U,8U},
+            std::pair{7U,11U},std::pair{9U,4U}}) {
         const auto& before=include_original.pages.at(page).blocks.at(block);
         const auto& after=include_mapped.pages.at(page).blocks.at(block);
         const auto& metadata=include_metadata.pages.at(page).blocks.at(block);
@@ -1154,16 +1185,40 @@ target_link_libraries(cotizar PRIVATE tarifas)
                     file.second.replace(at,
                         std::char_traits<char>::length(before_rule),
                         "target_include_directories(preparacion PUBLIC include)");
-                }else
+                }else if(page==7&&block==8)
                     file.second+="target_include_directories(preparacion PRIVATE interno)\n";
+                else if(page==9) {
+                    check(file.second.empty(),"Original aforo CMake description changed");
+                    file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Aforo LANGUAGES CXX)
+add_library(aforo STATIC motor/cupo.cpp)
+add_executable(consultar_aforo programas/consulta.cpp)
+target_compile_features(aforo PRIVATE cxx_std_20)
+target_compile_features(consultar_aforo PRIVATE cxx_std_20)
+set_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)
+target_include_directories(aforo PUBLIC publico)
+target_link_libraries(consultar_aforo PRIVATE aforo)
+)cmake";
+                }
                 repaired=true;
             }
+        if(page==7&&block==11)
+            for(auto& file:request.project_files)
+                if(file.first=="app/main.cpp") {
+                    constexpr auto experimental="#include \"ajuste.h\"\n";
+                    check(file.second.starts_with(experimental),
+                        "Original U2L4 client no longer has experimental include");
+                    file.second.erase(0,std::char_traits<char>::length(
+                        experimental));
+                    repaired=true;
+                }
         check(repaired&&compiler_runtime_request_allowed(after,request),
             "The U2L4 corrected CMake project was rejected before native run");
         const auto compiled=run_cpp(request);
         ran(compiled);
         const auto fresh=capture_cpp_execution(request,compiled);
-        check(compiled.execution.stdout_bytes=="0:5:13"&&
+        const auto expected_stdout=page==9?"7:0:0":"0:5:13";
+        check(compiled.execution.stdout_bytes==expected_stdout&&
             compiled.execution.stderr_bytes.empty()&&
             fresh.cmake_graph_correct&&
             evaluate_cpp_output_check(*after.output_check,fresh,request.revision)
@@ -1205,7 +1260,7 @@ target_link_libraries(cotizar PRIVATE tarifas)
                         sizeof("target_include_directories(preparacion PUBLIC include)")-1,
                         "target_include_directories(preparacion PRIVATE include)");
                     file.second+="target_include_directories(medir PRIVATE include)\n";
-                }else {
+                }else if(page==7&&block==8) {
                     const auto at=file.second.find(
                         "target_include_directories(preparacion PRIVATE interno)");
                     check(at!=file.second.npos,
@@ -1213,12 +1268,37 @@ target_link_libraries(cotizar PRIVATE tarifas)
                     file.second.replace(at,
                         sizeof("target_include_directories(preparacion PRIVATE interno)")-1,
                         "target_include_directories(preparacion PUBLIC interno)");
+                }else if(page==7&&block==11) {
+                    const auto at=file.second.find("PRIVATE interno");
+                    check(at!=file.second.npos,
+                        "U2L4 original PRIVATE internal scope moved");
+                    file.second.replace(at,sizeof("PRIVATE interno")-1,
+                        "PUBLIC interno");
+                }else {
+                    const auto at=file.second.find(
+                        "target_include_directories(aforo PUBLIC publico)");
+                    check(at!=file.second.npos,"U2L4 aforo public scope moved");
+                    file.second.replace(at,
+                        sizeof("target_include_directories(aforo PUBLIC publico)")-1,
+                        "target_include_directories(aforo PRIVATE publico)");
+                    file.second+=
+                        "target_include_directories(consultar_aforo PRIVATE publico)\n";
                 }
             }
+        if(page==7&&block==11)
+            for(auto& file:fake.project_files)
+                if(file.first=="app/main.cpp") {
+                    const auto source=std::ranges::find_if(
+                        before.project_files,
+                        [&](const auto& item){return item.first=="app/main.cpp";});
+                    check(source!=before.project_files.end(),
+                        "Original U2L4 client source missing");
+                    file.second=source->second;
+                }
         const auto fake_run=run_cpp(fake);
         ran(fake_run);
         const auto fake_fresh=capture_cpp_execution(fake,fake_run);
-        check(fake_run.execution.stdout_bytes=="0:5:13"&&
+        check(fake_run.execution.stdout_bytes==expected_stdout&&
             evaluate_cpp_output_check(*after.output_check,fake_fresh,
                 fake.revision).verdict==curriculum::OutputVerdict::correct&&
             !fake_fresh.cmake_graph_correct&&
@@ -1226,7 +1306,7 @@ target_link_libraries(cotizar PRIVATE tarifas)
                 fake,fake_fresh,"Ruta no publicada o filtrada"),
             "Matching output was credited without the requested include scope");
     }
-    std::cout<<"PASS U2L4 real MSVC PUBLIC/PRIVATE include roots: published headers, private isolation, first case and history, fake scopes rejected\n";
+    std::cout<<"PASS four U2L4 MSVC editors: public/private propagation, source repairs, first case and history, fake scopes rejected\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";

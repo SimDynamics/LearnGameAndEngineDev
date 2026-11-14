@@ -318,28 +318,37 @@ class OriginalCmakeIncludeScopeTest(unittest.TestCase):
         self.before = json.loads(INCLUDE_LESSON.read_text(encoding="utf-8"))
         self.after = deepcopy(self.before)
         owners = [
-            ("block_0004_0002", False),
-            ("block_0007_0008", True),
+            ("block_0004_0002", False, False),
+            ("block_0007_0008", True, False),
+            ("block_0007_0011", True, False),
+            ("block_0009_0004", False, True),
         ]
         self.after["compilerCmakeGraphChecks"] = [
             {
-                "activity": owner, "project": "Tiempos",
+                "activity": owner,
+                **({} if aforo else {"project": "Tiempos"}),
                 "minimumCmakeVersion": "3.20",
                 "targets": [
-                    {"name": "medir", "type": "EXECUTABLE",
-                     "sources": ["app/main.cpp"], "exactSources": True,
-                     "linksTo": ["preparacion"],
+                    {"name": "consultar_aforo" if aforo else "medir",
+                     "type": "EXECUTABLE",
+                     "sources": ["programas/consulta.cpp" if aforo else
+                                 "app/main.cpp"],
+                     "exactSources": True,
+                     "linksTo": ["aforo" if aforo else "preparacion"],
                      "explicitCxx20": True,
                      "explicitCxxExtensionsOff": True},
-                    {"name": "preparacion", "type": "STATIC_LIBRARY",
-                     "sources": ["src/entrega.cpp"], "exactSources": True,
-                     "publicIncludeRoots": ["include"],
+                    {"name": "aforo" if aforo else "preparacion",
+                     "type": "STATIC_LIBRARY",
+                     "sources": ["motor/cupo.cpp" if aforo else
+                                 "src/entrega.cpp"],
+                     "exactSources": True,
+                     "publicIncludeRoots": ["publico" if aforo else "include"],
                      **({"privateIncludeRoots": ["interno"]} if private else {}),
                      "explicitCxx20": True,
                      "explicitCxxExtensionsOff": True},
                 ],
             }
-            for owner, private in owners
+            for owner, private, aforo in owners
         ]
 
     def test_root_scopes_preserve_original_lessons_and_progress(self):
