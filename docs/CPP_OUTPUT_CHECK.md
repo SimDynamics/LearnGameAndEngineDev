@@ -973,6 +973,39 @@ Cada contrato ya publicado permanece inmutable. Es posible añadir
 nuevos propietarios al final de la declaración mediante una transición
 autenticada, sin modificar ni reordenar los anteriores.
 
+### Opción binaria con construcción independiente por defecto
+
+Para las prácticas que seleccionan una biblioteca con una opción booleana, el
+contrato admite `optionSelection` dentro del mismo propietario del grafo:
+
+```json
+"optionSelection": {
+  "name": "TARIFA_ESPECIAL",
+  "default": "OFF",
+  "target": "tarifas",
+  "offSource": "normal.cpp",
+  "offStdout": "0:6:15"
+}
+```
+
+El editor original configura `TARIFA_ESPECIAL=ON`. La rúbrica exige que la
+biblioteca del grafo original utilice `especial.cpp` con `exactSources` y que
+el estudiante declare la opción `OFF` por defecto en sus propias órdenes
+CMake ejecutadas. Además, el motor compila y ejecuta una **segunda copia
+aislada del mismo proyecto**, sin el override `-DTARIFA_ESPECIAL=ON`. Su
+biblioteca debe compilar exactamente `normal.cpp` y conservar el resto de
+los objetivos, enlaces, versión mínima, reglas C++ y salida `0:6:15`.
+Una coincidencia del resultado `ON`, una opción ficticia o una selección
+fijada siempre a la implementación especial no acreditan la construcción.
+
+La ejecución adicional utiliza un espacio de configuración y huella propia,
+conserva los proyectos y borradores del estudiante y nunca modifica la
+opción seleccionada en el editor. Si la compilación o ejecución de la
+configuración `OFF` falla, falta evidencia y no se concede el logro. El
+primer caso correcto del editor sigue siendo el único obligatorio; esta
+segunda ejecución es la comprobación interna del mismo objetivo, no un
+segundo caso que el estudiante deba activar manualmente.
+
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas

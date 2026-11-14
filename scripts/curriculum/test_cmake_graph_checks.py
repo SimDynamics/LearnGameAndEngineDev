@@ -235,5 +235,75 @@ class FirstProjectGraphChecksTest(unittest.TestCase):
             state.validate_transition(self.after, updated)
 
 
+# U2L3's original ON editor must also prove a separate default-OFF
+# configuration. Appending the root contract must not rewrite the exercise.
+OPTION_LESSON = ROOT / (
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json"
+)
+
+
+class OriginalCmakeOptionSelectionTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = json.loads(OPTION_LESSON.read_text(encoding="utf-8"))
+        self.after = deepcopy(self.before)
+        self.after["compilerCmakeGraphChecks"] = [{
+            "activity": "block_0011_0003",
+            "project": "Cotizaciones",
+            "minimumCmakeVersion": "3.20",
+            "targets": [
+                {"name": "cotizar", "type": "EXECUTABLE",
+                 "sources": ["muestra.cpp"], "linksTo": ["tarifas"],
+                 "exactSources": True, "explicitCxx20": True,
+                 "explicitCxxExtensionsOff": True},
+                {"name": "tarifas", "type": "STATIC_LIBRARY",
+                 "sources": ["especial.cpp"], "exactSources": True,
+                 "explicitCxx20": True, "explicitCxxExtensionsOff": True},
+            ],
+            "optionSelection": {
+                "name": "TARIFA_ESPECIAL", "default": "OFF",
+                "target": "tarifas", "offSource": "normal.cpp",
+                "offStdout": "0:6:15",
+            },
+        }]
+
+    def test_original_option_editor_preserves_all_historical_payloads(self):
+        state.validate(self.before)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_invalid_option_provenance_or_source_is_rejected(self):
+        changes = [
+            lambda item: item["optionSelection"].update(default="ON"),
+            lambda item: item["optionSelection"].update(name="OTRA_OPCION"),
+            lambda item: item["optionSelection"].update(target="cotizar"),
+            lambda item: item["optionSelection"].update(offSource="externo.cpp"),
+            lambda item: item["optionSelection"].update(offSource="especial.cpp"),
+            lambda item: item["optionSelection"].update(offStdout=42),
+            lambda item: item["optionSelection"].update(unknown=True),
+            lambda item: item["optionSelection"].pop("offStdout"),
+        ]
+        for change in changes:
+            altered = deepcopy(self.after)
+            change(altered["compilerCmakeGraphChecks"][0])
+            with self.subTest(change=change):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(altered)
+
+    def test_published_option_cannot_be_mutated_or_removed(self):
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][0]["optionSelection"][
+            "offStdout"] = "0:4:10"
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][0].pop("optionSelection")
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
+
+
 if __name__ == "__main__":
     unittest.main()

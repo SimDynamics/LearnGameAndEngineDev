@@ -856,6 +856,186 @@ set_property(TARGET ${elegido} PROPERTY CXX_EXTENSIONS OFF)
         curriculum::cmake_numeric_version("3.21"),
         "Equivalent CMake version spelling or ordering changed");
     std::cout<<"PASS original U2L1 CMake: real source, project, exact minimum, first-case history, wrong project/minimum refused\\n";
+    // U2L3 asks the student to construct the ON project from an empty
+    // CMakeLists.txt. The same submission must also build without the ON
+    // override and select normal.cpp from a genuine OFF-by-default option.
+    constexpr auto option_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json";
+    const auto option_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/option_relative);
+    const auto& option_before=option_original.pages.at(11).blocks.at(3);
+    check(option_before.stable_id=="block_0011_0003"&&
+        option_before.cmake&&option_before.output_check&&
+        option_before.cmake->options.at("TARIFA_ESPECIAL")=="ON"&&
+        !option_before.cmake_graph_check,
+        "The published U2L3 ON editor moved or changed its original goal");
+    std::string option_json=option_original.raw_json;
+    const auto option_at=option_json.find(anchor);
+    check(option_at!=option_json.npos&&
+        option_json.find(anchor,option_at+1)==option_json.npos,
+        "U2L3 root layout anchor moved");
+    option_json.insert(option_at,R"json(  "compilerCmakeGraphChecks": [
+      {"activity":"block_0011_0003","project":"Cotizaciones",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"cotizar","type":"EXECUTABLE",
+          "sources":["muestra.cpp"],"linksTo":["tarifas"],"exactSources":true,
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"tarifas","type":"STATIC_LIBRARY",
+          "sources":["especial.cpp"],"exactSources":true,
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ],
+       "optionSelection":{
+         "name":"TARIFA_ESPECIAL","default":"OFF",
+         "target":"tarifas","offSource":"normal.cpp","offStdout":"0:6:15"}
+      }
+    ],
+)json");
+    const auto option_mapped=lgaed::windows::parse_lesson_json(option_json,"es");
+    const auto option_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        option_json,"es");
+    const auto& option_after=option_mapped.pages.at(11).blocks.at(3);
+    check(option_mapped.state_layout.lineage==option_original.state_layout.lineage&&
+        option_mapped.state_layout.signatures==option_original.state_layout.signatures&&
+        option_metadata.state_layout.lineage==option_original.state_layout.lineage&&
+        option_after.cmake_graph_check&&
+        option_after.cmake_graph_check==
+            option_metadata.pages.at(11).blocks.at(3).cmake_graph_check&&
+        option_after.project_files==option_before.project_files&&
+        curriculum::exercise_key(option_mapped,option_after)==
+            curriculum::exercise_key(option_original,option_before)&&
+        curriculum::draft_key("programming",option_mapped,option_after)==
+            curriculum::draft_key("programming",option_original,option_before)&&
+        curriculum::reference_objective_frame(option_mapped,option_after)!=
+            curriculum::reference_objective_frame(option_original,option_before),
+        "Option review changed historical IDs, source, draft or accreditation frame");
+    const auto cmake_option_source=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa de dos por unidad" OFF)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake";
+    CppRunRequest option_request;
+    option_request.request_id=1550;
+    option_request.revision=550;
+    option_request.project_key="qa/p2-u2-options-on-off";
+    option_request.projects_directory=environment.paths.projects;
+    option_request.project_files=option_after.project_files;
+    option_request.cmake=option_after.cmake;
+    option_request.cmake_graph_check=option_after.cmake_graph_check;
+    option_request.capture_cmake_graph=true;
+    option_request.action=CppRunRequest::Action::compile_run;
+    bool wrote_option=false;
+    for(auto& file:option_request.project_files)
+        if(file.first=="CMakeLists.txt") {
+            check(file.second.empty(),"The U2L3 original editor is not empty");
+            file.second=cmake_option_source;
+            wrote_option=true;
+        }
+    check(wrote_option&&compiler_runtime_request_allowed(option_after,
+            option_request),
+        "Original U2L3 refused the student's valid CMake ON/OFF configuration");
+    const auto option_run=run_cpp(option_request);
+    ran(option_run);
+    const auto option_fresh=capture_cpp_execution(option_request,option_run);
+    check(option_run.execution.stdout_bytes=="0:4:10"&&
+        option_run.execution.stderr_bytes.empty()&&
+        option_run.cmake_graph&&option_run.cmake_option_probe&&
+        option_run.cmake_option_probe->execution.stdout_bytes=="0:6:15"&&
+        option_fresh.cmake_graph_correct&&
+        evaluate_cpp_output_check(*option_after.output_check,option_fresh,
+            option_request.revision).verdict==curriculum::OutputVerdict::correct,
+        "Real CMake/MSVC failed U2L3's independent ON and default-OFF projects");
+    auto original_option_request=option_request;
+    original_option_request.capture_cmake_graph=false;
+    original_option_request.cmake_graph_check.reset();
+    const auto historical_option=capture_cpp_execution(
+        original_option_request,option_run);
+    state::StateData option_saved;
+    state::prepare_lesson_state(option_saved,option_original);
+    check(record_compiler_puzzle_case(option_saved,option_original,option_before,
+            original_option_request,historical_option,"Salida ON histórica")&&
+        compiler_puzzle_completed(option_saved,option_original,option_before)&&
+        !compiler_puzzle_completed(option_saved,option_mapped,option_after),
+        "ON-only historical stdout incorrectly earned the new OFF objective");
+    state::prepare_lesson_state(option_saved,option_mapped);
+    check(record_compiler_puzzle_case(option_saved,option_mapped,option_after,
+            option_request,option_fresh,"ON y OFF acreditados")&&
+        compiler_puzzle_completed(option_saved,option_mapped,option_after)&&
+        compiler_puzzle_case_count(option_saved,option_mapped,option_after)==1,
+        "The first U2L3 ON result with independent OFF proof did not unlock");
+    const auto option_reopened=state::decode(state::encode(option_saved));
+    check(compiler_puzzle_completed(option_reopened,option_original,option_before)&&
+        compiler_puzzle_completed(option_reopened,option_mapped,option_after),
+        "Reopening lost old ON output or new ON/OFF structural credit");
+    const std::vector<std::pair<std::string,std::string>> rejected_options={
+        {"wrong-default",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa de dos por unidad" ON)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake"},
+        {"fixed-special",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa de dos por unidad" OFF)
+add_library(tarifas STATIC especial.cpp)
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake"},
+        {"no-option",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake"}
+    };
+    std::uint64_t option_variant_id=1551;
+    for(const auto& [label,cmake_code]:rejected_options) {
+        auto candidate=option_request;
+        candidate.request_id=option_variant_id;
+        candidate.revision=option_variant_id++;
+        candidate.project_key+="/"+label;
+        for(auto& file:candidate.project_files)
+            if(file.first=="CMakeLists.txt")file.second=cmake_code;
+        const auto variant_run=run_cpp(candidate);
+        ran(variant_run);
+        const auto captured=capture_cpp_execution(candidate,variant_run);
+        check(variant_run.execution.stdout_bytes=="0:4:10"&&
+            evaluate_cpp_output_check(*option_after.output_check,captured,
+                candidate.revision).verdict==curriculum::OutputVerdict::correct&&
+            !captured.cmake_graph_correct&&
+            !record_compiler_puzzle_case(option_saved,option_mapped,option_after,
+                candidate,captured,label),
+            "An ON-only CMake implementation earned unverified OFF credit: "+label);
+    }
+    std::cout<<"PASS original U2L3: distinct ON/OFF source and outputs, authentic option default, first case and archive preserved, negative variants rejected\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
