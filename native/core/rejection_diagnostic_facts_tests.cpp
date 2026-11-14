@@ -51,6 +51,26 @@ void accepted_semantics() {
                 "An equivalent balances interval or corrective instruction was rejected");
         }
     }
+    // An explicitly named lower and upper bound states the same integer
+    // domain without requiring a single arbitrary range punctuation style.
+    for(const auto interval:{"mínimo 0, máximo 20",
+                             "limite inferior 0; limite superior 20",
+                             "mínimo permitido de 0 y máximo permitido de 20"}) {
+        for(const auto action:{"Revise","Verifique","Compruebe"}) {
+            require(evaluate_rejection_diagnostics(
+                boxes(interval,action),RejectionOperation::boxes,box_facts).correct,
+                "A complete boxes min/max domain was rejected");
+        }
+    }
+    for(const auto interval:{"mínimo 0, máximo 9",
+                             "límite inferior 0, límite superior 9",
+                             "mínimo permitido de 0; máximo permitido de 9"}) {
+        for(const auto action:{"Revise","Verifique","Compruebe"}) {
+            require(evaluate_rejection_diagnostics(
+                balances(interval,action),RejectionOperation::balance,balance_facts).correct,
+                "A complete balances min/max domain was rejected");
+        }
+    }
     // Distinct output streams are mandatory even with a different interval
     // spelling; no generic acknowledgement is accepted as two diagnoses.
     const auto separated=boxes("[0,20]","Revise");
@@ -74,6 +94,21 @@ void rejected_semantics() {
         require(!evaluate_rejection_diagnostics(
             boxes(invalid,"Revise"),RejectionOperation::boxes,box_facts).correct,
             "Wrong boxes bounds or an ambiguous comma were falsely accepted");
+    }
+    // The true data fields cannot substitute for both explicit bounds.
+    // Repetition with a contradictory bound also must never grant credit.
+    for(const auto interval:{"mínimo 0",
+                             "máximo 9",
+                             "mínimo 1, máximo 9",
+                             "mínimo 0, máximo 8",
+                             "mínimo 0, máximo 9, máximo 10",
+                             "mínimo 0, mínimo 1, máximo 9",
+                             "mínimo cobros 0, máximo 9",
+                             "límite inferior 1, límite superior 9",
+                             "límite inferior 0, límite superior 10"}) {
+        require(!evaluate_rejection_diagnostics(
+            balances(interval,"Revise"),RejectionOperation::balance,balance_facts).correct,
+            "A missing, contradictory or unbound min/max statement was accepted");
     }
     const auto unlabelled=std::string(
         "Cajas, petición 1, piezas=-1: 0 - 20, revise.\n"
