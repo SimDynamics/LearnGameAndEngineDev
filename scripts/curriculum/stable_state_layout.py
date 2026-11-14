@@ -42,7 +42,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerCmakeGraphChecks"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -2515,6 +2515,63 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     off_source not in library["sources"],
                     "CMake binary option needs distinct original library sources")
 
+def _validate_order_equivalence_groups(document: dict) -> None:
+    """Bind reviewable independent code cards to their exact evaluated source.
+
+    The groups change accepted permutations, not the fragments, answer key,
+    draft address, or the original stateLayout. The author must independently
+    establish that the grouped statements can execute in any order.
+    """
+    if "orderEquivalenceGroups" not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
+            "Independent order groups require the existing Spanish v2 map")
+    entries = document["orderEquivalenceGroups"]
+    require(type(entries) is list and 0 < len(entries) <= 16,
+            "Order equivalences require 1..16 reviewed activities")
+    owners = _blocks(document)
+    seen = set()
+    for record in entries:
+        require(type(record) is dict and set(record) ==
+                {"activity", "sourceSha256", "groups"},
+                "Order equivalences need only activity, sourceSha256 and groups")
+        identity = _identity(record["activity"])
+        require(identity not in seen, "An order equivalence owner was declared twice")
+        seen.add(identity)
+        block = owners.get(identity)
+        require(type(block) is dict and block.get("type") == "order_code",
+                "Order equivalences require one existing evaluated order_code owner")
+        fragments, order = block.get("fragments"), block.get("correctOrder")
+        require(type(fragments) is list and 2 <= len(fragments) <= 256 and
+                all(type(fragment) is str and fragment.strip() and
+                    "\\n" not in fragment and "\\r" not in fragment
+                    for fragment in fragments) and
+                type(order) is list and len(order) == len(fragments) and
+                all(type(index) is int for index in order) and
+                sorted(order) == list(range(len(fragments))),
+                "Independent cards require a complete permutation of single physical lines")
+        digest = record["sourceSha256"]
+        require(type(digest) is str and re.fullmatch("[0-9a-f]{64}", digest) and
+                digest == state_fingerprint(block),
+                "Order equivalences do not match their exact evaluated source")
+        groups = record["groups"]
+        require(type(groups) is list and 0 < len(groups) <= 16,
+                "Each order equivalence owner requires 1..16 groups")
+        claimed = set()
+        for group in groups:
+            require(type(group) is list and 2 <= len(group) <= 8 and
+                    all(type(index) is int and 0 <= index < len(fragments)
+                        for index in group) and
+                    len(group) == len(set(group)) and
+                    not claimed.intersection(group),
+                    "Independent card groups must be distinct, disjoint and bounded")
+            claimed.update(group)
+            positions = sorted(order.index(index) for index in group)
+            require(positions == list(range(positions[0], positions[0] + len(positions))),
+                    "Independent card groups must occupy one contiguous canonical span")
+
+
 def _validate_order_visual_separators(document: dict) -> None:
     """A visual-only root extension, never an order fragment or progress slot."""
     if "orderVisualSeparators" not in document:
@@ -2553,6 +2610,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
     _validate_order_visual_separators(document)
+    _validate_order_equivalence_groups(document)
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
@@ -2960,6 +3018,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
+    require(not baseline.get("orderEquivalenceGroups") or
+            (type(current.get("orderEquivalenceGroups")) is list and
+             current["orderEquivalenceGroups"][:len(baseline["orderEquivalenceGroups"])] ==
+             baseline["orderEquivalenceGroups"]),
+            "Published order equivalence groups cannot be removed, reordered or weakened")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
                 for page, record in zip(document["pages"], document["stateLayout"]["current"])}
@@ -3242,6 +3305,11 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
+    require(not baseline.get("orderEquivalenceGroups") or
+            (type(current.get("orderEquivalenceGroups")) is list and
+             current["orderEquivalenceGroups"][:len(baseline["orderEquivalenceGroups"])] ==
+             baseline["orderEquivalenceGroups"]),
+            "Published order equivalence groups cannot be removed, reordered or weakened")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
     after_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
