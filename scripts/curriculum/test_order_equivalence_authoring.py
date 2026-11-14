@@ -169,7 +169,7 @@ class IndependentOrderAuthoring(unittest.TestCase):
             state.validate(no_archive)
         replaced_digest = deepcopy(formatted)
         replaced_digest["orderEquivalenceGroups"][0]["sourceSha256"] = (
-            state.state_fingerprint(formatted["pages"][0]["blocks"][0"])
+            state.state_fingerprint(formatted["pages"][0]["blocks"][0])
         )
         with self.assertRaises(state.LayoutError):
             state.validate_transition(declared, replaced_digest)
