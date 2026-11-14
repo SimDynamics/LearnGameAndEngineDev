@@ -1017,6 +1017,21 @@ int cajas_para(int piezas);
             "/* originally documented */ int value = 4;",
             "/* revised documentation */ int value = 4;"))
         throw std::runtime_error("Harmless comment-only prose was rejected");
+    if(!named_rule_comment_only_edit(
+            R"cpp(// __LINE__ and __builtin_COLUMN are just words here.
+const char* label = "__LINE__: __builtin_COLUMN";
+const char* raw = R"tag(source_location __builtin_LINE)tag";
+)cpp",
+            R"cpp(// __LINE__ and __builtin_COLUMN are still documentation.
+
+const char* label = "__LINE__: __builtin_COLUMN";
+const char* raw = R"tag(source_location __builtin_LINE)tag";
+)cpp"))
+        throw std::runtime_error("A quoted positional name blocked a safe header comment revision");
+    if(named_rule_comment_only_edit(
+            "#define ORIGINAL_LINE __LINE__\n// old guidance\nint x=ORIGINAL_LINE;",
+            "#define ORIGINAL_LINE __LINE__\n// revised guidance\nint x=ORIGINAL_LINE;"))
+        throw std::runtime_error("An authored macro with line-dependent expansion escaped comment review protection");
     if(named_rule_comment_only_edit(
             "/*x*/ int column = __builtin_COLUMN();",
             "/*expanded explanatory comment*/ int column = __builtin_COLUMN();"))
