@@ -310,6 +310,33 @@ inline bool productive(const Tokens& t,std::size_t i,
            (*close+2<t.size()&&op(t[*close+1],"*")&&
             zero_after(*close+2)))
             return false;
+        // A literal conditional expression cannot contribute source evidence
+        // from its impossible branch. For example, both "capacidad" mentions
+        // in (false ? capacidad + capacidad : 0) are dead, even though the
+        // returned hard-coded quotient can pass an independent numeric probe.
+        // This deliberately handles only provable literal conditions, not
+        // arbitrary C++ constant expressions or data-dependent branches.
+        if(open+2>=*close||!op(t[open+2],"?"))continue;
+        const bool never_first=id(t[open+1],"false")||
+            t[open+1]=="number:0";
+        const bool never_second=id(t[open+1],"true")||
+            t[open+1]=="number:1";
+        if(!never_first&&!never_second)continue;
+        std::size_t nested=0,paren_depth=0;
+        for(auto at=open+3;at<*close;++at) {
+            if(op(t[at],"(")){++paren_depth;continue;}
+            if(op(t[at],")")) {
+                if(paren_depth)--paren_depth;
+                continue;
+            }
+            if(paren_depth)continue;
+            if(op(t[at],"?")){++nested;continue;}
+            if(!op(t[at],":"))continue;
+            if(nested){--nested;continue;}
+            if((never_first&&i<at)||(never_second&&i>at))
+                return false;
+            break;
+        }
     }
     return true;
 }

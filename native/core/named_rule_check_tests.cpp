@@ -426,6 +426,30 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (false ? capacidad * capacidad : 0);
+        })cpp",rules,false,"An unreachable false ternary arm is not a named rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (true ? 0 : (capacidad + capacidad));
+        })cpp",rules,false,"An unreachable true ternary alternative is not a rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (0 ? (capacidad + capacidad) : 0);
+        })cpp",rules,false,"A numeric zero conditional cannot forge two uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (false ? capacidad * capacidad : 0);
+        })cpp",rules,true,"An irrelevant unreachable arm must not erase valid rule uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             return (piezas + 3) / 4 + (capacidad + capacidad) * (2 - 2);
         })cpp",rules,false,"A computed zero factor on the right cancels a whole sum");
     verify(R"cpp(
