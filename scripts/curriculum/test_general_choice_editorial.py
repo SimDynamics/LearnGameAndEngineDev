@@ -6,6 +6,9 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import unittest
 
 import stable_state_layout as layout
@@ -164,6 +167,50 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(layout.LayoutError):
                 layout.revise_choice_editorial(self.original, OWNER, 0, value)
 
+    def test_general_option_review_has_safe_public_cli(self):
+        # A published choice and its Spanish lesson are never rewritten here.
+        published_bytes = SOURCE.read_bytes()
+        with tempfile.TemporaryDirectory() as directory:
+            proposal = Path(directory) / "choice-proposal.json"
+            command = [
+                sys.executable, "-B", str(Path(layout.__file__)),
+                "revise-choice-editorial", str(SOURCE),
+                "--previous", str(SOURCE), "--identity", OWNER,
+                "--option-index", "0", "--replacement", REVISED,
+                "--output", str(proposal),
+            ]
+            result = subprocess.run(command, capture_output=True, text=True,
+                                    encoding="utf-8")
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(self.revise(),
+                             json.loads(proposal.read_text(encoding="utf-8")))
+            self.assertEqual(published_bytes, SOURCE.read_bytes())
+
+            # Exclusive output creation avoids replacing another author's work.
+            repeated = subprocess.run(command, capture_output=True, text=True,
+                                      encoding="utf-8")
+            self.assertNotEqual(0, repeated.returncode)
+            self.assertEqual(self.revise(),
+                             json.loads(proposal.read_text(encoding="utf-8")))
+
+            invalid = command.copy()
+            invalid[invalid.index("--option-index") + 1] = str(
+                len(self.block["options"]))
+            rejected = Path(directory) / "rejected.json"
+            invalid[invalid.index("--output") + 1] = str(rejected)
+            outcome = subprocess.run(invalid, capture_output=True, text=True,
+                                     encoding="utf-8")
+            self.assertNotEqual(0, outcome.returncode)
+            self.assertFalse(rejected.exists())
+
+            no_identity = command.copy()
+            no_identity[no_identity.index("--identity") + 1] = "block_9999_9999"
+            no_identity[no_identity.index("--output") + 1] = str(rejected)
+            outcome = subprocess.run(no_identity, capture_output=True, text=True,
+                                     encoding="utf-8")
+            self.assertNotEqual(0, outcome.returncode)
+            self.assertFalse(rejected.exists())
+            self.assertEqual(published_bytes, SOURCE.read_bytes())
 
 
 class GeneralQuestionEditorialTests(unittest.TestCase):

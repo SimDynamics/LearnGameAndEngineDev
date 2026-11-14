@@ -3474,7 +3474,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-compiler-cases", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -3484,10 +3484,15 @@ def main() -> None:
     parser.add_argument("--additions", type=Path,
                         help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
     parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
+    parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
+    parser.add_argument("--replacement", help="Exact revised nonblank choice text; answers and other fields are preserved")
     parser.add_argument("--editorial-return", action="append", default=[], metavar="ID:REVISION",
                         help="Explicit earlier payload of the same identity; prepare with --locale and Git --base-ref only")
     args = parser.parse_args()
     try:
+        require(args.action == "revise-choice-editorial" or
+                (args.option_index is None and args.replacement is None),
+                "Choice editorial parameters are only valid for revise-choice-editorial")
         editorial_returns = {}
         for value in args.editorial_return:
             identity, separator, revision = value.rpartition(":")
@@ -3538,6 +3543,15 @@ def main() -> None:
                     "revise-choice-option requires --identity without a move/addition plan")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = revise_choice_option(baseline, args.identity)
+        elif args.action == "revise-choice-editorial":
+            require(args.identity is not None and args.option_index is not None
+                    and args.replacement is not None and args.plan is None
+                    and args.additions is None,
+                    "revise-choice-editorial requires --identity, --option-index and "
+                    "--replacement without a move/addition plan")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_choice_editorial(baseline, args.identity,
+                                             args.option_index, args.replacement)
         elif args.action == "revise-compiler-cases":
             require(args.identity is not None and args.plan is None and args.additions is None,
                     "revise-compiler-cases requires --identity without a move/addition plan")
