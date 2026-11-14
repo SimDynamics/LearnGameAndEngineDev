@@ -2090,6 +2090,35 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         !interface_goal.correct&&!interface_capture.cmake_graph_correct&&
         interface_goal.reason.find("target_compile_options")!=std::string::npos,
         "An INTERFACE-only option incorrectly counted as a library compile flag");
+    // Even an executed target_compile_options is not proof of *effective*
+    // compiler flags if the student subsequently replaces COMPILE_OPTIONS.
+    // The File API compile fragments, not the authored trace, must reject it.
+    auto erased_options=warning_request;
+    erased_options.project_key+="/options-cleared-after-declaration";
+    erased_options.request_id=3306;
+    ++erased_options.revision;
+    for(auto& file:erased_options.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)\n"
+                "  set_property(TARGET cantidades PROPERTY COMPILE_OPTIONS \"\")");
+    const auto erased_run=run_cpp(erased_options);
+    ran(erased_run);
+    const auto erased_capture=capture_cpp_execution(
+        erased_options,erased_run);
+    const auto erased_graph=evaluate_cmake_graph(
+        erased_options,erased_run,warning_options);
+    check(matches_native_console_output(
+            erased_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            erased_capture,erased_options.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        erased_run.cmake_graph&&
+        !erased_graph.correct&&!erased_capture.cmake_graph_correct&&
+        erased_graph.reason.find("La opción no llegó")!=std::string::npos,
+        "U3L7 credited an authored flag erased before actual compilation: "+
+            erased_graph.reason);
     auto exclusive=warning_request;
     exclusive.request_id=3303;
     ++exclusive.revision;
