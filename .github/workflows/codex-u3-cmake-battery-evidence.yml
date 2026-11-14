@@ -1,0 +1,63 @@
+name: Codex U3 shared CMake battery mutation evidence
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-u3-cmake-battery-evidence.yml
+      - scripts/curriculum/u3_cmake_battery_probe.py
+      - scripts/curriculum/test_u3_cmake_battery_probe.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_bateria_como_segundo_consumidor.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Verify U3 CMake shared targets with ${{ matrix.cxx }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx: [g++, clang++]
+    steps:
+      - name: Read unchanged published CMake project
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check CMake Ninja and compiler
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake --version
+          ninja --version
+          "$CXX" --version
+      - name: Build both consumers and reject missing comparisons
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u3_cmake_battery_probe.py -v
+
+  msvc:
+    name: Verify U3 CMake shared targets with MSVC x64
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - name: Read unchanged published CMake project
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Enable MSVC native x64 tools
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Check CMake Ninja and compiler
+        shell: pwsh
+        run: |
+          cmake --version
+          ninja --version
+          where.exe cl
+      - name: Build both consumers and reject incomplete batteries
+        shell: pwsh
+        env:
+          CXX: cl
+        run: python -B -m unittest discover -s scripts/curriculum -p test_u3_cmake_battery_probe.py -v
