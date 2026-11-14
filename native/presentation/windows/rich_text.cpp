@@ -977,7 +977,7 @@ void style_cpp(HWND edit) {
     // Match the reference code block's neutral punctuation ink while keeping
     // the existing editor background and the user's system high-contrast ink.
     base.crTextColor = reader_theme::palette(edit).high_contrast
-        ? reader_theme::foreground(edit) : RGB(245,245,245);
+        ? reader_theme::foreground(edit) : RGB(255,255,255);
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
 }
