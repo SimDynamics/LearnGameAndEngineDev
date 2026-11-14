@@ -120,11 +120,11 @@ def executable(build: Path, name: str) -> Path:
     return build / (name + ".exe" if sys.platform == "win32" else name)
 
 
-def execute(exe: Path) -> tuple[int, str, str, tuple[tuple[int, int, int, int], ...]]:
+def execute(exe: Path, standard_input: str = "") -> tuple[int, str, str, tuple[tuple[int, int, int, int], ...]]:
     env = os.environ.copy()
     env.pop("LGAED_U3L10_MUTANT", None)
     done = subprocess.run([str(exe)], cwd=exe.parent, env=env,
-                          capture_output=True, text=True,
+                          input=standard_input, capture_output=True, text=True,
                           errors="replace", timeout=12)
     calls = []
     for line in done.stderr.splitlines():
@@ -154,7 +154,9 @@ def audit(candidate: Mapping[str, str], cxx: str) -> Audit:
                      "-DCMAKE_BUILD_TYPE=Debug"], source, env)
             command(["cmake", "--build", str(build), "--target", "consultar_ajustes"],
                     source, env)
-            client_code, stdout, stderr, _ = execute(executable(build, "consultar_ajustes"))
+            prepared_input = "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n"
+            client_code, stdout, stderr, _ = execute(
+                executable(build, "consultar_ajustes"), prepared_input)
             if (client_code != 1 or "Aceptadas=4 Rechazadas=2 Suma=-1" not in stdout or
                     stderr.count("Rechazo:") != 2):
                 return Audit(False, "The published client did not meet its runtime contract")
