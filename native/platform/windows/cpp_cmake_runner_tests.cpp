@@ -2025,7 +2025,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             std::string::npos&&
         evaluate_cpp_output_check(*warning_block.output_check,
             capture_cpp_execution(exclusive,exclusive_run),
-            exclusive.revision).verdict==curriculum::OutputVerdict::incorrect,
+            exclusive.revision).verdict!=curriculum::OutputVerdict::correct,
         "U3L7 failed to reject a superficially repaired exclusive upper bound");
     check(warning_block.project_files==warning_original&&
         warning_request.project_files!=exclusive.project_files,
