@@ -604,7 +604,20 @@ bool llega_a_tiempo(int dias) {
     require(real.error_utf8.empty()&&real.compilation.succeeded()&&
         real.execution.succeeded(),
         "Real MSVC CMake could not build or run the amended U3 battery: "+
-        real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
+        real.error_utf8+
+        "; configuration="+std::to_string(static_cast<int>(
+            real.configuration.status))+
+        "; compilation="+std::to_string(static_cast<int>(
+            real.compilation.status))+
+        "; execution="+std::to_string(static_cast<int>(
+            real.execution.status))+
+        "; compile_exit="+std::to_string(
+            real.compilation.exit_code.value_or(999))+
+        "; run_exit="+std::to_string(
+            real.execution.exit_code.value_or(999))+
+        "; configure_stderr="+real.configuration.stderr_bytes+
+        "; compile_stderr="+real.compilation.stderr_bytes+
+        "; run_stderr="+real.execution.stderr_bytes);
     const auto fresh=capture_cpp_execution(correct,real);
     require(fresh.named_rule_probe_correct&&real.named_rule_probe&&
         real.named_rule_probe->execution.succeeded()&&
