@@ -964,7 +964,7 @@ int main(int argc,char** argv) {
         {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
             const auto base=reader_theme::foreground(editor.value);
-            const auto green=reader_theme::palette(editor.value).high_contrast?base:RGB(122,195,141);
+            const auto green=reader_theme::palette(editor.value).high_contrast?base:RGB(131,209,151);
             const std::string prose="El código fuente de C++ se ejecuta. C++20 mantiene el nombre.";
             set_rich_text(editor.value,prose);
             check(edit_text(editor.value)==prose,"Formatting the curricular language name rewrote the original narration text");
@@ -1012,7 +1012,7 @@ int main(int argc,char** argv) {
         {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
             const auto base=reader_theme::foreground(editor.value);
-            const auto string_ink=reader_theme::palette(editor.value).high_contrast?base:RGB(122,195,141);
+            const auto string_ink=reader_theme::palette(editor.value).high_contrast?base:RGB(131,209,151);
             const auto check_ink=[&](std::wstring_view token,COLORREF ink){
                 const auto visible=wide(edit_text(editor.value));const auto begin=visible.find(token);
                 check(begin!=visible.npos,"The inline-string regression lost its original text");
@@ -1053,8 +1053,8 @@ int main(int argc,char** argv) {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
             const auto base=reader_theme::foreground(editor.value);
             const bool high_contrast=reader_theme::palette(editor.value).high_contrast;
-            const auto identifier_ink=high_contrast?base:RGB(171,141,227);
-            const auto string_ink=high_contrast?base:RGB(122,195,141);
+            const auto identifier_ink=high_contrast?base:RGB(184,151,244);
+            const auto string_ink=high_contrast?base:RGB(131,209,151);
             const auto check_range=[&](std::wstring_view context,std::size_t offset,std::size_t count,COLORREF ink){
                 const auto visible=wide(edit_text(editor.value));const auto start=visible.find(context);
                 check(start!=visible.npos&&offset+count<=context.size(),"The technical-character regression lost its source context");
@@ -1140,8 +1140,8 @@ int main(int argc,char** argv) {
             reader_theme::apply(editor.value,reader_theme::Surface::canvas);
             const auto base=reader_theme::foreground(editor.value);
             const bool high_contrast=reader_theme::palette(editor.value).high_contrast;
-            const auto identifier_ink=high_contrast?base:RGB(171,141,227);
-            const auto string_ink=high_contrast?base:RGB(122,195,141);
+            const auto identifier_ink=high_contrast?base:RGB(184,151,244);
+            const auto string_ink=high_contrast?base:RGB(131,209,151);
             const auto check_token=[&](std::wstring_view token,COLORREF expected){
                 const auto visible=wide(edit_text(editor.value));const auto begin=visible.find(token);
                 check(begin!=visible.npos,"The authored contextual-color regression lost its original token");
@@ -1392,10 +1392,38 @@ int main(int argc,char** argv) {
             check(character(editor.value, 0).crTextColor == (system_contrast ? colors.text : RGB(92,156,231)),
                 "Themed syntax lost the Android preprocessor color or system contrast");
             const auto quote = static_cast<LONG>(wide(original).find(L'"'));
-            check(character(editor.value, quote).crTextColor == (system_contrast ? colors.text : RGB(122,195,141)),
+            check(character(editor.value, quote).crTextColor == (system_contrast ? colors.text : RGB(131,209,151)),
                 "Themed syntax lost the original string color");
-            check(character(editor.value, static_cast<LONG>(wide(original).find(L'}'))).crTextColor == colors.text,
+            check(character(editor.value, static_cast<LONG>(wide(original).find(L'}'))).crTextColor ==
+                (system_contrast ? colors.text : RGB(245,245,245)),
                 "Themed syntax left uncolored punctuation unreadable");
+            // These are the reference code-block inks reported by the user.
+            // Verify the actual RichEdit colors without altering its theme fill.
+            Window syntax_sample{CreateWindowExW(0, MSFTEDIT_CLASS, L"",
+                WS_CHILD | ES_MULTILINE | ES_READONLY,
+                0,0,700,180,parent.value,nullptr,GetModuleHandleW(nullptr),nullptr)};
+            check(syntax_sample.value!=nullptr,"Create native C++ syntax reference fixture");
+            reader_theme::apply(syntax_sample.value,reader_theme::Surface::field);
+            const auto source_ink=std::string("int equipos{3};\nfor (int equipo{1}; equipo<=equipos; ++equipo) {\n")
+                +"    std::cout << \"Revision=\" << equipo << '\\n';\n}\n";
+            set_edit_text(syntax_sample.value,source_ink);
+            style_cpp(syntax_sample.value);
+            const auto sample=wide(edit_text(syntax_sample.value));
+            const auto validate_ink=[&](std::wstring_view token,COLORREF intended) {
+                const auto at=sample.find(token);
+                check(at!=sample.npos,"C++ reference fixture lost its sampled token");
+                check(character(syntax_sample.value,static_cast<LONG>(at)).crTextColor==
+                    (system_contrast?colors.text:intended),
+                    "The editor C++ token differs from the reference color");
+            };
+            validate_ink(L"equipos",RGB(184,151,244));
+            validate_ink(L"for",RGB(248,166,200));
+            validate_ink(L"3",RGB(241,162,117));
+            validate_ink(L"\\\"Revision=\\\"",RGB(131,209,151));
+            validate_ink(L"\\\"\\n\\\"",RGB(131,209,151));
+            validate_ink(L"{",RGB(245,245,245));
+            check(reader_theme::background(syntax_sample.value)==colors.field,
+                "Syntax recoloring changed the existing editor background");
             check(SendMessageW(editor.value, EM_UNDO, 0, 0) != 0 && edit_text(editor.value) == original,
                 "Theming entered the native Undo history");
             check(SendMessageW(editor.value, EM_REDO, 0, 0) != 0 && edit_text(editor.value) == original + 'X',
