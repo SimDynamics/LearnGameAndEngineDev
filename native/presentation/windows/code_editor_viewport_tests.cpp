@@ -56,6 +56,56 @@ int main(){
     presentation::style_cpp(edit);editor_window=edit;
     const auto band=FindWindowExW(host,nullptr,L"LearnGameAndEngineDev.FixedCodeNumbers",nullptr);
     check(band!=nullptr,"Actual gutter sibling missing");
+    {
+        // The full RichText palette suite is compiled but intentionally not
+        // rendered in the CI desktop. This focused native editor QA actually
+        // inspects RichEdit's character ink and unchanged background.
+        const auto syntax=CreateWindowExW(0,MSFTEDIT_CLASS,L"",
+            WS_CHILD|WS_VISIBLE|ES_MULTILINE|ES_READONLY,
+            0,0,600,180,host,reinterpret_cast<HMENU>(101),type.hInstance,nullptr);
+        check(syntax!=nullptr,"Create an isolated C++ syntax-color editor");
+        if(syntax){
+            presentation::reader_theme::apply(syntax,presentation::reader_theme::Surface::field);
+            const auto background=presentation::reader_theme::background(syntax);
+            const auto code=R"cpp(#include <iostream>
+int equipos{3};
+for (int equipo{1}; equipo<=equipos; ++equipo) {
+    std::cout << "Revision=" << equipo << '\n'; // comentario
+}
+)cpp";
+            presentation::set_edit_text(syntax,code);
+            presentation::style_cpp(syntax);
+            const auto displayed=presentation::wide(presentation::edit_text(syntax));
+            const auto high_contrast=presentation::reader_theme::palette(syntax).high_contrast;
+            const auto expected=[&](COLORREF reference){
+                return high_contrast?presentation::reader_theme::foreground(syntax):reference;
+            };
+            const auto token=[&](std::wstring_view word,COLORREF color,const char* message){
+                const auto at=displayed.find(word);
+                check(at!=displayed.npos,message);
+                if(at==displayed.npos)return;
+                CHARRANGE range{static_cast<LONG>(at),static_cast<LONG>(at+1)};
+                SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+                CHARFORMAT2W format{};format.cbSize=sizeof(format);
+                SendMessageW(syntax,EM_GETCHARFORMAT,SCF_SELECTION,
+                    reinterpret_cast<LPARAM>(&format));
+                check(format.crTextColor==expected(color),message);
+            };
+            token(L"#include",RGB(92,156,231),"Reference preprocessor ink changed");
+            token(L"equipos",RGB(184,151,244),"Reference identifier ink changed");
+            token(L"for",RGB(248,166,200),"Reference keyword ink changed");
+            token(L"3",RGB(241,162,117),"Reference numeric ink changed");
+            token(L"\"Revision=\"",RGB(131,209,151),"Reference string ink changed");
+            token(L"'\\n'",RGB(131,209,151),"Reference character escape ink changed");
+            token(L"// comentario",RGB(172,172,172),"Reference comment ink changed");
+            token(L"{",RGB(255,255,255),"Reference punctuation ink changed");
+            check(presentation::reader_theme::background(syntax)==background,
+                "Syntax coloring changed the existing dark editor background");
+            check(presentation::edit_text(syntax)==code,
+                "Syntax coloring rewrote the example's source");
+            DestroyWindow(syntax);
+        }
+    }
     SetFocus(host);pump();
     for(int zoom:{75,100,125,150,200}){
         SendMessageW(edit,EM_SETZOOM,zoom,100);RECT format{},client{};SendMessageW(edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));GetClientRect(edit,&client);
