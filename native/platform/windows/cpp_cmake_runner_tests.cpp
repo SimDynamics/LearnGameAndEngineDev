@@ -2340,7 +2340,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 "target_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)",
                 "# No client-owned MSVC options in this negative control");
     const auto initial_missing_run=run_cpp(initial_missing_warning);
-    ran(initial_missing_run);
+    // Exit 1 is intentional here: ran() requires a successful executable.
     const auto initial_missing_graph=evaluate_cmake_graph(
         initial_missing_warning,initial_missing_run,built_structure);
     const auto initial_missing_capture=capture_cpp_execution(
