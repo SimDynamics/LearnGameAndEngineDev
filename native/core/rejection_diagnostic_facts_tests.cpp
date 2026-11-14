@@ -122,6 +122,31 @@ void rejected_semantics() {
             RejectionOperation::balance,balance_facts).correct,
             "An authentic interval masked contradictory explicit lower or upper bounds");
     }
+    // A mathematically correct pair of bounds is not a statement of what
+    // is ALLOWED if the message explicitly calls that range forbidden.
+    for(const auto invalid:{
+        "rango no permitido de 0 a 9",
+        "intervalo prohibido 0..9",
+        "dominio inválido [0, 9]",
+        "rango no es válido de 0 a 9",
+        "no se admiten enteros entre 0 y 9",
+        "no se permite el rango 0 - 9",
+        "no se aceptan valores entre 0 y 9"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            balances(invalid,"Revise"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A negated or prohibited range was mistaken for an allowed domain");
+    }
+    const auto valid_with_independent_negation=std::string(
+        "Saldo, petición 2, cobros=10, devoluciones=0: "
+        "no se admite 21; rango permitido de 0 a 9. Revise los datos.\n"
+        "Saldo, petición 3, cobros=0, devoluciones=-1: "
+        "no se admite 21; rango permitido de 0 a 9. Revise los datos.\n");
+    require(evaluate_rejection_diagnostics(
+        valid_with_independent_negation,RejectionOperation::balance,
+        balance_facts).correct,
+        "Rejecting a different observed value suppressed a separate valid allowed range");
     const auto unlabelled=std::string(
         "Cajas, petición 1, piezas=-1: 0 - 20, revise.\n"
         "Cajas, petición 3, piezas=21: 0 - 20, revise.\n");
