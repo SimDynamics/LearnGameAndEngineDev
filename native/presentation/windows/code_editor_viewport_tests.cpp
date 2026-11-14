@@ -71,6 +71,8 @@ int main(){
 int equipos{3};
 for (int equipo{1}; equipo<=equipos; ++equipo) {
     std::cout << "Revision=" << equipo << '\n'; // comentario
+    const auto original = R"tag(/* no comentar */ "Revision=raw" // literal)tag";
+    const auto unicode = u8R"raw(// sin procesar "texto")raw";
 }
 )cpp";
             presentation::set_edit_text(syntax,code);
@@ -104,6 +106,10 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
             token(L"3",RGB(241,162,117),"Reference numeric ink changed");
             token(L"\"Revision=\"",RGB(131,209,151),"Reference string ink changed");
             token(L"'\\n'",RGB(131,209,151),"Reference character escape ink changed");
+            token(LR"verify(R"tag(/* no comentar */ "Revision=raw" // literal)tag")verify",
+                RGB(131,209,151),"C++ raw string contained fake comments or quotes with wrong ink");
+            token(LR"verify(u8R"raw(// sin procesar "texto")raw")verify",
+                RGB(131,209,151),"C++ u8 raw string prefix or contents lost string ink");
             token(L"// comentario",RGB(172,172,172),"Reference comment ink changed");
             token(L"{",RGB(255,255,255),"Reference punctuation ink changed");
             check(presentation::reader_theme::background(syntax)==background,
