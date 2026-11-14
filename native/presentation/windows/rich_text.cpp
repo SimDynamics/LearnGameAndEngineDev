@@ -487,10 +487,10 @@ enum class CppInk { identifier, keyword, string, literal, preprocessor, comment 
 COLORREF cpp_color(HWND edit, CppInk category, bool semantic_background=false) {
     const auto readable=[&](COLORREF original){return semantic_background&&!reader_theme::palette().high_contrast?original:accessible(edit,original);};
     switch (category) {
-    case CppInk::identifier: return readable(RGB(171,141,227));
-    case CppInk::keyword: return readable(RGB(231,155,186));
-    case CppInk::string: return readable(RGB(122,195,141));
-    case CppInk::literal: return readable(RGB(224,151,109));
+    case CppInk::identifier: return readable(RGB(184,151,244));
+    case CppInk::keyword: return readable(RGB(248,166,200));
+    case CppInk::string: return readable(RGB(131,209,151));
+    case CppInk::literal: return readable(RGB(241,162,117));
     case CppInk::preprocessor: return readable(RGB(92,156,231));
     case CppInk::comment: return readable(RGB(172,172,172));
     }
@@ -974,7 +974,10 @@ void style_cpp(HWND edit) {
     // Editing controls own their font, measured tab stops and paragraph layout.
     // Recoloring must not replace those settings after every keystroke.
     CHARFORMAT2W base{}; base.cbSize = sizeof(base); base.dwMask = CFM_COLOR;
-    base.crTextColor = reader_theme::foreground(edit);
+    // Match the reference code block's neutral punctuation ink while keeping
+    // the existing editor background and the user's system high-contrast ink.
+    base.crTextColor = reader_theme::palette(edit).high_contrast
+        ? reader_theme::foreground(edit) : RGB(245,245,245);
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
 }
