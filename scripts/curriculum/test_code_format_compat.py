@@ -263,6 +263,11 @@ class SourceFormatTest(unittest.TestCase):
         wrong_answer["pages"][0]["blocks"][1]["answers"] = ["3"]
         with self.assertRaises(layout.LayoutError):
             layout.prepare_v2(wrong_answer, "es", {"es": published}, published)
+        wrong_question = deepcopy(candidate)
+        wrong_question["pages"][0]["blocks"][1]["question"] = (
+            "Pregunta sustituida sin revisión independiente")
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(wrong_question, "es", {"es": published}, published)
         wrong_path = deepcopy(candidate)
         wrong_path["pages"][0]["blocks"][4]["initialCode"] = (
             "int main() {\n    return 0;\n}")

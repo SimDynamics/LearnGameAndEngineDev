@@ -736,6 +736,53 @@ def require_source_format_with_editorial(original: dict, current: dict) -> bool:
     """
     changed = code_format.require_source_lexical(original, current)
     projected = code_format.source_projection(current, original)
+
+    def restore_feedback(before: object, after: object) -> object:
+        if type(before) is str and type(after) is str:
+            require(before == after or bool(before.strip() and after.strip()),
+                    "Revised feedback must retain nonblank authored text")
+            return before
+        if type(before) is list and type(after) is list:
+            require(len(before) == len(after),
+                    "An editorial correction cannot add or remove feedback choices")
+            return [restore_feedback(a, b) for a, b in zip(before, after)]
+        if type(before) is dict and type(after) is dict:
+            require(before.keys() == after.keys(),
+                    "A reviewed guide cannot add or remove feedback fields")
+            restored = deepcopy(after)
+            for key, value in before.items():
+                if key == "text":
+                    restored[key] = restore_feedback(value, after[key])
+                else:
+                    require(value == after[key],
+                            "A reviewed guide changed nontext feedback metadata")
+            return restored
+        require(before == after, "A reviewed guide changed its data type or contract")
+        return deepcopy(before)
+
+    def restore_guides(before: dict, after: dict) -> None:
+        for key in ("explanation", "reviewFeedback"):
+            if key not in before and key not in after:
+                continue
+            require(key in before and key in after,
+                    "A combined review cannot add or remove guidance fields")
+            after[key] = restore_feedback(before[key], after[key])
+
+    restore_guides(original, projected)
+    for field in ("compileCheck", "outputCheck"):
+        older, newer = original.get(field), projected.get(field)
+        if type(older) is dict and type(newer) is dict:
+            restore_guides(older, newer)
+            if field == "outputCheck":
+                earlier_cases, current_cases = older.get("cases"), newer.get("cases")
+                if type(earlier_cases) is list and type(current_cases) is list:
+                    require(len(earlier_cases) == len(current_cases),
+                            "An editorial review cannot change the number of cases")
+                    for before_case, current_case in zip(earlier_cases, current_cases):
+                        if type(before_case) is dict and type(current_case) is dict:
+                            restore_guides(before_case, current_case)
+    require(projected == original,
+            "A combined source/prose revision changed a question, file, answer or non-guide field")
     require(state_fingerprint(projected) == state_fingerprint(original),
             "A combined source/prose revision changed a response or code contract")
     return changed
@@ -2839,10 +2886,26 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     archived = {entry["id"] for entry in old_formats}
     for entry in current_formats[len(old_formats):]:
         identity = entry["id"]
-        require(identity in before and identity not in archived and entry["block"] == before[identity],
-                "A new source-format archive must copy its exact published predecessor")
+        require(identity in before and identity not in archived,
+                "A new source-format archive must retain its original active owner")
+        # A reader may import directly across an intermediate prose-only
+        # release. Its actual pre-format snapshot is a later editorial node,
+        # not necessarily the first published block, but its code is unchanged.
+        predecessor = entry["block"]
+        if predecessor != before[identity]:
+            try:
+                require(not code_format.require_source_lexical(
+                            before[identity], predecessor),
+                        "An intermediate review cannot format its source before archiving")
+                require_source_format_with_editorial(before[identity], predecessor)
+            except code_format.SourceFormatError as exc:
+                raise LayoutError(f"Unsafe intermediate source for {identity}: {exc}") from exc
+            require(fingerprint(predecessor) in {
+                        proof["afterSha256"] for proof in meta["editorial"]
+                        if proof["id"] == identity},
+                    "An intermediate source snapshot lacks its authenticated editorial node")
         try:
-            require(code_format.require_source_format(before[identity], after[identity]),
+            require(require_source_format_with_editorial(predecessor, after[identity]),
                     "Source formatting archive did not change any source")
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
