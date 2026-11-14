@@ -1395,7 +1395,7 @@ int main(int argc,char** argv) {
             check(character(editor.value, quote).crTextColor == (system_contrast ? colors.text : RGB(131,209,151)),
                 "Themed syntax lost the original string color");
             check(character(editor.value, static_cast<LONG>(wide(original).find(L'}'))).crTextColor ==
-                (system_contrast ? colors.text : RGB(245,245,245)),
+                (system_contrast ? colors.text : RGB(255,255,255)),
                 "Themed syntax left uncolored punctuation unreadable");
             // These are the reference code-block inks reported by the user.
             // Verify the actual RichEdit colors without altering its theme fill.
@@ -1421,7 +1421,7 @@ int main(int argc,char** argv) {
             validate_ink(L"3",RGB(241,162,117));
             validate_ink(L"\"Revision=\"",RGB(131,209,151));
             validate_ink(L"'\\n'",RGB(131,209,151));
-            validate_ink(L"{",RGB(245,245,245));
+            validate_ink(L"{",RGB(255,255,255));
             check(reader_theme::background(syntax_sample.value)==colors.field,
                 "Syntax recoloring changed the existing editor background");
             check(SendMessageW(editor.value, EM_UNDO, 0, 0) != 0 && edit_text(editor.value) == original,
