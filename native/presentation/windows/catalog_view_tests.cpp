@@ -11,6 +11,7 @@
 #include <commctrl.h>
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -131,6 +132,77 @@ void location_notifications(HWND host,const std::filesystem::path& root){
     {state::StateStore after(environment.paths.root);check(after.load()==restored,"Restoring the callback's location rewrote saved data");}
     DestroyWindow(view);
 }
+// Exercise the error boundary with a private, minimal catalogue. The real
+// curriculum and student profile never become test inputs to be rewritten.
+void malformed_progress_keeps_other_units_available(HWND host) {
+    const auto unique=L"lgaed-catalog-error-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64());
+    const auto root=std::filesystem::temp_directory_path()/unique;
+    check(!std::filesystem::exists(root),"The isolated catalog fixture path is occupied");
+    struct TemporaryFixture {
+        std::filesystem::path root;
+        ~TemporaryFixture(){std::error_code ignored;std::filesystem::remove_all(root,ignored);}
+    } fixture{root};
+    const auto put=[&](std::string_view relative,std::string_view json){
+        const auto destination=root/"es"/std::filesystem::path(relative);
+        std::filesystem::create_directories(destination.parent_path());
+        std::ofstream out(destination,std::ios::binary);
+        check(out.good(),"Cannot create isolated catalog fixture");
+        out.write(json.data(),static_cast<std::streamsize>(json.size()));
+        check(out.good(),"Cannot write isolated catalog fixture");
+    };
+    put("programming/courses.json",R"json([{"id":"cpp_fundamentals","number":1,"title":"Curso QA"}])json");
+    put("programming/cpp_fundamentals/course_cpp_fundamentals.json",
+        R"json({"id":"cpp_fundamentals","title":"Curso QA","units":[{"id":"cpp_fundamentals__defectos","number":1,"title":"Unidad con error"},{"id":"cpp_fundamentals__siguiente","number":2,"title":"Unidad disponible"}]})json");
+    put("programming/cpp_fundamentals/defectos/unit_defectos.json",
+        R"json({"courseId":"cpp_fundamentals","unitId":"cpp_fundamentals__defectos","title":"Unidad con error","lessons":[{"id":"cpp_fundamentals__defectos__roto","number":1,"title":"Leccion rota"},{"id":"cpp_fundamentals__defectos__valido","number":2,"title":"Leccion valida"}]})json");
+    put("programming/cpp_fundamentals/siguiente/unit_siguiente.json",
+        R"json({"courseId":"cpp_fundamentals","unitId":"cpp_fundamentals__siguiente","title":"Unidad disponible","lessons":[{"id":"cpp_fundamentals__siguiente__sano","number":1,"title":"Leccion sana"}]})json");
+    put("programming/cpp_fundamentals/defectos/lesson_roto.json",
+        R"json({"id":"cpp_fundamentals__defectos__roto","title":"Leccion rota","pages":[]})json");
+    constexpr std::string_view valid=R"json({"id":"cpp_fundamentals__defectos__valido","title":"Leccion valida","pages":[{"blocks":[{"type":"paragraph","text":"Contenido valido."}]}]})json";
+    put("programming/cpp_fundamentals/defectos/lesson_valido.json",valid);
+    put("programming/cpp_fundamentals/siguiente/lesson_sano.json",
+        R"json({"id":"cpp_fundamentals__siguiente__sano","title":"Leccion sana","pages":[{"blocks":[{"type":"paragraph","text":"Contenido valido."}]}]})json");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"catalog-isolation-"+unique,false});
+    check(!std::filesystem::exists(environment.paths.root),
+        "The isolated catalog QA profile already exists");
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    auto data=store.load();
+    data.preferences["learning_progress"]["lesson_cpp_fundamentals__defectos__roto_started"]=true;
+    data.preferences["cpp_lesson_drafts"]["isolated-test-source"]=std::string("preserve");
+    store.save(data);
+    const auto before=store.load();
+    auto view=create_catalog_view(host,environment,root,[](const auto&){});
+    MoveWindow(view,0,0,px(view,950),px(view,760),TRUE);
+    navigate_catalog(view,{"es","programming","cpp_fundamentals",{}});
+    auto list=GetDlgItem(view,4105);
+    check(SendMessageW(list,LB_GETCOUNT,0,0)==2,"The malformed lesson hid indexed unit cards");
+    check(row_caption(list,0).find(L"progreso parcial")!=std::wstring::npos&&
+        row_caption(list,0).find(L" — Abrir")==std::wstring::npos,
+        "The broken unit was misrepresented as fully measured or just Abrir");
+    check(row_caption(list,1).find(L"0 de 1 lecci")==std::wstring::npos?false:true,
+        "The intact following unit lost its completed/total counter");
+    const auto notice=caption(GetDlgItem(view,4109));
+    check(notice.find(L"No se pudo calcular")!=std::wstring::npos&&
+        notice.find(L".json")==std::wstring::npos&&
+        notice.find(L"\\") == std::wstring::npos,
+        "The unit subtitle exposed a private error path or hid partial-progress status");
+    navigate_catalog(view,{"es","programming","cpp_fundamentals","cpp_fundamentals__defectos"});
+    list=GetDlgItem(view,4105);
+    check(SendMessageW(list,LB_GETCOUNT,0,0)==2&&
+        row_caption(list,0).find(L"Progreso de esta lecci")!=std::wstring::npos&&
+        row_caption(list,1).find(L"0 de 1 p")!=std::wstring::npos,
+        "One invalid lesson prevented its valid sibling from displaying progress");
+    DestroyWindow(view);
+    const auto after=store.load();
+    check(after.preferences.at("learning_progress")==before.preferences.at("learning_progress")&&
+        after.preferences.at("cpp_lesson_drafts")==before.preferences.at("cpp_lesson_drafts"),
+        "A malformed catalog lesson modified student progress or drafts");
+}
+
 LRESULT CALLBACK host_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) { return DefWindowProcW(window,message,wparam,lparam); }
 }
 int main() {
@@ -145,6 +217,7 @@ int main() {
         const auto host = CreateWindowExW(0,type.lpszClassName,L"Catalog QA",WS_OVERLAPPEDWINDOW,0,0,1000,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host != nullptr,"Create catalog QA host");
         MoveWindow(host,0,0,px(host,1000),px(host,850),TRUE);
+        malformed_progress_keeps_other_units_available(host);
         {
             // The last card can end before the visible viewport. No Windows
             // default white rectangle may remain under the Android-style cards.
