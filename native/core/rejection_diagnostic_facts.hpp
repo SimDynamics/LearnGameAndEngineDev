@@ -123,8 +123,10 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     // nouns, not an unrelated "piezas=-1 no válida" observation.
     const auto contradicts_allowed_domain=[&]() {
         const auto is_range=[](std::string_view value) {
-            return one_of(value,{"rango","intervalo","dominio","limite",
-                "limites","enteros","valores"});
+            // "límite no permitido 21" and "valores no permitidos"
+            // may describe rejected data, not the permitted domain.
+            // Only a named domain can carry a global contradiction.
+            return one_of(value,{"rango","intervalo","dominio"});
         };
         const auto invalid=[](std::string_view value) {
             return one_of(value,{"prohibido","prohibida","prohibidos",
@@ -162,6 +164,17 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                 for(auto j=i+3;j<end;++j) {
                     if(words[j].number)break;
                     if(is_range(words[j].text))return true;
+                    // A negated category matters only when it is followed
+                    // by this actual bounded range, not when the message
+                    // says "no se admiten valores -1" and then gives the
+                    // true 0..9 domain in a separate clause.
+                    if(one_of(words[j].text,{"enteros","valores"})&&
+                            j+4<words.size()&&
+                            one_of(words[j+1].text,{"entre","de","del"})&&
+                            words[j+2].number==0&&
+                            one_of(words[j+3].text,{"a","al","y","hasta"})&&
+                            words[j+4].number==upper)
+                        return true;
                 }
             }
         }
