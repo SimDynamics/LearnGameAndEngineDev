@@ -164,6 +164,53 @@ def _cmake_tokens(src: str) -> tuple[str, ...]:
         tokens.append("word:" + src[i:end]); i = end
     return tuple(tokens)
 
+def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
+    """Only executable identifiers and directives can observe source position."""
+    markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"}
+    for token in tokens:
+        if token.startswith("id:") and token[3:] in markers:
+            return True
+        if token.startswith("directive:") and any(name in token for name in markers):
+            return True
+    return False
+
+
+def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
+    """Mirror the native guard for line-dependent CMake expansion.
+
+    Bracket arguments and bracket comments do not themselves expand. A
+    bracket-stored template may nevertheless be expanded by string(CONFIGURE),
+    including the cmake_language(CALL ...) spelling.
+    """
+    names = ("CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE")
+
+    def command(index: int, spelling: str) -> bool:
+        token = tokens[index]
+        return token.startswith("word:") and token[5:].lower() == spelling
+
+    configures_brackets = False
+    for i in range(len(tokens)):
+        if (i + 2 < len(tokens) and command(i, "string")
+                and tokens[i + 1] == "paren:(" and command(i + 2, "configure")):
+            configures_brackets = True
+        if (i + 4 < len(tokens) and command(i, "cmake_language")
+                and tokens[i + 1] == "paren:(" and command(i + 2, "call")
+                and command(i + 3, "string") and command(i + 4, "configure")):
+            configures_brackets = True
+
+    for token in tokens:
+        argument = token.startswith(("word:", "quoted:"))
+        configurable_bracket = (configures_brackets and token.startswith("bracket:")
+                                and not token.startswith("bracket:#"))
+        if not (argument or configurable_bracket):
+            continue
+        for name in names:
+            if ((argument and token == "word:" + name)
+                    or "${" + name + "}" in token or "@" + name + "@" in token):
+                return True
+    return False
+
+
 def _language(path: str) -> str | None:
     name = PurePosixPath(path).name
     if name == "CMakeLists.txt" or path.endswith(".cmake"): return "cmake"
@@ -241,15 +288,17 @@ def require_source_lexical(original: dict, current: dict) -> bool:
         if "\\\n" in source or "\\\n" in newer or "\\\r\n" in source or "\\\r\n" in newer:
             raise SourceFormatError(f"Physical line splices cannot be reformatted: {slot}")
         lexer = _cmake_tokens if language == "cmake" else _cpp_tokens
-        # A token-preserving newline edit can still alter the observable line
-        # number reported by built-in C++ or CMake location introspection.
-        if language == "cpp" and any(location in source or location in newer
-                for location in ("__LINE__", "source_location")):
-            raise SourceFormatError(f"Source location may depend on physical line numbers: {slot}")
-        if language == "cmake" and "CMAKE_CURRENT_LIST_LINE" in source + newer:
-            raise SourceFormatError(f"CMake location may depend on physical line numbers: {slot}")
-        if lexer(source) != lexer(newer):
+        old_tokens, new_tokens = lexer(source), lexer(newer)
+        if old_tokens != new_tokens:
             raise SourceFormatError(f"Tokens, literals, comments or directives changed: {slot}")
+        # Only live location-sensitive tokens are unsafe. Inert comments,
+        # C++ quoted/raw literals and CMake bracket documentation may be
+        # reformatted without changing observable line-number results.
+        sensitive = (_cpp_position_sensitive_tokens if language == "cpp"
+                     else _cmake_position_sensitive_tokens)
+        if sensitive(old_tokens) or sensitive(new_tokens):
+            raise SourceFormatError(
+                f"Source location may depend on physical line numbers: {slot}")
         changed = True
     return changed
 
