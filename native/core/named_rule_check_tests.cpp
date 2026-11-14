@@ -868,9 +868,15 @@ void capacity() {
                 (std::source_location::current().line() == 1 ? 0 : 0);
         })cpp",rules,false,"std::source_location can distinguish compilations");
     verify(R"cpp(
-        // __LINE__, __FILE__ and source_location in prose are harmless.
         int cajas_para(int piezas) {
-            const char* texto = "__LINE__: source_location";
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                (__builtin_COLUMN() > 1 ? 0 : 0);
+        })cpp",rules,false,"Column positions can distinguish the submitted source and its private probe");
+    verify(R"cpp(
+        // __LINE__, __FILE__ and __builtin_COLUMN in prose are harmless.
+        int cajas_para(int piezas) {
+            const char* texto = "__LINE__: source_location __builtin_COLUMN";
             const int capacidad{4};
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,"Comments and literals are not build-location evidence");
@@ -1095,6 +1101,7 @@ int main() {return 0;}
        !named_rule_detail::probe_source_no_early_exit(harmless))
         throw std::runtime_error("Harmless exit text blocked a legitimate probe");
     for(const auto marker:{"__LINE__","__FILE__","__COUNTER__",
+            "__builtin_LINE()","__builtin_COLUMN()",
             "std::source_location::current().line()"}) {
         const auto location_sensitive=candidate+
             "\nint lgaed_probe_sensitive_marker = "+std::string(marker)+";\n";
@@ -1102,7 +1109,8 @@ int main() {return 0;}
             throw std::runtime_error("A probe accepted source-dependent compilation markers");
     }
     const auto prose_only=candidate+
-        "\n// __LINE__ is a comment.\nconst char* note = \"__FILE__ source_location\";\n";
+        "\n// __LINE__ and __builtin_COLUMN() are comments.\n"
+        "const char* note = \"__FILE__ source_location __builtin_COLUMN()\";\n";
     if(!named_rule_single_file_probe_source(single,prose_only))
         throw std::runtime_error("A comment or string disabled the independent probe");
 }
