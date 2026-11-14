@@ -406,7 +406,8 @@ class SourceFormatTest(unittest.TestCase):
                            if item["block"] == identity and item["path"] == "/explanation")
         self.assertTrue(explanation["spans"])
         explanation["spans"][0]["role"] = "prose"
-        layout.validate(forged)
+        # The draft's source-format change is not yet archived, so validating
+        # it before prepare_v2 would reject the missing editorial history.
         with self.assertRaisesRegex(layout.LayoutError, "repainted an unchanged public field"):
             layout.prepare_v2(forged, "es", family, published)
 
