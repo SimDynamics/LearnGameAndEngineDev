@@ -1,0 +1,55 @@
+name: Codex U3L8 report semantics (GCC Clang MSVC)
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-u3-report-observations.yml
+      - native/core/report_observation_check.hpp
+      - native/core/report_observation_check_tests.cpp
+      - native/core/code_format_compat.hpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-reports:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Fetch current Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile independent report tests
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/report_observation_check_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_u3_report_tests"
+      - name: Validate all report cases and malformed observations
+        run: "${RUNNER_TEMP}/lgaed_u3_report_tests"
+
+  windows-reports:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Fetch current Codex revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare Visual C++ x64
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile independent report tests with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\report_observation_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_u3_report_tests.exe"
+      - name: Validate original report cases with MSVC
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_u3_report_tests.exe"'
