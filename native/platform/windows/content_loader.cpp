@@ -2656,7 +2656,8 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
 // A reviewable root declaration attaches independent ordering groups to the
 // already mapped activity. It never rewrites fragments, correctOrder, old
 // responses, exercise addresses, or reader progress. Editorial prose can vary;
-// changing the evaluated source requires a new authenticated source digest.
+// a proven lexical-only formatting revision keeps the original source digest,
+// while changed C++ tokens never borrow that proof.
 void read_order_equivalence_groups(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"orderEquivalenceGroups"))return;
     const auto records=array(root,"orderEquivalenceGroups");
