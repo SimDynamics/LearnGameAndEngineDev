@@ -45,6 +45,22 @@ class PublishedCompilerRevisionAndroidTest {
         error("Missing historical storage position: $identity")
     }
 
+    // The active compiler/reference may have a later, independently published
+    // physical formatting revision. Restore *that* authenticated source first,
+    // exactly as the lesson state loader does, before reviewing old exercises.
+    private fun beforePhysicalFormatting(
+        lesson: JSONObject, identity: String, current: JSONObject
+    ): JSONObject {
+        val records = lesson.getJSONObject("stateLayout")
+            .optJSONArray("sourceFormatRevisions") ?: return current
+        for (index in 0 until records.length()) {
+            val entry = records.getJSONObject(index)
+            if (entry.getString("id") == identity)
+                return CurricularSourceFormatCompat.project(current, entry.getJSONObject("block"))
+        }
+        return current
+    }
+
     @Test fun reviewedCompilerAdditionsAndTheirReferenceProjectionsPreserveOldAddresses() {
         for (name in lessonNames) {
             val lesson = document(name)
@@ -63,7 +79,8 @@ class PublishedCompilerRevisionAndroidTest {
                 val expanded = block(lesson, id)
                 assertEquals(LessonStateLayoutJson.stateFingerprint(historical),
                     LessonStateLayoutJson.stateFingerprint(
-                        CurricularCompilerRevision.projectCompiler(expanded, historical)))
+                        CurricularCompilerRevision.projectCompiler(
+                            beforePhysicalFormatting(lesson, id, expanded), historical)))
                 val (p,b) = find(lesson, id)
                 assertEquals(originalPosition(lesson, id), layout.storagePosition(p,b))
                 val references = entry.optJSONArray("references") ?: JSONArray()
@@ -74,7 +91,8 @@ class PublishedCompilerRevisionAndroidTest {
                     val actual = block(lesson, refId)
                     assertEquals(LessonStateLayoutJson.stateFingerprint(previous),
                         LessonStateLayoutJson.stateFingerprint(
-                            CurricularCompilerRevision.projectReference(actual, previous)))
+                            CurricularCompilerRevision.projectReference(
+                                beforePhysicalFormatting(lesson, refId, actual), previous)))
                     val (rp, rb) = find(lesson, refId)
                     assertEquals(originalPosition(lesson, refId), layout.storagePosition(rp, rb))
                 }
@@ -89,13 +107,19 @@ class PublishedCompilerRevisionAndroidTest {
         val metadata = formattedLesson.getJSONObject("stateLayout")
         val owner = metadata.getJSONArray("compilerRevisions")
             .getJSONObject(0).getString("id")
+        // Work published this physical source archive already. Keep every
+        // original archive and add only an honest later editorial edge.
+        val archives = metadata.getJSONArray("sourceFormatRevisions")
+        val sourceBeforeFormatting = (0 until archives.length())
+            .map { archives.getJSONObject(it) }
+            .single { it.getString("id") == owner }
+            .getJSONObject("block")
         val previous = JSONObject(block(formattedLesson, owner).toString())
         val active = block(formattedLesson, owner)
         val priorSource = previous.getString("initialCode")
         assertFalse(priorSource.contains("\\\n"))
+        assertNotEquals(sourceBeforeFormatting.getString("initialCode"), priorSource)
         active.put("initialCode", priorSource + "\n")
-        metadata.put("sourceFormatRevisions", JSONArray().put(
-            JSONObject().put("id", owner).put("block", previous)))
         metadata.getJSONArray("editorial").put(JSONObject()
             .put("id", owner)
             .put("beforeSha256", LessonStateLayoutJson.fingerprint(previous))
@@ -103,8 +127,9 @@ class PublishedCompilerRevisionAndroidTest {
         val reopened = requireNotNull(LessonStateLayoutJson.read(formattedLesson))
         assertEquals(originalLayout.lineage, reopened.lineage)
         assertEquals(originalLayout.legacyLineage, reopened.legacyLineage)
-        assertEquals(priorSource,
-            CurricularSourceFormatCompat.project(active, previous).getString("initialCode"))
+        assertEquals(sourceBeforeFormatting.getString("initialCode"),
+            CurricularSourceFormatCompat.project(active, sourceBeforeFormatting)
+                .getString("initialCode"))
         val altered = JSONObject(formattedLesson.toString())
         block(altered, owner).put("initialCode", "int main() { return 99; }")
         assertTrue(runCatching { LessonStateLayoutJson.read(altered) }.exceptionOrNull()
@@ -146,39 +171,31 @@ class PublishedCompilerRevisionAndroidTest {
         val oldLayout = requireNotNull(LessonStateLayoutJson.read(published))
         val revised = JSONObject(published.toString())
         val metadata = revised.getJSONObject("stateLayout")
-        // Select an actual code block, not a positional guess or a reference
-        // already owned by a reviewed compiler expansion.
-        val knownReferences = mutableSetOf<String>()
+        val references = mutableSetOf<String>()
         val compilerRevisions = metadata.getJSONArray("compilerRevisions")
         for (index in 0 until compilerRevisions.length()) {
-            val references = compilerRevisions.getJSONObject(index)
+            val entries = compilerRevisions.getJSONObject(index)
                 .optJSONArray("references") ?: JSONArray()
-            for (n in 0 until references.length())
-                knownReferences.add(references.getJSONObject(n).getString("id"))
+            for (n in 0 until entries.length())
+                references.add(entries.getJSONObject(n).getString("id"))
         }
-        val pages = revised.getJSONArray("pages")
-        var formattedId: String? = null
-        for (p in 0 until pages.length()) {
-            if (formattedId != null) break
-            val blocks = pages.getJSONObject(p).getJSONArray("blocks")
-            val ids = metadata.getJSONArray("current").getJSONObject(p).getJSONArray("blocks")
-            for (b in 0 until blocks.length()) {
-                val item = blocks.getJSONObject(b)
-                val id = ids.getString(b)
-                if (item.optString("type") == "code" && id !in knownReferences &&
-                    !item.optString("code").contains("__LINE__") &&
-                    !item.optString("code").contains("source_location")) {
-                    formattedId = id
-                    break
-                }
+        // All the independent source examples in this published lesson have
+        // already been formatted by Work. Reuse a genuine archived predecessor
+        // instead of forging a second copy of the same source-format record.
+        val archived = metadata.getJSONArray("sourceFormatRevisions")
+        val sourceEntry = (0 until archived.length())
+            .map { archived.getJSONObject(it) }
+            .first { entry ->
+                val id = entry.getString("id")
+                id !in references && block(revised, id).optString("type") == "code" &&
+                    !block(revised, id).getString("code").contains("__LINE__")
             }
-        }
-        val selected = requireNotNull(formattedId) { "No independent C++ code example" }
+        val selected = sourceEntry.getString("id")
+        val original = sourceEntry.getJSONObject("block")
         val previous = JSONObject(block(revised, selected).toString())
         val current = block(revised, selected)
+        assertNotEquals(original.getString("code"), previous.getString("code"))
         current.put("code", previous.getString("code") + "\n")
-        metadata.put("sourceFormatRevisions", JSONArray().put(
-            JSONObject().put("id", selected).put("block", previous)))
         metadata.getJSONArray("editorial").put(JSONObject()
             .put("id", selected)
             .put("beforeSha256", LessonStateLayoutJson.fingerprint(previous))
@@ -186,8 +203,7 @@ class PublishedCompilerRevisionAndroidTest {
         val newLayout = requireNotNull(LessonStateLayoutJson.read(revised))
         assertEquals(oldLayout.lineage, newLayout.lineage)
         assertEquals(oldLayout.legacyLineage, newLayout.legacyLineage)
-        assertEquals(LessonStateLayoutJson.stateFingerprint(previous),
-            LessonStateLayoutJson.stateFingerprint(
-                CurricularSourceFormatCompat.project(current, previous)))
+        assertEquals(original.getString("code"),
+            CurricularSourceFormatCompat.project(current, original).getString("code"))
     }
 }
