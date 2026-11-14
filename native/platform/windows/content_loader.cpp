@@ -408,7 +408,7 @@ void require_formatted_question_semantics(const JsonObject& root,
     // Apply the same Unicode-aware whitespace convention used for authored
     // language metadata. The later SemanticPublicFields::trimmed method is
     // not visible here, and calling it broke the actual MSVC Windows build.
-    const nonblank=[](std::string_view value) {
+    const auto nonblank=[](std::string_view value) {
         const auto utf16=key(value);
         return std::ranges::any_of(std::wstring_view(utf16.c_str(),utf16.size()),
             [](wchar_t c){return !narration_space(c);});
