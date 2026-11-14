@@ -228,12 +228,13 @@ inline OpenBatteryVerdict open_battery_verify(
             return {false,"La mutación no corresponde a su caso original o nuevo.",extra};
         if(runs[i].exit_code!=1)
             return {false,"Una mutación no cambió el resultado final.",extra};
-        // The new comparison must communicate both kinds of failure. A
-        // changing exit status with a fixed printed label is insufficient.
-        if(i>original.size()&&
-           runs[i].stdout_bytes==runs.front().stdout_bytes&&
+        // Every historical and added comparison must report a changed
+        // observation. An unmodified "OK" report accompanied by exit 1
+        // does not prove that the test communicated the detected defect.
+        // Compare actual student stdout/stderr, excluding private trace lines.
+        if(runs[i].stdout_bytes==runs.front().stdout_bytes&&
            runs[i].stderr_bytes==runs.front().stderr_bytes)
-            return {false,"La nueva comparación no comunicó su contraste.",extra};
+            return {false,"La comparación no comunicó el fallo observado.",extra};
         auto calls=runs[i].calls;
         std::ranges::sort(calls,order);
         if(calls!=baseline)

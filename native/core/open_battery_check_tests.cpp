@@ -165,6 +165,19 @@ void judgments() {
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A pre-mutated baseline counted as a clean original");
     runs=correct({3,3,7,59});
+    runs[1].stdout_bytes=runs.front().stdout_bytes;
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "A historical comparison silently returned 1 without reporting its failure");
+    runs=correct({3,3,7,59});
+    runs[originals.size()].stdout_bytes=runs.front().stdout_bytes;
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "The final historical comparison silently passed an incorrect report");
+    runs=correct({3,3,7,59});
+    runs[1].stdout_bytes=runs.front().stdout_bytes;
+    runs[1].stderr_bytes="Caso distinto: 2,3,7\n";
+    verify(open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "Equivalent error reporting on stderr was incorrectly rejected");
+    runs=correct({3,3,7,59});
     runs.back().stdout_bytes=runs.front().stdout_bytes;
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A silent destination failure passed without its contrast");
