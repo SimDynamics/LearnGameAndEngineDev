@@ -340,7 +340,12 @@ ejecutada por `.github/workflows/codex-u3-report-observations.yml`,
 contrasta con GCC, Clang y MSVC las dos entradas históricas, sus informes
 completos y filtrados, los duplicados, las líneas con errores, el final sin
 salto, el archivo vacío, los límites de `int` y la frontera de doce líneas.
-Comprueba además la coincidencia simultánea de `stdout`, `stderr` y
+En la frontera comprueba un lote de doce líneas con etiquetas repetidas, tres
+filas mal formadas y una última fila sin salto final: hay nueve observaciones
+válidas, seis coincidencias y tres diferencias, aunque la vista filtrada
+muestre solamente las tres discrepancias. Se conserva además la posición de
+cada diagnóstico de formato, incluso después de un rechazo intermedio.
+Comprueba la coincidencia simultánea de `stdout`, `stderr` y
 retorno, y la equivalencia exclusivamente textual `LF`/`CRLF` en Windows.
 Esta prueba del oráculo no sustituye la compilación y ejecución de la
 solución del estudiante ni acredita una declaración que Work aún no haya
