@@ -99,6 +99,11 @@ endforeach()
 list(APPEND LGAED_CODE_FORMAT_FIXTURES
     "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.changed-answer.json"
     "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.forged-archive.json")
+# Real U7L3 question+explanation and physical spacing; originals stay in assets.
+foreach(u7_name IN ITEMS before after changed-answer stale-question forged-source)
+    list(APPEND LGAED_CODE_FORMAT_FIXTURES
+        "${LGAED_CODE_FORMAT_FIXTURE_DIR}/u7-question.${u7_name}.json")
+endforeach()
 add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
     COMMAND ${_lgaed_state_fixture_python} "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
         --output-dir "${LGAED_CODE_FORMAT_FIXTURE_DIR}"
@@ -108,8 +113,11 @@ add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Verify source-only transformations with immutable historical origins in es/en/fr"
+    COMMENT "Verify source-only and combined question/spacing histories in es/en/fr"
     VERBATIM)
 add_custom_target(lgaed_code_format_fixtures DEPENDS ${LGAED_CODE_FORMAT_FIXTURES})
 

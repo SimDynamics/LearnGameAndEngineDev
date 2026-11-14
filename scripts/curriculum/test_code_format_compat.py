@@ -411,6 +411,27 @@ class SourceFormatTest(unittest.TestCase):
         with self.assertRaisesRegex(layout.LayoutError, "repainted an unchanged public field"):
             layout.prepare_v2(forged, "es", family, published)
 
+    def test_real_u7_combined_format_fixtures_keep_authentic_history(self):
+        """The exported Win32 input is a read-only copy of the real U7L3."""
+        from code_format_fixture_source import real_question_spacing_fixtures
+
+        documents = real_question_spacing_fixtures()
+        before = documents["u7-question.before"]
+        after = documents["u7-question.after"]
+        identity = before["stateLayout"]["current"][0]["blocks"][3]
+        self.assertEqual(identity, "block_0000_0003")
+        self.assertEqual(before["pages"][0]["blocks"][3]["answers"],
+                         after["pages"][0]["blocks"][3]["answers"])
+        self.assertNotEqual(before["pages"][0]["blocks"][3]["question"],
+                            after["pages"][0]["blocks"][3]["question"])
+        self.assertEqual(layout.validate(before), layout.validate(after))
+        layout.validate_transition(before, after)
+        for forged in ("u7-question.changed-answer",
+                       "u7-question.stale-question", "u7-question.forged-source"):
+            with self.subTest(forged=forged), self.assertRaises(layout.LayoutError):
+                layout.validate(documents[forged])
+
+
     def test_real_u10_l4_combined_format_and_authored_guide(self):
         """Authenticate a real published compiler owner without editing its JSON."""
         import hashlib

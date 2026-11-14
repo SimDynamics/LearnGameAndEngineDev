@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 
@@ -50,12 +51,71 @@ def fixtures() -> dict[str, dict]:
     outputs["es.forged-archive"] = invalid_archive
     return outputs
 
+def real_question_spacing_fixtures() -> dict[str, dict]:
+    """Actual published U7L3 source; CI-only copies, not curricular edits."""
+    root = Path(__file__).resolve().parents[2] / "app/src/main/assets/content"
+    relative = (Path("programming/cpp_fundamentals/errores_y_construccion_gradual")
+                / "lesson_validar_antes_y_elegir_reporte.json")
+    family = {
+        locale: json.loads((root / locale / relative).read_text(encoding="utf-8"))
+        for locale in ("es", "en", "fr")
+    }
+    before = family["es"]
+    layout.validate(before)
+    identity = "block_0000_0003"
+    assert before["stateLayout"]["current"][0]["blocks"][3] == identity
+    original = before["pages"][0]["blocks"][3]
+    assert original["type"] == "output_prediction"
+    assert not any(entry["id"] == identity for entry in
+                   before["stateLayout"].get("sourceFormatRevisions", []))
+
+    modified = deepcopy(before)
+    target = modified["pages"][0]["blocks"][3]
+    source = "    int piezas{10};\n    if (piezas < 0 || piezas > 10)"
+    replacement = "    int piezas{10};\n\n    if (piezas < 0 || piezas > 10)"
+    assert target["code"].count(source) == 1
+    target["code"] = target["code"].replace(source, replacement, 1)
+    target["question"] += " Examina si el extremo superior está incluido."
+    target["explanation"] += " El límite superior también forma parte del intervalo."
+    for field in ("/question", "/explanation"):
+        marker = next(item for item in modified["textSemantics"]["fields"]
+                      if item["block"] == identity and item["path"] == field)
+        marker["sourceSha256"] = hashlib.sha256(
+            target[field[1:]].encode("utf-8")).hexdigest()
+    after = layout.prepare_v2(modified, "es", family, before)
+    layout.validate_transition(before, after)
+    assert original["answers"] == target["answers"]
+    assert before["stateLayout"]["origin"] == after["stateLayout"]["origin"]
+    assert before["stateLayout"]["current"] == after["stateLayout"]["current"]
+    assert before["stateLayout"]["family"] == after["stateLayout"]["family"]
+
+    wrong_answer = deepcopy(after)
+    wrong_answer["pages"][0]["blocks"][3]["answers"] = ["falsa"]
+    stale_marker = deepcopy(after)
+    old_marker = next(item for item in before["textSemantics"]["fields"]
+                      if item["block"] == identity and item["path"] == "/question")
+    new_marker = next(item for item in stale_marker["textSemantics"]["fields"]
+                      if item["block"] == identity and item["path"] == "/question")
+    new_marker["sourceSha256"] = old_marker["sourceSha256"]
+    forged_source = deepcopy(after)
+    forged_source["pages"][0]["blocks"][3]["code"] = (
+        forged_source["pages"][0]["blocks"][3]["code"].replace(
+            "piezas < 0", "piezas <= 0", 1))
+    return {
+        "u7-question.before": before,
+        "u7-question.after": after,
+        "u7-question.changed-answer": wrong_answer,
+        "u7-question.stale-question": stale_marker,
+        "u7-question.forged-source": forged_source,
+    }
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
     options = parser.parse_args()
     files = fixtures()
+    files.update(real_question_spacing_fixtures())
     options.output_dir.mkdir(parents=True, exist_ok=True)
     for name, document in files.items():
         destination = options.output_dir / f"{name}.json"

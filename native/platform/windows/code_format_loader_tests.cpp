@@ -469,6 +469,64 @@ void verify_additional_real_compile_diagnostics(const std::filesystem::path& fix
             must_reject(fixtures/(std::string(sample.label)+"."+variant+".json"));
     }
 }
+void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures) {
+    // Authenticated U7L3 source/prompt copies, never edits to actual lessons.
+    const auto before_file=fixtures/"u7-question.before.json";
+    const auto after_file=fixtures/"u7-question.after.json";
+    const auto before=windows::load_lesson(before_file,"es");
+    const auto after=windows::load_lesson(after_file,"es");
+    check(before.id=="cpp_fundamentals__errores_y_construccion_gradual__validar_antes_y_elegir_reporte"&&
+          after.id==before.id&&before.state_layout.lineage==after.state_layout.lineage&&
+          before.state_layout.signatures==after.state_layout.signatures&&
+          before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
+          after.state_layout.source_format_revisions.size()==
+              before.state_layout.source_format_revisions.size()+1,
+          "Combined U7L3 source/question edit changed the published history");
+    const auto& old=before.pages.at(0).blocks.at(3);
+    const auto& revised=after.pages.at(0).blocks.at(3);
+    check(old.type==curriculum::BlockType::output_prediction&&
+          revised.type==old.type&&old.stable_id=="block_0000_0003"&&
+          old.stable_id==revised.stable_id&&old.address.page==revised.address.page&&
+          old.address.block==revised.address.block&&old.code!=revised.code&&
+          old.question!=revised.question&&old.explanation!=revised.explanation&&
+          old.answers==revised.answers&&
+          curriculum::exercise_key(before,old)==curriculum::exercise_key(after,revised)&&
+          curriculum::draft_key("programming",before,old)==
+              curriculum::draft_key("programming",after,revised),
+          "Question/source spacing changed U7L3 answer, identity or archived student state");
+    const auto archive=std::find_if(after.state_layout.source_format_revisions.begin(),
+                                   after.state_layout.source_format_revisions.end(),
+        [&](const auto& item){return item.id==revised.stable_id;});
+    check(archive!=after.state_layout.source_format_revisions.end(),
+          "The real U7L3 text/source change has no complete source archive");
+    const auto original=winrt::Windows::Data::Json::JsonObject::Parse(
+        winrt::to_hstring(archive->raw_json));
+    check(winrt::to_string(original.GetNamedString(L"code"))==old.code&&
+          winrt::to_string(original.GetNamedString(L"question"))==old.question,
+          "Real U7L3 archive replaced its original question or code");
+
+    state::StateData saved;
+    state::prepare_lesson_state(saved,before);
+    state::Response response;
+    response.correct=true;
+    response.answer=old.answers.front();
+    state::put_response(saved,before,old,response);
+    state::save_current_page(saved,before,0);
+    const auto reopened=state::decode(state::encode(saved));
+    state::validate_lesson_state(reopened,after);
+    const auto retained=state::get_response(reopened,after,revised);
+    check(retained&&retained->correct&&retained->answer==response.answer&&
+          state::current_page(reopened,after)==0,
+          "Win32 import lost the previously correct U7L3 prediction");
+    const auto catalog=windows::load_lesson_progress_metadata(after_file,"es");
+    check(catalog.state_layout.signatures==after.state_layout.signatures&&
+          catalog.state_layout.lineage==after.state_layout.lineage&&
+          catalog.pages.at(0).blocks.at(3).stable_id==revised.stable_id,
+          "The progress-only Windows loader lost the reviewed U7L3 owner");
+    for(const auto forged:{"changed-answer","stale-question","forged-source"})
+        must_reject(fixtures/(std::string("u7-question.")+forged+".json"));
+}
+
 }
 
 int main(int argc,char** argv) {
@@ -477,6 +535,7 @@ int main(int argc,char** argv) {
         const std::filesystem::path dir(argv[1]);
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
         verify_visual_separators_keep_order_and_history(dir);
+        verify_real_u7_question_and_spacing(dir);
         verify_real_curricular_pilot(std::filesystem::path(argv[2]));
         verify_real_curricular_pilot(std::filesystem::path(argv[2])/"after-editorial");
         verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));
@@ -486,7 +545,7 @@ int main(int argc,char** argv) {
             must_reject(std::filesystem::path(argv[3])/name);
         must_reject(dir/"es.changed-answer.json");
         must_reject(dir/"es.forged-archive.json");
-        std::cout<<"PASS native format loader: es/en/fr, real U4 and U6/U9 compileCheck, protected archives, drafts and forged-source rejection\n";
+        std::cout<<"PASS native format loader: es/en/fr, real U4 and U7 questions, U6/U9 compileCheck, protected archives, drafts and forged-source rejection\n";
         return 0;
     }catch(const std::exception& error){
         std::cerr<<"FAIL native physical-format loader: "<<error.what()<<'\n';
