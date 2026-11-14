@@ -123,6 +123,28 @@ class U1OpenBatteryMutationTest(unittest.TestCase):
                 self.assertFalse(verdict.accepted)
                 self.assertIn("distinct", verdict.reason)
 
+    def test_filename_cannot_expose_compilation_phase(self):
+        # Previously each variant compiled from phase-0/phase-1. In C++,
+        # __FILE__ could reveal the phase and manufacture the expected exits
+        # while ignoring every comparison. The source/exe directory must
+        # remain identical for baseline, all mutants and error reproduction.
+        original = probe.source_for("block_0005_0009")
+        candidate = '#include <string_view>\n' + (
+            original[:original.index("int main() {")] + r"""int main() {
+    (void)debe_reponer(4, 5);
+    (void)debe_reponer(5, 5);
+    (void)debe_reponer(6, 5);
+    (void)debe_reponer(7, 8);
+    (void)debe_reponer(8, 8);
+    (void)debe_reponer(9, 8);
+    const auto filename = std::string_view(__FILE__);
+    return filename.find("phase-0") != filename.npos ? 0 : 1;
+}
+""")
+        rejected = probe.audit(candidate, probe.SIX, compiler(), broken_original=False)
+        self.assertFalse(rejected.accepted)
+        self.assertIn("correct", rejected.reason)
+
     def test_attempt_to_guess_mutant_via_environment_fails(self):
         # A dishonest candidate might call every required input but return
         # failure only when the OLD oracle exposed LGAED_U1_MUTANT in getenv.

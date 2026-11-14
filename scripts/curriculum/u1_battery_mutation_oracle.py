@@ -117,6 +117,9 @@ def compile_candidate(source: str, directory: Path, cxx: str) -> Path:
                             errors="replace", timeout=90)
     if result.returncode or not exe.is_file():
         raise ValueError("Compilation failed: " + result.stderr + result.stdout)
+    # A student executable must not be able to inspect the private mutant's
+    # generated source. The next phase recreates the same source path anew.
+    cpp.unlink()
     return exe
 
 
@@ -145,8 +148,9 @@ def audit(source: str, cases: tuple[tuple[int, int], ...], cxx: str,
     """Require all calls and independent failed mutants in separate binaries.
 
     The candidate's main must fail each wrong-result implementation, while
-    succeeding with a correct comparator. Distinct compile artifacts prevent
-    candidate code from inspecting the selected mutant through process state.
+    succeeding with a correct comparator. Every variant is recompiled in the
+    SAME private workspace; phase identifiers, source bytes and process
+    arguments are not exposed to the candidate.
     This proof is isolated QA, not a persistent completion or exercise oracle.
     """
     try:
@@ -156,14 +160,17 @@ def audit(source: str, cases: tuple[tuple[int, int], ...], cxx: str,
             if broken_original:
                 phases.append(("original-defect", None))
             seen = []
-            for ordinal, (label, index) in enumerate(phases):
+            # The same absolute source path and executable path are used for
+            # every private mutation. Otherwise __FILE__, argv[0], or the
+            # current working directory would reveal phase-0/phase-1.
+            directory = Path(tmp) / "sandbox"
+            directory.mkdir()
+            for label, index in phases:
                 mode = ("original-defect" if label == "original-defect" else
                         "mutant" if index is not None else "correct")
-                phase = Path(tmp) / f"phase-{ordinal}"
-                phase.mkdir()
                 program = instrument(source, cases, broken_original=broken_original,
                                      mode=mode, mutant=index)
-                exe = compile_candidate(program, phase, cxx)
+                exe = compile_candidate(program, directory, cxx)
                 code, observed = execute(exe)
                 seen.append((label, code))
                 if Counter(observed) != Counter(cases):
