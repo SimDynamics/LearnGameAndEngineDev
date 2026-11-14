@@ -197,6 +197,25 @@ void malformed_progress_keeps_other_units_available(HWND host) {
         row_caption(list,1).find(L"0 de 1 p")!=std::wstring::npos,
         "One invalid lesson prevented its valid sibling from displaying progress");
     DestroyWindow(view);
+    {
+        // An unrelated UI/callback error can still reach the window procedure.
+        // Never print its potentially private source path in the course header.
+        auto protected_view=create_catalog_view(host,environment,root,
+            [](const std::filesystem::path&){
+                throw std::runtime_error("C:/private/student/lesson.json: Curriculum: malformed");
+            });
+        MoveWindow(protected_view,0,0,px(protected_view,950),px(protected_view,760),TRUE);
+        navigate_catalog(protected_view,{"es","programming","cpp_fundamentals",
+            "cpp_fundamentals__siguiente"});
+        auto choices=GetDlgItem(protected_view,4105);
+        check(SendMessageW(choices,LB_SETCURSEL,0,0)==0,
+            "Select the known valid lesson for error-presentation QA");
+        SendMessageW(choices,WM_KEYDOWN,VK_RETURN,1);pump();
+        check(caption(GetDlgItem(protected_view,4109))==
+            L"No se pudo actualizar el catálogo. Intenta abrirlo de nuevo.",
+            "The catalog displayed raw exception details or an internal asset path");
+        DestroyWindow(protected_view);
+    }
     const auto after=store.load();
     check(after.preferences.at("learning_progress")==before.preferences.at("learning_progress")&&
         after.preferences.at("cpp_lesson_drafts")==before.preferences.at("cpp_lesson_drafts"),
