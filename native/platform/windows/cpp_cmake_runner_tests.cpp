@@ -2388,6 +2388,16 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     const auto original_initial_state=state::encode(initial_build_state);
     const auto initial_capture=capture_cpp_execution(
         initial_build,initial_build_result);
+    const auto initial_checker_capture=capture_cpp_execution(
+        initial_checker_build,initial_checker_run);
+    check(!curriculum::has_compiler_objective(first_adjustments)&&
+        !record_compiler_puzzle_case(initial_build_state,adjustments_lesson,
+            first_adjustments,initial_checker_build,initial_checker_capture,
+            "Comprobador aún sin implementar")&&
+        !compiler_puzzle_completed(initial_build_state,adjustments_lesson,
+            first_adjustments)&&
+        state::encode(initial_build_state)==original_initial_state,
+        "Building the unfinished second executable falsely advanced U3L10");
     check(!curriculum::has_compiler_objective(first_adjustments)&&
         !record_compiler_puzzle_case(initial_build_state,adjustments_lesson,
             first_adjustments,initial_build,initial_capture,
