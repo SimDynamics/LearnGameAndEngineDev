@@ -1921,6 +1921,116 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             "U3L4 credited inherited OFF or an unused/incomplete list");
     }
     std::cout<<"PASS U3L4 four original CMake target-list editors: actual MSVC, APPEND order, historical receipts, spoofed applications rejected\n";
+    // U3L7: exercise the original warning/repair lesson with actual MSVC.
+    // Its published GCC flags remain untouched. A compiler-specific CMake
+    // fixture must emit a diagnostic from cantidad.cpp before the correction.
+    constexpr auto warning_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_leer_avisos_sin_sustituir_las_pruebas.json";
+    const auto warning_lesson=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/warning_relative);
+    const auto& warning_block=warning_lesson.pages.at(2).blocks.at(4);
+    check(warning_block.stable_id=="block_0002_0004"&&warning_block.cmake&&
+        warning_block.output_check&&warning_block.output_check->cases.size()==1&&
+        warning_block.project_files.size()==4,
+        "Original U3L7 warning/repair lesson no longer matches its source");
+    const auto warning_original=warning_block.project_files;
+    CppRunRequest warning_request;
+    warning_request.projects_directory=environment.paths.projects;
+    warning_request.project_key="qa/p2-u3-warning-repair/original-owner";
+    warning_request.request_id=3301;
+    warning_request.revision=3301;
+    warning_request.project_files=warning_original;
+    warning_request.cmake=warning_block.cmake;
+    warning_request.action=CppRunRequest::Action::compile_run;
+    const auto warning_replace=[](std::string& source,
+            std::string_view from,std::string_view to) {
+        const auto at=source.find(from);
+        check(at!=source.npos&&source.find(from,at+from.size())==source.npos,
+            "An original U3L7 source fragment changed");
+        source.replace(at,from.size(),to);
+    };
+    bool adapted_warning_flags=false;
+    for(auto& file:warning_request.project_files)
+        if(file.first=="CMakeLists.txt") {
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)",
+                "if(MSVC)\n"
+                "  target_compile_options(cantidades PRIVATE /W4 /permissive-)\n"
+                "else()\n"
+                "  target_compile_options(cantidades PRIVATE -Wall -Wextra -Wpedantic)\n"
+                "endif()");
+            adapted_warning_flags=true;
+        }
+    check(adapted_warning_flags&&
+        warning_request.project_files!=warning_original,
+        "U3L7 platform-specific CMake flags were not prepared");
+    const auto faulty_warning_run=run_cpp(warning_request);
+    const auto warning_output=
+        faulty_warning_run.compilation.stdout_bytes+
+        faulty_warning_run.compilation.stderr_bytes;
+    check(faulty_warning_run.error_utf8.empty()&&
+        faulty_warning_run.configuration.succeeded()&&
+        faulty_warning_run.compilation.succeeded()&&
+        faulty_warning_run.execution.status==CppPhaseStatus::completed&&
+        faulty_warning_run.execution.exit_code==1&&
+        faulty_warning_run.execution.stdout_bytes.find("Bateria: ERROR")!=
+            std::string::npos&&
+        warning_output.find("cantidad.cpp")!=std::string::npos&&
+        warning_output.find("warning C")!=std::string::npos&&
+        warning_output.find("D9002")==std::string::npos,
+        "U3L7 did not compile with real MSVC options, report the original "
+        "source warning and reveal the failing boundary checks");
+    const auto actual_commands=read(
+        inspect_cpp_project(warning_request).workspace/L"compile_commands.json");
+    check(actual_commands.find("cantidad.cpp")!=std::string::npos&&
+        actual_commands.find("/W4")!=std::string::npos&&
+        actual_commands.find("/permissive-")!=std::string::npos,
+        "The selected MSVC warning options did not reach the build command");
+    bool warning_repaired=false;
+    for(auto& file:warning_request.project_files)
+        if(file.first=="cantidad.cpp") {
+            warning_replace(file.second,"return (0 <= dato) <= 20;",
+                "return dato >= 0 && dato <= 20;");
+            warning_repaired=true;
+        }
+    check(warning_repaired,"U3L7 original defective function disappeared");
+    warning_request.request_id=3302;
+    ++warning_request.revision;
+    const auto corrected_warning_run=run_cpp(warning_request);
+    ran(corrected_warning_run);
+    const auto expected_warning_output=
+        warning_block.output_check->cases.front().outputs.front();
+    check(matches_native_console_output(
+            corrected_warning_run.execution.stdout_bytes,
+            expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            capture_cpp_execution(warning_request,corrected_warning_run),
+            warning_request.revision).verdict==curriculum::OutputVerdict::correct,
+        "U3L7 repaired inclusive condition did not pass all original cases");
+    auto exclusive=warning_request;
+    exclusive.request_id=3303;
+    ++exclusive.revision;
+    for(auto& file:exclusive.project_files)
+        if(file.first=="cantidad.cpp")
+            warning_replace(file.second,"return dato >= 0 && dato <= 20;",
+                "return dato >= 0 && dato < 20;");
+    const auto exclusive_run=run_cpp(exclusive);
+    check(exclusive_run.error_utf8.empty()&&
+        exclusive_run.compilation.succeeded()&&
+        exclusive_run.execution.status==CppPhaseStatus::completed&&
+        exclusive_run.execution.exit_code==1&&
+        exclusive_run.execution.stdout_bytes.find("dato=20")!=std::string::npos&&
+        exclusive_run.execution.stdout_bytes.find("Bateria: ERROR")!=
+            std::string::npos&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            capture_cpp_execution(exclusive,exclusive_run),
+            exclusive.revision).verdict==curriculum::OutputVerdict::incorrect,
+        "U3L7 failed to reject a superficially repaired exclusive upper bound");
+    check(warning_block.project_files==warning_original&&
+        warning_request.project_files!=exclusive.project_files,
+        "U3L7 platform adaptation changed the historical source or final repair");
+    std::cout<<"PASS U3L7 actual MSVC warnings, compiler-specific CMake options, defective boundary, inclusive repair and exclusive-bound rejection\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
