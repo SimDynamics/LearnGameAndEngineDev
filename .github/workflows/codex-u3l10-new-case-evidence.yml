@@ -1,0 +1,55 @@
+name: Codex U3L10 authentic extended CMake battery
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - scripts/curriculum/u3_l10_extended_battery_probe.py
+      - scripts/curriculum/test_u3_l10_extended_battery_probe.py
+      - .github/workflows/codex-u3l10-new-case-evidence.yml
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify CMake and Ninja
+        run: |
+          cmake --version
+          ninja --version
+      - name: Run genuine CMake test and private mutations
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u3_l10_extended_battery_probe.py -v
+
+  msvc:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Check real Windows toolchain
+        shell: pwsh
+        run: |
+          cmake --version
+          ninja --version
+          where.exe cl
+      - name: Verify original CMake project with MSVC
+        shell: pwsh
+        env:
+          CXX: cl
+        run: python -B -m unittest discover -s scripts/curriculum -p test_u3_l10_extended_battery_probe.py -v
