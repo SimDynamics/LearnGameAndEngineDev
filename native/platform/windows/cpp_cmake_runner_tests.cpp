@@ -2420,6 +2420,40 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         compiler_puzzle_completed(mapped_reopened,adjustments_mapped,
             adjustments_reviewed),
         "U3L10 old and structural CMake achievements were not both preserved");
+    // U3L10: inheriting /W4 from the native profile and preserving all
+    // eleven correct rows cannot replace authored options on the checker.
+    auto missing_checker_warning=adjustments_checked;
+    missing_checker_warning.project_key+="/inherited-checker-warning";
+    missing_checker_warning.request_id=3513;
+    ++missing_checker_warning.revision;
+    for(auto& file:missing_checker_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            adjustments_replace(file.second,
+                "target_compile_options(comprobar_ajustes PRIVATE /W4 /permissive-)",
+                "# The checker deliberately does not declare MSVC options");
+    const auto inherited_checker_result=run_cpp(missing_checker_warning);
+    ran(inherited_checker_result);
+    const auto inherited_checker_capture=capture_cpp_execution(
+        missing_checker_warning,inherited_checker_result);
+    const auto inherited_checker_structure=evaluate_cmake_graph(
+        missing_checker_warning,inherited_checker_result,
+        *adjustments_reviewed.cmake_graph_check);
+    check(matches_native_console_output(
+            inherited_checker_result.execution.stdout_bytes,
+            adjustments_expected)&&
+        evaluate_cpp_output_check(*adjustments_reviewed.output_check,
+            inherited_checker_capture,missing_checker_warning.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !inherited_checker_structure.correct&&
+        !inherited_checker_capture.cmake_graph_correct&&
+        inherited_checker_structure.reason.find(
+            "target_compile_options")!=std::string::npos&&
+        inherited_checker_structure.reason.find(
+            "comprobar_ajustes")!=std::string::npos&&
+        !record_compiler_puzzle_case(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed,missing_checker_warning,
+            inherited_checker_capture,"Avisos heredados, no declarados"),
+        "U3L10 credited the checker with inherited but unauthored MSVC flags");
     // A counterfeit checker compiling the same library implementation
     // directly emits the expected eleven OK lines, but does not link ajustes.
     auto unlinked_adjustments=adjustments_checked;

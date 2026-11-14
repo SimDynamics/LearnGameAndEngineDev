@@ -12,6 +12,10 @@ on:
       - native/core/**
       - native/platform/windows/**
       - native/presentation/windows/**
+      # These exact Python sources are executed by this workflow. Changes to
+      # contract validation/tests must not skip Windows CI.
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_cmake_graph_checks.py
   workflow_dispatch:
 
 permissions:
