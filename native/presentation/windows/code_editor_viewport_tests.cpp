@@ -163,7 +163,7 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
                 ?presentation::reader_theme::foreground(edit):reference;
             return current.crTextColor==expected;
         };
-        const auto colors_ok=colored(L"row_0",RGB(184,151,244))&&
+        const auto colors_ok=colored(L"rxow_0",RGB(184,151,244))&&
             colored(L"= 0;",RGB(248,166,200))&&
             colored(L"= 0;",RGB(241,162,117),2)&&
             colored(L"// Hg gjpqy",RGB(172,172,172));
