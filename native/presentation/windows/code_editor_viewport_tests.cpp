@@ -56,6 +56,128 @@ int main(){
     presentation::style_cpp(edit);editor_window=edit;
     const auto band=FindWindowExW(host,nullptr,L"LearnGameAndEngineDev.FixedCodeNumbers",nullptr);
     check(band!=nullptr,"Actual gutter sibling missing");
+    {
+        // The full RichText palette suite is compiled but intentionally not
+        // rendered in the CI desktop. This focused native editor QA actually
+        // inspects RichEdit's character ink and unchanged background.
+        const auto syntax=CreateWindowExW(0,MSFTEDIT_CLASS,L"",
+            WS_CHILD|WS_VISIBLE|ES_MULTILINE|ES_READONLY,
+            0,0,600,180,host,reinterpret_cast<HMENU>(101),type.hInstance,nullptr);
+        check(syntax!=nullptr,"Create an isolated C++ syntax-color editor");
+        if(syntax){
+            presentation::reader_theme::apply(syntax,presentation::reader_theme::Surface::field);
+            const auto background=presentation::reader_theme::background(syntax);
+            const auto code=R"cpp(#include <iostream>
+int equipos{3};
+for (int equipo{1}; equipo<=equipos; ++equipo) {
+    std::cout << "Revision=" << equipo << '\n'; // comentario
+    const auto original = R"tag(/* no comentar */ "Revision=raw" // literal)tag";
+    const auto unicode = u8R"raw(// sin procesar "texto")raw";
+    const auto utf8 = u8"Texto";
+    const auto wide_character = L'\n';
+    const auto custom_suffix = "dato"_custom;
+}
+)cpp";
+            presentation::set_edit_text(syntax,code);
+            presentation::style_cpp(syntax);
+            const auto displayed=presentation::wide(presentation::edit_text(syntax));
+            const auto high_contrast=presentation::reader_theme::palette(syntax).high_contrast;
+            const auto expected=[&](COLORREF reference){
+                return high_contrast?presentation::reader_theme::foreground(syntax):reference;
+            };
+            const auto token_part=[&](std::wstring_view word,std::size_t begin,
+                    std::size_t length,COLORREF color,const char* message){
+                const auto at=displayed.find(word);
+                check(at!=displayed.npos&&begin<=word.size()&&
+                    length<=word.size()-begin,message);
+                if(at==displayed.npos||begin>word.size()||
+                   length>word.size()-begin)return;
+                bool all_match=true;
+                for(auto offset=begin;offset<begin+length;++offset) {
+                    CHARRANGE range{static_cast<LONG>(at+offset),static_cast<LONG>(at+offset+1)};
+                    SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+                    CHARFORMAT2W format{};format.cbSize=sizeof(format);
+                    SendMessageW(syntax,EM_GETCHARFORMAT,SCF_SELECTION,
+                        reinterpret_cast<LPARAM>(&format));
+                    all_match=all_match&&format.crTextColor==expected(color);
+                }
+                check(all_match,message);
+            };
+            const auto token=[&](std::wstring_view word,COLORREF color,const char* message) {
+                token_part(word,0,word.size(),color,message);
+            };
+            token(L"#include",RGB(92,156,231),"Reference preprocessor ink changed");
+            token(L"equipos",RGB(184,151,244),"Reference identifier ink changed");
+            token(L"for",RGB(248,166,200),"Reference keyword ink changed");
+            token(L"3",RGB(241,162,117),"Reference numeric ink changed");
+            token(L"\"Revision=\"",RGB(131,209,151),"Reference string ink changed");
+            token_part(L"'\\n'",0,1,RGB(241,162,117),
+                "Reference character literal opening quote is not orange");
+            token_part(L"'\\n'",1,2,RGB(131,209,151),
+                "Reference character escape is not green");
+            token_part(L"'\\n'",3,1,RGB(241,162,117),
+                "Reference character literal closing quote is not orange");
+            token(LR"verify(R"tag(/* no comentar */ "Revision=raw" // literal)tag")verify",
+                RGB(131,209,151),"C++ raw string contained fake comments or quotes with wrong ink");
+            token(LR"verify(u8R"raw(// sin procesar "texto")raw")verify",
+                RGB(131,209,151),"C++ u8 raw string prefix or contents lost string ink");
+            token(LR"verify(u8"Texto")verify",
+                RGB(131,209,151),"C++ UTF-8 string prefix differs from its contents");
+            token_part(LR"verify(L'\n')verify",0,1,RGB(131,209,151),
+                "C++ wide character prefix lost green ink");
+            token_part(LR"verify(L'\n')verify",1,1,RGB(241,162,117),
+                "C++ wide character opening quote is not orange");
+            token_part(LR"verify(L'\n')verify",2,2,RGB(131,209,151),
+                "C++ wide character escape is not green");
+            token_part(LR"verify(L'\n')verify",4,1,RGB(241,162,117),
+                "C++ wide character closing quote is not orange");
+            token(LR"verify("dato"_custom)verify",
+                RGB(131,209,151),"An adjacent user-defined literal suffix lost string ink");
+            token(L"// comentario",RGB(172,172,172),"Reference comment ink changed");
+            token(L"{",RGB(255,255,255),"Reference punctuation ink changed");
+            check(presentation::reader_theme::background(syntax)==background,
+                "Syntax coloring changed the existing dark editor background");
+            check(presentation::edit_text(syntax)==code,
+                "Syntax coloring rewrote the example's source");
+            // An unfinished ordinary literal is normal while typing. A
+            // physical newline must recover keyword/comment ink on the next
+            // line rather than coloring the remainder of the editor green.
+            const auto unfinished=R"source(auto nota = "texto incompleto
+for (int siguiente{1}; siguiente<3; ++siguiente) { // otra linea
+    auto letra = 'n
+    if (siguiente) { }
+}
+)source";
+            presentation::set_edit_text(syntax,unfinished);
+            presentation::style_cpp(syntax);
+            const auto recovered=presentation::wide(presentation::edit_text(syntax));
+            const auto recovered_ink=[&](std::wstring_view needle,COLORREF reference,
+                    const char* message) {
+                const auto at=recovered.find(needle);
+                check(at!=recovered.npos,message);
+                if(at==recovered.npos)return;
+                CHARRANGE range{static_cast<LONG>(at),static_cast<LONG>(at+1)};
+                SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+                CHARFORMAT2W current{};current.cbSize=sizeof(current);
+                SendMessageW(syntax,EM_GETCHARFORMAT,SCF_SELECTION,
+                    reinterpret_cast<LPARAM>(&current));
+                check(current.crTextColor==expected(reference),message);
+            };
+            recovered_ink(L"for (",RGB(248,166,200),
+                "Unclosed string absorbed the following C++ for keyword");
+            recovered_ink(L"siguiente",RGB(184,151,244),
+                "Unclosed string absorbed the next C++ identifier");
+            recovered_ink(L"// otra linea",RGB(172,172,172),
+                "Unclosed string absorbed the following comment");
+            recovered_ink(L"if (",RGB(248,166,200),
+                "Unclosed character literal absorbed the following if keyword");
+            check(presentation::reader_theme::background(syntax)==background,
+                "Incomplete source recoloring modified the existing editor background");
+            check(presentation::edit_text(syntax)==unfinished,
+                "Incomplete source recoloring rewrote the student's draft");
+            DestroyWindow(syntax);
+        }
+    }
     SetFocus(host);pump();
     for(int zoom:{75,100,125,150,200}){
         SendMessageW(edit,EM_SETZOOM,zoom,100);RECT format{},client{};SendMessageW(edit,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));GetClientRect(edit,&client);
@@ -89,6 +211,33 @@ int main(){
     SendMessageW(edit,WM_CHAR,L'x',1);
     check(mid_edit_paints==0,"Syntax formatting painted an intermediate editor frame during typing");
     check(editor->document().text==text.substr(0,5)+"x"+text.substr(5),"A typed character changed another source range");
+    {
+        // Check the actual editable control after EN_CHANGE syntax restyling,
+        // not just the readonly reference above. All token colors and the
+        // surface remain stable while writing, scrolling and using Undo.
+        const auto source=presentation::wide(presentation::edit_text(edit));
+        CHARRANGE previous{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+        const auto colored=[&](std::wstring_view part,COLORREF reference,std::size_t offset=0) {
+            const auto at=source.find(part);
+            if(at==source.npos||offset>=part.size())return false;
+            CHARRANGE position{static_cast<LONG>(at+offset),static_cast<LONG>(at+offset+1)};
+            SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&position));
+            CHARFORMAT2W current{};current.cbSize=sizeof(current);
+            SendMessageW(edit,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&current));
+            const auto expected=presentation::reader_theme::palette(edit).high_contrast
+                ?presentation::reader_theme::foreground(edit):reference;
+            return current.crTextColor==expected;
+        };
+        const auto colors_ok=colored(L"rxow_0",RGB(184,151,244))&&
+            colored(L"= 0;",RGB(248,166,200))&&
+            colored(L"= 0;",RGB(241,162,117),2)&&
+            colored(L"// Hg gjpqy",RGB(172,172,172));
+        SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+        check(colors_ok,"Live syntax formatting lost a reference ink after a native character edit");
+        check(presentation::reader_theme::background(edit)==
+            presentation::reader_theme::palette(edit).field,
+            "Live code editing recolored the editor background");
+    }
     editor->undo();check(editor->document().text==text,"Atomic paint transaction damaged Undo");
     editor->redo();check(editor->document().text==text.substr(0,5)+"x"+text.substr(5),"Atomic paint transaction damaged Redo");
     editor->reset({"int main() {}",{},12,12});
@@ -103,6 +252,110 @@ int main(){
     key.message=WM_KEYDOWN;const bool second=windows::CodeEditor::handle_key_message(key);if(!second)SendMessageW(edit,WM_KEYDOWN,VK_RETURN,1);
     check(editor->document().text==indented+"\n    ","Enter lost the current line's existing spaces");
     key.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(key);
+    {
+        // Fullscreen reproduction: add many rows, pan downward, then delete
+        // the added rows. The native first visible line must return to zero,
+        // rather than leaving an empty bottom viewport that cannot pan up.
+        MoveWindow(host,30,30,900,1080,TRUE);
+        MoveWindow(edit,0,0,650,950,TRUE);
+        SendMessageW(edit,EM_SETZOOM,100,100);
+        std::string expanded;
+        for(int row=0;row<110;++row)
+            expanded+="int row_"+std::to_string(row)+" = "+std::to_string(row)+";\n";
+        {
+            // The abbreviated source may still overflow a compact editor.
+            // Its old bottom offset must be clamped, not blindly restored.
+            MoveWindow(edit,0,0,650,460,TRUE);
+            editor->reset(windows::predefined_code_document(expanded));
+            const auto partial_cut=SendMessageW(edit,EM_LINEINDEX,40,0);
+            check(partial_cut>0,"Partially trimmed source lost its native line boundary");
+            CHARRANGE partial_tail{static_cast<LONG>(partial_cut),-1};
+            SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&partial_tail));
+            POINT old_bottom{0,900};
+            SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&old_bottom));
+            POINT original_scroll{};
+            SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&original_scroll));
+            check(original_scroll.y>0,"Compact editor cannot reproduce a scrolled source");
+            SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L""));
+            pump();
+            POINT partial_scroll{};
+            SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&partial_scroll));
+            check(partial_scroll.y>=0&&partial_scroll.y<original_scroll.y,
+                "A shortened but overflowing source retained an obsolete bottom offset");
+            check(editor->document().text.find("row_40")==std::string::npos,
+                "Partial-scroll correction modified the retained source boundary");
+            SendMessageW(edit,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+            check(SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+                "The shortened source could not scroll to its first line");
+            editor->undo();
+            check(editor->document().text==expanded,
+                "The partial-scroll repair broke Undo of the original long source");
+        }
+        MoveWindow(edit,0,0,650,950,TRUE);
+        editor->reset(windows::predefined_code_document(expanded));
+        const auto cut=SendMessageW(edit,EM_LINEINDEX,18,0);
+        check(cut>0,"Fullscreen regression has no eighteenth native line");
+        CHARRANGE tail{static_cast<LONG>(cut),-1};
+        SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&tail));
+        // Select the removable tail first, then preserve an actual native
+        // scrolled viewport as the Undo predecessor.
+        POINT far_down{0,900};
+        SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&far_down));
+        POINT saved{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
+        check(saved.y>0,"Fullscreen regression failed to scroll inside its long source");
+        SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L""));
+        pump();
+        POINT trimmed{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&trimmed));
+        check(SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0&&trimmed.y==0,
+            "Deleting fullscreen rows left the editor stuck at its previous bottom scroll");
+        const auto shortened=editor->document().text;
+        check(shortened.starts_with("int row_0 = 0;")&&
+            shortened.find("row_109")==shortened.npos&&
+            SendMessageW(edit,EM_GETLINECOUNT,0,0)<=19,
+            "Fullscreen scroll repair changed the student's remaining source text");
+        editor->undo();pump();
+        POINT restored{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&restored));
+        check(editor->document().text==expanded&&restored.y>0,
+            "Undo failed to recover the long source and its earlier genuine scroll");
+        editor->redo();pump();
+        POINT redone{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&redone));
+        check(editor->document().text==shortened&&redone.y==0&&
+            SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+            "Redo restored a stale fullscreen bottom offset after source shrink");
+        // Resizing from a short viewport to fullscreen should also discard
+        // an obsolete offset only when every remaining visual line fits.
+        MoveWindow(edit,0,0,650,170,TRUE);
+        POINT inset{0,160};SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&inset));
+        MoveWindow(edit,0,0,650,950,TRUE);pump();
+        POINT expanded_view{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&expanded_view));
+        check(expanded_view.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+            "Returning to fullscreen retained a stale compact-viewport scroll");
+        // RichEdit can ignore a narrowed EM_SETRECTNP while the containing
+        // HWND remains tall. Establish genuine overflow with a compact native
+        // viewport first, then let the parent change its formatting rectangle.
+        // Normalization must retain valid scroll there and clear it once all
+        // current source lines fit after expanding the viewport again.
+        MoveWindow(edit,0,0,650,170,TRUE);
+        POINT pushed{0,160};
+        SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&pushed));
+        POINT offset_before{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset_before));
+        check(offset_before.y>0,"The compact editor did not establish genuine native scroll");
+        RECT narrow{};GetClientRect(edit,&narrow);
+        SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&narrow));
+        editor->normalize_viewport();pump();
+        POINT valid_offset{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&valid_offset));
+        check(valid_offset.y>0,
+            "Parent formatting mistakenly removed a valid compact-editor scroll");
+        MoveWindow(edit,0,0,650,950,TRUE);
+        RECT wide{};GetClientRect(edit,&wide);
+        SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&wide));
+        editor->normalize_viewport();pump();
+        POINT offset_after{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset_after));
+        check(offset_after.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+            "Parent layout kept an obsolete scroll after fullscreen source became short");
+        check(editor->document().text==shortened,
+            "Normalizing the parent formatting rectangle changed the student source");
+    }
     editor_window=nullptr;editor.reset();DestroyWindow(host);OleUninitialize();FreeLibrary(rich);
     std::cout<<assertions<<" actual Win32 editor checks, "<<failed<<" failures\n";return failed?1:0;
 }

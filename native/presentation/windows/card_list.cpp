@@ -260,6 +260,15 @@ LRESULT CALLBACK list_proc(HWND window,UINT message,WPARAM wp,LPARAM lp) {
             return SendMessageW(self->parent,WM_DRAWITEM,static_cast<WPARAM>(self->identifier),reinterpret_cast<LPARAM>(&draw));
         }
         case WM_ERASEBKGND:{RECT area{};GetClientRect(window,&area);FillRect(reinterpret_cast<HDC>(wp),&area,reader_theme::brush(reader_theme::Surface::screen));return TRUE;}
+        case WM_PAINT:{
+            // A card list can end above the viewport. Paint its uncovered area
+            // explicitly rather than leaving the system's white background.
+            PAINTSTRUCT paint{};
+            if(const auto dc=BeginPaint(window,&paint))
+                FillRect(dc,&paint.rcPaint,reader_theme::brush(reader_theme::Surface::screen));
+            EndPaint(window,&paint);
+            return 0;
+        }
         case WM_NCDESTROY:SetWindowLongPtrW(window,GWLP_USERDATA,0);if(self->owned)delete self;return DefWindowProcW(window,message,wp,lp);
         default:break;
         }

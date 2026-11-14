@@ -1,6 +1,7 @@
 #pragma once
 #include "core/cpp_project.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/open_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 
 #include <chrono>
@@ -102,6 +103,7 @@ struct CppRunRequest {
     std::optional<curriculum::RejectionOperation> rejection_probe;
     std::optional<curriculum::ReportMode> observation_probe;
     std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
+    std::optional<curriculum::OpenBatteryProbeSpec> open_battery_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
     // Ordinary CMake builds and private probes do not need to parse the
     // entire generated target graph. Enable only for structure-aware checks.
@@ -127,6 +129,10 @@ struct CppAssertionProbe {
 struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
     CppPhaseResult compilation, execution;
+};
+struct CppOpenBatteryEvidence {
+    std::string original_project_fingerprint;
+    std::vector<curriculum::OpenBatteryRun> runs;
 };
 
 // Read-only CMake File API evidence, pinned to the submitted project/configuration.
@@ -191,6 +197,7 @@ struct CppRunResult {
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
+    std::optional<CppOpenBatteryEvidence> open_battery_evidence;
     std::vector<CppObservationProbe> observation_probes;
     std::vector<CppAssertionProbe> assertion_probes;
 };

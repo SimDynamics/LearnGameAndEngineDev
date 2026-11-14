@@ -11,6 +11,7 @@
 #include <commctrl.h>
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -131,6 +132,96 @@ void location_notifications(HWND host,const std::filesystem::path& root){
     {state::StateStore after(environment.paths.root);check(after.load()==restored,"Restoring the callback's location rewrote saved data");}
     DestroyWindow(view);
 }
+// Exercise the error boundary with a private, minimal catalogue. The real
+// curriculum and student profile never become test inputs to be rewritten.
+void malformed_progress_keeps_other_units_available(HWND host) {
+    const auto unique=L"lgaed-catalog-error-"+std::to_wstring(GetCurrentProcessId())+
+        L"-"+std::to_wstring(GetTickCount64());
+    const auto root=std::filesystem::temp_directory_path()/unique;
+    check(!std::filesystem::exists(root),"The isolated catalog fixture path is occupied");
+    struct TemporaryFixture {
+        std::filesystem::path root;
+        ~TemporaryFixture(){std::error_code ignored;std::filesystem::remove_all(root,ignored);}
+    } fixture{root};
+    const auto put=[&](std::string_view relative,std::string_view json){
+        const auto destination=root/"es"/std::filesystem::path(relative);
+        std::filesystem::create_directories(destination.parent_path());
+        std::ofstream out(destination,std::ios::binary);
+        check(out.good(),"Cannot create isolated catalog fixture");
+        out.write(json.data(),static_cast<std::streamsize>(json.size()));
+        check(out.good(),"Cannot write isolated catalog fixture");
+    };
+    put("programming/courses.json",R"json([{"id":"cpp_fundamentals","number":1,"title":"Curso QA"}])json");
+    put("programming/cpp_fundamentals/course_cpp_fundamentals.json",
+        R"json({"id":"cpp_fundamentals","title":"Curso QA","units":[{"id":"cpp_fundamentals__defectos","number":1,"title":"Unidad con error"},{"id":"cpp_fundamentals__siguiente","number":2,"title":"Unidad disponible"}]})json");
+    put("programming/cpp_fundamentals/defectos/unit_defectos.json",
+        R"json({"courseId":"cpp_fundamentals","unitId":"cpp_fundamentals__defectos","title":"Unidad con error","lessons":[{"id":"cpp_fundamentals__defectos__roto","number":1,"title":"Leccion rota"},{"id":"cpp_fundamentals__defectos__valido","number":2,"title":"Leccion valida"}]})json");
+    put("programming/cpp_fundamentals/siguiente/unit_siguiente.json",
+        R"json({"courseId":"cpp_fundamentals","unitId":"cpp_fundamentals__siguiente","title":"Unidad disponible","lessons":[{"id":"cpp_fundamentals__siguiente__sano","number":1,"title":"Leccion sana"}]})json");
+    put("programming/cpp_fundamentals/defectos/lesson_roto.json",
+        R"json({"id":"cpp_fundamentals__defectos__roto","title":"Leccion rota","pages":[]})json");
+    constexpr std::string_view valid=R"json({"id":"cpp_fundamentals__defectos__valido","title":"Leccion valida","pages":[{"blocks":[{"type":"paragraph","text":"Contenido valido."}]}]})json";
+    put("programming/cpp_fundamentals/defectos/lesson_valido.json",valid);
+    put("programming/cpp_fundamentals/siguiente/lesson_sano.json",
+        R"json({"id":"cpp_fundamentals__siguiente__sano","title":"Leccion sana","pages":[{"blocks":[{"type":"paragraph","text":"Contenido valido."}]}]})json");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"catalog-isolation-"+unique,false});
+    check(!std::filesystem::exists(environment.paths.root),
+        "The isolated catalog QA profile already exists");
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    auto data=store.load();
+    data.preferences["learning_progress"]["lesson_cpp_fundamentals__defectos__roto_started"]=true;
+    data.preferences["cpp_lesson_drafts"]["isolated-test-source"]=std::string("preserve");
+    store.save(data);
+    const auto before=store.load();
+    auto view=create_catalog_view(host,environment,root,[](const auto&){});
+    MoveWindow(view,0,0,px(view,950),px(view,760),TRUE);
+    navigate_catalog(view,{"es","programming","cpp_fundamentals",{}});
+    auto list=GetDlgItem(view,4105);
+    check(SendMessageW(list,LB_GETCOUNT,0,0)==2,"The malformed lesson hid indexed unit cards");
+    check(row_caption(list,0).find(L"progreso parcial")!=std::wstring::npos&&
+        row_caption(list,0).find(L" — Abrir")==std::wstring::npos,
+        "The broken unit was misrepresented as fully measured or just Abrir");
+    check(row_caption(list,1).find(L"0 de 1 lecci")!=std::wstring::npos,
+        "The intact following unit lost its completed/total counter");
+    const auto notice=caption(GetDlgItem(view,4109));
+    check(notice.find(L"No se pudo calcular")!=std::wstring::npos&&
+        notice.find(L".json")==std::wstring::npos&&
+        notice.find(L"\\") == std::wstring::npos,
+        "The unit subtitle exposed a private error path or hid partial-progress status");
+    navigate_catalog(view,{"es","programming","cpp_fundamentals","cpp_fundamentals__defectos"});
+    list=GetDlgItem(view,4105);
+    check(SendMessageW(list,LB_GETCOUNT,0,0)==2&&
+        row_caption(list,0).find(L"Progreso de esta lecci")!=std::wstring::npos&&
+        row_caption(list,1).find(L"0 de 1 p")!=std::wstring::npos,
+        "One invalid lesson prevented its valid sibling from displaying progress");
+    DestroyWindow(view);
+    {
+        // An unrelated UI/callback error can still reach the window procedure.
+        // Never print its potentially private source path in the course header.
+        auto protected_view=create_catalog_view(host,environment,root,
+            [](const std::filesystem::path&){
+                throw std::runtime_error("C:/private/student/lesson.json: Curriculum: malformed");
+            });
+        MoveWindow(protected_view,0,0,px(protected_view,950),px(protected_view,760),TRUE);
+        navigate_catalog(protected_view,{"es","programming","cpp_fundamentals",
+            "cpp_fundamentals__siguiente"});
+        auto choices=GetDlgItem(protected_view,4105);
+        check(SendMessageW(choices,LB_SETCURSEL,0,0)==0,
+            "Select the known valid lesson for error-presentation QA");
+        SendMessageW(choices,WM_KEYDOWN,VK_RETURN,1);pump();
+        check(caption(GetDlgItem(protected_view,4109))==
+            L"No se pudo actualizar el catálogo. Intenta abrirlo de nuevo.",
+            "The catalog displayed raw exception details or an internal asset path");
+        DestroyWindow(protected_view);
+    }
+    const auto after=store.load();
+    check(after.preferences.at("learning_progress")==before.preferences.at("learning_progress")&&
+        after.preferences.at("cpp_lesson_drafts")==before.preferences.at("cpp_lesson_drafts"),
+        "A malformed catalog lesson modified student progress or drafts");
+}
+
 LRESULT CALLBACK host_proc(HWND window,UINT message,WPARAM wparam,LPARAM lparam) { return DefWindowProcW(window,message,wparam,lparam); }
 }
 int main() {
@@ -145,6 +236,27 @@ int main() {
         const auto host = CreateWindowExW(0,type.lpszClassName,L"Catalog QA",WS_OVERLAPPEDWINDOW,0,0,1000,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         check(host != nullptr,"Create catalog QA host");
         MoveWindow(host,0,0,px(host,1000),px(host,850),TRUE);
+        malformed_progress_keeps_other_units_available(host);
+        {
+            // The last card can end before the visible viewport. No Windows
+            // default white rectangle may remain under the Android-style cards.
+            auto empty_list=create_card_list(host,4998,WM_APP+300);
+            reader_theme::apply(empty_list,reader_theme::Surface::screen);
+            MoveWindow(empty_list,0,0,px(empty_list,240),px(empty_list,180),TRUE);
+            const wchar_t* label=L"Tarjeta de prueba";
+            check(SendMessageW(empty_list,LB_ADDSTRING,0,reinterpret_cast<LPARAM>(label))!=LB_ERR,
+                "Create one themed catalog card");
+            InvalidateRect(empty_list,nullptr,TRUE);
+            UpdateWindow(empty_list);
+            const auto dc=GetDC(empty_list);
+            check(dc!=nullptr,"Inspect the empty catalog viewport");
+            const auto actual=GetPixel(dc,px(empty_list,30),px(empty_list,140));
+            const auto expected=reader_theme::background(empty_list);
+            ReleaseDC(empty_list,dc);
+            DestroyWindow(empty_list);
+            check(actual==expected,
+                "The empty trailing catalog viewport kept a white/system background");
+        }
         std::filesystem::path opened; unsigned launches = 0, options = 0,smo_launches=0;bool all_actions=false;
         auto create = [&] {
             auto view = create_catalog_view(host,environment,root,[&](const auto& path) { opened = path; ++launches; },
@@ -377,6 +489,19 @@ int main() {
         SendMessageW(list,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(40,20));
         SendMessageW(list,WM_LBUTTONUP,0,MAKELPARAM(40,20)); pump();
         check(catalog_location(view) == before && launches == 0,"Dragging the catalog triggered card activation");
+        // A malformed progress asset must never leave later units with an
+        // orphaned "Abrir" detail or a raw local JSON path in the subtitle.
+        navigate_catalog(view,{"es","programming","cpp_fundamentals",{}});list=GetDlgItem(view,4105);
+        check(SendMessageW(list,LB_GETCOUNT,0,0)==12,"The course lost indexed units");
+        for(const auto index:{10,11}) {
+            const auto displayed=row_caption(list,index);
+            check(displayed.find(L" — Abrir")==std::wstring::npos&&
+                displayed.find(L"progreso parcial")==std::wstring::npos&&
+                displayed.find(L"0 de ")!=std::wstring::npos,
+                "U11/U12 did not calculate authentic progress after the historic-format repair");
+        }
+        check(caption(GetDlgItem(view,4109))==L"Unidades",
+            "The restored unit menu still displayed an error instead of its ordinary subtitle");
         navigate_catalog(view,{"es","programming","cpp_fundamentals","cpp_fundamentals__programas_y_ejecucion"}); list = GetDlgItem(view,4105);
         check(SendMessageW(list,LB_GETCOUNT,0,0) == 5,"Indexed lesson list missing");
         check(caption(GetDlgItem(view,4114))==L"Unidad 1"&&caption(GetDlgItem(view,4109))==L"Lecciones"

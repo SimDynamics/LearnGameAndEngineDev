@@ -487,14 +487,76 @@ enum class CppInk { identifier, keyword, string, literal, preprocessor, comment 
 COLORREF cpp_color(HWND edit, CppInk category, bool semantic_background=false) {
     const auto readable=[&](COLORREF original){return semantic_background&&!reader_theme::palette().high_contrast?original:accessible(edit,original);};
     switch (category) {
-    case CppInk::identifier: return readable(RGB(171,141,227));
-    case CppInk::keyword: return readable(RGB(231,155,186));
-    case CppInk::string: return readable(RGB(122,195,141));
-    case CppInk::literal: return readable(RGB(224,151,109));
+    case CppInk::identifier: return readable(RGB(184,151,244));
+    case CppInk::keyword: return readable(RGB(248,166,200));
+    case CppInk::string: return readable(RGB(131,209,151));
+    case CppInk::literal: return readable(RGB(241,162,117));
     case CppInk::preprocessor: return readable(RGB(92,156,231));
     case CppInk::comment: return readable(RGB(172,172,172));
     }
     return reader_theme::foreground(edit);
+}
+// A raw C++ literal is one lexical string token, including its R/u8R prefix
+// and delimiter. Quotes, // and /* inside the body are literal data, never
+// separate comments or keywords. The syntax coloring must not rewrite it.
+std::size_t cpp_literal_suffix_end(std::wstring_view text,std::size_t end) {
+    // User-defined literal suffixes are part of the same adjacent C++ token.
+    if(end<text.size()&&text[end]==L'_') {
+        ++end;
+        while(end<text.size()&&identifier_part(text[end]))++end;
+    }
+    return end;
+}
+std::optional<std::size_t> cpp_raw_literal_end(std::wstring_view text,std::size_t at) {
+    constexpr std::wstring_view prefixes[]{L"u8R\"",L"uR\"",L"UR\"",L"LR\"",L"R\""};
+    for(const auto prefix:prefixes) {
+        if(!text.substr(at).starts_with(prefix))continue;
+        const auto marker_start=at+prefix.size();
+        const auto opening=text.find(L'(',marker_start);
+        if(opening==text.npos||opening-marker_start>16)return {};
+        const auto marker=text.substr(marker_start,opening-marker_start);
+        if(std::ranges::any_of(marker,[](wchar_t ch){
+            return ch==L' '||ch==L'\t'||ch==L'\r'||ch==L'\n'||
+                ch==L'\\'||ch==L'('||ch==L')';}))return {};
+        const auto closing=L")"+std::wstring(marker)+L"\"";
+        const auto found=text.find(closing,opening+1);
+        return found==text.npos?text.size():
+            cpp_literal_suffix_end(text,found+closing.size());
+    }
+    return {};
+}
+// Ordinary UTF-8, wide and Unicode string/character prefixes share the same
+// green ink as their contents. Previously u8/L was painted as an identifier.
+std::optional<std::size_t> cpp_ordinary_literal_end(
+        std::wstring_view text,std::size_t at) {
+    constexpr std::wstring_view prefixes[]{
+        L"u8\"",L"u\"",L"U\"",L"L\"",L"\"",
+        L"u8'",L"u'",L"U'",L"L'",L"'"
+    };
+    for(const auto prefix:prefixes) {
+        if(!text.substr(at).starts_with(prefix))continue;
+        const auto quote=prefix.back();
+        auto end=at+prefix.size();
+        bool closed=false;
+        while(end<text.size()) {
+            const auto c=text[end++];
+            if(c==L'\\'&&end<text.size()) {
+                // Backslash-newline is physically spliced by C++; include
+                // the optional CR of CRLF in the same continuation.
+                if(text[end]==L'\r'&&end+1<text.size()&&text[end+1]==L'\n')
+                    end+=2;
+                else ++end;
+            }else if(c==quote) {
+                closed=true;break;
+            }else if(c==L'\r'||c==L'\n') {
+                // Ordinary C++ literals cannot swallow a subsequent physical
+                // line while the student is still typing the closing quote.
+                --end;break;
+            }
+        }
+        return closed?cpp_literal_suffix_end(text,end):end;
+    }
+    return {};
 }
 std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_background=false) {
     const auto identifier_color = cpp_color(edit,CppInk::identifier,semantic_background);
@@ -518,10 +580,31 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_backgro
         } else if (include_header && text[index] == L'<') {
             const auto end = text.find_first_of(L">\r\n", index + 1); index = end == text.npos ? text.size() : end + (text[end] == L'>');
             result.push_back({start,index,string_color}); include_header = false;
-        } else if (text[index] == L'"' || text[index] == L'\'') {
-            const auto quote = text[index++];
-            while (index < text.size()) { const auto c = text[index++]; if (c == L'\\' && index < text.size()) ++index; else if (c == quote) break; }
-            result.push_back({start,index,string_color}); include_header = false;
+        } else if(const auto raw=cpp_raw_literal_end(text,index);raw) {
+            index=*raw;
+            result.push_back({start,index,string_color});
+            include_header=false;
+        } else if(const auto literal=cpp_ordinary_literal_end(text,index);literal) {
+            index=*literal;
+            result.push_back({start,index,string_color}); include_header=false;
+            // The reference C++ renderer distinguishes the apostrophes of
+            // character literals (orange) from their content/escapes (green).
+            // Keep a u8/u/U/L prefix and any user-defined suffix green.
+            auto quote=start;
+            if(text.substr(start).starts_with(L"u8'"))quote+=2;
+            else if(text.substr(start).starts_with(L"u'")||
+                    text.substr(start).starts_with(L"U'")||
+                    text.substr(start).starts_with(L"L'"))++quote;
+            if(quote<index&&text[quote]==L'\'') {
+                result.push_back({quote,quote+1,literal_color});
+                for(auto closing=quote+1;closing<index;++closing) {
+                    if(text[closing]==L'\\'&&closing+1<index){++closing;continue;}
+                    if(text[closing]==L'\'') {
+                        result.push_back({closing,closing+1,literal_color});
+                        break;
+                    }
+                }
+            }
         } else if (text[index] == L'#') {
             ++index; while (index < text.size() && (text[index] == L' ' || text[index] == L'\t')) ++index;
             const auto directive = index; while (index < text.size() && identifier_part(text[index])) ++index;
@@ -974,7 +1057,10 @@ void style_cpp(HWND edit) {
     // Editing controls own their font, measured tab stops and paragraph layout.
     // Recoloring must not replace those settings after every keystroke.
     CHARFORMAT2W base{}; base.cbSize = sizeof(base); base.dwMask = CFM_COLOR;
-    base.crTextColor = reader_theme::foreground(edit);
+    // Match the reference code block's neutral punctuation ink while keeping
+    // the existing editor background and the user's system high-contrast ink.
+    base.crTextColor = reader_theme::palette(edit).high_contrast
+        ? reader_theme::foreground(edit) : RGB(255,255,255);
     SendMessageW(edit, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&base));
     apply_cpp(edit, source);
 }

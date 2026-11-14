@@ -1,0 +1,25 @@
+name: Codex original CMake battery root contracts
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_open_battery_contract.py
+      - .github/workflows/codex-open-battery-contract.yml
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify root-only authoring and full historical preservation
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_open_battery_contract.py -v

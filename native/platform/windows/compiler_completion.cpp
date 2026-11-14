@@ -277,6 +277,28 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.open_battery_probe!=block.open_battery_probe)return false;
+    if(block.open_battery_probe) {
+        const auto& authored=*block.open_battery_probe;
+        if(!block.cmake||request.cmake!=block.cmake||
+           !curriculum::open_battery_probe_spec_valid(authored)||
+           request.cmake->target!=authored.test_target||
+           request.action!=CppRunRequest::Action::compile_run||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           request.diagnostic||request.source_files!=block.source_files||
+           request.project_files.size()!=block.project_files.size())
+            return false;
+        // The student's test driver alone may change. The shared function,
+        // interface, client and original build description must remain
+        // unchanged until Work publishes a separately authenticated revision.
+        for(std::size_t i=0;i<request.project_files.size();++i) {
+            const auto& original=block.project_files[i];
+            const auto& candidate=request.project_files[i];
+            if(original.first!=candidate.first||
+               (original.first!=authored.test_path&&
+                original.second!=candidate.second))return false;
+        }
+    }
     if(request.cmake_graph_check!=block.cmake_graph_check)return false;
     if(block.cmake_graph_check) {
         if(!block.cmake||!request.cmake||
@@ -582,6 +604,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
        (block.named_rule_source_check&&
            block.named_rule_source_check->execution_probe&&
            !execution.named_rule_probe_correct)||
+       (block.open_battery_probe&&!execution.open_battery_probe_correct)||
        (block.cmake_graph_check&&!execution.cmake_graph_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;

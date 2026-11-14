@@ -17,9 +17,11 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -1699,9 +1701,19 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 "Unknown, inactive or duplicated source-format owner");
             const auto previous=item.GetNamedObject(L"block");
             const auto before=state_fingerprint(previous);
-            const auto expected=refined_order_signatures.contains(id)?
-                refined_order_signatures.at(id):result.signatures.at(id);
-            require(before==expected,"Source format archive does not match its historical contract");
+            // A formatting archive can begin after an authenticated compiler,
+            // reference, choice or order revision. Compare with that revised
+            // contract, not the original pre-revision signature. The active
+            // block is independently checked against the same target below.
+            const auto expected=revised_compiler_references.contains(id)?
+                std::string(revised_compiler_references.at(id)->reference_after):
+                revised_compilers.contains(id)?
+                    std::string(revised_compilers.at(id)->after):
+                revised_choices.contains(id)?
+                    std::string(revised_choices.at(id)->after_payload):
+                refined_order_signatures.contains(id)?
+                    refined_order_signatures.at(id):result.signatures.at(id);
+            require(before==expected,"Source format archive does not match its authenticated pre-format contract");
             source_format_originals.emplace(id,previous);
             result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
         }
@@ -3294,6 +3306,131 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     }
 }
 
+// Root-authored CMake batteries are attached only after the original mapped
+// blocks are loaded. Every historical case must match a real source call,
+// its independent expected value and its original order.
+void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
+    const auto entries=array(root,"compilerOpenBatteryChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+            "Open CMake batteries require existing Spanish v2 owners");
+    const auto authored_int=[](const IJsonValue& value) {
+        require(value.ValueType()==JsonValueType::Number,
+            "Open CMake battery needs integer input facts");
+        const double number=value.GetNumber();
+        require(std::isfinite(number)&&std::trunc(number)==number&&
+                number>=static_cast<double>(std::numeric_limits<int>::min())&&
+                number<=static_cast<double>(std::numeric_limits<int>::max()),
+            "Open CMake battery integer is outside the signed int range");
+        return static_cast<int>(number);
+    };
+    const auto source_int=[](const std::string& source) {
+        int number{};
+        const auto [end,error]=std::from_chars(
+            source.data(),source.data()+source.size(),number);
+        require(error==std::errc{}&&end==source.data()+source.size(),
+            "Original battery calls contain an unsupported numeric token");
+        return number;
+    };
+    std::set<std::string> used;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","library","test","function",
+            "comparison","target","originalCases"},true);
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&used.insert(identity).second,
+            "Duplicate or invalid open CMake battery identity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Open CMake battery has duplicated mapped identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&owner->cmake&&
+                !owner->output_check&&!owner->compile_check&&
+                owner->source_files.empty()&&!owner->project_files.empty()&&
+                !owner->named_rule_source_check&&!owner->cmake_graph_check,
+            "Open CMake battery requires an original unevaluated project editor");
+        OpenBatteryProbeSpec check;
+        check.library_path=text(item,"library");
+        check.test_path=text(item,"test");
+        check.function_name=text(item,"function");
+        check.comparison_name=text(item,"comparison");
+        check.test_target=text(item,"target");
+        const auto cases=array(item,"originalCases");
+        require(cases.Size()>0&&cases.Size()<=32,
+            "Open CMake battery needs between 1 and 32 original cases");
+        for(const auto& element:cases) {
+            const auto original=element.GetObject();
+            allowed_keys(original,{"value","lower","upper","initial"},true);
+            check.original_cases.push_back({
+                authored_int(original.GetNamedValue(L"value")),
+                authored_int(original.GetNamedValue(L"lower")),
+                authored_int(original.GetNamedValue(L"upper")),
+                authored_int(original.GetNamedValue(L"initial"))
+            });
+        }
+        require(open_battery_probe_spec_valid(check)&&
+                owner->cmake->target==check.test_target,
+            "Open CMake battery has invalid paths, names or duplicate cases");
+        const auto source=[&](std::string_view name)->const std::string* {
+            const auto it=std::ranges::find(owner->project_files,name,
+                &CppProjectFiles::value_type::first);
+            return it==owner->project_files.end()?nullptr:&it->second;
+        };
+        const auto library=source(check.library_path);
+        const auto driver=source(check.test_path);
+        const auto cmake=source("CMakeLists.txt");
+        require(library&&driver&&cmake,
+            "Open CMake battery must use only its original shared project files");
+        require(open_battery_mutated_library(*library,check.function_name,
+                OpenBatteryMutation::baseline).has_value(),
+            "The shared C++ function cannot be instrumented independently");
+        const auto escaped=std::regex_replace(
+            check.test_path,std::regex(R"(\.)"),R"(\.)");
+        const std::regex target(
+            R"(\badd_executable\s*\(\s*)"+check.test_target+
+            R"(\s+)"+escaped+R"(\s*\))");
+        require(std::regex_search(*cmake,target)&&
+                cmake->find("add_library(")!=cmake->npos,
+            "Open CMake battery must use its original test executable and library");
+        const std::regex call(R"(\b)"+check.comparison_name+
+            R"(\s*\(\s*(\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(true|false)\s*,\s*(-?\d+)\s*\))");
+        std::vector<OpenBatteryCall> authored;
+        std::set<int> labels;
+        for(std::sregex_iterator found(driver->begin(),driver->end(),call),end;
+                found!=end;++found) {
+            const auto& m=*found;
+            require(labels.insert(source_int(m[1].str())).second,
+                "Original open battery repeats its case label");
+            const OpenBatteryCall original{
+                source_int(m[2].str()),source_int(m[3].str()),
+                source_int(m[4].str()),source_int(m[5].str())
+            };
+            const auto expected=open_battery_expected(original);
+            require((m[6].str()=="true")==expected.first&&
+                    source_int(m[7].str())==expected.second,
+                "Original open battery expected answer contradicts the contract");
+            authored.push_back(original);
+        }
+        require(authored==check.original_cases,
+            "Open CMake battery root cases differ from actual historical comparisons");
+        OutputCheck runtime;
+        runtime.open_battery_check=true;
+        runtime.input_comparison=TextComparison::exact;
+        OutputCase first;
+        first.standard_input=owner->standard_input.value_or("");
+        first.executable=check.test_target;
+        first.outputs={""}; // Independent mutation evidence, never stdout comparison.
+        first.explanation="La batería comprobó sus casos anteriores y el nuevo "
+                          "con ejecuciones independientes del componente.";
+        runtime.cases.push_back(std::move(first));
+        owner->open_battery_probe=std::move(check);
+        owner->output_check=std::move(runtime);
+    }
+}
+
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
@@ -3565,6 +3702,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_open_battery_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
@@ -3624,7 +3762,19 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                             ((p==3&&b==3)||(p==6&&b==3)))||
                         (lesson.id=="programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones"&&
                             ((p==2&&b==3)||(p==3&&b==7)||(p==4&&b==3))));
-                    if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||declared_runtime) {
+                    // A root-only open battery must load its complete original
+                    // project before the progress-side loader can authenticate
+                    // its new, separately sealed execution objective.
+                    bool declared_battery=false;
+                    if(root.HasKey(L"compilerOpenBatteryChecks")) {
+                        const auto identity=lesson.state_layout.current[p].blocks[b];
+                        for(const auto& candidate:array(root,"compilerOpenBatteryChecks"))
+                            if(text(candidate.GetObject(),"activity")==identity) {
+                                declared_battery=true;break;
+                            }
+                    }
+                    if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||
+                       declared_runtime||declared_battery) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
                         const auto historical=authenticated_compiler_source(lesson,p,b,block);
@@ -3656,6 +3806,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
+        read_compiler_open_battery_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);

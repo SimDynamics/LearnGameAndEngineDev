@@ -340,6 +340,68 @@ struct CodeEditor::Impl {
         SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&now().scroll));
     }
 
+    void restore_top_when_all_lines_fit() {
+        if(!window||!multiline)return;
+        POINT old_scroll{};
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&old_scroll));
+        const auto visible_first=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+        if(old_scroll.y<=0&&visible_first<=0)return;
+        RECT format{};
+        SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        const auto room=static_cast<std::int64_t>(format.bottom)-format.top;
+        const auto count=SendMessageW(window,EM_GETLINECOUNT,0,0);
+        if(room<=0||count<=0)return;
+        // A trailing newline creates a real, empty final visual row.
+        // EM_POSFROMCHAR on its insertion position can return -1, and an
+        // offscreen character may have negative client coordinates. Neither
+        // is a trustworthy document-bottom measurement. Use the count of
+        // native visual rows and their uniform code-editor line spacing.
+        CHARFORMAT2W font{};font.cbSize=sizeof(font);
+        SendMessageW(window,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&font));
+        if(font.yHeight<=0)return;
+        std::int64_t row=MulDiv(font.yHeight,static_cast<int>(GetDpiForWindow(window)),1440);
+        int numerator=0,denominator=0;
+        SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+            reinterpret_cast<LPARAM>(&denominator));
+        if(numerator>0&&denominator>0)
+            row=MulDiv(static_cast<int>(row),numerator,denominator);
+        if(row<=0)return;
+        if(count>1) {
+            // Measure consecutive visible lines when possible. This matches
+            // actual RichEdit leading and zoom, without depending on an empty
+            // or distant last-line character that may not have coordinates.
+            const auto visible=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+            const auto sample=std::clamp<LRESULT>(visible,0,count-2);
+            const auto first=SendMessageW(window,EM_LINEINDEX,sample,0);
+            const auto second=SendMessageW(window,EM_LINEINDEX,sample+1,0);
+            if(first>=0&&second>=0) {
+                POINTL at{},next{};
+                SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&at),first);
+                SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),second);
+                const auto measured=static_cast<std::int64_t>(next.y)-at.y;
+                // A sentinel (-1,-1) or a stale layout is not an actual
+                // line-height measurement. Keep the base font estimate then.
+                if(measured>=std::max<std::int64_t>(1,row/2)&&
+                   measured<=row*2)row=measured;
+            }
+        }
+        const auto story_height=static_cast<std::int64_t>(count)*row;
+        // Removing rows can invalidate an old fullscreen bottom offset even
+        // when the shortened document still slightly overflows. Clamp against
+        // the current measured story, not yesterday's native scrollbar range.
+        const auto maximum=std::max<std::int64_t>(0,story_height-room);
+        if(maximum>0&&old_scroll.y<=maximum)return;
+        const auto new_y=static_cast<LONG>(std::clamp<std::int64_t>(
+            maximum,0,std::numeric_limits<LONG>::max()));
+        POINT corrected{old_scroll.x,new_y};
+        SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&corrected));
+        if(maximum==0) {
+            const auto remaining=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+            if(remaining>0)
+                SendMessageW(window,EM_LINESCROLL,0,-remaining);
+        }
+    }
+
     void commit(Snapshot next) {
         history.resize(current + 1);
         history.push_back(std::move(next));
@@ -461,6 +523,7 @@ struct CodeEditor::Impl {
         if(reveal_cursor) {
             SendMessageW(window,EM_SCROLLCARET,0,0);
         }
+        restore_top_when_all_lines_fit();
         SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
         if(notify_parent&&!previous_applying&&(events&ENM_CHANGE)) {
             // EN_CHANGE intentionally runs inside Freeze so syntax coloring
@@ -515,6 +578,8 @@ struct CodeEditor::Impl {
         next.cursor = selection(window);
         SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&next.scroll));
         commit(std::move(next));
+        restore_top_when_all_lines_fit();
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
         // TOM/UI Automation can change the native story without WM_SETTEXT or
         // EM_REPLACESEL. The completed edit observed here owns its paragraph
         // refresh; cursor/format-only observations take the early return above.
@@ -776,6 +841,11 @@ struct CodeEditor::Impl {
                 self.window = nullptr;
                 return DefSubclassProc(window, message, wparam, lparam);
             }
+            if(message==WM_SIZE) {
+                const auto result=DefSubclassProc(window,message,wparam,lparam);
+                if(!self.applying)self.restore_top_when_all_lines_fit();
+                return result;
+            }
             if (message == WM_GETDLGCODE) {
                 auto result = DefSubclassProc(window, message, wparam, lparam) |
                     DLGC_WANTCHARS | DLGC_WANTARROWS;
@@ -878,8 +948,17 @@ struct CodeEditor::Impl {
             if (mutating) {
                 self.capture();
                 self.pending_edit.reset();
-                if(!self.applying)if(const auto parent=GetParent(window))
-                    SendMessageW(parent,WM_COMMAND,MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),reinterpret_cast<LPARAM>(window));
+                if(!self.applying) {
+                    // EN_CHANGE may run inside RichEdit's frozen edit. Inspect
+                    // the final line geometry only after native Unfreeze.
+                    self.restore_top_when_all_lines_fit();
+                    SendMessageW(window,EM_GETSCROLLPOS,0,
+                        reinterpret_cast<LPARAM>(&self.now().scroll));
+                    if(const auto parent=GetParent(window))
+                        SendMessageW(parent,WM_COMMAND,
+                            MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),
+                            reinterpret_cast<LPARAM>(window));
+                }
             }
             return result;
         } catch (...) {
@@ -911,6 +990,11 @@ CodeEditor::~CodeEditor() {
 }
 
 void CodeEditor::capture_change() { impl_->capture(); }
+void CodeEditor::normalize_viewport() {
+    if(!impl_||!impl_->window||!IsWindow(impl_->window)||impl_->applying)return;
+    impl_->restore_top_when_all_lines_fit();
+    impl_->cursor_snapshot();
+}
 EditorDocument CodeEditor::document() const {
     impl_->capture();
     impl_->cursor_snapshot();

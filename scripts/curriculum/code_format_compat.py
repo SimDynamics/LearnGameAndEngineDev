@@ -53,7 +53,7 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
         # Physical preprocessor lines, including backslash continuations, are
         # immutable inside the directive; blank lines around them may change.
         line = src.rfind("\n", 0, i) + 1
-        if src[i] == "#" and not src[line:i].strip():
+        if (src[i] == "#" or src.startswith("%:", i)) and not src[line:i].strip():
             end = i
             while True:
                 newline = src.find("\n", end)
@@ -151,18 +151,147 @@ def _cmake_tokens(src: str) -> tuple[str, ...]:
                 elif src[end] == '"': end += 1; break
                 else: end += 1
             else: raise SourceFormatError("Unterminated CMake quoted argument")
+            # CMake warns for adjacent quoted arguments. A format review
+            # must not remove that warning by introducing a separator.
+            if end < len(src) and src[end] not in _WS + "()#":
+                raise SourceFormatError("Unseparated CMake quoted argument")
             tokens.append("quoted:" + src[i:end]); i = end; continue
         if src[i] in "()":
             tokens.append("paren:" + src[i]); i += 1; continue
         end = i
-        while end < len(src) and src[end] not in _WS + "()#\"":
+        legacy_quote = False
+        while end < len(src):
             if src[end] == "\\":
                 if end + 1 >= len(src): raise SourceFormatError("Trailing CMake escape")
                 end += 2
-            else: end += 1
-        if end == i: raise SourceFormatError("Unexpected CMake delimiter")
+            elif src[end] == '"':
+                # -Da="b c" is one legacy unquoted argument, unlike -Da= "b c".
+                legacy_quote = not legacy_quote
+                end += 1
+            elif not legacy_quote and src.startswith("$(", end):
+                # CMake's make-style reference is literal within the same
+                # argument. A space before '(' would change the argument list.
+                close = src.find(")", end + 2)
+                if close < 0: raise SourceFormatError("Unterminated CMake make-style reference")
+                end = close + 1
+            elif not legacy_quote and src[end] in _WS + "()#":
+                break
+            else:
+                end += 1
+        if end == i or legacy_quote:
+            raise SourceFormatError("Malformed CMake legacy unquoted argument")
         tokens.append("word:" + src[i:end]); i = end
     return tuple(tokens)
+
+
+def _cmake_command_gaps(src: str, tokens: tuple[str, ...]) -> tuple[int, ...]:
+    """Keep CMake's physical command syntax separate from cosmetic whitespace.
+
+    A command name and '(' must share a line. Two consecutive invocations
+    must be separated by a newline, not merely spaces. Parenthesized
+    arguments within a command may still be freely formatted.
+    """
+    gaps: list[int] = []
+    offset = 0
+    depth = 0
+    previous = ""
+    for token in tokens:
+        literal = token.split(":", 1)[1]
+        start = src.find(literal, offset)
+        if start < 0:
+            raise SourceFormatError("CMake source token offset unavailable")
+        line_break = "\n" in src[offset:start]
+        if depth == 0 and token == "paren:(" and previous.startswith("word:"):
+            gaps.append(1 if line_break else 0)
+        if depth == 0 and token.startswith("word:") and previous == "paren:)":
+            gaps.append(3 if line_break else 2)
+        if token == "paren:(":
+            depth += 1
+        elif token == "paren:)":
+            depth -= 1
+            if depth < 0:
+                raise SourceFormatError("Unbalanced CMake command parentheses")
+        previous = token
+        offset = start + len(literal)
+    if depth:
+        raise SourceFormatError("Unbalanced CMake command parentheses")
+    return tuple(gaps)
+
+def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
+    """Only executable identifiers and directives can observe source position."""
+    markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"}
+    for token in tokens:
+        # A # or %: following leading block comments can still introduce
+        # preprocessing. Refuse unclassified markers in format-only edits.
+        if token in {"op:#", "op:##", "op:%:", "op:%:%:"}:
+            return True
+        if token.startswith("id:") and token[3:] in markers:
+            return True
+        if token.startswith("directive:") and any(name in token for name in markers):
+            return True
+    return False
+
+
+def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
+    """Mirror the native guard for line-dependent CMake expansion.
+
+    Bracket arguments and bracket comments do not themselves expand. A
+    bracket-stored template may nevertheless be expanded by string(CONFIGURE)
+    or file(CONFIGURE), including the cmake_language(CALL ...) spellings.
+    """
+    names = ("CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE")
+
+    def command(index: int, spelling: str) -> bool:
+        token = tokens[index]
+        if token.startswith("word:"):
+            actual = token[5:]
+        elif token.startswith('quoted:"') and token.endswith('"'):
+            # cmake_language(CALL "file" "CONFIGURE" ...) is executable.
+            actual = token[8:-1]
+        elif token.startswith("bracket:["):
+            raw = token[8:]
+            at = 1
+            while at < len(raw) and raw[at] == "=":
+                at += 1
+            if at == len(raw) or raw[at] != "[":
+                return False
+            suffix = "]" + raw[1:at] + "]"
+            if not raw.endswith(suffix) or len(raw) < at + 1 + len(suffix):
+                return False
+            actual = raw[at+1:-len(suffix)]
+        else:
+            return False
+        return actual.lower() == spelling
+
+    def dynamic_name(index: int) -> bool:
+        token = tokens[index]
+        return token.startswith(("word:", "quoted:")) and any(
+            marker in token for marker in ("${", "$ENV{", "$CACHE{"))
+
+    configures_brackets = False
+    for i in range(len(tokens)):
+        if (i + 2 < len(tokens) and (command(i, "string") or command(i, "file"))
+                and tokens[i + 1] == "paren:(" and command(i + 2, "configure")):
+            configures_brackets = True
+        if (i + 4 < len(tokens) and command(i, "cmake_language")
+                and tokens[i + 1] == "paren:(" and command(i + 2, "call")
+                and (command(i + 3, "string") or command(i + 3, "file")
+                     or dynamic_name(i + 3))
+                and (command(i + 4, "configure") or dynamic_name(i + 4))):
+            configures_brackets = True
+
+    for token in tokens:
+        argument = token.startswith(("word:", "quoted:"))
+        configurable_bracket = (configures_brackets and token.startswith("bracket:")
+                                and not token.startswith("bracket:#"))
+        if not (argument or configurable_bracket):
+            continue
+        for name in names:
+            if ((argument and token == "word:" + name)
+                    or "${" + name + "}" in token or "@" + name + "@" in token):
+                return True
+    return False
+
 
 def _language(path: str) -> str | None:
     name = PurePosixPath(path).name
@@ -241,15 +370,22 @@ def require_source_lexical(original: dict, current: dict) -> bool:
         if "\\\n" in source or "\\\n" in newer or "\\\r\n" in source or "\\\r\n" in newer:
             raise SourceFormatError(f"Physical line splices cannot be reformatted: {slot}")
         lexer = _cmake_tokens if language == "cmake" else _cpp_tokens
-        # A token-preserving newline edit can still alter the observable line
-        # number reported by built-in C++ or CMake location introspection.
-        if language == "cpp" and any(location in source or location in newer
-                for location in ("__LINE__", "source_location")):
-            raise SourceFormatError(f"Source location may depend on physical line numbers: {slot}")
-        if language == "cmake" and "CMAKE_CURRENT_LIST_LINE" in source + newer:
-            raise SourceFormatError(f"CMake location may depend on physical line numbers: {slot}")
-        if lexer(source) != lexer(newer):
+        old_tokens, new_tokens = lexer(source), lexer(newer)
+        if old_tokens != new_tokens:
             raise SourceFormatError(f"Tokens, literals, comments or directives changed: {slot}")
+        if language == "cmake" and (
+            _cmake_command_gaps(source, old_tokens)
+            != _cmake_command_gaps(newer, new_tokens)
+        ):
+            raise SourceFormatError(f"CMake command line boundaries changed: {slot}")
+        # Only live location-sensitive tokens are unsafe. Inert comments,
+        # C++ quoted/raw literals and CMake bracket documentation may be
+        # reformatted without changing observable line-number results.
+        sensitive = (_cpp_position_sensitive_tokens if language == "cpp"
+                     else _cmake_position_sensitive_tokens)
+        if sensitive(old_tokens) or sensitive(new_tokens):
+            raise SourceFormatError(
+                f"Source location may depend on physical line numbers: {slot}")
         changed = True
     return changed
 

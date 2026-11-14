@@ -153,7 +153,10 @@ if(LGAED_WASI_RUNNER_QA_ONLY)
     add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
     target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     add_test(NAME native.wasi_runner COMMAND lgaed_cpp_runner_tests --wasi)
-    message(STATUS "Focused real Windows WASI runner QA: C++23 compilation, four inputs and output rejection; no app or narration.")
+    add_test(NAME native.open_battery_runner COMMAND lgaed_cpp_runner_tests --open-battery
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json")
+    set_tests_properties(native.open_battery_runner PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+    message(STATUS "Focused Windows runner QA: WASI and independent CMake battery mutations; no app or narration.")
     return()
 endif()
 # The import/player modes still build the complete production core/platform
@@ -313,6 +316,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options
         user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
+    # Run the real native edit/scroll and gutter regression on the same
+    # isolated Windows runner that builds the curricular reading controls.
+    add_executable(lgaed_code_editor_viewport_tests
+        native/presentation/windows/code_editor_viewport_tests.cpp)
+    target_link_libraries(lgaed_code_editor_viewport_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.code_editor_viewport COMMAND lgaed_code_editor_viewport_tests)
+    set_tests_properties(native.code_editor_viewport PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
     # The original reader tests are still only compiled. The history UI test
     # exercises the actual Win32 record/compare/restore dialogs, without
     # creating an app profile or evaluating learner completion.

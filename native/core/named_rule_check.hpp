@@ -77,9 +77,9 @@ inline bool probe_environment_neutral(
         "__LINE__","__FILE__","__FILEW__","__BASE_FILE__",
         "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
         "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
-        "__FUNCDNAME__","__builtin_LINE","__builtin_FILE",
-        "__builtin_FUNCTION","__builtin_source_location",
-        "source_location"
+        "__FUNCDNAME__","__builtin_LINE","__builtin_COLUMN",
+        "__builtin_FILE","__builtin_FUNCTION",
+        "__builtin_source_location","source_location"
     };
     return std::ranges::none_of(tokens,[&](std::string_view token) {
         if(!token.starts_with("id:"))return false;
@@ -400,8 +400,36 @@ inline bool absorbed_by_boolean_literal(const Tokens& t,std::size_t at,
     return false;
 }
 
+// An unevaluated operand observes the type or validity of an expression,
+// not the current value of a purpose-named local constant. Such references
+// must never contribute evidence that the arithmetic uses that agreement.
+// Limit the recognition to C++ unevaluated operators, leaving arbitrary
+// expressions to the independent runtime probe.
+inline bool unevaluated_rule_use(const Tokens& t,std::size_t i,
+        std::size_t scope_start) {
+    if(i>=t.size()||i<scope_start)return false;
+    const auto query=[&](std::size_t at) {
+        return id(t[at],"sizeof")||id(t[at],"decltype")||
+            id(t[at],"noexcept")||id(t[at],"typeid");
+    };
+    // Both sizeof value and sizeof(+value) are unevaluated. The
+    // parenthesized forms below also handle nested sizeof(decltype(value)).
+    if(i>scope_start&&query(i-1))return true;
+    if(i>=scope_start+2&&query(i-2)&&
+       (op(t[i-1],"+")||op(t[i-1],"-")||
+        op(t[i-1],"*")||op(t[i-1],"&")))return true;
+    std::vector<std::size_t> open;
+    for(auto at=scope_start;at<i;++at) {
+        if(op(t[at],"("))open.push_back(at);
+        else if(op(t[at],")")&&!open.empty())open.pop_back();
+    }
+    return std::ranges::any_of(open,[&](std::size_t at){
+        return at>scope_start&&query(at-1);
+    });
+}
 inline bool productive(const Tokens& t,std::size_t i,
         std::size_t scope_start=0) {
+    if(unevaluated_rule_use(t,i,scope_start))return false;
     // Direct algebraic identities cannot establish that a constant is
     // meaningfully used. This is deliberately a bounded syntactic check;
     // arbitrary C++ still requires execution evidence.
@@ -588,16 +616,24 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     // Local aliases carry their originating use count across initializers and
     // assignments. An overwritten alias loses its previous evidence.
     constexpr std::size_t limit=64;
-    std::vector<std::pair<std::string,std::size_t>> aliases;
+    // A block may declare a new variable with an existing outer name.
+    // Its evidence expires at scope exit; assignments to the outer variable
+    // still propagate when there is no inner shadowing declaration.
+    struct Alias { std::string name; std::size_t count,depth; };
+    std::vector<Alias> aliases;
+    // An inner declaration with the same spelling as the required rule
+    // temporarily hides the outer rule; it does not invalidate that rule.
+    std::vector<std::size_t> named_rule_shadows;
     const auto uses=[&](std::size_t first,std::size_t last) {
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
             if(absorbed_by_boolean_literal(t,i,first,last)||
                !productive(t,i,bounds.open+1))continue;
-            std::size_t contribution=id(t[i],name)?1:0;
-            for(const auto& alias:aliases)
-                if(id(t[i],alias.first)) {
-                    contribution=alias.second;
+            std::size_t contribution=
+                named_rule_shadows.empty()&&id(t[i],name)?1:0;
+            for(auto alias=aliases.rbegin();alias!=aliases.rend();++alias)
+                if(id(t[i],alias->name)) {
+                    contribution=alias->count;
                     break;
                 }
             count+=std::min(contribution,limit-count);
@@ -652,7 +688,18 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(op(t[i],"{")){++nesting;continue;}
-        if(op(t[i],"}")){if(nesting)--nesting;continue;}
+        if(op(t[i],"}")){
+            if(nesting) {
+                std::erase_if(aliases,[&](const Alias& alias){
+                    return alias.depth==nesting;
+                });
+                std::erase_if(named_rule_shadows,[&](std::size_t depth){
+                    return depth==nesting;
+                });
+                --nesting;
+            }
+            continue;
+        }
         // The first unconditional return ends the function path. A later
         // unreachable return must not manufacture the required source uses.
         // A simple runtime guard remains conditional and does not suppress
@@ -764,14 +811,26 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=initializer+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name) {
-                if(declared)return 0; // Ambiguous shadowing of the named rule.
-                declared=true;
+                if(nesting==0) {
+                    // Two declarations in one function scope are not an
+                    // authenticated local agreement.
+                    if(declared)return 0;
+                    declared=true;
+                }else {
+                    // C++ permits a nested shadow. It can neither borrow
+                    // nor destroy the outer constant's source evidence.
+                    named_rule_shadows.push_back(nesting);
+                }
             }else {
                 const auto count=uses(initializer+1,last);
+                // A declaration within braces shadows rather than updating
+                // an alias that belongs to the enclosing scope.
                 const auto found=std::ranges::find_if(aliases,
-                    [&](const auto& alias){return alias.first==local;});
-                if(found==aliases.end())aliases.emplace_back(local,count);
-                else found->second=count;
+                    [&](const Alias& alias){
+                        return alias.name==local&&alias.depth==nesting;
+                    });
+                if(found==aliases.end())aliases.push_back({local,count,nesting});
+                else found->count=count;
             }
             i=last;
             continue;
@@ -783,10 +842,11 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name)return 0;
             const auto count=uses(i+2,last);
-            const auto found=std::ranges::find_if(aliases,
-                [&](const auto& alias){return alias.first==local;});
-            if(found==aliases.end())aliases.emplace_back(local,count);
-            else found->second=count;
+            // Assignments target the nearest in-scope declaration.
+            const auto found=std::find_if(aliases.rbegin(),aliases.rend(),
+                [&](const Alias& alias){return alias.name==local;});
+            if(found==aliases.rend())aliases.push_back({local,count,nesting});
+            else found->count=count;
             i=last;
         }
     }
@@ -870,12 +930,13 @@ inline bool named_rule_comment_only_edit(std::string_view original,
     if(original==candidate)return true;
     if(code_format::physical_splice(original)||code_format::physical_splice(candidate))
         return false;
-    for(const auto sentinel:{"__LINE__","source_location"})
-        if(original.find(sentinel)!=original.npos||
-           candidate.find(sentinel)!=candidate.npos)return false;
     const auto before=code_format::cpp_tokens(original);
     const auto after=code_format::cpp_tokens(candidate);
     if(!before||!after)return false;
+    // A comment edit can move a real line/column query. Quoting the name in
+    // the documentation is not itself such a query; inspect lexical tokens.
+    if(code_format::cpp_position_sensitive_tokens(*before)||
+       code_format::cpp_position_sensitive_tokens(*after))return false;
     const auto only_code=[](const auto& tokens) {
         std::vector<std::string> code;
         for(const auto& token:tokens)

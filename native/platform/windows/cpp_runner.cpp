@@ -1702,6 +1702,15 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(!valid){fresh.report_probe_correct=false;break;}
         }
     }
+    if(request.open_battery_probe&&result.open_battery_evidence) {
+        const auto& evidence=*result.open_battery_evidence;
+        const auto frame=fingerprint(request);
+        fresh.open_battery_probe_correct=
+            evidence.original_project_fingerprint==frame&&
+            curriculum::open_battery_probe_spec_valid(*request.open_battery_probe)&&
+            curriculum::open_battery_verify(
+                request.open_battery_probe->original_cases,evidence.runs,frame).accepted;
+    }
     if(request.named_rule_probe&&result.named_rule_probe) {
         const auto independent=request.cmake?
             curriculum::named_rule_probe_source(*request.named_rule_probe):
@@ -1837,6 +1846,88 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
         proof.compilation,proof.execution};
 }
 
+// This proof runs only from the already isolated C++ project worker.
+// A distinct SHA-owned workspace is used for each compiled mutation; no
+// student draft, historical answer or profile state is rewritten here.
+void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& result,
+        std::stop_token stop) {
+    if(!request.open_battery_probe||!request.cmake||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto& spec=*request.open_battery_probe;
+    if(!curriculum::open_battery_probe_spec_valid(spec)||
+       request.cmake->target!=spec.test_target)return;
+    const auto lib=std::ranges::find(request.project_files,spec.library_path,
+        &curriculum::CppProjectFiles::value_type::first);
+    const auto test=std::ranges::find(request.project_files,spec.test_path,
+        &curriculum::CppProjectFiles::value_type::first);
+    if(lib==request.project_files.end()||test==request.project_files.end())return;
+    CppOpenBatteryEvidence evidence;
+    evidence.original_project_fingerprint=fingerprint(request);
+    const auto run=[&](curriculum::OpenBatteryMutation mutation,
+            std::optional<curriculum::OpenBatteryCall> target,
+            std::size_t index)->bool {
+        if(stop.stop_requested())return false;
+        const auto source=curriculum::open_battery_mutated_library(
+            lib->second,spec.function_name,mutation,target);
+        if(!source)return false;
+        auto private_request=request;
+        private_request.open_battery_probe.reset(); // no nested probes
+        private_request.named_rule_probe.reset();
+        private_request.rejection_probe.reset();
+        private_request.observation_probe.reset();
+        private_request.assertion_mode.reset();
+        private_request.cmake_graph_check.reset();
+        private_request.capture_cmake_graph=false;
+        private_request.stdin_utf8.clear();
+        private_request.project_key+="/open-battery-private-v1/"+std::to_string(index);
+        private_request.request_id=~(request.request_id+index);
+        for(auto& item:private_request.project_files)
+            if(item.first==spec.library_path) { item.second=*source;break; }
+        const auto observed=run_cpp(private_request,stop);
+        if(!observed.error_utf8.empty()||stop.stop_requested())return false;
+        const auto calls=curriculum::open_battery_parse_calls(
+            observed.execution.stderr_bytes);
+        if(!calls)return false;
+        curriculum::OpenBatteryRun phase;
+        phase.program_frame=evidence.original_project_fingerprint;
+        phase.mutation=mutation;
+        phase.target=target;
+        phase.compiled=observed.compilation.succeeded()&&
+            (observed.configuration.status==CppPhaseStatus::not_started||
+             observed.configuration.succeeded());
+        phase.executed=observed.execution.status==CppPhaseStatus::completed&&
+            observed.execution.exit_code.has_value()&&
+            *observed.execution.exit_code<=255;
+        if(phase.executed)
+            phase.exit_code=static_cast<int>(*observed.execution.exit_code);
+        phase.calls=*calls;
+        phase.stdout_bytes=observed.execution.stdout_bytes;
+        phase.stderr_bytes=curriculum::open_battery_student_stderr(
+            observed.execution.stderr_bytes);
+        evidence.runs.push_back(std::move(phase));
+        return evidence.runs.back().compiled&&evidence.runs.back().executed;
+    };
+    if(!run(curriculum::OpenBatteryMutation::baseline,{},0))return;
+    std::optional<curriculum::OpenBatteryCall> added;
+    for(const auto& call:evidence.runs.front().calls)
+        if(std::ranges::find(spec.original_cases,call)==spec.original_cases.end()){
+            if(added)return; // two unrelated calls are not one new case
+            added=call;
+        }
+    if(!added)return;
+    for(std::size_t i=0;i<spec.original_cases.size();++i)
+        if(!run(curriculum::OpenBatteryMutation::invert_acceptance,
+                spec.original_cases[i],i+1))return;
+    if(!run(curriculum::OpenBatteryMutation::invert_acceptance,
+            added,spec.original_cases.size()+1))return;
+    if(!run(curriculum::OpenBatteryMutation::corrupt_destination,
+            added,spec.original_cases.size()+2))return;
+    result.open_battery_evidence=std::move(evidence);
+}
+
 // A second, isolated compile/execute exercise proves that the same student
 // diagnostic function writes to the caller-supplied ostream, not hard-coded
 // std::cerr. Never convert an incomplete probe into an execution achievement.
@@ -1970,6 +2061,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             run_cmake(request,result,input,compiler_input,stop);
             complete_cmake_option_probe(request,result,stop);
             complete_named_rule_probe(request,result,stop);
+            complete_open_battery_probe(request,result,stop);
             return result;
         }
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}

@@ -25,9 +25,68 @@ void lexical_safety(){
         "#include <iostream>\n\nint main() {\n    return 0;\n}\n",Language::cpp),
         "Safe blank rows beside a preprocessor directive were rejected");
     check(code_format::equivalent(
+        "%:include <iostream>\nint main(){return 0;}\n",
+        "%:include <iostream>\n\nint main() {\n    return 0;\n}\n",Language::cpp),
+        "C++ alternative directive spelling rejected safe formatting");
+    check(!code_format::equivalent(
+        "%:define X 3\nint n=X;","%:\ndefine X 3\nint n=X;",Language::cpp),
+        "A digraph directive was broken by an unauthenticated newline");
+    check(!code_format::equivalent(
+        "/* note */ %:define X 3\nint n=X;",
+        "/* note */ %:\ndefine X 3\nint n=X;",Language::cpp),
+        "A digraph directive after a block comment escaped safety checks");
+    check(!code_format::equivalent(
+        "/* note */ #define X 3\nint n=X;",
+        "/* note */ #\ndefine X 3\nint n=X;",Language::cpp),
+        "A # directive after a block comment escaped safety checks");
+    check(code_format::equivalent(
+        "const char* note=\"%:define X\";\nint main(){}",
+        "const char* note=\"%:define X\";\n\nint main() {}",Language::cpp),
+        "Inert %: in a quoted literal blocked safe code formatting");
+    check(code_format::equivalent(
         "add_library(envios STATIC lib.cpp)\ntarget_include_directories(envios PUBLIC include)\n",
         "add_library(\n  envios\n  STATIC lib.cpp\n)\n\ntarget_include_directories(\n  envios PUBLIC include\n)\n",Language::cmake),
         "Safe CMake command formatting was rejected");
+    check(code_format::equivalent(
+        "show(-Da=\"b c\")\nmessage(ok)", "show(-Da=\"b c\")\n\nmessage(ok)",
+        Language::cmake), "Unquoted legacy CMake argument blocked safe layout");
+    check(code_format::equivalent(
+        "show(-Dfoo=$(BAR))\nmessage(ok)", "show(-Dfoo=$(BAR))\n\nmessage(ok)",
+        Language::cmake), "Literal make-style CMake reference blocked safe layout");
+    check(!code_format::equivalent(
+        "show(-Da=\"b c\")", "show(-Da= \"b c\")",Language::cmake),
+        "Spacing split one legacy quoted CMake argument into two");
+    check(!code_format::equivalent(
+        "show(a\" \"b)", "show(a \" \" b)",Language::cmake),
+        "Spacing split a mixed unquoted CMake argument into three");
+    check(!code_format::equivalent(
+        "show(-Dfoo=$(BAR))", "show(-Dfoo=$ (BAR))",Language::cmake),
+        "Spacing split a make-style CMake variable reference");
+    check(!code_format::equivalent(
+        "show(\"x\"\"y\")", "show(\"x\" \"y\")",Language::cmake),
+        "Spacing hid a CMake adjacent-quote syntax diagnostic");
+    check(code_format::equivalent(
+        "message(STATUS \"a\")\nmessage(STATUS \"b\")",
+        "message (STATUS \"a\")\n\nmessage\t(STATUS \"b\")",Language::cmake),
+        "Safe CMake header spaces and blank command lines were rejected");
+    check(code_format::equivalent(
+        "message(STATUS \"a\")","message(\n  STATUS \"a\"\n)",Language::cmake),
+        "A safe line break inside a command was rejected");
+    check(code_format::equivalent(
+        "if(TRUE AND (TRUE OR FALSE))\nmessage(STATUS \"yes\")\nendif()",
+        "if(\n  TRUE AND (\n    TRUE OR FALSE\n  )\n)\n\nmessage(STATUS \"yes\")\nendif()",
+        Language::cmake), "Nested CMake parentheses rejected safe layout");
+    check(!code_format::equivalent(
+        "message(STATUS \"ok\")","message\n(STATUS \"ok\")",Language::cmake),
+        "A physical newline invalidated a CMake command header");
+    check(!code_format::equivalent(
+        "message(STATUS \"a\")\nmessage(STATUS \"b\")",
+        "message(STATUS \"a\") message(STATUS \"b\")",Language::cmake),
+        "Removing a command-separating newline was silently allowed");
+    check(!code_format::equivalent(
+        "message(STATUS \"a\") message(STATUS \"b\")",
+        "message(STATUS \"a\")\nmessage(STATUS \"b\")",Language::cmake),
+        "An invalid same-line command split was treated as cosmetic");
     check(!code_format::equivalent("int n=1;","int n=2;",Language::cpp),
         "An altered integer literal was accepted");
     check(!code_format::equivalent("int n=x+ +y;","int n=x++y;",Language::cpp),
@@ -61,6 +120,37 @@ void lexical_safety(){
             "auto line=std::source_location::current().line();",
             "auto line=\nstd::source_location::current().line();",Language::cpp),
         "std::source_location was affected by an introduced physical line");
+    check(!code_format::equivalent(
+            "int main(){return __builtin_LINE();}",
+            "int main(){\nreturn __builtin_LINE();}",Language::cpp),
+        "Source __builtin_LINE() changed value after a token-equivalent newline");
+    check(!code_format::equivalent(
+            "int main(){return __builtin_COLUMN();}",
+            "int main(){ return __builtin_COLUMN();}",Language::cpp),
+        "Source __builtin_COLUMN() changed value after token-equivalent spacing");
+    check(code_format::equivalent(
+        R"code(// __LINE__ is documented, not evaluated.
+const char* label = "__builtin_COLUMN source_location";
+const char* raw = R"tag(__builtin_LINE __LINE__)tag";
+int main(){return label[0]=='_' && raw[0]=='_';}
+)code",
+        R"code(// __LINE__ is documented, not evaluated.
+const char* label = "__builtin_COLUMN source_location";
+const char* raw = R"tag(__builtin_LINE __LINE__)tag";
+
+int main() {
+    return label[0]=='_' && raw[0]=='_';
+}
+)code",Language::cpp),
+        "Harmless strings, raw literals and comments falsely blocked code spacing");
+    check(code_format::equivalent(
+            "int count__LINE__marker=1;int main(){return count__LINE__marker;}",
+            "int count__LINE__marker=1;\nint main(){return count__LINE__marker;}",Language::cpp),
+        "A longer identifier containing a macro spelling was treated as a positional macro");
+    check(!code_format::equivalent(
+            "#define SOURCE_LINE __LINE__\nint line=SOURCE_LINE;",
+            "#define SOURCE_LINE __LINE__\n\nint line=SOURCE_LINE;",Language::cpp),
+        "A position-sensitive macro directive gained an unverified formatting exception");
     check(!code_format::equivalent(R"qa(auto s="abc"_length;)qa",
             R"qa(auto s="abc" _length;)qa",Language::cpp),
         "Adjacent user-defined literal suffix was detached");
@@ -71,6 +161,142 @@ void lexical_safety(){
             R"qa(message("${CMAKE_CURRENT_LIST_LINE}"))qa",
             "\nmessage(\"${CMAKE_CURRENT_LIST_LINE}\")",Language::cmake),
         "CMake line introspection silently changed its value");
+    check(!code_format::equivalent(
+            R"qa(function(where)
+  message("${CMAKE_CURRENT_FUNCTION_LIST_LINE}")
+endfunction()
+where()
+)qa",
+            R"qa(
+function(where)
+  message("${CMAKE_CURRENT_FUNCTION_LIST_LINE}")
+endfunction()
+where()
+)qa",Language::cmake),
+        "CMake function-definition line introspection silently changed its value");
+    check(!code_format::equivalent(
+            "if(CMAKE_CURRENT_LIST_LINE)\nmessage(\"ok\")\nendif()",
+            "\nif(CMAKE_CURRENT_LIST_LINE)\nmessage(\"ok\")\nendif()",Language::cmake),
+        "A bare CMake line-position variable escaped format protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_minimum_required(VERSION 3.20)
+string(CONFIGURE "@CMAKE_CURRENT_LIST_LINE@" value @ONLY)
+message("${value}")
+)qa",
+            R"qa(cmake_minimum_required(VERSION 3.20)
+
+string(CONFIGURE "@CMAKE_CURRENT_LIST_LINE@" value @ONLY)
+message("${value}")
+)qa",Language::cmake),
+        "CMake string(CONFIGURE) @VAR@ substitution changed line without a token change");
+    check(!code_format::equivalent(
+            R"qa(cmake_minimum_required(VERSION 3.20)
+string(CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] value @ONLY)
+message("${value}")
+)qa",
+            R"qa(cmake_minimum_required(VERSION 3.20)
+
+string(CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] value @ONLY)
+message("${value}")
+)qa",Language::cmake),
+        "A bracket argument later expanded by string(CONFIGURE) hid a line change");
+    check(!code_format::equivalent(
+            R"qa(cmake_minimum_required(VERSION 3.20)
+file(CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)
+)qa",
+            R"qa(cmake_minimum_required(VERSION 3.20)
+
+file(CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)
+)qa",Language::cmake),
+        "CMake file(CONFIGURE) expanded an inert-looking bracket template on a new line");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL file CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(
+cmake_language(CALL file CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language CALL file(CONFIGURE) bypassed bracket protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL "file" "CONFIGURE" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(
+cmake_language(CALL "file" "CONFIGURE" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language quoted file and CONFIGURE names escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] output @ONLY))qa",
+            R"qa(
+cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] output @ONLY))qa",
+            Language::cmake),
+        "CMake-language quoted string and CONFIGURE names escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL [=[file]=] [=[CONFIGURE]=] OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(
+cmake_language(CALL [=[file]=] [=[CONFIGURE]=] OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language bracket literal command names escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(set(command_name file)
+cmake_language(CALL "${command_name}" CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(set(command_name file)
+
+cmake_language(CALL "${command_name}" CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language dynamically expanded command name escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(set(subcommand CONFIGURE)
+cmake_language(CALL file "${subcommand}" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] @ONLY))qa",
+            R"qa(set(subcommand CONFIGURE)
+
+cmake_language(CALL file "${subcommand}" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language dynamically expanded CONFIGURE subcommand escaped protection");
+    check(!code_format::equivalent(
+            R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
+STRING(CONFIGURE "${template}" result @ONLY)
+)qa",
+            R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
+
+STRING(CONFIGURE "${template}" result @ONLY)
+)qa",Language::cmake),
+        "An indirect template or case variant bypassed CMake configure protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
+            R"qa(
+cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
+            Language::cmake),
+        "CMake-language CALL of string(CONFIGURE) bypassed bracket protection");
+    check(code_format::equivalent(
+            R"qa(#[=[ @CMAKE_CURRENT_LIST_LINE@ is comment-only ]=]
+string(CONFIGURE "literal" result @ONLY)
+)qa",
+            R"qa(#[=[ @CMAKE_CURRENT_LIST_LINE@ is comment-only ]=]
+
+string(CONFIGURE "literal" result @ONLY)
+)qa",Language::cmake),
+        "A bracket comment was incorrectly treated as a configurable argument");
+    check(code_format::equivalent(
+            R"qa(message([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",
+            R"qa(
+message([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",Language::cmake),
+        "An inert CMake bracket literal was misclassified as a substitution");
+    check(code_format::equivalent(
+            R"qa(#[=[ ${CMAKE_CURRENT_LIST_LINE} in a comment ]=]
+message([=[${CMAKE_CURRENT_LIST_LINE}]=])
+)qa",
+            R"qa(#[=[ ${CMAKE_CURRENT_LIST_LINE} in a comment ]=]
+
+message([=[${CMAKE_CURRENT_LIST_LINE}]=])
+)qa",Language::cmake),
+        "CMake bracket arguments and bracket comments were mistaken for expansions");
+    check(code_format::equivalent(
+            "# CMAKE_CURRENT_FUNCTION_LIST_LINE is just documentation\n"
+            "message(\"CMAKE_CURRENT_LIST_LINE\")",
+            "# CMAKE_CURRENT_FUNCTION_LIST_LINE is just documentation\n\n"
+            "message(\"CMAKE_CURRENT_LIST_LINE\")",Language::cmake),
+        "CMake literal names in comments or quotes blocked safe source spacing");
+    check(code_format::equivalent(
+            "set(my_CMAKE_CURRENT_LIST_LINE 7)\nmessage(ok)",
+            "set(my_CMAKE_CURRENT_LIST_LINE 7)\n\nmessage(ok)",Language::cmake),
+        "A longer inert CMake identifier was treated as a position variable");
     check(!code_format::equivalent("a", "a\n",Language::immutable),
         "Unknown data source was modified");
 }

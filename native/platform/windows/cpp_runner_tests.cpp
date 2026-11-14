@@ -5,9 +5,12 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 
 #include <windows.h>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <chrono>
 #include <fstream>
@@ -69,7 +72,8 @@ int main(int argc, char** argv) {
     const bool diagnostic_only = argc == 2 && std::string_view(argv[1]) == "--diagnostic-utf8";
     const bool cpp23_only = argc == 2 && std::string_view(argv[1]) == "--cpp23";
     const bool wasi_only = argc == 2 && std::string_view(argv[1]) == "--wasi";
-    if (argc > 1 && !diagnostic_only && !cpp23_only && !wasi_only) return 2;
+    const bool battery_only = argc == 3 && std::string_view(argv[1]) == "--open-battery";
+    if (argc > 1 && !diagnostic_only && !cpp23_only && !wasi_only && !battery_only) return 2;
     const lgaed::LaunchOptions options{lgaed::ProfileId::Codex,
         L"cpp-runner-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
             std::to_wstring(GetTickCount64()), false};
@@ -94,6 +98,8 @@ int main(int argc, char** argv) {
         if (cpp23_only && !name.starts_with("C++23 ")) return;
         if (wasi_only && !name.starts_with("WASI ")) return;
         if (!wasi_only && name.starts_with("WASI ")) return;
+        if (battery_only && !name.starts_with("Open battery ")) return;
+        if (!battery_only && name.starts_with("Open battery ")) return;
         try {
             action();
             ++passed;
@@ -1309,6 +1315,220 @@ int main(int count, char**) {
         result = run_cpp(value);
         require(result.compilation.status == CppPhaseStatus::launch_failed && result.run_directory.empty(),
             "Reject invalid timeout without starting work");
+    });
+
+    test("Open battery authentic real U3L10 loader and historical progress", [&] {
+        using namespace lgaed;
+        using namespace lgaed::curriculum;
+        using namespace winrt::Windows::Data::Json;
+        require(argc==3,"Original U3L10 asset path was not supplied");
+        const auto original_text=read(std::filesystem::path(argv[2]));
+        const auto original=windows::parse_lesson_json(original_text,"es");
+        constexpr auto declaration=R"json([{
+          "activity":"block_0006_0011",
+          "library":"src/ajuste.cpp",
+          "test":"pruebas/casos.cpp",
+          "function":"intentar_ajuste",
+          "comparison":"comprobar",
+          "target":"comprobar_ajustes",
+          "originalCases":[
+            {"value":2,"lower":3,"upper":7,"initial":77},
+            {"value":5,"lower":3,"upper":7,"initial":-8},
+            {"value":9,"lower":3,"upper":7,"initial":19},
+            {"value":4,"lower":4,"upper":4,"initial":-4},
+            {"value":-20,"lower":20,"upper":20,"initial":8},
+            {"value":20,"lower":-20,"upper":-20,"initial":17},
+            {"value":0,"lower":7,"upper":3,"initial":77},
+            {"value":21,"lower":3,"upper":7,"initial":-8},
+            {"value":-21,"lower":3,"upper":7,"initial":19},
+            {"value":0,"lower":-21,"upper":7,"initial":-4},
+            {"value":0,"lower":3,"upper":21,"initial":8}
+          ]
+        }])json";
+        auto document=JsonObject::Parse(winrt::to_hstring(original_text));
+        document.Insert(L"compilerOpenBatteryChecks",
+            JsonArray::Parse(winrt::to_hstring(declaration)));
+        const auto reviewed=winrt::to_string(document.Stringify());
+        const auto loaded=windows::parse_lesson_json(reviewed,"es");
+        const auto saved=windows::parse_lesson_progress_metadata(reviewed,"es");
+        require(original.pages.size()==7&&loaded.pages.size()==7&&
+                saved.pages.size()==7&&original.pages[6].blocks.size()>11&&
+                original.state_layout.signatures==loaded.state_layout.signatures&&
+                original.state_layout.signatures==saved.state_layout.signatures,
+                "Original U3L10 state map, family or lesson content was changed");
+        const auto& before=original.pages[6].blocks[11];
+        const auto& owner=loaded.pages[6].blocks[11];
+        const auto& progress=saved.pages[6].blocks[11];
+        require(!before.output_check&&owner.output_check&&progress.output_check&&
+                owner.output_check->open_battery_check&&
+                progress.output_check->open_battery_check&&
+                owner.open_battery_probe&&progress.open_battery_probe&&
+                owner.open_battery_probe==progress.open_battery_probe&&
+                owner.open_battery_probe->original_cases.size()==11&&
+                owner.open_battery_probe->comparison_name=="comprobar"&&
+                owner.stable_id==before.stable_id&&
+                owner.stable_id==progress.stable_id&&
+                owner.project_files==before.project_files&&
+                progress.project_files==before.project_files&&
+                owner.address.page==before.address.page&&
+                owner.address.block==before.address.block&&
+                progress.address.page==before.address.page&&
+                progress.address.block==before.address.block,
+                "Root-only goal changed a historical source, owner or progress contract");
+        auto valid=request(owner.initial_code,owner.standard_input.value_or(""));
+        valid.project_key="u3l10-loader-qa";
+        valid.cmake=owner.cmake;
+        valid.project_files=owner.project_files;
+        valid.open_battery_probe=owner.open_battery_probe;
+        require(windows::compiler_runtime_request_allowed(owner,valid),
+                "The authentic authored CMake project was not recognized");
+        auto lacking=valid;lacking.open_battery_probe.reset();
+        require(!windows::compiler_runtime_request_allowed(owner,lacking),
+                "The test driver was accepted without its independent objective");
+        auto changed=valid;
+        for(auto& [path,source]:changed.project_files)
+            if(path=="src/ajuste.cpp")source+="\n// invalid library change\n";
+        require(!windows::compiler_runtime_request_allowed(owner,changed),
+                "An unapproved shared-library change passed the objective");
+        FreshExecution observed;
+        observed.source_revision=valid.revision;
+        observed.compilation_succeeded=observed.execution_succeeded=true;
+        observed.execution_completed=true;observed.exit_code=0;
+        observed.standard_input=valid.stdin_utf8;
+        observed.standard_output="Fallos=0\n";
+        observed.executable="comprobar_ajustes";
+        require(evaluate_output_check(*owner.output_check,observed,valid.revision).verdict==
+                OutputVerdict::incorrect,
+                "The old Fallos=0 message forged a new battery achievement");
+        observed.open_battery_probe_correct=true;
+        require(evaluate_output_check(*owner.output_check,observed,valid.revision).verdict==
+                OutputVerdict::correct,
+                "A genuinely verified independent battery was not evaluated");
+        // Saving and reopening preserves only a genuinely earned, sealed
+        // receipt. A printed success alone must not unlock the reference.
+        state::StateData recorded;
+        require(!windows::compiler_puzzle_completed(recorded,loaded,owner),
+                "An unattempted open battery inherited progress");
+        auto missing_proof=observed;
+        missing_proof.open_battery_probe_correct=false;
+        const auto untouched=recorded;
+        require(!windows::record_compiler_puzzle_case(
+                    recorded,loaded,owner,valid,missing_proof,"Incorrecto")&&
+                recorded==untouched,
+                "A missing independent witness changed saved progress");
+        require(windows::record_compiler_puzzle_case(
+                    recorded,loaded,owner,valid,observed,"Correcto")&&
+                windows::compiler_puzzle_completed(recorded,loaded,owner),
+                "A checked original/new battery did not earn its own receipt");
+        const auto reopened_state=state::decode(state::encode(recorded));
+        require(windows::compiler_puzzle_completed(
+                    reopened_state,saved,progress),
+                "The independent battery achievement was lost on historical progress reopening");
+        windows::validate_compiler_puzzle_state(reopened_state,saved,progress);
+        auto tampered=reopened_state;
+        for(auto& [name,value]:tampered.preferences["native_windows"])
+            if(name.ends_with("/cases")) {
+                auto& cases=std::get<std::vector<std::string>>(value);
+                cases[0]="unverified battery";
+                break;
+            }
+        require(!windows::compiler_puzzle_completed(tampered,saved,progress),
+                "Tampered independent battery state unlocked the restored editor");
+        const auto rejects=[&](const JsonObject& candidate) {
+            bool rejected=false;
+            try {(void)windows::parse_lesson_json(
+                winrt::to_string(candidate.Stringify()),"es");}
+            catch(const std::exception&) {rejected=true;}
+            require(rejected,"Forged original CMake battery metadata was accepted");
+        };
+        auto altered=JsonObject::Parse(winrt::to_hstring(reviewed));
+        altered.GetNamedArray(L"compilerOpenBatteryChecks").GetObjectAt(0)
+            .GetNamedArray(L"originalCases").GetObjectAt(0)
+            .Insert(L"value",JsonValue::CreateNumberValue(3));
+        rejects(altered);
+        auto duplicate=JsonObject::Parse(winrt::to_hstring(reviewed));
+        auto entries=duplicate.GetNamedArray(L"compilerOpenBatteryChecks");
+        entries.Append(entries.GetObjectAt(0));
+        rejects(duplicate);
+    });
+
+    test("Open battery executes original CMake with authenticated private mutations", [&] {
+        using namespace lgaed::curriculum;
+        auto value=request("");
+        value.project_key="qa-open-battery-v1";
+        value.cmake=CmakeConfig{"comprobar_ajustes",{},"Debug"};
+        value.compile_timeout=90s;
+        value.execution_timeout=10s;
+        value.project_files={
+            {"CMakeLists.txt",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(PrivateBatteryQA LANGUAGES CXX)
+add_library(ajustes STATIC src/ajuste.cpp)
+target_include_directories(ajustes PUBLIC publico)
+add_executable(comprobar_ajustes pruebas/casos.cpp)
+target_link_libraries(comprobar_ajustes PRIVATE ajustes)
+target_compile_features(ajustes PRIVATE cxx_std_20)
+target_compile_features(comprobar_ajustes PRIVATE cxx_std_20)
+set_target_properties(ajustes comprobar_ajustes PROPERTIES CXX_EXTENSIONS OFF)
+)cmake"},
+            {"publico/control/ajuste.h",R"cpp(#pragma once
+bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste);
+)cpp"},
+            {"src/ajuste.cpp",R"cpp(#include "control/ajuste.h"
+bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {
+    if(valor<-20||valor>20||inferior<-20||inferior>20||
+       superior<-20||superior>20||inferior>superior)return false;
+    ajuste=valor<inferior?inferior-valor:valor>superior?superior-valor:0;
+    return true;
+}
+)cpp"},
+            {"pruebas/casos.cpp",R"cpp(#include "control/ajuste.h"
+#include <iostream>
+bool comprobar(int valor,int inferior,int superior,int inicial,
+               bool acepta,int ajuste) {
+    int resultado=inicial;
+    const bool actual=intentar_ajuste(valor,inferior,superior,resultado);
+    return actual==acepta&&resultado==ajuste;
+}
+int main() {
+    int fallos=0;
+    if(!comprobar(2,3,7,77,true,1))++fallos;
+    if(!comprobar(3,3,7,59,true,0))++fallos;
+    std::cout<<"Fallos="<<fallos<<'\n';
+    return fallos?1:0;
+}
+)cpp"}
+        };
+        value.open_battery_probe=OpenBatteryProbeSpec{
+            "src/ajuste.cpp","pruebas/casos.cpp",
+            "intentar_ajuste","comprobar","comprobar_ajustes",
+            {{2,3,7,77}}
+        };
+        const auto submitted=value.project_files;
+        const auto positive=run_cpp(value);
+        successful(positive);
+        require(positive.open_battery_evidence&&
+                positive.open_battery_evidence->runs.size()==4,
+                "Four actual CMake executions were not retained as private evidence");
+        const auto current=capture_cpp_execution(value,positive);
+        require(current.open_battery_probe_correct,
+                "Correct original + added case did not pass independent mutations");
+        require(value.project_files==submitted,
+                "The private CMake probe changed student or published project bytes");
+        auto missing=value;
+        for(auto& [name,source]:missing.project_files)
+            if(name=="pruebas/casos.cpp") {
+                const auto before="    if(!comprobar(3,3,7,59,true,0))++fallos;\n";
+                const auto at=source.find(before);
+                require(at!=std::string::npos,
+                        "The owned test fixture lost its additional case");
+                source.erase(at,std::string_view(before).size());
+            }
+        const auto insufficient=run_cpp(missing);
+        successful(insufficient);
+        require(!capture_cpp_execution(missing,insufficient).open_battery_probe_correct,
+                "An unchanged one-case battery was accepted as expanded evidence");
+        require(missing.project_files!=submitted,
+                "The negative fixture did not change its authored test source");
     });
 
     std::cout << "Real C++ runner: " << passed << " passed, " << failed << " failed.\n";

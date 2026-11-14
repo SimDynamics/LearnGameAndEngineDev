@@ -52,7 +52,8 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
     for(std::size_t i=0;i<source.size();) {
         if(space(source[i])){++i;continue;}
         const auto line=source.rfind('\n',i)==source.npos?0:source.rfind('\n',i)+1;
-        if(source[i]=='#'&&std::all_of(source.begin()+static_cast<std::ptrdiff_t>(line),
+        if((source[i]=='#'||source.substr(i).starts_with("%:"))&&
+           std::all_of(source.begin()+static_cast<std::ptrdiff_t>(line),
                 source.begin()+static_cast<std::ptrdiff_t>(i),[](char c){return space(c);})) {
             auto end=i;
             while(true) {
@@ -142,38 +143,186 @@ inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view sou
         }
         if(source[i]=='"') {
             auto end=quoted_end(source,i);if(!end)return {};
+            // Adjacent quoted arguments trigger a CMake syntax warning.
+            // Formatting them apart would change the diagnostic behavior.
+            if(*end<source.size()&&!space(source[*end])&&
+               source[*end]!='('&&source[*end]!=')'&&source[*end]!='#')return {};
             push(result,"quoted:",source.substr(i,*end-i));i=*end;continue;
         }
         if(source[i]=='('||source[i]==')') {
             push(result,"paren:",source.substr(i,1));++i;continue;
         }
         auto end=i;
-        while(end<source.size()&&!space(source[end])&&source[end]!='('&&source[end]!=')'
-                &&source[end]!='#'&&source[end]!='"') {
+        bool legacy_quote=false;
+        while(end<source.size()) {
             if(source[end]=='\\') {
                 if(end+1>=source.size())return {};
                 end+=2;
-            } else ++end;
+            }else if(source[end]=='"') {
+                // Preserve one unquoted legacy token, including quoted pieces.
+                // -Da="b c" is not the same argument list as -Da= "b c".
+                legacy_quote=!legacy_quote;
+                ++end;
+            }else if(!legacy_quote&&source.substr(end).starts_with("$(")) {
+                // Preserve make-style references as one unquoted token.
+                const auto close=source.find(')',end+2);
+                if(close==source.npos)return {};
+                end=close+1;
+            }else if(!legacy_quote&&(space(source[end])||
+                      source[end]=='('||source[end]==')'||source[end]=='#')) {
+                break;
+            }else ++end;
         }
-        if(end==i)return {};
+        if(end==i||legacy_quote)return {};
         push(result,"word:",source.substr(i,end-i));i=end;
     }
     return result;
 }
+// CMake has line-sensitive syntax independent of variables like
+// CMAKE_CURRENT_LIST_LINE. Command names cannot be separated from their
+// opening '(' by a newline, and consecutive commands need a newline.
+inline std::optional<std::vector<unsigned char>> cmake_command_gaps(
+        std::string_view source,const std::vector<std::string>& tokens) {
+    std::vector<unsigned char> gaps;
+    std::string_view previous;
+    std::size_t offset=0,depth=0;
+    for(const auto& token:tokens) {
+        const auto separator=token.find(':');
+        if(separator==token.npos)return {};
+        const std::string_view literal=std::string_view(token).substr(separator+1);
+        const auto start=source.find(literal,offset);
+        if(start==source.npos)return {};
+        const bool line_break=source.substr(offset,start-offset).find('\n')!=source.npos;
+        if(depth==0&&token=="paren:("&&previous.starts_with("word:"))
+            gaps.push_back(line_break?1:0);
+        if(depth==0&&token.starts_with("word:")&&previous=="paren:)")
+            gaps.push_back(line_break?3:2);
+        if(token=="paren:(")++depth;
+        else if(token=="paren:)") {
+            if(depth==0)return {};
+            --depth;
+        }
+        previous=token;
+        offset=start+literal.size();
+    }
+    if(depth!=0)return {};
+    return gaps;
+}
+// Position-dependent queries must be detected as actual source tokens, not
+// substrings of comments, ordinary string literals or raw strings. A macro
+// directive containing one of these names stays conservatively protected:
+// preprocessing can move the point where its replacement is expanded.
+inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens) {
+    constexpr std::string_view names[]{
+        "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"
+    };
+    for(const auto& token:tokens) {
+        // An unrecognized # or %: may still introduce a directive after
+        // leading block comments. Never approve formatting it as an operator.
+        if(token=="op:#"||token=="op:##"||token=="op:%:"||token=="op:%:%:")
+            return true;
+        if(token.starts_with("id:")) {
+            const auto name=std::string_view(token).substr(3);
+            if(std::ranges::any_of(names,[&](std::string_view item){return name==item;}))
+                return true;
+        }else if(token.starts_with("directive:")) {
+            if(std::ranges::any_of(names,[&](std::string_view item){
+                    return token.find(item)!=std::string::npos;}))
+                return true;
+        }
+    }
+    return false;
+}
+// CMake bracket arguments and both forms of comments never expand variables.
+// Ordinary quoted and unquoted arguments can, and conditions can read a bare
+// variable name. Keep those position-dependent expressions protected while
+// allowing source spacing beside inert comments and bracket literals.
+inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& tokens) {
+    constexpr std::string_view names[]{
+        "CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE"
+    };
+    const auto command=[](std::string_view token,std::string_view name) {
+        if(token.starts_with("word:"))token.remove_prefix(5);
+        else if(token.starts_with("quoted:\"")&&token.ends_with('"')) {
+            // cmake_language(CALL "file" "CONFIGURE" ...) accepts quoted names.
+            token.remove_prefix(8);token.remove_suffix(1);
+        }else if(token.starts_with("bracket:[")) {
+            // cmake_language(CALL [=[file]=] [=[CONFIGURE]=] ...) also runs.
+            token.remove_prefix(8);
+            std::size_t opening=1;
+            while(opening<token.size()&&token[opening]=='=')++opening;
+            if(opening==token.size()||token[opening]!='[')return false;
+            const auto terminator="]"+std::string(token.substr(1,opening-1))+"]";
+            if(token.size()<opening+1+terminator.size()||
+               !token.ends_with(terminator))return false;
+            token=token.substr(opening+1,token.size()-(opening+1)-terminator.size());
+        }else return false;
+        if(token.size()!=name.size())return false;
+        for(std::size_t i=0;i<name.size();++i) {
+            const auto ch=token[i];
+            if((ch>='A'&&ch<='Z'?ch-'A'+'a':ch)!=name[i])return false;
+        }
+        return true;
+    };
+    const auto dynamic_name=[](std::string_view token) {
+        // CMake expands unquoted/quoted CALL arguments, including variables
+        // containing the actual command name or CONFIGURE subcommand.
+        return (token.starts_with("word:")||token.starts_with("quoted:"))&&
+            (token.find("${")!=token.npos||token.find("$ENV{")!=token.npos||
+             token.find("$CACHE{")!=token.npos);
+    };
+    // Bracket arguments ordinarily have no variable expansion, but can be
+    // consumed later by string(CONFIGURE) or file(CONFIGURE). Even a template
+    // first stored via set() can become position-dependent at configuration.
+    bool configures_bracket_arguments=false;
+    for(std::size_t i=0;i+2<tokens.size();++i) {
+        if((command(tokens[i],"string")||command(tokens[i],"file"))&&
+           tokens[i+1]=="paren:("&&command(tokens[i+2],"configure"))
+            configures_bracket_arguments=true;
+        if(i+4<tokens.size()&&command(tokens[i],"cmake_language")&&
+           tokens[i+1]=="paren:("&&command(tokens[i+2],"call")&&
+           (command(tokens[i+3],"string")||command(tokens[i+3],"file")||
+            dynamic_name(tokens[i+3]))&&
+           (command(tokens[i+4],"configure")||dynamic_name(tokens[i+4])))
+            configures_bracket_arguments=true;
+    }
+    for(const auto& token:tokens) {
+        const bool argument=token.starts_with("word:")||token.starts_with("quoted:");
+        const bool configurable_bracket=configures_bracket_arguments&&
+            token.starts_with("bracket:")&&!token.starts_with("bracket:#");
+        if(!argument&&!configurable_bracket)continue;
+        for(const auto name:names) {
+            // ${VAR} expands in ordinary arguments; @VAR@ can be substituted
+            // during string(CONFIGURE) or by older CMake parsing policies.
+            if((argument&&token==std::string("word:")+std::string(name))||
+               token.find("${"+std::string(name)+"}")!=std::string::npos||
+               token.find("@"+std::string(name)+"@")!=std::string::npos)
+                return true;
+        }
+    }
+    return false;
+}
 inline bool equivalent(std::string_view before,std::string_view after,Language language) {
     if(before==after)return true;
     if(language==Language::immutable||physical_splice(before)||physical_splice(after))return false;
-    // Physical line positions can affect actual output, not just diagnostics.
-    // Until a compiler-aware source-map proof exists, reject all such edits.
-    if(language==Language::cpp&&(before.find("__LINE__")!=before.npos||
-        after.find("__LINE__")!=after.npos||
-        before.find("source_location")!=before.npos||
-        after.find("source_location")!=after.npos))return false;
-    if(language==Language::cmake&&(before.find("CMAKE_CURRENT_LIST_LINE")!=before.npos||
-        after.find("CMAKE_CURRENT_LIST_LINE")!=after.npos))return false;
     const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
     const auto b=language==Language::cmake?cmake_tokens(after):cpp_tokens(after);
-    return a&&b&&*a==*b;
+    if(!a||!b)return false;
+    // A physical spacing review must not change observable line/column values.
+    // Only executable/source argument tokens count, not quoted explanations or
+    // CMake bracket literals that never expand their contents.
+    if(language==Language::cpp&&
+       (cpp_position_sensitive_tokens(*a)||cpp_position_sensitive_tokens(*b)))
+        return false;
+    if(language==Language::cmake&&
+       (cmake_position_sensitive_tokens(*a)||cmake_position_sensitive_tokens(*b)))
+        return false;
+    if(language==Language::cmake) {
+        const auto first=cmake_command_gaps(before,*a);
+        const auto second=cmake_command_gaps(after,*b);
+        if(!first||!second||*first!=*second)return false;
+    }
+    return *a==*b;
 }
 
 // A curricular exercise may allow edits within one function or main, but

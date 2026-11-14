@@ -162,6 +162,133 @@ void capacity() {
         })cpp",rules,false,"A different computed value is still a wrong agreement");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            const int capacidad{4};
+            {
+                const int capacidad{8};
+                (void)capacidad;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "An unused inner constant shadow must not erase a valid outer capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            {
+                const int capacidad{8};
+                {
+                    const int capacidad{2};
+                    (void)capacidad;
+                }
+                (void)capacidad;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Nested shadowing scopes must restore the original constant on exit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                const int capacidad{4};
+                total = (piezas + capacidad - 1) / capacidad;
+            }
+            return total;
+        })cpp",rules,false,
+        "An inner shadow cannot manufacture uses of an unused outer capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total = (piezas + capacidad - 1) / capacidad;
+            {
+                const int capacidad{8};
+                (void)capacidad;
+            }
+            return total;
+        })cpp",rules,true,
+        "A valid outer alias survives an unrelated same-named inner constant");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                const int total = capacidad + capacidad;
+                (void)total;
+            }
+            return (piezas + 3) / 4 + total;
+        })cpp",rules,false,
+        "An inner shadow cannot lend its capacity uses to the outer total");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                int total{0};
+                total = capacidad + capacidad;
+            }
+            return (piezas + 3) / 4 + total;
+        })cpp",rules,false,
+        "An assignment to a shadowed local must not credit its outer namesake");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total = (piezas + capacidad - 1) / capacidad;
+            {
+                int total{0};
+                total = piezas / 4;
+            }
+            return total;
+        })cpp",rules,true,
+        "A nested shadow must not erase a correct outer result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int total{0};
+            {
+                total = (piezas + capacidad - 1) / capacidad;
+            }
+            return total;
+        })cpp",rules,true,
+        "An inner block can legitimately assign a calculation to the outer alias");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4
+                + (sizeof(capacidad) - sizeof(int))
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,false,
+        "sizeof never evaluates the capacity, despite two lexical references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4
+                + (sizeof(decltype(capacidad)) - sizeof(int))
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,false,
+        "decltype and sizeof must not create value-dependency evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4
+                + (sizeof +capacidad - sizeof(int))
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,false,
+        "Unary sizeof cannot create a productive named-rule use");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            auto const tipo = sizeof(capacidad);
+            return (piezas + 3) / 4 + tipo + tipo - 2 * sizeof(int);
+        })cpp",rules,false,
+        "An alias computed from sizeof must not launder source evidence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad
+                + (sizeof(capacidad) - sizeof(int));
+        })cpp",rules,true,
+        "Real capacity uses stay credited alongside harmless sizeof metadata");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int cupo{4};
             const int ajuste = cupo - 1;
             const int cajas = (piezas + ajuste) / cupo;
@@ -868,9 +995,15 @@ void capacity() {
                 (std::source_location::current().line() == 1 ? 0 : 0);
         })cpp",rules,false,"std::source_location can distinguish compilations");
     verify(R"cpp(
-        // __LINE__, __FILE__ and source_location in prose are harmless.
         int cajas_para(int piezas) {
-            const char* texto = "__LINE__: source_location";
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                (__builtin_COLUMN() > 1 ? 0 : 0);
+        })cpp",rules,false,"Column positions can distinguish the submitted source and its private probe");
+    verify(R"cpp(
+        // __LINE__, __FILE__ and __builtin_COLUMN in prose are harmless.
+        int cajas_para(int piezas) {
+            const char* texto = "__LINE__: source_location __builtin_COLUMN";
             const int capacidad{4};
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,"Comments and literals are not build-location evidence");
@@ -1007,6 +1140,33 @@ int cajas_para(int piezas);
     if(named_rule_comment_only_edit("constexpr auto marker=\"// 4\";",
                                     "constexpr auto marker=\"// 6\";"))
         throw std::runtime_error("Changed literal bytes were treated as comments");
+    if(!named_rule_comment_only_edit(
+            "/* originally documented */ int value = 4;",
+            "/* revised documentation */ int value = 4;"))
+        throw std::runtime_error("Harmless comment-only prose was rejected");
+    if(!named_rule_comment_only_edit(
+            R"cpp(// __LINE__ and __builtin_COLUMN are just words here.
+const char* label = "__LINE__: __builtin_COLUMN";
+const char* raw = R"tag(source_location __builtin_LINE)tag";
+)cpp",
+            R"cpp(// __LINE__ and __builtin_COLUMN are still documentation.
+
+const char* label = "__LINE__: __builtin_COLUMN";
+const char* raw = R"tag(source_location __builtin_LINE)tag";
+)cpp"))
+        throw std::runtime_error("A quoted positional name blocked a safe header comment revision");
+    if(named_rule_comment_only_edit(
+            "#define ORIGINAL_LINE __LINE__\n// old guidance\nint x=ORIGINAL_LINE;",
+            "#define ORIGINAL_LINE __LINE__\n// revised guidance\nint x=ORIGINAL_LINE;"))
+        throw std::runtime_error("An authored macro with line-dependent expansion escaped comment review protection");
+    if(named_rule_comment_only_edit(
+            "/*x*/ int column = __builtin_COLUMN();",
+            "/*expanded explanatory comment*/ int column = __builtin_COLUMN();"))
+        throw std::runtime_error("A source-column-changing comment edit reused an old header contract");
+    if(named_rule_comment_only_edit(
+            "// label\nint line = __builtin_LINE();",
+            "// label\n\nint line = __builtin_LINE();"))
+        throw std::runtime_error("A source-line-changing comment edit reused an old header contract");
 }
 
 void independently_generated_probe() {
@@ -1095,6 +1255,7 @@ int main() {return 0;}
        !named_rule_detail::probe_source_no_early_exit(harmless))
         throw std::runtime_error("Harmless exit text blocked a legitimate probe");
     for(const auto marker:{"__LINE__","__FILE__","__COUNTER__",
+            "__builtin_LINE()","__builtin_COLUMN()",
             "std::source_location::current().line()"}) {
         const auto location_sensitive=candidate+
             "\nint lgaed_probe_sensitive_marker = "+std::string(marker)+";\n";
@@ -1102,7 +1263,8 @@ int main() {return 0;}
             throw std::runtime_error("A probe accepted source-dependent compilation markers");
     }
     const auto prose_only=candidate+
-        "\n// __LINE__ is a comment.\nconst char* note = \"__FILE__ source_location\";\n";
+        "\n// __LINE__ and __builtin_COLUMN() are comments.\n"
+        "const char* note = \"__FILE__ source_location __builtin_COLUMN()\";\n";
     if(!named_rule_single_file_probe_source(single,prose_only))
         throw std::runtime_error("A comment or string disabled the independent probe");
 }

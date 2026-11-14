@@ -1658,6 +1658,9 @@ struct LessonView {
             // exists; measuring during EN_CHANGE sees the previous document.
             const bool source=owner->source==answer;
             (void)update_answer_scrollbars(answer,source?16:0,source?16:0,source?16:0,false,-1,&pre_measure_scroll);
+            // The parent may have restored an old offset after the editor's
+            // own EN_CHANGE transaction. Normalize against the final viewport.
+            if(source&&owner->source_editor)owner->source_editor->normalize_viewport();
         }else (void)update_answer_scrollbars(answer,16,0,16,false,-1,&pre_measure_scroll);
         if(final_edit)settle_prediction_caret(answer);
     }
@@ -1721,7 +1724,17 @@ struct LessonView {
         // the first answer line away before the new row receives its height.
         const auto line_floor=std::min<std::int64_t>(std::numeric_limits<LONG>::max(),
             static_cast<std::int64_t>(px(top_padding))+static_cast<std::int64_t>(lines)*fallback_height);
-        const auto bottom=std::max<std::int64_t>(line_floor,document_bottom)+px(bottom_padding);
+        // EM_POSFROMCHAR can report offscreen or stale insertion coordinates
+        // after deleting fullscreen rows. On editable source only, use native
+        // visual-line count as the height anchor. Other rich/answer controls
+        // retain their original mixed-font measurement.
+        const bool fullscreen_source=fullscreen_block&&std::ranges::any_of(
+            controls,[answer](const auto& vm){return vm.source==answer;});
+        const auto safe_document_bottom=fullscreen_source?
+            std::min<std::int64_t>(document_bottom,
+                line_floor+static_cast<std::int64_t>(fallback_height)*2):
+            static_cast<std::int64_t>(document_bottom);
+        const auto bottom=std::max<std::int64_t>(line_floor,safe_document_bottom)+px(bottom_padding);
         const auto right=document_right+px(right_padding);
         bool horizontal=has_text&&(style&ES_AUTOHSCROLL)&&right>client.right;
         const bool vertical=!fit_height&&has_text&&bottom>client.bottom-(horizontal?bar_height:0)+px(1);
@@ -2175,6 +2188,7 @@ struct LessonView {
         if(vm.project)vm.project->snapshot(request);
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
+        request.open_battery_probe=block(index).open_battery_probe;
         request.cmake_graph_check=block(index).cmake_graph_check;
         request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
@@ -3641,6 +3655,8 @@ struct LessonView {
             };
             sync(vm.answer,16,0,16);
             sync(vm.source,16,16,16);
+            if(fullscreen_block&&vm.source_editor&&vm.source&&IsWindowVisible(vm.source))
+                vm.source_editor->normalize_viewport();
             sync(vm.input,0,0,0);
             sync(vm.console,laboratory()?18:12,laboratory()?18:0,laboratory()?18:16,laboratory()?18:-1);
         }
@@ -4085,9 +4101,11 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=!block(index).named_rule_source_check||
+                const bool independent=(!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
-                    fresh.named_rule_probe_correct;
+                    fresh.named_rule_probe_correct)&&
+                    (!block(index).open_battery_probe||
+                     fresh.open_battery_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4102,7 +4120,12 @@ struct LessonView {
                         "La structure CMake ne respecte pas encore le contrat : ")
                         +graph.reason;
                 }
-                if(!independent&&preserved_source)
+                if(!independent&&preserved_source&&block(index).open_battery_probe)
+                    text+='\n'+ui(
+                        "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
+                        "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
+                        "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
+                if(!independent&&preserved_source&&!block(index).open_battery_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",

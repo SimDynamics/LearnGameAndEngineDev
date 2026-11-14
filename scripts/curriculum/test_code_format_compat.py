@@ -106,6 +106,152 @@ class SourceFormatTest(unittest.TestCase):
             fmt.require_source_format({"type": "code", "language": "cmake", "code": cmake_before},
                                       {"type": "code", "language": "cmake", "code": cmake_after})
 
+    def test_cpp_preprocessor_digraph_and_comment_preamble_safety(self):
+        # %: is the standard alternative token for # in preprocessing directives.
+        allowed = [
+            ("%:include <iostream>\nint main(){return 0;}\n",
+             "%:include <iostream>\n\nint main() {\n    return 0;\n}\n"),
+            ('const char* note="%:define X";\nint main(){}',
+             'const char* note="%:define X";\n\nint main() {}'),
+        ]
+        for before, after in allowed:
+            with self.subTest(safe=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": after}))
+        blocked = [
+            ("%:define X 3\nint n=X;", "%:\ndefine X 3\nint n=X;"),
+            ("/* note */ %:define X 3\nint n=X;",
+             "/* note */ %:\ndefine X 3\nint n=X;"),
+            ("/* note */ #define X 3\nint n=X;",
+             "/* note */ #\ndefine X 3\nint n=X;"),
+        ]
+        for before, after in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": after})
+
+    def test_cpp_location_tokens_match_native_and_ignore_inert_mentions(self):
+        allowed = [
+            '// __LINE__ is documentation\nint main() {}',
+            'const char* name = "__builtin_COLUMN";\nint main() {}',
+            'auto literal = R"tag(__builtin_LINE and source_location)tag";',
+            '/* __LINE__ does not expand here */ int main() {}',
+        ]
+        for before in allowed:
+            with self.subTest(allowed=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": "\n" + before}))
+        blocked = [
+            'int current = __LINE__;',
+            'int current = __builtin_LINE();',
+            'int current = __builtin_COLUMN();',
+            'auto current = std::source_location::current();',
+            '#define CURRENT __LINE__\nint main() {}',
+        ]
+        for before in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": "\n" + before})
+
+    def test_cmake_legacy_arguments_not_spaced_into_different_calls(self):
+        # CMake treats these legacy unquoted forms as one argument.
+        allowed = [
+            ('show(-Da="b c")\nmessage(ok)',
+             'show(-Da="b c")\n\nmessage(ok)'),
+            ('show(-Dfoo=$(BAR))\nmessage(ok)',
+             'show(-Dfoo=$(BAR))\n\nmessage(ok)'),
+            ('message("a b")', 'message(\n  "a b"\n)'),
+        ]
+        for before, after in allowed:
+            with self.subTest(allowed=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after}))
+        blocked = [
+            ('show(-Da="b c")', 'show(-Da= "b c")'),
+            ('show(a" "b)', 'show(a " " b)'),
+            ('show(-Dfoo=$(BAR))', 'show(-Dfoo=$ (BAR))'),
+            ('show("x""y")', 'show("x" "y")'),
+        ]
+        for before, after in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after})
+
+    def test_cmake_command_header_and_invocation_separator_boundaries(self):
+        # Verified against cmake -P: line breaks after a command name
+        # or their removal between invocations change parse success.
+        allowed = [
+            ('message(STATUS "a")\nmessage(STATUS "b")',
+             'message (STATUS "a")\n\nmessage\t(STATUS "b")'),
+            ('message(STATUS "a")',
+             'message(\n  STATUS "a"\n)'),
+            ('if(TRUE AND (TRUE OR FALSE))\nmessage(STATUS "yes")\nendif()',
+             'if(\n  TRUE AND (\n    TRUE OR FALSE\n  )\n)\n\nmessage(STATUS "yes")\nendif()'),
+            ('message(STATUS "a") # note\nmessage(STATUS "b")',
+             'message(STATUS "a")\n# note\nmessage(STATUS "b")'),
+        ]
+        for before, after in allowed:
+            with self.subTest(safe=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after}))
+        blocked = [
+            ('message(STATUS "ok")', 'message\n(STATUS "ok")'),
+            ('message (STATUS "ok")', 'message\n(STATUS "ok")'),
+            ('message(STATUS "a")\nmessage(STATUS "b")',
+             'message(STATUS "a") message(STATUS "b")'),
+            ('message(STATUS "a")\nmessage(STATUS "b")',
+             'message(STATUS "a")\tmessage(STATUS "b")'),
+            ('message(STATUS "a") message(STATUS "b")',
+             'message(STATUS "a")\nmessage(STATUS "b")'),
+        ]
+        for before, after in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after})
+
+    def test_cmake_location_tokens_match_native_and_configure_expansion(self):
+        allowed = [
+            '#[=[ ${CMAKE_CURRENT_LIST_LINE} is inert ]=]\nmessage(ok)',
+            'message([=[${CMAKE_CURRENT_LIST_LINE}]=])',
+            'message([=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=])',
+            '# CMAKE_CURRENT_LIST_LINE is documentation\nmessage("CMAKE_CURRENT_FUNCTION_LIST_LINE")',
+            'set(my_CMAKE_CURRENT_LIST_LINE 3)\nmessage(ok)',
+        ]
+        for before in allowed:
+            with self.subTest(allowed=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": "\n" + before}))
+        blocked = [
+            'message("${CMAKE_CURRENT_LIST_LINE}")',
+            'message("${CMAKE_CURRENT_FUNCTION_LIST_LINE}")',
+            'if(CMAKE_CURRENT_LIST_LINE)\nmessage(ok)\nendif()',
+            'string(CONFIGURE "@CMAKE_CURRENT_LIST_LINE@" result @ONLY)',
+            'string(CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY)',
+            'file(CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'cmake_language(CALL file CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'cmake_language(CALL "file" "CONFIGURE" OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] result @ONLY)',
+            'cmake_language(CALL [=[file]=] [=[CONFIGURE]=] OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'set(command_name file)\ncmake_language(CALL "${command_name}" CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'set(subcommand CONFIGURE)\ncmake_language(CALL file "${subcommand}" OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] @ONLY)',
+            'set(template [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=])\nSTRING(CONFIGURE "${template}" result @ONLY)',
+            'cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY)',
+        ]
+        for before in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": "\n" + before})
+
     def test_answers_and_file_lists_are_not_formatting(self):
         before = fixture()
         after = edited(before)

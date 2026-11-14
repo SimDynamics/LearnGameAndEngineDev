@@ -222,8 +222,21 @@ target_include_directories(parts PRIVATE include)
     const auto configured=run_cpp(request);check(configured.error_utf8.empty()&&configured.configuration.succeeded()&&!configured.compilation.succeeded()&&!configured.execution.succeeded(),"Configure did not run real CMake/Ninja generation only: "+configured.error_utf8+configured.configuration.stderr_bytes);
     check(configured.configuration.stdout_bytes.find("LGAED stdout áé你好")!=std::string::npos&&configured.configuration.stderr_bytes.find("LGAED stderr áé你好")!=std::string::npos,
         "The private tool host mixed channels or corrupted real Unicode diagnostics");
-    check(configured.configuration.stdout_bytes.find("Detecting CXX compiler ABI info - done")!=std::string::npos&&configured.configuration.stderr_bytes.find("CMAKE_OBJECT_PATH_MAX")==std::string::npos,
-        "The native tool workspace still exhausts MSVC paths during the real ABI check");
+    const bool abi_detected=configured.configuration.stdout_bytes.find(
+        "Detecting CXX compiler ABI info - done")!=std::string::npos;
+    const bool path_limit_warning=configured.configuration.stderr_bytes.find(
+        "CMAKE_OBJECT_PATH_MAX")!=std::string::npos;
+    // A missing ABI marker and an object-path warning require different fixes.
+    // Preserve the exact isolated configure diagnostics on failure instead of
+    // attributing both symptoms to a Windows path limit without evidence.
+    if(!abi_detected||path_limit_warning)
+        throw std::runtime_error(
+            "Native CMake ABI check: compiler ABI marker="+
+            std::string(abi_detected?"present":"missing")+
+            ", CMAKE_OBJECT_PATH_MAX warning="+
+            std::string(path_limit_warning?"present":"absent")+
+            "\nCaptured CMake stdout:\n"+configured.configuration.stdout_bytes+
+            "\nCaptured CMake stderr:\n"+configured.configuration.stderr_bytes);
     // Both programs print 42, but the original executable compiles value.cpp
     // directly while the second project links the static library. Generated
     // File API facts must distinguish those structures independently of stdout.
