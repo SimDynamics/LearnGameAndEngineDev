@@ -1483,12 +1483,26 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         ran(native_build);
         const auto fresh=capture_cpp_execution(request,native_build);
         const auto expected=mapped_block.output_check->cases.front().outputs.front();
+        const auto generated_verdict=evaluate_cmake_graph(request,native_build,
+            *mapped_block.cmake_graph_check);
+        const auto authored_output=evaluate_cpp_output_check(
+            *mapped_block.output_check,fresh,request.revision);
         check(native_build.execution.stdout_bytes==expected&&
             native_build.execution.stderr_bytes.empty()&&
             fresh.cmake_graph_correct&&native_build.cmake_graph&&
-            evaluate_cpp_output_check(*mapped_block.output_check,fresh,
-                request.revision).verdict==curriculum::OutputVerdict::correct,
-            "Original U3L2 child CMake target failed real MSVC execution");
+            authored_output.verdict==curriculum::OutputVerdict::correct,
+            "Original U3L2 child CMake target failed real MSVC: owner="+
+            mapped_block.stable_id+"; graph="+generated_verdict.reason+
+            "; captured_chars="+
+                std::to_string(native_build.execution.stdout_bytes.size())+
+            "; expected_chars="+std::to_string(expected.size())+
+            "; captured_CR="+std::to_string(std::ranges::count(
+                native_build.execution.stdout_bytes,'\\r'))+
+            "; expected_CR="+std::to_string(std::ranges::count(expected,'\\r'))+
+            "; stdout_identical="+
+                std::to_string(native_build.execution.stdout_bytes==expected)+
+            "; output_verdict="+std::to_string(
+                static_cast<int>(authored_output.verdict)));
         const auto& graph=*native_build.cmake_graph;
         const auto child_name=boxes?"envios":"lotes";
         const auto child=std::ranges::find_if(graph.targets,
