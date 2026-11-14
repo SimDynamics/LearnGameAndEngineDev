@@ -2011,22 +2011,46 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     auto exclusive=warning_request;
     exclusive.request_id=3303;
     ++exclusive.revision;
+    // The negative control owns an independent CMake workspace. A reused
+    // previously linked executable must never hide the upper-bound defect.
+    exclusive.project_key+="/exclusive-upper-bound";
+    bool exclusive_source_changed=false;
     for(auto& file:exclusive.project_files)
-        if(file.first=="cantidad.cpp")
+        if(file.first=="cantidad.cpp") {
             warning_replace(file.second,"return dato >= 0 && dato <= 20;",
                 "return dato >= 0 && dato < 20;");
+            exclusive_source_changed=true;
+        }
+    check(exclusive_source_changed&&
+        exclusive.project_files!=warning_request.project_files,
+        "U3L7 exclusive control did not modify the original source");
     const auto exclusive_run=run_cpp(exclusive);
+    const auto exclusive_evidence=capture_cpp_execution(exclusive,exclusive_run);
+    const auto exclusive_verdict=evaluate_cpp_output_check(
+        *warning_block.output_check,exclusive_evidence,exclusive.revision);
     check(exclusive_run.error_utf8.empty()&&
+        exclusive_run.configuration.succeeded()&&
         exclusive_run.compilation.succeeded()&&
         exclusive_run.execution.status==CppPhaseStatus::completed&&
         exclusive_run.execution.exit_code==1&&
         exclusive_run.execution.stdout_bytes.find("dato=20")!=std::string::npos&&
         exclusive_run.execution.stdout_bytes.find("Bateria: ERROR")!=
             std::string::npos&&
-        evaluate_cpp_output_check(*warning_block.output_check,
-            capture_cpp_execution(exclusive,exclusive_run),
-            exclusive.revision).verdict!=curriculum::OutputVerdict::correct,
-        "U3L7 failed to reject a superficially repaired exclusive upper bound");
+        exclusive_verdict.verdict!=curriculum::OutputVerdict::correct,
+        "U3L7 failed to reject an exclusive upper bound: error="+
+        exclusive_run.error_utf8+
+        "; configure="+std::to_string(static_cast<int>(
+            exclusive_run.configuration.status))+
+        "; compile="+std::to_string(static_cast<int>(
+            exclusive_run.compilation.status))+
+        "; run="+std::to_string(static_cast<int>(
+            exclusive_run.execution.status))+
+        "; exit="+std::to_string(
+            exclusive_run.execution.exit_code.value_or(999))+
+        "; stdout="+exclusive_run.execution.stdout_bytes+
+        "; stderr="+exclusive_run.execution.stderr_bytes+
+        "; verdict="+std::to_string(static_cast<int>(
+            exclusive_verdict.verdict)));
     check(warning_block.project_files==warning_original&&
         warning_request.project_files!=exclusive.project_files,
         "U3L7 platform adaptation changed the historical source or final repair");
