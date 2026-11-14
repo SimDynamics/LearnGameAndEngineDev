@@ -25,7 +25,10 @@ class ReductionProbeTest(unittest.TestCase):
 
     def test_literal_one_is_not_a_second_result(self):
         candidate = probe.reduced_candidate().replace(
-            "std::cout << \"Segundo=\" << segundo", "std::cout << \"Segundo=\" << 1")
+            "    const int segundo = contar_altos({}, 2);",
+            "    (void)contar_altos({}, 2);").replace(
+            'std::cout << "Segundo=" << segundo',
+            'std::cout << "Segundo=" << 1')
         result = probe.audit(candidate, compiler())
         self.assertFalse(result.accepted)
         self.assertIn("not reflected", result.reason)
