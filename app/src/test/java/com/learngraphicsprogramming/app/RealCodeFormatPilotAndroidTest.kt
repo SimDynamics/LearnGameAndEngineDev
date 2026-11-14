@@ -43,133 +43,95 @@ class RealCodeFormatPilotAndroidTest {
         return source
     }
 
-    private fun realForm(original: JSONObject): JSONObject {
-        val formatted = JSONObject(original.toString())
-        val state = formatted.getJSONObject("stateLayout")
-        require(state.getInt("version") == 2 && state.getString("locale") == "es")
-        require(state.optJSONArray("sourceFormatRevisions") == null)
-        val editions = state.getJSONArray("editorial")
-        val archives = JSONArray()
-        for (page in pages) {
-            val index = 2
-            val block = formatted.getJSONArray("pages").getJSONObject(page)
-                .getJSONArray("blocks").getJSONObject(index)
-            val historical = JSONObject(block.toString())
-            require(block.getString("type") == "code")
-            val identity = state.getJSONArray("current").getJSONObject(page)
-                .getJSONArray("blocks").getString(index)
-            require(identity == if (page == 3) "block_0003_0002" else "block_0005_0002")
-            block.put("code", addPhysicalSpacing(block.getString("code")))
-            archives.put(JSONObject().put("id", identity).put("block", historical))
-            editions.put(JSONObject().put("id", identity)
-                .put("beforeSha256", LessonStateLayoutJson.fingerprint(historical))
-                .put("afterSha256", LessonStateLayoutJson.fingerprint(block)))
-        }
-        state.put("sourceFormatRevisions", archives)
-        return formatted
-    }
-
-    private fun pilotDocuments(published: JSONObject = originalLesson()): Pair<JSONObject, JSONObject> {
-        val state = published.getJSONObject("stateLayout")
-        val revisions = state.optJSONArray("sourceFormatRevisions")
-        if (revisions == null || revisions.length() == 0)
-            return published to realForm(published)
-
-        // Work may have already published these two exact format-only revisions
-        // on main. Restore their genuine archived source in memory, never
-        // rewrite the shipped file or regenerate its immutable origin.
-        require(revisions.length() == pages.size)
-        val restored = JSONObject(published.toString())
-        val oldState = restored.getJSONObject("stateLayout")
-        val edits = oldState.getJSONArray("editorial")
-        for ((ordinal, page) in pages.withIndex()) {
-            val original = revisions.getJSONObject(ordinal)
-            val id = state.getJSONArray("current").getJSONObject(page)
-                .getJSONArray("blocks").getString(2)
-            require(id == original.getString("id") &&
-                id == if (page == 3) "block_0003_0002" else "block_0005_0002")
-            val archived = original.getJSONObject("block")
-            val current = published.getJSONArray("pages").getJSONObject(page)
-                .getJSONArray("blocks").getJSONObject(2)
-            require(current.getString("code") == addPhysicalSpacing(archived.getString("code")))
-            restored.getJSONArray("pages").getJSONObject(page)
-                .getJSONArray("blocks").put(2, JSONObject(archived.toString()))
-        }
-        for (ordinal in pages.indices.reversed()) {
-            val page = pages[ordinal]
-            val oldBlock = revisions.getJSONObject(ordinal).getJSONObject("block")
-            val newBlock = published.getJSONArray("pages").getJSONObject(page)
-                .getJSONArray("blocks").getJSONObject(2)
-            val edge = edits.getJSONObject(edits.length() - 1)
-            require(edge.getString("id") == revisions.getJSONObject(ordinal).getString("id") &&
-                edge.getString("beforeSha256") == LessonStateLayoutJson.fingerprint(oldBlock) &&
-                edge.getString("afterSha256") == LessonStateLayoutJson.fingerprint(newBlock))
-            edits.remove(edits.length() - 1)
-        }
-        oldState.remove("sourceFormatRevisions")
-        requireNotNull(LessonStateLayoutJson.read(restored))
-        requireNotNull(LessonStateLayoutJson.read(published))
-        return restored to published
+    private fun archivedSource(published: JSONObject, page: Int): JSONObject {
+        val metadata = published.getJSONObject("stateLayout")
+        val id = metadata.getJSONArray("current").getJSONObject(page)
+            .getJSONArray("blocks").getString(2)
+        require(id == if (page == 3) "block_0003_0002" else "block_0005_0002")
+        val archives = metadata.getJSONArray("sourceFormatRevisions")
+        val original = (0 until archives.length())
+            .map { archives.getJSONObject(it) }
+            .single { it.getString("id") == id }
+            .getJSONObject("block")
+        val current = published.getJSONArray("pages").getJSONObject(page)
+            .getJSONArray("blocks").getJSONObject(2)
+        require(original.getString("type") == "code")
+        require(current.getString("code") == addPhysicalSpacing(original.getString("code")))
+        require(CurricularSourceFormatCompat.project(current, original).getString("code") ==
+            original.getString("code"))
+        return original
     }
 
     @Test fun bothPublishedCodeBlocksRetainAndroidProgressLineageAndAnswers() {
-        val (authentic, rewritten) = pilotDocuments()
-        val unformatted = requireNotNull(LessonStateLayoutJson.read(authentic))
-        val formatted = requireNotNull(LessonStateLayoutJson.read(rewritten))
-
-        assertEquals(authentic.getString("id"), rewritten.getString("id"))
-        assertEquals(unformatted.lineage, formatted.lineage)
-        assertEquals(unformatted.legacyLineage, formatted.legacyLineage)
-        assertEquals(unformatted.origin, formatted.origin)
-        assertEquals(unformatted.current, formatted.current)
-        assertEquals(unformatted.additions, formatted.additions)
-        for (page in listOf(3, 5)) {
-            assertEquals(unformatted.storagePosition(page, 2), formatted.storagePosition(page, 2))
-            val prior = authentic.getJSONArray("pages").getJSONObject(page)
-                .getJSONArray("blocks").getJSONObject(2).getString("code")
-            val corrected = rewritten.getJSONArray("pages").getJSONObject(page)
+        val published = originalLesson()
+        val layout = requireNotNull(LessonStateLayoutJson.read(published))
+        val reopened = JSONObject(published.toString())
+        val roundtrip = requireNotNull(LessonStateLayoutJson.read(reopened))
+        assertEquals(layout.lineage, roundtrip.lineage)
+        assertEquals(layout.legacyLineage, roundtrip.legacyLineage)
+        assertEquals(layout.origin, roundtrip.origin)
+        assertEquals(layout.current, roundtrip.current)
+        assertEquals(layout.additions, roundtrip.additions)
+        for (page in pages) {
+            assertEquals(layout.storagePosition(page, 2), roundtrip.storagePosition(page, 2))
+            val prior = archivedSource(published, page).getString("code")
+            val corrected = published.getJSONArray("pages").getJSONObject(page)
                 .getJSONArray("blocks").getJSONObject(2).getString("code")
             assertNotEquals(prior, corrected)
             assertTrue(corrected.contains("\n\n    if ("))
             assertTrue(corrected.contains("\n\n    return 0;"))
         }
-        val originalPrediction = authentic.getJSONArray("pages").getJSONObject(3)
+        // The later published paragraph corrections are real history, not
+        // something to roll back merely to fabricate an earlier test fixture.
+        val originalPrediction = published.getJSONArray("pages").getJSONObject(3)
             .getJSONArray("blocks").getJSONObject(3)
-        val revisedPrediction = rewritten.getJSONArray("pages").getJSONObject(3)
+        val reopenedPrediction = reopened.getJSONArray("pages").getJSONObject(3)
             .getJSONArray("blocks").getJSONObject(3)
-        assertEquals(originalPrediction.toString(), revisedPrediction.toString())
-        val initialCompiler = authentic.getJSONArray("pages").getJSONObject(3)
+        assertEquals(originalPrediction.toString(), reopenedPrediction.toString())
+        val compiler = published.getJSONArray("pages").getJSONObject(3)
             .getJSONArray("blocks").getJSONObject(6)
-        val revisedCompiler = rewritten.getJSONArray("pages").getJSONObject(3)
+        val reopenedCompiler = reopened.getJSONArray("pages").getJSONObject(3)
             .getJSONArray("blocks").getJSONObject(6)
-        assertEquals(initialCompiler.toString(), revisedCompiler.toString())
+        assertEquals(compiler.toString(), reopenedCompiler.toString())
     }
 
-    @Test fun alreadyPublishedPhysicalFormattingRecoversOnlyAuthenticOriginals() {
-        val (before, after) = pilotDocuments()
-        val (recovered, published) = pilotDocuments(realForm(before))
-        assertEquals(
-            requireNotNull(LessonStateLayoutJson.read(before)).lineage,
-            requireNotNull(LessonStateLayoutJson.read(recovered)).lineage)
-        assertEquals(
-            requireNotNull(LessonStateLayoutJson.read(after)).lineage,
-            requireNotNull(LessonStateLayoutJson.read(published)).lineage)
+    @Test fun alreadyPublishedPhysicalFormattingSupportsFurtherAuthenticatedSpacing() {
+        val published = originalLesson()
+        val before = requireNotNull(LessonStateLayoutJson.read(published))
+        val modified = JSONObject(published.toString())
+        val state = modified.getJSONObject("stateLayout")
+        val originalArchives = state.getJSONArray("sourceFormatRevisions").toString()
         for (page in pages) {
-            assertEquals(
-                before.getJSONArray("pages").getJSONObject(page).getJSONArray("blocks")
-                    .getJSONObject(2).getString("code"),
-                recovered.getJSONArray("pages").getJSONObject(page).getJSONArray("blocks")
-                    .getJSONObject(2).getString("code"))
-            assertEquals(
-                after.getJSONArray("pages").getJSONObject(page).getJSONArray("blocks")
-                    .getJSONObject(2).getString("code"),
-                published.getJSONArray("pages").getJSONObject(page).getJSONArray("blocks")
-                    .getJSONObject(2).getString("code"))
+            val historical = archivedSource(published, page)
+            val id = state.getJSONArray("current").getJSONObject(page)
+                .getJSONArray("blocks").getString(2)
+            val active = modified.getJSONArray("pages").getJSONObject(page)
+                .getJSONArray("blocks").getJSONObject(2)
+            val former = JSONObject(active.toString())
+            active.put("code", former.getString("code") + "\n")
+            state.getJSONArray("editorial").put(JSONObject()
+                .put("id", id)
+                .put("beforeSha256", LessonStateLayoutJson.fingerprint(former))
+                .put("afterSha256", LessonStateLayoutJson.fingerprint(active)))
+            assertEquals(historical.getString("code"),
+                CurricularSourceFormatCompat.project(active, historical).getString("code"))
         }
+        // The earlier archive and its original state addresses are unchanged
+        // even when subsequent editorial commits add more blank lines.
+        assertEquals(originalArchives, state.getJSONArray("sourceFormatRevisions").toString())
+        val after = requireNotNull(LessonStateLayoutJson.read(modified))
+        assertEquals(before.lineage, after.lineage)
+        assertEquals(before.legacyLineage, after.legacyLineage)
+        assertEquals(before.origin, after.origin)
+        assertEquals(before.current, after.current)
+        for (page in pages)
+            assertEquals(before.storagePosition(page, 2), after.storagePosition(page, 2))
     }
 
     @Test fun realLessonForgedAnswerCodeOrHistoricalSnapshotIsRejected() {
-        val (original, expected) = pilotDocuments()
+        val published = originalLesson()
+        val layout = requireNotNull(LessonStateLayoutJson.read(published))
+        for (page in pages) archivedSource(published, page)
         val attacks: List<(JSONObject) -> Unit> = listOf(
             { it.getJSONArray("pages").getJSONObject(3).getJSONArray("blocks")
                 .getJSONObject(3).put("answers", JSONArray().put("forged")) },
@@ -181,16 +143,17 @@ class RealCodeFormatPilotAndroidTest {
                 .getJSONObject(0).getJSONObject("block")
                 .put("code", "int unrelated = 7;") },
             { it.getJSONObject("stateLayout").getJSONArray("sourceFormatRevisions")
-                .getJSONObject(0).put("id", "block_0003_0003") }
+                .getJSONObject(0).put("id", "block_0003_0003") },
+            { it.getJSONObject("stateLayout").getJSONArray("editorial")
+                .getJSONObject(0).put("afterSha256", "0".repeat(64)) }
         )
         attacks.forEach { forge ->
-            val changed = JSONObject(expected.toString())
+            val changed = JSONObject(published.toString())
             forge(changed)
             assertTrue(runCatching { LessonStateLayoutJson.read(changed) }.exceptionOrNull()
                 is LessonStateLayoutException)
         }
-        assertEquals(
-            requireNotNull(LessonStateLayoutJson.read(original)).lineage,
-            requireNotNull(LessonStateLayoutJson.read(expected)).lineage)
+        assertEquals(layout.lineage,
+            requireNotNull(LessonStateLayoutJson.read(originalLesson())).lineage)
     }
 }
