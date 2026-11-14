@@ -2188,6 +2188,7 @@ struct LessonView {
         if(vm.project)vm.project->snapshot(request);
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
+        request.open_battery_probe=block(index).open_battery_probe;
         request.cmake_graph_check=block(index).cmake_graph_check;
         request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
@@ -4100,9 +4101,11 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool independent=!block(index).named_rule_source_check||
+                const bool independent=(!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
-                    fresh.named_rule_probe_correct;
+                    fresh.named_rule_probe_correct)&&
+                    (!block(index).open_battery_probe||
+                     fresh.open_battery_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4117,7 +4120,12 @@ struct LessonView {
                         "La structure CMake ne respecte pas encore le contrat : ")
                         +graph.reason;
                 }
-                if(!independent&&preserved_source)
+                if(!independent&&preserved_source&&block(index).open_battery_probe)
+                    text+='\n'+ui(
+                        "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
+                        "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
+                        "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
+                if(!independent&&preserved_source&&!block(index).open_battery_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",

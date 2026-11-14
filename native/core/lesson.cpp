@@ -382,6 +382,20 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             }
         }
     }
+    if(activity.open_battery_probe) {
+        // A new, root-authenticated mutation objective must never inherit
+        // an older successful stdout receipt from this stable CMake editor.
+        const auto& spec=*activity.open_battery_probe;
+        token("open-cmake-battery-independent-mutations-v1");
+        token(spec.library_path);token(spec.test_path);
+        token(spec.function_name);token(spec.comparison_name);
+        token(spec.test_target);
+        token(std::to_string(spec.original_cases.size()));
+        for(const auto& item:spec.original_cases) {
+            token(std::to_string(item.value));token(std::to_string(item.lower));
+            token(std::to_string(item.upper));token(std::to_string(item.initial));
+        }
+    }
     if(activity.cmake_graph_check) {
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
@@ -702,8 +716,10 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         ? expected_observation_report(*check.observation_report,execution.standard_input)
         : std::optional<ReportExpectation>{};
     if(check.observation_report&&!report_expected)return {};
-    const bool stdout_correct = (selected->balance_three_pairs ||
-        std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end()) &&
+    const bool stdout_correct = (check.open_battery_check
+        ? execution.open_battery_probe_correct
+        : (selected->balance_three_pairs ||
+           std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end())) &&
         (!expected||equivalent_stdout(expected->standard_output,execution.standard_output)) &&
         (!report_expected||report_detail::exact_or_native_crlf(
             report_expected->standard_output,execution.standard_output));
