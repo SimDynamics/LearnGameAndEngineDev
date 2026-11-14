@@ -173,7 +173,13 @@ void rejected_semantics() {
         "límite no permitido 21; rango permitido de 0 a 9",
         "no se admiten valores -1; rango permitido de 0 a 9"
     }) {
-        const auto valid=balances(phrase,"Revise");
+        const auto message=[&](int request,int charges,int returns) {
+            return "Saldo, petición "+std::to_string(request)+
+                ", cobros="+std::to_string(charges)+
+                ", devoluciones="+std::to_string(returns)+
+                ": "+std::string(phrase)+". Revise los datos.\\n";
+        };
+        const auto valid=message(2,10,0)+message(3,0,-1);
         require(evaluate_rejection_diagnostics(
             valid,RejectionOperation::balance,balance_facts).correct,
             "Rejecting a specific outside value was misread as banning the allowed domain");
