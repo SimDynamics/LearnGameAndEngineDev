@@ -113,6 +113,67 @@ class IndependentOrderAuthoring(unittest.TestCase):
         with self.assertRaises(state.LayoutError):
             state.validate(misplaced)
 
+    def test_authored_group_survives_later_lexical_source_format(self):
+        # A legitimate future editorial formatting pass must not require
+        # rewriting an already published root authoring digest or old answers.
+        source = {
+            "id": "orden_formato_qa", "title": "Declaraciones independientes",
+            "pages": [{"blocks": [{
+                "type": "order_code", "question": "Ordena las declaraciones.",
+                "fragments": ["int primero{1};", "int segundo{2};",
+                              "return primero + segundo;"],
+                "correctOrder": [0, 1, 2],
+                "explanation": "Los valores se declaran antes del resultado.",
+            }]}],
+        }
+        original = state.prepare_v2(source, "es", {"es": source})
+        declared = deepcopy(original)
+        identity = declared["stateLayout"]["current"][0]["blocks"][0]
+        digest = state.state_fingerprint(declared["pages"][0]["blocks"][0])
+        declared["orderEquivalenceGroups"] = [{
+            "activity": identity, "sourceSha256": digest, "groups": [[0, 1]],
+        }]
+        state.validate_transition(original, declared)
+        formatted_candidate = deepcopy(declared)
+        formatted_candidate["pages"][0]["blocks"][0]["fragments"][0] = (
+            "int primero {1};"
+        )
+        formatted = state.prepare_v2(
+            formatted_candidate, "es", {"es": declared}, declared)
+        state.validate(formatted)
+        state.validate_transition(declared, formatted)
+        self.assertEqual(formatted["orderEquivalenceGroups"],
+                         declared["orderEquivalenceGroups"])
+        self.assertEqual(formatted["stateLayout"]["origin"],
+                         declared["stateLayout"]["origin"])
+        self.assertEqual(formatted["stateLayout"]["family"],
+                         declared["stateLayout"]["family"])
+        archive = formatted["stateLayout"]["sourceFormatRevisions"]
+        self.assertEqual(len(archive), 1)
+        self.assertEqual(archive[0]["id"], identity)
+        self.assertEqual(archive[0]["block"],
+                         declared["pages"][0]["blocks"][0])
+        self.assertNotEqual(
+            state.state_fingerprint(formatted["pages"][0]["blocks"][0]),
+            digest, "The test must actually exercise the historical source path")
+
+        forged = deepcopy(formatted)
+        forged["pages"][0]["blocks"][0]["fragments"][0] = (
+            "int primero {2};"
+        )
+        with self.assertRaises(state.LayoutError):
+            state.validate(forged)
+        no_archive = deepcopy(formatted)
+        del no_archive["stateLayout"]["sourceFormatRevisions"]
+        with self.assertRaises(state.LayoutError):
+            state.validate(no_archive)
+        replaced_digest = deepcopy(formatted)
+        replaced_digest["orderEquivalenceGroups"][0]["sourceSha256"] = (
+            state.state_fingerprint(formatted["pages"][0]["blocks"][0"])
+        )
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(declared, replaced_digest)
+
     def test_published_group_is_append_only_and_old_contracts_unchanged(self):
         _, current = authored()
         state.validate(current)
