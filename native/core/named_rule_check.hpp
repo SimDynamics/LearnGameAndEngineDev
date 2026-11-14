@@ -288,12 +288,14 @@ inline std::optional<int> arithmetic_constant(
 }
 inline std::optional<LocalRule> constant(
         const Tokens& t,std::size_t position,std::size_t limit) {
-    // Both "const int" and "int const" denote the same const-qualified
-    // integer type. Accept the two idiomatic spellings in an authored rule.
+    // C++ permits both "constexpr int" and "int constexpr", as well as
+    // "const int" and "int const". These are equivalent purpose-named
+    // constant declarations for a reviewed local integer rule.
     if(position+5>=limit)return {};
     const bool const_before=(id(t[position],"const")||
         id(t[position],"constexpr"))&&id(t[position+1],"int");
-    const bool const_after=id(t[position],"int")&&id(t[position+1],"const");
+    const bool const_after=id(t[position],"int")&&
+        (id(t[position+1],"const")||id(t[position+1],"constexpr"));
     if(!(const_before||const_after)||!t[position+2].starts_with("id:"))
         return {};
     const auto name=t[position+2].substr(3);
@@ -742,12 +744,13 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         }
         auto start=i;
         if(id(t[start],"const")||id(t[start],"constexpr"))++start;
-        // Local intermediates may use either const placement, just like the
-        // authored rule itself: const int ajuste or int const ajuste.
+        // Local intermediates can use either position of const/constexpr,
+        // including "auto constexpr ajuste", without losing their real
+        // dependency on the named constant.
         const bool has_type=start<bounds.close&&
             (id(t[start],"int")||id(t[start],"auto"));
         const bool trailing_const=has_type&&start+1<bounds.close&&
-            id(t[start+1],"const");
+            (id(t[start+1],"const")||id(t[start+1],"constexpr"));
         const auto variable=start+1+(trailing_const?1u:0u);
         const auto initializer=variable+1;
         if(has_type&&initializer<bounds.close&&
