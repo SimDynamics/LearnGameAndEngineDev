@@ -89,6 +89,25 @@ void parsing() {
         verify(!open_battery_parse_calls(malformed),
                "An incomplete private execution trace was accepted");
 }
+void specification() {
+    const OpenBatteryProbeSpec correct_spec{
+        "src/ajuste.cpp","pruebas/casos.cpp","intentar_ajuste",
+        "comprobar_ajustes",{originals.begin(),originals.end()}};
+    verify(open_battery_probe_spec_valid(correct_spec),
+           "An authentic original CMake owner was rejected");
+    auto forged=correct_spec;forged.test_path="../escape.cpp";
+    verify(!open_battery_probe_spec_valid(forged),
+           "A private probe could escape the project");
+    forged=correct_spec;forged.library_path=forged.test_path;
+    verify(!open_battery_probe_spec_valid(forged),
+           "The harness was treated as a shared library");
+    forged=correct_spec;forged.original_cases.push_back(forged.original_cases.front());
+    verify(!open_battery_probe_spec_valid(forged),
+           "Duplicate original calls were accepted");
+    forged=correct_spec;forged.test_target="test;escape";
+    verify(!open_battery_probe_spec_valid(forged),
+           "A test target accepted shell metacharacters");
+}
 void agreement() {
     verify(open_battery_expected({2,3,7,59})==std::pair{true,1},
            "Below interval expected +1");
@@ -156,7 +175,7 @@ void judgments() {
 }
 }
 int main()try{
-    generated();parsing();agreement();judgments();
+    generated();parsing();specification();agreement();judgments();
     std::cout<<"PASS open-battery portable core: original, new, mutation and provenance\n";
     return 0;
 }catch(const std::exception& error){

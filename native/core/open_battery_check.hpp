@@ -21,6 +21,11 @@ struct OpenBatteryCall {
     bool operator==(const OpenBatteryCall&) const = default;
 };
 enum class OpenBatteryMutation { baseline, invert_acceptance, corrupt_destination };
+struct OpenBatteryProbeSpec {
+    std::string library_path, test_path, function_name, test_target;
+    std::vector<OpenBatteryCall> original_cases;
+    bool operator==(const OpenBatteryProbeSpec&) const = default;
+};
 struct OpenBatteryRun {
     std::string program_frame;
     bool compiled=false,executed=false;
@@ -53,6 +58,25 @@ inline bool open_battery_originals_valid(std::span<const OpenBatteryCall> cases)
         for(std::size_t j=0;j<i;++j)
             if(cases[i]==cases[j])return false;
     return true;
+}
+// Authenticated source file names and finite mutation work are required.
+// The curriculum loader, not an editable student project, owns this request.
+inline bool open_battery_probe_spec_valid(const OpenBatteryProbeSpec& spec) {
+    const auto safe=[](std::string_view path) {
+        if(path.empty()||path.size()>256||path.starts_with('/')||
+           path.starts_with('.')||path.find("..")!=path.npos||
+           path.find('\\')!=path.npos)return false;
+        for(unsigned char c:path)
+            if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+                 (c>='0'&&c<='9')||c=='_'||c=='-'||
+                 c=='.'||c=='/'))return false;
+        return true;
+    };
+    return safe(spec.library_path)&&safe(spec.test_path)&&
+        spec.library_path!=spec.test_path&&
+        open_battery_identifier(spec.function_name)&&
+        open_battery_identifier(spec.test_target)&&
+        open_battery_originals_valid(spec.original_cases);
 }
 // Independent agreement for bool f(int valor,int inferior,int superior,int&).
 // A rejected request preserves the destination, including negative sentinels.
