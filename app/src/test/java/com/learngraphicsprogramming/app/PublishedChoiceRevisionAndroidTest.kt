@@ -89,23 +89,41 @@ class PublishedChoiceRevisionAndroidTest {
         val modified = JSONObject(published.toString())
         val meta = modified.getJSONObject("stateLayout")
         val formatId = "block_0000_0002"
-        val snapshot = JSONObject(block(modified, formatId).toString())
+        // Work already published the authentic source archive. Never erase it
+        // or pretend that its earlier release is today's unformatted lesson.
+        val archives = meta.getJSONArray("sourceFormatRevisions")
+        val original = (0 until archives.length())
+            .map { archives.getJSONObject(it) }
+            .single { it.getString("id") == formatId }
+            .getJSONObject("block")
         val formatted = block(modified, formatId)
-        formatted.put("code", snapshot.getString("code") + "\n")
-        meta.put("sourceFormatRevisions", JSONArray().put(
-            JSONObject().put("id", formatId).put("block", snapshot)))
+        val previous = JSONObject(formatted.toString())
+        assertNotEquals(original.getString("code"), previous.getString("code"))
+        assertEquals(original.getString("code"),
+            CurricularSourceFormatCompat.project(previous, original).getString("code"))
+
+        // A later, token-preserving whitespace improvement must coexist with
+        // the archived choice revision and all earlier formatting proofs.
+        formatted.put("code", previous.getString("code") + "\n")
         meta.getJSONArray("editorial").put(JSONObject()
             .put("id", formatId)
-            .put("beforeSha256", LessonStateLayoutJson.fingerprint(snapshot))
+            .put("beforeSha256", LessonStateLayoutJson.fingerprint(previous))
             .put("afterSha256", LessonStateLayoutJson.fingerprint(formatted)))
         val after = requireNotNull(LessonStateLayoutJson.read(modified))
         assertEquals(before.lineage, after.lineage)
         assertEquals(before.legacyLineage, after.legacyLineage)
+        assertEquals(archives.toString(),
+            modified.getJSONObject("stateLayout").getJSONArray("sourceFormatRevisions").toString())
         val choiceId = meta.getJSONArray("choiceRevisions").getJSONObject(0).getString("id")
         val (p, b) = position(published, choiceId)
         assertEquals(before.storagePosition(p, b), after.storagePosition(p, b))
-        assertEquals(snapshot.getString("code"),
-            CurricularSourceFormatCompat.project(formatted, snapshot).getString("code"))
-        assertNotEquals(snapshot.getString("code"), formatted.getString("code"))
+        assertEquals(original.getString("code"),
+            CurricularSourceFormatCompat.project(formatted, original).getString("code"))
+        assertNotEquals(previous.getString("code"), formatted.getString("code"))
+
+        val forged = JSONObject(modified.toString())
+        block(forged, formatId).put("code", "int main(){ return 99; }")
+        assertTrue(runCatching { LessonStateLayoutJson.read(forged) }.exceptionOrNull()
+            is LessonStateLayoutException)
     }
 }
