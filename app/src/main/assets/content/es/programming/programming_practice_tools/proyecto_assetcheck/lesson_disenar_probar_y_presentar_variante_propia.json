@@ -331,7 +331,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// include/assetcheck/estadisticas.hpp\n#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <string>\nnamespace assetcheck {\nstruct Estadisticas {\n    std::size_t texturas=0, mallas=0, sonidos=0;\n    int bytes_total=0;\n};\nEstadisticas contar_tipos(const Lote& lote);\nstd::string salida_tipos(const Estadisticas& datos, const Lote& lote);\n}"
+          "code": "// include/assetcheck/estadisticas.hpp\n#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <string>\n\nnamespace assetcheck {\nstruct Estadisticas {\n    std::size_t texturas=0, mallas=0, sonidos=0;\n    int bytes_total=0;\n};\n\nEstadisticas contar_tipos(const Lote& lote);\nstd::string salida_tipos(const Estadisticas& datos, const Lote& lote);\n}"
         },
         {
           "type": "paragraph",
@@ -373,7 +373,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Cada elemento del vector ya fue admitido. Completa sólo esta función.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    // Cuenta cada tipo exacto y suma bytes declarados.\n    return total;\n}\nint main() {\n    int grupos=0;\n    if (!(std::cin >> grupos)) return 0;\n    for (int g=0; g<grupos; ++g) {\n        int cantidad=0;\n        if (!(std::cin >> cantidad)) return 1;\n        std::vector<Registro> admitidos;\n        for (int i=0; i<cantidad; ++i) {\n            Registro r;\n            if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n            admitidos.push_back(r);\n        }\n        const Totales t=contar_tipos(admitidos);\n        std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n                  << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n    }\n}",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\n\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Cada elemento del vector ya fue admitido. Completa sólo esta función.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    // Cuenta cada tipo exacto y suma bytes declarados.\n    return total;\n}\n\nint main() {\n    int grupos=0;\n\n    if (!(std::cin >> grupos)) return 0;\n\n    for (int g=0; g<grupos; ++g) {\n        int cantidad=0;\n        if (!(std::cin >> cantidad)) return 1;\n        std::vector<Registro> admitidos;\n\n        for (int i=0; i<cantidad; ++i) {\n            Registro r;\n            if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n            admitidos.push_back(r);\n        }\n\n        const Totales t=contar_tipos(admitidos);\n\n        std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n                  << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n    }\n}",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -444,7 +444,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n\n    return total;\n}"
         },
         {
           "type": "paragraph",
@@ -465,7 +465,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\n\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\n\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\n\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
         },
         {
           "type": "paragraph",
@@ -503,7 +503,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// src/cliente_tipos.cpp (referencia del autor)\n#include \"assetcheck/estadisticas.hpp\"\n#include \"assetcheck/manifiesto.hpp\"\n#include <iostream>\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote lote;\n    assetcheck::ErrorGlobal error=assetcheck::ErrorGlobal::ninguno;\n    if (!assetcheck::revisar_archivo(argv[1], lote, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_tipos(\n        assetcheck::contar_tipos(lote), lote);\n    std::cerr << assetcheck::salida_rechazos(lote);\n    return assetcheck::codigo_terminacion(error, lote);\n}"
+          "code": "// src/cliente_tipos.cpp (referencia del autor)\n#include \"assetcheck/estadisticas.hpp\"\n#include \"assetcheck/manifiesto.hpp\"\n#include <iostream>\n\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n\n    assetcheck::Lote lote;\n    assetcheck::ErrorGlobal error=assetcheck::ErrorGlobal::ninguno;\n\n    if (!assetcheck::revisar_archivo(argv[1], lote, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n\n    std::cout << assetcheck::salida_tipos(\n        assetcheck::contar_tipos(lote), lote);\n    std::cerr << assetcheck::salida_rechazos(lote);\n\n    return assetcheck::codigo_terminacion(error, lote);\n}"
         },
         {
           "type": "paragraph",
@@ -541,7 +541,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\nconst Estadisticas e=contar_tipos(lote);\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
+          "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\n\nconst Estadisticas e=contar_tipos(lote);\n\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
         },
         {
           "type": "paragraph",
@@ -3957,6 +3957,119 @@
         "id": "block_0017_0004",
         "beforeSha256": "df5974b70554d5dec31d43fd174b86da652e1d90687b7b4a1a4b524c62fe79a5",
         "afterSha256": "51f3959c52c1ed38789e01cc447909cc489975833a21c34477af178538421895"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "c82fd37c3ded99ed44aafb2b757fd07c590def117e3ca8bc04d807fc722213ec",
+        "afterSha256": "cef75263a06b32755459f68748ed1234e9cd9ff7dd2462b90f9ffef04b971d0b"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "2e17e5769a4c3cc899376dde108d56475755f12cb4767b268e88e360cdbe7b58",
+        "afterSha256": "448df8971d5b75e9974163bd4dd173bce04abb1f226f3019aa90df50efa4b63a"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "0740906acc170c36380e1b006fdae4b646fbff120a58d27083baa76d94f772b8",
+        "afterSha256": "e5fe04d9b81d182aa46308d5ac4c689a0081a60d7534a5d396c6545796ba9533"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "fa0460ffd2c3b2296de310bd6ad697e6d79ae4471a2102f8f4bae7cdaa683174",
+        "afterSha256": "f0597637ed510714994da5b1ba71f54a865f8bb488655cb63376536fc6dfa7c3"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "1a91999ea659f1ee06489796cee2eb4581e17045d9487e01302359b8db38bf11",
+        "afterSha256": "c1fc187f5850134bbddf9a3de9c9d5140e4ab765d95913d0609727c3d0733982"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "9a0ba6ae204ee476ac45421227e48b5d58f2f7ee8c9f458138c33cd09462223f",
+        "afterSha256": "6143bbf7932975c92c9144d6e21ea7b46212b2b425942933672e14d83c594e7c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// include/assetcheck/estadisticas.hpp\n#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <string>\nnamespace assetcheck {\nstruct Estadisticas {\n    std::size_t texturas=0, mallas=0, sonidos=0;\n    int bytes_total=0;\n};\nEstadisticas contar_tipos(const Lote& lote);\nstd::string salida_tipos(const Estadisticas& datos, const Lote& lote);\n}"
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Cada elemento del vector ya fue admitido. Completa sólo esta función.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    // Cuenta cada tipo exacto y suma bytes declarados.\n    return total;\n}\nint main() {\n    int grupos=0;\n    if (!(std::cin >> grupos)) return 0;\n    for (int g=0; g<grupos; ++g) {\n        int cantidad=0;\n        if (!(std::cin >> cantidad)) return 1;\n        std::vector<Registro> admitidos;\n        for (int i=0; i<cantidad; ++i) {\n            Registro r;\n            if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n            admitidos.push_back(r);\n        }\n        const Totales t=contar_tipos(admitidos);\n        std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n                  << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n    }\n}",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "2\n0\n4\ntextura 5\nmalla 240\nsonido 8\nsonido 2\n",
+                "outputs": [
+                  "textura=0 malla=0 sonido=0 bytes=0\ntextura=1 malla=1 sonido=2 bytes=255\n"
+                ],
+                "explanation": "La primera colección está vacía; en la segunda hay una textura, una malla y dos sonidos. La suma es 255."
+              },
+              {
+                "standardInput": "2\n3\nsonido 30000\nsonido 7\ntextura 1\n2\nmalla 200\nmalla 100\n",
+                "outputs": [
+                  "textura=1 malla=0 sonido=2 bytes=30008\ntextura=0 malla=2 sonido=0 bytes=300\n"
+                ],
+                "explanation": "Cada colección reinicia sus contadores. La primera suma 30000+7+1; la segunda 200+100."
+              },
+              {
+                "standardInput": "1\n5\ntextura 30000\ntextura 1\nmalla 10\nsonido 2\nsonido 3\n",
+                "outputs": [
+                  "textura=2 malla=1 sonido=2 bytes=30016\n"
+                ],
+                "explanation": "Cada registro admitido aporta un contador y sus bytes; 30000+1+10+2+3=30016."
+              },
+              {
+                "standardInput": "1\n3\nmalla 7\nmalla 9\nmalla 13\n",
+                "outputs": [
+                  "textura=0 malla=3 sonido=0 bytes=29\n"
+                ],
+                "explanation": "Las tres admisiones son mallas; los demás contadores siguen en cero."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// src/cliente_tipos.cpp (referencia del autor)\n#include \"assetcheck/estadisticas.hpp\"\n#include \"assetcheck/manifiesto.hpp\"\n#include <iostream>\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote lote;\n    assetcheck::ErrorGlobal error=assetcheck::ErrorGlobal::ninguno;\n    if (!assetcheck::revisar_archivo(argv[1], lote, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_tipos(\n        assetcheck::contar_tipos(lote), lote);\n    std::cerr << assetcheck::salida_rechazos(lote);\n    return assetcheck::codigo_terminacion(error, lote);\n}"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\nconst Estadisticas e=contar_tipos(lote);\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
+        }
       }
     ]
   }
