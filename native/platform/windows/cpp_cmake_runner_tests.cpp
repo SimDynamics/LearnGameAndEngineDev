@@ -1980,6 +1980,25 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     const auto warning_output=
         faulty_warning_run.compilation.stdout_bytes+
         faulty_warning_run.compilation.stderr_bytes;
+    // Record the *emitted* MSVC warning code, never an assumed GCC warning
+    // or a fixed diagnostic inferred from the lesson's faulty expression.
+    const auto warning_at=warning_output.find("warning C");
+    const auto warning_first=warning_at==std::string::npos?0:
+        warning_output.rfind('\n',warning_at);
+    const auto warning_line_start=warning_first==std::string::npos?0:
+        warning_first+1;
+    const std::string_view warning_line(warning_output.data()+warning_line_start,
+        warning_at==std::string::npos?0:warning_at-warning_line_start);
+    const bool diagnostic_code=warning_at!=std::string::npos&&
+        warning_at+13<=warning_output.size()&&
+        std::ranges::all_of(std::string_view(warning_output).substr(
+            warning_at+9,4),[](unsigned char ch) {
+                return ch>='0'&&ch<='9';
+            });
+    check(diagnostic_code&&warning_line.find("cantidad.cpp")!=
+            std::string_view::npos,
+        "U3L7 MSVC did not emit a source-owned warning with its numeric code");
+    const auto warning_code=warning_output.substr(warning_at+8,5);
     const auto actual_warning_graph=evaluate_cmake_graph(
         warning_request,faulty_warning_run,warning_options);
     check(actual_warning_graph.correct&&
@@ -2092,7 +2111,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     check(warning_block.project_files==warning_original&&
         warning_request.project_files!=exclusive.project_files,
         "U3L7 platform adaptation changed the historical source or final repair");
-    std::cout<<"PASS U3L7 actual MSVC warnings, compiler-specific CMake options, defective boundary, inclusive repair and exclusive-bound rejection\n";
+    std::cout<<"PASS U3L7 actual MSVC diagnostic "<<warning_code<<
+        ": target-owned compiler flags, defective boundary, inclusive repair "
+        "and exclusive-bound rejection\n";
     // U3L10: validate the published eleven-case checker under real MSVC
     // without modifying its original CMake or the intentionally faulty source.
     constexpr auto adjustments_relative=
