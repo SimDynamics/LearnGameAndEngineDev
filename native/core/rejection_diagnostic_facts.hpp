@@ -256,7 +256,14 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
             end=i+2;interval=true;stated_upper=*words[i+2].number;
         }else if(i+1<words.size()) {
             const auto& next=words[i+1];
-            if(next.number&&next.start>=words[i].end) {
+            if(next.number&&*next.number<0&&
+                    next.start==words[i].end&&
+                    next.start<source.size()&&source[next.start]=='-') {
+                // No spaces in "0-9": the shared lexer treats "-9" as
+                // one signed number. It is the upper bound of a hyphenated
+                // range, not a negative upper limit.
+                interval=true;stated_upper=-*next.number;
+            }else if(next.number&&next.start>=words[i].end) {
                 const auto connector=std::string_view(source).substr(words[i].end,
                     next.start-words[i].end);
                 const auto trim=[](std::string_view value) {
@@ -286,12 +293,6 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                 interval=punctuation=="-"||bracketed||
                     connector.find("..")!=connector.npos;
                 if(interval)stated_upper=*next.number;
-            }else if(next.number&&*next.number<0&&
-                    next.start==words[i].end&&
-                    next.start<source.size()&&source[next.start]=='-') {
-                // "0-9" lexes as the two tokens 0 and -9; the '-' here
-                // separates the bounds rather than negating the maximum.
-                interval=true;stated_upper=-*next.number;
             }
             if(interval)end=i+1;
         }
