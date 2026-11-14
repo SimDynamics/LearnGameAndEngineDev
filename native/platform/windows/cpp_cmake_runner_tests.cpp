@@ -2031,6 +2031,153 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         warning_request.project_files!=exclusive.project_files,
         "U3L7 platform adaptation changed the historical source or final repair");
     std::cout<<"PASS U3L7 actual MSVC warnings, compiler-specific CMake options, defective boundary, inclusive repair and exclusive-bound rejection\n";
+    // U3L10: validate the published eleven-case checker under real MSVC
+    // without modifying its original CMake or the intentionally faulty source.
+    constexpr auto adjustments_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json";
+    const auto adjustments_lesson=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/adjustments_relative);
+    const auto& adjustments_before=adjustments_lesson.pages.at(6).blocks.at(6);
+    check(adjustments_before.stable_id=="block_0006_0008"&&
+        adjustments_before.cmake&&adjustments_before.output_check&&
+        adjustments_before.output_check->cases.size()==1&&
+        adjustments_before.project_files.size()==5,
+        "U3L10 original eleven-case checker or its stable owner changed");
+    const auto adjustments_files=adjustments_before.project_files;
+    CppRunRequest adjustments;
+    adjustments.projects_directory=environment.paths.projects;
+    adjustments.project_key="qa/p2-u3-adjustments/eleven-original-cases";
+    adjustments.request_id=3501;
+    adjustments.revision=3501;
+    adjustments.project_files=adjustments_files;
+    adjustments.cmake=adjustments_before.cmake;
+    adjustments.capture_cmake_graph=true;
+    adjustments.action=CppRunRequest::Action::compile_run;
+    const auto adjustments_replace=[](std::string& source,
+            std::string_view old_text,std::string_view new_text) {
+        const auto at=source.find(old_text);
+        check(at!=source.npos&&source.find(old_text,at+old_text.size())==source.npos,
+            "U3L10 published source no longer matches its expected repair");
+        source.replace(at,old_text.size(),new_text);
+    };
+    bool adjustments_options=false;
+    for(auto& file:adjustments.project_files)
+        if(file.first=="CMakeLists.txt") {
+            for(const auto name:{"ajustes","consultar_ajustes","comprobar_ajustes"}) {
+                const auto original=std::string("target_compile_options(")+name+
+                    " PRIVATE -Wall -Wextra -Wpedantic)";
+                const auto compatible=std::string("if(MSVC)\n  target_compile_options(")+
+                    name+" PRIVATE /W4 /permissive-)\nelse()\n  "+original+"\nendif()";
+                adjustments_replace(file.second,original,compatible);
+            }
+            adjustments_options=true;
+        }
+    check(adjustments_options&&adjustments.project_files!=adjustments_files,
+        "U3L10 MSVC-specific options were not prepared safely");
+    const auto faulty_adjustments=run_cpp(adjustments);
+    check(faulty_adjustments.error_utf8.empty()&&
+        faulty_adjustments.configuration.succeeded()&&
+        faulty_adjustments.compilation.succeeded()&&
+        faulty_adjustments.execution.status==CppPhaseStatus::completed&&
+        faulty_adjustments.execution.exit_code==1&&
+        faulty_adjustments.execution.stdout_bytes.find(
+            "Caso=3 Acepta=1 Ajuste=2")!=std::string::npos&&
+        faulty_adjustments.execution.stdout_bytes.find(
+            "Caso=6 Acepta=1 Ajuste=40")!=std::string::npos&&
+        faulty_adjustments.execution.stdout_bytes.find("Fallos=2")!=
+            std::string::npos&&
+        faulty_adjustments.execution.stderr_bytes.empty()&&
+        faulty_adjustments.cmake_graph,
+        "U3L10 actual MSVC did not expose both original adjustment errors");
+    const auto& adjustment_graph=*faulty_adjustments.cmake_graph;
+    const auto& adjustment_library=find_target(adjustment_graph,"ajustes");
+    const auto& adjustment_client=find_target(adjustment_graph,"consultar_ajustes");
+    const auto& adjustment_checker=find_target(adjustment_graph,"comprobar_ajustes");
+    check(adjustment_graph.project_name=="AjustesConEvidencia"&&
+        adjustment_library.type=="STATIC_LIBRARY"&&
+        contains(adjustment_library.compiled_sources,"src/ajuste.cpp")&&
+        adjustment_client.type=="EXECUTABLE"&&
+        contains(adjustment_client.compiled_sources,"app/consulta.cpp")&&
+        contains(adjustment_client.build_dependencies,"ajustes")&&
+        links(adjustment_client,"ajustes.lib")&&
+        adjustment_checker.type=="EXECUTABLE"&&
+        contains(adjustment_checker.compiled_sources,"pruebas/casos.cpp")&&
+        contains(adjustment_checker.build_dependencies,"ajustes")&&
+        links(adjustment_checker,"ajustes.lib"),
+        "U3L10 generated graph did not preserve the shared library and two consumers");
+    const auto actual_adjustment_commands=read(
+        inspect_cpp_project(adjustments).workspace/L"compile_commands.json");
+    check(actual_adjustment_commands.find("src/ajuste.cpp")!=std::string::npos&&
+        actual_adjustment_commands.find("/W4")!=std::string::npos&&
+        actual_adjustment_commands.find("/permissive-")!=std::string::npos&&
+        actual_adjustment_commands.find("-Wpedantic")==std::string::npos,
+        "U3L10 MSVC command did not apply the selected compiler warning options");
+    // Changing only the erroneous subtraction must turn the very same
+    // eleven checks green; the published original and saved progress remain.
+    bool repaired_adjustment=false;
+    for(auto& file:adjustments.project_files)
+        if(file.first=="src/ajuste.cpp") {
+            adjustments_replace(file.second,"ajuste = valor - superior;",
+                "ajuste = superior - valor;");
+            repaired_adjustment=true;
+        }
+    check(repaired_adjustment,"U3L10 faulty function was replaced unexpectedly");
+    adjustments.request_id=3502;
+    ++adjustments.revision;
+    const auto correct_adjustments=run_cpp(adjustments);
+    ran(correct_adjustments);
+    const auto adjustments_expected=
+        adjustments_before.output_check->cases.front().outputs.front();
+    const auto adjustments_capture=capture_cpp_execution(
+        adjustments,correct_adjustments);
+    check(matches_native_console_output(
+            correct_adjustments.execution.stdout_bytes,adjustments_expected)&&
+        correct_adjustments.execution.stderr_bytes.empty()&&
+        evaluate_cpp_output_check(*adjustments_before.output_check,
+            adjustments_capture,adjustments.revision).verdict==
+                curriculum::OutputVerdict::correct,
+        "U3L10 corrected library failed the published eleven original cases");
+    state::StateData adjustments_saved;
+    state::prepare_lesson_state(adjustments_saved,adjustments_lesson);
+    check(record_compiler_puzzle_case(adjustments_saved,adjustments_lesson,
+            adjustments_before,adjustments,adjustments_capture,
+            "Once comprobaciones reales")&&
+        compiler_puzzle_completed(adjustments_saved,adjustments_lesson,
+            adjustments_before)&&
+        compiler_puzzle_case_count(adjustments_saved,adjustments_lesson,
+            adjustments_before)==1,
+        "U3L10 correct original case did not obtain its authentic first-case receipt");
+    const auto adjustments_reopened=state::decode(state::encode(adjustments_saved));
+    check(compiler_puzzle_completed(adjustments_reopened,adjustments_lesson,
+            adjustments_before)&&
+        adjustments_before.project_files==adjustments_files,
+        "U3L10 reopened completion or original project sources were changed");
+    // After the fix the client is still a different executable. Its
+    // six requests include two rejections that must keep stderr separate.
+    auto adjustments_client_request=adjustments;
+    adjustments_client_request.request_id=3503;
+    ++adjustments_client_request.revision;
+    adjustments_client_request.cmake->target="consultar_ajustes";
+    adjustments_client_request.stdin_utf8=
+        "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n";
+    const auto adjustments_client_run=run_cpp(adjustments_client_request);
+    check(adjustments_client_run.error_utf8.empty()&&
+        adjustments_client_run.compilation.succeeded()&&
+        adjustments_client_run.execution.status==CppPhaseStatus::completed&&
+        adjustments_client_run.execution.exit_code==1&&
+        adjustments_client_run.executable=="consultar_ajustes"&&
+        adjustments_client_run.execution.stdout_bytes.find(
+            "Aceptadas=4 Rechazadas=2 Suma=-1")!=std::string::npos&&
+        adjustments_client_run.execution.stderr_bytes.find(
+            "Rechazo: peticion=4")!=std::string::npos&&
+        adjustments_client_run.execution.stderr_bytes.find(
+            "Rechazo: peticion=6")!=std::string::npos&&
+        adjustments_before.project_files==adjustments_files,
+        "U3L10 external client did not preserve accepted and rejected requests");
+    std::cout<<"PASS U3L10 actual MSVC eleven-case regression: source-dependent "
+        "library/client/checker, warning options, two initial failures, "
+        "isolated repair, first-case history and six-request client\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
