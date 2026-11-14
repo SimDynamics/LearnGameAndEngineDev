@@ -1699,9 +1699,19 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 "Unknown, inactive or duplicated source-format owner");
             const auto previous=item.GetNamedObject(L"block");
             const auto before=state_fingerprint(previous);
-            const auto expected=refined_order_signatures.contains(id)?
-                refined_order_signatures.at(id):result.signatures.at(id);
-            require(before==expected,"Source format archive does not match its historical contract");
+            // A formatting archive can begin after an authenticated compiler,
+            // reference, choice or order revision. Compare with that revised
+            // contract, not the original pre-revision signature. The active
+            // block is independently checked against the same target below.
+            const auto expected=revised_compiler_references.contains(id)?
+                std::string(revised_compiler_references.at(id)->reference_after):
+                revised_compilers.contains(id)?
+                    std::string(revised_compilers.at(id)->after):
+                revised_choices.contains(id)?
+                    std::string(revised_choices.at(id)->after_payload):
+                refined_order_signatures.contains(id)?
+                    refined_order_signatures.at(id):result.signatures.at(id);
+            require(before==expected,"Source format archive does not match its authenticated pre-format contract");
             source_format_originals.emplace(id,previous);
             result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
         }
