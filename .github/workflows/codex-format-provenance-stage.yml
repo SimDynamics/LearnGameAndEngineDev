@@ -1,0 +1,256 @@
+name: Codex temporary source format provenance verification
+on:
+  push:
+    branches: [Codex]
+    paths: [.github/workflows/codex-format-provenance-stage.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reproduce detached provenance and prepare bounded correction
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from copy import deepcopy
+          import subprocess, sys
+          base = 'ecb9f24ee3b9780c8c065c3e484c261bac4ac131'
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^'], text=True).strip() == base
+          assert subprocess.check_output(['git', 'diff', '--name-only', base, 'HEAD'], text=True).splitlines() == ['.github/workflows/codex-format-provenance-stage.yml']
+          sys.path.insert(0, 'scripts/curriculum')
+          import test_compile_check_source_format as fixture
+          import validar_json_programacion as contract
+          before, after = fixture.formatted_pair()
+          page, index = fixture.POSITIONS[0]
+          old = before['pages'][page]['blocks'][index]
+          current = after['pages'][page]['blocks'][index]
+          relative = 'app/src/main/assets/content/es/' + fixture.RELATIVE.as_posix()
+          def accepts(path, previous, pn=page, bn=index):
+              return contract.preserves_source_format_revision(path, pn, bn, previous, current,
+                  previous_document=before, current_document=after)
+          assert accepts(relative, old), 'Real source-format fixture must pass before patch'
+          unrelated = relative.replace('lesson_declaraciones_y_firmas.json', 'lesson_unrelated.json')
+          assert accepts(unrelated, old), 'Expected wrong-path provenance reproduction'
+          detached = deepcopy(old)
+          detached['initialCode'] = '\n' + detached['initialCode']
+          for item in detached.get('projectFiles', []):
+              if item['path'] == 'main.cpp':
+                  item['initialCode'] = detached['initialCode']
+          assert accepts(relative, detached), 'Expected detached-original provenance reproduction'
+          assert accepts(relative, old, float(page), float(index)), 'Expected non-integer coordinate reproduction'
+          print('REPRODUCED: wrong lesson pathname, detached earlier source, and non-integer coordinates accepted', flush=True)
+          path = Path('scripts/curriculum/validar_json_programacion.py')
+          original = path.read_text(encoding='utf-8')
+          start = original.index('def preserves_source_format_revision(')
+          end = original.index('\ndef preserves_previous_exercise(', start)
+          section = original[start:end]
+          def replace_once(old_text, new_text):
+              global section
+              assert section.count(old_text) == 1, old_text
+              section = section.replace(old_text, new_text, 1)
+          replace_once('    if (course_id not in STRUCTURAL_COURSES or\n',
+              '    if (course_id not in STRUCTURAL_COURSES or\n'
+              '            type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0 or\n')
+          replace_once('    try:\n        baseline = _state_layout.prepare(previous_document)\n',
+              '''    try:
+                  # Bind the complete lesson to its actual repository path, not
+                  # merely a course prefix shared by unrelated lesson files.
+                  lesson_path = PurePosixPath(str(relative).replace("\\\\", "/")).relative_to(
+                      PurePosixPath("app/src/main/assets/content/es/programming") / course_id)
+                  if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                          or lesson_path.suffix != ".json"
+                          or not lesson_path.stem.startswith("lesson_")
+                          or not lesson_path.stem[7:]):
+                      return False
+                  lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
+                  if previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id:
+                      return False
+                  baseline = _state_layout.prepare(previous_document)
+          '''.rstrip() + '\n')
+          replace_once('        identity = identities[0]\n',
+              '        identity = identities[0]\n'
+              '        # Equivalent tokens alone cannot authenticate the caller\'s\n'
+              '        # claimed old block. It must be the exact published owner.\n'
+              '        if _state_layout._blocks(baseline).get(identity) != old:\n'
+              '            return False\n')
+          with path.open('w', encoding='utf-8', newline='') as stream:
+              stream.write(original[:start] + section + original[end:])
+          PY
+      - name: Add real-asset regressions and retain read-only continuous checks
+        shell: bash
+        run: |
+          cat > scripts/curriculum/test_source_format_provenance.py <<'PY'
+          """Bind formatting permission to the actual published lesson and both owners.
+
+          All reviewed documents are generated in memory from the real U6 assets.
+          This does not change curricular JSON, original hashes or student state.
+          """
+          from copy import deepcopy
+          import unittest
+          import validar_json_programacion as contract
+          import test_compile_check_source_format as fixture
+
+
+          class SourceFormatProvenanceTest(unittest.TestCase):
+              @classmethod
+              def setUpClass(cls):
+                  cls.before, cls.after = fixture.formatted_pair()
+                  cls.relative = 'app/src/main/assets/content/es/' + fixture.RELATIVE.as_posix()
+                  cls.asset_path = fixture.ROOT / cls.relative
+                  cls.asset_bytes = cls.asset_path.read_bytes()
+
+              def setUp(self):
+                  self.previous = deepcopy(self.before)
+                  self.current_doc = deepcopy(self.after)
+                  self.page, self.index = fixture.POSITIONS[0]
+                  self.old = self.previous['pages'][self.page]['blocks'][self.index]
+                  self.current = self.current_doc['pages'][self.page]['blocks'][self.index]
+
+              def tearDown(self):
+                  self.assertEqual(self.asset_bytes, self.asset_path.read_bytes())
+
+              def accepts(self, **overrides):
+                  args = dict(relative=self.relative, pn=self.page, bn=self.index,
+                              old=self.old, current=self.current,
+                              previous_document=self.previous, current_document=self.current_doc)
+                  args.update(overrides)
+                  return contract.preserves_source_format_revision(**args)
+
+              def test_three_authentic_owners_preserve_their_archived_format(self):
+                  for p, b in fixture.POSITIONS:
+                      with self.subTest(owner=(p, b)):
+                          self.assertTrue(self.accepts(pn=p, bn=b,
+                              old=self.previous['pages'][p]['blocks'][b],
+                              current=self.current_doc['pages'][p]['blocks'][b]))
+
+              def test_equivalent_windows_path_spelling_stays_valid(self):
+                  self.assertTrue(self.accepts(relative=self.relative.replace('/', '\\')))
+
+              def test_another_lesson_filename_cannot_borrow_the_proof(self):
+                  self.assertFalse(self.accepts(relative=self.relative.replace(
+                      'lesson_declaraciones_y_firmas.json', 'lesson_other.json')))
+
+              def test_another_unit_cannot_borrow_the_proof(self):
+                  self.assertFalse(self.accepts(relative=self.relative.replace(
+                      '/funciones_y_contratos/', '/another_unit/')))
+
+              def test_noncanonical_parent_path_and_wrong_suffix_are_rejected(self):
+                  for path in (self.relative.replace('/funciones_y_contratos/',
+                                '/funciones_y_contratos/../funciones_y_contratos/'),
+                               self.relative.removesuffix('.json') + '.txt',
+                               self.relative + '/extra.json'):
+                      with self.subTest(path=path):
+                          self.assertFalse(self.accepts(relative=path))
+
+              def test_lexically_equivalent_but_detached_old_source_is_rejected(self):
+                  detached = deepcopy(self.old)
+                  detached['initialCode'] = '\n' + detached['initialCode']
+                  for item in detached.get('projectFiles', []):
+                      if item['path'] == 'main.cpp':
+                          item['initialCode'] = detached['initialCode']
+                  self.assertFalse(self.accepts(old=detached))
+
+              def test_detached_previous_guidance_is_not_historical_evidence(self):
+                  detached = deepcopy(self.old)
+                  self.assertIn('explanation', detached['compileCheck'])
+                  detached['compileCheck']['explanation'] += ' Texto no publicado.'
+                  self.assertFalse(self.accepts(old=detached))
+
+              def test_detached_current_block_is_rejected(self):
+                  detached = deepcopy(self.current)
+                  detached['initialCode'] = '\n' + detached['initialCode']
+                  self.assertFalse(self.accepts(current=detached))
+
+              def test_coordinates_are_nonnegative_integers_not_equal_numeric_aliases(self):
+                  for pn, bn in ((float(self.page), self.index),
+                                 (self.page, float(self.index)),
+                                 (True, self.index), (self.page, False),
+                                 (-1, self.index), (self.page, -1),
+                                 (100000, self.index)):
+                      with self.subTest(position=(pn, bn)):
+                          self.assertFalse(self.accepts(pn=pn, bn=bn))
+
+              def test_missing_archive_and_duplicate_identity_stay_rejected(self):
+                  identity = self.current_doc['stateLayout']['current'][self.page]['blocks'][self.index]
+                  for mode in ('missing', 'duplicate'):
+                      forged = deepcopy(self.current_doc)
+                      archives = forged['stateLayout']['sourceFormatRevisions']
+                      if mode == 'missing':
+                          forged['stateLayout']['sourceFormatRevisions'] = [
+                              entry for entry in archives if entry['id'] != identity]
+                      else:
+                          archives.append(deepcopy(next(entry for entry in archives if entry['id'] == identity)))
+                      with self.subTest(mode=mode):
+                          self.assertFalse(self.accepts(current_document=forged))
+
+              def test_changed_tokens_do_not_become_a_format_revision(self):
+                  forged = deepcopy(self.current_doc)
+                  changed = forged['pages'][self.page]['blocks'][self.index]
+                  changed['initialCode'] += '\nint unapproved = 1;\n'
+                  self.assertFalse(self.accepts(current_document=forged, current=changed))
+
+              def test_wrong_course_locale_and_absent_documents_stay_rejected(self):
+                  self.assertFalse(self.accepts(course_id='programming_practice_tools'))
+                  self.assertFalse(self.accepts(relative=self.relative.replace('/es/', '/en/')))
+                  self.assertFalse(self.accepts(previous_document=None))
+                  self.assertFalse(self.accepts(current_document=None))
+
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/codex-reviewed-diagnostic-format.yml')
+          text = path.read_text(encoding='utf-8')
+          anchor = '      - scripts/curriculum/test_reviewed_diagnostic_structural_format.py\n'
+          assert text.count(anchor) == 1
+          text = text.replace(anchor, anchor + '      - scripts/curriculum/test_source_format_provenance.py\n')
+          text += ('      - name: Reject detached source-format provenance and wrong lesson paths\n'
+                   '        run: python -B -m unittest discover -s scripts/curriculum -p test_source_format_provenance.py -v\n')
+          with path.open('w', encoding='utf-8', newline='') as output:
+              output.write(text)
+          PY
+      - name: Run new proof checks and existing real diagnostic integration
+        shell: bash
+        run: |
+          python3 -m py_compile scripts/curriculum/validar_json_programacion.py scripts/curriculum/test_source_format_provenance.py
+          python3 -B -m unittest discover -s scripts/curriculum -p test_source_format_provenance.py -v
+          python3 -B -m unittest discover -s scripts/curriculum -p test_compile_check_source_format.py -v
+          python3 -B -m unittest discover -s scripts/curriculum -p test_reviewed_diagnostic_structural_format.py -v
+          git diff --check
+      - name: Save only tested file blobs without moving any ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, re, subprocess, urllib.request
+          files = ['scripts/curriculum/validar_json_programacion.py',
+                   'scripts/curriculum/test_source_format_provenance.py',
+                   '.github/workflows/codex-reviewed-diagnostic-format.yml']
+          actual = set(subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines())
+          assert actual == {files[0], files[2]}, actual
+          assert subprocess.check_output(['git', 'diff', '--name-only', '--', 'app/src/main/assets/content', 'PENDIENTES_RECURSOS_CURRICULARES.md'], text=True) == ''
+          print('PENDING_COUNT', len(re.findall(r'^### ', Path('PENDIENTES_RECURSOS_CURRICULARES.md').read_text(encoding='utf-8'), re.M)), flush=True)
+          for path in files:
+              data = Path(path).read_bytes()
+              sha = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/SimDynamics/LearnGameAndEngineDev/git/blobs',
+                  method='POST', data=json.dumps({'content': data.decode('utf-8'), 'encoding': 'utf-8'}).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  result = json.load(response)
+              assert result['sha'] == sha
+              print('TESTED_BLOB ' + json.dumps({'path': path, 'sha': sha}), flush=True)
+          PY
