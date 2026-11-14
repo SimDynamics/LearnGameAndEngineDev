@@ -38,6 +38,10 @@ std::vector<OpenBatteryRun> correct(OpenBatteryCall added) {
     for(std::size_t i=1;i<runs.size();++i) {
         runs[i]=runs[0];
         runs[i].exit_code=1;
+        runs[i].mutation=i==originals.size()+2?
+            OpenBatteryMutation::corrupt_destination:
+            OpenBatteryMutation::invert_acceptance;
+        runs[i].target=i<=originals.size()?originals[i-1]:added;
     }
     return runs;
 }
@@ -115,6 +119,18 @@ void judgments() {
     runs[2].calls.pop_back();
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "Short circuit dropped a later case");
+    runs=correct({3,3,7,59});
+    runs[4].target=originals[0];
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "An unrelated old mutant replaced the required case");
+    runs=correct({3,3,7,59});
+    runs.back().mutation=OpenBatteryMutation::invert_acceptance;
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "The new destination mutation was replaced with an acceptance test");
+    runs=correct({3,3,7,59});
+    runs[0].target=OpenBatteryCall{3,3,7,59};
+    verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+           "A pre-mutated baseline counted as a clean original");
     runs=correct({3,3,7,59});
     runs[1].program_frame="another-source";
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,

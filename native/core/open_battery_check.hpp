@@ -25,6 +25,10 @@ struct OpenBatteryRun {
     std::string program_frame;
     bool compiled=false,executed=false;
     int exit_code=-1;
+    // Exact private variant and source-independent input tuple exercised.
+    // A duplicated passing mutant must not stand in for a missing case.
+    OpenBatteryMutation mutation=OpenBatteryMutation::baseline;
+    std::optional<OpenBatteryCall> target;
     std::vector<OpenBatteryCall> calls;
 };
 struct OpenBatteryVerdict {
@@ -144,8 +148,10 @@ inline OpenBatteryVerdict open_battery_verify(
     for(const auto& run:runs)
         if(run.program_frame!=program_frame||!run.compiled||!run.executed)
             return {false,"La ejecución pertenece a otra revisión o no terminó.",{}};
-    if(runs.front().exit_code!=0)
-        return {false,"La biblioteca original no pasó la batería.",{}};
+    if(runs.front().exit_code!=0||
+       runs.front().mutation!=OpenBatteryMutation::baseline||
+       runs.front().target.has_value())
+        return {false,"La biblioteca original no pasó su ejecución sin mutación.",{}};
     auto baseline=runs.front().calls;
     const auto order=[](const auto& a,const auto& b) {
         return std::tie(a.value,a.lower,a.upper,a.initial)<
@@ -166,6 +172,14 @@ inline OpenBatteryVerdict open_battery_verify(
            item.upper==extra->upper)
             return {false,"La nueva terna repite una original.",{}};
     for(std::size_t i=1;i<runs.size();++i) {
+        const auto required=i<=original.size()?
+            OpenBatteryMutation::invert_acceptance:
+            i==original.size()+1?
+                OpenBatteryMutation::invert_acceptance:
+                OpenBatteryMutation::corrupt_destination;
+        const auto target=i<=original.size()?original[i-1]:*extra;
+        if(runs[i].mutation!=required||runs[i].target!=target)
+            return {false,"La mutación no corresponde a su caso original o nuevo.",extra};
         if(runs[i].exit_code!=1)
             return {false,"Una mutación no cambió el resultado final.",extra};
         auto calls=runs[i].calls;
