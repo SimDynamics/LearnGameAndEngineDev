@@ -410,7 +410,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los cuatro conjuntos comprueban colección vacía, dos colecciones sucesivas, varios registros del mismo tipo y tamaños altos. Superar este editor acredita el cálculo dentro de estas entradas, pero no la integración del ejecutable externo ni una prueba Windows."
+          "text": "Los cuatro conjuntos comprueban colección vacía, dos colecciones sucesivas, varios registros del mismo tipo y tamaños altos. Superar este editor acredita el cálculo dentro de estas entradas, pero no la integración del ejecutable externo ni una prueba Windows.\n\nPara desbloquear «Continuar», basta comprobar correctamente el primer caso. Las otras tres pruebas son opcionales y no bloquean el paso; en todas se conserva la misma función. Los casos del editor, con sus entradas y salidas, son:\n\nPrimer caso obligatorio.\nEntrada:\n2\n0\n4\ntextura 5\nmalla 240\nsonido 8\nsonido 2\n\nSalida esperada:\ntextura=0 malla=0 sonido=0 bytes=0\ntextura=1 malla=1 sonido=2 bytes=255\n\nEnsayo opcional 1.\nEntrada:\n2\n3\nsonido 30000\nsonido 7\ntextura 1\n2\nmalla 200\nmalla 100\n\nSalida esperada:\ntextura=1 malla=0 sonido=2 bytes=30008\ntextura=0 malla=2 sonido=0 bytes=300\n\nEnsayo opcional 2.\nEntrada:\n1\n5\ntextura 30000\ntextura 1\nmalla 10\nsonido 2\nsonido 3\n\nSalida esperada:\ntextura=2 malla=1 sonido=2 bytes=30016\n\nEnsayo opcional 3.\nEntrada:\n1\n3\nmalla 7\nmalla 9\nmalla 13\n\nSalida esperada:\ntextura=0 malla=3 sonido=0 bytes=29"
         },
         {
           "type": "multiple_choice",
@@ -549,7 +549,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia de U4L7 fue compilada con C++23 en Linux usando GCC 14.2 y Clang 17. En ambos se superaron seis suites CTest, incluidas las cuatro previas y las dos nuevas, y 22 comparaciones del módulo de estadísticas. No atribuyas estas pruebas a MSVC ni a un dispositivo Windows."
+          "text": "La referencia de U4L7 se comprobó con C++23 en Linux mediante GCC 14.2 y Clang 17, y después en GitHub Actions sobre Windows Server 2022 con MSVC 19.44. La validación Windows construyó ambos clientes y sus comprobadores y superó las seis suites CTest, incluidas 22 comparaciones de estadísticas y nueve escenarios del segundo cliente. Puedes consultar el resultado publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional/actions/runs/43654194345. Estas son pruebas de la referencia del autor: no acreditan una instalación desde cero ni las acciones manuales realizadas en el equipo del estudiante."
         },
         {
           "type": "multiple_choice",
@@ -661,7 +661,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto educativo está previsto en E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck. En Visual Studio Developer PowerShell x64, verifica primero la presencia de MSVC, CMake y Ninja. Suponemos que los archivos del proyecto ya fueron creados mediante las lecciones; si la carpeta no existe, no se debe ejecutar la secuencia como si ya se hubiera integrado."
+          "text": "El proyecto educativo ya está publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional. Su carpeta de trabajo en Windows es E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional y AssetCheck es una subcarpeta. En Visual Studio Developer PowerShell x64 comprueba primero las rutas y versiones de MSVC, CMake y Ninja. Las órdenes siguientes suponen que has creado o incorporado los archivos mediante las lecciones anteriores; no ejecutes la construcción sobre una carpeta inexistente o una caché ajena."
         },
         {
           "type": "code",
@@ -679,7 +679,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para esta muestra, ambos códigos esperados son 1 por cuatro rechazos locales, no por un fallo de compilación. Las redirecciones guardan cada canal por separado dentro de build, que no se publica. Todavía faltan ejecución, capturas y comparación reales en Windows."
+          "text": "Para esta muestra, ambos códigos esperados son 1 porque hay cuatro rechazos locales, no por un fallo de compilación. Las redirecciones guardan stdout y stderr por separado dentro de build, una carpeta que no se publica. La referencia del autor ya pasó seis suites CTest en Windows Server 2022 con MSVC 19.44. Todavía se deben ejecutar y documentar las acciones correspondientes en el Windows local del estudiante, con capturas reales de las herramientas y resultados; el registro de GitHub Actions no reemplaza esas capturas."
         },
         {
           "type": "multiple_choice",
@@ -746,7 +746,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La carpeta de AssetCheck es un repositorio educativo independiente del principal. Un archivo .gitignore excluye build/, build-*/, out/, .vs/, binarios .exe/.obj/.pdb y archivos .env. Versiona CMakeLists.txt, include/, src/, pruebas/, muestras/ con datos ficticios, README.md y docs/. Nunca publiques credenciales, modelos, cachés o datos personales."
+          "text": "El repositorio educativo de Programación 2 ya existe y se llama SimDynamics/02_construccion_depuracion_y_practica_profesional. AssetCheck es una subcarpeta dentro de ese repositorio, no otro repositorio independiente. El archivo .gitignore de la raíz excluye carpetas build/, build-*/, out/, .vs/, binarios generados .exe/.obj/.pdb y archivos .env. Versiona CMakeLists.txt, include/, src/, pruebas/, muestras/ con datos ficticios, README.md y docs/. Nunca publiques credenciales, modelos, cachés o información personal."
         },
         {
           "type": "code",
@@ -755,7 +755,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba si el proyecto ya es repositorio Git. Si existe .git y un historial, consérvalo; no inicialices ni fuerces otra rama. Sólo si el directorio aún no es repositorio, git init -b main establece una rama inicial. La documentación oficial de Git explica esta opción en https://git-scm.com/docs/git-init."
+          "text": "Antes de preparar una publicación, comprueba con Git la raíz del proyecto, la rama, el historial y la dirección de origin. En este proyecto, .git ya existe en E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional; Git también lo reconoce al ejecutar órdenes desde AssetCheck. No ejecutes git init, no crees un .git dentro de AssetCheck y no sustituyas origin a ciegas. La documentación oficial de Git permite consultar estas operaciones en https://git-scm.com/docs/git-status y https://git-scm.com/docs/git-remote."
         },
         {
           "type": "code",
@@ -785,11 +785,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Crear y comprobar el repositorio educativo en GitHub"
+          "text": "Verificar y actualizar el repositorio educativo existente"
         },
         {
           "type": "paragraph",
-          "text": "En GitHub, usa New repository para crear un repositorio vacío en tu cuenta con un nombre propio de AssetCheck. Si el proyecto local ya tiene README y .gitignore, no es necesario que el formulario cree otros archivos iniciales. Copia la URL HTTPS real del botón Code; no inventes una dirección ni escribas contraseñas en los comandos."
+          "text": "El repositorio de Programación 2 ya está creado y publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional. Comprueba que origin apunte a esa dirección y que la rama local sea la prevista antes de publicar cambios. No uses «New repository» ni crees otro repositorio para AssetCheck, sus pruebas, su variante o las etapas futuras. El bloque siguiente muestra operaciones generales de Git: la orden que agrega origin sólo procede cuando falta ese remoto, por lo que NO debes ejecutarla si origin ya existe. No escribas contraseñas ni tokens en los comandos."
         },
         {
           "type": "code",
@@ -798,7 +798,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si la rama actual no es main, inspecciona su relación con el remoto antes de publicar; no fuerces una sustitución. Después del push, abre el repositorio y contrasta que contenga fuentes, muestras ficticias, pruebas y documentación, sin build/ ni secretos. El proyecto es independiente de los botones de Git de LearnGameAndEngineDev."
+          "text": "En este proyecto, conserva la rama main y el remoto origin que ya apunta al repositorio educativo existente. Publica sólo cambios propios, verificados y preparados para el commit; no ejecutes el commit de ejemplo sin comprobar antes los archivos realmente seleccionados. Después de publicar, contrasta en GitHub que estén los fuentes, las muestras ficticias, las pruebas y los documentos, sin build/, binarios ni secretos. La integración del proyecto es independiente de los botones de Git del repositorio principal LearnGameAndEngineDev."
         },
         {
           "type": "paragraph",
@@ -931,7 +931,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La presentación final debe explicar problema, usuario, decisiones, funcionamiento del lector, variante personal, tecnologías, pruebas y resultados reales, límites y enlaces al repositorio. Un resumen de CV podrá mencionar C++23, CMake y CTest cuando estén verificados; no debe atribuir al estudiante el trabajo del autor ni declarar ejecutado un entorno Windows que aún no se comprobó."
+          "text": "La presentación final debe explicar problema, usuario, decisiones, funcionamiento del lector, variante personal, tecnologías, pruebas y resultados reales, límites y enlaces al repositorio. La referencia del autor ya acredita C++23, CMake y CTest mediante seis suites aprobadas con MSVC en Windows Server 2022; esos resultados no acreditan una ejecución en el equipo del estudiante ni su autoría. Un resumen de CV sólo podrá atribuirle las capacidades y la variante que él realmente construya y compruebe."
         },
         {
           "type": "code",
@@ -940,11 +940,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia U4L7 fue comprobada en Linux mediante GCC 14.2 y Clang 17 con seis suites CTest correctas en cada entorno. Sigue pendiente integrar y verificar el proyecto educativo en Windows, documentar sus capturas y publicar el repositorio propio con la aportación del estudiante. El curso no se considera concluido por disponer de esta lección."
+          "text": "La referencia U4L7 ya fue compilada y comprobada con GCC 14.2 y Clang 17 en Linux y con MSVC 19.44 en Windows Server 2022. Las seis suites CTest superaron la validación automatizada del commit publicado 6e4dae1f en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional. Permanecen pendientes la reproducción y las capturas en el Windows local del estudiante, su variante autónoma y sus pruebas, y la presentación del portafolio con la autoría real. El curso no se considera concluido por disponer de esta referencia."
         },
         {
           "type": "note",
-          "text": "Mantener abiertos U4L3 (reconstrucción y capturas), U4L4–U4L7 (integración y evidencia de Windows), la comprobación del proyecto personal y su repositorio GitHub. El usuario realizará la revisión visual y de audio durante el estudio. No borrar estos pendientes por los resultados de Linux."
+          "text": "Mantener abiertos U4L3 (recorrido de herramientas y capturas), las comprobaciones y capturas manuales de U4L4–U4L7 en Windows local, la construcción y evaluación de una variante propia y su presentación en el repositorio existente. Las seis suites CTest de la referencia ya se verificaron en Windows Server 2022, pero no acreditan esas tareas ni la autoría del estudiante. La revisión visual y de audio cotidiana continúa durante el estudio. No cerrar los pendientes restantes por disponer de la referencia compilada."
         },
         {
           "type": "multiple_choice",
@@ -1598,8 +1598,65 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "364afabaabeda16467b6608de1003bd8fdf6342932e5e4f6d66a12c230622cd5",
-        "spans": []
+        "sourceSha256": "f00a990a051c8050211051f5fee6963eee96c421d061e100f42bd44ce077b228",
+        "spans": [
+          {
+            "start": 527,
+            "end": 570,
+            "text": "2\n0\n4\ntextura 5\nmalla 240\nsonido 8\nsonido 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 589,
+            "end": 660,
+            "text": "textura=0 malla=0 sonido=0 bytes=0\ntextura=1 malla=1 sonido=2 bytes=255",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 690,
+            "end": 747,
+            "text": "2\n3\nsonido 30000\nsonido 7\ntextura 1\n2\nmalla 200\nmalla 100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 766,
+            "end": 841,
+            "text": "textura=1 malla=0 sonido=2 bytes=30008\ntextura=0 malla=2 sonido=0 bytes=300",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 871,
+            "end": 925,
+            "text": "1\n5\ntextura 30000\ntextura 1\nmalla 10\nsonido 2\nsonido 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 944,
+            "end": 982,
+            "text": "textura=2 malla=1 sonido=2 bytes=30016",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1012,
+            "end": 1040,
+            "text": "1\n3\nmalla 7\nmalla 9\nmalla 13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1059,
+            "end": 1094,
+            "text": "textura=0 malla=3 sonido=0 bytes=29",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0005",
@@ -1957,7 +2014,7 @@
       {
         "block": "block_0010_0004",
         "path": "/text",
-        "sourceSha256": "2e57e62c1be30cdc2eaff4c68b39f56d4d637e383f3d64d009a1cec17ee2c939",
+        "sourceSha256": "1ce77186b69ccff7607a4a2b87975a02341176e49fda830fb261284a9ecb38ce",
         "spans": []
       },
       {
@@ -2107,7 +2164,7 @@
       {
         "block": "block_0012_0001",
         "path": "/text",
-        "sourceSha256": "443981e4870d6ddc6b8a75277b01fc0b59c9f7980b4a018edd78aab1ba1deb81",
+        "sourceSha256": "1161bc15257c633144e35c38fe9ff1f023f3a84292a711687c5bc4da68dcfc6b",
         "spans": []
       },
       {
@@ -2119,7 +2176,7 @@
       {
         "block": "block_0012_0005",
         "path": "/text",
-        "sourceSha256": "329c0e5d31c0de0647ad69729b2ef9c891c57c9fdf99b94b530e4c20b40af52e",
+        "sourceSha256": "7445a747d48d84c3afd14b5b187f09f2e5d398b492a9065b9f2a593158d4c6b6",
         "spans": []
       },
       {
@@ -2281,13 +2338,13 @@
       {
         "block": "block_0014_0001",
         "path": "/text",
-        "sourceSha256": "6d3e0d99898a90e998d9fd07cc649a68577ab4dbf713f7f87908a346325eaf8f",
+        "sourceSha256": "59eb39f47a95c9e3e0c0fb8d14714ff7b8df425ea78e6186e510dfa887bd205f",
         "spans": []
       },
       {
         "block": "block_0014_0003",
         "path": "/text",
-        "sourceSha256": "25844c2209207f4a38ded0805e6e3ffaa864414f6f840abe66ad920a2987345f",
+        "sourceSha256": "ac63136c4d7b3850bf9a59a05913614789c59b57bf9e5dc41d91cefb83149dca",
         "spans": []
       },
       {
@@ -2341,19 +2398,19 @@
       {
         "block": "block_0015_0000",
         "path": "/text",
-        "sourceSha256": "0cf984ccd34c940a4f15d95dbf14999cd9e80eb43e6b056d8a96d18ead8e086a",
+        "sourceSha256": "66565a00d0adb933030794e437bab6970e2ea1db36dd39b2ab81c45cda29f715",
         "spans": []
       },
       {
         "block": "block_0015_0001",
         "path": "/text",
-        "sourceSha256": "0fa8f8bdefeffcb282328f61c5a06714bd6ced575e038b48d825c2c0b9d157ac",
+        "sourceSha256": "55e631f9dca9ddd37f6e1f4f5b9a198ea48618889abe2048996647e03b9c173e",
         "spans": []
       },
       {
         "block": "block_0015_0003",
         "path": "/text",
-        "sourceSha256": "548bac1c37981833de059db0a332e367b196b7e94980840097cb7207bd6d08ae",
+        "sourceSha256": "532e79c0071f8bfdd4f23482657fc2f506223d5f55d38f3888692726c321ff1d",
         "spans": []
       },
       {
@@ -2586,19 +2643,19 @@
       {
         "block": "block_0017_0001",
         "path": "/text",
-        "sourceSha256": "2e2bedc9f8ac99649e019d2cb21cec87efe901076b307ea0eb437d5532beb6ec",
+        "sourceSha256": "2757d17393fd6ebdfd112f976d9eda45db2cbd8cc939e790faf09199e20d8123",
         "spans": []
       },
       {
         "block": "block_0017_0003",
         "path": "/text",
-        "sourceSha256": "27f31f482d7cf1e9743fb6c9ffc5987fed578b89651d761c0fd13286f5e370ea",
+        "sourceSha256": "2694fb01ca64c877b1986b475e2f3cff138a2c51eba4e80db4e2a549aec6cf23",
         "spans": []
       },
       {
         "block": "block_0017_0004",
         "path": "/text",
-        "sourceSha256": "699b359201bb1cc2a0f4ea0ddcae6bc628853ad1272965e11c719afb0a385391",
+        "sourceSha256": "651de9a10d423188c8f882166bd8f3753153b1d0f05508999f367af24d963935",
         "spans": []
       },
       {
@@ -3840,6 +3897,66 @@
         "id": "block_0016_0002",
         "beforeSha256": "7acfd49abd69da299d45725c84173a76b29f568ed3bbde65ddc5a2cf50e2d898",
         "afterSha256": "64962eb5b3ccbd3ac02462810ba412909290d70e24b31b2f3fd54917daa7de70"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "37f305db0f3fbf33c92bab59b57685e20643f0dfa8639f22305c92b744200b3a",
+        "afterSha256": "b4be2b2130cc4e859943671a79002326f7fa93eabc218b73a06e0fe1532690ec"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "aacad5d34890e73b0617866e5d5321f8d5a59c01636b8f5664116d7f92ce1314",
+        "afterSha256": "9f916c1fb67892158db24caa4b201cad2dd41d4c7a73161950bc3c57b600e1ff"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "854bb47d3466dc7e4d5d809fadd905f274b80283f33a03a2b39bb73d1858ad63",
+        "afterSha256": "d959b602fbc7b0294243baf39240074de44f623dfe42a5795c6a3539160f5336"
+      },
+      {
+        "id": "block_0012_0005",
+        "beforeSha256": "7edd6b095d579e429c7facecc2e1f16237c5bf405ea68a97f367c057c0d72aca",
+        "afterSha256": "99bfe4f74df09dbf63e075c2fc56868d381339596b9be617581acbb24a6a93a7"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "eef8b81be85e45ec8055b6c62fff405e54eaa41be4c8bb37d22a14d8111fac1b",
+        "afterSha256": "71949112822b1f10e98e60acd9680ffffd85b7d951b75095034d97c66700563c"
+      },
+      {
+        "id": "block_0014_0003",
+        "beforeSha256": "ccb0ea8d91e1c0ec9ddde7bc9eb32e40adde3d9ed37083bf4e929048a0ac143c",
+        "afterSha256": "e5db851202195f2be3a718f199d483b83cd2a24bc186d8ee7a1f53552b282bcb"
+      },
+      {
+        "id": "block_0015_0000",
+        "beforeSha256": "787059c9663e221acefff06f68086141343ab50124f1647d8cbba6fde5c76fc2",
+        "afterSha256": "44a905318bc134ef79f9f0d88c587fb9b49c6e46a52ae898165af6323eeb05be"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "e2dfea7ed920673b73a85bebef4a17de597e4623b6a7aa0e8b701c7159663bd5",
+        "afterSha256": "ec1a4290bffe4c2b4da8b9156661ca15084a7d3ffa980ae0484a614f4881872d"
+      },
+      {
+        "id": "block_0015_0003",
+        "beforeSha256": "3871d937080172e34dd068c2d79739387600588c5b21845d5475cdf87294fda2",
+        "afterSha256": "8dd922a59983dd37944e3dc2c40cb36fdf5a4afc65386bb8a1ca76f1fa4f7357"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "79561535aaa34d6934b46e252c817ecdb8606a505d66bd005f2fd40d2477b1af",
+        "afterSha256": "9d5458a90aa64fcd5cb113e577366a0ccc46e95638fdf83686819259d24d95ab"
+      },
+      {
+        "id": "block_0017_0003",
+        "beforeSha256": "a7e9741baa865fe546599fd74029252a40db385191fcf50270b28929f4bcd959",
+        "afterSha256": "5609ab2ed5131b874b2d46980ba4adeebe1bf4d519be156b8a39fb526fe85d6f"
+      },
+      {
+        "id": "block_0017_0004",
+        "beforeSha256": "df5974b70554d5dec31d43fd174b86da652e1d90687b7b4a1a4b524c62fe79a5",
+        "afterSha256": "51f3959c52c1ed38789e01cc447909cc489975833a21c34477af178538421895"
       }
     ]
   }
