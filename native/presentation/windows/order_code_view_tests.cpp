@@ -2,6 +2,7 @@
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 #include <commctrl.h>
 #include <richedit.h>
@@ -338,6 +339,38 @@ void generic_order_groups_accept_new_owner() {
           curriculum::draft_key("programming",original,before)==
               curriculum::draft_key("programming",active,after),
         "A new order equivalence rewrote physical code or existing learner state");
+    // Widening the set of accepted orders must NOT silently rewrite an
+    // incorrect historical answer. Only the next explicit student check may
+    // turn that stored attempt into a correct one.
+    state::StateData previous_attempt;
+    state::Response prior_answer;
+    prior_answer.order={1,0,2};
+    prior_answer.correct=false;
+    state::put_response(previous_attempt,original,before,prior_answer);
+    const auto preserved_blob=state::string_value(
+        previous_attempt,"learning_progress",
+        curriculum::exercise_key(original,before));
+    const auto saved_before=previous_attempt;
+    const auto restored=state::get_response(previous_attempt,active,after);
+    check(restored.has_value()&&restored->order==prior_answer.order&&
+          !restored->correct&&
+          curriculum::evaluate_order(after,std::vector<std::size_t>{1,0,2}).correct&&
+          state::response_storage_key(original,before)==
+              state::response_storage_key(active,after)&&
+          state::string_value(previous_attempt,"learning_progress",
+              curriculum::exercise_key(active,after))==preserved_blob&&
+          previous_attempt==saved_before,
+        "New equivalences silently promoted, regraded or rewrote a prior incorrect answer");
+    // Previously earned canonical answers also survive unchanged.
+    state::StateData earlier_success;
+    state::Response successful;
+    successful.order={0,1,2};
+    successful.correct=true;
+    state::put_response(earlier_success,original,before,successful);
+    const auto reopened_success=state::get_response(earlier_success,active,after);
+    check(reopened_success&&reopened_success->correct&&
+          reopened_success->order==successful.order,
+        "Root-only order equivalence revoked a valid historical achievement");
     const auto reject=[](std::string forged) {
         bool loader=false,progress=false;
         try{(void)lgaed::windows::parse_lesson_json(forged,"es");}
