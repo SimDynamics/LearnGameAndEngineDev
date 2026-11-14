@@ -306,6 +306,54 @@ inline bool productive(const Tokens& t,std::size_t i,
     for(const auto open:containing) {
         const auto close=closing(t,open,"(",")");
         if(!close||*close<=i)continue;
+        // In an AND-only group, a literal false forces the entire expression
+        // to false even when it comes AFTER the named constant. Likewise a
+        // literal true makes an OR-only group independent of its other terms.
+        // Inspect top-level operands only: mixing && with ||, a ternary or a
+        // comma changes grouping, so do not infer an always-constant result.
+        std::vector<std::size_t> logical_operators;
+        bool and_only=true,or_only=true,ambiguous=false;
+        std::size_t logical_depth=0;
+        for(auto at=open+1;at<*close;++at) {
+            if(op(t[at],"(")){++logical_depth;continue;}
+            if(op(t[at],")")) {
+                if(logical_depth)--logical_depth;
+                continue;
+            }
+            if(logical_depth)continue;
+            if(op(t[at],"?")||op(t[at],":")||op(t[at],",")) {
+                ambiguous=true;break;
+            }
+            if(op(t[at],"&&")||op(t[at],"||")) {
+                logical_operators.push_back(at);
+                if(!op(t[at],"&&"))and_only=false;
+                if(!op(t[at],"||"))or_only=false;
+            }
+        }
+        if(!ambiguous&&!logical_operators.empty()&&(and_only||or_only)) {
+            const auto literal_operand=[&](std::size_t first,std::size_t last,
+                    bool desired) {
+                while(first<last&&op(t[first],"(")) {
+                    const auto end=closing(t,first,"(",")");
+                    if(!end||*end!=last-1)break;
+                    ++first;--last;
+                }
+                if(last!=first+1)return false;
+                return desired?(id(t[first],"true")||t[first]=="number:1"):
+                    (id(t[first],"false")||t[first]=="number:0");
+            };
+            std::size_t first=open+1;
+            bool constant_group=false;
+            for(std::size_t index=0;index<=logical_operators.size();++index) {
+                const auto last=index<logical_operators.size()?
+                    logical_operators[index]:*close;
+                if(literal_operand(first,last,or_only)) {
+                    constant_group=true;break;
+                }
+                first=last+1;
+            }
+            if(constant_group)return false;
+        }
         if((open>=2&&op(t[open-1],"*")&&zero_before(open-2))||
            (*close+2<t.size()&&op(t[*close+1],"*")&&
             zero_after(*close+2)))
