@@ -2653,6 +2653,83 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
 
 // Presentation-only, declared at the lesson root; these blank cards do not
 // become fragments or answers and never allocate a historical state slot.
+// A reviewable root declaration attaches independent ordering groups to the
+// already mapped activity. It never rewrites fragments, correctOrder, old
+// responses, exercise addresses, or reader progress. Editorial prose can vary;
+// changing the evaluated source requires a new authenticated source digest.
+void read_order_equivalence_groups(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"orderEquivalenceGroups"))return;
+    const auto records=array(root,"orderEquivalenceGroups");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            records.Size()>0&&records.Size()<=16,
+        "Independent order groups need a bounded Spanish v2 root declaration");
+    std::set<std::string> owners;
+    for(const auto& value:records) {
+        const auto record=value.GetObject();
+        allowed_keys(record,{"activity","sourceSha256","groups"},true);
+        const auto identity=text(record,"activity");
+        const auto digest=text(record,"sourceSha256");
+        require(valid_id(identity)&&owners.insert(identity).second&&valid_hash(digest),
+            "Independent order group has an invalid owner or source digest");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Independent order activity has duplicate mapped owners");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::order_code&&
+                owner->fragments.size()>=2&&owner->fragments.size()<=256&&
+                owner->correct_order.size()==owner->fragments.size()&&
+                !owner->raw_json.empty(),
+            "Independent order groups require an existing code-order activity");
+        for(const auto& fragment:owner->fragments)
+            require(!fragment.empty()&&
+                    fragment.find_first_not_of(" \t")!=fragment.npos&&
+                    fragment.find_first_of("\r\n")==fragment.npos,
+                "An independent order card must contain exactly one physical code line");
+        auto canonical=owner->correct_order;
+        std::ranges::sort(canonical);
+        for(std::size_t i=0;i<canonical.size();++i)
+            require(canonical[i]==i,"Independent order groups require a complete canonical answer");
+        require(state_fingerprint(JsonObject::Parse(key(owner->raw_json)))==digest,
+            "Independent groups refer to a different evaluated source contract");
+        const auto groups=array(record,"groups");
+        require(groups.Size()>0&&groups.Size()<=16,
+            "Independent order contract needs between 1 and 16 groups");
+        std::set<std::size_t> claimed;
+        std::vector<std::vector<std::size_t>> result;
+        for(const auto& raw:groups) {
+            const auto indices=raw.GetArray();
+            require(indices.Size()>=2&&indices.Size()<=8,
+                "Independent order groups contain 2..8 physical code cards");
+            std::vector<std::size_t> group,positions;
+            for(const auto& cell:indices) {
+                const auto index=integer(cell,owner->fragments.size());
+                require(index<owner->fragments.size()&&claimed.insert(index).second,
+                    "Independent cards cannot repeat or leave their original owner");
+                const auto location=std::ranges::find(owner->correct_order,index);
+                require(location!=owner->correct_order.end(),
+                    "An independent card is missing from the canonical response");
+                group.push_back(index);
+                positions.push_back(static_cast<std::size_t>(
+                    std::distance(owner->correct_order.begin(),location)));
+            }
+            std::ranges::sort(positions);
+            for(std::size_t i=1;i<positions.size();++i)
+                require(positions[i]==positions.front()+i,
+                    "An independent order group must span contiguous canonical slots");
+            result.push_back(std::move(group));
+        }
+        // Existing source-pinned reviews continue working without a new field.
+        // A later authored root declaration may confirm the same groups but
+        // cannot silently change already accepted permutations.
+        require(owner->order_equivalence_groups.empty()||
+                owner->order_equivalence_groups==result,
+            "A new declaration conflicts with an existing reviewed order");
+        owner->order_equivalence_groups=std::move(result);
+    }
+}
+
 void read_order_visual_separators(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"orderVisualSeparators"))return;
     const auto records=array(root,"orderVisualSeparators");
@@ -3470,6 +3547,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_order_equivalence_groups(root,lesson);
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
@@ -3560,6 +3638,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_order_equivalence_groups(root,lesson);
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
