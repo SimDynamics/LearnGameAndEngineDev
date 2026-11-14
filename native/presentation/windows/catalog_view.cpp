@@ -512,8 +512,15 @@ LRESULT CALLBACK catalog_proc(HWND window,UINT message,WPARAM wparam,LPARAM lpar
         case WM_NCDESTROY: SetWindowLongPtrW(window,GWLP_USERDATA,0); if (self->owned_by_window) delete self; break;
         }
     } catch (const std::exception& error) {
-        if (message == WM_CREATE) { OutputDebugStringW(wide(error.what()).c_str()); return -1; }
-        SetWindowTextW(self->status,wide(error.what()).c_str());
+        // Keep the actionable cause in diagnostics, not as a filesystem path
+        // or internal curriculum contract dumped into the student's heading.
+        OutputDebugStringW(wide(std::string("Catalog UI: ")+error.what()+"\n").c_str());
+        if (message == WM_CREATE) return -1;
+        if (self->status && IsWindow(self->status))
+            SetWindowTextW(self->status,wide(self->ui(
+                "No se pudo actualizar el catálogo. Intenta abrirlo de nuevo.",
+                "The catalog could not be updated. Please reopen it.",
+                "Impossible de mettre à jour le catalogue. Veuillez le rouvrir.")).c_str());
     }
     return DefWindowProcW(window,message,wparam,lparam);
 }
