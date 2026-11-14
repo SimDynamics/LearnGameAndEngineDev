@@ -8,6 +8,7 @@
 #include <richedit.h>
 #include <windowsx.h>
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <ole2.h>
 #include <algorithm>
 #include <iostream>
