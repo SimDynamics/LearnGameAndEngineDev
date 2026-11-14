@@ -1,0 +1,48 @@
+name: Codex U1 open battery mutation evidence
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-u1-battery-mutation-oracle.yml
+      - scripts/curriculum/u1_battery_mutation_oracle.py
+      - scripts/curriculum/test_u1_battery_mutation_oracle.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx: [g++, clang++]
+    steps:
+      - name: Read original U1 lessons without modifying course
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile and mutate real U1 batteries
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u1_battery_mutation_oracle.py -v
+
+  msvc:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Read original U1 lessons without modifying course
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Enable Visual C++ tools
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile and mutate real U1 batteries under MSVC
+        shell: pwsh
+        env:
+          CXX: cl
+        run: python -B -m unittest discover -s scripts/curriculum -p test_u1_battery_mutation_oracle.py -v
