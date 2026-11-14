@@ -273,6 +273,10 @@ La declaración debe comunicar el dominio **admitido**, no negar su vigencia:
 «rango no permitido de 0 a 9» y «rango 0..9 no válido» no acreditan el objetivo.
 En cambio, «no se permite 21; rango permitido de 0 a 9» conserva la
 distinción entre un dato rechazado y el intervalo autorizado.
+Si aparecen dos intervalos declarados para el mismo rechazo, ambos
+deben expresar los límites correctos: «rango permitido 0..9; rango
+permitido 0..8» se rechaza por contradicción. Un ejemplo numérico en
+otra oración no se interpreta automáticamente como un segundo intervalo.
 Una coma aislada entre datos no acredita un intervalo:
 la notación con coma exige ambos corchetes de un intervalo cerrado.
 Tampoco se acepta cambiar un límite, intercambiar cobros y devoluciones
