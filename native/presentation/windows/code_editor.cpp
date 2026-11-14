@@ -340,6 +340,48 @@ struct CodeEditor::Impl {
         SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&now().scroll));
     }
 
+    void restore_top_when_all_lines_fit() {
+        if(!window||!multiline)return;
+        POINT old_scroll{};
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&old_scroll));
+        const auto visible_first=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+        if(old_scroll.y<=0&&visible_first<=0)return;
+        RECT format{};
+        SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        const auto room=static_cast<std::int64_t>(format.bottom)-format.top;
+        const auto count=SendMessageW(window,EM_GETLINECOUNT,0,0);
+        if(room<=0||count<=0)return;
+        std::int64_t story_height=0;
+        if(count==1) {
+            CHARFORMAT2W font{};font.cbSize=sizeof(font);
+            SendMessageW(window,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&font));
+            if(font.yHeight<=0)return;
+            // The one-line path still respects native font scaling.
+            story_height=MulDiv(font.yHeight,static_cast<int>(GetDpiForWindow(window)),1440);
+        }else{
+            const auto first=SendMessageW(window,EM_LINEINDEX,0,0);
+            const auto second=SendMessageW(window,EM_LINEINDEX,1,0);
+            const auto last=SendMessageW(window,EM_LINEINDEX,count-1,0);
+            if(first<0||second<0||last<0)return;
+            POINTL top{},next{},bottom{};
+            SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&top),first);
+            SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next),second);
+            SendMessageW(window,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&bottom),last);
+            const auto row=static_cast<std::int64_t>(next.y)-top.y;
+            if(row<=0||bottom.y<top.y)return;
+            story_height=static_cast<std::int64_t>(bottom.y)-top.y+row;
+        }
+        // The scrollbar can retain a formerly valid bottom offset after a
+        // fullscreen edit removes rows. Reset only when the entire current
+        // native visual story fits; preserve scrolling and Undo for long code.
+        if(story_height<=0||story_height+2>room)return;
+        POINT origin{old_scroll.x,0};
+        SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
+        const auto remaining=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+        if(remaining>0)
+            SendMessageW(window,EM_LINESCROLL,0,-remaining);
+    }
+
     void commit(Snapshot next) {
         history.resize(current + 1);
         history.push_back(std::move(next));
@@ -461,6 +503,7 @@ struct CodeEditor::Impl {
         if(reveal_cursor) {
             SendMessageW(window,EM_SCROLLCARET,0,0);
         }
+        restore_top_when_all_lines_fit();
         SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
         if(notify_parent&&!previous_applying&&(events&ENM_CHANGE)) {
             // EN_CHANGE intentionally runs inside Freeze so syntax coloring
@@ -515,6 +558,8 @@ struct CodeEditor::Impl {
         next.cursor = selection(window);
         SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&next.scroll));
         commit(std::move(next));
+        restore_top_when_all_lines_fit();
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
         // TOM/UI Automation can change the native story without WM_SETTEXT or
         // EM_REPLACESEL. The completed edit observed here owns its paragraph
         // refresh; cursor/format-only observations take the early return above.
@@ -775,6 +820,11 @@ struct CodeEditor::Impl {
                 self.native_scrollbars.window = nullptr;
                 self.window = nullptr;
                 return DefSubclassProc(window, message, wparam, lparam);
+            }
+            if(message==WM_SIZE) {
+                const auto result=DefSubclassProc(window,message,wparam,lparam);
+                if(!self.applying)self.restore_top_when_all_lines_fit();
+                return result;
             }
             if (message == WM_GETDLGCODE) {
                 auto result = DefSubclassProc(window, message, wparam, lparam) |
