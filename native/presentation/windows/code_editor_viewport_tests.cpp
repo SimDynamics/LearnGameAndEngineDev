@@ -146,6 +146,32 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
     SendMessageW(edit,WM_CHAR,L'x',1);
     check(mid_edit_paints==0,"Syntax formatting painted an intermediate editor frame during typing");
     check(editor->document().text==text.substr(0,5)+"x"+text.substr(5),"A typed character changed another source range");
+    {
+        // Check the actual editable control after EN_CHANGE syntax restyling,
+        // not just the readonly reference above. All token colors and the
+        // surface remain stable while writing, scrolling and using Undo.
+        const auto source=presentation::wide(presentation::edit_text(edit));
+        CHARRANGE previous{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
+        const auto colored=[&](std::wstring_view part,COLORREF reference) {
+            const auto at=source.find(part);
+            if(at==source.npos)return false;
+            CHARRANGE position{static_cast<LONG>(at),static_cast<LONG>(at+1)};
+            SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&position));
+            CHARFORMAT2W current{};current.cbSize=sizeof(current);
+            SendMessageW(edit,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&current));
+            const auto expected=presentation::reader_theme::palette(edit).high_contrast
+                ?presentation::reader_theme::foreground(edit):reference;
+            return current.crTextColor==expected;
+        };
+        const auto colors_ok=colored(L"row_0",RGB(184,151,244))&&
+            colored(L"= 0;",RGB(255,255,255))&&
+            colored(L"// Hg gjpqy",RGB(172,172,172));
+        SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+        check(colors_ok,"Live syntax formatting lost a reference ink after a native character edit");
+        check(presentation::reader_theme::background(edit)==
+            presentation::reader_theme::palette(edit).field,
+            "Live code editing recolored the editor background");
+    }
     editor->undo();check(editor->document().text==text,"Atomic paint transaction damaged Undo");
     editor->redo();check(editor->document().text==text.substr(0,5)+"x"+text.substr(5),"Atomic paint transaction damaged Redo");
     editor->reset({"int main() {}",{},12,12});
