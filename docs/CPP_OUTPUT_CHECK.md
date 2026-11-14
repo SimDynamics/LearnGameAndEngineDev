@@ -335,6 +335,17 @@ estas ejecuciones, con los recibos asociados a la fuente y revisión capturadas.
 En la consola nativa, se admite únicamente la traducción textual propia del
 CRT de `LF` a `CRLF`; no se recortan caracteres ni se ignora el diagnóstico.
 
+La regresión independiente `native/core/report_observation_check_tests.cpp`,
+ejecutada por `.github/workflows/codex-u3-report-observations.yml`,
+contrasta con GCC, Clang y MSVC las dos entradas históricas, sus informes
+completos y filtrados, los duplicados, las líneas con errores, el final sin
+salto, el archivo vacío, los límites de `int` y la frontera de doce líneas.
+Comprueba además la coincidencia simultánea de `stdout`, `stderr` y
+retorno, y la equivalencia exclusivamente textual `LF`/`CRLF` en Windows.
+Esta prueba del oráculo no sustituye la compilación y ejecución de la
+solución del estudiante ni acredita una declaración que Work aún no haya
+integrado en el JSON.
+
 El editor sólo puede corregir el cuerpo de `main`: `leer_entero` y
 `leer_registro`, sus firmas, sus inclusiones y el resto del archivo deben
 permanecer intactos. Una salida preparada codificada como constante no
