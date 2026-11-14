@@ -5,6 +5,7 @@
 #include "platform/windows/environment.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "platform/windows/state_store.hpp"
 #include "native_build_config.hpp"
 
 #include <windows.h>
@@ -1403,6 +1404,36 @@ int main(int count, char**) {
         require(evaluate_output_check(*owner.output_check,observed,valid.revision).verdict==
                 OutputVerdict::correct,
                 "A genuinely verified independent battery was not evaluated");
+        // Saving and reopening preserves only a genuinely earned, sealed
+        // receipt. A printed success alone must not unlock the reference.
+        state::StateData recorded;
+        require(!windows::compiler_puzzle_completed(recorded,loaded,owner),
+                "An unattempted open battery inherited progress");
+        auto missing_proof=observed;
+        missing_proof.open_battery_probe_correct=false;
+        const auto untouched=recorded;
+        require(!windows::record_compiler_puzzle_case(
+                    recorded,loaded,owner,valid,missing_proof,"Incorrecto")&&
+                recorded==untouched,
+                "A missing independent witness changed saved progress");
+        require(windows::record_compiler_puzzle_case(
+                    recorded,loaded,owner,valid,observed,"Correcto")&&
+                windows::compiler_puzzle_completed(recorded,loaded,owner),
+                "A checked original/new battery did not earn its own receipt");
+        const auto reopened_state=state::decode(state::encode(recorded));
+        require(windows::compiler_puzzle_completed(
+                    reopened_state,saved,progress),
+                "The independent battery achievement was lost on historical progress reopening");
+        windows::validate_compiler_puzzle_state(reopened_state,saved,progress);
+        auto tampered=reopened_state;
+        for(auto& [name,value]:tampered.preferences["native_windows"])
+            if(name.ends_with("/cases")) {
+                auto& cases=std::get<std::vector<std::string>>(value);
+                cases[0]="unverified battery";
+                break;
+            }
+        require(!windows::compiler_puzzle_completed(tampered,saved,progress),
+                "Tampered independent battery state unlocked the restored editor");
         const auto rejects=[&](const JsonObject& candidate) {
             bool rejected=false;
             try {(void)windows::parse_lesson_json(
