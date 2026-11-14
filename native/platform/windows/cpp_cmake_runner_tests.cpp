@@ -2065,6 +2065,31 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         !inherited_goal.correct&&!inherited_capture.cmake_graph_correct&&
         inherited_goal.reason.find("target_compile_options")!=std::string::npos,
         "Inherited /W4 incorrectly credited an authored CMake warning");
+    // An INTERFACE-only flag reaches consumers but never proves that the
+    // library itself was configured to compile with that warning level.
+    auto interface_only=warning_request;
+    interface_only.project_key+="/interface-warning-only";
+    interface_only.request_id=3305;
+    ++interface_only.revision;
+    for(auto& file:interface_only.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(cantidades INTERFACE /W4 /permissive-)");
+    const auto interface_run=run_cpp(interface_only);
+    ran(interface_run);
+    const auto interface_capture=capture_cpp_execution(
+        interface_only,interface_run);
+    const auto interface_goal=evaluate_cmake_graph(
+        interface_only,interface_run,warning_options);
+    check(matches_native_console_output(
+            interface_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            interface_capture,interface_only.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !interface_goal.correct&&!interface_capture.cmake_graph_correct&&
+        interface_goal.reason.find("target_compile_options")!=std::string::npos,
+        "An INTERFACE-only option incorrectly counted as a library compile flag");
     auto exclusive=warning_request;
     exclusive.request_id=3303;
     ++exclusive.revision;
