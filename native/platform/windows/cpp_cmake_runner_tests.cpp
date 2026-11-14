@@ -355,18 +355,24 @@ add_dependencies(first parts)
         "The historical CMake lesson must have one root state map");
     projected.insert(at,R"json(  "compilerCmakeGraphChecks": [
     {"activity":"block_0004_0004","project":"Preparacion",
+     "minimumCmakeVersion":"3.20",
      "targets":[
        {"name":"revisar","type":"EXECUTABLE",
-        "sources":["main.cpp"],"linksTo":["faltantes"],"exactSources":true},
+        "sources":["main.cpp"],"linksTo":["faltantes"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true},
        {"name":"faltantes","type":"STATIC_LIBRARY",
-        "sources":["faltantes.cpp"],"exactSources":true}
+        "sources":["faltantes.cpp"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true}
      ]},
     {"activity":"block_0008_0003","project":"Pases",
+     "minimumCmakeVersion":"3.20",
      "targets":[
        {"name":"portero","type":"EXECUTABLE",
-        "sources":["acceso.cpp"],"linksTo":["regla"],"exactSources":true},
+        "sources":["acceso.cpp"],"linksTo":["regla"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true},
        {"name":"regla","type":"STATIC_LIBRARY",
-        "sources":["regla.cpp"],"exactSources":true}
+        "sources":["regla.cpp"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true}
      ]}
   ],
 )json");
@@ -458,6 +464,39 @@ add_dependencies(first parts)
         compiler_puzzle_completed(reopened,original,before)&&
         compiler_puzzle_case_count(reopened,mapped,after)==1,
         "Reopening changed either historical stdout or new graph accreditation");
+    // The profile builds in C++23, so a CMake script without the stated
+    // minimum for the library would still print the right first case.
+    // Source-bound authoring must reject that omission independently.
+    auto no_library_standard=repaired_project;
+    no_library_standard.request_id=1402;
+    no_library_standard.revision=141;
+    no_library_standard.project_key+="/missing-library-cxx20";
+    bool dropped_library_standard=false;
+    for(auto& file:no_library_standard.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto requirement=
+                "target_compile_features(faltantes PRIVATE cxx_std_20)\n";
+            const auto at=file.second.find(requirement);
+            check(at!=file.second.npos,
+                "The historical faltantes minimum C++20 command moved");
+            file.second.erase(at,std::char_traits<char>::length(requirement));
+            dropped_library_standard=true;
+        }
+    check(dropped_library_standard,
+        "The historical CMake script was not found for its negative proof");
+    const auto missing_standard_run=run_cpp(no_library_standard);
+    ran(missing_standard_run);
+    const auto missing_standard=capture_cpp_execution(
+        no_library_standard,missing_standard_run);
+    check(missing_standard_run.execution.stdout_bytes=="3:0:0"&&
+        evaluate_cpp_output_check(*after.output_check,missing_standard,
+            no_library_standard.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !missing_standard.cmake_graph_correct&&
+        !record_compiler_puzzle_case(saved,mapped,after,no_library_standard,
+            missing_standard,"Mínimo de biblioteca omitido")&&
+        compiler_puzzle_completed(saved,mapped,after),
+        "CMake U2L2 credited a library lacking explicit C++20 from correct stdout");
     std::cout<<"PASS actual published U2 CMake editor: MSVC library link, first-case success, historical receipts and reopening\\n";
 
     // The second original U2L2 exercise begins with an empty
@@ -541,12 +580,733 @@ set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
         !record_compiler_puzzle_case(passes_saved,mapped,passes_after,
             duplicate,duplicate_fresh,"Fuentes duplicadas"),
         "The identical stdout from a duplicate source earned a library-link receipt");
+    // The runner's extensions-OFF default is insufficient proof that
+    // the student configured both targets. Real MSVC must still execute
+    // the same selected program before this counterexample is rejected.
+    auto no_explicit_extensions=passes;
+    no_explicit_extensions.request_id=1442;
+    no_explicit_extensions.revision=442;
+    no_explicit_extensions.project_key+="/missing-target-extensions";
+    bool removed_rule=false;
+    for(auto& file:no_explicit_extensions.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto requirement=
+                "set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)\n";
+            const auto at=file.second.find(requirement);
+            check(at!=file.second.npos,
+                "The original Pases CXX_EXTENSIONS declaration moved");
+            file.second.erase(at,std::char_traits<char>::length(requirement));
+            removed_rule=true;
+        }
+    check(removed_rule,"Pases CMake source missing");
+    const auto no_rule_run=run_cpp(no_explicit_extensions);
+    ran(no_rule_run);
+    const auto no_rule_capture=capture_cpp_execution(no_explicit_extensions,
+        no_rule_run);
+    check(no_rule_run.execution.stdout_bytes=="1:1:0"&&
+        evaluate_cpp_output_check(*passes_after.output_check,no_rule_capture,
+            no_explicit_extensions.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !no_rule_capture.cmake_graph_correct&&
+        !record_compiler_puzzle_case(passes_saved,mapped,passes_after,
+            no_explicit_extensions,no_rule_capture,"Extensiones heredadas"),
+        "Pases credited inherited extensions-OFF without an authored command");
     const auto persisted=state::decode(state::encode(passes_saved));
     check(compiler_puzzle_completed(persisted,mapped,passes_after)&&
         compiler_puzzle_completed(persisted,mapped,after)&&
         compiler_puzzle_completed(persisted,original,before),
         "A failed alternative invalidated earlier achievements on reopening");
     std::cout<<"PASS both original U2L2 CMake editors: linked library, duplicate source rejected, preserved first-case and history\\n";
+    // U2L1 starts with an empty CMakeLists.txt. Its already-published
+    // inventoried source and first output can receive a separate, authentic
+    // generated-graph requirement without replacing any historical exercise.
+    constexpr auto inventory_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_fuentes_objetivos_y_fases.json";
+    const auto inventory_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/inventory_relative);
+    const auto& inventory_before=inventory_original.pages.at(9).blocks.at(3);
+    check(inventory_before.stable_id=="block_0009_0003"&&
+        inventory_before.cmake&&inventory_before.output_check&&
+        !inventory_before.cmake_graph_check,
+        "Original U2L1 inventory editor moved or already received a graph");
+    std::string inventory_projected=inventory_original.raw_json;
+    const auto inventory_at=inventory_projected.find(anchor);
+    check(inventory_at!=inventory_projected.npos&&
+        inventory_projected.find(anchor,inventory_at+1)==inventory_projected.npos,
+        "Original U2L1 lesson changed its root stateLayout anchor");
+    inventory_projected.insert(inventory_at,R"json(  "compilerCmakeGraphChecks": [
+      {"activity":"block_0009_0003","project":"InventarioLocal",
+       "minimumCmakeVersion":"3.20",
+       "targets":[{"name":"comprobar","type":"EXECUTABLE",
+                   "sources":["inventario.cpp"],"exactSources":true,
+                   "explicitCxx20":true,"explicitCxxExtensionsOff":true}]}
+    ],
+)json");
+    const auto inventory_mapped=lgaed::windows::parse_lesson_json(
+        inventory_projected,"es");
+    const auto inventory_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        inventory_projected,"es");
+    const auto& inventory_after=inventory_mapped.pages.at(9).blocks.at(3);
+    check(inventory_mapped.state_layout.lineage==
+            inventory_original.state_layout.lineage&&
+        inventory_mapped.state_layout.signatures==
+            inventory_original.state_layout.signatures&&
+        inventory_metadata.state_layout.lineage==
+            inventory_original.state_layout.lineage&&
+        inventory_after.cmake_graph_check&&
+        inventory_after.cmake_graph_check==
+            inventory_metadata.pages.at(9).blocks.at(3).cmake_graph_check&&
+        inventory_after.project_files==inventory_before.project_files&&
+        curriculum::exercise_key(inventory_mapped,inventory_after)==
+            curriculum::exercise_key(inventory_original,inventory_before)&&
+        curriculum::draft_key("programming",inventory_mapped,inventory_after)==
+            curriculum::draft_key("programming",inventory_original,inventory_before)&&
+        curriculum::reference_objective_frame(inventory_mapped,inventory_after)!=
+            curriculum::reference_objective_frame(inventory_original,inventory_before),
+        "U2L1 source, saved state, draft or graph provenance changed");
+    CppRunRequest inventory;
+    inventory.request_id=1450;inventory.revision=450;
+    inventory.project_key="qa/p2-u2-first-inventory";
+    inventory.projects_directory=environment.paths.projects;
+    inventory.cmake=inventory_after.cmake;
+    inventory.project_files=inventory_after.project_files;
+    inventory.cmake_graph_check=inventory_after.cmake_graph_check;
+    inventory.capture_cmake_graph=true;
+    inventory.action=CppRunRequest::Action::compile_run;
+    bool supplied_inventory_cmake=false;
+    for(auto& file:inventory.project_files)
+        if(file.first=="CMakeLists.txt") {
+            check(file.second.empty(),"The original U2L1 editor is not empty");
+            file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+            supplied_inventory_cmake=true;
+        }
+    check(supplied_inventory_cmake&&
+        compiler_runtime_request_allowed(inventory_after,inventory),
+        "Correct U2L1 CMake source cannot enter the original student editor");
+    const auto inventory_run=run_cpp(inventory);
+    ran(inventory_run);
+    const auto inventory_fresh=capture_cpp_execution(inventory,inventory_run);
+    check(inventory_run.execution.stdout_bytes=="0:1:1"&&
+        inventory_run.execution.stderr_bytes.empty()&&
+        inventory_fresh.cmake_graph_correct&&
+        evaluate_cpp_output_check(*inventory_after.output_check,inventory_fresh,
+            inventory.revision).verdict==curriculum::OutputVerdict::correct,
+        "Real U2L1 MSVC failed project name, compiled source or first output");
+    // A project that omits either explicit requirement still compiles under
+    // this runner's C++23 / extensions-OFF defaults. The generated program
+    // must not be enough to unlock an authored C++20/extension exercise.
+    struct InventoryVariant {
+        std::string suffix,cmake_source;
+        bool should_pass;
+    };
+    const std::vector<InventoryVariant> variants={
+        {"defaults-only",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+)cmake",false},
+        {"feature-without-property",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+)cmake",false},
+        {"property-without-feature",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+)cmake",false},
+        {"property-overwritten",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS ON)
+)cmake",false},
+        {"equivalent-target-properties",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_STANDARD 20)
+set_property(TARGET comprobar PROPERTY CXX_EXTENSIONS OFF)
+)cmake",true},
+        {"expanded-target-feature",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+set(elegido comprobar)
+add_executable(comprobar inventario.cpp)
+target_compile_features(${elegido} PRIVATE cxx_std_20)
+set_property(TARGET ${elegido} PROPERTY CXX_EXTENSIONS OFF)
+)cmake",true}
+    };
+    std::uint64_t variant_id=1460;
+    for(const auto& variant:variants) {
+        auto candidate=inventory;
+        candidate.request_id=variant_id;
+        candidate.revision=variant_id++;
+        candidate.project_key+="/"+variant.suffix;
+        bool changed=false;
+        for(auto& file:candidate.project_files)
+            if(file.first=="CMakeLists.txt") {
+                file.second=variant.cmake_source;
+                changed=true;
+            }
+        check(changed,"The original U2L1 CMake file vanished");
+        const auto output=run_cpp(candidate);
+        ran(output);
+        const auto observed=capture_cpp_execution(candidate,output);
+        check(output.execution.stdout_bytes=="0:1:1"&&
+            output.execution.stderr_bytes.empty()&&
+            evaluate_cpp_output_check(*inventory_after.output_check,observed,
+                candidate.revision).verdict==curriculum::OutputVerdict::correct&&
+            observed.cmake_graph_correct==variant.should_pass,
+            "Authored CMake language rules earned wrong first-case evidence: "+
+                variant.suffix);
+    }
+    // A previous valid stdout-only achievement remains historical. It must
+    // not silently complete the newly authenticated construction goal.
+    auto inventory_legacy=inventory;
+    inventory_legacy.capture_cmake_graph=false;
+    inventory_legacy.cmake_graph_check.reset();
+    const auto inventory_old_capture=capture_cpp_execution(
+        inventory_legacy,inventory_run);
+    state::StateData inventory_saved;
+    state::prepare_lesson_state(inventory_saved,inventory_original);
+    check(record_compiler_puzzle_case(inventory_saved,inventory_original,
+            inventory_before,inventory_legacy,inventory_old_capture,
+            "Salida previa")&&
+        compiler_puzzle_completed(inventory_saved,inventory_original,
+            inventory_before)&&
+        !compiler_puzzle_completed(inventory_saved,inventory_mapped,
+            inventory_after),
+        "U2L1 graph incorrectly inherited an old stdout-only achievement");
+    state::prepare_lesson_state(inventory_saved,inventory_mapped);
+    check(record_compiler_puzzle_case(inventory_saved,inventory_mapped,
+            inventory_after,inventory,inventory_fresh,
+            "Fuente y proyecto")&&
+        compiler_puzzle_completed(inventory_saved,inventory_mapped,
+            inventory_after)&&
+        compiler_puzzle_case_count(inventory_saved,inventory_mapped,
+            inventory_after)==1,
+        "Correct first U2L1 case did not earn its new construction objective");
+    const auto inventory_reopened=state::decode(state::encode(inventory_saved));
+    check(compiler_puzzle_completed(inventory_reopened,inventory_original,
+            inventory_before)&&
+        compiler_puzzle_completed(inventory_reopened,inventory_mapped,
+            inventory_after),
+        "Reopening the U2L1 achievement lost its old or new provenance");
+    // The same executable output from a different CMake project is not proof
+    // of the original project name, even when source and target are identical.
+    auto inventory_impostor=inventory;
+    inventory_impostor.request_id=1451;inventory_impostor.revision=451;
+    inventory_impostor.project_key+="/wrong-project";
+    for(auto& file:inventory_impostor.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto correct_name="project(InventarioLocal LANGUAGES CXX)";
+            const auto at=file.second.find(correct_name);
+            check(at!=file.second.npos,"The U2L1 CMake project name moved");
+            file.second.replace(at,std::char_traits<char>::length(correct_name),
+                "project(ProyectoAjeno LANGUAGES CXX)");
+        }
+    const auto impostor_run=run_cpp(inventory_impostor);
+    ran(impostor_run);
+    const auto impostor_fresh=capture_cpp_execution(inventory_impostor,
+        impostor_run);
+    check(impostor_run.execution.stdout_bytes==
+            inventory_run.execution.stdout_bytes&&
+        evaluate_cpp_output_check(*inventory_after.output_check,impostor_fresh,
+            inventory_impostor.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !impostor_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(inventory_saved,inventory_mapped,
+            inventory_after,inventory_impostor,impostor_fresh,
+            "Proyecto ajeno"),
+        "U2L1 accepted matching stdout from the wrong CMake project");
+    // CMake's generated top-level directory records the minimum actually
+    // declared by the project, not the newer CMake executable in the runner.
+    auto inventory_old_min=inventory;
+    inventory_old_min.request_id=1452;inventory_old_min.revision=452;
+    inventory_old_min.project_key+="/older-minimum";
+    for(auto& file:inventory_old_min.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto original_version="cmake_minimum_required(VERSION 3.20)";
+            const auto at=file.second.find(original_version);
+            check(at!=file.second.npos,"The original inventory minimum moved");
+            file.second.replace(at,std::char_traits<char>::length(original_version),
+                "cmake_minimum_required(VERSION 3.19)");
+        }
+    const auto old_min_run=run_cpp(inventory_old_min);
+    ran(old_min_run);
+    const auto old_min_fresh=capture_cpp_execution(inventory_old_min,old_min_run);
+    check(old_min_run.execution.stdout_bytes=="0:1:1"&&
+        old_min_run.cmake_graph&&
+        old_min_run.cmake_graph->minimum_cmake_version=="3.19"&&
+        evaluate_cpp_output_check(*inventory_after.output_check,old_min_fresh,
+            inventory_old_min.revision).verdict==curriculum::OutputVerdict::correct&&
+        !old_min_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(inventory_saved,inventory_mapped,
+            inventory_after,inventory_old_min,old_min_fresh,
+            "Requisito mínimo alterado"),
+        "U2L1 accepted a different CMake minimum with matching stdout");
+    check(curriculum::cmake_numeric_version("3.20")==
+        curriculum::cmake_numeric_version("3.20.0")&&
+        curriculum::cmake_numeric_version("3.20")!=
+        curriculum::cmake_numeric_version("3.21"),
+        "Equivalent CMake version spelling or ordering changed");
+    std::cout<<"PASS original U2L1 CMake: real source, project, exact minimum, first-case history, wrong project/minimum refused\\n";
+    // U2L3 asks the student to construct the ON project from an empty
+    // CMakeLists.txt. The same submission must also build without the ON
+    // override and select normal.cpp from a genuine OFF-by-default option.
+    constexpr auto option_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json";
+    const auto option_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/option_relative);
+    const auto& option_before=option_original.pages.at(11).blocks.at(3);
+    check(option_before.stable_id=="block_0011_0003"&&
+        option_before.cmake&&option_before.output_check&&
+        option_before.cmake->options.at("TARIFA_ESPECIAL")=="ON"&&
+        !option_before.cmake_graph_check,
+        "The published U2L3 ON editor moved or changed its original goal");
+    std::string option_json=option_original.raw_json;
+    const auto option_at=option_json.find(anchor);
+    check(option_at!=option_json.npos&&
+        option_json.find(anchor,option_at+1)==option_json.npos,
+        "U2L3 root layout anchor moved");
+    option_json.insert(option_at,R"json(  "compilerCmakeGraphChecks": [
+      {"activity":"block_0011_0003","project":"Cotizaciones",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"cotizar","type":"EXECUTABLE",
+          "sources":["muestra.cpp"],"linksTo":["tarifas"],"exactSources":true,
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"tarifas","type":"STATIC_LIBRARY",
+          "sources":["especial.cpp"],"exactSources":true,
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ],
+       "optionSelection":{
+         "name":"TARIFA_ESPECIAL","default":"OFF",
+         "target":"tarifas","offSource":"normal.cpp","offStdout":"0:6:15"}
+      }
+    ],
+)json");
+    const auto option_mapped=lgaed::windows::parse_lesson_json(option_json,"es");
+    const auto option_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        option_json,"es");
+    const auto& option_after=option_mapped.pages.at(11).blocks.at(3);
+    check(option_mapped.state_layout.lineage==option_original.state_layout.lineage&&
+        option_mapped.state_layout.signatures==option_original.state_layout.signatures&&
+        option_metadata.state_layout.lineage==option_original.state_layout.lineage&&
+        option_after.cmake_graph_check&&
+        option_after.cmake_graph_check==
+            option_metadata.pages.at(11).blocks.at(3).cmake_graph_check&&
+        option_after.project_files==option_before.project_files&&
+        curriculum::exercise_key(option_mapped,option_after)==
+            curriculum::exercise_key(option_original,option_before)&&
+        curriculum::draft_key("programming",option_mapped,option_after)==
+            curriculum::draft_key("programming",option_original,option_before)&&
+        curriculum::reference_objective_frame(option_mapped,option_after)!=
+            curriculum::reference_objective_frame(option_original,option_before),
+        "Option review changed historical IDs, source, draft or accreditation frame");
+    const auto cmake_option_source=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa de dos por unidad" OFF)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake";
+    CppRunRequest option_request;
+    option_request.request_id=1550;
+    option_request.revision=550;
+    option_request.project_key="qa/p2-u2-options-on-off";
+    option_request.projects_directory=environment.paths.projects;
+    option_request.project_files=option_after.project_files;
+    option_request.cmake=option_after.cmake;
+    option_request.cmake_graph_check=option_after.cmake_graph_check;
+    option_request.capture_cmake_graph=true;
+    option_request.action=CppRunRequest::Action::compile_run;
+    bool wrote_option=false;
+    for(auto& file:option_request.project_files)
+        if(file.first=="CMakeLists.txt") {
+            check(file.second.empty(),"The U2L3 original editor is not empty");
+            file.second=cmake_option_source;
+            wrote_option=true;
+        }
+    check(wrote_option&&compiler_runtime_request_allowed(option_after,
+            option_request),
+        "Original U2L3 refused the student's valid CMake ON/OFF configuration");
+    const auto option_run=run_cpp(option_request);
+    ran(option_run);
+    const auto option_fresh=capture_cpp_execution(option_request,option_run);
+    check(option_run.execution.stdout_bytes=="0:4:10"&&
+        option_run.execution.stderr_bytes.empty()&&
+        option_run.cmake_graph&&option_run.cmake_option_probe&&
+        option_run.cmake_option_probe->execution.stdout_bytes=="0:6:15"&&
+        option_fresh.cmake_graph_correct&&
+        evaluate_cpp_output_check(*option_after.output_check,option_fresh,
+            option_request.revision).verdict==curriculum::OutputVerdict::correct,
+        "Real CMake/MSVC failed U2L3's independent ON and default-OFF projects");
+    // Neither a forged OFF run nor a receipt from a different source
+    // revision may complete the existing editor, even with correct ON stdout.
+    auto forged_off=option_run;
+    check(forged_off.cmake_option_probe.has_value(),
+        "The independent OFF probe must carry bound result evidence");
+    forged_off.cmake_option_probe->project_fingerprint="0";
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted an OFF result from an unrelated project fingerprint");
+    forged_off=option_run;
+    forged_off.cmake_option_probe->execution.stdout_bytes="0:4:10";
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted ON stdout as evidence of OFF selection");
+    forged_off=option_run;
+    forged_off.cmake_option_probe->graph.reset();
+    check(!capture_cpp_execution(option_request,forged_off).cmake_graph_correct,
+        "U2L3 accepted OFF stdout without a generated project graph");
+    auto mismatched_option=option_request;
+    for(auto& file:mismatched_option.project_files)
+        if(file.first=="CMakeLists.txt")file.second+="\n# revision distinta\n";
+    check(!capture_cpp_execution(mismatched_option,option_run).cmake_graph_correct,
+        "U2L3 reused previous ON/OFF graph evidence after changing source");
+    auto original_option_request=option_request;
+    original_option_request.capture_cmake_graph=false;
+    original_option_request.cmake_graph_check.reset();
+    const auto historical_option=capture_cpp_execution(
+        original_option_request,option_run);
+    state::StateData option_saved;
+    state::prepare_lesson_state(option_saved,option_original);
+    check(record_compiler_puzzle_case(option_saved,option_original,option_before,
+            original_option_request,historical_option,"Salida ON histórica")&&
+        compiler_puzzle_completed(option_saved,option_original,option_before)&&
+        !compiler_puzzle_completed(option_saved,option_mapped,option_after),
+        "ON-only historical stdout incorrectly earned the new OFF objective");
+    state::prepare_lesson_state(option_saved,option_mapped);
+    check(record_compiler_puzzle_case(option_saved,option_mapped,option_after,
+            option_request,option_fresh,"ON y OFF acreditados")&&
+        compiler_puzzle_completed(option_saved,option_mapped,option_after)&&
+        compiler_puzzle_case_count(option_saved,option_mapped,option_after)==1,
+        "The first U2L3 ON result with independent OFF proof did not unlock");
+    const auto option_reopened=state::decode(state::encode(option_saved));
+    check(compiler_puzzle_completed(option_reopened,option_original,option_before)&&
+        compiler_puzzle_completed(option_reopened,option_mapped,option_after),
+        "Reopening lost old ON output or new ON/OFF structural credit");
+    const std::vector<std::pair<std::string,std::string>> rejected_options={
+        {"wrong-default",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa de dos por unidad" ON)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake"},
+        {"fixed-special",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+option(TARIFA_ESPECIAL "Tarifa de dos por unidad" OFF)
+add_library(tarifas STATIC especial.cpp)
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake"},
+        {"no-option",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Cotizaciones LANGUAGES CXX)
+if(TARIFA_ESPECIAL)
+  add_library(tarifas STATIC especial.cpp)
+else()
+  add_library(tarifas STATIC normal.cpp)
+endif()
+add_executable(cotizar muestra.cpp)
+target_compile_features(tarifas PRIVATE cxx_std_20)
+target_compile_features(cotizar PRIVATE cxx_std_20)
+set_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(cotizar PRIVATE tarifas)
+)cmake"}
+    };
+    std::uint64_t option_variant_id=1551;
+    for(const auto& [label,cmake_code]:rejected_options) {
+        auto candidate=option_request;
+        candidate.request_id=option_variant_id;
+        candidate.revision=option_variant_id++;
+        candidate.project_key+="/"+label;
+        for(auto& file:candidate.project_files)
+            if(file.first=="CMakeLists.txt")file.second=cmake_code;
+        const auto variant_run=run_cpp(candidate);
+        ran(variant_run);
+        const auto captured=capture_cpp_execution(candidate,variant_run);
+        check(variant_run.execution.stdout_bytes=="0:4:10"&&
+            evaluate_cpp_output_check(*option_after.output_check,captured,
+                candidate.revision).verdict==curriculum::OutputVerdict::correct&&
+            !captured.cmake_graph_correct&&
+            !record_compiler_puzzle_case(option_saved,option_mapped,option_after,
+                candidate,captured,label),
+            "An ON-only CMake implementation earned unverified OFF credit: "+label);
+    }
+    std::cout<<"PASS original U2L3: distinct ON/OFF source and outputs, authentic option default, first case and archive preserved, negative variants rejected\n";
+    // Real U2L4: the library must publish include/ to the linked client,
+    // but the correction is not a pair of duplicated PRIVATE searches.
+    constexpr auto include_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_cabeceras_y_requisitos_de_uso.json";
+    const auto include_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/include_relative);
+    const auto& public_before=include_original.pages.at(4).blocks.at(2);
+    const auto& private_before=include_original.pages.at(7).blocks.at(8);
+    const auto& edit_before=include_original.pages.at(7).blocks.at(11);
+    const auto& aforo_before=include_original.pages.at(9).blocks.at(4);
+    check(public_before.stable_id=="block_0004_0002"&&
+        private_before.stable_id=="block_0007_0008"&&
+        edit_before.stable_id=="block_0007_0011"&&
+        aforo_before.stable_id=="block_0009_0004"&&
+        public_before.cmake&&private_before.cmake&&
+        edit_before.cmake&&aforo_before.cmake&&
+        public_before.output_check&&private_before.output_check&&
+        edit_before.output_check&&aforo_before.output_check&&
+        !public_before.cmake_graph_check&&!private_before.cmake_graph_check&&
+        !edit_before.cmake_graph_check&&!aforo_before.cmake_graph_check,
+        "The published U2L4 include-scope owners moved");
+    std::string include_json=include_original.raw_json;
+    const auto include_at=include_json.find(anchor);
+    check(include_at!=include_json.npos&&
+        include_json.find(anchor,include_at+1)==include_json.npos,
+        "U2L4 root layout address changed");
+    include_json.insert(include_at,R"json(  "compilerCmakeGraphChecks":[
+      {"activity":"block_0004_0002","project":"Tiempos",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"medir","type":"EXECUTABLE",
+          "sources":["app/main.cpp"],"exactSources":true,
+          "linksTo":["preparacion"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"preparacion","type":"STATIC_LIBRARY",
+          "sources":["src/entrega.cpp"],"exactSources":true,
+          "publicIncludeRoots":["include"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0007_0008","project":"Tiempos",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"medir","type":"EXECUTABLE",
+          "sources":["app/main.cpp"],"exactSources":true,
+          "linksTo":["preparacion"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"preparacion","type":"STATIC_LIBRARY",
+          "sources":["src/entrega.cpp"],"exactSources":true,
+          "publicIncludeRoots":["include"],"privateIncludeRoots":["interno"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0007_0011","project":"Tiempos",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"medir","type":"EXECUTABLE",
+          "sources":["app/main.cpp"],"exactSources":true,
+          "linksTo":["preparacion"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"preparacion","type":"STATIC_LIBRARY",
+          "sources":["src/entrega.cpp"],"exactSources":true,
+          "publicIncludeRoots":["include"],"privateIncludeRoots":["interno"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0009_0004","minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"consultar_aforo","type":"EXECUTABLE",
+          "sources":["programas/consulta.cpp"],"exactSources":true,
+          "linksTo":["aforo"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"aforo","type":"STATIC_LIBRARY",
+          "sources":["motor/cupo.cpp"],"exactSources":true,
+          "publicIncludeRoots":["publico"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]}
+    ],
+)json");
+    const auto include_mapped=lgaed::windows::parse_lesson_json(
+        include_json,"es");
+    const auto include_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        include_json,"es");
+    check(include_mapped.state_layout.lineage==
+            include_original.state_layout.lineage&&
+        include_mapped.state_layout.signatures==
+            include_original.state_layout.signatures&&
+        include_metadata.state_layout.lineage==
+            include_original.state_layout.lineage&&
+        include_metadata.state_layout.signatures==
+            include_original.state_layout.signatures,
+        "Include-scope check changed historical state layout");
+    std::uint64_t include_request_id=1701;
+    for(const auto& [page,block]:{
+            std::pair{4U,2U},std::pair{7U,8U},
+            std::pair{7U,11U},std::pair{9U,4U}}) {
+        const auto& before=include_original.pages.at(page).blocks.at(block);
+        const auto& after=include_mapped.pages.at(page).blocks.at(block);
+        const auto& metadata=include_metadata.pages.at(page).blocks.at(block);
+        check(after.cmake_graph_check&&
+            after.cmake_graph_check==metadata.cmake_graph_check&&
+            before.project_files==after.project_files&&
+            curriculum::exercise_key(include_original,before)==
+                curriculum::exercise_key(include_mapped,after)&&
+            curriculum::draft_key("programming",include_original,before)==
+                curriculum::draft_key("programming",include_mapped,after)&&
+            curriculum::reference_objective_frame(include_original,before)!=
+                curriculum::reference_objective_frame(include_mapped,after),
+            "U2L4 root include scope rewrote original project, ID or draft");
+        CppRunRequest request;
+        request.request_id=include_request_id;
+        request.revision=include_request_id++;
+        request.project_key="qa/p2-u2-includes/"+after.stable_id;
+        request.projects_directory=environment.paths.projects;
+        request.project_files=after.project_files;
+        request.cmake=after.cmake;
+        request.cmake_graph_check=after.cmake_graph_check;
+        request.capture_cmake_graph=true;
+        request.action=CppRunRequest::Action::compile_run;
+        bool repaired=false;
+        for(auto& file:request.project_files)
+            if(file.first=="CMakeLists.txt") {
+                if(page==4) {
+                    constexpr auto before_rule=
+                        "target_include_directories(preparacion PRIVATE include)";
+                    const auto at=file.second.find(before_rule);
+                    check(at!=file.second.npos,"U2L4 private include fixture moved");
+                    file.second.replace(at,
+                        std::char_traits<char>::length(before_rule),
+                        "target_include_directories(preparacion PUBLIC include)");
+                }else if(page==7&&block==8)
+                    file.second+="target_include_directories(preparacion PRIVATE interno)\n";
+                else if(page==9) {
+                    check(file.second.empty(),"Original aforo CMake description changed");
+                    file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Aforo LANGUAGES CXX)
+add_library(aforo STATIC motor/cupo.cpp)
+add_executable(consultar_aforo programas/consulta.cpp)
+target_compile_features(aforo PRIVATE cxx_std_20)
+target_compile_features(consultar_aforo PRIVATE cxx_std_20)
+set_target_properties(aforo consultar_aforo PROPERTIES CXX_EXTENSIONS OFF)
+target_include_directories(aforo PUBLIC publico)
+target_link_libraries(consultar_aforo PRIVATE aforo)
+)cmake";
+                }
+                repaired=true;
+            }
+        if(page==7&&block==11)
+            for(auto& file:request.project_files)
+                if(file.first=="app/main.cpp") {
+                    constexpr auto experimental="#include \"ajuste.h\"\n";
+                    check(file.second.starts_with(experimental),
+                        "Original U2L4 client no longer has experimental include");
+                    file.second.erase(0,std::char_traits<char>::length(
+                        experimental));
+                    repaired=true;
+                }
+        check(repaired&&compiler_runtime_request_allowed(after,request),
+            "The U2L4 corrected CMake project was rejected before native run");
+        const auto compiled=run_cpp(request);
+        ran(compiled);
+        const auto fresh=capture_cpp_execution(request,compiled);
+        const auto expected_stdout=page==9?"7:0:0":"0:5:13";
+        check(compiled.execution.stdout_bytes==expected_stdout&&
+            compiled.execution.stderr_bytes.empty()&&
+            fresh.cmake_graph_correct&&
+            evaluate_cpp_output_check(*after.output_check,fresh,request.revision)
+                .verdict==curriculum::OutputVerdict::correct,
+            "Actual MSVC U2L4 project did not prove correct PUBLIC/PRIVATE roots");
+        auto original_request=request;
+        original_request.capture_cmake_graph=false;
+        original_request.cmake_graph_check.reset();
+        const auto historical=capture_cpp_execution(original_request,compiled);
+        state::StateData include_saved;
+        state::prepare_lesson_state(include_saved,include_original);
+        check(record_compiler_puzzle_case(include_saved,include_original,before,
+                original_request,historical,"Salida histórica")&&
+            compiler_puzzle_completed(include_saved,include_original,before)&&
+            !compiler_puzzle_completed(include_saved,include_mapped,after),
+            "New include requirement inherited unverified stdout history");
+        state::prepare_lesson_state(include_saved,include_mapped);
+        check(record_compiler_puzzle_case(include_saved,include_mapped,after,
+                request,fresh,"Ruta pública/privada")&&
+            compiler_puzzle_completed(include_saved,include_mapped,after)&&
+            compiler_puzzle_case_count(include_saved,include_mapped,after)==1,
+            "Real U2L4 first case failed to unlock its declared include scope");
+        const auto reopened=state::decode(state::encode(include_saved));
+        check(compiler_puzzle_completed(reopened,include_original,before)&&
+            compiler_puzzle_completed(reopened,include_mapped,after),
+            "U2L4 history lost original or scope-aware achievement");
+        auto fake=request;
+        fake.request_id=include_request_id;
+        fake.revision=include_request_id++;
+        fake.project_key+="/fake-scope";
+        for(auto& file:fake.project_files)
+            if(file.first=="CMakeLists.txt") {
+                if(page==4) {
+                    const auto at=file.second.find(
+                        "target_include_directories(preparacion PUBLIC include)");
+                    check(at!=file.second.npos,
+                        "U2L4 public declaration moved before negative control");
+                    file.second.replace(at,
+                        sizeof("target_include_directories(preparacion PUBLIC include)")-1,
+                        "target_include_directories(preparacion PRIVATE include)");
+                    file.second+="target_include_directories(medir PRIVATE include)\n";
+                }else if(page==7&&block==8) {
+                    const auto at=file.second.find(
+                        "target_include_directories(preparacion PRIVATE interno)");
+                    check(at!=file.second.npos,
+                        "U2L4 internal declaration moved before negative control");
+                    file.second.replace(at,
+                        sizeof("target_include_directories(preparacion PRIVATE interno)")-1,
+                        "target_include_directories(preparacion PUBLIC interno)");
+                }else if(page==7&&block==11) {
+                    const auto at=file.second.find("PRIVATE interno");
+                    check(at!=file.second.npos,
+                        "U2L4 original PRIVATE internal scope moved");
+                    file.second.replace(at,sizeof("PRIVATE interno")-1,
+                        "PUBLIC interno");
+                }else {
+                    const auto at=file.second.find(
+                        "target_include_directories(aforo PUBLIC publico)");
+                    check(at!=file.second.npos,"U2L4 aforo public scope moved");
+                    file.second.replace(at,
+                        sizeof("target_include_directories(aforo PUBLIC publico)")-1,
+                        "target_include_directories(aforo PRIVATE publico)");
+                    file.second+=
+                        "target_include_directories(consultar_aforo PRIVATE publico)\n";
+                }
+            }
+        if(page==7&&block==11)
+            for(auto& file:fake.project_files)
+                if(file.first=="app/main.cpp") {
+                    const auto source=std::ranges::find_if(
+                        before.project_files,
+                        [&](const auto& item){return item.first=="app/main.cpp";});
+                    check(source!=before.project_files.end(),
+                        "Original U2L4 client source missing");
+                    file.second=source->second;
+                }
+        const auto fake_run=run_cpp(fake);
+        ran(fake_run);
+        const auto fake_fresh=capture_cpp_execution(fake,fake_run);
+        check(fake_run.execution.stdout_bytes==expected_stdout&&
+            evaluate_cpp_output_check(*after.output_check,fake_fresh,
+                fake.revision).verdict==curriculum::OutputVerdict::correct&&
+            !fake_fresh.cmake_graph_correct&&
+            !record_compiler_puzzle_case(include_saved,include_mapped,after,
+                fake,fake_fresh,"Ruta no publicada o filtrada"),
+            "Matching output was credited without the requested include scope");
+    }
+    std::cout<<"PASS four U2L4 MSVC editors: public/private propagation, source repairs, first case and history, fake scopes rejected\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";

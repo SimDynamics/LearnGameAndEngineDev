@@ -491,6 +491,14 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
         if(!configuration.HasKey(L"targets"))continue;
         const auto references=configuration.GetNamedArray(L"targets");
         const auto directories=configuration.GetNamedArray(L"directories");
+        // Codemodel v2 reports the minimum from the top-level CMake
+        // directory, independently of the runner's newer toolchain defaults.
+        if(directories.Size()) {
+            const auto top=directories.GetObjectAt(0);
+            if(top.HasKey(L"minimumCMakeVersion"))
+                graph.minimum_cmake_version=json_text(
+                    top.GetNamedObject(L"minimumCMakeVersion"),L"string");
+        }
         std::map<std::string,std::string> names;
         for(const auto& reference:references) {
             const auto item=reference.GetObject();
@@ -523,6 +531,19 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
                     if(source.HasKey(L"compileGroupIndex"))
                         fact.compiled_sources.push_back(json_text(source,L"path"));
                 }
+            if(target.HasKey(L"compileGroups"))
+                for(const auto& group_value:target.GetNamedArray(L"compileGroups")) {
+                    const auto group=group_value.GetObject();
+                    if(json_text(group,L"language")!="CXX"||
+                       !group.HasKey(L"includes"))continue;
+                    for(const auto& item_include:group.GetNamedArray(L"includes")) {
+                        const auto path=json_text(item_include.GetObject(),L"path");
+                        if(!path.empty()&&std::ranges::find(
+                                fact.include_directories,path)==
+                                fact.include_directories.end())
+                            fact.include_directories.push_back(path);
+                    }
+                }
             if(target.HasKey(L"artifacts"))
                 for(const auto& artifact:target.GetNamedArray(L"artifacts"))
                     fact.artifacts.push_back(json_text(artifact.GetObject(),L"path"));
@@ -549,6 +570,192 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
     }
     if(!matched)throw std::runtime_error("CMake requested configuration has no generated graph");
     return graph;
+}
+// Only an explicitly authored target requirement needs this private trace.
+// No ordinary compilation, free laboratory, or independent probe collects it.
+bool requires_authored_cmake_trace(const CppRunRequest& request) {
+    return request.capture_cmake_graph&&request.cmake_graph_check&&
+        (request.cmake_graph_check->option_selection||
+         std::ranges::any_of(request.cmake_graph_check->targets,
+            [](const auto& target) {
+                return target.require_explicit_cxx20||
+                    target.require_explicit_extensions_off||
+                    !target.public_include_roots.empty()||
+                    !target.private_include_roots.empty();
+            }));
+}
+bool authored_cmake_path(std::string_view value) {
+    const auto path=project_path(value);
+    return path.filename()==L"CMakeLists.txt"||path.extension()==L".cmake";
+}
+std::filesystem::path authored_cmake_trace_path(
+        const std::filesystem::path& workspace) {
+    return workspace/L"lgaed-authored-cmake-trace.jsonl";
+}
+// The JSON CMake trace lists commands actually invoked at configure time,
+// with expanded arguments. Ignore all non-student source locations, including
+// CMake modules and compiler/toolchain defaults. This evidence supplements
+// generated File API target/source/link facts, never replaces them.
+void attach_authored_cmake_trace(const std::filesystem::path& workspace,
+        const CppRunRequest& request,CppCmakeGraphEvidence& graph) {
+    const auto path=authored_cmake_trace_path(workspace);
+    state::require_safe_path(path);
+    if(!std::filesystem::is_regular_file(path)||
+       std::filesystem::file_size(path)>4*1024*1024)return;
+    std::ifstream input(path,std::ios::binary);
+    if(!input)return;
+    const auto source=workspace/L"p";
+    const auto equals=[](std::string_view left,std::string_view right) {
+        return left.size()==right.size()&&
+            std::ranges::equal(left,right,[](unsigned char a,unsigned char b) {
+                if(a>='a'&&a<='z')a=static_cast<unsigned char>(a-'a'+'A');
+                if(b>='a'&&b<='z')b=static_cast<unsigned char>(b-'a'+'A');
+                return a==b;
+            });
+    };
+    const auto off=[&](std::string_view value) {
+        return equals(value,"OFF")||equals(value,"FALSE")||
+            equals(value,"NO")||equals(value,"N")||value=="0";
+    };
+    // Parse into a temporary graph: malformed/partial traces never
+    // certify an early prefix of the student's CMake commands.
+    auto observed=graph.targets;
+    auto observed_options=graph.authored_option_defaults;
+    const auto target_for=[&](std::string_view name)->CppCmakeTargetEvidence* {
+        const auto it=std::ranges::find_if(observed,
+            [&](const auto& item){return item.name==name;});
+        return it==observed.end()?nullptr:&*it;
+    };
+    const auto apply_property=[&](std::string_view name,
+            std::string_view key,std::string_view value) {
+        auto* target=target_for(name);
+        if(!target)return;
+        if(equals(key,"CXX_EXTENSIONS"))
+            target->explicit_extensions_off=off(value);
+        else if(equals(key,"CXX_STANDARD"))
+            target->explicit_cxx20=value=="20";
+    };
+    std::string line;
+    std::size_t records=0;
+    try {
+        while(std::getline(input,line)) {
+            if(++records>50000||line.size()>65536)return;
+            const auto event=JsonObject::Parse(winrt::to_hstring(line));
+            if(!event.HasKey(L"cmd"))continue; // trace format header
+            if(!event.HasKey(L"file")||!event.HasKey(L"args"))return;
+            const auto origin=project_path(json_text(event,L"file")).lexically_normal();
+            const bool authored=std::ranges::any_of(request.project_files,
+                [&](const auto& file) {
+                    if(!authored_cmake_path(file.first))return false;
+                    const auto expected=(source/project_path(file.first))
+                        .lexically_normal().generic_wstring();
+                    const auto observed_path=origin.generic_wstring();
+                    const CaseInsensitive cmp;
+                    return !cmp(expected,observed_path)&&
+                        !cmp(observed_path,expected);
+                });
+            if(!authored)continue;
+            const auto command=json_text(event,L"cmd");
+            std::vector<std::string> args;
+            for(const auto& value:event.GetNamedArray(L"args")) {
+                const auto expanded=winrt::to_string(value.GetString());
+                std::size_t begin=0;
+                for(;;) {
+                    const auto end=expanded.find(';',begin);
+                    args.push_back(expanded.substr(begin,end==std::string::npos?
+                        end:end-begin));
+                    if(end==std::string::npos)break;
+                    begin=end+1;
+                }
+            }
+            if(args.empty())continue;
+            if(equals(command,"option")&&args.size()>=2) {
+                observed_options.emplace_back(args[0],
+                    args.size()==2||off(args[2])?"OFF":"ON");
+            }else if(equals(command,"target_include_directories")&&
+                     args.size()>=3) {
+                auto* target=target_for(args.front());
+                if(!target)continue;
+                bool is_public=false,is_private=false;
+                for(std::size_t i=1;i<args.size();++i) {
+                    if(equals(args[i],"PUBLIC")) {
+                        is_public=true;is_private=false;
+                    }else if(equals(args[i],"PRIVATE")) {
+                        is_private=true;is_public=false;
+                    }else if(equals(args[i],"INTERFACE")) {
+                        is_public=false;is_private=false;
+                    }else if(equals(args[i],"BEFORE")||
+                             equals(args[i],"AFTER")||
+                             equals(args[i],"SYSTEM"))continue;
+                    else if(is_public||is_private) {
+                        // CMake expands source-dir variables in the trace.
+                        // Simple relative roots resolve beside the CMake file.
+                        if(args[i].find("$<")!=std::string::npos)continue;
+                        auto root=project_path(args[i]);
+                        if(root.is_relative())root=origin.parent_path()/root;
+                        root=root.lexically_normal();
+                        const auto resolved=utf8(root.generic_wstring());
+                        if(is_public)
+                            target->authored_public_include_directories
+                                .push_back(resolved);
+                        else
+                            target->authored_private_include_directories
+                                .push_back(resolved);
+                    }
+                }
+            }else if(equals(command,"target_compile_features")&&args.size()>2) {
+                auto* target=target_for(args.front());
+                if(!target)continue;
+                bool applies_to_target=false;
+                for(std::size_t i=1;i<args.size();++i) {
+                    if(equals(args[i],"PRIVATE")||equals(args[i],"PUBLIC"))
+                        applies_to_target=true;
+                    else if(equals(args[i],"INTERFACE"))
+                        applies_to_target=false;
+                    else if(applies_to_target&&equals(args[i],"cxx_std_20"))
+                        target->explicit_cxx20=true;
+                }
+            }else if(equals(command,"set_target_properties")&&args.size()>=4) {
+                const auto separator=std::ranges::find_if(args,
+                    [&](const auto& arg){return equals(arg,"PROPERTIES");});
+                if(separator==args.end())continue;
+                const auto pos=static_cast<std::size_t>(separator-args.begin());
+                if(pos==0)continue;
+                for(auto i=pos+1;i+1<args.size();i+=2)
+                    for(std::size_t t=0;t<pos;++t)
+                        apply_property(args[t],args[i],args[i+1]);
+            }else if(equals(command,"set_property")&&args.size()>=5&&
+                     equals(args.front(),"TARGET")) {
+                const auto separator=std::ranges::find_if(args,
+                    [&](const auto& arg){return equals(arg,"PROPERTY");});
+                if(separator==args.end())continue;
+                const auto pos=static_cast<std::size_t>(separator-args.begin());
+                if(pos<2||pos+3!=args.size())continue;
+                bool append=false;
+                for(std::size_t i=1;i<pos;++i)
+                    append=append||equals(args[i],"APPEND")||
+                        equals(args[i],"APPEND_STRING");
+                if(append)continue;
+                for(std::size_t i=1;i<pos;++i)
+                    apply_property(args[i],args[pos+1],args[pos+2]);
+            }
+        }
+    }catch(const std::exception&) {
+        return;
+    }catch(const winrt::hresult_error&) {
+        return;
+    }
+    if(input.bad()||!records)return;
+    for(std::size_t i=0;i<observed.size();++i) {
+        graph.targets[i].explicit_cxx20=observed[i].explicit_cxx20;
+        graph.targets[i].explicit_extensions_off=
+            observed[i].explicit_extensions_off;
+        graph.targets[i].authored_public_include_directories=
+            std::move(observed[i].authored_public_include_directories);
+        graph.targets[i].authored_private_include_directories=
+            std::move(observed[i].authored_private_include_directories);
+    }
+    graph.authored_option_defaults=std::move(observed_options);
 }
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
@@ -625,7 +832,13 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
     while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()){auto& phase=request.action==CppRunRequest::Action::execute?result.execution:request.action==CppRunRequest::Action::build?result.compilation:result.configuration;phase.status=CppPhaseStatus::cancelled;return;}
     result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);const auto& build_directory=workspace;const auto source=workspace/L"p",state_file=workspace/L"state.json";
     auto availability=inspect_unlocked(request);const auto action=request.action;
-    const bool configure=action==CppRunRequest::Action::configure||(action==CppRunRequest::Action::compile_run&&!availability.configured);
+    const bool authored_trace=requires_authored_cmake_trace(request);
+    const auto trace_file=authored_cmake_trace_path(workspace);
+    const bool missing_trace=authored_trace&&
+        !std::filesystem::is_regular_file(trace_file);
+    const bool configure=action==CppRunRequest::Action::configure||
+        (action==CppRunRequest::Action::compile_run&&
+         (!availability.configured||missing_trace));
     const auto cmake=std::filesystem::path(build::educational_cmake),ninja=std::filesystem::path(build::educational_ninja),compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";
     if(!std::filesystem::is_regular_file(cmake)||!std::filesystem::is_regular_file(ninja)||!std::filesystem::is_regular_file(compiler))throw std::runtime_error("Pinned CMake, Ninja or MSVC is unavailable");
     if(configure){(void)verify_workspace_identity(request,true);materialize(request.project_files,source);state::require_safe_path(build_directory);std::filesystem::create_directories(build_directory);state::require_safe_path(build_directory);
@@ -637,13 +850,33 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
             "string(APPEND CMAKE_CXX_FLAGS_INIT \" /Zc:__cplusplus\")\n");
         std::vector<std::wstring> arguments{L"--fresh",L"-S",source.wstring(),L"-B",build_directory.wstring(),L"-G",L"Ninja",L"-DCMAKE_MAKE_PROGRAM="+ninja.wstring(),L"-DCMAKE_CXX_COMPILER="+compiler.wstring(),L"-DCMAKE_C_COMPILER="+compiler.wstring(),L"-DCMAKE_RC_COMPILER="+std::wstring(build::educational_resource_compiler),L"-DCMAKE_BUILD_TYPE="+std::wstring(winrt::to_hstring(request.cmake->build_type)),L"-DCMAKE_CXX_STANDARD="+std::to_wstring(build::cpp_standard),L"-DCMAKE_CXX_STANDARD_REQUIRED=ON",L"-DCMAKE_CXX_EXTENSIONS=OFF",L"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",L"-DCMAKE_USER_MAKE_RULES_OVERRIDE_CXX="+language_rules.wstring()};
         for(const auto& [key,value]:request.cmake->options)arguments.push_back(std::wstring(L"-D")+winrt::to_hstring(key).c_str()+L"="+winrt::to_hstring(value).c_str());
+        if(authored_trace) {
+            state::require_safe_path(trace_file);
+            arguments.push_back(L"--trace-expand");
+            arguments.push_back(L"--trace-format=json-v1");
+            arguments.push_back(L"--trace-redirect="+trace_file.wstring());
+            bool has_authored_cmake=false;
+            for(const auto& file:request.project_files) {
+                if(!authored_cmake_path(file.first))continue;
+                const auto owned=(source/project_path(file.first)).lexically_normal();
+                state::require_safe_path(owned);
+                arguments.push_back(L"--trace-source="+owned.wstring());
+                has_authored_cmake=true;
+            }
+            if(!has_authored_cmake)
+                throw std::invalid_argument(
+                    "Explicit CMake rules need an original authored CMake file");
+        }
         result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true);
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
-    if(availability.configured&&request.capture_cmake_graph)
+    if(availability.configured&&request.capture_cmake_graph) {
         result.cmake_graph=snapshot_cmake_graph(workspace,request,
             result.project_fingerprint,result.configuration_fingerprint);
+        if(authored_trace)
+            attach_authored_cmake_trace(workspace,request,*result.cmake_graph);
+    }
     if(action==CppRunRequest::Action::configure)return;
     if(!availability.configured)throw std::runtime_error("Configure and generate the current project before building or running it");
     if(action==CppRunRequest::Action::build||action==CppRunRequest::Action::compile_run){materialize(request.project_files,source);auto saved=read_json(state_file);
@@ -928,8 +1161,40 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     if(!required.project_name.empty()&&
        graph.project_name!=required.project_name)
         return fail("El nombre de proyecto generado por CMake no coincide.");
+    if(!required.minimum_cmake_version.empty()) {
+        const auto expected=curriculum::cmake_numeric_version(
+            required.minimum_cmake_version);
+        const auto actual=curriculum::cmake_numeric_version(
+            graph.minimum_cmake_version);
+        if(!expected||!actual||*expected!=*actual)
+            return fail("La versión mínima de CMake declarada en el proyecto no coincide.");
+    }
+    if(required.option_selection) {
+        const auto& opt=*required.option_selection;
+        const auto found=request.cmake->options.find(opt.name);
+        if(found==request.cmake->options.end()||found->second!="ON")
+            return fail("La configuración de esta práctica no selecciona ON.");
+        if(!std::ranges::any_of(graph.authored_option_defaults,
+                [&](const auto& entry) {
+                    return entry.first==opt.name&&entry.second=="OFF";
+                }))
+            return fail("La opción no declara OFF por defecto en el proyecto.");
+    }
     if(required.targets.empty())
         return fail("No hay objetivos de construcción declarados para comprobar.");
+    const auto cmake_source=cmake_workspace(request)/L"p";
+    const auto include_has=[&](const std::vector<std::string>& included,
+            const std::filesystem::path& expected) {
+        const auto expected_path=expected.lexically_normal().generic_wstring();
+        const CaseInsensitive comparator;
+        return std::ranges::any_of(included,[&](const auto& value) {
+            auto candidate=project_path(value);
+            if(candidate.is_relative())candidate=cmake_source/candidate;
+            const auto found_path=candidate.lexically_normal().generic_wstring();
+            return !comparator(expected_path,found_path)&&
+                   !comparator(found_path,expected_path);
+        });
+    };
     std::vector<std::string> seen;
     for(const auto& item:required.targets) {
         if(item.name.empty()||item.type.empty()||
@@ -940,6 +1205,43 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
             [&](const auto& candidate){return candidate.name==item.name;});
         if(found==graph.targets.end()||found->type!=item.type)
             return fail("Falta el objetivo o tipo solicitado: "+item.name);
+        if(item.require_explicit_cxx20&&!found->explicit_cxx20)
+            return fail("Falta declarar el mínimo C++20 en el objetivo: "+item.name);
+        if(item.require_explicit_extensions_off&&
+           !found->explicit_extensions_off)
+            return fail("Falta desactivar las extensiones explícitamente en: "+item.name);
+        for(const auto& root:item.public_include_roots) {
+            const auto dir=cmake_source/project_path(root);
+            if(!include_has(found->authored_public_include_directories,dir))
+                return fail("Falta publicar la búsqueda de encabezados: "+root);
+            if(!include_has(found->include_directories,dir))
+                return fail("La biblioteca no compila con la raíz pública: "+root);
+            for(const auto& other:required.targets)
+                if(other.type=="EXECUTABLE"&&
+                   std::ranges::find(other.links_to,item.name)!=other.links_to.end()) {
+                    const auto linked=std::ranges::find_if(graph.targets,
+                        [&](const auto& t){return t.name==other.name;});
+                    if(linked==graph.targets.end()||
+                       !include_has(linked->include_directories,dir))
+                        return fail("La ruta PUBLIC no llega al cliente: "+root);
+                }
+        }
+        for(const auto& root:item.private_include_roots) {
+            const auto dir=cmake_source/project_path(root);
+            if(!include_has(found->authored_private_include_directories,dir))
+                return fail("Falta limitar la ruta interna a PRIVATE: "+root);
+            if(!include_has(found->include_directories,dir))
+                return fail("La biblioteca no recibe su ruta privada: "+root);
+            for(const auto& other:required.targets)
+                if(other.type=="EXECUTABLE"&&
+                   std::ranges::find(other.links_to,item.name)!=other.links_to.end()) {
+                    const auto linked=std::ranges::find_if(graph.targets,
+                        [&](const auto& t){return t.name==other.name;});
+                    if(linked==graph.targets.end()||
+                       include_has(linked->include_directories,dir))
+                        return fail("La ruta PRIVATE se filtró al cliente: "+root);
+                }
+        }
         for(const auto& source:item.sources)
             if(std::ranges::find(found->compiled_sources,source)==
                 found->compiled_sources.end())
@@ -1069,6 +1371,54 @@ bool accepted_compile_diagnostic(const CppRunRequest& request,const CppRunResult
         result.compilation==diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes);
 }catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}
 
+// Reconstruct the independently configured default-OFF project to validate
+// the second result; a single correct ON output cannot grant this objective.
+CppRunRequest default_option_request(const CppRunRequest& request,
+        const curriculum::CmakeOptionSelectionRequirement& option,
+        const curriculum::CmakeGraphRequirement& authored) {
+    auto off=request;
+    off.request_id=~request.request_id;
+    off.project_key+="/cmake-option-off-v1/"+option.name;
+    off.cmake->options.erase(option.name);
+    off.named_rule_probe.reset();
+    off.rejection_probe.reset();
+    off.observation_probe.reset();
+    off.assertion_mode.reset();
+    off.capture_cmake_graph=true;
+    auto off_required=authored;
+    off_required.option_selection.reset();
+    for(auto& target:off_required.targets)
+        if(target.name==option.library_target) {
+            target.sources={option.disabled_source};
+            target.exact_sources=true;
+        }
+    off.cmake_graph_check=std::move(off_required);
+    return off;
+}
+bool verified_default_option_probe(const CppRunRequest& request,
+        const CppRunResult& result,
+        const curriculum::CmakeGraphRequirement& required) {
+    if(!required.option_selection||!result.cmake_option_probe)return false;
+    const auto& option=*required.option_selection;
+    const auto off=default_option_request(request,option,required);
+    const auto& proof=*result.cmake_option_probe;
+    CppRunResult replay;
+    replay.request_id=proof.request_id;
+    replay.revision=proof.revision;
+    replay.compilation=proof.compilation;
+    replay.configuration=proof.configuration;
+    replay.execution=proof.execution;
+    replay.project_fingerprint=proof.project_fingerprint;
+    replay.configuration_fingerprint=proof.configuration_fingerprint;
+    replay.target_type=proof.target_type;
+    replay.executable=proof.executable;
+    replay.error_utf8=proof.error_utf8;
+    replay.cmake_graph=proof.graph;
+    return replay.execution.succeeded()&&
+        replay.execution.stdout_bytes==option.disabled_stdout&&
+        replay.execution.stderr_bytes.empty()&&
+        evaluate_cmake_graph(off,replay,*off.cmake_graph_check).correct;
+}
 curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,const CppRunResult& result) {
     curriculum::FreshExecution fresh;
     if(request.request_id!=result.request_id||request.revision!=result.revision||request.diagnostic
@@ -1084,9 +1434,14 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
-    if(request.cmake_graph_check)
+    if(request.cmake_graph_check) {
+        const auto& required=*request.cmake_graph_check;
         fresh.cmake_graph_correct=evaluate_cmake_graph(
-            request,result,*request.cmake_graph_check).correct;
+            request,result,required).correct;
+        if(fresh.cmake_graph_correct&&required.option_selection)
+            fresh.cmake_graph_correct=verified_default_option_probe(
+                request,result,required);
+    }
     if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
         result.compilation.succeeded()&&
         result.target_type=="WASI_COMMAND"&&
@@ -1207,6 +1562,25 @@ CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
 // workspace against the student's unchanged library sources. Its executable
 // never reuses the student-editable test driver or changes the submitted
 // project. The worker owns this work; the window thread never runs it.
+// Build the exact submitted source under a private OFF configuration.
+// This request has no option-selection recursion and cannot reuse the ON cache.
+void complete_cmake_option_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.cmake_graph_check||
+       !request.cmake_graph_check->option_selection||
+       request.action!=CppRunRequest::Action::compile_run||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto& authored=*request.cmake_graph_check;
+    const auto off=default_option_request(request,*authored.option_selection,
+        authored);
+    const auto observed=run_cpp(off,stop);
+    result.cmake_option_probe=CppCmakeOptionProbe{
+        observed.request_id,observed.revision,observed.project_fingerprint,
+        observed.configuration_fingerprint,observed.target_type,
+        observed.error_utf8,observed.executable,observed.compilation,
+        observed.execution,observed.configuration,observed.cmake_graph};
+}
 void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result,
         std::stop_token stop) {
     if(!request.named_rule_probe||
@@ -1384,6 +1758,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         }
         if(request.cmake){
             run_cmake(request,result,input,compiler_input,stop);
+            complete_cmake_option_probe(request,result,stop);
             complete_named_rule_probe(request,result,stop);
             return result;
         }

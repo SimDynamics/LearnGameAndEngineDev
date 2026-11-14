@@ -2662,7 +2662,8 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> owners;
     for(const auto& record:records) {
         const auto item=record.GetObject();
-        allowed_keys(item,{"activity","project","targets"});
+        allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
+            "optionSelection"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2685,13 +2686,21 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             require(requirement.project_name.size()<=128,
                 "CMake project name is too long");
         }
+        if(item.HasKey(L"minimumCmakeVersion")) {
+            requirement.minimum_cmake_version=text(item,"minimumCmakeVersion");
+            require(curriculum::cmake_numeric_version(
+                requirement.minimum_cmake_version).has_value(),
+                "CMake minimum requires a numeric major.minor version");
+        }
         const auto targets=array(item,"targets");
         require(targets.Size()>0&&targets.Size()<=16,
             "CMake graph requires 1..16 generated targets");
         std::set<std::string> unique;
         for(const auto& t:targets) {
             const auto source=t.GetObject();
-            allowed_keys(source,{"name","type","sources","linksTo","exactSources"});
+            allowed_keys(source,{"name","type","sources","linksTo","exactSources",
+                "explicitCxx20","explicitCxxExtensionsOff",
+                "publicIncludeRoots","privateIncludeRoots"});
             require(source.HasKey(L"name")&&source.HasKey(L"type"),
                 "Each CMake graph target requires a name and type");
             CmakeRequiredTarget wanted;
@@ -2729,8 +2738,72 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 require(!wanted.exact_sources||!wanted.sources.empty(),
                     "An exact CMake source requirement cannot be empty");
             }
+            for(const auto [key,flag]:{
+                    std::pair{L"explicitCxx20",&wanted.require_explicit_cxx20},
+                    std::pair{L"explicitCxxExtensionsOff",
+                              &wanted.require_explicit_extensions_off}}) {
+                if(!source.HasKey(key))continue;
+                const auto value=source.GetNamedValue(key);
+                require(value.ValueType()==JsonValueType::Boolean,
+                    "CMake explicit toolchain requirements must be Boolean");
+                *flag=value.GetBoolean();
+            }
+            const auto valid_include_root=[](std::string_view path) {
+                if(path.empty()||path.size()>256||path.back()=='/'||
+                   path.front()=='/')return false;
+                std::size_t start=0;
+                for(;;) {
+                    const auto end=path.find('/',start);
+                    const auto part=path.substr(start,end==path.npos?
+                        path.npos:end-start);
+                    if(part.empty()||part=="."||part==".."||
+                       !std::ranges::all_of(part,[](unsigned char ch) {
+                           return (ch>='a'&&ch<='z')||
+                               (ch>='A'&&ch<='Z')||
+                               (ch>='0'&&ch<='9')||
+                               ch=='_'||ch=='-'||ch=='.'||ch=='+';
+                       }))return false;
+                    if(end==path.npos)break;
+                    start=end+1;
+                }
+                return true;
+            };
+            for(const auto [key,roots]:{
+                    std::pair{L"publicIncludeRoots",&wanted.public_include_roots},
+                    std::pair{L"privateIncludeRoots",&wanted.private_include_roots}}) {
+                if(!source.HasKey(key))continue;
+                *roots=strings(source.GetNamedArray(key),false,false);
+                require(wanted.type=="STATIC_LIBRARY"&&
+                        !roots->empty()&&roots->size()<=8,
+                    "CMake include roots require 1..8 library-owned paths");
+                std::set<std::string> seen_roots;
+                for(const auto& path:*roots)
+                    require(valid_include_root(path)&&
+                            seen_roots.insert(path).second&&
+                            std::ranges::any_of(owner->project_files,
+                                [&](const auto& file) {
+                                    return file.first.starts_with(path+'/')&&
+                                        (file.first.ends_with(".h")||
+                                         file.first.ends_with(".hpp")||
+                                         file.first.ends_with(".hxx"));
+                                }),
+                        "CMake include roots must contain original headers");
+            }
+            for(const auto& root:wanted.public_include_roots)
+                require(std::ranges::find(wanted.private_include_roots,root)==
+                    wanted.private_include_roots.end(),
+                    "CMake root cannot be simultaneously PUBLIC and PRIVATE");
             requirement.targets.push_back(std::move(wanted));
         }
+        for(const auto& library:requirement.targets)if(
+                !library.public_include_roots.empty()||
+                !library.private_include_roots.empty())
+            require(std::ranges::any_of(requirement.targets,
+                [&](const auto& consumer) {
+                    return consumer.type=="EXECUTABLE"&&
+                        std::ranges::find(consumer.links_to,library.name)!=
+                            consumer.links_to.end();
+                }),"Include scopes require an explicitly linked executable");
         const auto selected=std::ranges::find_if(requirement.targets,
             [&](const auto& target){return target.name==owner->cmake->target;});
         require(selected!=requirement.targets.end()&&selected->type=="EXECUTABLE",
@@ -2744,6 +2817,37 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                         target.type=="EXECUTABLE",
                     "CMake links must reference a declared static library from an executable");
             }
+        if(item.HasKey(L"optionSelection")) {
+            const auto option=item.GetNamedObject(L"optionSelection");
+            allowed_keys(option,{"name","default","target","offSource","offStdout"},true);
+            require(option.HasKey(L"name")&&option.HasKey(L"default")&&
+                    option.HasKey(L"target")&&option.HasKey(L"offSource")&&
+                    option.HasKey(L"offStdout"),
+                "Binary option requires name, default, target, source and output");
+            const auto name=text(option,"name");
+            const auto target=text(option,"target");
+            const auto off_source=text(option,"offSource");
+            const auto off_output=text(option,"offStdout");
+            require(target_name(name)&&name.size()<=128&&
+                    text(option,"default")=="OFF"&&
+                    off_output.size()<=1024*1024&&
+                    owner->standard_input.value_or("").empty()&&
+                    owner->cmake->options.contains(name)&&
+                    owner->cmake->options.at(name)=="ON",
+                "Binary option requires an ON editor with authored OFF default");
+            const auto library=std::ranges::find_if(requirement.targets,
+                [&](const auto& item){return item.name==target;});
+            require(library!=requirement.targets.end()&&
+                    library->type=="STATIC_LIBRARY"&&
+                    library->exact_sources&&!library->sources.empty()&&
+                    std::ranges::find(library->sources,off_source)==
+                        library->sources.end()&&is_cpp_source_file(off_source)&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& file){return file.first==off_source;}),
+                "Binary option must switch between distinct original library files");
+            requirement.option_selection=CmakeOptionSelectionRequirement{
+                name,target,off_source,off_output};
+        }
         owner->cmake_graph_check=std::move(requirement);
     }
 }

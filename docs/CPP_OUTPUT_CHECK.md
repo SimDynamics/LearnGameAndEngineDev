@@ -936,9 +936,100 @@ que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
 de `projectFiles`; `exactSources` exige que no existan fuentes de
 compilación adicionales. `linksTo` referencia objetivos de biblioteca
 estática también declarados, y se acredita mediante dependencia y enlace del
-artefacto real. Cada contrato ya publicado permanece inmutable. Es posible añadir
+artefacto real. `minimumCmakeVersion` es una propiedad opcional del
+propietario, por ejemplo `"minimumCmakeVersion": "3.20"`. Comprueba la versión
+mínima declarada por `cmake_minimum_required(VERSION)` en el directorio raíz,
+según el dato `minimumCMakeVersion.string` de **CMake File API codemodel v2**.
+Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
+`3.19` y `3.21` no. No se deduce esta versión de la instalación de CMake,
+ni se sustituye por una búsqueda textual del código fuente. Para exigir los requisitos explícitos de los objetivos, un elemento de
+`targets` puede declarar `"explicitCxx20": true` y
+`"explicitCxxExtensionsOff": true`. Estas propiedades optativas obligan a
+comprobar que **CMake ejecutó** una declaración de C++20 y una desactivación
+de extensiones sobre el objetivo, además de construirlo y ejecutar su primer
+caso correctamente. El perfil Windows puede aportar C++23 y extensiones
+desactivadas, pero eso **no** satisface las propiedades del alumno.
+
+En la configuración autenticada, el motor guarda una traza JSON privada de
+CMake limitada a los archivos CMake originales del proyecto. Sólo acepta
+órdenes ejecutadas y argumentos expandidos: `target_compile_features(objetivo
+PRIVATE cxx_std_20)`, `set_target_properties(objetivo PROPERTIES
+CXX_STANDARD 20)` y `set_property(TARGET objetivo PROPERTY
+CXX_STANDARD 20)` son formas equivalentes para el mínimo. Para extensiones
+se admiten `set_target_properties(... PROPERTIES CXX_EXTENSIONS OFF)` y
+`set_property(TARGET ... PROPERTY CXX_EXTENSIONS OFF)`, con los valores
+falsos admitidos por CMake. Una orden posterior que active las extensiones
+invalida el requisito. Las rutas, fuentes y enlaces siguen contrastándose
+mediante File API. No se evalúan solamente las cadenas impresas por el alumno,
+ni se concede crédito desde una configuración anterior sin traza autenticada.
+
+La traza está limitada al proyecto y a los objetivos declarados. Esta primera
+capacidad no certifica todavía asignaciones por ámbito de directorio,
+propagación por interfaces de otros objetivos ni cualquier macro dinámica que
+no pueda atribuirse con certeza al objetivo. En esos casos se necesita una
+comprobación adicional en lugar de conceder un acierto supuesto.
+
+Cada contrato ya publicado permanece inmutable. Es posible añadir
 nuevos propietarios al final de la declaración mediante una transición
 autenticada, sin modificar ni reordenar los anteriores.
+
+### Opción binaria con construcción independiente por defecto
+
+Para las prácticas que seleccionan una biblioteca con una opción booleana, el
+contrato admite `optionSelection` dentro del mismo propietario del grafo:
+
+```json
+"optionSelection": {
+  "name": "TARIFA_ESPECIAL",
+  "default": "OFF",
+  "target": "tarifas",
+  "offSource": "normal.cpp",
+  "offStdout": "0:6:15"
+}
+```
+
+El editor original configura `TARIFA_ESPECIAL=ON`. La rúbrica exige que la
+biblioteca del grafo original utilice `especial.cpp` con `exactSources` y que
+el estudiante declare la opción `OFF` por defecto en sus propias órdenes
+CMake ejecutadas. Además, el motor compila y ejecuta una **segunda copia
+aislada del mismo proyecto**, sin el override `-DTARIFA_ESPECIAL=ON`. Su
+biblioteca debe compilar exactamente `normal.cpp` y conservar el resto de
+los objetivos, enlaces, versión mínima, reglas C++ y salida `0:6:15`.
+Una coincidencia del resultado `ON`, una opción ficticia o una selección
+fijada siempre a la implementación especial no acreditan la construcción.
+
+La ejecución adicional utiliza un espacio de configuración y huella propia,
+conserva los proyectos y borradores del estudiante y nunca modifica la
+opción seleccionada en el editor. Si la compilación o ejecución de la
+configuración `OFF` falla, falta evidencia y no se concede el logro. El
+primer caso correcto del editor sigue siendo el único obligatorio; esta
+segunda ejecución es la comprobación interna del mismo objetivo, no un
+segundo caso que el estudiante deba activar manualmente.
+
+### Rutas públicas y privadas de encabezados
+
+En los proyectos U2L4, una biblioteca estática puede declarar
+`"publicIncludeRoots": ["include"]` y
+`"privateIncludeRoots": ["interno"]` dentro de su objetivo en
+`compilerCmakeGraphChecks`. Las rutas han de contener archivos de cabecera
+originales del editor, no rutas externas o generadas. El objetivo requiere un
+consumidor ejecutable enlazado explícitamente.
+
+El motor utiliza las rutas C++ realmente publicadas por **CMake File API**
+en los objetivos compilados, además de la traza privada de las órdenes
+`target_include_directories` ejecutadas en los archivos CMake del alumno.
+Para `PUBLIC`, exige una declaración pública, la ruta efectiva en la
+biblioteca y su propagación al consumidor enlazado. Para `PRIVATE`, exige
+la declaración privada y la ruta en la biblioteca, sin permitir que llegue
+al consumidor. Una búsqueda `PRIVATE` duplicada manualmente en el cliente,
+o la publicación de `interno`, no se acreditan aunque la salida coincida.
+
+La comprobación admite rutas relativas al archivo CMake y rutas absolutas
+equivalentes de la fuente. Los valores dinámicos no atribuibles con certeza
+al objetivo no conceden crédito por mera coincidencia. Los nuevos objetivos
+se incorporan en la raíz de la lección sin cambiar los proyectos, direcciones,
+borradores o recibos históricos. El primer caso correcto continúa siendo
+suficiente para avanzar, siempre que incluya la evidencia estructural.
 
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,

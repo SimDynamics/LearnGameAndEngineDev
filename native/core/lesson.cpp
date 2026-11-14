@@ -386,6 +386,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
         token(graph.project_name);
+        // Preserve the original seal for older graph declarations. Only a
+        // newly authored minimum requirement adds a new objective frame.
+        if(!graph.minimum_cmake_version.empty()) {
+            token("minimum-cmake-version-v1");
+            token(graph.minimum_cmake_version);
+        }
         token(std::to_string(graph.targets.size()));
         for(const auto& target:graph.targets) {
             token(target.name);token(target.type);
@@ -394,6 +400,24 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             for(const auto& path:target.sources)token(path);
             token(std::to_string(target.links_to.size()));
             for(const auto& name:target.links_to)token(name);
+            if(target.require_explicit_cxx20)token("authored-cxx20-v1");
+            if(target.require_explicit_extensions_off)
+                token("authored-extensions-off-v1");
+            if(!target.public_include_roots.empty()||
+               !target.private_include_roots.empty()) {
+                token("cmake-public-private-includes-v1");
+                token(std::to_string(target.public_include_roots.size()));
+                for(const auto& root:target.public_include_roots)token(root);
+                token(std::to_string(target.private_include_roots.size()));
+                for(const auto& root:target.private_include_roots)token(root);
+            }
+        }
+        if(graph.option_selection) {
+            token("cmake-option-default-off-v1");
+            token(graph.option_selection->name);
+            token(graph.option_selection->library_target);
+            token(graph.option_selection->disabled_source);
+            token(graph.option_selection->disabled_stdout);
         }
     }
     result += std::to_string(activity.output_check->cases.size()) + '[';
