@@ -341,15 +341,15 @@ inline bool productive(const Tokens& t,std::size_t i,
         // Examine only a top-level, non-nested ternary with independently
         // evaluable integral arms; any ambiguous expression stays uncredited
         // only by the ordinary, conservative source and execution checks.
-        std::size_t question=*close,colon=*close,paren_depth=0;
+        std::size_t question=*close,colon=*close,branch_parentheses=0;
         bool nested_ternary=false;
         for(auto at=open+1;at<*close;++at) {
-            if(op(t[at],"(")){++paren_depth;continue;}
+            if(op(t[at],"(")){++branch_parentheses;continue;}
             if(op(t[at],")")) {
-                if(paren_depth)--paren_depth;
+                if(branch_parentheses)--branch_parentheses;
                 continue;
             }
-            if(paren_depth)continue;
+            if(branch_parentheses)continue;
             if(op(t[at],"?")) {
                 if(question!=*close){nested_ternary=true;break;}
                 question=at;
