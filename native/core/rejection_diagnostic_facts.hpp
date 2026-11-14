@@ -613,7 +613,7 @@ inline bool rejection_function_only_edit(std::string_view original,
     if(candidate.size()<prefix.size()+suffix.size()||!candidate.starts_with(prefix)||
         !candidate.ends_with(suffix))return false;
     const auto body=candidate.substr(prefix.size(),candidate.size()-prefix.size()-suffix.size());
-    return !code_format::forbidden_preprocessor_in_edit(body);
+    return code_format::confined_function_body_edit(body);
 }
 
 } // namespace lgaed::curriculum
