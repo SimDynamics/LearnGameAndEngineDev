@@ -705,6 +705,15 @@ no el hash de la prosa o del archivo completo. Work lo obtiene con el script
 reales; no debe copiar la huella del ejemplo a otro ejercicio. El cargador
 Windows y el validador Python comprueban ambos este vínculo.
 
+Si Work incorpora después una revisión de **formato físico sin cambios de
+tokens**, el `sourceSha256` original de `orderEquivalenceGroups` permanece
+intacto. Los validadores aceptan ese vínculo anterior únicamente cuando
+`stateLayout.sourceFormatRevisions` contiene el bloque previo completo y
+su procedencia, equivalencia léxica y transición editorial ya están
+autenticadas. El editor muestra el formato nuevo, pero el marco de respuesta
+histórico conserva su identidad. Un cambio de instrucción, resultado u
+orden canónico no puede valerse de ese archivo para heredar el grupo.
+
 `groups` contiene listas de **índices físicos de tarjetas**, no números de
 posición visual. Cada grupo contiene entre dos y ocho índices distintos y
 ocupa un tramo contiguo del orden canónico. Las tarjetas de código de ese
