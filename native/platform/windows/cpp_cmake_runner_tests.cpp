@@ -2075,6 +2075,110 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         }
     check(adjustments_options&&adjustments.project_files!=adjustments_files,
         "U3L10 MSVC-specific options were not prepared safely");
+    // U3L10's earlier CMake-construction owner starts with a blank
+    // description and unfinished C++ implementations. Its graph can be
+    // compiled and checked independently, but it has no outputCheck and
+    // must not be credited as an accomplished open programming exercise.
+    const auto& first_adjustments=adjustments_lesson.pages.at(2).blocks.at(3);
+    check(first_adjustments.stable_id=="block_0002_0003"&&
+        first_adjustments.cmake&&
+        !first_adjustments.output_check&&!first_adjustments.compile_check&&
+        first_adjustments.project_files.size()==5&&
+        first_adjustments.project_files.front().first=="CMakeLists.txt"&&
+        first_adjustments.project_files.front().second.empty(),
+        "U3L10 original empty CMake task was replaced or pre-credited");
+    auto initial_build=adjustments;
+    initial_build.request_id=3401;
+    initial_build.revision=3401;
+    initial_build.project_key="qa/p2-u3-adjustments/initial-cmake-only";
+    initial_build.project_files=first_adjustments.project_files;
+    initial_build.cmake=first_adjustments.cmake;
+    initial_build.project_files.front().second=
+        adjustments.project_files.front().second;
+    CppCmakeGraphRequirement built_structure{
+        "AjustesConEvidencia",{
+            {"consultar_ajustes","EXECUTABLE",
+             {"app/consulta.cpp"},{"ajustes"},true},
+            {"comprobar_ajustes","EXECUTABLE",
+             {"pruebas/casos.cpp"},{"ajustes"},true},
+            {"ajustes","STATIC_LIBRARY",{"src/ajuste.cpp"},{},true}
+        }};
+    built_structure.minimum_cmake_version="3.20";
+    for(auto& target:built_structure.targets) {
+        target.require_explicit_cxx20=true;
+        target.require_explicit_extensions_off=true;
+    }
+    built_structure.targets.back().public_include_roots={"publico"};
+    initial_build.cmake_graph_check=built_structure;
+    for(const auto& file:first_adjustments.project_files)
+        if(file.first!="CMakeLists.txt")
+            initial_build.cmake_graph_check->source_integrity.emplace_back(
+                file.first,state::sha256(file.second));
+    const auto original_blank_files=first_adjustments.project_files;
+    const auto initial_build_result=run_cpp(initial_build);
+    const auto valid_build_graph=evaluate_cmake_graph(
+        initial_build,initial_build_result,built_structure);
+    check(initial_build_result.error_utf8.empty()&&
+        initial_build_result.configuration.succeeded()&&
+        initial_build_result.compilation.succeeded()&&
+        initial_build_result.execution.status==CppPhaseStatus::completed&&
+        initial_build_result.execution.exit_code==1&&
+        initial_build_result.execution.stderr_bytes.find(
+            "PENDIENTE: cliente sin implementar")!=std::string::npos&&
+        valid_build_graph.correct&&
+        initial_build_result.cmake_graph&&
+        first_adjustments.project_files==original_blank_files,
+        "U3L10 initial CMake could not build both targets and preserve the "
+        "intentionally unfinished C++ exercise: "+valid_build_graph.reason);
+    state::StateData initial_build_state;
+    state::prepare_lesson_state(initial_build_state,adjustments_lesson);
+    const auto original_initial_state=state::encode(initial_build_state);
+    const auto initial_capture=capture_cpp_execution(
+        initial_build,initial_build_result);
+    check(!curriculum::has_compiler_objective(first_adjustments)&&
+        !record_compiler_puzzle_case(initial_build_state,adjustments_lesson,
+            first_adjustments,initial_build,initial_capture,
+            "CMake construido, programa aún pendiente")&&
+        !compiler_puzzle_completed(initial_build_state,adjustments_lesson,
+            first_adjustments)&&
+        state::encode(initial_build_state)==original_initial_state,
+        "The incomplete U3L10 program received a false progress receipt");
+    // Identical client behaviour can be obtained by compiling the component
+    // directly into the executable; that is not the requested library link.
+    auto flattened_build=initial_build;
+    flattened_build.request_id=3402;
+    ++flattened_build.revision;
+    flattened_build.project_key+="/direct-source-instead-of-library";
+    for(auto& file:flattened_build.project_files)
+        if(file.first=="CMakeLists.txt") {
+            adjustments_replace(file.second,
+                "add_executable(consultar_ajustes app/consulta.cpp)",
+                "add_executable(consultar_ajustes app/consulta.cpp src/ajuste.cpp)");
+            adjustments_replace(file.second,
+                "add_executable(comprobar_ajustes pruebas/casos.cpp)",
+                "add_executable(comprobar_ajustes pruebas/casos.cpp src/ajuste.cpp)");
+            adjustments_replace(file.second,
+                "target_link_libraries(consultar_ajustes PRIVATE ajustes)",
+                "target_include_directories(consultar_ajustes PRIVATE publico)");
+            adjustments_replace(file.second,
+                "target_link_libraries(comprobar_ajustes PRIVATE ajustes)",
+                "target_include_directories(comprobar_ajustes PRIVATE publico)");
+        }
+    const auto flattened_result=run_cpp(flattened_build);
+    const auto flattened_graph=evaluate_cmake_graph(
+        flattened_build,flattened_result,built_structure);
+    check(flattened_result.error_utf8.empty()&&
+        flattened_result.compilation.succeeded()&&
+        flattened_result.execution.status==CppPhaseStatus::completed&&
+        flattened_result.execution.exit_code==1&&
+        flattened_result.execution.stderr_bytes==
+            initial_build_result.execution.stderr_bytes&&
+        !flattened_graph.correct&&
+        first_adjustments.project_files==original_blank_files,
+        "U3L10 incorrectly credited direct source compilation as a library");
+    std::cout<<"PASS U3L10 initial empty CMake task: real project graph and "
+        "MSVC build, unimplemented client remains uncredited, direct-source "
+        "bypass refused, unchanged learner state\n";
     const auto faulty_adjustments=run_cpp(adjustments);
     check(faulty_adjustments.error_utf8.empty()&&
         faulty_adjustments.configuration.succeeded()&&
