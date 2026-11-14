@@ -278,12 +278,31 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     if(request.cmake_graph_check!=block.cmake_graph_check)return false;
-    if(block.cmake_graph_check&&
-       (!block.cmake||request.cmake!=block.cmake||
-        request.backend!=CppRunRequest::Backend::native_msvc||
-        request.action!=CppRunRequest::Action::compile_run||
-        !request.capture_cmake_graph||request.diagnostic))
-        return false;
+    if(block.cmake_graph_check) {
+        if(!block.cmake||!request.cmake||
+           request.cmake->build_type!=block.cmake->build_type||
+           request.cmake->options!=block.cmake->options||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||
+           !request.capture_cmake_graph||request.diagnostic)
+            return false;
+        // A published editor may start on the client while its mandatory
+        // first output case runs the checker. Permit only executables named
+        // in existing output cases and in this authenticated CMake graph.
+        if(request.cmake->target!=block.cmake->target) {
+            if(!block.output_check||
+               !std::ranges::any_of(block.output_check->cases,
+                   [&](const auto& item) {
+                       return item.executable==request.cmake->target;
+                   })||
+               !std::ranges::any_of(block.cmake_graph_check->targets,
+                   [&](const auto& item) {
+                       return item.name==request.cmake->target&&
+                           item.type=="EXECUTABLE";
+                   }))
+                return false;
+        }
+    }
     if(block.named_rule_source_check) {
         const auto& named=*block.named_rule_source_check;
         if(request.named_rule_probe!=named.execution_probe)return false;
