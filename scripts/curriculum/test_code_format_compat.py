@@ -152,6 +152,8 @@ class SourceFormatTest(unittest.TestCase):
             'string(CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY)',
             'file(CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
             'cmake_language(CALL file CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'cmake_language(CALL "file" "CONFIGURE" OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] result @ONLY)',
             'set(template [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=])\nSTRING(CONFIGURE "${template}" result @ONLY)',
             'cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY)',
         ]

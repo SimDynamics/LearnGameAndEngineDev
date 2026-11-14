@@ -157,6 +157,18 @@ cmake_language(CALL file CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT
             Language::cmake),
         "CMake-language CALL file(CONFIGURE) bypassed bracket protection");
     check(!code_format::equivalent(
+            R"qa(cmake_language(CALL "file" "CONFIGURE" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(
+cmake_language(CALL "file" "CONFIGURE" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language quoted file and CONFIGURE names escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] output @ONLY))qa",
+            R"qa(
+cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] output @ONLY))qa",
+            Language::cmake),
+        "CMake-language quoted string and CONFIGURE names escaped bracket protection");
+    check(!code_format::equivalent(
             R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
 STRING(CONFIGURE "${template}" result @ONLY)
 )qa",

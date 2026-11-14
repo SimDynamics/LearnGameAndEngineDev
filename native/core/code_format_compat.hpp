@@ -190,8 +190,12 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
         "CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE"
     };
     const auto command=[](std::string_view token,std::string_view name) {
-        if(!token.starts_with("word:"))return false;
-        token.remove_prefix(5);
+        if(token.starts_with("word:"))token.remove_prefix(5);
+        else if(token.starts_with("quoted:\"")&&token.ends_with('"')) {
+            // cmake_language(CALL "file" "CONFIGURE" ...) accepts quoted
+            // names; they still invoke the real configuration operation.
+            token.remove_prefix(8);token.remove_suffix(1);
+        }else return false;
         if(token.size()!=name.size())return false;
         for(std::size_t i=0;i<name.size();++i) {
             const auto ch=token[i];

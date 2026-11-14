@@ -186,7 +186,14 @@ def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
 
     def command(index: int, spelling: str) -> bool:
         token = tokens[index]
-        return token.startswith("word:") and token[5:].lower() == spelling
+        if token.startswith("word:"):
+            actual = token[5:]
+        elif token.startswith('quoted:"') and token.endswith('"'):
+            # cmake_language(CALL "file" "CONFIGURE" ...) is executable.
+            actual = token[8:-1]
+        else:
+            return False
+        return actual.lower() == spelling
 
     configures_brackets = False
     for i in range(len(tokens)):
