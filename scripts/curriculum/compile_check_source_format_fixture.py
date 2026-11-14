@@ -97,7 +97,18 @@ def all_reviewed_pairs() -> dict[str, dict]:
     generated = {}
     lessons = []
     count = 0
+    # Keep the previous real MSVC regression in which spacing changes both
+    # main.cpp and diferencia.cpp. Expanding coverage must not silently
+    # replace that implementation-file check with a main-only example.
+    legacy_before, legacy_after = formatted_pair()
+    retained_legacy = False
     for index, (_, before, after, owners) in enumerate(formatted_documents()):
+        if before["id"] == legacy_before["id"]:
+            if before != legacy_before or retained_legacy:
+                raise ValueError("The existing U6L2 diagnostic baseline is not unique")
+            after = legacy_after
+            layout.validate_transition(before, after)
+            retained_legacy = True
         prefix = f"all-{index}"
         generated[prefix + ".before"] = before
         generated[prefix + ".after"] = after
@@ -108,7 +119,7 @@ def all_reviewed_pairs() -> dict[str, dict]:
                        for identity, diagnostic in owners],
         })
         count += len(owners)
-    if count != 17 or len(lessons) != 6:
+    if count != 17 or len(lessons) != 6 or not retained_legacy:
         raise ValueError("The complete published closed-diagnostic coverage changed")
     generated["all-diagnostics.manifest"] = {"version": 1, "lessons": lessons}
     return generated
