@@ -138,6 +138,18 @@ void rejected_semantics() {
             balance_facts).correct,
             "A negated or prohibited range was mistaken for an allowed domain");
     }
+    for(const auto invalid:{
+        "rango 0..9 prohibido",
+        "rango [0, 9] no válido",
+        "intervalo 0 - 9 no es permitido",
+        "dominio de 0 a 9 no está permitido",
+        "rango 0..9 inválido"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            balances(invalid,"Revise"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A forbidden suffix after the real bounds gained semantic credit");
+    }
     const auto valid_with_independent_negation=std::string(
         "Saldo, petición 2, cobros=10, devoluciones=0: "
         "no se admite 21; rango permitido de 0 a 9. Revise los datos.\n"
@@ -147,6 +159,15 @@ void rejected_semantics() {
         valid_with_independent_negation,RejectionOperation::balance,
         balance_facts).correct,
         "Rejecting a different observed value suppressed a separate valid allowed range");
+    const auto valid_after_range=std::string(
+        "Saldo, petición 2, cobros=10, devoluciones=0: "
+        "rango permitido de 0 a 9; no se permite 21. Revise los datos.\n"
+        "Saldo, petición 3, cobros=0, devoluciones=-1: "
+        "rango permitido de 0 a 9; no se permite 21. Revise los datos.\n");
+    require(evaluate_rejection_diagnostics(
+        valid_after_range,RejectionOperation::balance,
+        balance_facts).correct,
+        "An unrelated forbidden value after a valid domain blocked a genuine review");
     const auto unlabelled=std::string(
         "Cajas, petición 1, piezas=-1: 0 - 20, revise.\n"
         "Cajas, petición 3, piezas=21: 0 - 20, revise.\n");
