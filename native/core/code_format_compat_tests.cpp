@@ -152,7 +152,8 @@ STRING(CONFIGURE "${template}" result @ONLY)
         "An indirect template or case variant bypassed CMake configure protection");
     check(!code_format::equivalent(
             R"qa(cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
-            R"qa(\ncmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
+            R"qa(
+cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
             Language::cmake),
         "CMake-language CALL of string(CONFIGURE) bypassed bracket protection");
     check(code_format::equivalent(
@@ -166,7 +167,8 @@ string(CONFIGURE "literal" result @ONLY)
         "A bracket comment was incorrectly treated as a configurable argument");
     check(code_format::equivalent(
             R"qa(message([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",
-            R"qa(\nmessage([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",Language::cmake),
+            R"qa(
+message([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",Language::cmake),
         "An inert CMake bracket literal was misclassified as a substitution");
     check(code_format::equivalent(
             R"qa(#[=[ ${CMAKE_CURRENT_LIST_LINE} in a comment ]=]
