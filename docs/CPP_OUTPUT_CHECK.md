@@ -292,8 +292,12 @@ aislada** que llama a la misma función del estudiante con dos objetos
 directamente en `std::cerr`, incluso si la ejecución original muestra el mismo
 texto. Sólo se permiten modificaciones dentro del cuerpo de la función de
 diagnóstico asignada; cambiar `main`, el componente, la firma o los datos del
-programa no acredita el objetivo. La ejecución, la prueba independiente y los
-casos se sellan con la revisión y la fuente vigente.
+programa no acredita el objetivo. El comprobador valida el alcance de las
+llaves C++ y sus dígrafos `<%`/`%>` para impedir cerrar anticipadamente la
+función e introducir otras declaraciones. No confunde las llaves que aparecen
+dentro de cadenas, literales crudos o comentarios con delimitadores del
+programa. La ejecución, la prueba independiente y los casos se sellan con
+la revisión y la fuente vigente.
 
 **Estado editorial:** la activación de la capacidad técnica es optativa hasta
 que Work publique ambas declaraciones y compruebe el primer caso y sus sondas
@@ -353,8 +357,11 @@ integrado en el JSON.
 
 El editor sólo puede corregir el cuerpo de `main`: `leer_entero` y
 `leer_registro`, sus firmas, sus inclusiones y el resto del archivo deben
-permanecer intactos. Una salida preparada codificada como constante no
-acredita las entradas independientes. Una ejecución que no termine normalmente
+permanecer intactos. La misma protección léxica de llaves C++ detecta el
+cierre prematuro de `main` y declaraciones introducidas fuera de su
+alcance; admite expresiones y bloques internos correctamente anidados.
+Una salida preparada codificada como constante no acredita las entradas
+independientes. Una ejecución que no termine normalmente
 o un error de construcción tampoco cuenta como resultado esperado.
 
 **Estado:** el motor y sus pruebas se integran en `Codex`, pero la ficha
