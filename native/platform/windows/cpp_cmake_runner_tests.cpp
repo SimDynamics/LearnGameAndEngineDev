@@ -2072,10 +2072,17 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     misplaced_warning.request_id=3308;
     ++misplaced_warning.revision;
     for(auto& file:misplaced_warning.project_files)
-        if(file.first=="CMakeLists.txt")
+        if(file.first=="CMakeLists.txt") {
             warning_replace(file.second,
                 "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "# The library has no target-owned warning flags");
+            // CMake requires the executable to exist before attaching its
+            // options. Preserve that ordering in this negative control.
+            warning_replace(file.second,
+                "add_executable(comprobar_cantidad comprobar.cpp)",
+                "add_executable(comprobar_cantidad comprobar.cpp)\n"
                 "target_compile_options(comprobar_cantidad PRIVATE /W4 /permissive-)");
+        }
     const auto misplaced_run=run_cpp(misplaced_warning);
     ran(misplaced_run);
     const auto misplaced_capture=capture_cpp_execution(
