@@ -1057,6 +1057,176 @@ target_link_libraries(cotizar PRIVATE tarifas)
             "An ON-only CMake implementation earned unverified OFF credit: "+label);
     }
     std::cout<<"PASS original U2L3: distinct ON/OFF source and outputs, authentic option default, first case and archive preserved, negative variants rejected\n";
+    // Real U2L4: the library must publish include/ to the linked client,
+    // but the correction is not a pair of duplicated PRIVATE searches.
+    constexpr auto include_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_cabeceras_y_requisitos_de_uso.json";
+    const auto include_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/include_relative);
+    const auto& public_before=include_original.pages.at(4).blocks.at(2);
+    const auto& private_before=include_original.pages.at(7).blocks.at(8);
+    check(public_before.stable_id=="block_0004_0002"&&
+        private_before.stable_id=="block_0007_0008"&&
+        public_before.cmake&&private_before.cmake&&
+        public_before.output_check&&private_before.output_check&&
+        !public_before.cmake_graph_check&&!private_before.cmake_graph_check,
+        "The published U2L4 include-scope owners moved");
+    std::string include_json=include_original.raw_json;
+    const auto include_at=include_json.find(anchor);
+    check(include_at!=include_json.npos&&
+        include_json.find(anchor,include_at+1)==include_json.npos,
+        "U2L4 root layout address changed");
+    include_json.insert(include_at,R"json(  "compilerCmakeGraphChecks":[
+      {"activity":"block_0004_0002","project":"Tiempos",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"medir","type":"EXECUTABLE",
+          "sources":["app/main.cpp"],"exactSources":true,
+          "linksTo":["preparacion"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"preparacion","type":"STATIC_LIBRARY",
+          "sources":["src/entrega.cpp"],"exactSources":true,
+          "publicIncludeRoots":["include"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]},
+      {"activity":"block_0007_0008","project":"Tiempos",
+       "minimumCmakeVersion":"3.20",
+       "targets":[
+         {"name":"medir","type":"EXECUTABLE",
+          "sources":["app/main.cpp"],"exactSources":true,
+          "linksTo":["preparacion"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"preparacion","type":"STATIC_LIBRARY",
+          "sources":["src/entrega.cpp"],"exactSources":true,
+          "publicIncludeRoots":["include"],"privateIncludeRoots":["interno"],
+          "explicitCxx20":true,"explicitCxxExtensionsOff":true}
+       ]}
+    ],
+)json");
+    const auto include_mapped=lgaed::windows::parse_lesson_json(
+        include_json,"es");
+    const auto include_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        include_json,"es");
+    check(include_mapped.state_layout.lineage==
+            include_original.state_layout.lineage&&
+        include_mapped.state_layout.signatures==
+            include_original.state_layout.signatures&&
+        include_metadata.state_layout.lineage==
+            include_original.state_layout.lineage&&
+        include_metadata.state_layout.signatures==
+            include_original.state_layout.signatures,
+        "Include-scope check changed historical state layout");
+    std::uint64_t include_request_id=1701;
+    for(const auto& [page,block]:{
+            std::pair{4U,2U},std::pair{7U,8U}}) {
+        const auto& before=include_original.pages.at(page).blocks.at(block);
+        const auto& after=include_mapped.pages.at(page).blocks.at(block);
+        const auto& metadata=include_metadata.pages.at(page).blocks.at(block);
+        check(after.cmake_graph_check&&
+            after.cmake_graph_check==metadata.cmake_graph_check&&
+            before.project_files==after.project_files&&
+            curriculum::exercise_key(include_original,before)==
+                curriculum::exercise_key(include_mapped,after)&&
+            curriculum::draft_key("programming",include_original,before)==
+                curriculum::draft_key("programming",include_mapped,after)&&
+            curriculum::reference_objective_frame(include_original,before)!=
+                curriculum::reference_objective_frame(include_mapped,after),
+            "U2L4 root include scope rewrote original project, ID or draft");
+        CppRunRequest request;
+        request.request_id=include_request_id;
+        request.revision=include_request_id++;
+        request.project_key="qa/p2-u2-includes/"+after.stable_id;
+        request.projects_directory=environment.paths.projects;
+        request.project_files=after.project_files;
+        request.cmake=after.cmake;
+        request.cmake_graph_check=after.cmake_graph_check;
+        request.capture_cmake_graph=true;
+        request.action=CppRunRequest::Action::compile_run;
+        bool repaired=false;
+        for(auto& file:request.project_files)
+            if(file.first=="CMakeLists.txt") {
+                if(page==4) {
+                    constexpr auto before_rule=
+                        "target_include_directories(preparacion PRIVATE include)";
+                    const auto at=file.second.find(before_rule);
+                    check(at!=file.second.npos,"U2L4 private include fixture moved");
+                    file.second.replace(at,
+                        std::char_traits<char>::length(before_rule),
+                        "target_include_directories(preparacion PUBLIC include)");
+                }else
+                    file.second+="target_include_directories(preparacion PRIVATE interno)\n";
+                repaired=true;
+            }
+        check(repaired&&compiler_runtime_request_allowed(after,request),
+            "The U2L4 corrected CMake project was rejected before native run");
+        const auto compiled=run_cpp(request);
+        ran(compiled);
+        const auto fresh=capture_cpp_execution(request,compiled);
+        check(compiled.execution.stdout_bytes=="0:5:13"&&
+            compiled.execution.stderr_bytes.empty()&&
+            fresh.cmake_graph_correct&&
+            evaluate_cpp_output_check(*after.output_check,fresh,request.revision)
+                .verdict==curriculum::OutputVerdict::correct,
+            "Actual MSVC U2L4 project did not prove correct PUBLIC/PRIVATE roots");
+        auto original_request=request;
+        original_request.capture_cmake_graph=false;
+        original_request.cmake_graph_check.reset();
+        const auto historical=capture_cpp_execution(original_request,compiled);
+        state::StateData include_saved;
+        state::prepare_lesson_state(include_saved,include_original);
+        check(record_compiler_puzzle_case(include_saved,include_original,before,
+                original_request,historical,"Salida histórica")&&
+            compiler_puzzle_completed(include_saved,include_original,before)&&
+            !compiler_puzzle_completed(include_saved,include_mapped,after),
+            "New include requirement inherited unverified stdout history");
+        state::prepare_lesson_state(include_saved,include_mapped);
+        check(record_compiler_puzzle_case(include_saved,include_mapped,after,
+                request,fresh,"Ruta pública/privada")&&
+            compiler_puzzle_completed(include_saved,include_mapped,after)&&
+            compiler_puzzle_case_count(include_saved,include_mapped,after)==1,
+            "Real U2L4 first case failed to unlock its declared include scope");
+        const auto reopened=state::decode(state::encode(include_saved));
+        check(compiler_puzzle_completed(reopened,include_original,before)&&
+            compiler_puzzle_completed(reopened,include_mapped,after),
+            "U2L4 history lost original or scope-aware achievement");
+        auto fake=request;
+        fake.request_id=include_request_id;
+        fake.revision=include_request_id++;
+        fake.project_key+="/fake-scope";
+        for(auto& file:fake.project_files)
+            if(file.first=="CMakeLists.txt") {
+                if(page==4) {
+                    const auto at=file.second.find(
+                        "target_include_directories(preparacion PUBLIC include)");
+                    check(at!=file.second.npos,
+                        "U2L4 public declaration moved before negative control");
+                    file.second.replace(at,
+                        sizeof("target_include_directories(preparacion PUBLIC include)")-1,
+                        "target_include_directories(preparacion PRIVATE include)");
+                    file.second+="target_include_directories(medir PRIVATE include)\n";
+                }else {
+                    const auto at=file.second.find(
+                        "target_include_directories(preparacion PRIVATE interno)");
+                    check(at!=file.second.npos,
+                        "U2L4 internal declaration moved before negative control");
+                    file.second.replace(at,
+                        sizeof("target_include_directories(preparacion PRIVATE interno)")-1,
+                        "target_include_directories(preparacion PUBLIC interno)");
+                }
+            }
+        const auto fake_run=run_cpp(fake);
+        ran(fake_run);
+        const auto fake_fresh=capture_cpp_execution(fake,fake_run);
+        check(fake_run.execution.stdout_bytes=="0:5:13"&&
+            evaluate_cpp_output_check(*after.output_check,fake_fresh,
+                fake.revision).verdict==curriculum::OutputVerdict::correct&&
+            !fake_fresh.cmake_graph_correct&&
+            !record_compiler_puzzle_case(include_saved,include_mapped,after,
+                fake,fake_fresh,"Ruta no publicada o filtrada"),
+            "Matching output was credited without the requested include scope");
+    }
+    std::cout<<"PASS U2L4 real MSVC PUBLIC/PRIVATE include roots: published headers, private isolation, first case and history, fake scopes rejected\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";

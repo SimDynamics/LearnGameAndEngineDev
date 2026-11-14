@@ -1006,6 +1006,31 @@ primer caso correcto del editor sigue siendo el único obligatorio; esta
 segunda ejecución es la comprobación interna del mismo objetivo, no un
 segundo caso que el estudiante deba activar manualmente.
 
+### Rutas públicas y privadas de encabezados
+
+En los proyectos U2L4, una biblioteca estática puede declarar
+`"publicIncludeRoots": ["include"]` y
+`"privateIncludeRoots": ["interno"]` dentro de su objetivo en
+`compilerCmakeGraphChecks`. Las rutas han de contener archivos de cabecera
+originales del editor, no rutas externas o generadas. El objetivo requiere un
+consumidor ejecutable enlazado explícitamente.
+
+El motor utiliza las rutas C++ realmente publicadas por **CMake File API**
+en los objetivos compilados, además de la traza privada de las órdenes
+`target_include_directories` ejecutadas en los archivos CMake del alumno.
+Para `PUBLIC`, exige una declaración pública, la ruta efectiva en la
+biblioteca y su propagación al consumidor enlazado. Para `PRIVATE`, exige
+la declaración privada y la ruta en la biblioteca, sin permitir que llegue
+al consumidor. Una búsqueda `PRIVATE` duplicada manualmente en el cliente,
+o la publicación de `interno`, no se acreditan aunque la salida coincida.
+
+La comprobación admite rutas relativas al archivo CMake y rutas absolutas
+equivalentes de la fuente. Los valores dinámicos no atribuibles con certeza
+al objetivo no conceden crédito por mera coincidencia. Los nuevos objetivos
+se incorporan en la raíz de la lección sin cambiar los proyectos, direcciones,
+borradores o recibos históricos. El primer caso correcto continúa siendo
+suficiente para avanzar, siempre que incluya la evidencia estructural.
+
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas

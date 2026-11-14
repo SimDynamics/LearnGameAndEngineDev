@@ -305,5 +305,92 @@ class OriginalCmakeOptionSelectionTest(unittest.TestCase):
             state.validate_transition(self.after, changed)
 
 
+# U2L4 preserves the original clients and historical answers while
+# binding explicit PUBLIC and PRIVATE roots to their existing CMake editors.
+INCLUDE_LESSON = ROOT / (
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "construccion_reproducible/lesson_cabeceras_y_requisitos_de_uso.json"
+)
+
+
+class OriginalCmakeIncludeScopeTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = json.loads(INCLUDE_LESSON.read_text(encoding="utf-8"))
+        self.after = deepcopy(self.before)
+        owners = [
+            ("block_0004_0002", False),
+            ("block_0007_0008", True),
+        ]
+        self.after["compilerCmakeGraphChecks"] = [
+            {
+                "activity": owner, "project": "Tiempos",
+                "minimumCmakeVersion": "3.20",
+                "targets": [
+                    {"name": "medir", "type": "EXECUTABLE",
+                     "sources": ["app/main.cpp"], "exactSources": True,
+                     "linksTo": ["preparacion"],
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": "preparacion", "type": "STATIC_LIBRARY",
+                     "sources": ["src/entrega.cpp"], "exactSources": True,
+                     "publicIncludeRoots": ["include"],
+                     **({"privateIncludeRoots": ["interno"]} if private else {}),
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                ],
+            }
+            for owner, private in owners
+        ]
+
+    def test_root_scopes_preserve_original_lessons_and_progress(self):
+        state.validate(self.before)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_invalid_include_roots_are_rejected(self):
+        def change_root(document, value):
+            document["compilerCmakeGraphChecks"][0]["targets"][1][
+                "publicIncludeRoots"] = value
+
+        for invalid in ([], ["include", "include"], ["../include"],
+                        ["/include"], ["include/.."], ["externo"],
+                        ["src"], ["inexistente"], "include", [1], [None]):
+            candidate = deepcopy(self.after)
+            change_root(candidate, invalid)
+            with self.subTest(value=invalid):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(candidate)
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][0]["targets"][0][
+            "publicIncludeRoots"] = ["include"]
+        with self.assertRaises(state.LayoutError):
+            state.validate(candidate)
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][0]["targets"][1][
+            "privateIncludeRoots"] = ["include"]
+        with self.assertRaises(state.LayoutError):
+            state.validate(candidate)
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][0]["targets"][0][
+            "linksTo"] = []
+        with self.assertRaises(state.LayoutError):
+            state.validate(candidate)
+
+    def test_published_public_private_contracts_are_immutable(self):
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][1]["targets"][1].pop(
+            "privateIncludeRoots")
+        state.validate(changed)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, changed)
+        changed = deepcopy(self.after)
+        changed["compilerCmakeGraphChecks"][0]["targets"][1][
+            "publicIncludeRoots"] = ["src"]
+        with self.assertRaises(state.LayoutError):
+            state.validate(changed)
+
+
 if __name__ == "__main__":
     unittest.main()
