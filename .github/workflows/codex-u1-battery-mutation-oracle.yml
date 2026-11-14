@@ -7,6 +7,8 @@ on:
       - .github/workflows/codex-u1-battery-mutation-oracle.yml
       - scripts/curriculum/u1_battery_mutation_oracle.py
       - scripts/curriculum/test_u1_battery_mutation_oracle.py
+      - scripts/curriculum/u1_reduction_probe.py
+      - scripts/curriculum/test_u1_reduction_probe.py
       - app/src/main/assets/content/es/programming/programming_practice_tools/evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json
   workflow_dispatch:
 
@@ -30,6 +32,10 @@ jobs:
         env:
           CXX: ${{ matrix.cxx }}
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_u1_battery_mutation_oracle.py -v
+      - name: Verify original stateful U1 reduction and changed second return
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_u1_reduction_probe.py -v
 
   msvc:
     runs-on: windows-2022
@@ -46,3 +52,8 @@ jobs:
         env:
           CXX: cl
         run: python -B -m unittest discover -s scripts/curriculum -p test_u1_battery_mutation_oracle.py -v
+      - name: Verify original stateful U1 reduction with real MSVC
+        shell: pwsh
+        env:
+          CXX: cl
+        run: python -B -m unittest discover -s scripts/curriculum -p test_u1_reduction_probe.py -v
