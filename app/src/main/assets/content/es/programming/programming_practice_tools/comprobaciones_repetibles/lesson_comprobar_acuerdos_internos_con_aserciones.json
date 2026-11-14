@@ -2,9 +2,18 @@
   "id": "programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones",
   "title": "Comprobar acuerdos internos con aserciones",
   "compilerRuntimeChecks": [
-    {"activity": "block_0002_0003", "kind": "wasiAssertionAbortV1"},
-    {"activity": "block_0003_0007", "kind": "wasiAssertionSuppressedV1"},
-    {"activity": "block_0004_0007", "kind": "wasiAssertionRepairV1"}
+    {
+      "activity": "block_0002_0003",
+      "kind": "wasiAssertionAbortV1"
+    },
+    {
+      "activity": "block_0003_0007",
+      "kind": "wasiAssertionSuppressedV1"
+    },
+    {
+      "activity": "block_0004_0007",
+      "kind": "wasiAssertionRepairV1"
+    }
   ],
   "pages": [
     {
@@ -15,11 +24,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En Programación 1 utilizaste static_assert para comprobar condiciones constantes durante la compilación. Ahora introducimos assert: cuando está habilitada, comprueba su condición durante la ejecución, con los valores disponibles en ese momento. Si la condición resulta verdadera, la ejecución continúa después de la comprobación. Si resulta falsa, emite un diagnóstico y provoca una terminación anormal. No entrega un resultado bool al llamador ni le ofrece una rama para recuperarse del incumplimiento (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)."
+          "text": "En Programación 1 utilizaste `static_assert` para comprobar una condición constante durante la compilación. Ahora introducimos `assert`: cuando está habilitada, comprueba una condición durante la ejecución, con los valores disponibles en ese momento.\n\nSi la condición es verdadera, el programa continúa después de la comprobación.\nSi es falsa, informa del incumplimiento e interrumpe el programa de forma anormal.\n\n`assert` no devuelve un resultado `bool` que otra función pueda consultar para decidir cómo continuar. Por tanto, su consecuencia es distinta de devolver `false` para comunicar un rechazo previsto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
         },
         {
           "type": "paragraph",
-          "text": "Una aserción hace visible una contradicción con un acuerdo interno: una propiedad que el programa esperaba que ya se cumpliera en ese punto. Comprobar esas propiedades ayuda a localizar desacuerdos entre operaciones y sus consumidores. Una aserción fallida interrumpe el programa; ese mecanismo tiene un papel distinto del tratamiento que permite recuperarse de datos rechazados (Kernighan & Pike, 1999, pp. 141–142). Elegir una condición útil exige precisar qué propiedad observa y qué obligaciones quedan fuera de ella."
+          "text": "Una aserción comprueba algo que, según el diseño del programa, ya debería ser cierto en ese punto. Por ejemplo, después de calcular cuántas cajas hacen falta, podemos comprobar que sus plazas alcanzan para guardar todas las piezas. Si no alcanzan, el resultado del cálculo contradice esa condición interna.\n\nEstas comprobaciones ayudan a detectar desacuerdos entre lo que una operación promete y lo que entrega. Si una aserción falla, detiene el programa; no sustituye el tratamiento de una situación prevista de la que queremos recuperarnos y continuar (Kernighan & Pike, 1999). Debemos elegir qué condición observar y reconocer qué otras obligaciones quedan sin comprobar."
         },
         {
           "type": "multiple_choice",
@@ -48,11 +57,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera el cliente de cajas: intentar_cajas recibe cualquier int, acepta sólo cantidades de 0 a 20 y conserva el destino cuando devuelve false. El cliente informa del rechazo y puede continuar con la petición siguiente. Recibir -1 es una situación prevista por ese contrato: la decisión de rechazo debe ejecutarse antes de llamar al cálculo y antes de modificar el destino."
+          "text": "El cliente de cajas procesa cantidades una detrás de otra. Su función `intentar_cajas` puede recibir cualquier `int`, pero sólo acepta cantidades desde cero hasta veinte, incluidos ambos extremos.\n\nCuando acepta, calcula las cajas y escribe el resultado en el destino recibido.\nCuando rechaza, devuelve `false` y deja ese destino con el valor que tenía.\n\nCon una petición de menos uno, el rechazo es una situación prevista por ese contrato. El cliente debe informar del problema y seguir con la petición siguiente. Para conservar ese comportamiento, la función comprueba el intervalo antes de llamar al cálculo y antes de escribir en el destino."
         },
         {
           "type": "paragraph",
-          "text": "Dentro del cálculo, después de aceptar una cantidad, comprobamos otra propiedad: las plazas de las cajas calculadas deben cubrir las piezas. Con cinco piezas, la división entera 5 / 4 obtiene 1 y esa caja sólo ofrece cuatro plazas. La comparación 1 * 4 >= 5 resulta falsa. El dato cinco pertenece al intervalo admitido; el defecto está en el cálculo. Detectar esa contradicción interna ayuda a localizarlo sin atribuir el problema a una petición válida."
+          "text": "Dentro del cálculo queremos comprobar que las cajas obtenidas tengan plazas suficientes. Cada caja ofrece cuatro plazas. Con cinco piezas, el cálculo defectuoso hace esto:\n1. Divide los enteros cinco y cuatro. `5 / 4` obtiene uno: la división entera descarta la fracción.\n2. Calcula las plazas disponibles. `1 * 4` obtiene cuatro.\n3. Comprueba si esas cuatro plazas alcanzan para cinco piezas. `1 * 4 >= 5` es falso.\n\nCinco pertenece al intervalo admitido: no hay que rechazar esa petición. El error está en la cantidad de cajas calculada. La aserción permite detenerse al detectar que el resultado no cumple la condición de capacidad."
         },
         {
           "type": "multiple_choice",
@@ -81,11 +90,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La cabecera <cassert> proporciona la macro assert: el preprocesador sustituye su uso por la comprobación que corresponda. Se escribe assert(condicion);, sin std:: delante; no es una llamada a una función de ese espacio de nombres. La condición representa algo que esperas que ya sea cierto. Aquí sólo consulta cajas, piezas_por_caja y piezas; el cálculo y el return permanecen fuera de la comprobación (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). El cálculo inicial está alterado deliberadamente para estudiar su incumplimiento."
+          "text": "La cabecera `<cassert>` proporciona `assert` como una macro. Esto significa que, al preparar el código para compilarlo, el preprocesador sustituye su uso por el código que corresponda. No es una función del espacio de nombres `std`: se escribe `assert(condicion);`, sin ese prefijo (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nEn el programa siguiente, `assert(cajas * piezas_por_caja >= piezas);` sólo consulta los valores y compara la capacidad con las piezas. El cálculo de las cajas y el `return` están fuera de la comprobación. El cálculo inicial está alterado deliberadamente para estudiar qué ocurre cuando da plazas insuficientes."
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, sigue por separado las peticiones -1 y 5 de la entrada preparada: identifica cuál se rechaza sin llamar al cálculo y qué capacidad obtiene la otra. El dominio del cliente es un máximo de ocho enteros completos representables, seguidos del final normal de la entrada. Sólo 0..20 llega al cálculo, el divisor es cuatro y los productos de la condición caben en int. Conserva ese dominio y el programa inicial de este editor; los otros dos estados tienen editores independientes.\n\nPulsa «Compilar y ejecutar» con la aserción habilitada. Observa por separado stdout, stderr y el estado de terminación. Localiza el rechazo público de la primera petición y el diagnóstico de la condición interna de la segunda. El formato de ese diagnóstico y el estado con que el entorno informa del aborto dependen de la implementación: no se exige un mensaje literal ni un número de terminación universal.",
+          "text": "El dominio de este cliente es un máximo de ocho enteros completos representables por `int`, seguidos del final normal de la entrada. Sólo las cantidades entre cero y veinte llegan al cálculo. Dentro de ese dominio, el divisor es cuatro y las sumas y productos utilizados caben en `int`.\n\nLa entrada preparada contiene dos peticiones, en este orden:\nMenos uno: el cliente debe rechazarla sin llamar al cálculo.\nCinco: el cliente debe aceptarla; el cálculo defectuoso obtendrá una caja.\n\nConserva el programa inicial y esa entrada en este editor. Pulsa «Compilar y ejecutar» con la aserción habilitada. Observa por separado:\n`stdout`: no llega a imprimirse el resultado de la petición de cinco.\n`stderr`: aparece el rechazo público de la primera petición y después el diagnóstico de la aserción.\nTerminación: la ejecución se interrumpe por la aserción dentro del cálculo.\n\nEl formato del diagnóstico y el estado con que el entorno informa de esa interrupción dependen de la implementación. No se exige un mensaje universal ni un número de terminación común a todos los entornos. Los otros dos estados se estudian en editores independientes.",
           "emphasis": [
             {
               "text": "la aserción habilitada"
@@ -100,7 +109,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La interrupción por assert ocurre dentro de cajas_para; no significa que main haya alcanzado su return. El rechazo público de -1 ya se había comunicado y el cliente continuó. Al aceptar después cinco piezas, el cálculo no ofrece capacidad suficiente y la aserción interrumpe esa ejecución antes de imprimir su resultado. Son dos condiciones distintas, alcanzadas en dos momentos del mismo lote."
+          "text": "Para la primera petición, `intentar_cajas` devuelve `false`. El cliente emite su rechazo y continúa con la segunda. Esa continuación es parte del comportamiento prometido.\n\nPara la segunda, acepta las cinco piezas y llama a `cajas_para`. Allí la condición de capacidad resulta falsa y `assert` interrumpe la ejecución. La función no llega a devolver las cajas y `main` no alcanza su propio `return`. El rechazo de la primera petición y la interrupción de la segunda tienen causas distintas."
         }
       ]
     },
@@ -112,7 +121,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El segundo estado escribe #define NDEBUG antes de incluir <cassert>. Esa directiva define un nombre del preprocesador; no crea una variable bool. Cuando ese nombre está definido al incluir la cabecera, assert no evalúa su condición ni ejecuta las operaciones escritas dentro de ella. Lo decisivo es que el nombre esté definido, no que tenga un valor verdadero: definirlo con #define NDEBUG 0 también desactivaría la comprobación (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3).\n\nUn nombre de configuración como Debug o Release no reemplaza comprobar cómo se construyó el programa. Este editor muestra la definición en su propio archivo. Desactivarla aquí permite estudiar la diferencia; no demuestra que las comprobaciones sean innecesarias cuando algunas pruebas han pasado (Thomas & Hunt, 2020, pp. 116–117).",
+          "text": "El segundo estado escribe `#define NDEBUG` antes de incluir `<cassert>`. Esa directiva define un nombre del preprocesador; no crea una variable `bool`. Cuando ese nombre está definido al incluir la cabecera, `assert` no evalúa su condición: tampoco ejecuta una llamada u otra operación escrita dentro de ella.\n\nLo decisivo es que el nombre esté definido. Escribir `#define NDEBUG 0` también desactiva la comprobación: ese cero no se interpreta como una orden de mantenerla activa (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nLos nombres de configuración Debug y Release no bastan para saber si una aserción se ejecuta; hay que comprobar si se definió `NDEBUG`. Este editor lo muestra en el propio archivo. Aquí desactivamos la comprobación para estudiar sus consecuencias. Que algunas pruebas hayan pasado no demuestra que todas las aserciones sean innecesarias (Thomas & Hunt, 2020).",
           "emphasis": [
             {
               "text": "no evalúa su condición"
@@ -126,7 +135,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la misma entrada, la decisión pública sigue rechazando -1. La petición válida de cinco llega ahora a imprimir Cajas=1, aunque esa capacidad sea insuficiente. El diagnóstico de la primera petición permanece y main termina normalmente con 1 porque hubo un rechazo recuperable. Retirar la comprobación interna no reparó la división. Si sólo llegara la petición válida de cinco, ese mismo cálculo defectuoso terminaría normalmente con 0: el retorno del cliente tampoco acredita por sí solo la corrección del cálculo."
+          "text": "La decisión de `intentar_cajas` sigue rechazando la petición de menos uno y el cliente conserva la marca `hubo_rechazos`. La petición de cinco vuelve a obtener una sola caja. Como `assert` está desactivada, ya no interrumpe el cálculo y ahora se imprime `Cajas=1`.\n\nAl terminar la entrada, `main` consulta aquella marca y devuelve uno por el rechazo previsto de la primera petición. Es una terminación normal con código distinto de cero. No procede de una aserción fallida.\n\nDesactivar la comprobación no reparó el cálculo. Si sólo llegara la petición válida de cinco, el cliente imprimiría ese mismo resultado incorrecto y terminaría normalmente con cero, porque no habría rechazado ninguna petición. Su código final informa de los rechazos; por sí solo no comprueba que el cálculo sea correcto."
         },
         {
           "type": "multiple_choice",
@@ -151,7 +160,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta este estado independiente con «Compilar y ejecutar», sin cambiar su código ni la entrada -1 5. Compara los tres resultados: Cajas=1 seguido de salto de línea en stdout; el rechazo público de la primera petición en stderr; y terminación normal con 1. Esa última cifra procede del retorno de main, mientras que la actividad anterior se interrumpió dentro del cálculo."
+          "text": "Ejecuta este estado independiente con «Compilar y ejecutar», sin cambiar su código ni la entrada preparada. Compara por separado:\n`stdout`: `Cajas=1` seguido de salto de línea.\n`stderr`: el rechazo público de la primera petición, que contiene la cantidad de menos uno.\nTerminación: normal, con código uno devuelto por `main`.\n\nEn la actividad anterior, la aserción impedía llegar a imprimir las cajas y a devolver un código desde `main`. En ésta, ambas acciones se completan."
         },
         {
           "type": "cpp_compiler",
@@ -201,7 +210,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia suma una cantidad de una plaza menos que la capacidad antes de dividir: con cinco piezas calcula (5 + 4 - 1) / 4, que obtiene 2. Ocho plazas cubren las cinco piezas y la condición permite continuar; aparece Cajas=2. El diagnóstico público y el retorno normal 1 permanecen por la primera petición, -1. La fórmula también da cero cajas para cero piezas y no añade otra caja cuando las piezas completan exactamente las anteriores.\n\nLos tres estados separan defecto, comprobación y reparación: el primero interrumpe el cálculo defectuoso; el segundo conserva ese defecto sin comprobarlo; el tercero repara el cálculo manteniendo la comprobación. Una aserción verdadera sólo observa su condición en la ejecución que la alcanzó. Aquí verifica cobertura, sin demostrar por sí sola que usamos la menor cantidad de cajas."
+          "text": "La referencia calcula `(piezas + piezas_por_caja - 1) / piezas_por_caja`. Como cada caja tiene cuatro plazas, suma tres antes de realizar la división entera.\n\nPara cinco piezas:\n1. Suma cinco y tres: obtiene ocho.\n2. Divide ocho entre cuatro: obtiene dos cajas.\n3. Comprueba sus plazas: dos por cuatro son ocho, suficientes para cinco piezas. La aserción permite continuar y el cliente imprime `Cajas=2`.\n\nTambién se conservan el diagnóstico de la primera petición, menos uno, y la terminación normal con código uno debida a ese rechazo.\n\nLa suma de tres tiene un propósito concreto. Si una cantidad completa exactamente sus cajas, añadir tres no alcanza para obtener otra caja al dividir entre cuatro: con ocho piezas, once entre cuatro sigue dando dos. Si sobran una, dos o tres piezas después de llenar las cajas anteriores, esa suma hace que la división cuente la caja adicional necesaria. Para cero piezas, tres entre cuatro da cero.\n\nLa aserción observa otra cosa: sólo comprueba que haya plazas suficientes. No comprueba por sí sola que hayamos usado la menor cantidad de cajas. Tampoco acredita cantidades que esta ejecución no haya probado. Por eso conservar la aserción y reparar la fórmula son dos tareas distintas."
         },
         {
           "type": "multiple_choice",
@@ -226,7 +235,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera registrar_visita y su contador inicializado, estudiados al observar sin repetir operaciones. La llamada incrementa numero_visita: además de obtener un resultado, cambia el estado del programa. Ahora quedó dentro de assert. Con la comprobación habilitada se ejecuta y registra una visita; si se define NDEBUG antes de incluir <cassert>, esa expresión no se evalúa y la visita no se registra. Por eso una operación necesaria debe ejecutarse fuera de una aserción que sólo observa su resultado (Thomas & Hunt, 2020, p. 116). El problema no es que se prohíba escribir una llamada ahí, sino haber hecho depender el trabajo requerido de una comprobación que puede desaparecer."
+          "text": "La llamada `registrar_visita` incrementa `numero_visita` y devuelve su nuevo valor. Por tanto, además de producir un resultado, modifica el estado del programa. En el ejemplo siguiente, esa llamada está dentro de `assert`.\n\nCon la aserción habilitada, se llama una vez y el contador pasa de cero a uno.\nCon `NDEBUG` definido antes de incluir `<cassert>`, la condición no se evalúa. La llamada no se ejecuta y el contador permanece en cero.\n\nSi registrar la visita es trabajo necesario, debe ejecutarse aunque se desactive la comprobación. Hay que realizar la operación fuera de la aserción y utilizar ésta sólo para observar su resultado (Thomas & Hunt, 2020). El problema es haber hecho depender ese trabajo de una comprobación que puede desaparecer."
         },
         {
           "type": "code",
@@ -257,7 +266,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la reorganización anterior, primera conserva el valor devuelto por la única llamada y assert sólo consulta ese valor. Con la comprobación habilitada o desactivada, la salida es Visitas=1;Primera=1 seguida de salto de línea.\n\nRecupera la misma separación en las cajas: el cálculo produce el resultado, la aserción observa su capacidad y el cliente conserva el rechazo recuperable. Los retornos normales de los estados segundo y tercero proceden de main; el primero se interrumpe antes. Distinguir esas causas requiere relacionar condición, canales y punto de terminación, además de leer el número que muestre el entorno."
+          "text": "En la reorganización anterior, la llamada se ejecuta una sola vez, antes de llegar a `assert`. `primera` conserva el uno devuelto y `numero_visita` queda en uno. La aserción sólo consulta `primera`; no vuelve a registrar una visita. Con la comprobación habilitada o desactivada, la salida es `Visitas=1;Primera=1` seguida de salto de línea.\n\nEn las cajas también separamos las tareas:\nEl cálculo obtiene cuántas cajas hacen falta.\nLa aserción observa si sus plazas alcanzan.\nEl cliente decide qué peticiones rechaza y si continúa con la siguiente.\n\nPara interpretar una ejecución hay que identificar cuál de esas acciones ocurrió. Un número distinto de cero mostrado por el entorno no basta para distinguir un rechazo previsto de una interrupción por aserción."
         }
       ]
     }
@@ -1089,6 +1098,71 @@
         "id": "block_0005_0005",
         "beforeSha256": "3bd3ada27c737b4b4d7dcfe983c41760eea96d0a99004a9c81c1cf3dd7206dce",
         "afterSha256": "2ba287e94c83edc648b465eb9c7c8e2e6156492dace213566360fd7490e10ac4"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8651111ea151996b1c3d39a0085c29918c102415e37fa6d2edc4d399b03963d5",
+        "afterSha256": "0b3b4fd8b19393480a1cd313b80efd205c776bd503aa11b5cf8a3a9e4ec837e1"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "fffaf472a90f3ae8d98e3936a2de438565494dd4d44c5e1eb225725cc1a4d8d0",
+        "afterSha256": "268170366e39fc0aa28f254b52885f0e81a9261eab8c4e470729de9f8e5841f6"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "2f4fe3f3b78674c2431101b340ac45675869c7b8a7edac9d7e9e975cb0a50aba",
+        "afterSha256": "0f92e11a26a4cf62d58acce48345009e15c415371d77be037b92da40ef418939"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "3f4e64e169a98ef0c7123857d70d8821dd32a450dacbe35b7bb7b8d730d721ee",
+        "afterSha256": "96d8834d6a0e1d3a331516423c790575b7fcdb111fc2d289330117464147d410"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "960b724df0aa8926cae05f832dd76bb63af564f1ccafe3337ba104adc077b25d",
+        "afterSha256": "7a96a9fb13198dc282030ec2422edffacd81f503cbf6a57c2d94841ab629c7b8"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "20306e35f6608455a005200bea706b7780c5c1ff832024d18cf0d08b08137681",
+        "afterSha256": "74ac20fba9d3f9ba42436eb290970241e0cb8dff25ca477e526747303859d1cf"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "6b1402cb2c76afee56c135a42c5ea877b63f392764eaec762a4f229d65993f1d",
+        "afterSha256": "a11106ff978358502dac06bdc2c9990f33436cfecbc6a395acc6063694c52cc3"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "96319b291e6cddd97140db3f3d30591eea93d4dddf8fa56dd956a603bf16c4f9",
+        "afterSha256": "48dc8082b0ab8d19d23e8530ec191e9de425668e8391825716b10004423e0a8e"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "88bd72abb420ab3e95ddd1f3f7fb7d757ce83c128eb5390fdfb55128f15c351e",
+        "afterSha256": "5937fef11e20de791b067e5e16381e463f245f0570049996cf7898109af12124"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "767980b614fdba89c5629961ab47aa13edf5d3a6acce47f63953b63ca2820bb6",
+        "afterSha256": "dea545c342523a02f21aa802301685e08b616866425160fa4e7cebebc0d80c63"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "39aa5b01fdf756a1659e6042b1a4fe3d687f94f4c67d931da5848dae0901f41e",
+        "afterSha256": "fbc817f8ef6d1c5f36485c1e66abfa6b0e0f1b5513bcb8c34dac531d60b16081"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "9300b42b4e8c2fe98be453ca11a0ef77202559a35a6f238ac4e36c9314c10501",
+        "afterSha256": "a5825fdf88f2c86689594611976909e38d0c9cbd2bed7687b46289f6ed09fb34"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "2ba287e94c83edc648b465eb9c7c8e2e6156492dace213566360fd7490e10ac4",
+        "afterSha256": "e2f5d268626b38357b6b121030e2651a18f2611bbce209f588f9d938e7d3177b"
       }
     ]
   },
@@ -1104,30 +1178,47 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "9902795ebbeb2ba1b2fbd70950a5ec23fa7507786bd6575039edacf87d75e491",
+        "sourceSha256": "8fb762392f7a6ed75e26f8f2c8594ee53ae8762ba4711d39587d6a54003258e7",
         "spans": [
           {
-            "start": 29,
-            "end": 42,
+            "start": 30,
+            "end": 43,
             "text": "static_assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 130,
+            "start": 128,
+            "end": 134,
             "text": "assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 428,
-            "end": 432,
+            "start": 416,
+            "end": 422,
+            "text": "assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 454,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 503,
-            "end": 544,
-            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)",
+            "start": 570,
+            "end": 575,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 612,
+            "end": 645,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1136,12 +1227,12 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "08bdc30fe9709e8ad3e16e38ee674f45a050ad32cd6dac0db951f6cb7c3cdbcf",
+        "sourceSha256": "e628a2f19e9d19309c5c18953eb08f9c957470c69a87fff0ff30175827d7aa20",
         "spans": [
           {
-            "start": 379,
-            "end": 416,
-            "text": "(Kernighan & Pike, 1999, pp. 141–142)",
+            "start": 554,
+            "end": 578,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1246,38 +1337,40 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "9f6b5c62f4320c76a58e3910a215bc42c7fa5eb25a8885002e764f07261ae86f",
+        "sourceSha256": "b49144c2249c7bd37fdf5254ef2b0684311ba9c963bfcfe10c65c4ba836580e5",
         "spans": [
           {
-            "start": 30,
-            "end": 44,
+            "start": 71,
+            "end": 85,
             "text": "intentar_cajas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 65,
+            "start": 112,
+            "end": 115,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 99,
-            "text": "0 a 20",
+            "start": 152,
+            "end": 169,
+            "text": "cero hasta veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 138,
-            "end": 143,
+            "start": 304,
+            "end": 309,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 231,
-            "text": "-1",
+            "start": 375,
+            "end": 384,
+            "text": "menos uno",
             "role": "data",
             "reading": "natural"
           }
@@ -1286,26 +1379,35 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "30fd3a54355436475ac09206600e7958fd71b147272348bf81ca4dd157c1fbd7",
+        "sourceSha256": "ec1e63ff43ba7c6a53f30b0567b3b6d07401e24e0cff1a31504e647a27a07312",
         "spans": [
           {
-            "start": 178,
-            "end": 183,
+            "start": 211,
+            "end": 216,
             "text": "5 / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 192,
-            "end": 193,
-            "text": "1",
+            "start": 226,
+            "end": 229,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 247,
-            "end": 257,
+            "start": 308,
+            "end": 313,
+            "text": "1 * 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 395,
+            "end": 405,
             "text": "1 * 4 >= 5",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1395,141 +1497,168 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "1b43de8eedff8c1bdc60995f522f078c83efd6542f0ea1a66fa7c844d051e8e8",
+        "sourceSha256": "51c55e2d3a6c7ba6bb99b79fa02bad09a850541df5180b26e8df5e5b6492a7bf",
         "spans": [
           {
-            "start": 12,
-            "end": 21,
+            "start": 13,
+            "end": 22,
             "text": "<cassert>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 43,
-            "end": 49,
+            "start": 37,
+            "end": 43,
             "text": "assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 133,
-            "end": 151,
+            "start": 227,
+            "end": 230,
+            "text": "std",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 263,
             "text": "assert(condicion);",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 157,
-            "end": 162,
-            "text": "std::",
-            "role": "cpp"
-          },
-          {
-            "start": 310,
+            "start": 282,
             "end": 315,
-            "text": "cajas",
-            "role": "cpp"
-          },
-          {
-            "start": 317,
-            "end": 332,
-            "text": "piezas_por_caja",
-            "role": "cpp"
-          },
-          {
-            "start": 335,
-            "end": 341,
-            "text": "piezas",
-            "role": "cpp"
-          },
-          {
-            "start": 359,
-            "end": 365,
-            "text": "return",
-            "role": "cpp"
-          },
-          {
-            "start": 402,
-            "end": 443,
-            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)",
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 387,
+            "text": "assert(cajas * piezas_por_caja >= piezas);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 484,
+            "end": 490,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "c4f8d5da905b6e4efa417bbb4d4ca42b07dd5659e774b0ac7c689809270f5622",
+        "sourceSha256": "bc0ae3564ad32fb0be860e5e11eeb1ddf0b0189be69c9edbb138b3f3ef2681dd",
         "spans": [
           {
-            "start": 53,
-            "end": 59,
-            "text": "-1 y 5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 291,
-            "end": 296,
-            "text": "0..20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 377,
-            "end": 380,
+            "start": 86,
+            "end": 89,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 573,
-            "end": 579,
+            "start": 159,
+            "end": 172,
+            "text": "cero y veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 284,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 349,
+            "end": 358,
+            "text": "Menos uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 415,
+            "text": "Cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 475,
+            "end": 483,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 624,
+            "end": 630,
             "text": "stdout",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 581,
-            "end": 587,
+            "start": 694,
+            "end": 700,
             "text": "stderr",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "d6798c9246c4d5a2e37c3673535db99898233a5da5c51bb1220aaea0a25ad371",
+        "sourceSha256": "bf09233e8ec3c371fbed5003818a195d04b5b9dea2cc5d7db23ac5c1bb4528fe",
         "spans": [
           {
-            "start": 20,
-            "end": 26,
-            "text": "assert",
-            "role": "cpp"
+            "start": 27,
+            "end": 41,
+            "text": "intentar_cajas",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 54,
-            "text": "cajas_para",
-            "role": "cpp"
-          },
-          {
-            "start": 73,
-            "end": 77,
-            "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 96,
-            "end": 102,
-            "text": "return",
-            "role": "cpp"
-          },
-          {
-            "start": 126,
-            "end": 128,
-            "text": "-1",
-            "role": "data",
+            "start": 53,
+            "end": 58,
+            "text": "false",
+            "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 235,
+            "text": "cajas_para",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 292,
+            "text": "assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 367,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 397,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1542,63 +1671,75 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "9a23a51f9fd74f920596c4e1a6f2596ab090a4dfd1b21e30496851f107e6af6c",
+        "sourceSha256": "eee6b70e57395487bd2e41d401db8b16b34114c6235bf524e588bb696c36c4dd",
         "spans": [
           {
-            "start": 26,
-            "end": 40,
+            "start": 27,
+            "end": 41,
             "text": "#define NDEBUG",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 67,
+            "start": 61,
+            "end": 70,
             "text": "<cassert>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 140,
-            "end": 144,
+            "start": 145,
+            "end": 149,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 202,
-            "end": 208,
+            "start": 209,
+            "end": 215,
             "text": "assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 375,
-            "end": 391,
+            "start": 365,
+            "end": 381,
             "text": "#define NDEBUG 0",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 429,
-            "end": 470,
-            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)",
+            "start": 480,
+            "end": 513,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 505,
-            "end": 510,
+            "start": 545,
+            "end": 550,
             "text": "Debug",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 513,
-            "end": 520,
+            "start": 553,
+            "end": 560,
             "text": "Release",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 643,
+            "end": 649,
+            "text": "NDEBUG",
+            "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 769,
-            "end": 803,
-            "text": "(Thomas & Hunt, 2020, pp. 116–117)",
+            "start": 853,
+            "end": 874,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1607,39 +1748,61 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "7d92cc7f54af1ff046b490f3f1e58943124ceb476808d3f83d129f9228250b7a",
+        "sourceSha256": "48bbb2caf50a7ca7b785f7c9e375228833f8d22cd9f315e7e85d0d0da327e7d3",
         "spans": [
           {
-            "start": 59,
-            "end": 61,
-            "text": "-1",
+            "start": 16,
+            "end": 30,
+            "text": "intentar_cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "menos uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 121,
+            "start": 106,
+            "end": 119,
+            "text": "hubo_rechazos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 187,
+            "text": "assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 262,
             "text": "Cajas=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 212,
-            "end": 216,
+            "start": 291,
+            "end": 295,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 241,
-            "end": 242,
-            "text": "1",
+            "start": 331,
+            "end": 334,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 435,
-            "end": 436,
-            "text": "0",
+            "start": 651,
+            "end": 655,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -1844,48 +2007,49 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "a6fe575f3e506abe7390cc90f9be5e07199dfda778dbd8834b3627a6af107ae8",
+        "sourceSha256": "22c483190ee7cf26a8f7a4e2741897a1bb7037fa12419c8cea766160c822e223",
         "spans": [
           {
-            "start": 97,
-            "end": 101,
-            "text": "-1 5",
+            "start": 131,
+            "end": 137,
+            "text": "stdout",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 132,
-            "end": 139,
+            "start": 141,
+            "end": 148,
             "text": "Cajas=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 175,
-            "text": "stdout",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 222,
-            "end": 228,
+            "start": 178,
+            "end": 184,
             "text": "stderr",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 256,
-            "text": "1",
+            "start": 301,
+            "end": 304,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 298,
-            "end": 302,
+            "start": 319,
+            "end": 323,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 431,
+            "end": 435,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1972,40 +2136,41 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "1cbeae3e07b12b4880a611ccae0a31d2fa7c5803ad6630626707a586a8e7d732",
+        "sourceSha256": "0d97e949dddd0de31403623c3022fe15c1482c23c507d3703370c9354a26c86a",
         "spans": [
           {
-            "start": 111,
-            "end": 126,
-            "text": "(5 + 4 - 1) / 4",
-            "role": "cpp"
+            "start": 23,
+            "end": 71,
+            "text": "(piezas + piezas_por_caja - 1) / piezas_por_caja",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 140,
-            "end": 141,
-            "text": "2",
+            "start": 251,
+            "end": 254,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 221,
-            "end": 228,
+            "start": 395,
+            "end": 402,
             "text": "Cajas=2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 274,
-            "text": "1",
-            "role": "output",
+            "start": 466,
+            "end": 475,
+            "text": "menos uno",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 311,
-            "end": 313,
-            "text": "-1",
-            "role": "data",
+            "start": 512,
+            "end": 515,
+            "text": "uno",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2081,42 +2246,47 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "cd04d99482c7e43b8a4383fc1b92102aa5c46c44f9b59501f22f0334d008d1d1",
+        "sourceSha256": "2a97168603c19a473779be0d28b2b0c3615b230590e2a5c86c1a826726845b7a",
         "spans": [
           {
-            "start": 9,
-            "end": 25,
+            "start": 12,
+            "end": 28,
             "text": "registrar_visita",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 137,
+            "start": 42,
+            "end": 55,
             "text": "numero_visita",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 224,
-            "end": 230,
+            "start": 214,
+            "end": 220,
             "text": "assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 310,
-            "end": 316,
+            "start": 308,
+            "end": 314,
             "text": "NDEBUG",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 334,
-            "end": 343,
+            "start": 343,
+            "end": 352,
             "text": "<cassert>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 500,
-            "end": 529,
-            "text": "(Thomas & Hunt, 2020, p. 116)",
+            "start": 638,
+            "end": 659,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2239,32 +2409,42 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "8eef8b454adfee20e296e0a45470922c498d905c43867a264973a8bc091bd1e7",
+        "sourceSha256": "c3ceaef540d0fe18a21508a0d4b51fc365aa4c522101fa8a0c8fd9c8fb5f2b3d",
         "spans": [
           {
-            "start": 31,
-            "end": 38,
-            "text": "primera",
-            "role": "cpp"
-          },
-          {
-            "start": 89,
-            "end": 95,
+            "start": 86,
+            "end": 92,
             "text": "assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 199,
+            "start": 96,
+            "end": 103,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 146,
+            "text": "numero_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 196,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 312,
             "text": "Visitas=1;Primera=1",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 450,
-            "end": 454,
-            "text": "main",
-            "role": "cpp"
           }
         ]
       }

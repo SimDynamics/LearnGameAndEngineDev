@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera el contrato local: exactamente id tipo tamano_bytes, separados por espacios o tabuladores; hasta 80 caracteres sin terminador, sólo ASCII imprimible o tabulador. El identificador tiene de 1 a 12 caracteres, empieza por letra ASCII y continúa con letras, dígitos o _. El tipo es textura, malla o sonido. El tamaño ocupa de uno a cinco dígitos decimales y representa de 1 a 30000 bytes. No lleva signo ni sufijo; los ceros iniciales se permiten dentro de esa longitud."
+          "text": "Recupera las reglas que debe cumplir cada línea antes de compararla con el resto del lote:\n\nCampos: exactamente id tipo tamano_bytes, en ese orden. Se separan por uno o varios espacios o tabuladores; también se permiten esos separadores al principio y al final.\nContenido: hasta 80 caracteres sin contar el terminador. Sólo se admite ASCII imprimible o tabulador; los espacios y tabuladores también cuentan para la longitud.\nIdentificador: de 1 a 12 caracteres. Empieza por una letra ASCII y continúa con letras ASCII, dígitos o el guion bajo _.\nTipo: exactamente textura, malla o sonido, con esas minúsculas.\nTamaño: de uno a cinco dígitos decimales que representan de 1 a 30000 bytes. No lleva signo ni sufijo. Los ceros iniciales se permiten dentro de esa longitud."
         },
         {
           "type": "paragraph",
@@ -57,7 +57,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si ya se admitió Caja malla 15, una aparición posterior Caja sonido 2 no actualiza ni fusiona ese registro. Es un duplicado: conserva la primera línea de origen, el tipo malla y el tamaño 15. No se suman tamaños. El registro que se conserva tiene que seguir siendo uno que realmente se recibió y admitió."
+          "text": "Si ya se admitió Caja malla 15 y después llega Caja sonido 2, el programa rechaza esta segunda línea por duplicado. Conserva el registro de la primera admisión: su número de línea de origen, el tipo malla y el tamaño 15. La segunda línea no actualiza ni fusiona sus campos y tampoco se suman los tamaños. El registro conservado tiene que corresponder a una línea completa que realmente se recibió y admitió."
         },
         {
           "type": "paragraph",
@@ -698,7 +698,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de las admisiones, stdout añade una línea final:\nRESUMEN lineas=L aceptados=A rechazados=R\n\nCada rechazo ocupa una fila de stderr:\nRECHAZO linea=N causa=CODIGO\n\nSólo DUPLICADO añade el campo primera=P, separado por un espacio, antes del salto; P identifica la primera admisión de ese ID. Los marcadores se sustituyen por los datos del lote. Todas las filas terminan con un salto, sin títulos adicionales."
+          "text": "Después de las admisiones, stdout añade una línea final:\nRESUMEN lineas=L aceptados=A rechazados=R\n\nL representa el total de líneas recibidas; A, la cantidad de registros admitidos; R, la cantidad de líneas rechazadas. Esos marcadores se sustituyen por los números del lote.\n\nCada rechazo ocupa una fila de stderr:\nRECHAZO linea=N causa=CODIGO\n\nN es el número de la línea original. CODIGO se sustituye por su primera causa de rechazo: FORMATO, ID, TIPO, TAMANO o DUPLICADO. Sólo esta última añade primera=P, separado por un espacio:\nRECHAZO linea=N causa=DUPLICADO primera=P\n\nP identifica el número de línea en que se admitió por primera vez ese identificador exacto. Así se pueden localizar tanto la aparición rechazada como el registro que se conserva. Todas las filas terminan con un salto de línea, sin títulos adicionales."
         },
         {
           "type": "paragraph",
@@ -1216,7 +1216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta política exige conservar los resultados de la revisión sin enviarlos a los canales mientras la lectura siga abierta. Si se imprimieran las admisiones conforme llegan, no podrían retirarse de un archivo de salida cuando apareciera la línea 101. Preparar datos y publicarlos son acciones diferentes. La biblioteca debe comunicar el resultado de la operación; el cliente decide su presentación, separación que permite tratar los errores en el contexto adecuado (Kernighan & Pike, 1999, pp. 111–112)."
+          "text": "Mientras no se confirme que la lectura llegó a su final normal y que el archivo está dentro del límite, se guardan las admisiones y los rechazos como datos, sin publicar sus filas ni el resumen. Si se imprimieran conforme llegan, no podrían retirarse de un archivo de salida al descubrir después la línea 101.\n\nAl completar la revisión, el cliente podrá presentar esos resultados. Si una de las condiciones globales impide completarla, publicará únicamente el diagnóstico global acordado.\n\nLa biblioteca comunicará el resultado de la operación y el cliente decidirá cómo presentarlo. Separar esas responsabilidades permite tratar los errores en el contexto adecuado (Kernighan & Pike, 1999)."
         },
         {
           "type": "math_puzzle",
@@ -2903,7 +2903,28 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "d08cc80052406497bc0905a4e04b4c5c1af29f9d6401e96c8029311a5901d939",
+        "afterSha256": "fb50fdfdfa2e780487bbf56edb47275b1b4483687f007b13e2ac739e1d96bf47"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "d911ce12de8fc09a1be7a7feb799370719daf013fcde7903e4cebcfbc5fd56f6",
+        "afterSha256": "894d5e718838b19218b25f59840527122c385cd03f84926753efd3e82e1fc9f6"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "1c667f85a53f5adb195eddcc23b2d3fee043abbc0fd380744efe06c1dd37ed6e",
+        "afterSha256": "4328b114d09c7e4601b4ba1ee10041b0bb211b2576469a4515efb67a0b3e45c2"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "5feb811d97302a9e04425d2e9e4d16fdcbc4dc0d692444fb775bcd36e8918f21",
+        "afterSha256": "46f3c74b6319b9669f1da63e224dbf960bd866b17b5e625dbe9b7d663fa8a8b5"
+      }
+    ]
   },
   "textSemantics": {
     "version": 1,
@@ -2923,67 +2944,67 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "05426f18fd062e8e341ed41bd6483770c88cfeacd91e9842a210870ed6b1da59",
+        "sourceSha256": "058f7915a642002d55aea267e205a2cc8882d6d8bd9d8c61bb1e4e1f4a87cece",
         "spans": [
           {
-            "start": 40,
-            "end": 60,
+            "start": 112,
+            "end": 132,
             "text": "id tipo tamano_bytes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 108,
+            "start": 279,
+            "end": 281,
             "text": "80",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 197,
-            "end": 203,
+            "start": 443,
+            "end": 449,
             "text": "1 a 12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 274,
+            "start": 543,
+            "end": 544,
             "text": "_",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 287,
-            "end": 294,
+            "start": 564,
+            "end": 571,
             "text": "textura",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 296,
-            "end": 301,
+            "start": 573,
+            "end": 578,
             "text": "malla",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 304,
-            "end": 310,
+            "start": 581,
+            "end": 587,
             "text": "sonido",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 331,
-            "end": 342,
+            "start": 621,
+            "end": 632,
             "text": "uno a cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 386,
+            "start": 670,
+            "end": 679,
             "text": "1 a 30000",
             "role": "data",
             "reading": "natural"
@@ -3126,7 +3147,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "6683bd26c7fce1b3ded87296de156347f931ddad6f63dcf196b85edc864fa95c",
+        "sourceSha256": "d1ede0c39327c0023a04cd611a0c7eb21780055e2cf6b24b4fc5d64927b3a41f",
         "spans": [
           {
             "start": 17,
@@ -3136,22 +3157,22 @@
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 69,
+            "start": 47,
+            "end": 60,
             "text": "Caja sonido 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 170,
-            "end": 175,
+            "start": 199,
+            "end": 204,
             "text": "malla",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 188,
-            "end": 190,
+            "start": 217,
+            "end": 219,
             "text": "15",
             "role": "output",
             "reading": "natural"
@@ -4205,7 +4226,7 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "30c6c58b3e353299ad92a59b8025c9d77abe964e9303c099b403744e6fde8a89",
+        "sourceSha256": "1398b65d44df6658aaee164392ecf664315799c651b8162b07badd41ac2f8f29",
         "spans": [
           {
             "start": 27,
@@ -4222,36 +4243,106 @@
             "reading": "natural"
           },
           {
-            "start": 131,
-            "end": 137,
+            "start": 100,
+            "end": 101,
+            "text": "L",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 183,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 313,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 167,
+            "start": 315,
+            "end": 343,
             "text": "RECHAZO linea=N causa=CODIGO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 174,
-            "end": 183,
-            "text": "DUPLICADO",
+            "start": 345,
+            "end": 346,
+            "text": "N",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 208,
+            "start": 382,
+            "end": 388,
+            "text": "CODIGO",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 442,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 446,
+            "text": "ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 452,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 460,
+            "text": "TAMANO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 472,
+            "text": "DUPLICADO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 506,
             "text": "primera=P",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 252,
-            "end": 253,
+            "start": 533,
+            "end": 574,
+            "text": "RECHAZO linea=N causa=DUPLICADO primera=P",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 577,
             "text": "P",
             "role": "data",
             "reading": "natural"
@@ -5425,19 +5516,19 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "f9224918e103988ffb4d5d27591acc0f03d4995e5e4c58aeaceff262ac9b25ab",
+        "sourceSha256": "ab21220f11e656210536c33bb3b47a9df72c3c158c48ebf0dae836d263275b46",
         "spans": [
           {
-            "start": 244,
-            "end": 247,
+            "start": 305,
+            "end": 308,
             "text": "101",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 463,
-            "end": 500,
-            "text": "(Kernighan & Pike, 1999, pp. 111–112)",
+            "start": 666,
+            "end": 690,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }

@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya sabes relacionar una salida con su fuente y elegir una prueba que contraste una hipótesis. Ahora investigaremos una dificultad del propio diagnóstico: añadir código para observar puede introducir una operación que antes no existía. Antes de confiar en una traza, hay que precisar qué observa y qué cambios permite."
+          "text": "En las lecciones anteriores relacionaste una salida con el programa ejecutado y elegiste datos para distinguir posibles causas. Ahora examinaremos también el código que añades para investigar. Escribir un mensaje puede ayudar a seguir un valor, pero la expresión que obtiene ese valor puede ejecutar otra operación.\n\nLlamaremos diagnóstico al mensaje con el que intentamos averiguar qué ocurrió. Una sucesión de estos mensajes permite seguir el programa durante su ejecución; se utiliza como traza (Thomas & Hunt, 2020, p. 94). Antes de confiar en ella, necesitamos saber qué dato describe cada mensaje y qué operaciones realiza para obtenerlo."
         },
         {
           "type": "paragraph",
-          "text": "Considera un servicio de visitas. Cada llamada a registrar_visita registra exactamente una visita nueva, incrementa numero_visita y devuelve el número alcanzado. El contador empieza en cero al iniciar cada programa. Guardar el resultado de una llamada permite consultar después ese dato sin volver a registrar la visita. Conservar historia es parte de este contrato; no vamos a reparar el servicio eliminándola."
+          "text": "El programa conserva un contador llamado numero_visita y ofrece la función registrar_visita. Juntos forman el pequeño servicio de visitas de este ejemplo. El contador está declarado fuera de las funciones: se prepara con cero al comenzar el programa y las llamadas utilizan ese mismo objeto.\n\nCada llamada a registrar_visita ejecuta dos acciones, en orden. Primero, ++numero_visita aumenta el contador en uno. Después, return numero_visita devuelve el valor que ha quedado. Esa llamada registra una visita nueva; no consulta simplemente el número de una visita anterior.\n\nAl guardar el valor devuelto en otro objeto, conservas una copia de ese resultado. Puedes leer la copia después sin volver a llamar a la función. El contador seguirá reflejando las visitas posteriores, mientras la copia conservará el dato que recibió."
         },
         {
           "type": "paragraph",
-          "text": "El experimento de referencia solicita dos visitas, en instrucciones separadas y en ese orden. La línea R reúne sus resultados. Calcula primero esos valores desde el contrato, antes de utilizar una ejecución como referencia."
+          "text": "La primera prueba solicita dos visitas de trabajo: una llamada se realiza al preparar primera y la siguiente al preparar segunda. Cada instrucción termina antes de comenzar la siguiente. No se añade ninguna visita para mostrar el resultado.\n\nLa línea que empieza con R: presenta los dos valores guardados, separados por dos puntos. Para predecirla, sigue el contador desde cero, identifica qué devuelve cada llamada y conserva ese retorno en el objeto correspondiente. Después utiliza esos objetos al reconstruir la salida. Así distingues el trabajo realizado de la impresión de sus resultados."
         },
         {
           "type": "output_prediction",
@@ -35,7 +35,7 @@
         },
         {
           "type": "note",
-          "text": "Cada programa de la lección comienza en una ejecución nueva. En los programas de visitas mostrados hacemos como máximo cuatro llamadas, de modo que estos valores caben en int. Conserva el orden de las instrucciones; una ejecución anterior no aporta visitas a la siguiente."
+          "text": "Cada ejecución de los programas de visitas comienza con numero_visita preparado con cero. Las visitas de una ejecución anterior no se trasladan a la siguiente. Dentro de una misma ejecución, en cambio, cada llamada continúa desde el contador que dejó la anterior.\n\nEn los programas de visitas mostrados realizamos como máximo cuatro llamadas a registrar_visita. Los valores alcanzados caben en int. Conserva el orden de las instrucciones para seguir qué dato existe cuando se imprime cada línea."
         }
       ]
     },
@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Queremos añadir una observación entre las dos visitas de trabajo. La etiqueta DIAG identifica ese mensaje; R sigue identificando los resultados de las visitas solicitadas. El siguiente autor escribió una llamada al servicio dentro de la expresión que imprime el diagnóstico. Estudia lo que realmente ejecuta: la intención de observar no modifica el contrato de la función."
+          "text": "Ahora queremos añadir un mensaje entre las dos visitas de trabajo. DIAG: identificará ese diagnóstico y R: seguirá presentando los resultados de las visitas solicitadas.\n\nEn la revisión siguiente, la expresión que imprime DIAG: contiene registrar_visita(). Para obtener el número que se enviará a std::cout, el programa tiene que ejecutar esa llamada. Estar dentro de una impresión no cambia lo que hace su cuerpo: el incremento ocurre antes de devolver el valor. Sigue también esa operación al predecir la revisión, sin sustituirla todavía por una lectura del resultado guardado."
         },
         {
           "type": "output_prediction",
@@ -81,7 +81,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Hay dos preguntas distintas: qué valores produjeron las operaciones de trabajo y qué texto añadió el diagnóstico. Una línea extra cambia la salida completa del programa. Además, esta revisión cambia el estado del servicio: no podemos tratarla como si fuera el experimento original con una explicación escrita al margen."
+          "text": "El diagnóstico cambió algo más que la cantidad de texto. En el programa sin diagnóstico, la primera visita devolvía uno y la segunda devolvía dos. En esta revisión, primera conserva uno; la llamada añadida para imprimir registra la visita dos; después, la segunda visita de trabajo devuelve tres. Por eso R:1:3 ya no coincide con R:1:2.\n\nHay que distinguir dos cambios. Imprimir DIAG: añade una línea a la salida completa. Además, ejecutar registrar_visita() para obtener su dato añade una visita y cambia el resultado de la llamada posterior. La etiqueta del mensaje no convierte esa operación en una consulta del pasado."
         }
       ]
     },
@@ -93,11 +93,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta práctica queremos observar el resultado de la primera visita sin registrar otra. La versión instrumentada puede añadir una línea DIAG, pero las dos operaciones de trabajo deben conservar su orden, sus resultados y el estado que dejan. Comparamos la línea R y las operaciones del servicio por separado del texto extra; no exigimos ni afirmamos que toda la salida sea idéntica a la del programa sin diagnóstico."
+          "text": "La observación que necesitamos tiene dos condiciones: mostrar el resultado de la primera visita y obtenerlo sin registrar otra. Añadir código para observar un programa se llama instrumentarlo; aquí la versión instrumentada podrá añadir una línea DIAG:, pero debe conservar las dos visitas de trabajo, su orden y los resultados que producen.\n\nPor tanto, compararemos por separado las operaciones del servicio, la línea R: y el mensaje añadido. El contador debe terminar como en el programa de dos visitas y R: debe conservar sus dos resultados. La salida completa sí tendrá texto nuevo: conservar el trabajo no significa que todos los caracteres impresos sean idénticos."
         },
         {
           "type": "paragraph",
-          "text": "Para investigar si el diagnóstico añade una visita, identifica la llamada nueva y compara las revisiones con la misma preparación. La etiqueta DIAG distingue la observación añadida; R permite comparar los resultados de trabajo. Un formato constante facilita reconocer qué cambió de una ejecución a otra. Las salidas de diagnóstico resultan útiles cuando responden a una pregunta concreta; reunir mensajes sin ese propósito dificulta seguir la investigación (Kernighan & Pike, 1999, pp. 124–125)."
+          "text": "Para investigar la llamada añadida, utiliza en ambas revisiones el mismo comienzo: contador a cero y dos visitas de trabajo en el mismo orden. Cambia sólo cómo obtiene su dato el diagnóstico. Si también alteras el contador o eliminas una visita, ya no estarás examinando por separado el efecto del mensaje.\n\nLos rótulos cumplen un propósito concreto. DIAG: permite localizar la observación nueva; R: permite contrastar los resultados de trabajo. Mantener su formato ayuda a reconocer la diferencia entre ejecuciones. Los mensajes de diagnóstico son más útiles cuando comprueban una pregunta precisa y presentan los datos de forma reconocible, en vez de acumular información sin un propósito definido (Kernighan & Pike, 1999, pp. 124–125)."
         },
         {
           "type": "multiple_choice",
@@ -135,7 +135,7 @@
         },
         {
           "type": "note",
-          "text": "Identifica la revisión que ejecutas y empieza cada comparación desde el mismo estado inicial. Las herramientas y el perfil también deben ser pertinentes al contraste. Cambiar una condición externa o ejecutar un artefacto anterior no es una nueva observación del mismo experimento."
+          "text": "Identifica qué revisión produce cada salida. En estos ejemplos, iniciar de nuevo el programa prepara el contador con cero; continuar una ejecución mantiene el contador alcanzado. Esas dos situaciones no son intercambiables.\n\nMantén la misma preparación y las mismas visitas al comparar el diagnóstico original con la reparación. Una salida de la revisión anterior conserva su valor como observación anterior, pero no demuestra qué produce la fuente que acabas de modificar."
         }
       ]
     },
@@ -147,7 +147,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor de código comienza con el diagnóstico que repite la llamada, cuya salida ya predijiste. Modifica únicamente la expresión que obtiene el dato de DIAG: debe mostrar el resultado ya obtenido por la primera visita de trabajo sin registrar otra visita. Ejecutar un intento incorrecto y repararlo forman parte de esta misma comprobación.",
+          "text": "El editor comienza con la llamada adicional dentro de DIAG:. Tu tarea es cambiar únicamente la expresión que obtiene el dato de ese mensaje. Debe mostrar el resultado ya obtenido por la primera visita, sin realizar otro registro.\n\nConserva las instrucciones que llevan a cabo las dos visitas de trabajo. Examina qué objeto guarda el resultado solicitado y cómo se puede consultar ese dato después. Si tu primer intento no cumple el objetivo, sigue los valores, corrige la expresión y vuelve a comprobar esa misma revisión.",
           "emphasis": [
             {
               "text": "el resultado ya obtenido por la primera visita"
@@ -156,7 +156,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva registrar_visita, su estado inicial y las dos llamadas de trabajo en su orden. Mantén ambas etiquetas y utiliza resultados calculados, no constantes que imiten la salida. La revisión corregida debe producir DIAG:1, un salto de línea y R:1:2, sin salto final. Contrasta también la línea R con el programa de referencia sin diagnóstico. Es una investigación del código de observación; quitar el incremento de la función o borrar una visita cambia el contrato. Usa «Compilar, ejecutar y comprobar» y conserva además el criterio del código: DIAG debe utilizar el resultado guardado, sin otra llamada al servicio.",
+          "text": "Conserva registrar_visita, el contador preparado con cero y las dos llamadas de trabajo, en su orden. Mantén las etiquetas y calcula los resultados mediante las operaciones del programa: no escribas números constantes para imitar la salida.\n\nLa reparación debe producir dos líneas:\nDIAG:1\nR:1:2\n\nHay un salto entre ambas y no hay salto final. La primera línea describe la visita que ya ocurrió; la segunda debe coincidir con la línea del programa sin diagnóstico.\n\nUtiliza «Compilar, ejecutar y comprobar» para contrastar la salida. Revisa también el código de la expresión: debe obtener el dato sin otra llamada al servicio. Quitar el incremento o borrar una visita de trabajo alteraría las operaciones que la práctica exige conservar.",
           "emphasis": [
             {
               "text": "sin otra llamada al servicio"
@@ -182,7 +182,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El diagnóstico que reutiliza el resultado guardado no realiza otra visita. Una coincidencia conseguida cambiando también el servicio no cumpliría el criterio de esta reparación, aunque sus caracteres de salida coincidieran."
+          "text": "El resultado requerido depende tanto de lo que se imprime como de cómo se obtiene. Reutilizar el retorno guardado permite describir la primera visita sin añadir otra. Una salida igual conseguida cambiando el servicio o sustituyendo los resultados por constantes no cumpliría esa reparación.\n\nLa comparación de la consola comprueba sus caracteres; la revisión del código permite comprobar que mantuviste las operaciones solicitadas. Utiliza ambos criterios al juzgar tu intento."
         }
       ]
     },
@@ -194,7 +194,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia mantiene el servicio y las visitas de trabajo. La expresión de DIAG utiliza un resultado guardado, después de que su operación ya haya terminado. Compárala con tu reparación y verifica que la expresión sólo consulta el resultado ya guardado, sin registrar otra visita."
+          "text": "La referencia mantiene el contador y las dos llamadas de trabajo. Cambia la expresión de DIAG: para leer primera, el objeto que recibió el retorno de la primera llamada.\n\nLeer primera consulta ese valor guardado. No ejecuta el cuerpo de registrar_visita y, por tanto, no realiza su incremento. La operación que produjo el dato ya terminó antes de comenzar la impresión."
         },
         {
           "type": "code",
@@ -203,7 +203,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera llamada conserva su resultado en primera; el diagnóstico lee ese dato y después se realiza la segunda visita. R mantiene los resultados de las dos operaciones. La línea DIAG sigue siendo una salida adicional: la conservación afirmada se refiere al estado del servicio y a los resultados de trabajo, no a que toda la secuencia de bytes sea la misma."
+          "text": "La primera llamada aumenta el contador a uno y guarda ese retorno en primera. DIAG: imprime la copia. Después, la segunda llamada aumenta el contador a dos y guarda su retorno en segunda. R: presenta los dos resultados, uno y dos.\n\nUna copia no sigue automáticamente al contador. Aunque numero_visita cambie después, primera conserva el resultado que recibió. Esta diferencia será necesaria cuando retrasemos el diagnóstico: el valor actual del contador puede corresponder a una visita distinta de la que queremos describir.\n\nLa línea DIAG: sigue añadiendo texto. Lo conservado son las visitas, sus resultados y el estado que dejan; no toda la secuencia de bytes que forma la salida del programa."
         },
         {
           "type": "fill_code",
@@ -227,7 +227,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ampliamos el experimento a tres visitas de trabajo. Esta vez el diagnóstico se imprime después de todas ellas, pero debe describir el resultado de la segunda. La línea R reúne los tres resultados guardados y C muestra numero_visita después del diagnóstico. La intención nueva distingue el dato histórico pedido del estado actual del servicio."
+          "text": "La siguiente prueba solicita tres visitas de trabajo. Cada retorno se guarda al terminar su llamada. Esta vez el diagnóstico se imprime después de las tres, pero debe describir el resultado de la segunda visita.\n\nLa línea R: reúne los tres resultados guardados. La línea C: muestra el valor que tiene numero_visita después del diagnóstico. Son datos diferentes: un retorno guardado permite consultar una operación pasada; el contador indica hasta dónde ha avanzado el servicio. Al predecir, sigue también la llamada escrita para obtener DIAG:, aunque aparezca después de que se hayan guardado los resultados de trabajo."
         },
         {
           "type": "output_prediction",
@@ -244,7 +244,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor de código modifica sólo cómo se obtiene el dato de DIAG. Debe mostrar el resultado de la segunda visita sin registrar otra. Conserva las tres visitas de trabajo, R y la lectura de C. Calcula sus valores requeridos antes de ejecutar tu reparación; comprueba tanto los resultados guardados como el estado final. No escribas constantes para simularlos."
+          "text": "En este editor cambia sólo la expresión que obtiene el dato de DIAG:. Debe recuperar el resultado guardado de la segunda visita, sin registrar otra. Conserva las tres llamadas de trabajo, la línea R: y la lectura del contador en C:.\n\nLa reparación debe producir:\nDIAG:2\nR:1:2:3\nC:3\n\nHay saltos entre las tres líneas y no hay salto después de la última. El diagnóstico debe describir la visita pedida y dejar el contador en el valor correspondiente a las tres visitas de trabajo. Mostrar un resultado de otra visita conservaría las operaciones, pero no respondería a la pregunta del diagnóstico.\n\nUtiliza los valores que produjo el programa, sin sustituirlos por constantes. Compila, ejecuta y comprueba tanto los resultados guardados como el estado final."
         },
         {
           "type": "cpp_compiler",
@@ -290,11 +290,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Sería incorrecto convertir el caso de visitas en la regla «ninguna función puede llamarse dos veces». Considera piezas_de_cajas: cada caja aporta tres piezas y cajas es un entero entre 0 y 6. Con el cuerpo mostrado, el resultado depende sólo de ese argumento; la función no modifica objetos externos ni lee o escribe mediante entrada/salida. En este dominio el producto cabe en int."
+          "text": "El problema anterior depende de lo que hace registrar_visita. No permite concluir que llamar dos veces a cualquier función añada siempre una operación de registro.\n\nConsidera piezas_de_cajas. Cada caja contiene tres piezas y cajas es un entero entre cero y seis. Para dos cajas, por ejemplo, la función calcula tres por dos y devuelve seis. Su cuerpo sólo multiplica el argumento por tres: no modifica un contador exterior ni realiza entrada o salida. En este dominio, el producto cabe en int.\n\nEn el programa siguiente se repetirá ese cálculo con el mismo argumento. Examina por separado el trabajo de la función y la impresión que realiza main."
         },
         {
           "type": "paragraph",
-          "text": "Llamaremos pura a esta función bajo esas condiciones: obtener su resultado no produce efectos observables adicionales y, con los mismos argumentos, devuelve el mismo valor. El nombre de una función o que guardemos su retorno en un objeto const no demuestra esa propiedad; hay que examinar su comportamiento y su contexto. La impresión del diagnóstico se realiza en main, fuera de piezas_de_cajas."
+          "text": "Bajo esas condiciones, llamaremos pura a esta función: con los mismos argumentos devuelve el mismo valor y obtener ese resultado no produce otros efectos observables. Repetir el producto vuelve a calcular el dato; no registra visitas ni modifica un estado que utilice la llamada siguiente.\n\nEsa propiedad se justifica examinando el cuerpo y su contexto. No se deduce de que la función devuelva int, de su nombre ni de que guardemos su retorno en un objeto const. const conserva el valor del objeto inicializado; no impide por sí solo las acciones de la llamada que lo prepara.\n\nLa impresión de DIAG: se realiza en main. Aunque el cálculo no cambie el trabajo, esa instrucción sí añade texto a la salida."
         },
         {
           "type": "output_prediction",
@@ -328,7 +328,7 @@
         },
         {
           "type": "note",
-          "text": "No inferimos que repetir sea siempre útil o que cualquier revisión futura sea pura. Si cambia el cuerpo, los argumentos o una condición relevante, vuelve a comprobar el contrato. Aquí contrastamos un cálculo pequeño y un servicio con historia; no estamos certificando todas las funciones del lenguaje."
+          "text": "La conclusión corresponde a esta función, con este cuerpo y dentro del dominio declarado. Si cambia una condición relevante, hay que examinar de nuevo cómo obtiene el resultado.\n\nNo hemos establecido que toda repetición sea útil ni que toda función que devuelve un entero carezca de efectos. La pregunta es qué hace la llamada concreta y qué exige conservar el contrato."
         }
       ]
     },
@@ -340,11 +340,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este servicio tiene otro significado: unidades empieza en 4 y retirar_unidad retira exactamente una, disminuye el estado y devuelve cuántas quedan. Su precondición es que quede al menos una unidad antes de cada llamada. El programa inicial cumple esa precondición incluso con la operación añadida por el diagnóstico; el problema no es un dato inválido, sino cuántas retiradas realiza."
+          "text": "Ahora cambiaremos el tipo de operación para comprobar si puedes seguir el mismo razonamiento. El programa mantiene unidades, que comienza con cuatro. Cada llamada a retirar_unidad disminuye ese valor en uno y devuelve cuántas unidades han quedado.\n\nLa llamada sólo está admitida cuando queda al menos una unidad antes de retirarla. Esa condición previa es su precondición. El programa mostrado la cumple incluso con la llamada añadida al diagnóstico. Por tanto, investigaremos una retirada de más, no una llamada sin unidades disponibles."
         },
         {
           "type": "paragraph",
-          "text": "Se solicitan dos retiradas de trabajo, en su orden. DIAG debe mostrar el resultado ya obtenido por la primera; R reúne los resultados de ambas. Predice primero la revisión inicial sin corregirla. Que el estado disminuya ahora no convierte en lectura una llamada escrita para diagnosticar."
+          "text": "El trabajo solicitado consta de dos retiradas, en ese orden. DIAG: debe describir el resultado ya obtenido por la primera; R: presenta los resultados de ambas.\n\nPredice primero la revisión mostrada, sin repararla. Cuenta todas las llamadas a retirar_unidad, incluida la que obtiene el dato del diagnóstico. Cada una disminuye unidades, aunque su resultado se utilice para imprimir. Conserva por separado el estado que queda y los retornos que ya se guardaron."
         },
         {
           "type": "output_prediction",
@@ -361,7 +361,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Repara el programa del siguiente editor de código cambiando únicamente la obtención del dato de DIAG. Conserva el servicio, las dos llamadas de trabajo, su orden y las etiquetas. Los valores deben proceder de las operaciones, no de constantes que imiten la salida. Desde 4 unidades, la observación correcta es DIAG:3, salto de línea, R:3:2, sin salto final; el estado debe terminar en 2. Compila, ejecuta y comprueba esta reparación antes de continuar."
+          "text": "En el editor siguiente repara únicamente la expresión que obtiene DIAG:. Debe leer el resultado de la primera retirada sin consumir otra unidad. Conserva el cuerpo del servicio, las dos llamadas de trabajo, su orden y las etiquetas.\n\nDesde cuatro unidades, la reparación debe mostrar:\nDIAG:3\nR:3:2\n\nHay un salto entre ambas líneas y no hay salto final. Las dos retiradas dejan el estado en dos unidades. Los valores impresos deben proceder de esas operaciones, no de constantes elegidas para aparentar el resultado.\n\nCompila, ejecuta y comprueba la salida. Revisa también que la expresión del diagnóstico ya no realice una retirada adicional."
         },
         {
           "type": "cpp_compiler",
@@ -390,7 +390,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta referencia, DIAG lee primera, que conserva el resultado de la primera retirada. La función sigue consumiendo una unidad en cada una de las dos llamadas de trabajo; leer ese resultado no ejecuta otra retirada."
+          "text": "En la referencia, la primera llamada retira una unidad y guarda el resultado en primera. DIAG: lee esa copia; no vuelve a ejecutar retirar_unidad. Después se realiza la segunda retirada de trabajo y se conserva su resultado.\n\nAsí, obtener el dato del diagnóstico no cambia cuántas unidades están disponibles para la retirada posterior. El servicio sigue disminuyendo unidades cada vez que se le llama: la reparación modifica la observación, no ese contrato."
         },
         {
           "type": "code",
@@ -399,7 +399,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde 4 unidades, las retiradas dejan 3 y después 2: DIAG muestra 3 y R reúne 3:2. Desde 6, dejan 5 y después 4: DIAG muestra 5 y R reúne 5:4. Esa variación descarta una impresión fija que sólo imite el primer caso. Otra reparación puede ser válida si conserva el servicio, las operaciones y el dato solicitado en ambas preparaciones; no basta conservar sólo la etiqueta o el resultado final."
+          "text": "Desde cuatro unidades, la primera retirada deja tres y la segunda deja dos. La referencia muestra DIAG:3 y, en la línea siguiente, R:3:2.\n\nDesde seis unidades, las mismas dos retiradas dejan cinco y cuatro. El diagnóstico debe adaptarse al dato obtenido: DIAG:5 y, en la línea siguiente, R:5:4. Una impresión fija preparada para el primer caso dejaría de describir estas operaciones.\n\nLa variación permite contrastar el diagnóstico con otro resultado requerido y detectar una impresión fija ajustada al primer caso. Revisa también la expresión del diagnóstico y las llamadas de trabajo para comprobar cómo se obtiene el dato y qué operaciones se conservan.\n\nOtra reparación será válida si conserva el servicio, las dos retiradas y el dato solicitado en ambas preparaciones. Coincidir sólo en una etiqueta o en el estado final no demuestra todas esas condiciones."
         },
         {
           "type": "multiple_choice",
@@ -420,7 +420,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva el resultado esperado, la revisión, la preparación inicial, el orden de las operaciones y lo observado antes y después del cambio. Ese registro permite reconocer qué comparación ya realizaste y qué posibilidad sigue pendiente. Por ejemplo, una salida obtenida antes de reparar DIAG no demuestra cómo se comporta la fuente corregida. Relacionar cada intento con sus resultados ayuda a evitar que una comprobación pendiente se recuerde como realizada (Kernighan & Pike, 1999, p. 127)."
+          "text": "Para juzgar una comparación necesitas mantener relacionados sus datos: la fuente ejecutada, la preparación inicial, las operaciones, el esperado y la salida observada. En esta lección puedes contrastarlos en los programas y las consolas de las actividades.\n\nPor ejemplo, la salida que produjo el diagnóstico con una retirada adicional sigue describiendo esa revisión. Editar después su expresión no transforma aquella salida en evidencia de la reparación. Hace falta construir y ejecutar la fuente modificada bajo la misma preparación para obtener la nueva observación.\n\nMantener identificados los intentos y sus resultados ayuda a no confundir una comprobación pendiente con otra ya realizada (Kernighan & Pike, 1999, p. 127)."
         },
         {
           "type": "multiple_choice",
@@ -445,7 +445,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor tiene su propio código y empieza con seis unidades. Repara sólo la obtención del dato de DIAG: debe reutilizar el resultado de la primera retirada. Conserva las dos retiradas de trabajo, su orden y las etiquetas. Compila, ejecuta y comprueba; no necesitas regresar a la actividad anterior."
+          "text": "Este editor contiene su propio programa y comienza con seis unidades. Repara sólo la expresión que obtiene DIAG: para que describa el resultado guardado de la primera retirada. Conserva las dos llamadas de trabajo, su orden y las etiquetas.\n\nAplica a esta preparación el mismo criterio: el diagnóstico debe usar el dato obtenido y no añadir una tercera retirada. Compila, ejecuta y comprueba este programa en su editor. La reparación realizada en otro editor no cambia automáticamente este código."
         },
         {
           "type": "cpp_compiler",
@@ -1643,6 +1643,146 @@
         "id": "block_0008_0005",
         "beforeSha256": "546268efcb99cdfa718b10d2e7347920b02455127bb819ea4f14c4efb57fae36",
         "afterSha256": "b5c5852761727bc8dffc2cf150a8d98f22dc8acd8239f296fafea2f050340a3f"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "83848470f716c76e2005d567449116b4bc7f3d41d42bfb5c95cafa19eef5feb3",
+        "afterSha256": "100e1a417965582065427b14676c68ab2f568ec4a70883f544415ad00a97680d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "3175ca2cced8ea07be586a2085762fbf28afa6fc018ed98a7af8861463384f36",
+        "afterSha256": "2450be5a38066096b110ee332f0f426abcb5feaeedb8ad489ffb7e70db939a4b"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "a6fb8e3b3b67e693bea5275eb5494e1c54c26ae17ff41902e3bc720e6834c07c",
+        "afterSha256": "dd54eb5d4c69151758adfcffccef559709a332c58b6acb9d03f1a9d5930f6e29"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "ce399e6bc33798933ab885713b495052c0e68bda408b1fe003b29993a3791896",
+        "afterSha256": "24a492f02e373f48e1fcdad341f9b60170fe9c31d2523b9c3dc149ff0ee77751"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "5b3ffad73f0d423672318b0bf466a92c0199eb976db66364b2bf9b0706855ea9",
+        "afterSha256": "754527bc815750e23278fc3f0b8bcfdc5294e0f253301e12dd150dd6627d1b7a"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5ce067cae3c17a7b79b0dd8e21155f78c237df3533eb4ee900d06f37af993693",
+        "afterSha256": "f675dfed7cd979825ab73ab3e8e5b1e07ed01080e1c878f752e5d369a1fc9f98"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "e23e5f3061d19a8c38f4335e6eef686a550fcc7f8c299f9f205f5bf3759a5696",
+        "afterSha256": "2260e6ea0c954ff4888d961903fc5300c0322c89cc5b7eedeb84b38cf27c1397"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e537c63f1bb899bd7b6477b523259a339339a3f4ab46b3492c5f990765952405",
+        "afterSha256": "88923f1b372bc60492e83118bec9a7ba267e17ed5bffd96ccdc6a5fb1eeb2678"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "4cd51b71add54c56f6d6ec8af94930fda0d0a989025ad1b68d8fa4249349b89c",
+        "afterSha256": "4bcca9dc0fa8f1ae32ccafd1ef357e4baf4bea81dfa7555bd6075a56c06df170"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "61ddcef82be9d7823b956dbef971051786d6ecbb6bd06728657ad6e04e4cdf93",
+        "afterSha256": "e457c72d4b7cb41418e0d07a56424e8859aebbba0b2775092ac5d51e58e9486a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "b062430ec9289baf334a2954a9bd2a080e87087b52ad7515c2e3136e499b5617",
+        "afterSha256": "570ec86a4728a65e31f57f17cb665a6eb95917124c1c5a7b7700a9b6e69447f8"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "00ffae47c2c47a9e1f0ab5755c3fbcdbda3187a586526e63e7044006c0851844",
+        "afterSha256": "7a37af596d76b866532ef2700a73805f11220db83d78d630e56f786824782152"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "518c15fa6bcca12a154f8c2c8270ec528d9ecd43ce5ad14fcf8e08baa3481070",
+        "afterSha256": "95dd2da1fec9559497c7d1e24fb779822fee6a1a3daa4c7225c64096e4c9e550"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "058f4cf3811cbace065d8bb56adf6bf6bad368ab874e0fb751a5c5eb7034dcff",
+        "afterSha256": "eb25f155550ba51e6c451c5cd25a4cdbe683bc6571f31ede0ec8509ac448475f"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "6472ae2d48a12d846588fb1367be862d190b29e67c9e08ff33a74dd924121654",
+        "afterSha256": "66b63e909c994f3e304f7f17f5fdacc063818ffafa7dc721966039075e7c3677"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "2980773a01f5cc2ed82a3f003738a70626f298b0649a7a6c14309aa5194e556a",
+        "afterSha256": "763336d5e984fbd159b168f3e8dfc6b23816909b3fbe8eb60c048a50a5337d6b"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "84296a55755d67b7f2402cc0e77dd2cc428bbc6edbc1ebc53af19c5b861065fd",
+        "afterSha256": "0fab906038cb58ecf3d23071fd44eec3c131db52472852dbd92d1e70e126604a"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "4cf8759768d23c8092468cfbd4f16d664eef2c0d8296547a4aea3633137715af",
+        "afterSha256": "8ec12de1cd93d51f7afb68053cf31e85f644964e3620c9c3a837b1809542f661"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "448e135e6d32129df7cad8a6e999332971eb2de32a7b913954fa3f578f823e78",
+        "afterSha256": "3eacd400713af3c088f9acaf9dc06810ad499b4ceb4a9760f574dc5168b9a492"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "e0f98ea9ca95762a13e896ef94b5235e7e89b4b748cc3df01304de4dcf176e11",
+        "afterSha256": "f36785b1098a904e1a7e11c802abbddee1d9516efa0cbf450d5d8af7e2d3fa5b"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "3ca88eec54c830b247579328d25de354029827c00ab086170c9e1676512f6aad",
+        "afterSha256": "a011f433d4654af08498b06756e4ecf65771d0636b38bca9f352c59ec5bc0eb7"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "27d217bdff7f42f3336be0897880fa880c9b3a97a543701c842de9ee06dac98f",
+        "afterSha256": "349b6317663bcf988778e085fa81282cb9cc00f2310eb7a6d03fb33586d63d9d"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "b32eaa57e36f1fc3c8f9595a02d2608b14e651683e45e8b11a61b1ad812259f6",
+        "afterSha256": "aca4ecfaf549a064f6f267416a6ad9e35c533933520513e0a1fad4ea09b52511"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "6badeef4926238254808a24c5eb25035e4e13bb86b7ca8661acf38f1c6a61fa9",
+        "afterSha256": "3a0a56a23a053e7651087873803c5fa18894cd2070810ea88390e5da8d023bca"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "b5c5852761727bc8dffc2cf150a8d98f22dc8acd8239f296fafea2f050340a3f",
+        "afterSha256": "7a793e1d680b22c3766cc6becddeaa298076606642e941dcc9d8f0da7a14627a"
+      },
+      {
+        "id": "block_0008_0008",
+        "beforeSha256": "e1b54c6ad2612af00ff70279f3290b74088d96cc13d8903c82a8c8ad95f4cb8a",
+        "afterSha256": "8df8a8fbb066b8aea0c73945a2c007fadca30b0d668d00c1e145ece1e20747ff"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "24a492f02e373f48e1fcdad341f9b60170fe9c31d2523b9c3dc149ff0ee77751",
+        "afterSha256": "723af783ef8775e43b56db6a996c3c1a8c57bc51f0852d9b8ca9ec18111c7c28"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "3a0a56a23a053e7651087873803c5fa18894cd2070810ea88390e5da8d023bca",
+        "afterSha256": "52a080db60ac3ca226538646d1d4778ec9105b53eb17e564d5da8dac64f71142"
       }
     ]
   },
@@ -1658,25 +1798,54 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "01ac54f74f1d122d55e14bd429c011866ffcdca27a68839be096aeb00d2d82f1",
-        "spans": []
+        "sourceSha256": "2e4be4d03286c8c7fd66d94b95ae651de67f2f03e79d4fdceeb2cd17b280c8bd",
+        "spans": [
+          {
+            "start": 498,
+            "end": 526,
+            "text": "(Thomas & Hunt, 2020, p. 94)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "e18099ba181eb59c895708ed1c50cda38e0c011b8decabe0261ab4628106fcf7",
+        "sourceSha256": "84586e3189000a9dca4b9c1a93e8000aaf07c7f52dc4eacd7aa2470c3f196f06",
         "spans": [
           {
-            "start": 49,
-            "end": 65,
+            "start": 41,
+            "end": 54,
+            "text": "numero_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 91,
             "text": "registrar_visita",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 129,
-            "text": "numero_visita",
+            "start": 308,
+            "end": 324,
+            "text": "registrar_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 366,
+            "end": 381,
+            "text": "++numero_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 419,
+            "end": 439,
+            "text": "return numero_visita",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1685,12 +1854,26 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "d982d0b68add34aef481f0c1e1b10ae9e48e65161cd28d96ade8fed824681c23",
+        "sourceSha256": "e78316baabd30565c7e1cc22d0a9ef6d57cb4ad2de8e6f6bf858a9dce45eb7ab",
         "spans": [
           {
-            "start": 103,
-            "end": 104,
-            "text": "R",
+            "start": 86,
+            "end": 93,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 128,
+            "text": "segunda",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 269,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
           }
@@ -1761,11 +1944,25 @@
       {
         "block": "block_0000_0005",
         "path": "/text",
-        "sourceSha256": "920d497319891a3a0e99d69dde53b8faeaea175c99007523e5a6199c3d1b4ddc",
+        "sourceSha256": "1b2903922bbb68b2ab2ad6455058e60fedc840b916b0f6085eb46f12c50ce009",
         "spans": [
           {
-            "start": 171,
-            "end": 174,
+            "start": 56,
+            "end": 69,
+            "text": "numero_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 360,
+            "text": "registrar_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 394,
+            "end": 397,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -1781,21 +1978,42 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "033cd2b5b3b4a98f0d2634148fce3b5c3f9b6a92e7e17d7c351a79b864a89b1f",
+        "sourceSha256": "50f8cdf20e13178a423d92fe3ad595756dcedb3b444b0ec07639eff8a882f155",
         "spans": [
           {
-            "start": 78,
-            "end": 82,
-            "text": "DIAG",
+            "start": 67,
+            "end": 72,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 108,
-            "text": "R",
+            "start": 104,
+            "end": 106,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 227,
+            "text": "DIAG:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 255,
+            "text": "registrar_visita()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 306,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1965,8 +2183,44 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "2f096906287419ec808370e358226ff7d2bb9b87806297a461c7f2da7ffcc185",
-        "spans": []
+        "sourceSha256": "951cbda8075d5e7151acc8ec460b8f5874af9b5e096ffb492486ab3b8eb628b2",
+        "spans": [
+          {
+            "start": 165,
+            "end": 172,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 310,
+            "text": "R:1:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "R:1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 384,
+            "text": "DIAG:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 458,
+            "text": "registrar_visita()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -1977,19 +2231,26 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "66559bf9524884b5b858d5bcdc214fbd2cf9c32c07b91fd7252c9121e4f1b5a0",
+        "sourceSha256": "1123a01db06607096c4030974cbc1395fcb8233d76d2fea40310ba44c5e714fd",
         "spans": [
           {
-            "start": 137,
-            "end": 141,
-            "text": "DIAG",
+            "start": 246,
+            "end": 251,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 264,
-            "text": "R",
+            "start": 418,
+            "end": 420,
+            "text": "R:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 508,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
           }
@@ -1998,25 +2259,25 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "d420831cf4875021ccade0165bd594bf38a74e40f2596db5f8be425be2f52d3f",
+        "sourceSha256": "a2c6be98f0321e27330e528229e955c06e965dede3b02736be84246a5cc3c946",
         "spans": [
           {
-            "start": 143,
-            "end": 147,
-            "text": "DIAG",
+            "start": 351,
+            "end": 356,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 183,
-            "text": "R",
+            "start": 397,
+            "end": 399,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 457,
-            "end": 494,
+            "start": 700,
+            "end": 737,
             "text": "(Kernighan & Pike, 1999, pp. 124–125)",
             "role": "citation",
             "reading": "natural"
@@ -2215,7 +2476,7 @@
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "102d3f72f84131d8dd9796290bb8ba88a05f848488fa06224adb649781bd89df",
+        "sourceSha256": "58cd435ce006a57610b1ce4851cee183e30e961fe62433a0ab9c84ba66ca1456",
         "spans": []
       },
       {
@@ -2227,12 +2488,12 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "9e5bd9dff3b03846ea999a41c863b8cd349c19483875fb20342c5c9e0d633d27",
+        "sourceSha256": "129f46be1c2e9f542a16e9ae992702b3379df33629713e66bd25227a22e42cbb",
         "spans": [
           {
-            "start": 156,
-            "end": 160,
-            "text": "DIAG",
+            "start": 54,
+            "end": 59,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           }
@@ -2241,7 +2502,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "1c9cee06ad98596e5c12b9f6edb0f4963b26af2a7fb1214e804b2b0d69cf14b7",
+        "sourceSha256": "859788b12f34b3cf1bb9387a63627654823003c866dff4ebb56dc4a2ef0aaf13",
         "spans": [
           {
             "start": 9,
@@ -2251,30 +2512,16 @@
             "reading": "technical"
           },
           {
-            "start": 216,
-            "end": 222,
+            "start": 282,
+            "end": 288,
             "text": "DIAG:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 244,
-            "end": 249,
+            "start": 289,
+            "end": 294,
             "text": "R:1:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 295,
-            "end": 296,
-            "text": "R",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 546,
-            "end": 550,
-            "text": "DIAG",
             "role": "output",
             "reading": "natural"
           }
@@ -2297,7 +2544,7 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "ff437ea97a387baa9810607710d0f7ddd9b128457dbf280f1b511e63cb60a9bf",
+        "sourceSha256": "d1f11837e4518244a6cb29176410c0b411a38e3bb9123313ccd0943b0c115c1f",
         "spans": []
       },
       {
@@ -2309,40 +2556,82 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "1244161c92c122b76da5013e018bd713a3f7bfcec31de15cf1796a72a13cacd6",
+        "sourceSha256": "ad4cdda1cbfa68fbc3e99b8f33acd1c6d99e92b6490de8d447cb37285c570d7a",
         "spans": [
           {
-            "start": 79,
-            "end": 83,
-            "text": "DIAG",
+            "start": 89,
+            "end": 94,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 112,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 253,
+            "text": "registrar_visita",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "3df199ca3175ca78bfb70e579467a35491ce88b4521e95e425346a845192624c",
+        "sourceSha256": "62cebc52171c736f14bd4bd17ebbf20edb315ccd5f64f28946b57916c9bcdc3b",
         "spans": [
           {
-            "start": 44,
-            "end": 51,
+            "start": 69,
+            "end": 76,
             "text": "primera",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 122,
-            "text": "R",
+            "start": 78,
+            "end": 83,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 180,
-            "end": 184,
-            "text": "DIAG",
+            "start": 179,
+            "end": 186,
+            "text": "segunda",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 190,
+            "text": "R:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 300,
+            "text": "numero_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 317,
+            "end": 324,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 535,
+            "end": 540,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           }
@@ -2425,28 +2714,35 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "e5a2a7fab5f699f029945256fc1f7008ac0a46d47714ee0712a5f2eb2b6bb657",
+        "sourceSha256": "0794b0ea0b0513ef7bd12d93bcaeb36ff73ffec856b4adf065504840b85f7256",
         "spans": [
           {
-            "start": 168,
-            "end": 169,
-            "text": "R",
+            "start": 222,
+            "end": 224,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 208,
-            "end": 209,
-            "text": "C",
+            "start": 271,
+            "end": 273,
+            "text": "C:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 231,
+            "start": 301,
+            "end": 314,
             "text": "numero_visita",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 537,
+            "end": 542,
+            "text": "DIAG:",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2543,26 +2839,47 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "2ccdb1c5049a7c6939e71a9901a28a3a0f4abf251e6a33901a5549f404f8e465",
+        "sourceSha256": "7006fd307b8dda3aeca56794d4fb009a3f2219dcb577195cfb15f6bafa1c98d7",
         "spans": [
           {
-            "start": 66,
-            "end": 70,
-            "text": "DIAG",
+            "start": 63,
+            "end": 68,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 178,
-            "text": "R",
+            "start": 197,
+            "end": 199,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 196,
-            "text": "C",
+            "start": 229,
+            "end": 231,
+            "text": "C:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 269,
+            "text": "DIAG:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 277,
+            "text": "R:1:2:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 281,
+            "text": "C:3",
             "role": "output",
             "reading": "natural"
           }
@@ -2736,33 +3053,33 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "340069d2bd979f2ded0178587e13e8642ee55bc07da9ddfaaa423c3c56eaec8e",
+        "sourceSha256": "5dc974db316f853f7c72054f4fcb7644f9d1d9a885791162cee121270c506336",
         "spans": [
           {
-            "start": 112,
-            "end": 127,
+            "start": 44,
+            "end": 60,
+            "text": "registrar_visita",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 190,
             "text": "piezas_de_cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 160,
-            "end": 165,
-            "text": "cajas",
+            "start": 489,
+            "end": 492,
+            "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 190,
-            "text": "0 y 6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 378,
-            "end": 381,
-            "text": "int",
+            "start": 641,
+            "end": 645,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2771,26 +3088,40 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "1243dd976717da8a60bc482068dce4f77b5a070feb8ff710e2040741d233138f",
+        "sourceSha256": "7a84d944abad01e456d8f2f035450211faa9e225fac5e9f700550399a33cc2b7",
         "spans": [
           {
-            "start": 238,
-            "end": 243,
+            "start": 394,
+            "end": 397,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 461,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 365,
-            "end": 369,
-            "text": "main",
+            "start": 463,
+            "end": 468,
+            "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 380,
-            "end": 395,
-            "text": "piezas_de_cajas",
+            "start": 594,
+            "end": 599,
+            "text": "DIAG:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 614,
+            "end": 618,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2968,7 +3299,7 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "d066fc4adaf105c4aff177476dfcc65f1f86d1b7334ecc7c7648e9f4927e2fd0",
+        "sourceSha256": "e12709e1a220b3b1263120be82a7c95c33ddece755275395324492b57464f7d3",
         "spans": []
       },
       {
@@ -2980,25 +3311,18 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "540e1682acee8e094b448c56a5dff035fe64f2f6bba4cdfc2408f36aa642bde3",
+        "sourceSha256": "f87bbcd4e152018a4b3e7ed83e0cf47d5cd61fd0d6abbaafda88bcb9dff34bcd",
         "spans": [
           {
-            "start": 38,
-            "end": 46,
+            "start": 115,
+            "end": 123,
             "text": "unidades",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 59,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 62,
-            "end": 76,
+            "start": 165,
+            "end": 179,
             "text": "retirar_unidad",
             "role": "cpp",
             "reading": "technical"
@@ -3008,21 +3332,35 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "791ebe539d00624b25138572169bcb4c5aa3cf95b01ae221944236437f4ea1ce",
+        "sourceSha256": "966a9531d15c6c0050d49fdc87d7b9e837eb810c1486eb4a3fa89455d8b7d99b",
         "spans": [
           {
-            "start": 52,
-            "end": 56,
-            "text": "DIAG",
+            "start": 61,
+            "end": 66,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 112,
-            "text": "R",
+            "start": 123,
+            "end": 125,
+            "text": "R:",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 256,
+            "text": "retirar_unidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 334,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3098,40 +3436,26 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "e744c8e8782e8b3805ad2d76ff647ce64baeb5f1397658fed3aa5c0b96caac4f",
+        "sourceSha256": "ac2ab717a20f6b49b981358b4c0c0bfba2bde71fa3ae998bfc120dd2eb8eb527",
         "spans": [
           {
-            "start": 96,
-            "end": 100,
-            "text": "DIAG",
+            "start": 66,
+            "end": 71,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 271,
-            "end": 272,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 310,
-            "end": 316,
+            "start": 285,
+            "end": 291,
             "text": "DIAG:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 334,
-            "end": 339,
+            "start": 292,
+            "end": 297,
             "text": "R:3:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 385,
-            "end": 386,
-            "text": "2",
             "role": "output",
             "reading": "natural"
           }
@@ -3160,19 +3484,33 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "f68f784db6d27a999b5d5cc86e920833f569b1bd2db58141b2f942e50bff2bdf",
+        "sourceSha256": "1c20f2ca738d9c7c0284d8f3348059b9bedc1b545244034e641515377da893fb",
         "spans": [
           {
-            "start": 20,
-            "end": 24,
-            "text": "DIAG",
+            "start": 21,
+            "end": 28,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 87,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 36,
-            "text": "primera",
+            "start": 131,
+            "end": 145,
+            "text": "retirar_unidad",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3181,89 +3519,33 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "c98d820b477d74878676e6539d337b919d236dd1075e8a86cc2c43b40a63b609",
+        "sourceSha256": "64534148d2c5b3f87bdbc2f7cc66c97f472f8d2b7626c131371ca9a1b0a80b8c",
         "spans": [
           {
-            "start": 6,
-            "end": 7,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 38,
-            "end": 51,
-            "text": "3 y después 2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 53,
-            "end": 57,
-            "text": "DIAG",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 66,
-            "end": 67,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 70,
-            "end": 71,
-            "text": "R",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 78,
-            "end": 81,
-            "text": "3:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 89,
-            "end": 90,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 98,
-            "end": 111,
-            "text": "5 y después 4",
+            "end": 104,
+            "text": "DIAG:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 117,
-            "text": "DIAG",
+            "start": 131,
+            "end": 136,
+            "text": "R:3:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 127,
-            "text": "5",
+            "start": 255,
+            "end": 261,
+            "text": "DIAG:5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 130,
-            "end": 131,
-            "text": "R",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 138,
-            "end": 141,
-            "text": "5:4",
+            "start": 288,
+            "end": 293,
+            "text": "R:5:4",
             "role": "output",
             "reading": "natural"
           }
@@ -3344,18 +3626,11 @@
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "9d61799e02b5a9507b47f45b2d79361f0ab3758ef9eb9b0968196b0b5e24448e",
+        "sourceSha256": "e545586d2be56ab3cabcd1660ba09e4c037b3da24d4cb844a0e9cc46bbae7f3d",
         "spans": [
           {
-            "start": 286,
-            "end": 290,
-            "text": "DIAG",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 458,
-            "end": 490,
+            "start": 694,
+            "end": 726,
             "text": "(Kernighan & Pike, 1999, p. 127)",
             "role": "citation",
             "reading": "natural"
@@ -3419,12 +3694,12 @@
       {
         "block": "block_0008_0008",
         "path": "/text",
-        "sourceSha256": "e04990be32d108d5336e215a3a8d7811fd614e70fd5489e19065a20d184c706e",
+        "sourceSha256": "52395d650d7af0d3750f95d3653a08cf9b6ba48cf3dfaa05bc4bd9c3db8a7ef2",
         "spans": [
           {
-            "start": 101,
-            "end": 105,
-            "text": "DIAG",
+            "start": 107,
+            "end": 112,
+            "text": "DIAG:",
             "role": "output",
             "reading": "natural"
           }

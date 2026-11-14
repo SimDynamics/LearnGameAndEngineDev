@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el primer curso construiste clientes que usan una cabecera y una implementación en otro archivo. En la práctica anterior de CMake describiste un objetivo con una sola fuente. Ahora reuniremos esas habilidades: conservar la interfaz y el cliente, construir una biblioteca local y relacionar su producto con el ejecutable. No añadiremos clases ni punteros para resolver una necesidad de construcción."
+          "text": "En el primer curso separaste la declaración de una función, su implementación y el archivo que la utiliza. A ese código que llama a la función lo llamamos cliente. En la práctica anterior describiste con CMake un objetivo que se construía desde una sola fuente.\n\nAhora la implementación tendrá su propio producto: reuniremos su código compilado en una biblioteca que el cliente utilizará al enlazar el ejecutable. Un objetivo sigue siendo la descripción con nombre de lo que se debe construir; la biblioteca y el ejecutable serán los productos obtenidos al construir sus respectivos objetivos. Mantendremos la interfaz y las llamadas para comprobar que esta organización conserva los resultados."
         },
         {
           "type": "paragraph",
@@ -18,7 +18,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Primero calcula un oráculo independiente. Este listado reúne temporalmente la función y el cliente en una sola fuente para estudiar el comportamiento. Después distribuiremos esa misma función entre cabecera e implementación; distribuir el código no modifica su contrato. Escribe toda la salida con dos separadores : y sin salto final."
+          "text": "Obtén primero los resultados requeridos aplicando la regla de cantidades a cada llamada. Esos resultados serán el oráculo: el criterio independiente con el que compararás las ejecuciones posteriores.\n\nEl programa del puzzle reúne temporalmente la función y el cliente en un solo archivo para estudiar su comportamiento. Después separaremos la declaración y el cuerpo en archivos distintos, conservando el mismo contrato. Responde con toda la salida, incluidos los dos separadores : y sin añadir un salto final."
         },
         {
           "type": "output_prediction",
@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Mantendremos los tres archivos C++ en el mismo directorio de fuentes. faltantes.h contiene la declaración común; faltantes.cpp la incluye y define la función; main.cpp incluye la cabecera y utiliza la función. La guarda de la cabecera y la correspondencia entre declaración y definición recuperan lo trabajado en el primer curso. La separación entre interfaz y cuerpo ayuda a que el cliente dependa de las llamadas acordadas (Kernighan & Pike, 1999, pp. 103–106)."
+          "text": "Los tres archivos C++ permanecerán juntos en el directorio de fuentes:\n\nfaltantes.h declara la función: indica su nombre, los tipos de sus parámetros y el tipo del resultado.\nfaltantes.cpp incluye esa cabecera y proporciona el cuerpo que calcula el resultado.\nmain.cpp incluye la misma cabecera y contiene el cliente que realiza las llamadas e imprime sus resultados.\n\nLa guarda de la cabecera evita volver a incorporar su contenido si se encuentra varias veces al procesar un mismo archivo .cpp con sus inclusiones. La declaración y la definición deben corresponder entre sí. Separar la interfaz del cuerpo permite que el cliente utilice las llamadas acordadas sin copiar la implementación en su archivo (Kernighan & Pike, 1999, pp. 103–106)."
         },
         {
           "type": "paragraph",
@@ -74,7 +74,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al compilar main.cpp, #include incorpora la declaración necesaria para comprobar las llamadas. No incorpora automáticamente faltantes.cpp ni su código objeto. Compilar el cliente y aportar la definición al enlace son necesidades distintas. Tampoco tener los archivos separados oculta físicamente la implementación o protege datos por sí solo."
+          "text": "Al compilar main.cpp, #include incorpora el contenido de faltantes.h. Así el compilador conoce cómo se llama a la función y puede comprobar los argumentos de cada llamada. Esa inclusión no selecciona faltantes.cpp como otra fuente ni añade su código compilado.\n\nLa construcción debe obtener también la implementación y aportar su producto al enlace. Compilar el cliente con una declaración y reunir la definición que necesita para formar el ejecutable son pasos distintos. Mantener los archivos separados organiza la interfaz y el cuerpo; no hace desaparecer físicamente la implementación ni protege datos por sí solo."
         },
         {
           "type": "multiple_choice",
@@ -103,7 +103,7 @@
         },
         {
           "type": "paragraph",
-          "text": "add_library(faltantes STATIC faltantes.cpp) define un objetivo de biblioteca estática llamado faltantes. Su construcción compila la fuente de la implementación y reúne código objeto en un archivo de biblioteca. Ese archivo sirve como entrada de enlace; no es un programa que podamos ejecutar como revisar. add_executable(revisar main.cpp) define el objetivo del cliente (Scott, 2025, pp. 18–21)."
+          "text": "add_library(faltantes STATIC faltantes.cpp) declara el objetivo que construirá la biblioteca. Sus argumentos tienen estas funciones:\n\nfaltantes es el nombre del objetivo que usaremos en las relaciones de CMake.\nSTATIC pide una biblioteca estática: un archivo que reúne código objeto para utilizarlo al enlazar otro producto.\nfaltantes.cpp es el archivo fuente de esa biblioteca, situado aquí junto a CMakeLists.txt.\n\nAl configurar, CMake registra esa descripción. Cuando se construye el objetivo, el compilador traduce la fuente a código objeto y la herramienta correspondiente lo reúne en el archivo de biblioteca. Ese archivo no se ejecuta como un programa. Por separado, add_executable(revisar main.cpp) declara el objetivo ejecutable revisar y selecciona main.cpp como su fuente (Scott, 2025, pp. 18–21)."
         },
         {
           "type": "code",
@@ -112,11 +112,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Aquí elegimos STATIC para estudiar un producto estático y una dependencia local controlada. No es una regla de que todas las bibliotecas deban ser estáticas: CMake admite otras clases de biblioteca y otras decisiones según el proyecto (Scott, 2025, pp. 18–19, 23). El nombre del archivo de biblioteca varía con la plataforma; utilizaremos el nombre del objetivo al describir la relación, sin adivinar un sufijo o una ruta del producto."
+          "text": "Elegimos STATIC para practicar una biblioteca estática local cuyo código y construcción forman parte de este proyecto. Existen otras clases de biblioteca; la elección depende de lo que necesite cada proyecto y no convierte esta práctica en una regla para todas las bibliotecas (Scott, 2025, pp. 18–19, 23).\n\nEl nombre físico del archivo generado sigue las convenciones de la plataforma y puede incluir una extensión o un prefijo. Para describir su uso en CMake emplearemos el nombre del objetivo faltantes. Así la relación se mantiene expresada mediante el elemento que CMake conoce y construye, sin escribir a mano la ruta de su producto."
         },
         {
           "type": "paragraph",
-          "text": "faltantes.cpp y main.cpp son unidades de traducción distintas. La cabecera se lee dentro de ellas. Puedes listar una cabecera entre los archivos de un objetivo para organizar el proyecto; eso no hace que una cabecera de declaraciones se convierta en otra unidad compilable ni sustituye la fuente que contiene la definición (Scott, 2025, p. 179). En este ejemplo sólo enumeramos las fuentes .cpp en add_library y add_executable."
+          "text": "El compilador procesa cada archivo .cpp con el contenido que incorporan sus inclusiones. El texto resultante que se traduce por separado se llama unidad de traducción. En este proyecto hay dos: la que parte de faltantes.cpp y la que parte de main.cpp. Ambas incorporan la declaración de la misma cabecera.\n\nTambién es posible listar una cabecera entre los archivos de un objetivo, por ejemplo para que aparezca en la lista del proyecto de un editor. Eso no convierte esta cabecera de declaraciones en otro cuerpo compilado ni reemplaza la implementación que debe traducirse (Scott, 2025, p. 179). En estas descripciones enumeramos los .cpp en add_library y add_executable."
         },
         {
           "type": "multiple_choice",
@@ -162,7 +162,7 @@
         },
         {
           "type": "paragraph",
-          "text": "target_link_libraries(revisar PRIVATE faltantes) relaciona el objetivo del cliente con la biblioteca local. Al construir revisar, las reglas contemplan la construcción de faltantes cuando sea necesaria y aportan su producto al enlace del ejecutable. Es una dependencia entre objetivos, no un nombre de función ni una instrucción de #include (Scott, 2025, pp. 20–21)."
+          "text": "target_link_libraries(revisar PRIVATE faltantes) declara cómo utiliza el ejecutable la biblioteca. Lee sus argumentos por su función:\n\nrevisar es el objetivo cuyo enlace estamos describiendo.\nPRIVATE indica que esta relación se aplica al propio objetivo revisar.\nfaltantes es el objetivo de biblioteca cuyo producto necesita ese enlace.\n\nComo faltantes se construye dentro del proyecto, CMake prepara una dependencia: antes de enlazar revisar debe estar disponible la biblioteca actualizada. Su archivo se aporta al enlace para disponer de la definición llamada por el cliente. La instrucción describe una relación de construcción; no llama a la función C++ ni sustituye la inclusión de la cabecera (Scott, 2025, pp. 20–21)."
         },
         {
           "type": "code",
@@ -171,11 +171,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada objetivo solicita por separado un mínimo de C++20 mediante cxx_std_20 y conserva CXX_EXTENSIONS OFF, como en la práctica anterior. Ese mínimo no exige usar exactamente C++20: un modo C++23 también lo satisface. CMake combina los requisitos y aplica el estándar más exigente que corresponda (Scott, 2025, pp. 216–218). set_target_properties admite aquí los dos nombres antes de PROPERTIES: la propiedad se aplica a ambos.\n\nPRIVATE indica el alcance de la relación que estamos estableciendo para revisar. No es el acceso private de una clase de C++; no promete que otros archivos desaparezcan o que una biblioteca estática nunca influya en una cadena de enlace. Los requisitos de uso y sus otros alcances se estudiarán cuando trabajemos cadenas de objetivos (Scott, 2025, pp. 180–181)."
+          "text": "Cada llamada a target_compile_features nombra un objetivo, aplica con PRIVATE el requisito a su compilación y solicita cxx_std_20. En esta descripción se declara por separado para faltantes y para revisar. Pide un modo de lenguaje C++20 o posterior: C++23 también puede satisfacer ese mínimo. CMake combina este requisito con los demás que correspondan y conserva el más exigente (Scott, 2025, pp. 216–218).\n\nEl mínimo del modo no certifica por sí solo que el compilador implemente todas las características concretas de C++20. Las fuentes todavía tienen que compilarse; una característica no admitida puede producir su diagnóstico al traducir el código que la utiliza.\n\nset_target_properties recibe aquí faltantes y revisar antes de PROPERTIES. Esos son los dos objetivos que modifica. Después aparece el par CXX_EXTENSIONS OFF: solicita el modo sin extensiones propias del compilador, cuando éste distingue esos modos. El estándar mínimo y las extensiones son decisiones diferentes.\n\nPRIVATE es una palabra de CMake que expresa el alcance de una relación o de un requisito. No determina qué funciones puede llamar un archivo C++. Aquí basta seguir su efecto sobre estos dos objetivos; las reglas adicionales de uso y enlace entre cadenas de bibliotecas se estudiarán con esos proyectos (Scott, 2025, pp. 180–181)."
         },
         {
           "type": "paragraph",
-          "text": "Pedir construir revisar es suficiente para construir las dependencias declaradas que necesite. No hay que ejecutar primero una compilación manual de cada .cpp. Esto no promete un orden fijo entre las compilaciones independientes: la herramienta puede coordinarlas en paralelo. El enlace del ejecutable sí necesita los productos que utiliza."
+          "text": "Al pedir construir revisar, la herramienta incluye el trabajo que necesita para obtener sus productos y los de sus dependencias declaradas. No necesitas compilar primero a mano cada .cpp.\n\nLa traducción de main.cpp y la de faltantes.cpp pueden realizarse de forma independiente e incluso en paralelo. El archivo de biblioteca debe estar disponible antes del enlace que lo utiliza. Por eso la dependencia expresa qué producto necesita otro paso, sin imponer una única secuencia para todas las compilaciones del proyecto."
         },
         {
           "type": "multiple_choice",
@@ -221,7 +221,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor de código conserva las tres fuentes C++ válidas, pero su descripción CMake omite la relación entre revisar y faltantes. No falta la declaración de la función. Primero predice la fase que podrá detectar esta omisión; después configura, construye y lee los diagnósticos antes de cambiar un archivo."
+          "text": "El editor siguiente conserva los tres archivos C++ válidos: la cabecera, la implementación y el cliente. Su CMakeLists.txt crea los dos objetivos, pero omite la relación que permite a revisar utilizar el producto de faltantes.\n\nPrimero responde al puzzle sobre la fase que detectará esa omisión. Después utiliza «Configurar y generar» y «Construir objetivo» sin cambiar todavía los archivos. Lee qué fase terminó y qué diagnóstico aparece: tener una declaración disponible y disponer de su definición al formar el ejecutable son necesidades distintas."
         },
         {
           "type": "multiple_choice",
@@ -242,7 +242,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de Windows, CMake prepara reglas para Ninja y el compilador MSVC. El perfil de la app solicita C++23; el mínimo cxx_std_20 del proyecto sigue siendo compatible. Conserva el diagnóstico real: su redacción puede variar. Busca la fase de construcción y la referencia a faltan_unidades; no memorices un número de línea ni una frase exacta de un compilador.\n\nRepara sólo la relación de construcción, conservando cabecera, implementación, llamadas, cxx_std_20 y CXX_EXTENSIONS OFF. Configura de nuevo porque cambió CMakeLists.txt y usa «Compilar, ejecutar y comprobar» para revisar las tres llamadas: 3:0:0, sin salto final. La reparación debe aportar faltantes al enlace mediante la dependencia del objetivo, sin incluir el .cpp en main ni copiar allí la función."
+          "text": "En el editor de Windows, CMake prepara reglas para Ninja y el compilador MSVC. El perfil de la app solicita el modo C++23, compatible con el mínimo cxx_std_20 de esta descripción. Lee el diagnóstico que realmente obtengas y busca la referencia a faltan_unidades y el paso que falló; la frase exacta o su número de línea pueden variar.\n\nRepara sólo la relación de construcción. Conserva la cabecera, la implementación, las llamadas y los requisitos cxx_std_20 y CXX_EXTENSIONS OFF. La biblioteca faltantes debe participar en el enlace de revisar mediante la dependencia entre objetivos; no incluyas el .cpp en main ni copies allí la función.\n\nTras cambiar CMakeLists.txt, pulsa «Configurar y generar» para preparar las reglas de esa descripción. Después utiliza «Compilar, ejecutar y comprobar». Las tres llamadas conservadas deben producir 3:0:0, sin salto final. Comprueba también en la descripción qué relación aporta el producto de la biblioteca al ejecutable."
         },
         {
           "type": "cpp_compiler",
@@ -285,7 +285,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La relación entre objetivos aporta el producto de la biblioteca al enlace del cliente. Incluir el .cpp dentro de main o copiar la función modificaría la organización que este ejercicio debía conservar; coincidir en stdout no bastaría para acreditar ese criterio."
+          "text": "La reparación mantiene la implementación en su biblioteca y utiliza ese producto al enlazar el cliente. Revisa tanto la relación declarada como la salida obtenida.\n\nIncluir el .cpp dentro de main o copiar allí la función podría proporcionar otra organización capaz de producir texto. No cumpliría la tarea de construir y utilizar los dos objetivos acordados. Coincidir en stdout comprueba los caracteres de esa ejecución; no demuestra por sí solo qué organización de construcción los obtuvo."
         },
         {
           "type": "paragraph",
@@ -301,7 +301,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para contrastar la reparación de tu descripción CMake, la descripción de referencia de la página 4 incluye target_link_libraries(revisar PRIVATE faltantes). Son válidos otros órdenes de instrucciones que respeten la creación de cada objetivo antes de aplicarle requisitos. La solución debe mantener los papeles acordados: implementación en faltantes y cliente en revisar."
+          "text": "La descripción de referencia de la página 4 contiene target_link_libraries(revisar PRIVATE faltantes). Esa relación aporta el producto de la implementación al cliente, manteniendo el cuerpo en la biblioteca faltantes y las llamadas en revisar.\n\nNo es necesario copiar una disposición textual única de las instrucciones. Debes crear cada objetivo antes de aplicarle sus requisitos y conservar los archivos y la dependencia que definen sus funciones en el proyecto. Esa es la relación que permite juzgar tu reparación de CMakeLists.txt."
         },
         {
           "type": "paragraph",
@@ -322,7 +322,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de responder la predicción, utiliza el nuevo editor de esta página para construir revisar y ejecutar la revisión alterada. La descripción ya conserva la dependencia correcta; el cuerpo de la biblioteca es la única diferencia respecto del proyecto de referencia. No necesitas regresar al editor de la página anterior."
+          "text": "El editor de esta página contiene la revisión alterada y una descripción que ya declara la dependencia correcta. Construye revisar y ejecuta ese proyecto para contrastar la predicción. La diferencia está en el cuerpo de la función de faltantes.cpp; mantén identificada esa fuente al interpretar el resultado."
         },
         {
           "type": "multiple_choice",
@@ -343,7 +343,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La herramienta puede actualizar sólo los productos afectados; no necesita recompilar siempre todos los archivos. La revisión alterada y la reparación siguiente tienen cada una su propio proyecto: atribuye la salida a las fuentes y al objetivo que acabas de construir."
+          "text": "Cuando se reutiliza un directorio de construcción, la herramienta puede actualizar sólo los productos afectados por un cambio. Por ejemplo, cambiar la implementación requiere obtener de nuevo el código correspondiente, actualizar la biblioteca y enlazar el cliente con ese producto; no implica que siempre deban traducirse otra vez todas las fuentes que permanecieron iguales.\n\nEn estas actividades la revisión alterada y la reparación siguiente disponen cada una de su propio proyecto. Atribuye cada salida a sus archivos y al objetivo que acabas de construir, aunque los nombres de los archivos y del ejecutable se repitan."
         },
         {
           "type": "heading",
@@ -449,7 +449,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente editor de código ya conserva la dependencia correcta. Esta vez faltantes.cpp contiene un error sintáctico intencional. Configura y construye revisar sin editar primero. Identifica qué archivo y qué fase explican el fallo; compáralo con la dependencia ausente de la página 5.\n\nRepara únicamente la sintaxis, conservando función, llamadas y cantidades. Construye revisar, ejecuta y comprueba 3:0:0, sin salto final y con retorno 0."
+          "text": "Este editor conserva la relación correcta entre revisar y faltantes, pero contiene un error sintáctico intencional en faltantes.cpp. Configura y solicita construir revisar antes de editarlo. En el registro identifica el archivo señalado y si el fallo ocurrió al traducir C++ o al enlazar productos.\n\nCompáralo con la práctica de la dependencia ausente: aquí la relación existe, pero la fuente de la biblioteca debe poder compilarse para obtener su producto. Repara sólo la sintaxis y conserva la función, sus cantidades, la cabecera, las llamadas y CMakeLists.txt. Reconstruye revisar; después ejecuta y comprueba 3:0:0, sin salto final y con retorno 0."
         },
         {
           "type": "cpp_compiler",
@@ -509,7 +509,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Configurar una descripción válida no garantiza que cada fuente C++ compile; enlazar tampoco demuestra por sí solo la corrección del comportamiento. La dependencia ya era correcta en este proyecto: el nuevo fallo procede del texto de la implementación."
+          "text": "En la práctica de la relación ausente, el cliente podía compilar pero su enlace no recibía la definición. En este proyecto la dependencia ya es correcta: el compilador se detiene al traducir el texto de faltantes.cpp, de modo que todavía no se obtiene su nuevo producto.\n\nConfigurar una descripción válida no demuestra que cada fuente C++ compile. Del mismo modo, compilar y enlazar un ejecutable no decide si sus cálculos cumplen el contrato. Sitúa cada diagnóstico y cada resultado en el paso que realmente los produjo."
         }
       ]
     },
@@ -521,7 +521,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La relación utiliza nombres de objetivos. Los archivos describen entradas; el nombre de proyecto agrupa la descripción. No podemos sustituir uno por otro sólo porque algunas prácticas hayan usado nombres parecidos. Conserva esta distinción al leer un proyecto distinto."
+          "text": "Distingue los nombres por dónde se utilizan. Los argumentos de add_library y add_executable identifican objetivos y sus archivos de entrada. project da nombre al proyecto. target_link_libraries relaciona un objetivo con el producto de otro.\n\nEsos papeles se conservan aunque los nombres cambien. El fragmento del puzzle utiliza una fuente de implementación, una biblioteca y un cliente con nombres distintos de los anteriores. Para completarlo, busca qué objetivo proporciona la implementación que necesita el enlace, sin deducirlo del nombre del archivo o del proyecto."
         },
         {
           "type": "fill_code",
@@ -549,11 +549,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto Pases tiene una función admitir: acepta cuando puntos es mayor o igual que minimo. Ambos argumentos admiten enteros entre 0 y 20, inclusive. regla.h declara la función, regla.cpp la define y acceso.cpp contiene main. Todos los archivos están juntos. El cliente imprime los casos (12,8), (8,8) y (5,8) en ese orden, separados por :, sin salto final; calcula la salida antes de construir."
+          "text": "El proyecto Pases utiliza otra función: admitir devuelve verdadero cuando puntos es mayor o igual que minimo. Ambos argumentos son enteros entre 0 y 20, inclusive. El cliente debe conservar esa regla de admisión.\n\nregla.h contiene la declaración.\nregla.cpp contiene la definición.\nacceso.cpp contiene main y realiza las llamadas.\n\nTodos esos archivos están juntos en el directorio de fuentes. El cliente consulta (12,8), (8,8) y (5,8), en ese orden, y separa sus resultados con : sin añadir salto final. Calcula el resultado de cada llamada desde esta regla antes de construir el proyecto."
         },
         {
           "type": "paragraph",
-          "text": "Escribe CMakeLists.txt desde el espacio vacío. Define la biblioteca estática regla con regla.cpp y el ejecutable portero con acceso.cpp, relaciona portero con regla y declara cxx_std_20 y CXX_EXTENSIONS OFF en ambos objetivos. Declara CMake mínimo 3.20 y C++ habilitado mediante CXX. El editor de código pide portero como objetivo; el proyecto Pases y el archivo acceso.cpp cumplen otros papeles. Configura, construye portero y comprueba las tres llamadas conservadas. Si falla una fase, identifica el archivo u objetivo del diagnóstico y corrige sólo lo necesario dentro del mismo intento."
+          "text": "Completa el CMakeLists.txt vacío del editor con una descripción que cumpla estos requisitos:\n\nAdmitir CMake desde la versión 3.20 y nombrar el proyecto Pases, habilitando C++ mediante CXX.\nCrear la biblioteca estática regla a partir de regla.cpp.\nCrear el ejecutable portero a partir de acceso.cpp.\nAplicar cxx_std_20 y CXX_EXTENSIONS OFF a ambos objetivos.\nRelacionar portero con el producto de regla para su enlace.\n\nEscribe las instrucciones con los nombres que corresponden a cada papel. El editor ya solicita portero como objetivo: Pases es el proyecto y acceso.cpp es un archivo de entrada.\n\nConfigura, construye ese objetivo y comprueba la ejecución de las tres llamadas conservadas. Si falla una fase, localiza el archivo, objetivo o relación que señala su diagnóstico y corrige lo necesario en este intento, conservando las fuentes C++ proporcionadas."
         },
         {
           "type": "cpp_compiler",
@@ -596,7 +596,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una solución válida describe y usa la biblioteca pedida, conserva las fuentes y sus interfaces y cumple el comportamiento acordado. No exige copiar un orden superficial único de instrucciones."
+          "text": "Una solución válida debe declarar y utilizar la biblioteca pedida, mantener las fuentes y sus interfaces y obtener el comportamiento acordado. Revisa en tu CMakeLists.txt qué fuente pertenece a cada objetivo y cómo llega la biblioteca al enlace de portero.\n\nLa consola permite contrastar las llamadas de esa revisión. La descripción permite comprobar los objetivos y la dependencia solicitados. No se exige una única disposición superficial de líneas si se conservan esas relaciones y los demás requisitos."
         }
       ]
     },
@@ -638,7 +638,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las dos actividades siguientes conservan las fuentes de Pases y su propia descripción. La revisión estricta y la recuperación inclusiva se comprueban por separado, sin regresar al editor donde construiste la descripción. La función del proyecto de unidades faltantes no participa en este proyecto: no mezcles sus contratos ni sus productos."
+          "text": "Las dos actividades siguientes contienen cada una las fuentes de Pases y su propia descripción CMake. Una permite observar la revisión estricta; la otra pide recuperar la comparación inclusiva. Conservan los mismos objetivos y la misma relación de enlace, de modo que el contraste se refiere al cálculo de admitir.\n\nLa función de unidades faltantes pertenece al otro proyecto. Sus argumentos, su contrato y sus productos no se utilizan para decidir el resultado de estas llamadas de admisión."
         },
         {
           "type": "heading",
@@ -2399,6 +2399,126 @@
         "id": "block_0008_0004",
         "beforeSha256": "8b09b03a083895a73c16d0026bc2c094fb5b8b62dc0f4ae6929620d2da780e42",
         "afterSha256": "2d6020ae8c17f3fc21edb5c26c5d907faa2913c202f2ad0a477555f83b47364b"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "3898c56efeebf5b7117ca12a055aab845ae67ffd04cc2716ae6d604f3a23d03e",
+        "afterSha256": "ce3e70181b6b8f20a335650a7823508b351d68beaced872a8629c1b8a3d69ca2"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "c6a9571728ef8ea373b5cb13722105e0a8852789121211a742da0d6ca37a33e4",
+        "afterSha256": "571466a08cb904e9a2810ec6bf44023ec1f63fbaea11ff00002fb75f01ca95cf"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "743ed492f8f1f34a769dcd751243cfd6a4e0e39ab635e69247b6172333877736",
+        "afterSha256": "3edf4c8dddb70ea114f19b50ea316c4c669885eba3645905aa34c53af2f8357a"
+      },
+      {
+        "id": "block_0001_0008",
+        "beforeSha256": "87ad53d8377c0bc152443d20336010ad74e648e1b908d455c97139f5ad854c76",
+        "afterSha256": "8f4dd61af754a0a2597d611dce29dca1e25014b332e37cbd5f4362d54364ea64"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "28cbbb6a7042865babf6e25b3a0b243d39dcb61ce1b660af5e78798385bcf678",
+        "afterSha256": "dcbbfcf24e32a50867d198d70d0cd75edb4b081d6ed13b40edf34d50429a51b7"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "07e92ee33b4bd31e7a2765bfbeedaba2a6fbc379c04601849687dc5550e03f49",
+        "afterSha256": "f9758a856c8d03a53d8ce5adf8338644cbdb75dcf1fe91702dd219875d21a13d"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "def4dde554ef4c55aa0298d992ca0d13dfce0aa0f191b4d85e7fc3784333e87d",
+        "afterSha256": "b8f81543f2671f4ab20d9ad01da409857ccd06d288e0f77aac6e1193c78b0896"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "44753abb8718e330b46a00be9ae0ac023e0d20be040c55eb70d774aa965c22a2",
+        "afterSha256": "2a7b4b9456a76b12cfc7cd51401d52e54dcc89dcf29cb494a593185d3790912c"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ec1e811508f298c3e5d00114a6ca04135361b3d6964dcc7eb1e9ecbb1c3fcc18",
+        "afterSha256": "5eeea5e4c20fda2c737b23d9f956349d148e96b148ef2e57ac0d10d27b5ee206"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "34511fdbf7c8f791652a3d8418882483dbba2bf9c384386504d095dfff680ff6",
+        "afterSha256": "31914e0f2622be212bfdebacde6501a363b574a083291faa56b741eb13c2d154"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4a3f42edba6e1b9ce8aec075d1f4a6dcebeade834a2302ae54b5ec6670d4067c",
+        "afterSha256": "485bf1cc40b71cbefc18022a37b4e76ff7a9898c276939e2349bb8cd43c379b5"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "1b3996660ddb685637c429faa5c88612b5fd207564ba51ab82e75d3ad518a1bf",
+        "afterSha256": "49b17c746f4b79e7c80e7136da68a26db9378915ee4e12ae31c21ba0662f52f3"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "9d5b4e0210c47bec3988cd6f67922def0f88d8e61d18c084dc2c361561a9ce3e",
+        "afterSha256": "21e2bb64b97444c8d3e3360a7d138c5bc7076550178facf709e07bfd427edb3d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f18decf7013040ea9485ab20ebfacb7a59d4f2a9931a52ac70581b3b363f3f80",
+        "afterSha256": "14057d985bc9193cda39f7824395e9968e5ea8d9d1252a2ab265900eceaf1ad8"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "c773ae2dbe970313c85cf0ae905839ede6bc1ef401365b236477308a5520492a",
+        "afterSha256": "01d5758bad6413a0ab59340e2eab043875ba1bf23aadf804319560efb3f73d8c"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "38531e53aec71cfe1692b286ea74c03ad67785d285865be01c717979188c725c",
+        "afterSha256": "053dff671f1855351695daada49202e1a35ae48f34719696aafc186c5bea6f7f"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "1a7cbc58befdb29af0075979f7d6b9ba9faaec3bee1a506d7e7d4df8a2bcb8ee",
+        "afterSha256": "a446ffb3a263b082e02e7b0802117ebb67a7915c7726b463ec6e9259bdac6768"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "86a6683437d00fa34c2651417eb7d120a84fa4b9d1091f58ad9717350449b159",
+        "afterSha256": "63477efe995b4b2885732f62ae8d94a4b94d0a7ea3d87954cc1ecd5eacdfcde2"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ce3d480e3bc4c43600450e309c7547ffae4a2ffa155b7f7c8c79f359f16c0a78",
+        "afterSha256": "e6c27fc8c8c0ab80abe395f5c0b804dcec299699c8c5b5b4e0450a77e3988128"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "7ff04d0d52be85811f6028c63a791f28774527c42444406d5699592d6d58ca11",
+        "afterSha256": "bd3b79f159a06f3c35f0ca1eafc3a310ced80f2e947f5f035f9c3224580ea164"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "9609b48bfbaa993b8466d553cf5c994278cc3334a797a56ac9cfd59e469a39d9",
+        "afterSha256": "257e06143725a3311c79caedbc93aa47d92984506b9ff35005d8a3193f909952"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "2d6020ae8c17f3fc21edb5c26c5d907faa2913c202f2ad0a477555f83b47364b",
+        "afterSha256": "182cb56701c9e177d572678a5bdeb741572d072ee55e66597530723328ee5e13"
+      },
+      {
+        "id": "block_0009_0006",
+        "beforeSha256": "2f2ead1a82590586ed0b6bd72c3f239b8d382ab5ec3080a470057a1c31b02be2",
+        "afterSha256": "dca93155e243474e18796bbf2696ed78e837645265b1e47bad1e2703d46bfc6c"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3edf4c8dddb70ea114f19b50ea316c4c669885eba3645905aa34c53af2f8357a",
+        "afterSha256": "49ed82523af86b30594cbef01fffc77fdbdb473e818e1e3159b2cbb76d57f218"
       }
     ]
   },
@@ -2414,7 +2534,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "8ac9a37182f58b2db819ab129cea48725a783ce48fb110b1fb9946e1d0ecc4ca",
+        "sourceSha256": "8cf6b8cb4f20b8c9af763716471b1ec1370924d368c7a145a09f3558669c0f49",
         "spans": []
       },
       {
@@ -2466,14 +2586,14 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "cbf164c9ecfdc08fcf861b83ea352652acc8ba937e5c9ccfe78e25400e47fc2e",
+        "sourceSha256": "f01afa1da98b0a1eea4ba4d4521b9c9f086f0c38b11472359a9266ce24c9768a",
         "spans": [
           {
-            "start": 314,
-            "end": 315,
+            "start": 480,
+            "end": 481,
             "text": ":",
             "role": "output",
-            "reading": "characters"
+            "reading": "natural"
           }
         ]
       },
@@ -2526,32 +2646,39 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "bdf79c17130f2afe97463786264b91ac82e291a20f3f4aa623289e808db3a6d6",
+        "sourceSha256": "9b4723a037a22098456dc63dca78cd4eb673c9adea9cdebf4f98add7264ac618",
         "spans": [
           {
-            "start": 70,
-            "end": 81,
+            "start": 72,
+            "end": 83,
             "text": "faltantes.h",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 126,
+            "start": 175,
+            "end": 188,
             "text": "faltantes.cpp",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 159,
-            "end": 167,
+            "start": 260,
+            "end": 268,
             "text": "main.cpp",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 425,
-            "end": 462,
+            "start": 491,
+            "end": 495,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 705,
+            "end": 742,
             "text": "(Kernighan & Pike, 1999, pp. 103–106)",
             "role": "citation",
             "reading": "natural"
@@ -2603,7 +2730,7 @@
       {
         "block": "block_0001_0008",
         "path": "/text",
-        "sourceSha256": "27fa9bafbc07a066065cf855915030d57406c02ddab8c294d50cd2072500736c",
+        "sourceSha256": "483db661d16322dd89f273c2b77928f3ee188b188d1eaec56fca0146d27b6963",
         "spans": [
           {
             "start": 12,
@@ -2619,8 +2746,15 @@
             "role": "cpp"
           },
           {
-            "start": 124,
-            "end": 137,
+            "start": 57,
+            "end": 68,
+            "text": "faltantes.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 213,
             "text": "faltantes.cpp",
             "role": "data",
             "reading": "technical"
@@ -2715,7 +2849,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "f01f6889dce3156ac5247be9816a8313d7d136dac01163d8fbb7229e29b18891",
+        "sourceSha256": "c68aa0812d75ebcffe6a526a2b64a3e673daa04c824ad1a83cc7d699e6f59a97",
         "spans": [
           {
             "start": 0,
@@ -2725,29 +2859,57 @@
             "reading": "technical"
           },
           {
-            "start": 94,
-            "end": 103,
+            "start": 134,
+            "end": 143,
             "text": "faltantes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 297,
-            "end": 304,
-            "text": "revisar",
+            "start": 211,
+            "end": 217,
+            "text": "STATIC",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 306,
+            "start": 325,
             "end": 338,
+            "text": "faltantes.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 414,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 674,
+            "end": 706,
             "text": "add_executable(revisar main.cpp)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 370,
-            "end": 394,
+            "start": 738,
+            "end": 745,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 759,
+            "end": 767,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 783,
+            "end": 807,
             "text": "(Scott, 2025, pp. 18–21)",
             "role": "citation",
             "reading": "natural"
@@ -2757,67 +2919,81 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "93e7ee0caeafebce240bfe1c9e0c4d18c7ea33c09c426c455d6a4e8f778aaccd",
+        "sourceSha256": "af85a4566092036601e3fe707d1f1e828e058b854203bac88889e56bb4e3fc7c",
         "spans": [
           {
-            "start": 14,
-            "end": 20,
+            "start": 9,
+            "end": 15,
             "text": "STATIC",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 263,
+            "start": 277,
+            "end": 305,
             "text": "(Scott, 2025, pp. 18–19, 23)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 496,
+            "end": 505,
+            "text": "faltantes",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "043f289060621b23e61259617f008ba29f0aab8129a393ec229b17702b916729",
+        "sourceSha256": "b5a3f8c6c53b328c64c162436996834a63139802b922be4a0d2e27142461ea27",
         "spans": [
           {
-            "start": 0,
-            "end": 13,
-            "text": "faltantes.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 16,
-            "end": 24,
-            "text": "main.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 323,
-            "end": 344,
-            "text": "(Scott, 2025, p. 179)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 390,
-            "end": 394,
+            "start": 35,
+            "end": 39,
             "text": ".cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 398,
-            "end": 409,
+            "start": 210,
+            "end": 223,
+            "text": "faltantes.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 250,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 574,
+            "end": 595,
+            "text": "(Scott, 2025, p. 179)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 635,
+            "end": 639,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 643,
+            "end": 654,
             "text": "add_library",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 412,
-            "end": 426,
+            "start": 657,
+            "end": 671,
             "text": "add_executable",
             "role": "data",
             "reading": "technical"
@@ -3069,7 +3245,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "47d5b183d3f2540004caab5025b3d4728f050a38411bcf67e13638d78444006e",
+        "sourceSha256": "6d2b6f0faddf4dd8031a57c561befe46592c9dbd5ab59a97b677ae2632522728",
         "spans": [
           {
             "start": 0,
@@ -3079,28 +3255,50 @@
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 128,
+            "start": 135,
+            "end": 142,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 171,
-            "end": 180,
+            "start": 192,
+            "end": 199,
+            "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 254,
+            "end": 261,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 272,
             "text": "faltantes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 332,
-            "end": 340,
-            "text": "#include",
-            "role": "cpp"
+            "start": 343,
+            "end": 352,
+            "text": "faltantes",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 341,
-            "end": 365,
+            "start": 435,
+            "end": 442,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 699,
+            "end": 723,
             "text": "(Scott, 2025, pp. 20–21)",
             "role": "citation",
             "reading": "natural"
@@ -3110,87 +3308,116 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "f2c1d3e5e0c788f5f96e243fb17d93ec79f2d888fe66ff5ac61029b18cea844d",
+        "sourceSha256": "fbcd936cdefd792707a28a1f92d8307dcdcae9f9bfd7d63aa4702006b971de00",
         "spans": [
           {
-            "start": 49,
-            "end": 54,
-            "text": "C++20",
+            "start": 15,
+            "end": 38,
+            "text": "target_compile_features",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 74,
-            "text": "cxx_std_20",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 86,
-            "end": 104,
-            "text": "CXX_EXTENSIONS OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 173,
-            "end": 178,
-            "text": "C++20",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 188,
-            "end": 193,
-            "text": "C++23",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 295,
-            "end": 321,
-            "text": "(Scott, 2025, pp. 216–218)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 323,
-            "end": 344,
-            "text": "set_target_properties",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 382,
-            "end": 392,
-            "text": "PROPERTIES",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 427,
-            "end": 434,
+            "start": 70,
+            "end": 77,
             "text": "PRIVATE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 499,
-            "end": 506,
+            "start": 119,
+            "end": 129,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 189,
+            "text": "faltantes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 204,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 524,
-            "end": 531,
-            "text": "private",
-            "role": "cpp"
+            "start": 231,
+            "end": 236,
+            "text": "C++20",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 761,
-            "end": 787,
+            "start": 250,
+            "end": 255,
+            "text": "C++23",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 380,
+            "end": 406,
+            "text": "(Scott, 2025, pp. 216–218)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 526,
+            "text": "C++20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 671,
+            "end": 692,
+            "text": "set_target_properties",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 705,
+            "end": 714,
+            "text": "faltantes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 717,
+            "end": 724,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 734,
+            "end": 744,
+            "text": "PROPERTIES",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 828,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 986,
+            "end": 993,
+            "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1288,
+            "end": 1314,
             "text": "(Scott, 2025, pp. 180–181)",
             "role": "citation",
             "reading": "natural"
@@ -3200,21 +3427,35 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "f1cf90f0fedeb0db23503fac0cc51ff55a4911128b9b4da576e5bdc84bc7f6bd",
+        "sourceSha256": "00406c51dea5c1f64af8e3a99f6ab6c3bcc5fad15aefb410f6b8e07c97da50ef",
         "spans": [
           {
-            "start": 16,
-            "end": 23,
+            "start": 19,
+            "end": 26,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 158,
+            "start": 182,
+            "end": 186,
             "text": ".cpp",
             "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 214,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 236,
+            "text": "faltantes.cpp",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3446,18 +3687,25 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "b7b3e40ac7ba37910fca45451a4513a00e4bca73c973bac6e941011519a6ddd7",
+        "sourceSha256": "120e0cd9b6ee85e06a7a5a9f7b90326a3cde84e542710d000791c1a9c97ff809",
         "spans": [
           {
-            "start": 109,
-            "end": 116,
+            "start": 108,
+            "end": 122,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 191,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 128,
+            "start": 216,
+            "end": 225,
             "text": "faltantes",
             "role": "data",
             "reading": "technical"
@@ -3552,75 +3800,96 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "716b539730ad408e99ff56293bf00d194a6af8bacdeeb5813c6cfd8ef611fdfa",
+        "sourceSha256": "be76c18c228df4f43210f2d9ce4da5c793d07d4e426e24ec60ba24068709f198",
         "spans": [
           {
-            "start": 108,
-            "end": 113,
+            "start": 51,
+            "end": 56,
+            "text": "Ninja",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 121,
             "text": "C++23",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 125,
-            "end": 135,
+            "start": 148,
+            "end": 158,
             "text": "cxx_std_20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 279,
-            "end": 294,
+            "start": 246,
+            "end": 261,
             "text": "faltan_unidades",
             "role": "cpp"
           },
           {
-            "start": 456,
-            "end": 466,
+            "start": 448,
+            "end": 458,
             "text": "cxx_std_20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 469,
-            "end": 487,
+            "start": 461,
+            "end": 479,
             "text": "CXX_EXTENSIONS OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 522,
-            "end": 536,
-            "text": "CMakeLists.txt",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 608,
-            "end": 613,
-            "text": "3:0:0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 659,
-            "end": 668,
+            "start": 495,
+            "end": 504,
             "text": "faltantes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 732,
-            "end": 736,
+            "start": 537,
+            "end": 544,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 601,
+            "end": 605,
             "text": ".cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 740,
-            "end": 744,
+            "start": 609,
+            "end": 613,
             "text": "main",
             "role": "cpp"
+          },
+          {
+            "start": 655,
+            "end": 669,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 840,
+            "end": 845,
+            "text": "3:0:0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3640,24 +3909,24 @@
       {
         "block": "block_0004_0005",
         "path": "/text",
-        "sourceSha256": "ec9cd0708fbddb7e9932bb605060781fa13bc447aecd5c91e902982753651bc5",
+        "sourceSha256": "8a3be8e669b78629aa5fdd3348ed0453fb69eb281c063667a18f2d9fe121803c",
         "spans": [
           {
-            "start": 98,
-            "end": 102,
+            "start": 176,
+            "end": 180,
             "text": ".cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 113,
-            "end": 117,
+            "start": 191,
+            "end": 195,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 215,
-            "end": 221,
+            "start": 372,
+            "end": 378,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
@@ -3679,28 +3948,35 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "e09bc1cd7a11c00eaa61381838a9f18fec3325dd1c6b568db5631745c13610d7",
+        "sourceSha256": "b5b6a0d1fe32007ccbf23b32c3b245364e7acca12d8728bfcad3d39d353ce8ac",
         "spans": [
           {
-            "start": 107,
-            "end": 155,
+            "start": 53,
+            "end": 101,
             "text": "target_link_libraries(revisar PRIVATE faltantes)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 340,
-            "end": 349,
+            "start": 207,
+            "end": 216,
             "text": "faltantes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 363,
-            "end": 370,
+            "start": 235,
+            "end": 242,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 519,
+            "end": 533,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3782,14 +4058,21 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "b54a4809699f2105fb964e61581c3023744f41128f94c32e8983e0d95b2925f4",
+        "sourceSha256": "625bb4ba4595a7828d983bb2768670250726b7416034e9e85fb433a245ae7561",
         "spans": [
           {
-            "start": 90,
-            "end": 97,
+            "start": 123,
+            "end": 130,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 247,
+            "text": "faltantes.cpp",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3852,7 +4135,7 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "c8b85da436124f14a6b534ba3355751fed08327fecbec3295f9400a70ba647f1",
+        "sourceSha256": "76986cfb6151d96a83d5c0205560c701ecfe138892725ecf60b4cf81322430dc",
         "spans": []
       },
       {
@@ -3915,39 +4198,60 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "506500e94744186fc4551e1746b068ee2c2ea1e92c429e5db9e507f559b2f6b5",
+        "sourceSha256": "8096ffbc2b0613a2324ac3dd42dcc0f5d074442563b1bdbf143e7a01c50a4a35",
         "spans": [
           {
-            "start": 76,
-            "end": 89,
+            "start": 48,
+            "end": 55,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 67,
+            "text": "faltantes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 131,
             "text": "faltantes.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 161,
+            "start": 164,
+            "end": 171,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 374,
-            "end": 381,
+            "start": 549,
+            "end": 563,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 577,
+            "end": 584,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 403,
-            "end": 408,
+            "start": 614,
+            "end": 619,
             "text": "3:0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 440,
-            "end": 441,
+            "start": 651,
+            "end": 652,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -4070,8 +4374,16 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "e8c4b923f5931d73a1e0e78346fc8bd6e93faa2c929074111c466cfbbf47ad99",
-        "spans": []
+        "sourceSha256": "9d6a1c8d84e7522e57a6f00ececedada2b6d37dc3f6788572b01f1e92b699a60",
+        "spans": [
+          {
+            "start": 203,
+            "end": 216,
+            "text": "faltantes.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -4082,8 +4394,37 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "f6298b359de5698641ba52214c49db6f6ad42ca23f260e731bbfe730248070c9",
-        "spans": []
+        "sourceSha256": "56640056c87a6656ec46e0f5c6db9cf8c4039769cc6a44d88642a45f4f076171",
+        "spans": [
+          {
+            "start": 63,
+            "end": 74,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 91,
+            "text": "add_executable",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 148,
+            "text": "project",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 193,
+            "text": "target_link_libraries",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0002",
@@ -4170,7 +4511,7 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "54d83348fa867fb0cfc0ea991c5d1b4c1cf4333350f93f3b04270a6e57e5ea6e",
+        "sourceSha256": "887af2c575695fdecbf7546f69c7a74fc0d00d72cfcbe1ea6d4d634c655d5ecf",
         "spans": [
           {
             "start": 12,
@@ -4180,194 +4521,194 @@
             "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 43,
+            "start": 40,
+            "end": 47,
             "text": "admitir",
             "role": "cpp"
           },
           {
-            "start": 59,
-            "end": 65,
+            "start": 74,
+            "end": 80,
             "text": "puntos",
             "role": "cpp"
           },
           {
-            "start": 87,
-            "end": 93,
+            "start": 102,
+            "end": 108,
             "text": "minimo",
             "role": "cpp"
           },
           {
-            "start": 134,
-            "end": 140,
+            "start": 145,
+            "end": 151,
             "text": "0 y 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 153,
-            "end": 160,
+            "start": 214,
+            "end": 221,
             "text": "regla.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 181,
-            "end": 190,
+            "start": 247,
+            "end": 256,
             "text": "regla.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 213,
+            "start": 281,
+            "end": 291,
             "text": "acceso.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 223,
-            "end": 227,
+            "start": 301,
+            "end": 305,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 291,
-            "end": 297,
+            "start": 413,
+            "end": 419,
             "text": "(12,8)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 299,
-            "end": 304,
+            "start": 421,
+            "end": 426,
             "text": "(8,8)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 307,
-            "end": 312,
+            "start": 429,
+            "end": 434,
             "text": "(5,8)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 341,
-            "end": 342,
+            "start": 478,
+            "end": 479,
             "text": ":",
             "role": "output",
-            "reading": "characters"
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "06ea65c42d51d0026af81ddeea91fe97219b35ac3b0f3b5c94e8c3aa1701bc44",
+        "sourceSha256": "e94a95a083a44c3dc40a60dd1f56c6cd329a48fb775c4721ef44f3f84126e9d6",
         "spans": [
           {
-            "start": 8,
-            "end": 22,
+            "start": 12,
+            "end": 26,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 77,
-            "end": 82,
-            "text": "regla",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 87,
-            "end": 96,
-            "text": "regla.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 113,
-            "end": 120,
-            "text": "portero",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
             "start": 125,
-            "end": 135,
-            "text": "acceso.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 147,
-            "end": 154,
-            "text": "portero",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 159,
-            "end": 164,
-            "text": "regla",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 175,
-            "end": 185,
-            "text": "cxx_std_20",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 188,
-            "end": 206,
-            "text": "CXX_EXTENSIONS OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 248,
-            "end": 252,
+            "end": 129,
             "text": "3.20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 279,
-            "end": 282,
-            "text": "CXX",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 309,
-            "end": 316,
-            "text": "portero",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 344,
-            "end": 349,
+            "start": 152,
+            "end": 157,
             "text": "Pases",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 363,
-            "end": 373,
+            "start": 184,
+            "end": 187,
+            "text": "CXX",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 223,
+            "text": "regla",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 245,
+            "text": "regla.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 274,
+            "text": "portero",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 287,
+            "end": 297,
             "text": "acceso.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 418,
-            "end": 425,
+            "start": 307,
+            "end": 317,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 338,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 376,
             "text": "portero",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 401,
+            "text": "regla",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 514,
+            "end": 521,
+            "text": "portero",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 537,
+            "end": 542,
+            "text": "Pases",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 560,
+            "end": 570,
+            "text": "acceso.cpp",
             "role": "data",
             "reading": "technical"
           }
@@ -4404,8 +4745,23 @@
       {
         "block": "block_0008_0004",
         "path": "/text",
-        "sourceSha256": "f4630ed3a134415e1efcd9125778234008d2066edb380455431f2fd890b3f827",
-        "spans": []
+        "sourceSha256": "0473e000109a2a55f86765632e8e4eec38f5f71532712c2f34833ae7973c11ac",
+        "spans": [
+          {
+            "start": 156,
+            "end": 170,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 255,
+            "text": "portero",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0009_0000",
@@ -4556,14 +4912,27 @@
       {
         "block": "block_0009_0006",
         "path": "/text",
-        "sourceSha256": "2bd5457dcc0a740e6810eab2bd876592a6d35f26f6d3b8a74c68256641627826",
+        "sourceSha256": "388c30a6ef618619cfd27fb9616f815eec138a9a6c231c420bcdf9aaa9c8327b",
         "spans": [
           {
-            "start": 56,
-            "end": 61,
+            "start": 65,
+            "end": 70,
             "text": "Pases",
             "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 100,
+            "text": "CMake",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 313,
+            "text": "admitir",
+            "role": "cpp"
           }
         ]
       },

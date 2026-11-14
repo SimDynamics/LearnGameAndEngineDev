@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la práctica anterior, cabecera, implementación y cliente estaban en una misma carpeta. Ahora separaremos esos papeles. Queremos que un cliente pueda usar una biblioteca sin conocer la ubicación de su implementación ni añadir rutas por casualidad. Mantendremos las firmas, las guardas y la relación de enlace que ya conoces."
+          "text": "En la práctica anterior, la cabecera, la implementación y el cliente estaban en una misma carpeta. Ahora colocaremos cada parte en una carpeta distinta, conservando la misma función y sus llamadas.\n\nEl cliente necesita conocer la declaración de la función para poder llamarla. Esa declaración está en la cabecera. El cuerpo de la función seguirá en la implementación de la biblioteca y se incorporará mediante el enlace. Vamos a indicar qué necesita cada objetivo para construir su parte, sin escribir en el cliente la ubicación de la implementación. Mantendremos las firmas, las guardas de las cabeceras y la relación de enlace que ya conoces."
         },
         {
           "type": "code",
@@ -19,7 +19,7 @@
         },
         {
           "type": "paragraph",
-          "text": "include contiene la interfaz destinada al cliente; src contiene la implementación; app contiene el programa que la usa. Son nombres elegidos para este proyecto, no carpetas con poderes automáticos. CMake no deduce una ruta de búsqueda porque una carpeta se llame include. Tampoco compila una cabecera como una segunda definición de la función."
+          "text": "En este proyecto, cada carpeta tiene un papel concreto:\n\ninclude contiene la cabecera con la declaración que necesitan la biblioteca y el cliente.\nsrc contiene la implementación de la función.\napp contiene el programa que llama a esa función.\n\nEstos nombres organizan nuestros archivos. CMake no añade una ruta de búsqueda porque una carpeta se llame include. Debemos indicársela al objetivo que la necesita. La cabecera declara la función; no contiene una segunda definición de su cuerpo que deba compilarse por separado."
         },
         {
           "type": "multiple_choice",
@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Tanto entrega.cpp como main.cpp escribirán #include \"paquetes/entrega.h\". En este proyecto ninguno tiene esa cabecera junto a su propia fuente. Queremos proporcionar al compilador una raíz de búsqueda que, seguida del nombre paquetes/entrega.h, permita localizar el archivo real."
+          "text": "Tanto entrega.cpp como main.cpp escribirán #include \"paquetes/entrega.h\". Ninguno de esos archivos tiene la cabecera junto a él: el primero está en src y el segundo, en app.\n\nEl compilador necesita un directorio desde el cual buscar el nombre solicitado. Llamaremos raíz de búsqueda a ese punto de partida. Si empieza en include y continúa por paquetes/entrega.h, llega al archivo include/paquetes/entrega.h. Por eso necesitamos proporcionar include, conservando paquetes/entrega.h en la instrucción de inclusión."
         },
         {
           "type": "code",
@@ -74,7 +74,7 @@
         },
         {
           "type": "paragraph",
-          "text": "target_include_directories añade directorios de búsqueda para un objetivo ya definido. En los ejemplos de esta lección hay un solo CMakeLists.txt, situado en proyecto/. Una ruta relativa como include se interpreta respecto de ese directorio de fuentes; no respecto de la ubicación del .cpp ni del directorio separado de construcción (Scott, 2025, pp. 182–183)."
+          "text": "El comando target_include_directories indica los directorios donde el compilador debe buscar cabeceras al construir un objetivo ya definido.\n\nEn estos ejemplos hay un solo CMakeLists.txt, situado en proyecto/. Una ruta relativa como include se interpreta a partir de ese directorio de fuentes. CMake la convierte en la ruta correspondiente a proyecto/include. No la interpreta a partir de la carpeta del .cpp ni del directorio separado de construcción (Scott, 2025)."
         },
         {
           "type": "code",
@@ -83,7 +83,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El primer argumento nombra el objetivo. El alcance PUBLIC expresa quién recibe el requisito; lo estudiaremos enseguida. El último argumento es un directorio, no una cabecera ni un archivo .cpp. Este curso mantiene un mínimo de CMake 3.20 y usa este comando compatible. No lo presentamos como la única forma actual de organizar cabeceras: las herramientas más recientes ofrecen mecanismos adicionales (Scott, 2025, p. 182)."
+          "text": "Lee los argumentos de esta llamada en su orden:\n\npreparacion es el objetivo al que damos el requisito.\nPUBLIC indica quién utiliza la ruta: el propio objetivo y los objetivos que declaran usarlo. En la página siguiente distinguiremos esos dos usos.\ninclude es el directorio donde comienza la búsqueda. Aquí se proporciona un directorio, no el nombre de una cabecera ni de un archivo .cpp.\n\nEste curso mantiene un mínimo de CMake 3.20, con el que podemos utilizar este comando. En versiones más recientes existen otras formas de organizar cabeceras; la elegida aquí permite practicar la búsqueda y su relación con cada objetivo sin añadir esos mecanismos todavía (Scott, 2025)."
         },
         {
           "type": "multiple_choice",
@@ -131,11 +131,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El objetivo preparacion compila entrega.cpp, que incluye su interfaz. El objetivo medir compila main.cpp, que incluye la misma interfaz. Son compilaciones de objetivos distintos. Dar una ruta sólo a preparacion no la convierte en una opción general para todos los objetivos del proyecto."
+          "text": "Sigue las dos compilaciones por separado:\n\npreparacion compila entrega.cpp. Esa fuente incluye la cabecera para que la definición coincida con la declaración.\nmedir compila main.cpp. Esa fuente incluye la misma cabecera para conocer la función que va a llamar.\n\nAmbas necesitan encontrar el mismo archivo, pero pertenecen a objetivos distintos. Una ruta aplicada sólo a la compilación de preparacion no se convierte automáticamente en una ruta para la compilación de medir."
         },
         {
           "type": "paragraph",
-          "text": "En target_include_directories, PRIVATE aplica la ruta a la compilación del propio objetivo. INTERFACE la publica para los objetivos que lo consumen, sin aplicarla a su propia compilación. PUBLIC reúne ambos efectos: el objetivo utiliza la ruta y la publica como requisito para sus consumidores (Scott, 2025, pp. 182–183).\n\nEn este proyecto, entrega.cpp necesita encontrar la cabecera al compilar preparacion y main.cpp la necesita al compilar medir. Si usáramos INTERFACE include en preparacion, su propio entrega.cpp seguiría sin recibir esa búsqueda. PUBLIC include cubre ambas necesidades. El cliente recibe ese requisito cuando declara su relación con la biblioteca; no tiene que repetir la ruta."
+          "text": "Una biblioteca puede necesitar una ruta al compilar sus propias fuentes y también necesitar que sus clientes reciban esa ruta al compilar las suyas. Esa segunda necesidad forma parte de sus requisitos de uso: la información que debe recibir otro objetivo para utilizarla.\n\nEn target_include_directories, las palabras de alcance distinguen estos efectos:\n\nPRIVATE aplica la ruta a la compilación del propio objetivo, sin publicarla para sus consumidores.\nINTERFACE publica la ruta para los objetivos que lo utilizan, sin aplicarla a la compilación del propio objetivo.\nPUBLIC reúne ambos efectos: el objetivo utiliza la ruta y la publica para sus consumidores (Scott, 2025).\n\nEn nuestro proyecto, entrega.cpp necesita encontrar la cabecera al compilar preparacion y main.cpp la necesita al compilar medir. Si diéramos INTERFACE include a preparacion, su propio entrega.cpp no recibiría esa búsqueda. PUBLIC include cubre las dos necesidades. Para recibir el requisito publicado, medir debe declarar que utiliza preparacion mediante su relación de enlace; no necesita repetir la ruta."
         },
         {
           "type": "code",
@@ -144,7 +144,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El PRIVATE de target_link_libraries se refiere a la relación que declara medir. No impide que medir reciba los requisitos públicos de preparacion. Tampoco confiere la ruta a un objetivo ajeno que no declare esa dependencia. Aquí usamos PUBLIC y PRIVATE para sus respectivos papeles; no son etiquetas de acceso de una clase C++ ni permisos para abrir archivos."
+          "text": "En target_link_libraries(medir PRIVATE preparacion), medir declara que utiliza la biblioteca preparacion. Al construir medir, recibe los requisitos públicos de esa biblioteca, incluida la búsqueda de cabeceras. PRIVATE indica que medir no presenta esa relación como parte de sus propios requisitos públicos; no impide que él reciba los de preparacion.\n\nPor tanto, cada alcance se interpreta en la llamada donde aparece. PUBLIC en target_include_directories publica la ruta de la biblioteca. PRIVATE en target_link_libraries conserva el uso de esa biblioteca dentro de medir. Ninguno de ellos da la ruta a otro objetivo que no declare esa dependencia. Tampoco son etiquetas de acceso de una clase C++ ni permisos para abrir archivos."
         },
         {
           "type": "multiple_choice",
@@ -190,7 +190,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función minutos_preparacion recibe un entero de 0 a 12. Con cero unidades debe devolver cero minutos; con una cantidad positiva debe devolver 3 + 2 * unidades. El dominio es una precondición de esta función; esta versión no comprueba ni promete un rechazo para argumentos externos a él. Cambiar las carpetas no cambia ese contrato."
+          "text": "La función minutos_preparacion recibe una cantidad entera de unidades entre 0 y 12, ambos incluidos. Su contrato distingue dos casos:\n\nCon cero unidades devuelve cero minutos.\nCon una cantidad positiva devuelve 3 + 2 * unidades: tres minutos iniciales y dos minutos por unidad.\n\nCorresponde a quien llama respetar ese intervalo de entrada; es la precondición de esta función. Esta versión no comprueba ni promete rechazar cantidades fuera del intervalo. Separar los archivos en carpetas no cambia esos requisitos ni esos resultados."
         },
         {
           "type": "code",
@@ -241,7 +241,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor de código la ruta de include se aplica sólo a preparacion. main.cpp incluye \"paquetes/entrega.h\" y no recibe ninguna otra ruta de búsqueda del proyecto. Antes de ejecutar, predice qué fuente necesita esa información. Conserva los archivos y el objetivo medir; configura y construye para contrastar tu predicción.\n\nExamina el diagnóstico de main.cpp y repara sólo el alcance de la ruta que necesita el cliente, conservando cabecera, función, llamadas y objetivo. Vuelve a configurar y utiliza «Compilar, ejecutar y comprobar». La salida debe conservar 0:5:13, sin salto final.",
+          "text": "En este editor, la ruta include está aplicada sólo a preparacion. main.cpp incluye \"paquetes/entrega.h\" y no recibe otra ruta de búsqueda del proyecto. Conserva los archivos y el objetivo medir.\n\nPrimero identifica qué fuente compila cada objetivo y qué cabecera intenta incluir. Configura el proyecto y solicita construir medir. Examina el diagnóstico para comprobar en qué fuente falta la búsqueda.\n\nEn CMakeLists.txt, repara sólo el alcance de la ruta que necesita el cliente para compilar main.cpp, conservando la cabecera, la función, las llamadas y el objetivo. Como has cambiado la descripción de CMake, vuelve a configurar. Después utiliza «Compilar, ejecutar y comprobar». La salida debe conservar 0:5:13, sin salto final.",
           "emphasis": [
             {
               "text": "repara sólo el alcance de la ruta"
@@ -289,7 +289,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La configuración puede terminar correctamente aunque main.cpp no encuentre una cabecera al compilar. Ese diagnóstico pertenece a la búsqueda de la declaración, mientras que una definición ausente se manifestaría después durante el enlace. La reparación de alcance conserva el contrato de la función."
+          "text": "Configurar y generar puede terminar correctamente aunque el compilador no encuentre una cabecera al procesar main.cpp. En ese caso falta la información necesaria para compilar esa fuente: todavía no se ha llegado a enlazar el ejecutable.\n\nUna definición ausente plantea otro problema. La fuente puede conocer la declaración y compilar; si después el enlace no recibe la implementación que utiliza la llamada, fallará en esa fase. Aquí hemos corregido la búsqueda de la cabecera sin modificar el contrato de la función."
         },
         {
           "type": "multiple_choice",
@@ -318,7 +318,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una descripción de referencia para el proyecto anterior es la siguiente. Conserva la relación de enlace y publica la ruta requerida por las dos fuentes. Usa los mismos requisitos mínimos de C++20 sin extensiones que ya practicamos; PRIVATE en target_compile_features regula el requisito de compilación de cada objetivo, no la búsqueda de cabeceras."
+          "text": "Esta descripción de referencia conserva la relación de enlace y proporciona la ruta a las dos fuentes que la necesitan. La biblioteca la utiliza al compilar su implementación y la publica para el cliente.\n\nPara ambos objetivos, cxx_std_20 solicita un modo del lenguaje C++20 o posterior. Ese mínimo no garantiza por sí solo que el compilador implemente cada característica concreta de C++20. CXX_EXTENSIONS OFF solicita un modo sin extensiones cuando el compilador distingue ese modo de otro con extensiones. PRIVATE en target_compile_features aplica el requisito a la compilación de cada objetivo; esa llamada no configura la búsqueda de cabeceras."
         },
         {
           "type": "code",
@@ -327,7 +327,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reparación de referencia conserva las llamadas originales y su contrato. El puzzle siguiente utiliza cero, el extremo superior y un caso interior; calcula esa revisión antes de construirla en la actividad independiente que sigue."
+          "text": "La reparación de referencia conserva las llamadas originales y el contrato. En el puzzle siguiente, las llamadas utilizan cero unidades, el máximo permitido y una cantidad interior al intervalo. Calcula cada devolución con la regla que corresponde y conserva el orden de las llamadas al formar la salida. Después ejecutarás esa variación en su propio editor."
         },
         {
           "type": "output_prediction",
@@ -416,7 +416,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva la descripción correcta y las llamadas de frontera, pero la implementación perdió el caso especial de cero. Repara sólo esa obligación del cálculo; conserva las rutas y los otros casos. Compila, ejecuta y comprueba."
+          "text": "Este editor conserva la descripción correcta de CMake y las llamadas de la variación anterior, pero la implementación perdió el tratamiento de cero unidades. El proyecto puede construir aunque esa llamada devuelva un resultado incorrecto.\n\nRepara el cálculo para que cero unidades vuelva a dar cero minutos. Conserva la regla para las cantidades positivas, las rutas y las llamadas. Compila, ejecuta y comprueba que la reparación satisface la salida completa solicitada."
         },
         {
           "type": "cpp_compiler",
@@ -467,7 +467,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el proyecto que sigue, entrega.h declara la función que usa main.cpp; ajuste.h contiene constantes que sólo necesita entrega.cpp. El cliente puede llamar a la función sin incluir esa cabecera interna ni conocer sus constantes.\n\nMantener fuera de la interfaz los detalles que el cliente no necesita permite cambiar la implementación sin obligarlo a adaptarse a esos detalles. La interfaz también debe proporcionar lo necesario para utilizarla o declarar sus dependencias (Kernighan & Pike, 1999, pp. 104–105). Aquí lo practicaremos con dos directorios de cabeceras y un cliente que sólo incluye la interfaz pública."
+          "text": "En el proyecto siguiente, entrega.h declara la función que usa main.cpp. La implementación de entrega.cpp calcula los minutos mediante constantes guardadas en otra cabecera, ajuste.h. main.cpp sólo llama a la función: no utiliza esas constantes y no necesita incluir ajuste.h.\n\nEsta separación permite cambiar cómo se realiza el cálculo sin obligar al cliente a conocer cada detalle interno. Una interfaz debe ocultar los detalles que sus usuarios no necesitan y proporcionar lo necesario para utilizarla, o declarar expresamente sus dependencias (Kernighan & Pike, 1999). Vamos a practicarlo con una ruta de cabeceras compartida y otra que sólo necesita la implementación."
         },
         {
           "type": "code",
@@ -476,7 +476,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La cabecera pública sólo declara minutos_preparacion y su contrato. No incluye ajuste.h. La implementación incluye ambas cabeceras y usa dos constantes internas: minutos_base vale 3 y minutos_por_unidad vale 2. Las constantes se conservan en interno/, separada de src/; por eso buscar ajuste.h en la carpeta del .cpp no basta en este proyecto."
+          "text": "La cabecera pública declara minutos_preparacion y expresa su contrato. No incluye ajuste.h. La implementación incluye ambas cabeceras y utiliza estas constantes internas:\n\nminutos_base vale 3 y aporta los minutos iniciales para una cantidad positiva.\nminutos_por_unidad vale 2 y aporta los minutos de cada unidad.\n\nEl archivo ajuste.h está en interno/, mientras que entrega.cpp está en src/. Buscar junto al archivo .cpp no permite encontrarlo. La compilación de la biblioteca necesita también una ruta que empiece en interno/."
         },
         {
           "type": "code",
@@ -485,7 +485,7 @@
         },
         {
           "type": "paragraph",
-          "text": "PUBLIC include proporciona esa búsqueda tanto a preparacion como a los clientes que declaran usarla. PRIVATE interno proporciona la búsqueda adicional sólo a la compilación de preparacion.\n\nSi en el futuro entrega.h incluyera ajuste.h, el cliente también necesitaría encontrar esa segunda cabecera. No podríamos conservar a la vez esa inclusión pública y la afirmación de que la ruta sólo es interna. La clasificación depende del uso real, no del nombre de la carpeta."
+          "text": "La llamada anterior da a cada ruta el alcance que corresponde a su uso:\n\nPUBLIC include permite a preparacion encontrar la cabecera pública y publica esa búsqueda para los clientes que declaran utilizar la biblioteca.\nPRIVATE interno añade a la compilación de preparacion la búsqueda de ajuste.h, sin transmitir esa ruta a los clientes.\n\nEsto funciona porque entrega.h no incluye ajuste.h. Si la cabecera pública llegara a incluirla, al procesar entrega.h el compilador del cliente también tendría que encontrar ajuste.h. Habría que revisar los requisitos publicados o la organización de las cabeceras. El nombre interno no convierte por sí solo una dependencia en privada: lo decide qué archivos la necesitan."
         },
         {
           "type": "multiple_choice",
@@ -531,7 +531,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor de código conserva el contrato y las llamadas iniciales, pero utiliza ajuste.h sólo dentro de la implementación. Configura, construye medir y comprueba la salida. La separación de carpetas y las dos clases de ruta deben conservar el comportamiento 0:5:13, sin salto final."
+          "text": "Este editor utiliza ajuste.h sólo en la implementación y conserva el contrato y las llamadas iniciales. Configura el proyecto y construye medir. Después ejecuta y comprueba la salida: debe seguir siendo 0:5:13, sin salto final.\n\nAsí comprobarás que separar las carpetas y proporcionar las rutas pública e interna conserva el comportamiento de las mismas llamadas."
         },
         {
           "type": "cpp_compiler",
@@ -578,7 +578,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La ruta interna y la pública sirven a fuentes distintas. Las actividades que siguen aíslan una dependencia de la implementación, una inclusión indebida del cliente y un cambio deliberado de contrato. Cada una dispone de su propio editor; no necesitas modificar y restaurar sucesivamente este proyecto ya comprobado.",
+          "text": "La ruta pública permite que entrega.cpp y main.cpp encuentren entrega.h. La ruta interna permite que entrega.cpp encuentre además ajuste.h. Las actividades siguientes separan tres problemas: una dependencia de la implementación que ya no se encuentra, una inclusión indebida del cliente y un cambio deliberado de contrato.\n\nCada problema dispone de su propio editor. No necesitas modificar y restaurar sucesivamente el proyecto que acabas de comprobar.",
           "emphasis": [
             {
               "text": "una dependencia de la implementación"
@@ -615,7 +615,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva ajuste.h y su uso en src/entrega.cpp, pero la biblioteca perdió su búsqueda interna. Configura y construye medir; localiza la cabecera y la fuente del diagnóstico. Repara sólo la ruta interna de preparacion, sin publicarla al cliente. La actividad termina cuando la implementación vuelve a construir y el cliente conserva 0:5:13 y retorno 0. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Este proyecto conserva ajuste.h y su uso en src/entrega.cpp, pero la biblioteca perdió su ruta de búsqueda interna.\n\nConfigura el proyecto y solicita construir medir. Localiza en el diagnóstico la fuente que no puede compilarse y la cabecera que intenta incluir.\nRepara sólo la búsqueda interna de preparacion, sin publicarla al cliente y sin mover archivos.\nVuelve a configurar y utiliza «Compilar, ejecutar y comprobar».\n\nLa reparación debe permitir construir la implementación y mantener en el cliente la salida 0:5:13, sin salto final, con código de terminación 0."
         },
         {
           "type": "cpp_compiler",
@@ -666,7 +666,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta revisión añade #include \"ajuste.h\" a app/main.cpp, que no utiliza ningún nombre de esa cabecera. Conserva la búsqueda privada de la biblioteca. Construye y localiza el diagnóstico del cliente; retira únicamente la inclusión experimental para recuperar la separación acordada. No publiques interno para esconder ese uso indebido. Tras reparar, el cliente debe construir, ejecutar 0:5:13 y terminar con 0. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "En esta revisión se añadió #include \"ajuste.h\" a app/main.cpp, aunque el cliente no utiliza ningún nombre de esa cabecera. La biblioteca conserva su búsqueda privada.\n\nConfigura el proyecto y construye medir. Localiza el diagnóstico que corresponde al cliente y retira únicamente la inclusión experimental de app/main.cpp. Conserva la ruta privada de la biblioteca; publicar interno haría posible ese uso innecesario, pero no recuperaría la separación que estamos practicando.\n\nDespués utiliza «Compilar, ejecutar y comprobar». El cliente debe volver a construir y mostrar 0:5:13, sin salto final, con código de terminación 0."
         },
         {
           "type": "cpp_compiler",
@@ -717,7 +717,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor independiente actualiza el comentario del contrato en entrega.h y minutos_base en interno/ajuste.h: cuatro minutos iniciales si la cantidad es positiva, dos por unidad y cero para cero. Conserva el cliente y las rutas pública y privada. Compila, ejecuta y comprueba las mismas tres llamadas."
+          "text": "Ahora el cambio solicitado afecta al comportamiento, no a las rutas. En este editor independiente, cambia a cuatro los minutos iniciales para cantidades positivas. Mantén dos minutos por unidad y el resultado de cero minutos para cero unidades.\n\nActualiza el comentario del contrato en entrega.h y el valor de minutos_base en interno/ajuste.h para que expresen la nueva regla. Conserva el cliente y las rutas pública y privada. Compila, ejecuta y comprueba las mismas tres llamadas: la salida requerida es 0:6:14, sin salto final."
         },
         {
           "type": "cpp_compiler",
@@ -772,7 +772,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la separación de fases de las lecciones anteriores. Proporcionar una ruta de cabeceras permite traducir una llamada declarada; no incorpora el cuerpo de la función al ejecutable. La relación de enlace con la biblioteca aporta su producto y también puede transmitir requisitos públicos de uso. Retirarla podría quitar ambas cosas a la vez."
+          "text": "Encontrar la cabecera permite al compilador conocer la declaración de minutos_preparacion mientras procesa la llamada de main.cpp. Eso no incorpora al ejecutable el cuerpo escrito en entrega.cpp.\n\nLa relación de enlace con preparacion permite utilizar la implementación de la biblioteca. Además, esa relación transmite al cliente los requisitos públicos de uso, como su ruta de cabeceras. Si la retiramos, podemos perder tanto la implementación en el enlace como la búsqueda durante la compilación. Para distinguir ambos efectos, el ejemplo siguiente proporciona al cliente la ruta de forma directa."
         },
         {
           "type": "code",
@@ -781,7 +781,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este experimento recupera la implementación inicial de entrega.cpp, sin ajuste.h. Se ha dado a medir una búsqueda directa explícita sólo para aislar las fases. Los requisitos mínimos de C++20 anteriores se conservan. Ambas fuentes encuentran su cabecera; main.cpp usa minutos_preparacion, cuya única definición está en entrega.cpp. Solicitar construir medir no incorpora preparacion simplemente porque la biblioteca exista en la descripción. Aquí el rechazo esperado pertenece al enlace por la definición no aportada. Después de añadir la relación correcta, la búsqueda directa duplicada del cliente puede retirarse porque la biblioteca ya publica ese requisito."
+          "text": "Este experimento usa la implementación inicial de entrega.cpp, sin ajuste.h, y conserva los requisitos de modo del lenguaje anteriores. Sigue lo que ocurre con la descripción mostrada:\n\nmedir recibe directamente la ruta include. Por eso main.cpp puede encontrar la declaración de minutos_preparacion y compilar.\nLa única definición de la función está en entrega.cpp, que pertenece a preparacion.\nFalta la relación de enlace entre medir y preparacion. Construir medir no incorpora la biblioteca sólo porque su objetivo aparezca en CMakeLists.txt. El enlace no recibe la definición necesaria y falla.\n\nDar la ruta directamente al cliente permite aislar este fallo de enlace. Al añadir la relación correcta, medir también recibe la ruta pública de preparacion; entonces se puede retirar la ruta directa duplicada del cliente."
         },
         {
           "type": "multiple_choice",
@@ -829,7 +829,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye la descripción de CMake para este proyecto, conservando los archivos y sus contenidos. La interfaz está en publico/sala/cupo.h y ambos .cpp escriben #include \"sala/cupo.h\". El dominio es 0 <= ocupadas <= capacidad <= 20; plazas_libres devuelve capacidad - ocupadas, sin modificar estado. El editor de código proporciona las fuentes, pero deja CMakeLists.txt vacío para que construyas la descripción."
+          "text": "Construye la descripción de CMake de este proyecto en el editor. Las fuentes ya están preparadas y CMakeLists.txt está vacío; conserva los archivos y sus contenidos.\n\nLa interfaz está en publico/sala/cupo.h. Tanto la implementación como el cliente escriben #include \"sala/cupo.h\".\nLa función plazas_libres recibe capacidad y ocupadas, y devuelve capacidad - ocupadas sin modificar estado.\nQuien la llama debe respetar 0 <= ocupadas <= capacidad <= 20: la ocupación no puede ser negativa ni superar la capacidad, y la capacidad no puede superar veinte.\n\nLa descripción debe permitir construir la biblioteca y el ejecutable con esos archivos, encontrar la cabecera y enlazar la implementación."
         },
         {
           "type": "code",
@@ -838,7 +838,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Declara el mínimo CMake 3.20, habilita C++, crea los dos objetivos y fija para ambos el requisito cxx_std_20 con extensiones desactivadas. Determina la raíz que completa sala/cupo.h. Expresa esa búsqueda como requisito de la biblioteca para ella y para sus clientes; relaciona el ejecutable con aforo sin cambiar los includes ni copiar la implementación al cliente. Calcula las tres llamadas antes de configurar y construir consultar_aforo."
+          "text": "Completa CMakeLists.txt siguiendo las responsabilidades indicadas:\n\nDeclara CMake 3.20 como mínimo, nombra el proyecto SalaLocal y habilita C++.\nCrea la biblioteca estática aforo y el ejecutable consultar_aforo con las fuentes indicadas. Solicita para ambos el modo mínimo cxx_std_20 y desactiva las extensiones.\nDetermina desde qué directorio se llega al archivo real al continuar por sala/cupo.h. Proporciona esa búsqueda a la biblioteca para su propia compilación y para sus clientes.\nDeclara que el ejecutable utiliza aforo, sin cambiar las instrucciones de inclusión ni copiar la implementación al cliente.\n\nCalcula las devoluciones de las tres llamadas preparadas, respetando su orden. Después configura el proyecto, construye consultar_aforo y utiliza «Compilar, ejecutar y comprobar» para contrastar el comportamiento."
         },
         {
           "type": "cpp_compiler",
@@ -881,7 +881,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de la construcción: la descripción debe configurar y generar, construir el objetivo solicitado, enlazar la implementación y ejecutar las llamadas originales con el comportamiento acordado. Puede haber otras descripciones válidas; la referencia posterior no impone un orden textual único. Los tres casos ya examinan un interior del dominio, ocupación completa y capacidad cero. No uses argumentos fuera de la precondición para exigir una validación que la función no promete."
+          "text": "La construcción debe cumplir estos criterios:\n\nCMake configura y genera la descripción sin errores.\nEl objetivo consultar_aforo construye sus fuentes y enlaza la implementación de la biblioteca.\nAl ejecutar el programa, las llamadas originales cumplen el contrato y producen la salida solicitada.\n\nLa referencia siguiente muestra una descripción válida; no exige que escribas las instrucciones independientes en un único orden textual. Las llamadas comprueban una ocupación interior al intervalo permitido, ocupación completa y capacidad cero. No exijas una validación para argumentos fuera de la precondición: esa obligación no forma parte de la función."
         }
       ]
     },
@@ -893,7 +893,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La raíz publico completa el nombre sala/cupo.h; sala no debe repetirse dentro del directorio de búsqueda. El objetivo aforo reúne la definición y publica ese requisito al cliente que declara usarlo. Esta descripción de referencia conserva ambas relaciones."
+          "text": "Al empezar en publico y continuar por sala/cupo.h se llega a publico/sala/cupo.h. Empezar en publico/sala repetiría sala al buscar el mismo nombre.\n\naforo compila la definición y publica la raíz de búsqueda que también necesita el cliente. consultar_aforo declara que utiliza aforo; esa relación proporciona la implementación para el enlace y el requisito público para compilar. La descripción de referencia conserva ambas necesidades."
         },
         {
           "type": "code",
@@ -940,7 +940,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina un segundo ejecutable resumen, con su propio main, que incluye la interfaz pública de preparacion. La biblioteca conserva PUBLIC include y PRIVATE interno. Dar requisitos a medir no convierte a medir en un intermediario obligatorio: resumen debe expresar su propia relación con la biblioteca que utiliza."
+          "text": "Imagina un segundo ejecutable, resumen, con su propio main y sus propias llamadas a la función de preparacion. También incluye la cabecera pública. La biblioteca conserva PUBLIC include y PRIVATE interno.\n\nresumen debe declarar que utiliza preparacion para recibir su implementación y sus requisitos públicos. La relación que ya tiene medir sólo describe las necesidades de medir; no configura automáticamente todos los ejecutables del proyecto."
         },
         {
           "type": "code",
@@ -1013,7 +1013,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva como método la cadena de razones: qué incluye cada fuente, qué objetivo la compila, qué directorios necesita y qué relación aporta la definición. Comprueba luego la fase que falló y el comportamiento del producto construido. Este fundamento prepara proyectos mayores; la instalación, exportación, paquetes y pruebas con CTest se estudiarán en la continuación de CMake, sin darlos aquí por cubiertos."
+          "text": "Para decidir las rutas y las relaciones de un proyecto, sigue estos pasos:\n\nIdentifica qué cabeceras incluye cada fuente y en qué carpetas están.\nLocaliza el objetivo que compila esa fuente y determina desde qué directorios debe buscar cada nombre incluido.\nDistingue las rutas que sólo necesita la implementación de las que también necesitan sus clientes.\nComprueba qué relación de enlace proporciona la definición utilizada por cada llamada.\n\nSi la construcción falla, identifica primero la fase y el archivo del diagnóstico. Cuando el producto construya, ejecútalo y compara su comportamiento con el contrato: encontrar cabeceras y enlazar no garantiza que la función calcule bien. La instalación, la exportación, los paquetes y las pruebas con CTest se estudiarán en la continuación de CMake; estas actividades preparan esos temas sin darlos por cubiertos."
         }
       ]
     }
@@ -2876,6 +2876,171 @@
         "id": "block_0008_0003",
         "beforeSha256": "f4f1c26515944bc234c862c4a95cf4638a020d4931de7eac3bd9d390f4de493c",
         "afterSha256": "c57d4223426f181e67b707194caa86cbb6bbe265ce429e731b106cd22a38f1af"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "6f5bfbc5158b1c6e5a5682f5208f65dd2a9119c94e0de4e64ecc36c7b3bb1053",
+        "afterSha256": "8e42496191cb52a7f194100cedff4c7a8347ab85609dfb19aeb624400024e330"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "541cdd43a58bb614aa882203c8ec2746e8636bd1082e03fab8a076ad02663a03",
+        "afterSha256": "1cbf3de975297d3cad5426d508cac7758418c76ba4255203588e83225e1d9225"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "cd71ea613d9368ef570a69a1ea6a5d90be77722c8acac789c013e5d44dfd332e",
+        "afterSha256": "91f79ad4270f9f4fa524d75edcb2572c566afad2eb47cfd381391f08d86d1c1b"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "fbb1efff7ec442dbc569c20901dde442a6c5d96e6884cae11a265e0685bb4911",
+        "afterSha256": "c46b65ac41487f30e544ea379fb4c1ea9880de8be3ef8bde98984eb31e6a1879"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "655b37e79038014b9b58fd406cbdd039565fb8d56dfd5cbc84531f28e40870dd",
+        "afterSha256": "5d5faf14a90e5c4c81e84929d0dbd0d2b7f7dae77730851925c03762929642ce"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "8510aebf1232d181a614ef5ee1cf174b8625d8167231d6330474baec26c7ad54",
+        "afterSha256": "9d050c2ff1c4983a3f77099eed309da1c23177c3af36bd84f9625233591c2ba6"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "9c6fab44ad9b0d0705c3bf10b7a281054a7b5cc40d5f050463ea2260bb95f98a",
+        "afterSha256": "ee1aba7c49ca2deddde500d7098d02c6b43891d68f0f310e77f47412d9090859"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "7680258f32a5a56fa06eafb2a42907c491b69602bea92754377430302a70c14a",
+        "afterSha256": "9ae22049a1da08dfeae5f03d00d570dbeef025d7cea97c0c32028bc965499dfb"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d755e5ac31065cc24beb2800ea8370bf7a40b02b611db29889ccce77c3fd0901",
+        "afterSha256": "26f1e0bd4cb2a9110e402693002ccce47bc0c9beaf30fc210106f3fc07b1f108"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "69494b648ce97996198bedf09112ac639e7b5ccc2c61c72211db6bbd2a676e41",
+        "afterSha256": "3753442fa143c5dfc29afa1e5f5de2db704d4c0056719d258e6fa224614a4421"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "2b3c635498591d4c44e905b12028ba3e371b39166fbd2fe1e764a69750c70061",
+        "afterSha256": "20286777896c5829146abdb0a6657f5955358842cebde872001aeb265f9207c7"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "3041397e92b646194222cc5a8bb99983a32c04a1ed93d718f63a1412308a4e09",
+        "afterSha256": "38a0089abeadc5fd29f2235d07af3b86e31f378823f97daa8ef155a25769bad7"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "9a11fa923f97b57238ae5167959a92974cd140e2a1392ad5ad6a3ab3b869d3c8",
+        "afterSha256": "1485484ba9c7d60e984f39d6d5a3683a06220316bede845c41a87d6642d46bab"
+      },
+      {
+        "id": "block_0005_0011",
+        "beforeSha256": "20077ae67b9c2432504430ce20323c06053e3e997e49b8f6c6901b224daa3766",
+        "afterSha256": "3c6d601b2444a0358b7dcffde1251652e67eb81f58751d24acad58e68cb267d3"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "b2cb3eaa1f8afbf318e66ef865b66fa878317ed00c51db9017355e7bc8cca4fb",
+        "afterSha256": "c0d44ce54206244cb4d1dc00799f0711f51a7ad8942b7c9552101152fb081f38"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "7a5f029a8067011ae91b35dfe28992a0ebf9cb680c5777e534c73ab4ca4a66c6",
+        "afterSha256": "42634ccef4a893ced9debe46cfcf2fc7fbff14f2fbe9e805804aceb9d6df3089"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "e8609f72de8915aa8f44e1e3a62887a1287b7383f261c4166e0754bfb82ec33e",
+        "afterSha256": "1955babadb44465c559fb0177a03c14ab88c1666e1056baecc8a275b74476590"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "cf198a0e355824c11a456fac559ed7b24dd25828773666a996293c2396d0d4f8",
+        "afterSha256": "49ea14e5de8fb8ccd633b71f93f36cbac79137b815560b1bec991e0a37f66ff1"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "fe5529d3048986ecf3c997fb2fb8dfdea2d00c0d12785ce9117aaaf2adaf6e98",
+        "afterSha256": "e830a03929c7618cefeb4c0ee26e3215c8845eec261bc0c506273bca8dba0ada"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "e0470cc5efa9b952ff98d9ef524782f103d0f451121b0ce253a85ce7e1f8aaee",
+        "afterSha256": "2e1b118b45bc1c2c38c53f1f535e7487182a81825197692b4d84427b24de1bee"
+      },
+      {
+        "id": "block_0007_0010",
+        "beforeSha256": "2890baddeb6155be7695348d7843cbafe1c34f98d676a2c3668efd9f6eff1a57",
+        "afterSha256": "f16630394ac14a02e446c4626b0ab10bf2003d1d546f71621f4283e390956eb6"
+      },
+      {
+        "id": "block_0007_0013",
+        "beforeSha256": "8ac9d88cb530d0e0583cab47f316dc583f5a27a19b74e035bbbfdab611888df2",
+        "afterSha256": "a60b3698d32fd4b47fa79fa87ba33733db19795ad174773f3d0e0e2a922e7d15"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "69ef7a4905e23005bd8c3d22418ec94b53ed4e4e156096e059c288a7eb727fb0",
+        "afterSha256": "d038ed85c5219d31ae592b0d6d806400669b4bde4a24da2452dfb4f1ff2dc35a"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "c57d4223426f181e67b707194caa86cbb6bbe265ce429e731b106cd22a38f1af",
+        "afterSha256": "a9452f17e8923ead71cb1f5185f33911dc10df3e82d1cabd0cb8f77b965383fb"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "be8cef4b76b8e50088c66e8313c24c4937c349eb748dfc6f7b0b409d21cc1905",
+        "afterSha256": "40f84b5004f7141c7fef13ca092832ccd3da7b3470b3b34ed57e8c2430f95e51"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "ea769c08d588724db8dc9a5a28c7742d67f7502258b6ca82d483fcc891ebe4ee",
+        "afterSha256": "180c8681c0bc06792577a9d8ecbce6221b43e774c5fcb513feb9a60cab4a4168"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "6639d798144de57133333eadc7ea311e5fd8808e90c5d37871998144a15b2501",
+        "afterSha256": "8df13c6292a1d4c43001bc17442c44279e5c04ca468a97cfd4249739ed5a6262"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "3cb32365399a3b33aa0042b67bf4e90d29b7ae573c0ed05c16979e83088be30c",
+        "afterSha256": "c64ec6804ecfd18a884e790c24bf87bc7f8140abb76b1bb2cd2c0ff7fd563194"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "76fe5c67bf8c7e5283ded76c647a175f341d4d2ee5a34de4d9b2270bdf7ddf4d",
+        "afterSha256": "9cb569f6c789d7e4bde7c93975eaecd591426cab2152390073f59855a5f27289"
+      },
+      {
+        "id": "block_0011_0008",
+        "beforeSha256": "63257ca2cd01be7dfd12c9e63a8f19528c3808821c6ae5460dc969f28fe00798",
+        "afterSha256": "500a10df02fd2d335dbf0d3ec1dc5e0b127d1f811c4048e358d1bd539559e302"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "3753442fa143c5dfc29afa1e5f5de2db704d4c0056719d258e6fa224614a4421",
+        "afterSha256": "c00c331af523ff77d722c351bd8bd8c2351910c1c9cb46f902d5e15a9313cd57"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "e830a03929c7618cefeb4c0ee26e3215c8845eec261bc0c506273bca8dba0ada",
+        "afterSha256": "486a0b461b5d0c75fc8e1e88e3061e6f63f3971cdb5db88fd43c5c5e36be1644"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "38a0089abeadc5fd29f2235d07af3b86e31f378823f97daa8ef155a25769bad7",
+        "afterSha256": "80e37f7ad68e0d5dd837cec59c69d50021ea373ead639b00e718738d8e6d775d"
       }
     ]
   },
@@ -2891,38 +3056,38 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "12be02c7e78c61b910bd6025cac528f0e14e4e51c745ef5142953becd9fa8936",
+        "sourceSha256": "41732c0e782f410c9619914ff9d34defc6769172f9341eb9e4f4f6e7d12ff57e",
         "spans": []
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "44913875e38282509f9546d93f74ca3eb79f416957b396732f2b40bbb2235d97",
+        "sourceSha256": "b4c116cb53171d4e698c298296d6300eaae9e4c04932126fd5ab4f5f95c5c013",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
+            "start": 57,
+            "end": 64,
             "text": "include",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 54,
+            "start": 147,
+            "end": 150,
             "text": "src",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 86,
+            "start": 193,
+            "end": 196,
             "text": "app",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 270,
+            "start": 351,
+            "end": 358,
             "text": "include",
             "role": "data",
             "reading": "technical"
@@ -3079,7 +3244,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "db4e8dc54af026e4dcaa41d9504de912c4cbf1acd92e8107859051f882ffde28",
+        "sourceSha256": "f2e4313333c491541462f4475e6dc17bfb7e9f92178d5bfe787fdc0e8e127778",
         "spans": [
           {
             "start": 6,
@@ -3103,8 +3268,50 @@
             "reading": "technical"
           },
           {
-            "start": 225,
-            "end": 243,
+            "start": 148,
+            "end": 151,
+            "text": "src",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 172,
+            "text": "app",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 321,
+            "end": 328,
+            "text": "include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 362,
+            "text": "paquetes/entrega.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 381,
+            "end": 407,
+            "text": "include/paquetes/entrega.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 442,
+            "end": 449,
+            "text": "include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 463,
+            "end": 481,
             "text": "paquetes/entrega.h",
             "role": "data",
             "reading": "technical"
@@ -3114,47 +3321,54 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "c75d720f0634b2f3f5420234818e8710bd38c9e743e64157809c1c1f529425d2",
+        "sourceSha256": "467b63c08c815f141998d61c5ccab309e69548ef7b9aa4f7f1dc319e5ed9d679",
         "spans": [
           {
-            "start": 0,
-            "end": 26,
+            "start": 11,
+            "end": 37,
             "text": "target_include_directories",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 145,
+            "start": 172,
+            "end": 186,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 158,
-            "end": 167,
+            "start": 199,
+            "end": 208,
             "text": "proyecto/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 192,
-            "end": 199,
+            "start": 233,
+            "end": 240,
             "text": "include",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 289,
+            "start": 342,
+            "end": 358,
+            "text": "proyecto/include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 404,
+            "end": 408,
             "text": ".cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 333,
-            "end": 359,
-            "text": "(Scott, 2025, pp. 182–183)",
+            "start": 452,
+            "end": 465,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3163,33 +3377,47 @@
       {
         "block": "block_0001_0005",
         "path": "/text",
-        "sourceSha256": "f8bef3253969a55851e56a548780086191c4261a7bc547e59fe93f2750954654",
+        "sourceSha256": "ea7c22e4fae7a5db8ba36ece45688d9e5d954199d6c74cf399dfc27185fff838",
         "spans": [
           {
-            "start": 51,
-            "end": 57,
+            "start": 49,
+            "end": 60,
+            "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 109,
             "text": "PUBLIC",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 192,
+            "start": 249,
+            "end": 256,
+            "text": "include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 383,
+            "end": 387,
             "text": ".cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 233,
-            "end": 237,
+            "start": 429,
+            "end": 433,
             "text": "3.20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 400,
-            "end": 421,
-            "text": "(Scott, 2025, p. 182)",
+            "start": 662,
+            "end": 675,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3412,40 +3640,47 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "6606f8736f947690661eba043d38bda79a2f4a693b907f80905d51f1f2706ae5",
+        "sourceSha256": "90b7ec526f1e5ae8474ffcaae61c89f3f3dc08f2465f3a954aa8be5fb95d00ab",
         "spans": [
           {
-            "start": 12,
-            "end": 23,
+            "start": 43,
+            "end": 54,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 32,
-            "end": 43,
+            "start": 63,
+            "end": 74,
             "text": "entrega.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 87,
+            "start": 159,
+            "end": 164,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 104,
+            "start": 173,
+            "end": 181,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 210,
+            "start": 388,
+            "end": 399,
             "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 467,
+            "end": 472,
+            "text": "medir",
             "role": "data",
             "reading": "technical"
           }
@@ -3454,96 +3689,110 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "c924814e42d21d2649157d661329bcc59f7c43bea2a60a5deb405df1e9d2a8d6",
+        "sourceSha256": "f904b3f3c4f44f2daf211ab32bd8cae820d7cdec9ea02827313da639f47848e7",
         "spans": [
           {
-            "start": 3,
-            "end": 29,
+            "start": 276,
+            "end": 302,
             "text": "target_include_directories",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 31,
-            "end": 38,
+            "start": 355,
+            "end": 362,
             "text": "PRIVATE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 92,
-            "end": 101,
+            "start": 454,
+            "end": 463,
             "text": "INTERFACE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 194,
+            "start": 568,
+            "end": 574,
             "text": "PUBLIC",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 294,
-            "end": 320,
-            "text": "(Scott, 2025, pp. 182–183)",
+            "start": 659,
+            "end": 672,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 341,
-            "end": 352,
+            "start": 696,
+            "end": 707,
             "text": "entrega.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 396,
-            "end": 407,
+            "start": 751,
+            "end": 762,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 410,
-            "end": 418,
+            "start": 765,
+            "end": 773,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 443,
-            "end": 448,
+            "start": 798,
+            "end": 803,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 462,
-            "end": 479,
+            "start": 817,
+            "end": 834,
             "text": "INTERFACE include",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 483,
-            "end": 494,
+            "start": 837,
+            "end": 848,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 506,
-            "end": 517,
+            "start": 860,
+            "end": 871,
             "text": "entrega.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 553,
-            "end": 567,
+            "start": 899,
+            "end": 913,
             "text": "PUBLIC include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 978,
+            "end": 983,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1010,
+            "end": 1021,
+            "text": "preparacion",
             "role": "data",
             "reading": "technical"
           }
@@ -3552,54 +3801,89 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "2d5cd0a249a6a1dd599f8556b917d02481efda62a31f318ed9718d6741e4b5c9",
+        "sourceSha256": "73b0b751ba502263be604eff48f5c632ad01f5ee808408c0e8b9ce42856c030d",
         "spans": [
           {
             "start": 3,
-            "end": 10,
-            "text": "PRIVATE",
+            "end": 51,
+            "text": "target_link_libraries(medir PRIVATE preparacion)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 14,
-            "end": 35,
-            "text": "target_link_libraries",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 73,
-            "end": 78,
+            "start": 53,
+            "end": 58,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 94,
-            "end": 99,
-            "text": "medir",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 134,
-            "end": 145,
+            "start": 93,
+            "end": 104,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 236,
-            "end": 242,
+            "start": 119,
+            "end": 124,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 211,
+            "end": 218,
+            "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 235,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 339,
+            "end": 350,
+            "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 420,
+            "end": 426,
             "text": "PUBLIC",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 245,
-            "end": 252,
+            "start": 430,
+            "end": 456,
+            "text": "target_include_directories",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 491,
+            "end": 498,
             "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 502,
+            "end": 523,
+            "text": "target_link_libraries",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 568,
+            "end": 573,
+            "text": "medir",
             "role": "data",
             "reading": "technical"
           }
@@ -3854,7 +4138,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "9735d71152e4aeca0965cb455f7fbfb1e10cec1528b9e730db835a6b61a44b89",
+        "sourceSha256": "4646cecddd6695b9341428cc80962e8e6a29d24c9e2770c49b6370e38c53a0d9",
         "spans": [
           {
             "start": 11,
@@ -3864,32 +4148,46 @@
             "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 57,
-            "text": "0 a 12",
+            "start": 76,
+            "end": 82,
+            "text": "0 y 12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 63,
-            "end": 67,
-            "text": "cero",
+            "start": 139,
+            "end": 152,
+            "text": "cero unidades",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 95,
-            "text": "cero",
+            "start": 162,
+            "end": 174,
+            "text": "cero minutos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 145,
-            "end": 161,
+            "start": 211,
+            "end": 227,
             "text": "3 + 2 * unidades",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 241,
+            "text": "tres minutos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 265,
+            "text": "dos minutos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -4077,53 +4375,67 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "d7d65e7bf5a31fe817b62cd491e0025511e0a2cea07ab54334e9e80c19458351",
+        "sourceSha256": "4ed8407f2e4c31bfbc178e83544f392cae0eb764a07d79bdb1019264a5094986",
         "spans": [
           {
-            "start": 36,
-            "end": 43,
+            "start": 24,
+            "end": 31,
             "text": "include",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 61,
-            "end": 72,
+            "start": 53,
+            "end": 64,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 82,
+            "start": 66,
+            "end": 74,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 92,
-            "end": 110,
+            "start": 84,
+            "end": 102,
             "text": "paquetes/entrega.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 268,
-            "end": 273,
+            "start": 188,
+            "end": 193,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 355,
-            "end": 363,
+            "start": 323,
+            "end": 328,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 405,
+            "end": 419,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 493,
+            "end": 501,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 566,
-            "end": 572,
+            "start": 707,
+            "end": 713,
             "text": "0:5:13",
             "role": "output",
             "reading": "natural"
@@ -4139,11 +4451,11 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "42bdb252c7e15ecf4400034be9b53b75d614438c144d1d70ad2f94b4b325fd19",
+        "sourceSha256": "be264ff4a404e7cf6ad68c9a3d0305514e9aa95e2082cfb02a2ad774040a99e0",
         "spans": [
           {
-            "start": 53,
-            "end": 61,
+            "start": 109,
+            "end": 117,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
@@ -4254,18 +4566,32 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "742393c81c875ba17910c654b60d9314fb2ebea947661ba471327166cac9069f",
+        "sourceSha256": "f4ad5ca2c495fd17b56595a52b8fe4edee0e8ebb6bd9011f041e3d29448c133e",
         "spans": [
           {
-            "start": 232,
-            "end": 239,
+            "start": 228,
+            "end": 238,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 410,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 509,
+            "end": 516,
             "text": "PRIVATE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 243,
-            "end": 266,
+            "start": 520,
+            "end": 543,
             "text": "target_compile_features",
             "role": "data",
             "reading": "technical"
@@ -4275,12 +4601,12 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "0a4a7f33c50bc49cd6dc84444853e2e3853e069e0f45d6eef03eca12d9ce4820",
+        "sourceSha256": "92d86c6e31ed541399f161620046956a79d44d1ec02ab2665e7417eb0ee93c2a",
         "spans": [
           {
-            "start": 104,
-            "end": 108,
-            "text": "cero",
+            "start": 122,
+            "end": 135,
+            "text": "cero unidades",
             "role": "data",
             "reading": "natural"
           }
@@ -4475,13 +4801,27 @@
       {
         "block": "block_0005_0011",
         "path": "/text",
-        "sourceSha256": "22239b2c154507aa7a955a1a8d519833509b42d16ae7e4436386fb9e351febe2",
+        "sourceSha256": "9405ed858c22ac55cc22ccf07aa449dc96d04ebfed05dcfa4b1b2d8d2d9d1f60",
         "spans": [
           {
-            "start": 123,
-            "end": 127,
-            "text": "cero",
+            "start": 143,
+            "end": 156,
+            "text": "cero unidades",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 280,
+            "text": "cero unidades",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 306,
+            "text": "cero minutos",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4516,7 +4856,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "5412dbacf6123cd1033e49ab6d124948f9d108cc08e51857bc72f5f15f5915b7",
+        "sourceSha256": "70169014239d1e9939d1e4a491b55d97a88de9f444a5bfcf77ff58a4c334ce95",
         "spans": [
           {
             "start": 26,
@@ -4533,31 +4873,38 @@
             "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 81,
-            "text": "ajuste.h",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 120,
-            "end": 131,
+            "start": 94,
+            "end": 105,
             "text": "entrega.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 473,
-            "end": 510,
-            "text": "(Kernighan & Pike, 1999, pp. 104–105)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 174,
+            "end": 182,
+            "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 538,
-            "end": 541,
-            "text": "dos",
+            "start": 184,
+            "end": 192,
+            "text": "main.cpp",
             "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 275,
+            "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 547,
+            "end": 571,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -4565,82 +4912,89 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "2f38c79fb72d921aa71b16b87ba11ff961c93b13f77fb48ab40fec8d36520b86",
+        "sourceSha256": "3360db51efd637f83f895245bede8a49f7b653fee1f673439c05fc58325db8cf",
         "spans": [
           {
-            "start": 33,
-            "end": 52,
+            "start": 28,
+            "end": 47,
             "text": "minutos_preparacion",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 79,
-            "end": 87,
+            "start": 82,
+            "end": 90,
             "text": "ajuste.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 137,
-            "end": 140,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 162,
-            "end": 174,
+            "start": 172,
+            "end": 184,
             "text": "minutos_base",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 181,
+            "start": 190,
+            "end": 191,
             "text": "3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 184,
-            "end": 202,
+            "start": 251,
+            "end": 269,
             "text": "minutos_por_unidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 208,
-            "end": 209,
+            "start": 275,
+            "end": 276,
             "text": "2",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 242,
-            "end": 250,
-            "text": "interno/",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 264,
-            "end": 268,
-            "text": "src/",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 285,
-            "end": 293,
+            "start": 326,
+            "end": 334,
             "text": "ajuste.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 312,
-            "end": 316,
+            "start": 343,
+            "end": 351,
+            "text": "interno/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 366,
+            "end": 377,
+            "text": "entrega.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 390,
+            "text": "src/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 420,
             "text": ".cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 518,
+            "end": 526,
+            "text": "interno/",
             "role": "data",
             "reading": "technical"
           }
@@ -4649,47 +5003,75 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "cdc92fd302bd25e056763d57562b088cd956a01d4faa314f794ee24d58760822",
+        "sourceSha256": "468d00a082bde16fe8f658af5275414932bceecc3c3de34a0a8174b4113bc9e2",
         "spans": [
           {
-            "start": 0,
-            "end": 14,
+            "start": 73,
+            "end": 87,
             "text": "PUBLIC include",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 48,
-            "end": 59,
+            "start": 98,
+            "end": 109,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 116,
+            "start": 218,
+            "end": 233,
             "text": "PRIVATE interno",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 187,
+            "start": 260,
+            "end": 271,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 215,
+            "start": 287,
+            "end": 295,
+            "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 359,
+            "end": 368,
             "text": "entrega.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 226,
-            "end": 234,
+            "start": 380,
+            "end": 388,
             "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 446,
+            "end": 455,
+            "text": "entrega.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 512,
+            "end": 520,
+            "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 613,
+            "end": 620,
+            "text": "interno",
             "role": "data",
             "reading": "technical"
           }
@@ -4877,32 +5259,25 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "19745b5bb998cd1f275305f5cdcbae2181eff9583faee02c509d3bfeebae73a6",
+        "sourceSha256": "03b2a1577a920107e3ad3985efd5e01ee3f3ad714a6b74c7d6a9e31713d9f24f",
         "spans": [
           {
-            "start": 82,
-            "end": 90,
+            "start": 20,
+            "end": 28,
             "text": "ajuste.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 151,
+            "start": 138,
+            "end": 143,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 210,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 260,
-            "end": 266,
+            "start": 203,
+            "end": 209,
             "text": "0:5:13",
             "role": "output",
             "reading": "natural"
@@ -4918,8 +5293,44 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "d8001e19eff7f23c45bf03bdd82abb03da7327a1808dc834c0da0730b089c93a",
-        "spans": []
+        "sourceSha256": "bb28d831317bc2cebc559dcf5d5f34a7d0403c87b19fb24c17cc79e7417b63d1",
+        "spans": [
+          {
+            "start": 28,
+            "end": 39,
+            "text": "entrega.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 50,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 71,
+            "text": "entrega.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 112,
+            "text": "entrega.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 138,
+            "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
@@ -5080,7 +5491,7 @@
       {
         "block": "block_0007_0007",
         "path": "/text",
-        "sourceSha256": "c9a0778d14d36b80a8a43a489cd3377ddd21a644eb965faa5a7f1b97bc807291",
+        "sourceSha256": "dcbb1e5310d129c12310ef13ed71e3e31008b28b424aa639a023a6899afb4df3",
         "spans": [
           {
             "start": 23,
@@ -5097,29 +5508,29 @@
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 135,
+            "start": 160,
+            "end": 165,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 229,
+            "start": 298,
+            "end": 309,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 345,
-            "end": 351,
+            "start": 515,
+            "end": 521,
             "text": "0:5:13",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 362,
-            "end": 363,
+            "start": 566,
+            "end": 567,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -5141,39 +5552,53 @@
       {
         "block": "block_0007_0010",
         "path": "/text",
-        "sourceSha256": "3ee1a6e0214c981716b2717f45cab9cb3da3e8670bc4411735db8facafa4edf2",
+        "sourceSha256": "203f70afade8f968899a8b8f19db44e2c172acf2c2c58b8b794ab6e63ea1c73c",
         "spans": [
           {
-            "start": 20,
-            "end": 39,
+            "start": 27,
+            "end": 46,
             "text": "#include \"ajuste.h\"",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 42,
-            "end": 54,
+            "start": 49,
+            "end": 61,
             "text": "app/main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 294,
-            "end": 301,
+            "start": 202,
+            "end": 207,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 309,
+            "end": 321,
+            "text": "app/main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 375,
+            "end": 382,
             "text": "interno",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 384,
-            "end": 390,
+            "start": 573,
+            "end": 579,
             "text": "0:5:13",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 406,
-            "end": 407,
+            "start": 624,
+            "end": 625,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -5203,62 +5628,69 @@
       {
         "block": "block_0007_0013",
         "path": "/text",
-        "sourceSha256": "beeb2fb85f1ea09445aa396048afcefa3a98c6fe32843448a4c06a9cd210c5c8",
+        "sourceSha256": "82486c97ab721eb5b995efe62884e3f5f2b673d658da4ac0c4ada7250bc9177a",
         "spans": [
           {
-            "start": 69,
-            "end": 78,
-            "text": "entrega.h",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 81,
-            "end": 93,
-            "text": "minutos_base",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 97,
-            "end": 113,
-            "text": "interno/ajuste.h",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 115,
-            "end": 121,
+            "start": 108,
+            "end": 114,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 171,
-            "text": "dos",
+            "start": 171,
+            "end": 182,
+            "text": "dos minutos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 185,
-            "end": 189,
-            "text": "cero",
+            "start": 212,
+            "end": 224,
+            "text": "cero minutos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 199,
-            "text": "cero",
+            "start": 230,
+            "end": 243,
+            "text": "cero unidades",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 292,
-            "end": 296,
-            "text": "tres",
+            "start": 286,
+            "end": 295,
+            "text": "entrega.h",
             "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 310,
+            "end": 322,
+            "text": "minutos_base",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 342,
+            "text": "interno/ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 468,
+            "end": 481,
+            "text": "tres llamadas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 512,
+            "text": "0:6:14",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5307,66 +5739,137 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "d660c3e49649611807aba1c4102f82677ae859b827a76056ba423315c3947b5e",
-        "spans": []
-      },
-      {
-        "block": "block_0008_0003",
-        "path": "/text",
-        "sourceSha256": "5254c82faa4b5ab8bb8caa79e75fb376a5b873f669f48b0fa94fe8c6b40e5708",
+        "sourceSha256": "6ccf1f64355ad5f01411356d596c8b569bb7ad9107029ea6a0f2b52eec23d84a",
         "spans": [
           {
-            "start": 55,
-            "end": 66,
-            "text": "entrega.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 72,
-            "end": 80,
-            "text": "ajuste.h",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 95,
-            "end": 100,
-            "text": "medir",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 255,
-            "end": 263,
-            "text": "main.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 268,
-            "end": 287,
+            "start": 70,
+            "end": 89,
             "text": "minutos_preparacion",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 319,
-            "end": 330,
+            "start": 121,
+            "end": 129,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 194,
             "text": "entrega.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 352,
-            "end": 357,
+            "start": 223,
+            "end": 234,
+            "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "f115ca2061eb541dd0627aad1eaa1264726ad60e988194815d37d664437b1127",
+        "spans": [
+          {
+            "start": 50,
+            "end": 61,
+            "text": "entrega.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 75,
+            "text": "ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 191,
             "text": "medir",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 371,
-            "end": 382,
+            "start": 220,
+            "end": 227,
+            "text": "include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 245,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 299,
+            "text": "minutos_preparacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 354,
+            "end": 365,
+            "text": "entrega.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 383,
+            "end": 394,
+            "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 430,
+            "end": 435,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 438,
+            "end": 449,
+            "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 461,
+            "end": 466,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 530,
+            "end": 544,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 705,
+            "end": 710,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 745,
+            "end": 756,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
@@ -5493,109 +5996,130 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "326c550e2aeabadaf445b1b89db73c169c9ff86772e94e5f56c13104b7919c3a",
+        "sourceSha256": "db08b6845d06080d496697c5b4869fa40cda9b10b2d01a767d33cdaddd137d89",
         "spans": [
           {
-            "start": 117,
-            "end": 136,
+            "start": 99,
+            "end": 113,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 206,
             "text": "publico/sala/cupo.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 145,
-            "end": 149,
-            "text": ".cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 159,
-            "end": 181,
+            "start": 257,
+            "end": 279,
             "text": "#include \"sala/cupo.h\"",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 197,
-            "end": 229,
-            "text": "0 <= ocupadas <= capacidad <= 20",
-            "role": "math",
-            "reading": "natural"
-          },
-          {
-            "start": 231,
-            "end": 244,
+            "start": 292,
+            "end": 305,
             "text": "plazas_libres",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 274,
+            "start": 313,
+            "end": 322,
+            "text": "capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 333,
+            "text": "ocupadas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 366,
             "text": "capacidad - ocupadas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 353,
-            "end": 367,
-            "text": "CMakeLists.txt",
-            "role": "data",
-            "reading": "technical"
+            "start": 418,
+            "end": 450,
+            "text": "0 <= ocupadas <= capacidad <= 20",
+            "role": "math",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0009_0003",
         "path": "/text",
-        "sourceSha256": "9177ba0e23df532e3954372ee9e36493b718415ca31443512294084e3605ab3e",
+        "sourceSha256": "9dcec0ed17260a8273344b3b8a91e50bc715378202e4f57f07aa018b05028b07",
         "spans": [
           {
-            "start": 24,
-            "end": 28,
+            "start": 9,
+            "end": 23,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 86,
             "text": "3.20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 53,
-            "end": 56,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 98,
-            "end": 108,
-            "text": "cxx_std_20",
+            "start": 119,
+            "end": 128,
+            "text": "SalaLocal",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 181,
-            "text": "sala/cupo.h",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 295,
-            "end": 300,
+            "start": 173,
+            "end": 178,
             "text": "aforo",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 378,
-            "end": 382,
-            "text": "tres",
+            "start": 195,
+            "end": 210,
+            "text": "consultar_aforo",
             "role": "data",
-            "reading": "natural"
+            "reading": "technical"
           },
           {
-            "start": 424,
-            "end": 439,
+            "start": 273,
+            "end": 283,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 397,
+            "text": "sala/cupo.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 522,
+            "end": 527,
+            "text": "aforo",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 733,
+            "end": 748,
             "text": "consultar_aforo",
             "role": "data",
             "reading": "technical"
@@ -5619,21 +6143,14 @@
       {
         "block": "block_0009_0005",
         "path": "/text",
-        "sourceSha256": "202f080bd20064ca8a8cfb1e38759121d46bf194eca317990ed977f32d4860b4",
+        "sourceSha256": "69ef76b4f0d839dfb27cdeb169e6359d7e7fe1ec972e6ed88593f0fe8c55eb5b",
         "spans": [
           {
-            "start": 302,
-            "end": 306,
-            "text": "tres",
+            "start": 112,
+            "end": 127,
+            "text": "consultar_aforo",
             "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 381,
-            "end": 385,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
+            "reading": "technical"
           }
         ]
       },
@@ -5646,32 +6163,60 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "5c59ed2473a9ffea97648cffca64488de554cbc6a9adbd4503cbb4b7a0504e76",
+        "sourceSha256": "9759a60ab42e002cddfc17c2297d336256b54574cba82ee8d86318b76398390e",
         "spans": [
           {
-            "start": 8,
-            "end": 15,
+            "start": 14,
+            "end": 21,
             "text": "publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 46,
+            "start": 38,
+            "end": 49,
             "text": "sala/cupo.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 48,
-            "end": 52,
+            "start": 61,
+            "end": 80,
+            "text": "publico/sala/cupo.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 105,
+            "text": "publico/sala",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 120,
             "text": "sala",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 118,
-            "end": 123,
+            "start": 149,
+            "end": 154,
+            "text": "aforo",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 255,
+            "text": "consultar_aforo",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 281,
             "text": "aforo",
             "role": "data",
             "reading": "technical"
@@ -5877,61 +6422,68 @@
       {
         "block": "block_0011_0001",
         "path": "/text",
-        "sourceSha256": "6f4b3a1bcfa12bf3c11ffa991fa3af734e6cabaa16d54e248a3250991bf9926a",
+        "sourceSha256": "5afdccf07f424ffab7393bfad6094ae47cb2c37181da13f59073cec12977cd79",
         "spans": [
           {
-            "start": 30,
-            "end": 37,
+            "start": 31,
+            "end": 38,
             "text": "resumen",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 53,
-            "end": 57,
+            "start": 54,
+            "end": 58,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 94,
-            "end": 105,
+            "start": 98,
+            "end": 109,
             "text": "preparacion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 144,
+            "start": 171,
+            "end": 185,
             "text": "PUBLIC include",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 147,
-            "end": 162,
+            "start": 188,
+            "end": 203,
             "text": "PRIVATE interno",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 181,
-            "end": 186,
-            "text": "medir",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 202,
-            "end": 207,
-            "text": "medir",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 241,
-            "end": 248,
+            "start": 206,
+            "end": 213,
             "text": "resumen",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 251,
+            "text": "preparacion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 335,
+            "end": 340,
+            "text": "medir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 374,
+            "end": 379,
+            "text": "medir",
             "role": "data",
             "reading": "technical"
           }
@@ -6298,7 +6850,7 @@
       {
         "block": "block_0011_0008",
         "path": "/text",
-        "sourceSha256": "15356f209cf1edfe9172a46b970aaec2ac25fba74b3df2aee54ddbda258fc074",
+        "sourceSha256": "7f64e9276b805126b19a06f174c6152d57f76f069baee7017ba0ec0a633cb0ac",
         "spans": []
       }
     ],

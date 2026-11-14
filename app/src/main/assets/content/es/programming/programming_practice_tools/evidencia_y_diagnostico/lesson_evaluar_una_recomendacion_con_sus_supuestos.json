@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Considera esta nota de trabajo para el programa de la actividad: «Si un vector sólo se lee mediante su parámetro, pásalo por const&: evitas la copia y el programa conserva sus resultados». Antes de aceptarla como regla, formula qué necesitas saber para aplicarla al programa que vas a mantener."
+          "text": "Considera esta nota de trabajo para el programa de la actividad: «Si un vector sólo se lee mediante su parámetro, pásalo por const&: evitas la copia y el programa conserva sus resultados». Aquí const& abrevia recibir el vector por una referencia que no permite modificarlo mediante ese parámetro.\n\nLa nota reúne dos afirmaciones: que se evita crear una copia del vector y que el programa sigue produciendo los mismos resultados. Necesitamos examinar ambas. Antes de adoptar el consejo, elige una pregunta que permita comprobar si se puede aplicar al programa que debes mantener."
         },
         {
           "type": "paragraph",
-          "text": "Ya conoces copias, referencias y const de C++ 1. Aquí los recuperarás para examinar una recomendación: identificar qué afirma, buscar información pertinente, contrastar sus supuestos y reformular lo que puedas sostener.\n\nAprender de lo que lees requiere examinar su contexto y sus condiciones de uso, y revisar las consecuencias de aplicarlo a tu trabajo (Thomas & Hunt, 2020, pp. 14–18). En este caso, investigarás cuándo un cambio en el parámetro conserva los resultados del programa."
+          "text": "Recuperaremos las copias, las referencias y const que practicaste en C++ 1. Primero identificarás qué afirma la recomendación y qué necesitas conservar en tu programa. Después utilizarás una lectura pertinente y dos formas de llamar a la función para comprobar en qué condiciones se sostienen sus afirmaciones.\n\nAprender de una recomendación requiere examinar su contexto: qué condiciones da por supuestas y qué consecuencias tendría aplicarla a tu trabajo (Thomas & Hunt, 2020, pp. 14–18). En este caso, nos interesa comprobar si cambiar un parámetro conserva tanto el dato devuelto como el estado que deja la función."
         },
         {
           "type": "paragraph",
-          "text": "En el puzzle siguiente elige la pregunta que permite investigar si el cambio conserva el comportamiento. Distingue una duda sobre qué significa const& de otra sobre si este cambio conserva el comportamiento de un programa particular. Un consejo breve puede dejar sin expresar información que necesitas para responder a la segunda."
+          "text": "En el puzzle siguiente selecciona una pregunta sobre la conservación del comportamiento. Saber qué permite escribir const& resuelve una duda del lenguaje. Decidir si ese cambio mantiene los resultados requiere además examinar el cuerpo de esta función y las llamadas que admite.\n\nPor ejemplo, leer un objeto mediante un parámetro no indica todavía qué puede hacer otro parámetro con ese mismo objeto. Un consejo breve puede omitir esa relación; la pregunta debe permitir investigarla."
         },
         {
           "type": "multiple_choice",
@@ -47,11 +47,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En las llamadas de esta actividad, el argumento es una variable de tipo std::vector<int>. Un parámetro por valor crea su propio vector como copia de esa variable. Un parámetro const std::vector<int>& se refiere al vector del llamador y permite consultarlo, sin modificarlo por esa referencia.\n\nLa restricción const no impide que otro parámetro permita modificar el mismo vector. Una referencia tampoco conserva por sí misma el estado que el vector tenía antes de ese cambio."
+          "text": "En estas llamadas, el argumento es una variable de tipo std::vector<int>. Si el parámetro se recibe por valor, al entrar en la función se crea otro vector con una copia de sus elementos. La función puede consultar esa copia aunque el vector original cambie después.\n\nUn parámetro const std::vector<int>& se refiere al propio vector del llamador. La función puede consultarlo mediante esa referencia, pero no modificarlo a través de ella. Si otro parámetro permite modificar el mismo vector, esa modificación sigue siendo posible. La referencia consultará el objeto con el contenido que tenga en ese momento: no guarda automáticamente una copia de cómo estaba al comenzar la llamada."
         },
         {
           "type": "paragraph",
-          "text": "Una copia y un acceso compartido no conservan necesariamente la misma información cuando otra operación modifica el objeto (Kernighan & Pike, 1999, p. 107). Esta distinción ayuda a investigar el consejo: hay que comprobar si la función consulta el vector antes o después de un cambio realizado por otro acceso.\n\nLa propiedad general no decide por sí sola si los resultados de este programa se conservarán. Debes examinar qué objetos se pasan a la función y qué operaciones se realizan sobre ellos."
+          "text": "Una copia y un acceso compartido no conservan necesariamente la misma información cuando otra operación modifica el objeto. Kernighan y Pike explican esa diferencia al examinar información que debe mantenerse aunque una llamada posterior cambie los datos a los que se tenía acceso (Kernighan & Pike, 1999, p. 107).\n\nLa distinción orienta nuestra investigación, pero no demuestra todavía qué hará este programa. Tendremos que identificar qué objeto usa cada parámetro, por dónde se modifica y en qué momento se consulta su tamaño. Así aplicaremos la propiedad a las llamadas concretas, en lugar de convertir la lectura en una garantía para cualquier uso."
         },
         {
           "type": "multiple_choice",
@@ -72,7 +72,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de probar el cambio, identifica en el código qué objetos reciben los parámetros y qué relaciones permiten sus llamadas. No necesitas una secuencia única de pasos: puedes volver a la lectura cuando el código plantee otra duda. Lo importante es distinguir lo que ya comprendías, lo que sólo suponías y lo que la nueva evidencia permite aprender."
+          "text": "En el código siguiente localiza la llamada que utiliza entrada y destino, y la que utiliza compartido en las dos posiciones. Relaciona cada argumento con el parámetro que recibe su valor o su referencia. Después sigue las dos instrucciones de la función: el añadido y la consulta del tamaño, en ese orden.\n\nCon esas relaciones podrás predecir la versión por valor. Si aparece una duda sobre qué conserva una copia o qué objeto consulta una referencia, vuelve a esa distinción. La lectura aporta una propiedad; el seguimiento del código permite decidir cómo interviene en este caso."
         },
         {
           "type": "output_prediction",
@@ -96,11 +96,11 @@
         },
         {
           "type": "paragraph",
-          "text": "registrar_y_medir recibe dos vectores, añade 7 mediante el segundo parámetro y devuelve un tamaño consultado mediante el primero. La versión inicial recibe antes por valor. La nota propone cambiar sólo ese primer parámetro por const std::vector<int>&. Antes de hacerlo, examina si la recomendación permite conservar las observaciones de main. Examina qué relaciones entre los argumentos permite la firma; no hay una condición que exija objetos distintos."
+          "text": "registrar_y_medir recibe dos vectores. Su primer parámetro se llama antes y, en la versión inicial, se recibe por valor: es una copia del primer argumento. El segundo parámetro, actual, se recibe por referencia y permite añadir un elemento al vector que proporciona el llamador.\n\nEl cuerpo añade 7 mediante actual y después consulta el tamaño mediante antes para devolverlo. Los nombres de los parámetros no obligan a que los argumentos sean dos objetos distintos. Antes de cambiar el primer parámetro a const std::vector<int>&, examina las llamadas de main y qué deberá conservarse en sus observaciones."
         },
         {
           "type": "paragraph",
-          "text": "Las llamadas están separadas de la salida para observar después los resultados y los tamaños. Cada ejecución comienza con sus objetos nuevos. Se usan vectores de cero a tres enteros al entrar; el único push_back deja como máximo cuatro elementos. Por ese límite, static_cast<int>(antes.size()) representa exactamente el tamaño conocido. Las referencias del programa se vinculan a los objetos vector completos, que permanecen en su ámbito durante las llamadas. Recuperas estas operaciones de C++ 1. En esta primera actividad conserva la versión por valor y comprueba sus dos líneas de salida."
+          "text": "Cada ejecución de este programa crea sus vectores de nuevo. Al entrar en la función contienen de cero a tres enteros; push_back añade un único elemento y deja como máximo cuatro. Por eso static_cast<int>(antes.size()) puede convertir ese tamaño a int sin perder su valor en los casos de esta actividad.\n\nLas referencias utilizadas se refieren a los objetos vector completos, que permanecen en su ámbito durante las llamadas. Las llamadas se realizan en instrucciones separadas de las impresiones: primero se guarda cada resultado y después se muestran ese dato y los tamaños de los vectores. En este primer editor conserva la versión por valor, compila, ejecuta y comprueba sus dos líneas de salida."
         },
         {
           "type": "cpp_compiler",
@@ -122,7 +122,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El primer resultado mide una copia del vector de entrada. En la llamada compartida, Actual permite observar por separado el tamaño del objeto al que se añadió el elemento. Con esta ejecución queda comprobada la versión por valor; la recomendación se contrasta a continuación en otra actividad.",
+          "text": "El valor devuelto mide una copia del vector de entrada, creada al comenzar la llamada. En la consulta con el mismo vector en ambas posiciones, el añadido modifica el argumento original a través del segundo parámetro; la copia conserva sus elementos anteriores.\n\nPor eso conviene observar dos datos: el resultado guardado de la función y el tamaño que aparece con el rótulo Actual. Este último pertenece al objeto que recibió el elemento. La ejecución de este editor comprueba la versión por valor; el cambio a referencia se examina en la actividad siguiente.",
           "emphasis": [
             {
               "text": "una copia del vector de entrada"
@@ -131,7 +131,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora considera la misma secuencia con el primer parámetro por referencia const. Predice antes de ejecutar: la modificación por el segundo parámetro ocurre antes de consultar el tamaño por el primero. El siguiente editor conserva sus propios archivos y las mismas llamadas; cambia sólo ese primer parámetro como propone la nota.",
+          "text": "Ahora estudia la misma secuencia recibiendo el primer parámetro por referencia const. Recuerda que la modificación por el segundo parámetro ocurre antes de consultar el tamaño por el primero. Identifica qué objeto se consulta si ambos parámetros se refieren al mismo vector.\n\nResponde primero a la predicción. Después, en el editor siguiente, cambia únicamente el primer parámetro como propone la nota; conserva el cuerpo de la función y las llamadas. Ese editor tiene su propio programa: cambiarlo no sustituye el intento de la versión por valor.",
           "emphasis": [
             {
               "text": "la modificación por el segundo parámetro ocurre antes de consultar el tamaño"
@@ -178,7 +178,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia aplica exactamente el cambio de parámetro sugerido. No añade otra modificación. La primera comparación mantiene dos objetos independientes; la segunda permite que ambos parámetros se refieran al mismo vector del llamador. Son contextos diferentes de uso de la misma función."
+          "text": "La referencia siguiente cambia únicamente el primer parámetro a una referencia const. Conserva el añadido, la consulta posterior del tamaño y las dos llamadas.\n\nEn la primera llamada, los argumentos entrada y destino son dos vectores distintos. En la segunda, compartido se proporciona en ambas posiciones, de modo que los dos parámetros se refieren a un mismo vector del llamador. Comparar esos usos permite comprobar si el consejo necesita una condición que no expresaba."
         },
         {
           "type": "code",
@@ -187,7 +187,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La versión por valor escribe Separados=2;Entrada=2;Actual=2 y después Compartido=2;Actual=3. Con el parámetro por referencia, la primera línea es igual, pero la segunda escribe Compartido=3;Actual=3. Todas las líneas terminan con salto; stderr queda vacío y ambos códigos son 0. En la segunda llamada del main, la copia inicial conservaba tamaño 2; la referencia permite consultar el vector que ya tiene tres elementos después del añadido. La restricción const sólo afecta a las modificaciones mediante antes."
+          "text": "La versión por valor produce estas líneas, cada una terminada con un salto:\nSeparados=2;Entrada=2;Actual=2\nCompartido=2;Actual=3\n\nLa versión por referencia conserva la primera línea y cambia la segunda:\nSeparados=2;Entrada=2;Actual=2\nCompartido=3;Actual=3\n\nCon dos vectores distintos, el añadido a uno no cambia el tamaño del otro. Con el vector compartido, la copia de la versión por valor conservaba dos elementos. La referencia, en cambio, consulta después del añadido el mismo vector que ya contiene tres. const impide modificarlo mediante el parámetro antes; no impide el añadido mediante actual.\n\nEn ambos programas stderr queda vacío y el código de terminación es 0. Esa terminación no decide si se conservaron los resultados: la diferencia se observa al comparar las líneas correspondientes."
         },
         {
           "type": "multiple_choice",
@@ -216,7 +216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Revisa la pregunta que seleccionaste en el primer puzzle. Una reformulación provisional puede advertir que reemplazar una copia por una referencia requiere revisar si alguna vía modifica el objeto antes de la consulta que debía conservar su resultado. En esta función, actual puede hacerlo cuando comparte objeto con antes. La revisión no se decide sólo por el tamaño del vector o por la presencia de const en una firma."
+          "text": "Vuelve a la pregunta seleccionada en el primer puzzle. El ejemplo mostró una condición que la nota no consideraba: el objeto consultado por un parámetro puede cambiar a través de otro parámetro de la misma función.\n\nUna recomendación más precisa debe pedir que se revise qué información hay que conservar y cuándo se consulta. En esta implementación, actual puede modificar el objeto que también se consulta mediante antes. Para decidir si reemplazar la copia mantiene el resultado, hay que seguir esas operaciones y sus llamadas. Ni el tamaño del vector ni la palabra const deciden por sí solos esa conservación."
         },
         {
           "type": "code",
@@ -242,7 +242,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta variante guarda el tamaño antes del cambio, añade el elemento y devuelve la cantidad guardada. Así conserva el resultado previo aunque ambos parámetros compartan objeto.\n\nEstas comparaciones estudian qué información se conserva y cuándo se consulta. Las salidas no miden el tiempo de ejecución, por lo que no permiten afirmar que la versión con referencia sea más rápida."
+          "text": "En esta variante, cantidad_anterior recibe el tamaño cuando el vector compartido todavía contiene dos elementos. Es un int que guarda ese número; no es una copia del vector. Después se añade el elemento, el vector pasa a contener tres y el retorno utiliza la cantidad ya guardada.\n\nAsí se conserva el tamaño previo incluso cuando los dos parámetros comparten objeto. Lo decisivo aquí es consultar y guardar la cantidad antes de realizar el cambio. El ejemplo permite acotar la recomendación sin concluir que compartir un objeto impida siempre obtener su tamaño anterior.\n\nEstas comparaciones examinan los resultados y el momento en que se obtiene cada dato. No miden cuánto tarda cada versión, así que no permiten afirmar que la versión con referencia sea más rápida."
         }
       ]
     },
@@ -254,11 +254,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Las comparaciones y los puzzles permiten revisar la pregunta inicial: el otro acceso al objeto puede cambiar el resultado antes de la consulta. Una nota útil podría señalar el papel del otro parámetro y el momento de la consulta, en vez de sustituir la regla inicial por «siempre» o «nunca». Mantén separadas las palabras de la recomendación, el aporte de la fuente y las observaciones de tu programa."
+          "text": "Las actividades permiten precisar la pregunta inicial: ¿qué objeto se consulta y puede haber cambiado cuando se pide su tamaño? La lectura distinguía copiar información de compartir un acceso. Las ejecuciones mostraron después qué ocurre con dos objetos distintos y con uno compartido.\n\nUna nota útil podría recordar que hay que revisar tanto el otro parámetro que modifica el vector como el momento de la consulta. Conserva esa condición al aplicar lo aprendido a otro programa. Sustituir la recomendación inicial por «siempre usa referencias» o «nunca las uses» perdería la diferencia que acabamos de comprobar."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba ahora el alcance de la recomendación cuando el vector compartido comienza vacío. Las dos actividades siguientes conservan las llamadas y el límite de tres elementos al entrar; cada una dispone de su propio editor. Predice primero y ejecuta después, sin regresar a un programa anterior."
+          "text": "Ahora comprobarás el mismo cambio cuando el vector compartido comienza vacío. Las dos versiones siguientes conservan las llamadas con objetos distintos y con el mismo objeto en ambas posiciones. También mantienen el límite de tres elementos al entrar.\n\nPara cada versión hay una predicción y un editor propios. Responde primero la predicción y ejecuta después ese mismo programa sin modificarlo. Compara el dato devuelto por la función con el tamaño que conserva el vector al finalizar la llamada; son observaciones diferentes."
         },
         {
           "type": "note",
@@ -320,7 +320,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta y comprueba esta revisión. Compara su observación con la de la actividad anterior: el mismo estado final no obliga a que la consulta intermedia haya devuelto el mismo valor."
+          "text": "Ejecuta y comprueba esta revisión por referencia const. Compara con la actividad por valor tanto el resultado guardado como el tamaño final que presenta Actual.\n\nEl tamaño final indica cuántos elementos quedaron en el vector después del añadido. El resultado guardado indica qué tamaño consultó cada versión: una consulta su copia y la otra el objeto compartido. Que el estado final coincida no obliga a que ambos resultados guardados sean iguales."
         },
         {
           "type": "cpp_compiler",
@@ -1152,6 +1152,91 @@
         "id": "block_0004_0004",
         "beforeSha256": "b57d005d0fcd0c730c8ba893df5a6ff620ddf4a4c2d8864a0d5dd12b7f54a8c4",
         "afterSha256": "e2613057c3042de258e949ce51e4a169e4e8991a8af54903f5134f4e57bc0ae1"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "56845f6dbe2370f130d8aefd575cf638028167e27af598137f4360136392231a",
+        "afterSha256": "67014d14326143d0a69ebb136c580840203f1c7339022e5c4097c18841bfc1cc"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e2af06267f222983002469809d90b95917c250373a42e7ce1986ec377e75694c",
+        "afterSha256": "0889c5fd9aa00f4dd0551b25be33a04a2e150da5f1fea4efa06938baf267221f"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "a5c917d19462ec92dbf6a71fdb453e9b65016602f766f05d1b87bbca2d55e60f",
+        "afterSha256": "c99428186113224f61ad14eea315c8e460891890e3fa5579e07059e9079df38d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "5071d8845ad6763a667a2624e8f9188df7c1c7627d804dc803d154ee03c0df08",
+        "afterSha256": "f005384fd545d17b8c62d47b0ffdcf789b44fe0a18aa8891b52f06e48c86c49c"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "7852359b267ace5777ced7e34a376e72109f23162a0022380f9bb4261907a308",
+        "afterSha256": "7a365c56c887b04f57fc583928c4e85f1cbbc505a9d773b8a29023921390e85b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "434d1878ede3a0ee3acaaef67c608c85740d9632fe608688df45d1e5d48cd15b",
+        "afterSha256": "e89ba1b39947ea599b884d2bea9703ce608c3571062fe9cc77134795e9323324"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "4fb7bb84a85a24fbd1a87951e67c529cde1475b1b3e38645fca2cd183afbe5de",
+        "afterSha256": "cfb85435eb74c511d8b91aa49d6ff1108e4499131fbb3e3728b3b67f41cf5412"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "265698834e0debda520ebddd00d5bd19aded9b848f24f931245fdf634e8f81e4",
+        "afterSha256": "5201248fbf1c0f1a4aaca44b7b02432740f51322a477526f6b1aad8b8c419625"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "31b6c4db13b76608d76b856a241b16df2c5629d07f91d4e31d383c3711efb08e",
+        "afterSha256": "7c7abc199fb680ef9f8e9626b3e4ea167bf5fcd0ece77f0604c99a9fc782097a"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "8a7db14b01f604e8091d8dc7ba150e3fd9f9e42664e7f99a38560c61dc2e777a",
+        "afterSha256": "8b55dda5e9118c515b8f65f6e94109dc87bae82da00041597610e986a5893910"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "97704669cf9b7c7504bc23c8bed9041588033ad366c534e6948accff26e11535",
+        "afterSha256": "e5349c922d98958b316c37a34d4b1dd430af848690c818daf2b40d97b1e81888"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "787ec4559fa798297f46475715c1055af4bfd58fae9331bbb97339f1c65e01e5",
+        "afterSha256": "b06ff3077a0c8aac027c13dc81ccb20aa401db3e134790684c36bc844549a835"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "cbedcf1e8418d360b781ed4ed0a31b944252d2d8ff1ce9e95c9b99b34211b72b",
+        "afterSha256": "e60bd270ec02367645f2f9b88724e3b3818410c159ddf816d248deeea5cbd1cb"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "e2613057c3042de258e949ce51e4a169e4e8991a8af54903f5134f4e57bc0ae1",
+        "afterSha256": "db531eca375b8db12f1540b402c474056ee1fd0c6ea916028bdc38596c09ea9c"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f0f9da570a01467511bb9a065d5b8c315be71971e44d04e2ef2654ac9410a0e6",
+        "afterSha256": "b5c699d8893fbf2e7236d7f64f75ef32171871d6d7bfbdd1e2aaab21b9e13a7d"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "70a28f64aa6054df50bfafba1a88712568e95bbfdf366a3c22e646eea28e9715",
+        "afterSha256": "33f7f567611641c6299bac8cf2fce6c6a3d2d8d2dbe3faafd23aa4b2ea83cac2"
+      },
+      {
+        "id": "block_0005_0010",
+        "beforeSha256": "02bab078882f5237b8db2389759a252090a8e845735939ec63912c03234373d9",
+        "afterSha256": "6b40421549c690b7105d85acc52f61a4d99397cdcd0a0500cbc5a0d42b68937e"
       }
     ]
   },
@@ -1167,11 +1252,17 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "1913ec1c3ecff6075ead25f743750702cb39521acb5f79ba6d86b12908829ca7",
+        "sourceSha256": "1a0e5e6394538581294d60e5959a59eadccf511df82ac209b435e57a0ac96b9a",
         "spans": [
           {
             "start": 125,
             "end": 131,
+            "text": "const&",
+            "role": "cpp"
+          },
+          {
+            "start": 194,
+            "end": 200,
             "text": "const&",
             "role": "cpp"
           }
@@ -1180,17 +1271,17 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "3a39e18da24f27439950df1a062c9ab62bb0358f53dfbcd263aa2ac73d711447",
+        "sourceSha256": "86ff08d723454e98262a69a560463dc65b5b71861d73a3ed50ce982bbdca0342",
         "spans": [
           {
-            "start": 33,
-            "end": 38,
+            "start": 44,
+            "end": 49,
             "text": "const",
             "role": "cpp"
           },
           {
-            "start": 355,
-            "end": 387,
+            "start": 457,
+            "end": 489,
             "text": "(Thomas & Hunt, 2020, pp. 14–18)",
             "role": "citation",
             "reading": "natural"
@@ -1200,11 +1291,11 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "a092723a9a7fd06ee97901b5d2c311f42d1be66cfec7387ab7add404bd5a2175",
+        "sourceSha256": "f9aa99b339427ad297526dd27220c598c2731fe522f15e87ee60ac4cb6eeff2a",
         "spans": [
           {
-            "start": 144,
-            "end": 150,
+            "start": 116,
+            "end": 122,
             "text": "const&",
             "role": "cpp"
           }
@@ -1267,24 +1358,18 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "4f33e90b9cac8ad0598b80f39083d419195dae5daeb6c66a1db7bdd34f1a94db",
+        "sourceSha256": "1afa7893db74cfefab194c90a1b195e1ef3a1ec5dd216396aea3d9282bcb5f94",
         "spans": [
           {
-            "start": 72,
-            "end": 88,
+            "start": 56,
+            "end": 72,
             "text": "std::vector<int>",
             "role": "cpp"
           },
           {
-            "start": 176,
-            "end": 199,
+            "start": 280,
+            "end": 303,
             "text": "const std::vector<int>&",
-            "role": "cpp"
-          },
-          {
-            "start": 309,
-            "end": 314,
-            "text": "const",
             "role": "cpp"
           }
         ]
@@ -1292,11 +1377,11 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "af2a8d758ff3d12fd337f333b8a76a73c73bd8ccd74842cf0da6f441170baad2",
+        "sourceSha256": "f7b8459a796ffd64f39c3d878fceaaeee970b69952f5cbf8052e8e9a1e1c49c0",
         "spans": [
           {
-            "start": 123,
-            "end": 155,
+            "start": 281,
+            "end": 313,
             "text": "(Kernighan & Pike, 1999, p. 107)",
             "role": "citation",
             "reading": "natural"
@@ -1354,8 +1439,27 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "cc1f5f132f7a246be24209967a22a6406f67a6a29b28b1cffc5fe42381033496",
-        "spans": []
+        "sourceSha256": "f06d485b85e2d5d651109f0f1ad4b712e09390df0e0c55a33af8f7ad194d86db",
+        "spans": [
+          {
+            "start": 55,
+            "end": 62,
+            "text": "entrada",
+            "role": "cpp"
+          },
+          {
+            "start": 65,
+            "end": 72,
+            "text": "destino",
+            "role": "cpp"
+          },
+          {
+            "start": 91,
+            "end": 101,
+            "text": "compartido",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0001_0005",
@@ -1398,7 +1502,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "e91d78199ac9a59fc91bb4505c4ef3bee26e8444c9882cd89d984c26016415cc",
+        "sourceSha256": "4b879854f32d564ade22e5827ecb2d439f046d95a76d5bde7f8b14635beed785",
         "spans": [
           {
             "start": 0,
@@ -1407,27 +1511,45 @@
             "role": "cpp"
           },
           {
-            "start": 45,
-            "end": 46,
+            "start": 68,
+            "end": 73,
+            "text": "antes",
+            "role": "cpp"
+          },
+          {
+            "start": 178,
+            "end": 184,
+            "text": "actual",
+            "role": "cpp"
+          },
+          {
+            "start": 296,
+            "end": 297,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 156,
-            "end": 161,
+            "start": 307,
+            "end": 313,
+            "text": "actual",
+            "role": "cpp"
+          },
+          {
+            "start": 352,
+            "end": 357,
             "text": "antes",
             "role": "cpp"
           },
           {
-            "start": 227,
-            "end": 250,
+            "start": 504,
+            "end": 527,
             "text": "const std::vector<int>&",
             "role": "cpp"
           },
           {
-            "start": 337,
-            "end": 341,
+            "start": 553,
+            "end": 557,
             "text": "main",
             "role": "cpp"
           }
@@ -1436,32 +1558,38 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "c9a5ade8d27598e290c2d95dea06fee1ea712ef0bcc3bf50bb37e0ea35a09638",
+        "sourceSha256": "82e5c72ec216f553694ee003cda00cf4daf10fd27e324e5268b8c6922366dcd3",
         "spans": [
           {
-            "start": 162,
-            "end": 173,
+            "start": 97,
+            "end": 108,
             "text": "cero a tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 202,
-            "end": 211,
+            "start": 118,
+            "end": 127,
             "text": "push_back",
             "role": "cpp"
           },
           {
-            "start": 229,
-            "end": 235,
+            "start": 171,
+            "end": 177,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 293,
+            "start": 187,
+            "end": 217,
             "text": "static_cast<int>(antes.size())",
+            "role": "cpp"
+          },
+          {
+            "start": 247,
+            "end": 250,
+            "text": "int",
             "role": "cpp"
           }
         ]
@@ -1497,11 +1625,11 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "818ad62231feac2ef6db9d0015c1e9125278cc2008fd56e781589633f179b616",
+        "sourceSha256": "a193e107a7df92fc77a616ede845690ff4b48f6f4782f7f3cbbb58b7061f56a1",
         "spans": [
           {
-            "start": 84,
-            "end": 90,
+            "start": 373,
+            "end": 379,
             "text": "Actual",
             "role": "output",
             "reading": "natural"
@@ -1511,11 +1639,11 @@
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "891627205d14830c08122d67c2c0d168e9788b57b39fc86ae6c1ce504086e4b0",
+        "sourceSha256": "46c7750c32018b0cc0b84ff76598e11942a401215bd54a370ac08429ba9231b7",
         "spans": [
           {
-            "start": 74,
-            "end": 79,
+            "start": 79,
+            "end": 84,
             "text": "const",
             "role": "cpp"
           }
@@ -1596,79 +1724,97 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "496b11358bf4d6d11515af7cdab1ef815524da820ec6a3ea181a833943727676",
-        "spans": []
+        "sourceSha256": "a678826f11a0f523950cc7e0613165961f3e8317c958b39841e2de50dc63145e",
+        "spans": [
+          {
+            "start": 79,
+            "end": 84,
+            "text": "const",
+            "role": "cpp"
+          },
+          {
+            "start": 199,
+            "end": 206,
+            "text": "entrada",
+            "role": "cpp"
+          },
+          {
+            "start": 209,
+            "end": 216,
+            "text": "destino",
+            "role": "cpp"
+          },
+          {
+            "start": 260,
+            "end": 270,
+            "text": "compartido",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "d90bf0d7b8e2ff4127cbfe52a303774236e0bc2a269a8d30e67b92f433927247",
+        "sourceSha256": "e21245fb9efea8ffead98c9c4ff44d73a10cc2024d89f272e330035cc271040a",
         "spans": [
           {
-            "start": 29,
-            "end": 59,
+            "start": 76,
+            "end": 106,
             "text": "Separados=2;Entrada=2;Actual=2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 70,
-            "end": 91,
+            "start": 107,
+            "end": 128,
             "text": "Compartido=2;Actual=3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 198,
+            "start": 203,
+            "end": 233,
+            "text": "Separados=2;Entrada=2;Actual=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 255,
             "text": "Compartido=3;Actual=3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 237,
-            "end": 243,
-            "text": "stderr",
-            "role": "cpp"
-          },
-          {
-            "start": 276,
-            "end": 277,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 305,
-            "end": 309,
-            "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 346,
-            "end": 347,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 404,
-            "end": 408,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 455,
-            "end": 460,
+            "start": 510,
+            "end": 515,
             "text": "const",
             "role": "cpp"
           },
           {
-            "start": 503,
-            "end": 508,
+            "start": 557,
+            "end": 562,
             "text": "antes",
             "role": "cpp"
+          },
+          {
+            "start": 594,
+            "end": 600,
+            "text": "actual",
+            "role": "cpp"
+          },
+          {
+            "start": 622,
+            "end": 628,
+            "text": "stderr",
+            "role": "cpp"
+          },
+          {
+            "start": 671,
+            "end": 672,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1762,23 +1908,23 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "078cb54df0472780a249c4980b7a5876eb0f4c615d4b334b7f1f01702610473a",
+        "sourceSha256": "c2c848746663814b1032a8d3e8a75aafa7d8ea49fd074b6d1505baec8adf3c98",
         "spans": [
           {
-            "start": 269,
-            "end": 275,
+            "start": 351,
+            "end": 357,
             "text": "actual",
             "role": "cpp"
           },
           {
-            "start": 317,
-            "end": 322,
+            "start": 417,
+            "end": 422,
             "text": "antes",
             "role": "cpp"
           },
           {
-            "start": 401,
-            "end": 406,
+            "start": 569,
+            "end": 574,
             "text": "const",
             "role": "cpp"
           }
@@ -1898,8 +2044,21 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "6edf57898eba973f9a1886e1a60e7584f8bcf7bd081bcbb49359c1bd03b0ba2c",
-        "spans": []
+        "sourceSha256": "72650eb24f9198d0ca8cc482ec155d68a3cb1e75b46952b4c953313d3157a249",
+        "spans": [
+          {
+            "start": 18,
+            "end": 35,
+            "text": "cantidad_anterior",
+            "role": "cpp"
+          },
+          {
+            "start": 119,
+            "end": 122,
+            "text": "int",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -1910,17 +2069,17 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "ec1b9663c2945f23cf3fb77abeb411b96a87987bb6e7fd9a5e7dfdf721b979d9",
+        "sourceSha256": "ba5fbbc0e1c37fae2fbd3072e3cfcd0b8f094e2e9e27dff845ab82a8835d4bfe",
         "spans": []
       },
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "67c5eb8809e689337f194a0ebf2364aa46a2bfd11ab9872688cbf6cde9c5bf19",
+        "sourceSha256": "459e9fb1e1a6dbd78d417f27c5d9efa8601fb801dc6a7807eaefa13271ccb456",
         "spans": [
           {
-            "start": 160,
-            "end": 164,
+            "start": 226,
+            "end": 230,
             "text": "tres",
             "role": "data",
             "reading": "natural"
@@ -2068,8 +2227,22 @@
       {
         "block": "block_0005_0010",
         "path": "/text",
-        "sourceSha256": "a52ff8125f77e3d06d77ea953eb3283bf034bc5fadada88192011300bc7191ec",
-        "spans": []
+        "sourceSha256": "afb9639a6903460eeea44442e7fcde268e265a68062f495bba0a9baeecdcb810",
+        "spans": [
+          {
+            "start": 49,
+            "end": 54,
+            "text": "const",
+            "role": "cpp"
+          },
+          {
+            "start": 153,
+            "end": 159,
+            "text": "Actual",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0011",

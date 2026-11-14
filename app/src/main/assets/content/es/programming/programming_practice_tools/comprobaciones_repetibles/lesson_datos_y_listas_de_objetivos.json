@@ -2,7 +2,10 @@
   "id": "programming_practice_tools__comprobaciones_repetibles__datos_y_listas_de_objetivos",
   "title": "Datos y listas de objetivos",
   "orderVisualSeparators": [
-    {"activity": "block_0005_0005", "count": 1}
+    {
+      "activity": "block_0005_0005",
+      "count": 1
+    }
   ],
   "pages": [
     {
@@ -13,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya puedes mantener una biblioteca, dos consumidores y su batería, y distinguir una revisión del código de un cambio del acuerdo. Ahora conservarás todos esos programas: el trabajo se hace en la descripción CMake. Una variable normal asocia un nombre con un valor dentro de esa descripción. Los comandos pueden consultar ese valor mientras CMake procesa el proyecto; no se trata de una variable del programa C++ que ejecutarás después (Scott, 2025, p. 34)."
+          "text": "Ya puedes mantener una biblioteca compartida por una aplicación y un comprobador, y distinguir una revisión del código de un cambio del acuerdo. Ahora conservarás esos programas y trabajarás sólo en la descripción de CMake.\n\nEn esa descripción podemos guardar un texto bajo un nombre y consultarlo en órdenes posteriores. Esa asociación es una variable normal de CMake. Por ejemplo, el siguiente comando guarda el nombre de un consumidor para utilizarlo después (Scott, 2025). Esa variable se utiliza mientras CMake procesa el proyecto; no es una variable del programa C++ que se ejecutará más tarde."
         },
         {
           "type": "code",
@@ -22,7 +25,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Aquí cliente_principal es el nombre de la variable y consultar_cajas es su valor. set conserva esa asociación; los objetivos siguen creándose con add_executable o add_library. Asignar el nombre de un objetivo a una variable no crea otro ejecutable ni cambia el nombre del que ya existe.\n\nCMake representa estos valores como texto. ${cliente_principal} consulta el valor al procesar el comando que contiene esa escritura: sustituir la referencia por el valor se llama expansión. Las mayúsculas forman parte del nombre de la variable. Si no hay ningún valor definido para el nombre consultado en ese contexto, la expansión aporta texto vacío; su efecto difiere del error de usar una variable C++ sin declarar (Scott, 2025, pp. 34–35)."
+          "text": "En set(cliente_principal consultar_cajas), los dos argumentos tienen funciones distintas:\n\ncliente_principal es el nombre de la variable en la que se guarda el dato.\nconsultar_cajas es el valor textual que se guarda en ella.\n\nset realiza esa asignación. Los objetivos siguen creándose con add_executable o add_library: guardar su nombre en una variable no crea otro ejecutable ni renombra el que ya existe.\n\nPara consultar el valor escribimos ${cliente_principal}. Cuando CMake procesa un comando que contiene esa referencia, la sustituye por el valor actual, consultar_cajas en este ejemplo. A esa sustitución la llamamos expansión. CMake representa estos valores como texto y distingue mayúsculas y minúsculas en los nombres de las variables. Si no hay un valor definido para el nombre consultado en ese contexto, la expansión aporta texto vacío (Scott, 2025). Por eso una referencia de CMake sin valor no se comporta como una variable C++ que se usa sin haberla declarado."
         },
         {
           "type": "multiple_choice",
@@ -56,7 +59,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En set, clientes nombra la variable que recibirá el dato. Al dar dos valores, su contenido representa la lista consultar_cajas;comprobar_cajas, con punto y coma entre elementos.\n\nEn set_target_properties, la expansión ${clientes} sin comillas proporciona los dos nombres de objetivos ya creados. Los argumentos anteriores a PROPERTIES identifican los objetivos que se modificarán. Después aparecen el nombre CXX_EXTENSIONS y el valor OFF: esa propiedad queda fijada a OFF en cada uno de los dos objetivos."
+          "text": "En la primera llamada, set recibe el nombre clientes y dos valores que debe guardar. Los reúne en el texto consultar_cajas;comprobar_cajas. El punto y coma separa los elementos de la lista.\n\nEn la segunda llamada, ${clientes} consulta ese contenido. Al aparecer sin comillas, proporciona aquí dos argumentos separados: consultar_cajas y comprobar_cajas. Esos objetivos ya deben existir.\n\nLee el resto de set_target_properties en orden:\n\nAntes de PROPERTIES aparecen los objetivos cuyas propiedades se van a modificar.\nPROPERTIES señala el comienzo de los pares de propiedad y valor.\nCXX_EXTENSIONS es la propiedad que se modifica en cada objetivo.\nOFF es el valor que se le asigna.\n\nLa propiedad es un ajuste guardado en el objetivo para preparar su construcción. En este caso solicita un modo del lenguaje sin extensiones propias del compilador, cuando éste distingue ese modo de otro con extensiones. La misma llamada asigna ese ajuste a los dos consumidores."
         },
         {
           "type": "paragraph",
@@ -94,11 +97,11 @@
         },
         {
           "type": "paragraph",
-          "text": "message muestra clientes=consultar_cajas;comprobar_cajas. En esa llamada, las comillas agrupan el rótulo y el valor dentro de un argumento.\n\nLa llamada a set_target_properties también consulta la variable, pero \"${clientes}\" conserva sólo su valor completo, consultar_cajas;comprobar_cajas, como un argumento. Ese comando lo interpreta como el nombre de un único objetivo con el punto y coma dentro. El proyecto tiene consultar_cajas y comprobar_cajas por separado; no tiene ese objetivo único."
+          "text": "En message, las comillas mantienen el rótulo y la expansión dentro de un mismo argumento. Por eso el texto mostrado incluye clientes=consultar_cajas;comprobar_cajas.\n\nEn set_target_properties, \"${clientes}\" también consulta la variable. La diferencia es que las comillas conservan todo su contenido, consultar_cajas;comprobar_cajas, como un único argumento. En el lugar donde se esperan nombres de objetivos, este comando intenta utilizar ese texto completo como el nombre de un solo objetivo.\n\nEl proyecto tiene consultar_cajas y comprobar_cajas por separado. No tiene un objetivo cuyo nombre sea consultar_cajas;comprobar_cajas. La consulta de la variable sí ocurrió; lo incorrecto es cómo se entregó su contenido a ese parámetro."
         },
         {
           "type": "paragraph",
-          "text": "El contraste depende del punto y coma y del parámetro que lo recibe. No demuestra que debas quitar siempre las comillas ni que toda expansión sin ellas separe espacios: los espacios internos de una expansión simple no se vuelven a dividir de esa manera. Aquí necesitamos una lista de nombres distintos para este comando (Scott, 2025, p. 99)."
+          "text": "Las comillas no impiden consultar la variable: agrupan el resultado en un argumento. En este comando necesitamos entregar por separado los dos nombres, y el punto y coma de esta lista permite separarlos cuando la expansión aparece sin comillas (Scott, 2025).\n\nEsto no es una regla para quitar siempre las comillas. Tampoco significa que los espacios que haya dentro de un valor se vuelvan a separar como si se hubieran escrito entre los argumentos del comando. Aquí estamos estudiando una lista de nombres separados por punto y coma y el parámetro concreto que los recibe."
         },
         {
           "type": "multiple_choice",
@@ -127,15 +130,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva la biblioteca con capacidad nombrada de cuatro plazas y su batería de siete casos. El trabajo se realiza sólo en CMakeLists.txt de la raíz. Pulsa «Configurar y generar» y examina el diagnóstico: mientras esa fase falle, esta descripción no dispone de una construcción ni una ejecución nuevas que la acrediten."
+          "text": "Este proyecto conserva la biblioteca de cajas de cuatro plazas y un comprobador ya escrito con siete casos. La tarea consiste en reparar la descripción de CMake; los programas C++ y sus comparaciones se mantienen tal como están.\n\nTrabaja sólo en el CMakeLists.txt de la raíz. Pulsa «Configurar y generar» antes de editar y examina el diagnóstico. Identifica qué nombre de objetivo intentó utilizar la llamada que aplica las propiedades. Si esa configuración falla, todavía no se dispone de una construcción nueva que corresponda a la descripción reparada."
         },
         {
           "type": "paragraph",
-          "text": "Repara el uso de clientes para aplicar CXX_EXTENSIONS OFF a los dos consumidores existentes. Conserva los nombres de objetivos, C++, cabeceras, pruebas y descripción del componente.\n\nEl proyecto incluye dos consultas get_target_property. Sus tres argumentos son la variable donde se guardará el resultado, el objetivo consultado y la propiedad. Por ejemplo, la consulta de consultar_cajas guarda CXX_EXTENSIONS en ext_consulta; message muestra después ese valor durante la configuración. Es un mensaje de CMake, distinto de la salida de la aplicación. Si la propiedad no tiene valor, get_target_property guarda el nombre de la variable de resultado seguido de -NOTFOUND (Scott, 2025, p. 116).\n\nEn el perfil actual de este Laboratorio, CMAKE_CXX_EXTENSIONS ya vale OFF cuando se crean los objetivos, por lo que sus propiedades CXX_EXTENSIONS comienzan con ese valor. Una propiedad puede recibir su valor inicial desde la variable de configuración correspondiente (Scott, 2025, pp. 214–215). Por eso observar OFF comprueba el valor final, pero no demuestra qué instrucción lo fijó: en esta práctica también debes aplicar la propiedad mediante la lista solicitada."
+          "text": "Repara el uso de clientes para aplicar CXX_EXTENSIONS OFF a los dos consumidores existentes. Conserva los nombres de los objetivos, los archivos C++, las cabeceras, las pruebas y la descripción del componente.\n\nPara consultar el resultado, el proyecto utiliza get_target_property. Esta orden lee una propiedad de un objetivo que ya existe y guarda el valor en una variable (Scott, 2025). En get_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS), cada argumento cumple este papel:\n\next_consulta nombra la variable donde se guardará el resultado de la consulta.\nconsultar_cajas identifica el objetivo que se consulta.\nCXX_EXTENSIONS identifica la propiedad cuyo valor se lee.\n\nLa segunda consulta hace lo mismo para el comprobador y guarda su resultado en ext_comprobador. Los mensajes de message muestran después esos valores durante la configuración; no son salidas del programa C++. Si el objetivo existe pero la propiedad consultada no tiene un valor fijado, get_target_property guarda el nombre de la variable de resultado seguido de -NOTFOUND. Por ejemplo, la primera consulta guardaría ext_consulta-NOTFOUND.\n\nEn este Laboratorio, CMAKE_CXX_EXTENSIONS ya tiene el valor OFF antes de crear los objetivos. Esa variable proporciona el valor inicial de la propiedad CXX_EXTENSIONS de cada uno (Scott, 2025). Así, los consumidores empiezan con OFF aunque todavía no se haya aplicado correctamente la lista.\n\nVer OFF al final permite conocer el valor de la propiedad, pero no identificar qué instrucción lo produjo. La actividad también exige que la llamada solicitada utilice la lista y reciba los dos objetivos; hay que revisar sus argumentos, además de las consultas."
         },
         {
           "type": "paragraph",
-          "text": "Criterios tras reparar: la configuración termina correctamente y los mensajes ext_consulta y ext_comprobador muestran OFF. Selecciona comprobar_cajas en «Objetivo CMake» y usa «Compilar, ejecutar y comprobar»: conserva sus siete casos, el resumen Bateria: OK y la terminación 0. Selecciona después consultar_cajas y comprueba que conserva 1:2 sin salto final, también con terminación 0. Ambos resultados corresponden a la descripción reparada.",
+          "text": "Después de reparar la descripción, vuelve a configurar. Comprueba estos aspectos por separado:\n\nLa configuración termina sin errores y la llamada aplica la propiedad a los dos consumidores mediante la lista.\nLos mensajes ext_consulta y ext_comprobador muestran OFF. Ese valor final también podía proceder de la inicialización del Laboratorio.\n\nSelecciona comprobar_cajas en «Objetivo CMake» y utiliza «Compilar, ejecutar y comprobar» con el comprobador suministrado. Su informe conserva Bateria: OK y la terminación con 0.\n\nEl ensayo de consultar_cajas es opcional en el editor. Si lo realizas, selecciona ese objetivo y compruébalo: debe conservar 1:2, sin salto final, y terminar con 0. Esas ejecuciones observan el comportamiento de los programas construidos; no demuestran por sí solas qué argumentos recibió la llamada de CMake.",
           "emphasis": [
             {
               "text": "ext_consulta y ext_comprobador muestran OFF"
@@ -213,11 +216,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La lista reúne los nombres de los consumidores; no incluye envios, cuya propiedad se fija en la descripción del componente. ${clientes} transmite los dos elementos a set_target_properties, de modo que esa instrucción aplica OFF a ambos. Las consultas posteriores guardan OFF en ext_consulta y ext_comprobador, y message muestra esos resultados.\n\nLa configuración previa del Laboratorio también puede inicializar esos valores. Para atribuir el efecto a esta instrucción hay que identificar los dos argumentos que recibió al expandir la lista; el mensaje final de una propiedad no conserva la historia de cómo obtuvo su valor."
+          "text": "clientes reúne los nombres de los consumidores. envios queda fuera de esa lista porque su propiedad se fija en el CMakeLists.txt del componente.\n\nAl procesar ${clientes}, set_target_properties recibe consultar_cajas y comprobar_cajas como dos argumentos de objetivo. Esa llamada asigna OFF a ambos. Las consultas posteriores guardan los valores en ext_consulta y ext_comprobador, y message los muestra.\n\nEn el Laboratorio, la inicialización de los objetivos también proporciona OFF. Para comprobar el uso de la lista hay que seguir su expansión y reconocer los dos argumentos que recibió esta llamada. El mensaje final muestra el valor de la propiedad; no guarda la historia de las asignaciones que lo produjeron."
         },
         {
           "type": "paragraph",
-          "text": "El diagnóstico de la variante literal menciona clientes; el de la variante entre comillas menciona el texto con punto y coma. Son problemas de configuración, no errores de cajas_para. CMake puede seguir procesando otras instrucciones y mostrar mensajes aun después de encontrar esos errores; que aparezca un mensaje posterior no convierte el resultado en una configuración correcta."
+          "text": "Las dos variantes fallan durante la configuración por nombres de objetivo distintos:\n\nLa variante que escribe clientes sin expandirlo busca un objetivo llamado clientes.\nLa variante que escribe \"${clientes}\" busca un objetivo llamado consultar_cajas;comprobar_cajas, con el punto y coma dentro del nombre.\n\nSon problemas de la descripción de CMake, no del cálculo de cajas_para. CMake puede continuar procesando otras órdenes y mostrar mensajes después de detectar esos errores. Que aparezca el mensaje de una lista no significa que la configuración haya terminado correctamente."
         },
         {
           "type": "multiple_choice",
@@ -242,7 +245,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva la biblioteca y las pruebas, pero agrupa la lista expandida entre comillas al aplicarla a set_target_properties. Configura y localiza qué nombre de objetivo intenta interpretar CMake. Repara únicamente la agrupación para aplicar OFF a los dos consumidores separados. Comprueba los dos mensajes de propiedad y conserva las salidas de ambos consumidores; no necesitas alterar la actividad ya reparada."
+          "text": "Este editor independiente conserva la biblioteca y el comprobador, pero aplica la lista entre comillas en set_target_properties.\n\nConfigura el proyecto y localiza el nombre de objetivo que intenta utilizar CMake. Repara sólo la agrupación del argumento para aplicar OFF a los dos consumidores separados. Conserva los programas C++, sus casos y los demás requisitos.\n\nVuelve a configurar y revisa tanto los argumentos de la llamada como las dos consultas de propiedad. Después utiliza «Compilar, ejecutar y comprobar» con comprobar_cajas seleccionado. El ensayo de consultar_cajas sigue siendo opcional y conserva 1:2, sin salto final, con terminación 0. Este editor tiene su propio borrador; no necesitas alterar la actividad anterior."
         },
         {
           "type": "cpp_compiler",
@@ -315,11 +318,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Al procesar set_target_properties, clientes sólo contiene consultar_cajas. Por tanto, esa aplicación de la propiedad recibe un solo objetivo. Después list(APPEND clientes comprobar_cajas) añade comprobar_cajas al final de la lista; APPEND designa esa operación de ampliación. Ahora el valor es consultar_cajas;comprobar_cajas.\n\nlist necesita el nombre clientes para modificar esa variable, no sus elementos expandidos. Ampliar la lista no vuelve a ejecutar set_target_properties ni extiende retroactivamente su aplicación al segundo consumidor (Scott, 2025, pp. 48–49)."
+          "text": "Sigue el contenido de clientes en el momento en que se procesa cada orden:\n\nset guarda sólo consultar_cajas.\nset_target_properties consulta entonces esa lista y recibe un único objetivo: consultar_cajas.\nlist(APPEND clientes comprobar_cajas) añade después comprobar_cajas al final. A partir de ese momento, la variable contiene consultar_cajas;comprobar_cajas.\n\nEn esta llamada a list, APPEND indica que se añaden elementos; clientes nombra la variable que se modifica y comprobar_cajas es el elemento nuevo. Hace falta proporcionar el nombre de la variable para modificar su contenido, no expandir antes sus elementos (Scott, 2025).\n\nLa ampliación cambia la lista que consultarán las órdenes siguientes. No vuelve a ejecutar set_target_properties, que ya había recibido sólo el primer nombre. La propiedad guardada en el segundo objetivo no cambia por añadir después su nombre a clientes."
         },
         {
           "type": "paragraph",
-          "text": "El mensaje de clientes ya muestra ambos nombres porque se escribe después de APPEND. En el perfil actual del Laboratorio, las dos consultas de CXX_EXTENSIONS muestran OFF: el segundo consumidor lo recibió al crearse, aunque la aplicación mediante la lista sólo alcanzó al primero.\n\nSi esa propiedad no hubiera recibido una inicialización previa, la consulta del comprobador devolvería ext_comprobador-NOTFOUND. Ese resultado indicaría que falta el valor de la propiedad, no que el objetivo no existe ni que C++ haya fallado. En ambos contextos se mantiene el hecho que estamos comprobando: cambiar una variable después no repite el comando que ya consumió su valor."
+          "text": "Si se muestra clientes después de APPEND, el mensaje ya contiene ambos nombres. Eso describe el contenido de la variable en ese momento, no el que recibió la llamada anterior.\n\nEn el Laboratorio, las dos consultas de CXX_EXTENSIONS muestran OFF. El primer consumidor fue incluido en la aplicación mediante la lista. El segundo ya había recibido OFF al crearse, aunque esa llamada no lo alcanzó.\n\nEn otro contexto, si la propiedad del comprobador no tuviera un valor fijado, su consulta produciría ext_comprobador-NOTFOUND. Ese resultado indicaría que falta el valor de la propiedad; no que falte el objetivo ni que haya fallado el programa C++. En ambos contextos se conserva la misma explicación del orden: ampliar una variable no repite una orden anterior."
         },
         {
           "type": "multiple_choice",
@@ -365,15 +368,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Configura esta descripción sin editarla. El mensaje de clientes muestra los dos consumidores. En el perfil actual del Laboratorio, ext_consulta y ext_comprobador muestran OFF desde el inicio, aunque la aplicación mediante la lista todavía omite al segundo objetivo. Una configuración puede terminar correctamente y dejar valores finales coincidentes sin cumplir el uso de la lista que pide la actividad."
+          "text": "Configura esta descripción sin editarla. El mensaje de clientes ya muestra los dos consumidores, porque se escribe después de ampliar la lista. Sin embargo, cuando se aplicó la propiedad, la lista todavía contenía sólo el primero.\n\nLos mensajes ext_consulta y ext_comprobador muestran OFF desde el inicio, por la inicialización que proporciona este Laboratorio. La configuración puede terminar sin errores y mostrar esos valores, aunque la llamada no haya utilizado la lista completa como exige la actividad."
         },
         {
           "type": "paragraph",
-          "text": "Construye y ejecuta comprobar_cajas con esta descripción. Su batería también debe pasar: compara resultados de llamadas a la biblioteca; no examina qué objetivos recibió set_target_properties. Conserva esa evidencia de comportamiento mientras corriges la aplicación de la propiedad."
+          "text": "Construye y ejecuta comprobar_cajas con la descripción inicial. El comprobador suministrado acepta la implementación correcta: compara los resultados de las llamadas a la biblioteca y sus esperados.\n\nEse programa no lee la lista clientes ni examina los argumentos que recibió set_target_properties. Su ejecución permite observar el comportamiento de la biblioteca, pero no decidir si ya se ha aplicado la propiedad a través de la lista completa."
         },
         {
           "type": "paragraph",
-          "text": "Modifica sólo la raíz para que la lista tenga ambos consumidores cuando se aplique CXX_EXTENSIONS OFF. Puedes ampliar antes de aplicar o realizar una aplicación posterior con la lista completa. Conserva APPEND como operación de ampliación para practicar su parámetro de nombre; no dupliques dos aplicaciones literales para evitar usar la lista.\n\nDespués vuelve a configurar y comprueba qué nombres recibe la aplicación de la propiedad. Consulta ambos valores, construye y ejecuta el comprobador y el cliente. Los criterios reúnen el uso de la lista completa, ambos valores OFF, siete casos conservados, Bateria: OK con terminación 0 y cliente 1:2 sin salto final con terminación 0. Los valores OFF que existían antes no acreditan por sí solos la modificación solicitada."
+          "text": "Modifica sólo el CMakeLists.txt de la raíz para que la llamada que aplica CXX_EXTENSIONS OFF reciba ambos consumidores mediante la lista.\n\nPuedes ampliar la lista antes de aplicar la propiedad, o realizar después una aplicación con la lista completa. Conserva APPEND como operación de ampliación y utiliza correctamente el nombre de la variable que modifica. No sustituyas el uso solicitado de la lista por dos aplicaciones con nombres literales.\n\nVuelve a configurar y revisa qué elementos contiene la lista cuando se expande en set_target_properties. Comprueba que la configuración termina sin errores y que las dos consultas muestran OFF. Los valores que ya existían antes de editar no acreditan por sí solos esa modificación.\n\nConstruye comprobar_cajas y utiliza «Compilar, ejecutar y comprobar» con el comprobador dado. El programa conserva Bateria: OK y la terminación 0. El ensayo opcional de consultar_cajas conserva 1:2, sin salto final, y la terminación 0. La tarea modifica la lista y su uso en CMake; conserva los archivos C++ y las comparaciones suministradas."
         },
         {
           "type": "cpp_compiler",
@@ -446,7 +449,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia inicia la lista, añade el segundo consumidor y sólo entonces expande los dos nombres al aplicar la propiedad. La diferencia está en los argumentos recibidos por set_target_properties: ahora esa instrucción alcanza a ambos objetivos. En el perfil del Laboratorio, los mensajes de propiedades ya mostraban OFF antes de corregir. El comprobador y el cliente conservan sus salidas porque sus acuerdos y fuentes permanecen iguales."
+          "text": "La referencia inicia clientes con consultar_cajas, añade comprobar_cajas y sólo entonces consulta el contenido completo al aplicar la propiedad. Por eso set_target_properties recibe dos nombres de objetivos.\n\nLa diferencia con el intento inicial está en esos argumentos y en el momento de la expansión. En el Laboratorio, los mensajes ya podían mostrar OFF antes de reparar el orden. El comprobador y la aplicación conservan sus salidas porque sus fuentes y sus acuerdos no han cambiado."
         },
         {
           "type": "multiple_choice",
@@ -475,15 +478,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera el proyecto de lotes con consultar_lotes y verificar_lotes, que consumen la biblioteca lotes. Sus fuentes y cuatro casos ya están conservados. La descripción del componente está completa; el trabajo es reunir los dos consumidores en una variable normal de la raíz para aplicar CXX_EXTENSIONS OFF a ambos."
+          "text": "El proyecto de lotes conserva los ejecutables consultar_lotes y verificar_lotes, ambos enlazados con la biblioteca lotes. Los programas C++ y el comprobador con sus cuatro casos ya están escritos; la descripción del componente también está completa.\n\nTu tarea está en el CMakeLists.txt de la raíz: reunir los nombres de los dos consumidores en una variable normal y utilizarla para aplicar CXX_EXTENSIONS OFF a ambos. La biblioteca mantiene sus propios requisitos fuera de esa lista."
         },
         {
           "type": "paragraph",
-          "text": "Primero configura el proyecto inicial. El mensaje programas_del_lote= todavía no contiene nombres; las dos consultas de CXX_EXTENSIONS muestran OFF por la inicialización del perfil del Laboratorio. Esos valores no demuestran que ya hayas reunido o utilizado una lista.\n\nCompleta la raíz con una variable cuyo nombre indique su propósito: puedes definir los dos elementos juntos o iniciar y ampliar la lista antes de usarla. El mensaje preparado consulta programas_del_lote; si eliges otro nombre, haz que el mensaje consulte también esa variable. Conserva lotes fuera de la lista de consumidores y mantén C++, cabecera, casos, enlaces y descripción hija."
+          "text": "Primero configura el proyecto inicial. El mensaje programas_del_lote= todavía no contiene nombres. Las consultas de CXX_EXTENSIONS muestran OFF por la inicialización del Laboratorio. Esos valores no demuestran que se haya creado o utilizado la lista solicitada.\n\nCompleta la raíz siguiendo estas condiciones:\n\nElige un nombre de variable que indique qué contiene.\nGuarda en ella los dos nombres de consumidores, juntos con set o iniciando la lista y ampliándola antes de usarla.\nUtiliza su contenido al aplicar la propiedad a los dos objetivos.\n\nEl mensaje preparado consulta programas_del_lote. Si eliges otro nombre, cambia también esa referencia para que muestre la variable que has utilizado. Conserva lotes fuera de la lista de consumidores y mantén los archivos C++, la cabecera, los casos, los enlaces y la descripción del hijo."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: la lista contiene exactamente los dos nombres de consumidores y se utiliza para aplicar CXX_EXTENSIONS OFF a ambos. La configuración termina correctamente y las consultas muestran OFF. Después construye y ejecuta verificar_lotes: conserva los casos 0→0, 6→1, 7→2 y 18→3, el resumen Bateria: OK y la terminación 0. Construye y ejecuta consultar_lotes: conserva 1:2 sin salto final y terminación 0.\n\nComprueba la aplicación de la lista, los valores de las propiedades y las ejecuciones. Observar sólo una variable con dos nombres, valores OFF iniciales o una batería satisfactoria deja sin comprobar otros requisitos de esta actividad."
+          "text": "Comprueba primero la descripción de CMake: la lista contiene exactamente los dos nombres de consumidores y la llamada utiliza esos elementos para aplicar CXX_EXTENSIONS OFF a ambos. La configuración debe terminar sin errores y las consultas deben mostrar OFF. Ver el valor inicial o imprimir dos nombres no sustituye revisar esa llamada.\n\nDespués construye verificar_lotes y utiliza «Compilar, ejecutar y comprobar» con el comprobador suministrado. Ese programa conserva estas comparaciones:\n\nCon 0 piezas espera 0 lotes.\nCon 6 piezas espera 1 lote.\nCon 7 piezas espera 2 lotes.\nCon 18 piezas espera 3 lotes.\n\nSu informe conserva Bateria: OK y la terminación 0. El ensayo de consultar_lotes es opcional y conserva 1:2, sin salto final, con terminación 0.\n\nCada observación tiene su alcance: la variable muestra sus nombres, las consultas muestran valores finales de propiedades y el comprobador compara llamadas a la biblioteca. Para resolver esta práctica también hay que comprobar que se utilizó la lista en la aplicación de la propiedad."
         },
         {
           "type": "cpp_compiler",
@@ -556,7 +559,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La descripción reúne los consumidores antes de aplicar la propiedad y conserva la biblioteca fuera de esa lista. Otra variable de nombre claro o un único set con ambos elementos también son soluciones válidas. Las consultas de propiedades y las ejecuciones responden preguntas distintas: el valor de una propiedad no demuestra qué comando se ejecutó, y la batería sólo compara los resultados que contiene.\n\nEl caso de evidencias al final de esta página plantea una consulta que sí devuelve ext_verificador-NOTFOUND, por lo que la propiedad no tiene un valor fijado en ese supuesto. Ese dato permite localizar un requisito pendiente, aunque la batería pase. No es el resultado inicial esperado del perfil actual del Laboratorio, que proporciona OFF al crear los objetivos."
+          "text": "La descripción reúne los consumidores antes de aplicar la propiedad y deja la biblioteca fuera de la lista. Otra variable de nombre claro o un único set con ambos elementos también cumplen esas condiciones.\n\nLas consultas muestran los valores finales de las propiedades. Las ejecuciones muestran lo que hicieron los programas con sus llamadas. Ninguna de esas observaciones identifica por sí sola los argumentos que recibió la orden encargada de utilizar la lista; por eso también revisamos la descripción.\n\nEl último puzzle plantea otro contexto: la consulta devuelve ext_verificador-NOTFOUND. Allí la propiedad del verificador no tiene un valor fijado y todavía falta cumplir ese requisito, aunque sus comparaciones pasen. Ese supuesto no describe el valor inicial del Laboratorio actual, que proporciona OFF al crear los objetivos."
         },
         {
           "type": "code",
@@ -599,7 +602,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Estas variables normales y listas se usaron sólo en la raíz de cada proyecto. No hemos establecido reglas generales de propagación entre directorios, caché, funciones o generadores. Recupera el criterio en futuras revisiones: qué parámetro espera un nombre, qué valor se obtiene al expandirlo y en qué momento se consume."
+          "text": "En estas prácticas, cada variable se declara y se consulta en el CMakeLists.txt de la raíz. El resultado de una consulta depende del contenido que tenga en ese momento.\n\nPara revisar otra descripción, comprueba qué argumento necesita cada comando, qué contenido se obtiene al consultar la variable y cuándo se utiliza. El uso de una variable desde otros directorios necesitará un estudio propio; no deduzcas esas reglas de estos ejemplos."
         }
       ]
     }
@@ -1896,6 +1899,116 @@
         "id": "block_0007_0002",
         "beforeSha256": "54c43d5d53030bb3ad60194914a54d4faf43c543eba4446392d16fb27f0a82c2",
         "afterSha256": "afb319c6f39082915728ebd637aa3c0158c3de2e6ea18ddf84b49bfa8c4ad4ba"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "4a5ff87001ee07a10838535df0c1108e2b27516e4848fc45224bbb3eb837694e",
+        "afterSha256": "a77ba2c2bfeefa0e99bfe2680419534d21613235c7492a3ea68b2e8873b50515"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "e713e51814d1736384a14ba2a143ab2b58c9028b121a234d1e453eddc224fd8a",
+        "afterSha256": "a20fc3cf080c71d6fd126229b99af6269fed339cd2011916c1ff6d368da6fe41"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "6e61095f5348e9450d52439e82fd91bed5e3010fa5e3aba05434f8de579cd97c",
+        "afterSha256": "ed010af0539ef186ae0597a5e360d62c1f4d4d95f8b86c5ee52231ad12ddede6"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "0dd46f2e4639c1ed184835a5c1e3d59853c3aff6bc94932615f9feb4710b584f",
+        "afterSha256": "a8f339acfcf2849a440be85193766ffaeb71fc2938df06cb197e41dd6305abed"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "33536b910b481782fbf66c40211823830bc98bf2bfef942b98c2b050e6cda217",
+        "afterSha256": "19f912be9d3b4e9f43fb1638e68e1062a3c1fd975d01fb173e4e75b0ea78064a"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "c7e0d92a4ddd754abfc8a20edc17a26ab8a2cd52bbdf7601c740659019a37af1",
+        "afterSha256": "b6e4ceacb1cecbff8102627a611863f19753a720718debd0f4992c9913345376"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "e6a06fceaed0fd9fcb110ef89a0d7bc0e3fe15b73cc66dec8a217942c126f641",
+        "afterSha256": "a00154e7800b71d9c21debcdc1f3084ec5ea96935ae947fb7a9410dcc16e317f"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "776742499fa49371396823fef7e78678e582873cc700a128012bc8bdc917d7bc",
+        "afterSha256": "706a30adc4a1c67a7f26cc72969dba5fc50c96d59714505b278daa341c8cf029"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "67d664e67282f0269f1e5ec5551c794203064983410a2e446b90ec8b1219bc44",
+        "afterSha256": "73f3ec4c2496282262cdedea412f8c20ef3cc6e246d7f91467fd634bd4336346"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "c4f1f3ea14e96ebc9c32ceb8eea1cfba2c51b05ffc663f58cba265b001db10c1",
+        "afterSha256": "e92499a138c27d4077900cb3f58a94857f7098945a1cf14c5b7421de4460b6ef"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "72c71c813821b5dfa97e5574e87ee246c0c6003987977e4ed3a04dac0681946d",
+        "afterSha256": "2116a1d60528036b172b285cfc7ab5baee01ead6754cda353b0d8c4e121b2649"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "0047b779863b9e25b1b510c1ed012dfa680663c43160a39efc42c89045c824c6",
+        "afterSha256": "7faad770a6dab60aceb201ea0a4ff30e54384d8a97a676e44692fdf833bcce6e"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "3f6532158aa7c9b8a6eb203d72b104acae1c45c18cd86187fbdaf07dbb8ba36e",
+        "afterSha256": "c9fb24624b1dfdb9685924b31081acee6e6f40d70d79f5b1381bfcda738ff5d5"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "4647235e206b7c663b8d5373ff5b2f9f20fe9781421b545bb33f2c6edac9fff1",
+        "afterSha256": "1d5f7b831a6b7553bd4b7b1c12509fddf6fc7f8a1b104d16833751578c10f878"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "f68ba51cfdeec19352cfaa6da951029cec563abdcbe3446d8efbf3cbea939b4f",
+        "afterSha256": "7c5e99f35379ea9cf88737636aacf120e511a1d5ae9996a2e349206ba08fcc2b"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "f7883eafe303ac63882946b02105fca4041d65f762adae1bb56b02c2b4f3e156",
+        "afterSha256": "24d6e7c71d77036c6d737e9b421d97a4a9685d84b766d32b897059d6c44f2a43"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "afb319c6f39082915728ebd637aa3c0158c3de2e6ea18ddf84b49bfa8c4ad4ba",
+        "afterSha256": "8eb03388c9565de703967f41fe4caa27126e9b57233f357c65fb9fb3675fee95"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "6ec4fc620e25cd80b376303049922601e2c7a480d7cc0aa74e87b94e0aa3ffeb",
+        "afterSha256": "f8ca89201bfa030127ae13c3eaa9daea79d9f090ea9983ad3e4c5cecb6d543dc"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "392cae6fff84e8dcd75c594145dbfab30efe7f975b8bcea3460698451fd38976",
+        "afterSha256": "3961404611e3403f059a73806748f33405a5c557e4807dca4101b116b46bc2db"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "5487ed385423618a5613694689be66019c9eb079bbde004d3a9ba881cac2c72f",
+        "afterSha256": "e253e9ed8e33653ee5da1db2d5e64a104587d313d8e3ae9c4e085b400daacca6"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "1230f26f61820566b346077d0d384e99b9c5199e5fb908d16d5682ab947b6d91",
+        "afterSha256": "684254a8ad000822cee541241ccef928ccf84242da78a96a3e77e3706712cac4"
+      },
+      {
+        "id": "block_0009_0006",
+        "beforeSha256": "13809a2f58ba7fbdfea4f2b658c3626455b19fc8954fa7007bcada98b8179d79",
+        "afterSha256": "23cef20ec2cb32bdbb0e1b1200a128adee18c20e976d7733cdce9cc926665f93"
       }
     ]
   },
@@ -1911,12 +2024,12 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "8ca69f33d69e52aec8b7ad7340b51f6aaacdb80cbb203eac4b704fd78eebd408",
+        "sourceSha256": "c78344c32c79a4f6579bbefd56b39568a2ff9aaa6e99622ee18cb1ef2ca4919f",
         "spans": [
           {
-            "start": 434,
-            "end": 454,
-            "text": "(Scott, 2025, p. 34)",
+            "start": 462,
+            "end": 475,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1925,54 +2038,68 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "6f48251e5d1bb00ab72a78e82fd130443f73c6b23501a538ff57fda60804d602",
+        "sourceSha256": "53b16b79800d5baccfbd72617e4823adfc4d27070a8cb11a0500e1669c77f6a5",
         "spans": [
           {
-            "start": 5,
-            "end": 22,
+            "start": 3,
+            "end": 41,
+            "text": "set(cliente_principal consultar_cajas)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 108,
             "text": "cliente_principal",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 53,
-            "end": 68,
+            "start": 166,
+            "end": 181,
             "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 85,
+            "start": 226,
+            "end": 229,
             "text": "set",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 160,
+            "start": 289,
+            "end": 303,
             "text": "add_executable",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 163,
-            "end": 174,
+            "start": 306,
+            "end": 317,
             "text": "add_library",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 331,
-            "end": 351,
+            "start": 443,
+            "end": 463,
             "text": "${cliente_principal}",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 707,
-            "end": 731,
-            "text": "(Scott, 2025, pp. 34–35)",
+            "start": 560,
+            "end": 575,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 848,
+            "end": 861,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2096,67 +2223,81 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "76072e38867e61f600cb85f73b7dc812eeba1ea62b3fc55493f8adf9953870db",
+        "sourceSha256": "4e96fbcffe4e3e0afc37de59a3cb7dc683f0d68e3221f514d281a4eae7c580eb",
         "spans": [
           {
-            "start": 3,
-            "end": 6,
+            "start": 23,
+            "end": 26,
             "text": "set",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 8,
-            "end": 16,
+            "start": 44,
+            "end": 52,
             "text": "clientes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 111,
-            "end": 142,
+            "start": 107,
+            "end": 138,
             "text": "consultar_cajas;comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 182,
-            "end": 203,
-            "text": "set_target_properties",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 218,
-            "end": 229,
+            "start": 214,
+            "end": 225,
             "text": "${clientes}",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 324,
+            "start": 319,
             "end": 334,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 337,
+            "end": 352,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 404,
+            "end": 425,
+            "text": "set_target_properties",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 446,
+            "end": 456,
             "text": "PROPERTIES",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 408,
-            "end": 422,
+            "start": 518,
+            "end": 528,
+            "text": "PROPERTIES",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 583,
+            "end": 597,
             "text": "CXX_EXTENSIONS",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 434,
-            "end": 437,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 468,
-            "end": 471,
+            "start": 648,
+            "end": 651,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
@@ -2301,54 +2442,61 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "def58ed99be9fdfe833f6a2b49f46e602773091fc31a402541fbab1d96a9a5de",
+        "sourceSha256": "d13d4938d3f5a59d4bfa9a3daac308812f5b177c6f2a3a6b23db3a7ca824e17f",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
+            "start": 3,
+            "end": 10,
             "text": "message",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 16,
-            "end": 56,
+            "start": 124,
+            "end": 164,
             "text": "clientes=consultar_cajas;comprobar_cajas",
             "role": "output",
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 175,
+            "start": 170,
+            "end": 191,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 211,
-            "end": 224,
+            "start": 193,
+            "end": 206,
             "text": "\"${clientes}\"",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 258,
-            "end": 289,
+            "start": 300,
+            "end": 331,
             "text": "consultar_cajas;comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 418,
-            "end": 433,
+            "start": 513,
+            "end": 528,
             "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 436,
-            "end": 451,
+            "start": 531,
+            "end": 546,
             "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 598,
+            "end": 629,
+            "text": "consultar_cajas;comprobar_cajas",
             "role": "data",
             "reading": "technical"
           }
@@ -2357,12 +2505,12 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "5016714096a66e31a9f5511f0f7b5db71a79afcb3859188ea0a3e761e4b50355",
+        "sourceSha256": "e42e7b0037ca50d44d41ff497420e0b617db213ce38cd2910695f8d607b949ec",
         "spans": [
           {
-            "start": 320,
-            "end": 340,
-            "text": "(Scott, 2025, p. 99)",
+            "start": 244,
+            "end": 257,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2455,11 +2603,11 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "a5bb60c02b873d495ffd0941a12896b10e50834db2cc95c100337db2749c241f",
+        "sourceSha256": "5c525a8e3dadc4a7410925bd0204609dc8dda97575ec43c40ea1703f474f3a0b",
         "spans": [
           {
-            "start": 136,
-            "end": 150,
+            "start": 249,
+            "end": 263,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
@@ -2469,7 +2617,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "93b67b8f95256645ef5575ae1e6aa5f01422f5d12dadc2df8c42ab77488000d1",
+        "sourceSha256": "75a6834a533ff27e3ce5af33b25715857f4e8e80f58e440fd5cd8a8bd0d48a04",
         "spans": [
           {
             "start": 17,
@@ -2486,92 +2634,120 @@
             "reading": "technical"
           },
           {
-            "start": 217,
-            "end": 236,
+            "start": 260,
+            "end": 279,
             "text": "get_target_property",
             "role": "data",
             "reading": "technical"
           },
           {
             "start": 373,
-            "end": 388,
-            "text": "consultar_cajas",
+            "end": 386,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 455,
+            "text": "get_target_property(ext_consulta consultar_cajas CXX_EXTENSIONS)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 396,
-            "end": 410,
-            "text": "CXX_EXTENSIONS",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 414,
-            "end": 426,
+            "start": 492,
+            "end": 504,
             "text": "ext_consulta",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 428,
-            "end": 435,
-            "text": "message",
+            "start": 571,
+            "end": 586,
+            "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 584,
-            "end": 603,
-            "text": "get_target_property",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 660,
-            "end": 669,
-            "text": "-NOTFOUND",
-            "role": "output",
-            "reading": "technical"
-          },
-          {
-            "start": 670,
-            "end": 691,
-            "text": "(Scott, 2025, p. 116)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 735,
-            "end": 755,
-            "text": "CMAKE_CXX_EXTENSIONS",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 764,
-            "end": 767,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 826,
-            "end": 840,
+            "start": 627,
+            "end": 641,
             "text": "CXX_EXTENSIONS",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 962,
-            "end": 988,
-            "text": "(Scott, 2025, pp. 214–215)",
+            "start": 765,
+            "end": 780,
+            "text": "ext_comprobador",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 798,
+            "end": 805,
+            "text": "message",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 972,
+            "end": 991,
+            "text": "get_target_property",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1048,
+            "end": 1057,
+            "text": "-NOTFOUND",
+            "role": "output",
+            "reading": "technical"
+          },
+          {
+            "start": 1102,
+            "end": 1123,
+            "text": "ext_consulta-NOTFOUND",
+            "role": "output",
+            "reading": "technical"
+          },
+          {
+            "start": 1147,
+            "end": 1167,
+            "text": "CMAKE_CXX_EXTENSIONS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1186,
+            "end": 1189,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1278,
+            "end": 1292,
+            "text": "CXX_EXTENSIONS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1305,
+            "end": 1318,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 1007,
-            "end": 1010,
+            "start": 1355,
+            "end": 1358,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1423,
+            "end": 1426,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
@@ -2581,67 +2757,67 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "544b9e2a11b994559d03d8b0634def75585ddb0d5ef94dfbefce2088db2f694b",
+        "sourceSha256": "98683887d7e90f89f90f124bcedc773f726d859b11070df7f668ebcf4535678f",
         "spans": [
           {
-            "start": 78,
-            "end": 90,
+            "start": 221,
+            "end": 233,
             "text": "ext_consulta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 108,
+            "start": 236,
+            "end": 251,
             "text": "ext_comprobador",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 118,
-            "end": 121,
+            "start": 261,
+            "end": 264,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 134,
-            "end": 149,
+            "start": 355,
+            "end": 370,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 247,
-            "end": 258,
+            "start": 487,
+            "end": 498,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 276,
-            "end": 277,
+            "start": 520,
+            "end": 521,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 298,
-            "end": 313,
+            "start": 537,
+            "end": 552,
             "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 339,
-            "end": 342,
+            "start": 649,
+            "end": 652,
             "text": "1:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 384,
-            "end": 385,
+            "start": 686,
+            "end": 687,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2657,61 +2833,89 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "4e1af1ac1cf9e700774570d06ff3311f2aca29471b2946fc8b9f36703b9abd9b",
+        "sourceSha256": "e0c383bdd77db03df5f20ffd70a38bd4bbcfa1ce1f22e985a8c3e645ccf63048",
         "spans": [
           {
-            "start": 59,
-            "end": 65,
+            "start": 0,
+            "end": 8,
+            "text": "clientes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 54,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 135,
+            "start": 114,
+            "end": 128,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 169,
             "text": "${clientes}",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 187,
+            "start": 171,
+            "end": 192,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 224,
-            "end": 227,
+            "start": 200,
+            "end": 215,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 233,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 289,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 271,
-            "end": 274,
-            "text": "OFF",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 278,
-            "end": 290,
+            "start": 348,
+            "end": 360,
             "text": "ext_consulta",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 293,
-            "end": 308,
+            "start": 363,
+            "end": 378,
             "text": "ext_comprobador",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 312,
-            "end": 319,
+            "start": 382,
+            "end": 389,
             "text": "message",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 478,
+            "end": 481,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           }
@@ -2720,18 +2924,39 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "59fb37e1410e1bf99312a602a339c6cd37170cb3bb5a98f130a99a2844d6fc87",
+        "sourceSha256": "4704a7bfa64bb9447db7eeed6fed2fad2ab661b5ff02d2d568a7ae172f5be288",
         "spans": [
           {
-            "start": 47,
-            "end": 55,
+            "start": 110,
+            "end": 118,
             "text": "clientes",
-            "role": "output",
-            "reading": "natural"
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 172,
-            "end": 182,
+            "start": 160,
+            "end": 168,
+            "text": "clientes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 207,
+            "text": "\"${clientes}\"",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 265,
+            "text": "consultar_cajas;comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 367,
+            "end": 377,
             "text": "cajas_para",
             "role": "cpp",
             "reading": "technical"
@@ -2818,21 +3043,49 @@
       {
         "block": "block_0004_0006",
         "path": "/text",
-        "sourceSha256": "e3bd81492ab29c094205fd337cd2985c70f49a587885bfbcf1be93a072f55ccb",
+        "sourceSha256": "89317d8c3900ebba0c2f2df9caca3c7e566db133fa953dd0b69517f018004f3b",
         "spans": [
           {
-            "start": 111,
-            "end": 132,
+            "start": 106,
+            "end": 127,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 250,
-            "end": 253,
+            "start": 266,
+            "end": 269,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 521,
+            "end": 536,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 564,
+            "end": 579,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 613,
+            "end": 616,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 651,
+            "end": 652,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2845,91 +3098,119 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "204d27194100810b4543ad1ed3b8b97fc04f54f55d4d83953c378464d003a1c8",
+        "sourceSha256": "c6d677b714ffbacde2e107f6bbeee7edda1681aec34488f23529fd2431148271",
         "spans": [
           {
-            "start": 12,
-            "end": 33,
-            "text": "set_target_properties",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 35,
-            "end": 43,
+            "start": 22,
+            "end": 30,
             "text": "clientes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 73,
+            "start": 76,
+            "end": 79,
+            "text": "set",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 107,
             "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 187,
-            "text": "list(APPEND clientes comprobar_cajas)",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 194,
-            "end": 209,
-            "text": "comprobar_cajas",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 232,
-            "end": 238,
-            "text": "APPEND",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 294,
-            "end": 325,
-            "text": "consultar_cajas;comprobar_cajas",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 328,
-            "end": 332,
-            "text": "list",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 352,
-            "end": 360,
-            "text": "clientes",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 457,
-            "end": 478,
+            "start": 109,
+            "end": 130,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 544,
-            "end": 568,
-            "text": "(Scott, 2025, pp. 48–49)",
+            "start": 187,
+            "end": 202,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 241,
+            "text": "list(APPEND clientes comprobar_cajas)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 256,
+            "end": 271,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 359,
+            "text": "consultar_cajas;comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 380,
+            "end": 384,
+            "text": "list",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 392,
+            "text": "APPEND",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 433,
+            "text": "clientes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 486,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 619,
+            "end": 632,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 726,
+            "end": 747,
+            "text": "set_target_properties",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 880,
+            "end": 888,
+            "text": "clientes",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "90cbbbe7236facc7e45ece23a70ea4a04e48305f933403ee62885743a930a8eb",
+        "sourceSha256": "8af867e9e34e4d36dfc3e1ca7dea5123b65af4d05983ba56246b844418fc79d5",
         "spans": [
           {
             "start": 14,
@@ -2939,29 +3220,36 @@
             "reading": "technical"
           },
           {
-            "start": 77,
-            "end": 83,
+            "start": 34,
+            "end": 40,
             "text": "APPEND",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 157,
+            "start": 217,
+            "end": 231,
             "text": "CXX_EXTENSIONS",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 167,
-            "end": 170,
+            "start": 241,
+            "end": 244,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 385,
-            "end": 409,
+            "start": 345,
+            "end": 348,
+            "text": "OFF",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 521,
             "text": "ext_comprobador-NOTFOUND",
             "role": "output",
             "reading": "technical"
@@ -3154,7 +3442,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "72c0210f87231e404163ce6953e41b2726cb8d27da63dd026b7ab6b5e556b9a4",
+        "sourceSha256": "1057bf7cbaf522aab2463b07ce7d8882b529e74741bdbf072402e82fb4725300",
         "spans": [
           {
             "start": 55,
@@ -3164,22 +3452,22 @@
             "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 143,
+            "start": 245,
+            "end": 257,
             "text": "ext_consulta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 146,
-            "end": 161,
+            "start": 260,
+            "end": 275,
             "text": "ext_comprobador",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 174,
+            "start": 285,
+            "end": 288,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
@@ -3189,7 +3477,7 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "fe84fa674a92a1ca685bd677a6d049aa4edbb7af03ad040bdb76e17835203240",
+        "sourceSha256": "b144579861e2d2eb923ef8265c27e2fb66931a60112111e86b3e3aef6a9a3173",
         "spans": [
           {
             "start": 20,
@@ -3199,8 +3487,15 @@
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 191,
+            "start": 229,
+            "end": 237,
+            "text": "clientes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 297,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
@@ -3210,61 +3505,82 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "3308839e62f1b6bf656b90aef9a143bbca4ee528f60530d06ef9fadcab5f6424",
+        "sourceSha256": "32c4ef8cddf1993c9a533ea921f3cd27d1d2981579c849f5185ca8c0c29d9495",
         "spans": [
           {
-            "start": 83,
-            "end": 101,
+            "start": 17,
+            "end": 31,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 92,
             "text": "CXX_EXTENSIONS OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 209,
+            "start": 260,
+            "end": 266,
             "text": "APPEND",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 573,
-            "end": 576,
+            "start": 530,
+            "end": 551,
+            "text": "set_target_properties",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 637,
+            "end": 640,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 603,
-            "end": 614,
+            "start": 741,
+            "end": 756,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 846,
+            "end": 857,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 631,
-            "end": 632,
+            "start": 875,
+            "end": 876,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 643,
-            "end": 646,
+            "start": 900,
+            "end": 915,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 925,
+            "end": 928,
             "text": "1:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 679,
-            "end": 680,
+            "start": 964,
+            "end": 965,
             "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 694,
-            "end": 697,
-            "text": "OFF",
             "role": "output",
             "reading": "natural"
           }
@@ -3279,18 +3595,39 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "78ba37e8fde55239cbf503adb91538c8927200d2ba30f0f8a44afcaa5dca7045",
+        "sourceSha256": "0e57c2ecd9d0d9e035f0f6fb8f14bbdbf0f41398ae94c13c2f015031570fe72c",
         "spans": [
           {
-            "start": 175,
-            "end": 196,
+            "start": 21,
+            "end": 29,
+            "text": "clientes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 49,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 72,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 174,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 318,
-            "end": 321,
+            "start": 353,
+            "end": 356,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
@@ -3437,32 +3774,39 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "7e37678f3fd1158c56cabd11690351701abf3e2493d5fdd44226d337287d92b0",
+        "sourceSha256": "33f61689210576b7d24e81e734142021fbfb56f578129e46f83ddabbbc7e16cd",
         "spans": [
           {
-            "start": 34,
-            "end": 49,
+            "start": 46,
+            "end": 61,
             "text": "consultar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 52,
-            "end": 67,
+            "start": 64,
+            "end": 79,
             "text": "verificar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 101,
+            "start": 115,
+            "end": 120,
             "text": "lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 286,
-            "end": 304,
+            "start": 271,
+            "end": 285,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 390,
+            "end": 408,
             "text": "CXX_EXTENSIONS OFF",
             "role": "data",
             "reading": "technical"
@@ -3472,7 +3816,7 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "aa08d785a94a820d8c42bb1f785526ef730eafe7ee0258d98b03f4249191dcac",
+        "sourceSha256": "9de57256823a1c8daa7d57d3f99a9996954bfa0979e2d137c6dd65649dfe2b8c",
         "spans": [
           {
             "start": 50,
@@ -3482,29 +3826,36 @@
             "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 134,
+            "start": 116,
+            "end": 130,
             "text": "CXX_EXTENSIONS",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 144,
-            "end": 147,
+            "start": 140,
+            "end": 143,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 454,
-            "end": 472,
+            "start": 423,
+            "end": 426,
+            "text": "set",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 576,
+            "end": 594,
             "text": "programas_del_lote",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 556,
-            "end": 561,
+            "start": 706,
+            "end": 711,
             "text": "lotes",
             "role": "data",
             "reading": "technical"
@@ -3514,96 +3865,117 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "42a1bd77ac43ec8cf4d76de296cb67d7cfc987e5693250823844246e074e9f64",
+        "sourceSha256": "a85793bb87793aa32127ff5bf8bd81118ec67cff023e6a1f0df413c924ca621b",
         "spans": [
           {
-            "start": 99,
-            "end": 117,
+            "start": 154,
+            "end": 172,
             "text": "CXX_EXTENSIONS OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 191,
-            "end": 194,
+            "start": 255,
+            "end": 258,
             "text": "OFF",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 224,
-            "end": 239,
+            "start": 357,
+            "end": 372,
             "text": "verificar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 260,
-            "end": 263,
-            "text": "0→0",
+            "start": 497,
+            "end": 498,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 513,
+            "end": 514,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 265,
-            "end": 268,
-            "text": "6→1",
+            "start": 526,
+            "end": 527,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 543,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 273,
-            "text": "7→2",
+            "start": 554,
+            "end": 555,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 570,
+            "end": 571,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 276,
-            "end": 280,
-            "text": "18→3",
+            "start": 583,
+            "end": 585,
+            "text": "18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 600,
+            "end": 601,
+            "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 293,
-            "end": 304,
+            "start": 630,
+            "end": 641,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 322,
-            "end": 323,
+            "start": 659,
+            "end": 660,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 345,
-            "end": 360,
+            "start": 675,
+            "end": 690,
             "text": "consultar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 371,
-            "end": 374,
+            "start": 714,
+            "end": 717,
             "text": "1:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 405,
-            "end": 406,
+            "start": 752,
+            "end": 753,
             "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 548,
-            "end": 551,
-            "text": "OFF",
             "role": "output",
             "reading": "natural"
           }
@@ -3618,25 +3990,25 @@
       {
         "block": "block_0009_0002",
         "path": "/text",
-        "sourceSha256": "3254938d53033f5f5744245f3182c7dd8e495a08fe0314683df140c405ed72aa",
+        "sourceSha256": "aeba54b17a2312d2b5b0d2dc88f3b37b5c32ba37cf264a2eb1f081d3e3c4ac33",
         "spans": [
           {
-            "start": 154,
-            "end": 157,
+            "start": 149,
+            "end": 152,
             "text": "set",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 490,
-            "end": 514,
+            "start": 569,
+            "end": 593,
             "text": "ext_verificador-NOTFOUND",
             "role": "output",
             "reading": "technical"
           },
           {
-            "start": 744,
-            "end": 747,
+            "start": 807,
+            "end": 810,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
@@ -3841,8 +4213,16 @@
       {
         "block": "block_0009_0006",
         "path": "/text",
-        "sourceSha256": "c4f7c5e6335178d594d1e9dc6ec02d20b6535cb5d90680dbf3e9adf3f2583545",
-        "spans": []
+        "sourceSha256": "df3f4066f9278412557d7565a1ff285343e37f78e235271fc7958a0cea66512a",
+        "spans": [
+          {
+            "start": 65,
+            "end": 79,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "AssetCheck todavía no inspeccionará archivos físicos ni procesará un lote completo. En esta etapa construiremos una función que recibe una línea y decide si cumple el contrato local. La comprobación de duplicados se añadirá después, porque necesita conocer las admisiones anteriores."
+          "text": "Comenzaremos por una sola línea del manifiesto, por ejemplo `Roca malla 240`. La función recibirá ese texto, comprobará sus tres campos y comunicará si lo acepta. Cuando lo acepte, guardará el ID, el tipo y el tamaño en un objeto `Registro`.\n\nAquí no abriremos el archivo del recurso ni mediremos su tamaño real: validaremos los datos escritos en la línea. Para reconocer un ID repetido también tendríamos que consultar las admisiones anteriores. Esa parte se incorporará al procesar el lote."
         },
         {
           "type": "paragraph",
-          "text": "Cada línea del manifiesto contiene exactamente tres campos, en este orden: id tipo tamano_bytes. La línea completa admite como máximo 80 bytes; sólo son válidos los caracteres ASCII imprimibles y las tabulaciones.\n\nCada campo tiene su propio contrato:\n\n1. id. Contiene de 1 a 12 caracteres, comienza con una letra y continúa únicamente con letras, dígitos o guion bajo.\n\n2. tipo. Debe ser exactamente textura, malla o sonido.\n\n3. tamano_bytes. Contiene de uno a cinco dígitos ASCII y representa un tamaño entre 1 y 30000."
+          "text": "Cada línea contiene exactamente tres campos, en este orden: `id tipo tamano_bytes`. Se separan con uno o más espacios o tabuladores; también se permiten esos separadores antes del primer campo y después del último. No se utilizan comillas para agrupar campos.\n\nLa línea completa admite como máximo 80 bytes, incluidos sus espacios y tabuladores. El terminador que separa una línea de la siguiente no forma parte del texto que recibirá esta función. Sólo se permiten los caracteres ASCII imprimibles y el tabulador.\n\nCada campo tiene estas condiciones:\n\n1. `id`. Contiene de 1 a 12 caracteres. Comienza con una letra ASCII y continúa únicamente con letras ASCII, dígitos ASCII o guion bajo. Las mayúsculas y minúsculas se conservan.\n\n2. `tipo`. Debe ser exactamente `textura`, `malla` o `sonido`, con esa escritura.\n\n3. `tamano_bytes`. Se escribe con entre uno y cinco dígitos ASCII y representa un tamaño entre 1 y 30000. No admite signo, punto decimal ni letras."
         },
         {
           "type": "paragraph",
-          "text": "La primera causa local se busca en orden FORMATO, ID, TIPO y TAMANO. Un registro rechazado no debe modificar ningún campo del último registro válido. Es un contrato de interfaz: no basta con devolver un código de error (Kernighan & Pike, 1999, capítulo 4)."
+          "text": "Si hay varios errores en la misma línea, la función comunica el primero según este orden: `FORMATO`, `ID`, `TIPO` y `TAMANO`. Por eso revisará primero la estructura completa, después el identificador, luego el tipo y por último el tamaño.\n\nAdemás de devolver la causa correcta, debe conservar el registro anterior cuando rechace una línea. Si el destino contiene Anterior, sonido y 87, un rechazo debe dejar exactamente esos tres valores. No puede guardar el nuevo ID y conservar los otros dos campos: eso mezclaría datos de dos registros. Este acuerdo determina qué puede cambiar la función y qué debe respetar el código que la llama (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La estructura Registro guarda los tres campos aceptados. Resultado comunica admisión o la primera causa de rechazo. La función no imprime ni termina el proceso: el futuro cliente decidirá cómo presentar las causas."
+          "text": "La cabecera reúne las declaraciones que necesitará el código que use la biblioteca. `Registro` agrupa el identificador, el tipo y el tamaño de una declaración admitida. Sus dos primeros miembros son cadenas; `tamano_bytes` es un entero.\n\n`Resultado` es un `enum class`: un tipo con alternativas nombradas. `aceptado` indica que se guardó el registro nuevo. Las otras cuatro alternativas señalan la primera condición incumplida. Así, la función comunica qué ocurrió mediante su retorno; no imprime mensajes ni termina el programa."
         },
         {
           "type": "code",
@@ -56,7 +56,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda esta cabecera en include/assetcheck/registro.hpp dentro de la carpeta externa AssetCheck, separada de 01_prueba_cmake. Ésta sigue siendo la prueba mínima del entorno. Al construir en un equipo distinto, primero deben comprobarse las herramientas reales y sus rutas."
+          "text": "En la declaración de `leer_registro`, los dos parámetros tienen funciones distintas:\n\n`const std::string& linea` permite consultar el texto recibido sin copiarlo ni modificarlo mediante ese parámetro.\n\n`Registro& destino` permite modificar el objeto del llamador. Nuestro acuerdo sólo permite hacerlo cuando la línea completa ha sido aceptada.\n\nEl retorno tiene tipo `Resultado`. Para expresar una alternativa se escribe, por ejemplo, `Resultado::formato`; el nombre del tipo identifica a qué conjunto pertenece.\n\n`namespace assetcheck` reúne los nombres de esta biblioteca. Desde fuera de ese espacio se podrá escribir `assetcheck::Registro`. `#pragma once` es la indicación, admitida por el compilador que usamos, de no procesar de nuevo esta cabecera si se incluye varias veces al compilar el mismo archivo fuente."
+        },
+        {
+          "type": "paragraph",
+          "text": "El valor inicial cero de `tamano_bytes` no es un tamaño admitido: es el estado inicial de ese miembro antes de guardar un registro válido. Crear el objeto no equivale a aceptar una línea. El código que lo utilice debe comprobar el `Resultado` para saber si se recibió un registro nuevo; un rechazo no autoriza utilizar los campos como si acabaran de actualizarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "La ubicación de esta cabecera será `AssetCheck/include/assetcheck/registro.hpp`, dentro de la carpeta del curso y separada de `01_prueba_cmake`. Por ahora hemos estudiado su interfaz. En la sección de construcción de esta misma lección crearás las carpetas y guardarás la cabecera junto con los otros archivos; allí se indican las acciones de Windows y sus resultados."
         },
         {
           "type": "multiple_choice",
@@ -85,7 +93,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función recibe un std::string con el texto de una línea, sin su terminador. Comprueba primero su longitud y cada byte. El tabulador ASCII es el único control permitido; NUL, salto de línea dentro del texto y bytes superiores a 126 se rechazan por FORMATO."
+          "text": "La función recibe el texto de una línea en un `std::string`. Primero cuenta sus bytes mediante `linea.size()`: si son más de 80, devuelve el rechazo de formato sin separar los campos.\n\nDespués examina cada byte. Se permite el tabulador, escrito `\\t` en C++, y los códigos ASCII desde 32 hasta 126, ambos incluidos. Se rechazan los demás: por ejemplo, el byte de valor cero, llamado NUL, un salto de línea dentro del texto o un byte de valor superior a 126. Las letras con acento o los emojis codificados en UTF-8 necesitan bytes que este contrato no admite; esta comprobación no es una validación general de texto Unicode."
         },
         {
           "type": "code",
@@ -94,12 +102,20 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de revisar la longitud y los bytes, la línea debe aportar exactamente tres campos. Usa std::istringstream y el operador >> en este orden:\n\n1. Extrae id, tipo y tamano_bytes. Si falta cualquiera de los tres, rechaza el registro por FORMATO.\n\n2. Intenta una cuarta extracción. No debe existir un cuarto campo.\n\n3. Si aparece texto sobrante, rechaza el registro por FORMATO. La línea «Roca malla 240 extra» es inválida aunque sus primeros tres campos parezcan correctos.\n\nSólo después de confirmar la estructura se comprueban ID, TIPO y TAMANO, respetando ese orden de causas."
+          "text": "El recorrido usa `unsigned char` para comparar cada byte como un valor no negativo. La condición del `if` se lee así: rechaza el byte si no es un tabulador y, además, está fuera del intervalo permitido. Por eso el tabulador se admite aunque su código no pertenezca al intervalo de los caracteres imprimibles.\n\nLos espacios finales cuentan para la longitud aunque no creen un campo nuevo. `Roca malla 240` ocupa 14 bytes: cuatro de Roca, uno de espacio, cinco de malla, otro espacio y tres dígitos. Con 66 espacios finales ocupa 80 bytes y sigue dentro del límite; con 67 ocupa 81 y se rechaza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una vez revisados la longitud y los bytes, separa los campos con `std::istringstream`. Este flujo permite leer desde la cadena en lugar de pedir datos a la consola. Las extracciones de cadenas mediante `>>` saltan los separadores y recogen el texto de cada campo.\n\n1. Extrae tres cadenas temporales: `id`, `tipo` y `tamano`. La tercera todavía contiene texto; no la conviertas aún en un entero. Así podrás rechazar después escrituras como `+12` o `12x` sin aceptar sólo su comienzo.\n\n2. Si no se obtienen las tres cadenas, devuelve el rechazo `FORMATO`.\n\n3. Intenta leer otra cadena, `extra`. Si la obtienes, existe un cuarto campo y también se rechaza por `FORMATO`.\n\nSólo después de esas comprobaciones se revisan el ID, el tipo y el tamaño. En `Roca malla 240 extra`, el problema se encuentra en el número de campos; no hace falta continuar con sus valores."
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "std::istringstream entrada(linea);\nstd::string id, tipo, tamano, extra;\nif (!(entrada >> id >> tipo >> tamano) || (entrada >> extra))\n    return Resultado::formato;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La condición reúne las dos formas de incumplir el número de campos. `!(entrada >> id >> tipo >> tamano)` es verdadero cuando falta alguno de los tres; en ese caso, `||` evita intentar la cuarta lectura. Si las tres extracciones tienen éxito, se evalúa `entrada >> extra`: obtener otro campo significa que hay texto sobrante.\n\nSi sólo quedan espacios o tabuladores después del tamaño, la cuarta extracción no encuentra otra cadena. Eso es lo esperado para una línea con tres campos: los separadores finales permitidos no son un cuarto campo. El texto original se consulta, mientras que las extracciones escriben únicamente en las cadenas temporales."
         },
         {
           "type": "math_puzzle",
@@ -174,7 +190,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El identificador debe comenzar con una letra ASCII A–Z o a–z. Después admite letras, dígitos y guion bajo hasta alcanzar doce caracteres. No lo conviertas a minúsculas: Roca y roca son ID diferentes."
+          "text": "El ID debe comenzar con una letra ASCII de `A` a `Z` o de `a` a `z`. Comprueba primero que no esté vacío, que no supere doce caracteres y que su primer carácter sea una letra. Después recorre el ID completo: cada carácter debe ser una letra, un dígito o un guion bajo.\n\nNo cambies su escritura para validarlo: `Roca` y `roca` son identificadores diferentes. El procedimiento comprueba las condiciones del ID recibido; no lo corrige ni lo convierte a minúsculas."
         },
         {
           "type": "code",
@@ -183,7 +199,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El tipo se contrasta exactamente con textura, malla o sonido. En «_A material 0», el primer error es ID, aunque el tipo y tamaño también sean inválidos. Para «A material 0», la primera causa es TIPO; no se llega a TAMANO."
+          "text": "`letra_ascii` y `digito_ascii` devuelven un valor lógico sobre un carácter. La primera comprueba los dos intervalos de letras; la segunda, el intervalo de dígitos. `id_valido` las combina sin modificar la cadena.\n\nEn su primer `if`, `||` evalúa de izquierda a derecha y se detiene al encontrar una condición verdadera. Si `id.empty()` es verdadero, no se consulta `id[0]`: una cadena vacía no tiene un primer carácter que examinar. El recorrido posterior devuelve `false` al encontrar un carácter que no sea letra, ni dígito, ni guion bajo. Sólo se alcanza `return true;` si todos cumplen las condiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando el ID sea válido, compara el tipo con las tres cadenas permitidas: `textura`, `malla` y `sonido`. La comparación es exacta; no se acepta otra palabra ni una escritura con mayúsculas diferentes.\n\nEn `_A material 0` hay tres campos, pero el ID empieza por guion bajo. Se devuelve `ID` antes de comprobar el tipo y el tamaño.\n\nEn `A material 0` el ID sí es válido. El tipo material no está permitido, por lo que se devuelve `TIPO`. Aunque cero tampoco sea un tamaño admisible, no es la primera causa que debe comunicarse."
         },
         {
           "type": "multiple_choice",
@@ -201,6 +221,69 @@
             "El tipo también es inválido, pero se revisa después del ID.",
             "La regla del primer carácter del ID tiene prioridad."
           ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_registro_primera_causa_nueva",
+          "prompt": "Todas estas líneas tienen menos de 80 bytes. Relaciona cada una con la primera causa de rechazo, siguiendo FORMATO, ID, TIPO y TAMANO.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "Roca malla 9 extra"
+                },
+                {
+                  "id": "b",
+                  "label": "7Roca material 000001"
+                },
+                {
+                  "id": "c",
+                  "label": "Roca material 000001"
+                },
+                {
+                  "id": "d",
+                  "label": "Roca malla 000001"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "formato",
+                  "label": "FORMATO"
+                },
+                {
+                  "id": "id",
+                  "label": "ID"
+                },
+                {
+                  "id": "tipo",
+                  "label": "TIPO"
+                },
+                {
+                  "id": "tamano",
+                  "label": "TAMANO"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "formato",
+                  "b": "id",
+                  "c": "tipo",
+                  "d": "tamano"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cuarto campo se detecta antes de validar los valores. Con tres campos, un ID que empieza por un dígito se rechaza antes de revisar material y 000001. Con Roca válido se detecta primero el tipo material. Sólo Roca malla 000001 llega a la revisión del tamaño, que tiene seis dígitos.",
+            "incorrect": "Cuenta primero los campos. Si hay exactamente tres, comprueba el inicio del ID; después el tipo y finalmente la escritura y el valor del tamaño. No elijas un error posterior cuando ya hay uno anterior."
+          }
         }
       ]
     },
@@ -212,11 +295,69 @@
         },
         {
           "type": "paragraph",
-          "text": "La conversión debe comprobar de uno a cinco dígitos ASCII antes de calcular. Los ceros iniciales están permitidos dentro del límite: 00009 equivale a 9. La cadena 000001 se rechaza porque contiene seis dígitos, aunque su valor matemático sea 1."
+          "text": "Para convertir el tamaño, revisa primero que la cadena tenga entre uno y cinco caracteres. Después examina cada carácter antes de usarlo en el cálculo: debe estar entre `'0'` y `'9'`. Un signo, una letra o un punto hacen que se rechace la cadena completa.\n\nLos ceros iniciales se permiten dentro de ese límite. `00009` tiene cinco dígitos y representa el valor nueve. `000001` tiene seis: se rechaza por su longitud, aunque represente el valor uno. Se comprueban tanto la escritura como la cantidad que representa."
         },
         {
           "type": "paragraph",
-          "text": "Acumula la cifra en un int local y después comprueba 1..30000. Debido al límite previo de cinco dígitos, la cifra provisional nunca supera 99999 y no puede desbordar un int normal. Sólo cuando todo es válido escribe en el destino. No uses una conversión que acepte silenciosamente la parte inicial de 12x."
+          "text": "Calcula el número en un `int` local, sin escribir todavía en el destino. Comienza por cero. Por cada dígito válido, multiplica lo acumulado por diez y añade el valor de ese dígito.\n\nPara el texto `240`, los pasos son:\n\nPrimer dígito: cero por diez más dos da dos.\n\nSegundo dígito: dos por diez más cuatro da veinticuatro.\n\nTercer dígito: veinticuatro por diez más cero da doscientos cuarenta.\n\nMultiplicar por diez deja sitio para la cifra siguiente a la derecha. Después de recorrer todo el texto, comprueba que el número esté entre 1 y 30000. Sólo si cumple también ese intervalo se guarda el resultado en el destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "El carácter `'4'` y el entero cuatro no son el mismo dato. En ASCII, los códigos de `'0'` a `'9'` son consecutivos; por eso `c - '0'` da el valor numérico del dígito que contiene `c`. Por ejemplo, con `c` igual a `'4'`, la resta da cuatro. Esta operación sólo se realiza después de comprobar que `c` es un dígito (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nCon cinco dígitos, el mayor valor provisional posible es 99999. La conversión necesita un `int` que pueda representar ese número; el MSVC de 32 y 64 bits de este entorno utiliza un `int` de 32 bits y permite llegar hasta 2147483647. Si se reutiliza esta conversión con otro compilador, hay que comprobar que su entero pueda representar ese valor provisional (Microsoft, 2024)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_registro_acumulacion_decimal",
+          "prompt": "Se convierte el texto 506 comenzando por un acumulado de cero. Relaciona cada momento con el valor acumulado después de incorporar ese dígito.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "Después de leer el primer dígito, 5"
+                },
+                {
+                  "id": "b",
+                  "label": "Después de leer el segundo dígito, 0"
+                },
+                {
+                  "id": "c",
+                  "label": "Después de leer el tercer dígito, 6"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "a506",
+                  "label": "506"
+                },
+                {
+                  "id": "a5",
+                  "label": "5"
+                },
+                {
+                  "id": "a50",
+                  "label": "50"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "a5",
+                  "b": "a50",
+                  "c": "a506"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se calcula 0 por 10 más 5, después 5 por 10 más 0 y finalmente 50 por 10 más 6. Los resultados sucesivos son 5, 50 y 506. El cero central sí ocupa una posición: no se omite al formar el número.",
+            "incorrect": "En cada paso multiplica por diez el valor que ya tenías y suma únicamente el dígito nuevo. No sumes los tres dígitos entre sí."
+          }
         },
         {
           "type": "multiple_choice",
@@ -237,7 +378,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La siguiente práctica obliga a conservar un valor anterior cuando se rechaza. Devolver false después de haber sobrescrito el destino también incumple el acuerdo."
+          "text": "En el laboratorio siguiente implementarás esa conversión mediante `tamano_valido`. El texto es la entrada y `destino` es el entero del llamador que se permite sustituir al aceptar.\n\nUn rechazo debe devolver `false` y conservar el entero anterior. Si primero escribes una parte del número en `destino` y después encuentras una letra, devolver `false` no deshace la escritura. Por eso necesitas calcular por separado y guardar sólo al final."
         }
       ]
     },
@@ -249,7 +390,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Completa sólo tamano_valido. El programa lee varios tokens; antes de cada llamada fija destino=91 y muestra texto:aceptado:destino. No cambies main ni sustituyas las comparaciones por impresiones fijas: el objetivo es implementar la función."
+          "text": "Completa únicamente `tamano_valido` en el editor de esta página. Conserva `main` y sus impresiones. Tu función debe aceptar entre uno y cinco dígitos ASCII cuyo valor esté entre 1 y 30000; devuelve `true` y guarda ese valor al aceptar. En cualquier otro caso devuelve `false` sin modificar `destino`.\n\nEl programa dado lee cadenas separadas por espacios o saltos de línea. Antes de cada llamada crea un destino con valor 91. Por eso cada texto se prueba por separado: una entrada no conserva el destino producido por la anterior.\n\nCada línea de la salida tiene tres partes, separadas por dos puntos:\n\nEl texto recibido.\n\nEl retorno de la función: uno para verdadero y cero para falso.\n\nEl entero que quedó en el destino.\n\nPor ejemplo, `1:1:1` significa que se recibió el texto uno, se aceptó y se guardó uno. `0:0:91` indica que el texto cero se rechazó y se conservó 91. Calcula los valores en la función; no sustituyas su implementación por salidas fijas."
         },
         {
           "type": "cpp_compiler",
@@ -291,7 +432,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Hay cuatro conjuntos de entradas: extremos y ceros iniciales válidos; signos, sufijos y seis dígitos inválidos; cero y rango; y otras cadenas fuera del dominio. Una solución equivalente puede usar otra estructura siempre que conserve exactamente el contrato."
+          "text": "Los ensayos conservados comprueban extremos, ceros iniciales, escritura inválida y valores fuera del intervalo. Cada renglón siguiente indica una entrada individual y la salida que debe producir con el destino inicial 91:\n\nEntrada 1 → salida `1:1:1`.\nEntrada 30000 → salida `30000:1:30000`.\nEntrada 00001 → salida `00001:1:1`.\nEntrada 0 → salida `0:0:91`.\nEntrada +12 → salida `+12:0:91`.\nEntrada 12x → salida `12x:0:91`.\nEntrada 000001 → salida `000001:0:91`.\nEntrada 30001 → salida `30001:0:91`.\nEntrada 29999 → salida `29999:1:29999`.\nEntrada 00000 → salida `00000:0:91`.\nEntrada 00009 → salida `00009:1:9`.\nEntrada 5 → salida `5:1:5`.\nEntrada abc → salida `abc:0:91`.\nEntrada -1 → salida `-1:0:91`.\nEntrada 99999 → salida `99999:0:91`.\nEntrada 030000 → salida `030000:0:91`.\n\nTodas las líneas terminan con un salto de línea. El programa permite escribir varios textos en Entrada para observar varias llamadas; las comprobaciones declaradas en el editor reúnen esos textos en cuatro grupos. Una implementación puede organizar sus condiciones de otra manera si respeta las reglas de aceptación y conservación."
         },
         {
           "type": "multiple_choice",
@@ -320,7 +461,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Tras comprobar el laboratorio puedes contrastar la solución con esta implementación. Los datos quedan en una variable temporal hasta superar el último criterio."
+          "text": "Esta implementación calcula el valor en `candidato`, una variable local distinta de `destino`. Rechazar por longitud, por un carácter inválido o por el intervalo termina la función antes de escribir en el entero del llamador.\n\nLa asignación `destino = candidato;` aparece después de todas esas comprobaciones. A continuación, `return true;` comunica la aceptación. Así, el retorno y el estado del destino cumplen juntos el acuerdo."
         },
         {
           "type": "code",
@@ -329,7 +470,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo admite valores con ceros iniciales de hasta cinco caracteres y rechaza 0, +12, 12x, 30001 y 000001 sin cambiar destino."
+          "text": "Sigue estos recorridos para comprobar la conservación:\n\nCon `00009`, cada carácter es un dígito y las cinco posiciones forman el valor nueve. Ese valor está en el intervalo permitido: se guarda nueve en el destino y se devuelve `true`.\n\nCon `12x`, los dos primeros caracteres forman provisionalmente doce. La letra final no es un dígito, por lo que se devuelve `false` antes de la asignación. Si el destino tenía 91, sigue teniendo 91; no queda sustituido por doce.\n\nCon `30001` se recorren cinco dígitos, pero el valor supera 30000. También se devuelve `false` sin cambiar el destino. Una escritura formada sólo por dígitos no garantiza que su valor esté permitido."
         }
       ]
     },
@@ -341,7 +482,78 @@
         },
         {
           "type": "paragraph",
-          "text": "En el proyecto externo se crea src/registro.cpp para implementar la interfaz y pruebas/casos.cpp como consumidor separado. Primero rechaza formato, después ID, TIPO y TAMANO; publica el Registro candidato una sola vez al final. El lector de varias líneas y los duplicados aún no pertenecen a esta etapa."
+          "text": "Construiremos ahora el componente que acabamos de estudiar. Trabajaremos en `AssetCheck`, junto a `01_prueba_cmake`, sin sustituir sus archivos. Esta etapa tendrá cuatro piezas:\n\n`include/assetcheck/registro.hpp`: la cabecera pública que declara `Registro`, `Resultado` y `leer_registro`.\n\n`src/registro.cpp`: las definiciones de las funciones que validan una línea.\n\n`pruebas/casos.cpp`: un programa que utiliza la cabecera y comprueba los resultados de la biblioteca.\n\n`CMakeLists.txt`: la descripción de la biblioteca, su consumidor y la prueba que ejecutará CTest.\n\nEs una construcción guiada de la referencia. El procesamiento del lote, la detección de duplicados y la lectura de archivos se incorporarán al enseñar sus respectivas etapas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre la consola de desarrollo x64 de Visual Studio que comprobaste en la lección anterior. Las órdenes siguientes pertenecen a CMD. En el equipo del autor, la carpeta del curso es `E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional`; si utilizas otra, copia su ruta desde la barra de direcciones del Explorador y sustituye sólo esa parte, conservando las comillas.\n\nEjecuta las tres líneas siguientes por separado. `cd /d` cambia de carpeta y también de unidad; `cd` muestra la ubicación actual y `dir /b` enumera su contenido. Confirma que aparece la carpeta del curso antes de continuar."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cd /d \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\"\ncd\ndir /b"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si todavía no existe `AssetCheck`, crea sus carpetas con estas órdenes. `mkdir` crea el directorio indicado y los padres que falten. La barra inversa separa los nombres de las carpetas en las rutas de Windows.\n\nSi ya existe, revisa primero lo que contiene: conserva los archivos y no los reemplaces sin compararlos. Esta guía parte de una carpeta nueva; no requiere borrar otra implementación ni su construcción."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "mkdir AssetCheck\\include\\assetcheck\nmkdir AssetCheck\\src\nmkdir AssetCheck\\pruebas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea cada archivo en una pestaña nueva de Bloc de notas, con texto sin formato. No edites la pestaña de la prueba mínima. Repite este procedimiento para cada pieza:\n\n1. Elige Archivo → Nueva pestaña. Escribe el código correspondiente.\n2. Elige Archivo → Guardar como.\n3. En «Nombre de archivo», escribe la ruta completa hasta el nombre que se indica. Puedes obtener la carpeta del curso desde el Explorador y añadir el subdirectorio y el archivo de la lista anterior.\n4. Selecciona «Todos los archivos» y codificación UTF-8. Guarda y comprueba el nombre de la pestaña.\n\nEmpieza por `AssetCheck\\include\\assetcheck\\registro.hpp`: guarda allí exactamente la cabecera que estudiamos al presentar la interfaz. Debe terminar en `.hpp`, sin un `.txt` añadido. La captura muestra ese nombre y los controles reales en el editor utilizado. El guardado de cada archivo nuevo puede volver a mostrar «Documentos de texto» como tipo: compruébalo cada vez."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l4_guardar_cabecera",
+          "src": "images/programming2/p2_u4l4_guardar_cabecera.jpg",
+          "alt": "Guardar como en AssetCheck, include, assetcheck; registro.hpp, Todos los archivos y UTF-8.",
+          "caption": "Captura real de Bloc de notas al comprobar el guardado de la cabecera. La carpeta y la extensión deben coincidir con la pieza que estás creando."
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea ahora `AssetCheck\\src\\registro.cpp` con el contenido completo siguiente. Empieza incluyendo nuestra cabecera para que la definición de `leer_registro` se contraste con su declaración. `<sstream>` aporta el flujo que lee los campos y `<locale>` permite fijar sus reglas de clasificación de caracteres.\n\nLas funciones auxiliares de ID y tamaño son las que hemos desarrollado. Se colocan dentro de un `namespace` sin nombre, escrito `namespace { ... }`: sus nombres quedan internos a este archivo fuente. La función pública `leer_registro` queda fuera de ese bloque y dentro de `assetcheck`, como declara la cabecera (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <locale>\n#include <sstream>\n\nnamespace assetcheck {\nnamespace {\nbool letra_ascii(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\nbool digito_ascii(char c) {\n    return c >= '0' && c <= '9';\n}\nbool id_valido(const std::string& id) {\n    if (id.empty() || id.size() > 12 || !letra_ascii(id[0]))\n        return false;\n    for (char c : id)\n        if (!letra_ascii(c) && !digito_ascii(c) && c != '_')\n            return false;\n    return true;\n}\nbool tamano_valido(const std::string& texto, int& destino)\n{\n    if (texto.empty() || texto.size() > 5) {\n        return false;\n    }\n    int candidato = 0;\n    for (char c : texto) {\n        if (c < '0' || c > '9') {\n            return false;\n        }\n        candidato = candidato * 10 + (c - '0');\n    }\n    if (candidato < 1 || candidato > 30000) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n} // namespace\n\nResultado leer_registro(const std::string& linea, Registro& destino)\n{\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char ch : linea) {\n        if (ch != '\\t' && (ch < 32 || ch > 126))\n            return Resultado::formato;\n    }\n\n    std::istringstream entrada(linea);\n    entrada.imbue(std::locale::classic());\n    std::string id, tipo, tamano, extra;\n    if (!(entrada >> id >> tipo >> tamano) || (entrada >> extra))\n        return Resultado::formato;\n\n    if (!id_valido(id)) return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\")\n        return Resultado::tipo;\n\n    int cantidad = 0;\n    if (!tamano_valido(tamano, cantidad)) return Resultado::tamano;\n\n    Registro candidato{id, tipo, cantidad};\n    destino = candidato;\n    return Resultado::aceptado;\n}\n} // namespace assetcheck\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sigue el orden de `leer_registro`:\n\nPrimero comprueba la longitud, los bytes y que haya exactamente tres campos.\n\nDespués comprueba el ID, el tipo y el tamaño, en ese orden. Un rechazo devuelve su alternativa de `Resultado` antes de llegar a la asignación final.\n\nEl tamaño se calcula en `cantidad`, una variable local. Una vez aceptados los tres campos, se construye `candidato` y se asigna a `destino` el registro completo.\n\nCon `Puerta sonido +9`, se obtienen tres campos, el ID y el tipo son válidos, pero el tamaño contiene un signo. Se devuelve `Resultado::tamano` y no se alcanza `destino = candidato;`. Los tres campos anteriores permanecen intactos.\n\nEste acuerdo describe los rechazos de datos que comunica `Resultado`; no convierte los errores ajenos a esos datos, como un fallo al reservar memoria, en una de sus alternativas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un flujo puede utilizar distintas reglas para reconocer separadores y representar números. Ese conjunto de reglas se llama configuración regional. `entrada.imbue(std::locale::classic())` selecciona para este flujo las reglas clásicas de C++, obtenidas con `std::locale::classic()`.\n\nLo hacemos antes de extraer los campos para que este lector use unas reglas conocidas aunque el programa haya seleccionado otras para sus demás flujos. La instrucción no cambia la configuración de Windows. Como ya se han rechazado los bytes no permitidos, entre los caracteres separadores sólo pueden quedar el espacio y el tabulador admitidos por nuestro contrato (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "heading",
+          "text": "Preparar un consumidor que compruebe el acuerdo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea `AssetCheck\\pruebas\\casos.cpp`. Este archivo incluye la misma cabecera que utilizará cualquier consumidor. No incluye `registro.cpp`: CMake construirá esa implementación como biblioteca y la enlazará con el comprobador.\n\nCada elemento de `pruebas` contiene un nombre que permite localizarlo, el texto de entrada, el `Resultado` esperado y el registro que debe quedar después. Esos esperados se obtienen de las reglas del manifiesto, no llamando al propio lector para fabricarlos. Separar entrada, resultado previsto y resultado obtenido permite detectar errores repetibles de la implementación (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"assetcheck/registro.hpp\"\n\n#include <iostream>\n#include <string>\n#include <vector>\n\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\nusing assetcheck::leer_registro;\n\nbool iguales(const Registro& a, const Registro& b)\n{\n    return a.id == b.id && a.tipo == b.tipo &&\n           a.tamano_bytes == b.tamano_bytes;\n}\n\nstruct Caso {\n    std::string nombre;\n    std::string linea;\n    Resultado esperado;\n    Registro registro_esperado;\n};\n\nint main()\n{\n    const Registro anterior{\"Anterior\", \"sonido\", 87};\n    const std::vector<Caso> pruebas{\n        {\"normal\", \"Roca malla 240\", Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"tabuladores\", \"\\tBrisa\\tsonido\\t00009\\t\", Resultado::aceptado, {\"Brisa\", \"sonido\", 9}},\n        {\"minimos\", \"A textura 1\", Resultado::aceptado, {\"A\", \"textura\", 1}},\n        {\"maximos\", \"Abc123456789 malla 30000\", Resultado::aceptado, {\"Abc123456789\", \"malla\", 30000}},\n        {\"minusculas\", \"roca malla 240\", Resultado::aceptado, {\"roca\", \"malla\", 240}},\n        {\"80 bytes\", \"Roca malla 240\" + std::string(66, ' '), Resultado::aceptado, {\"Roca\", \"malla\", 240}},\n        {\"81 bytes\", \"Roca malla 240\" + std::string(67, ' '), Resultado::formato, anterior},\n        {\"cuarto campo\", \"Roca malla 240 extra\", Resultado::formato, anterior},\n        {\"falta tamano\", \"Roca malla\", Resultado::formato, anterior},\n        {\"vacia\", \"\", Resultado::formato, anterior},\n        {\"solo separadores\", \" \\t \", Resultado::formato, anterior},\n        {\"NUL interno\", std::string(\"Roca\\0 malla 240\", 15), Resultado::formato, anterior},\n        {\"LF interno\", \"Roca\\n malla 240\", Resultado::formato, anterior},\n        {\"CR interno\", \"Roca\\r malla 240\", Resultado::formato, anterior},\n        {\"DEL\", std::string(1, static_cast<char>(127)) + \" malla 4\", Resultado::formato, anterior},\n        {\"UTF8\", \"\\xC3\\x91 malla 4\", Resultado::formato, anterior},\n        {\"ID antes de tipo\", \"_A material 0\", Resultado::id, anterior},\n        {\"ID empieza con cifra\", \"7Roca malla 2\", Resultado::id, anterior},\n        {\"ID de 13\", \"Abc1234567890 malla 2\", Resultado::id, anterior},\n        {\"guion en ID\", \"Ro-ca malla 2\", Resultado::id, anterior},\n        {\"tipo antes de tamano\", \"Roca Malla 0\", Resultado::tipo, anterior},\n        {\"cero\", \"Roca malla 0\", Resultado::tamano, anterior},\n        {\"signo\", \"Roca malla +12\", Resultado::tamano, anterior},\n        {\"sufijo\", \"Roca malla 12x\", Resultado::tamano, anterior},\n        {\"seis digitos\", \"Roca malla 000001\", Resultado::tamano, anterior},\n        {\"sobre limite\", \"Roca malla 30001\", Resultado::tamano, anterior},\n        {\"cinco nueves\", \"Roca malla 99999\", Resultado::tamano, anterior}\n    };\n\n    int casos = 0;\n    int fallos = 0;\n    for (const Caso& caso : pruebas) {\n        ++casos;\n        Registro destino = anterior;\n        const Resultado obtenido = leer_registro(caso.linea, destino);\n        if (obtenido != caso.esperado || !iguales(destino, caso.registro_esperado)) {\n            ++fallos;\n            std::cerr << \"Fallo: \" << caso.nombre << '\\n';\n        }\n    }\n\n    // Estas tres llamadas comparten destino y forman un solo caso de continuacion.\n    ++casos;\n    Registro destino = anterior;\n    const Resultado r1 = leer_registro(\"Puerta malla 8\", destino);\n    const bool primero = r1 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r2 = leer_registro(\"Puerta sonido +9\", destino);\n    const bool segundo = r2 == Resultado::tamano &&\n                         iguales(destino, Registro{\"Puerta\", \"malla\", 8});\n    const Resultado r3 = leer_registro(\"Puerta sonido 9\", destino);\n    const bool tercero = r3 == Resultado::aceptado &&\n                         iguales(destino, Registro{\"Puerta\", \"sonido\", 9});\n    if (!primero || !segundo || !tercero) {\n        ++fallos;\n        std::cerr << \"Fallo: continuacion\\n\";\n    }\n\n    std::cout << \"Casos=\" << casos << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función `iguales` compara los tres miembros de dos registros. No basta con comparar sólo el tamaño o sólo el retorno del lector. En las veintisiete filas, `destino` comienza con una copia de `anterior`; si se rechaza la entrada, los esperados exigen conservar esa copia completa.\n\nEl `for` cuenta cada fila ejecutada. Si difieren el retorno o los campos, aumenta `fallos` y escribe en `std::cerr` el nombre del caso que debes revisar. No se detiene en el primer error: así puedes observar los demás resultados de esa ejecución.\n\nLa última sesión es diferente. Sus tres llamadas utilizan un solo `destino`, sin reiniciarlo entre ellas. Se comprueba y guarda cada veredicto antes de realizar la siguiente llamada. La sesión aumenta una sola vez `casos`; cualquier discrepancia en sus tres pasos aumenta una vez `fallos`.\n\nEn total se realizan treinta llamadas al lector y se cuentan veintiocho casos: veintisiete individuales y una sesión de continuación. `return fallos == 0 ? 0 : 1;` comunica cero sólo si no se detectó ninguna discrepancia. El resumen se calcula con esos contadores; no se imprime una aprobación fija."
+        },
+        {
+          "type": "paragraph",
+          "text": "Varias entradas se escriben de forma especial para que la prueba contenga bytes concretos:\n\n`std::string(66, ' ')` crea 66 espacios. Sumarlos a los 14 bytes de Roca malla 240 da el límite de 80; con 67 espacios se llega a 81.\n\nEn `std::string(\"Roca\\0 malla 240\", 15)`, la longitud explícita conserva también el byte cero que aparece en medio. Sin esa longitud, la construcción desde el texto terminado en cero se detendría en ese primer cero.\n\nLas escrituras `\\t`, `\\n` y `\\r` representan tabulador, salto de línea y retorno de carro dentro de una cadena del código. No escribas un salto real en mitad de las comillas.\n\n`static_cast<char>(127)` construye el byte con código 127 para comprobar que se rechaza. `\\xC3\\x91` escribe dos bytes mediante cifras hexadecimales; forman la codificación UTF-8 de Ñ. Esta entrada debe rechazarse por formato, antes de intentar interpretar su ID. Estos escapes pertenecen al código C++ de la prueba; no son caracteres literales que deba aceptar un manifiesto."
+        },
+        {
+          "type": "heading",
+          "text": "Compartir la biblioteca y registrar su prueba"
         },
         {
           "type": "code",
@@ -350,11 +562,67 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la raíz del proyecto externo AssetCheck, abre una consola de desarrollo x64 y realiza estas cuatro operaciones en orden:\n\n1. Configurar y generar: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug. CMake prepara los archivos de construcción en build.\n\n2. Construir el comprobador: cmake --build build --target comprobar_registro. Verifica que esta fase termine sin errores.\n\n3. Ejecutar el comprobador: build\\comprobar_registro.exe. Observa la salida y el código de terminación del programa.\n\n4. Ejecutar la batería: ctest --test-dir build --output-on-failure. Contrasta el resultado de CTest con las pruebas del programa.\n\nNo ejecutes estas órdenes dentro de 01_prueba_cmake ni reutilices una carpeta build de otra raíz o generador. Si ya existe una caché ajena, elige otro directorio de construcción y sustituye build en todas las órdenes; no borres datos de otros proyectos."
+          "text": "Guarda la descripción anterior en `AssetCheck\\CMakeLists.txt`. Conserva la función de cada instrucción:\n\n`add_library` crea el objetivo `assetcheck_registro`. `STATIC` indica una biblioteca estática, que se incorporará al enlazar su consumidor; `src/registro.cpp` es su fuente.\n\n`target_include_directories` proporciona `include` como carpeta de búsqueda de cabeceras. Al ser `PUBLIC`, sirve para compilar la biblioteca y se transmite a quien la utilice. Por eso ambos archivos C++ pueden incluir `assetcheck/registro.hpp`.\n\n`target_compile_features` declara un mínimo de C++20 con `cxx_std_20`. `PUBLIC` transmite también ese requisito. No fija un máximo: en esta construcción seleccionaremos C++23 mediante la configuración. Las dos llamadas a `set_target_properties` establecen `CXX_EXTENSIONS OFF`: solicitan el modo sin extensiones cuando el compilador distingue esos modos. Esta propiedad no garantiza que el compilador rechace toda extensión del lenguaje.\n\n`add_executable` crea `comprobar_registro` desde `pruebas/casos.cpp`. `target_link_libraries` lo enlaza con la biblioteca y recibe sus requisitos de uso. `PRIVATE` expresa que esa dependencia se usa en este ejecutable (Scott, 2025)."
         },
         {
           "type": "paragraph",
-          "text": "La referencia parcial probada en Linux conserva las cuatro piezas: cabecera pública, implementación, batería y CMakeLists.txt. La salida observada fue «Casos=28 Fallos=0». Con CTest se completó una prueba. Las versiones utilizadas fueron GCC 14.2, CMake 3.31.6 y Ninja 1.12.1; no son evidencia de una compilación Windows de este componente."
+          "text": "CTest es la herramienta que acompaña a CMake para ejecutar las pruebas registradas y reunir sus resultados. En esta descripción, `enable_testing()` habilita su generación y `add_test` registra una prueba.\n\nDespués de `NAME` aparece el nombre de esa prueba: `comprobar_registro`. Después de `COMMAND` aparece el objetivo ejecutable del mismo nombre. CMake sustituye ese objetivo por la ubicación del programa construido, de modo que CTest sepa cuál ejecutar.\n\nAquí CTest considera aprobada la ejecución si el programa termina con cero. Quien contrasta los veintiocho casos y decide ese retorno es nuestro comprobador. Registrar una prueba no convierte automáticamente cada fila interna en una prueba distinta de CTest (Scott, 2025)."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l4_objetivos_cmake",
+          "src": "images/programming2/p2_u4l4_objetivos_cmake.jpg",
+          "alt": "Bloc de notas con CMakeLists.txt de AssetCheck: biblioteca de registro, comprobador, enable_testing y add_test.",
+          "caption": "Archivo real guardado para esta etapa. La biblioteca utiliza registro.cpp; el comprobador utiliza casos.cpp y la enlaza. No se han añadido todavía los objetivos del lote ni del lector de archivos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los cuatro archivos guardados, sitúa la consola de desarrollo dentro de `AssetCheck` mediante el bloque siguiente. Comprueba también `ctest`: `where ctest` enumera las ubicaciones encontradas y `ctest --version` muestra la versión de la herramienta que se ejecuta.\n\n`dir /s /b` lista los archivos y subdirectorios con sus rutas. Comprueba los cuatro nombres y las extensiones, especialmente que no existan `registro.cpp.txt` o `registro.hpp.txt`. Si falta un archivo, revisa la carpeta donde lo guardaste antes de configurar. No ejecutes la construcción dentro de `01_prueba_cmake` ni reutilices su caché."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cd /d \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck\"\ncd\ndir /s /b\nwhere ctest\nctest --version"
+        },
+        {
+          "type": "paragraph",
+          "text": "Configura y genera los archivos de construcción con la primera orden del bloque siguiente. `-S .` señala como fuente la carpeta actual; `-B build` guarda la caché y los archivos generados en su subdirectorio `build`; `-G Ninja` elige el generador y `-DCMAKE_BUILD_TYPE=Debug` selecciona la configuración de depuración.\n\n`-DCMAKE_CXX_STANDARD=23` selecciona C++23 para los objetivos que se crearán. `-DCMAKE_CXX_STANDARD_REQUIRED=ON` exige que CMake no reduzca la selección a un estándar anterior si no puede satisfacerla. Las propiedades de extensiones de ambos objetivos siguen desactivadas. El requisito mínimo C++20 de la biblioteca permite esta selección superior.\n\nEjecuta las líneas por separado. `echo` muestra el código que dejó la orden anterior mediante `%ERRORLEVEL%`. La configuración debe terminar con cero y escribir sus archivos en la carpeta de construcción. Si falla, detente y corrige el diagnóstico; no continúes con un ejecutable anterior.\n\nSi ya había una carpeta de construcción que pertenece a otra fuente, generador o compilador, elige otra carpeta vacía y sustituye `build` en todas las órdenes. No borres ni reutilices una caché ajena."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=23 -DCMAKE_CXX_STANDARD_REQUIRED=ON\necho CodigoConfiguracion=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye ahora el comprobador. `--build build` utiliza el proyecto generado en esa carpeta y `--target comprobar_registro` pide ese objetivo. CMake construye también la biblioteca de la que depende: no tienes que compilar `registro.cpp` a mano ni añadirlo como fuente del ejecutable.\n\nEl resultado debe ser la biblioteca y `comprobar_registro.exe`, con código de construcción cero. Una configuración correcta todavía no demuestra que las fuentes compilen ni que el enlace encuentre sus definiciones. Si aparece un error, lee su fase y el archivo señalado; corrige la causa y repite esta construcción antes de ejecutar."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cmake --build build --target comprobar_registro\necho CodigoConstruccion=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta el archivo de la carpeta `build`. No necesita argumentos ni entrada de teclado: las entradas y los esperados están en `casos.cpp`. Debe escribir `Casos=28 Fallos=0`, terminar la línea y devolver cero. Los detalles de fallo se escriben en el canal de error; no debe aparecer ninguno en esta revisión correcta."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "build\\comprobar_registro.exe\necho CodigoComprobador=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta también la prueba registrada. `--test-dir build` indica dónde leer la información generada para CTest; `--output-on-failure` pide mostrar la salida de los programas que fallen.\n\nEn esta etapa debe informar una prueba aprobada y ninguna fallida, y terminar con cero. En un acierto puede ocultar el resumen del programa: por eso no es extraño ver una prueba aprobada sin volver a ver `Casos=28 Fallos=0`. La ejecución directa anterior permitió observar ese resumen. Si CTest indica que no encontró pruebas, comprueba que configuraste esta raíz y que conservaste `enable_testing()` y `add_test` (Scott, 2025)."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "ctest --test-dir build --output-on-failure\necho CodigoCTest=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "La reproducción de esta etapa en Windows utilizó MSVC 19.51.36260.0, CMake y CTest 4.3.1-msvc1 y Ninja 1.13.2. La configuración y la construcción terminaron con cero. El comprobador mostró `Casos=28 Fallos=0`, con el canal de error vacío y código cero; CTest ejecutó una prueba y la aprobó.\n\nCMake recibió la selección de C++23 y la exigencia de conservarla. Para este compilador generó la opción `-std:c++latest` en ambas fuentes C++; ése es el modo observado. Ese nombre de MSVC puede incluir características posteriores, por lo que no lo interpretamos como una comprobación de portabilidad a cualquier compilador C++23. La construcción utilizó herramientas presentes en el equipo; la instalación inicial conserva su alcance propio en la preparación.\n\nAl reproducir la revisión publicada se encontró otro fallo, antes de compilar AssetCheck: CMake advirtió que la ruta prevista para sus objetos era demasiado larga y la prueba inicial de MSVC terminó con C1083 e Invalid argument. Esa copia se había extraído dentro de varias carpetas con nombres largos.\n\nPara contrastar la causa, se colocaron los mismos ocho archivos, comprobados byte a byte, en una ruta de reproducción más corta y se repitió la misma receta. La configuración, la construcción, el comprobador y CTest terminaron con cero. No se cambió el código, las herramientas ni la configuración de Windows.\n\nSi encuentras ese diagnóstico, comprueba primero la ruta que menciona CMake y en qué fase ocurrió. Elige una ubicación de construcción más corta mediante `-B` y utiliza esa misma ubicación al construir, ejecutar y llamar a CTest. Conserva el árbol anterior para no mezclar sus resultados con los de la nueva configuración. El fallo de aquella prueba del compilador no señalaba un error en las reglas del manifiesto."
         },
         {
           "type": "multiple_choice",
@@ -383,11 +651,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La batería del proyecto de referencia ensaya veintisiete casos individuales y una secuencia de tres llamadas sobre el mismo destino: una válida, una rechazada y otra válida. Comprueba el Resultado y los tres campos después de cada ejecución. Por ejemplo, después de «Puerta malla 8», la línea «Puerta sonido +9» se rechaza sin cambiar Puerta, malla y 8."
+          "text": "La batería comprueba tanto el retorno como los tres campos del registro. Las veintisiete filas comienzan desde Anterior, sonido y 87. Cada fila tiene su propio destino y sus esperados; una fila no utiliza el registro producido por la anterior.\n\nLa sesión final sí conserva un mismo destino durante tres llamadas:\n\nPrimero, `Puerta malla 8` se acepta. El destino queda con Puerta, malla y ocho.\n\nDespués, `Puerta sonido +9` se rechaza por tamaño. El destino debe seguir con Puerta, malla y ocho, aunque el texto rechazado contenga otro tipo.\n\nPor último, `Puerta sonido 9` se acepta. El destino pasa a contener Puerta, sonido y nueve.\n\nAsí se comprueba que el rechazo intermedio no deja una actualización parcial ni impide aceptar la línea siguiente. Esta función no busca duplicados; las dos líneas válidas de la sesión pueden tener el mismo ID."
         },
         {
           "type": "paragraph",
-          "text": "Seis mutantes deliberados fueron detectados en Linux: permitir 81 caracteres, ignorar un cuarto campo, omitir la validación del ID, omitir la del tipo, aceptar cero y aceptar seis dígitos. Las pruebas son útiles porque distinguen implementaciones defectuosas que podrían coincidir con un ejemplo fácil."
+          "text": "Se comprobaron también versiones con un error introducido expresamente. Estas versiones se llaman mutantes: se altera una regla de la implementación y se observa si las pruebas detectan la diferencia.\n\nPermitir 81 bytes hace que se acepte Roca malla 240 con 67 espacios finales; la prueba exige rechazar esos 81 bytes por formato.\n\nIgnorar el cuarto campo hace que se acepte Roca malla 240 extra; la prueba exige rechazarlo por formato.\n\nOmitir la revisión del ID permite que pase un identificador que empieza por una cifra o tiene un guion; las filas correspondientes exigen el rechazo por ID.\n\nOmitir la revisión del tipo deja pasar Malla; el tipo debe coincidir exactamente con una de las tres palabras permitidas.\n\nPermitir cero contradice el tamaño mínimo de uno.\n\nPermitir seis dígitos deja pasar 000001 porque su valor es uno, aunque su escritura incumpla el máximo de cinco dígitos.\n\nCambiar el ID del destino antes de validar altera registros anteriores en rechazos; las comparaciones de los tres campos descubren ese cambio.\n\nEn Windows, las siete versiones compilaron y el comprobador terminó con uno para cada una. La discrepancia se encontró al ejecutar las comparaciones; no se confundió un fallo de compilación con una prueba que detectara el error. Estos casos respaldan esas comprobaciones concretas, sin afirmar que cubran cualquier defecto posible."
         },
         {
           "type": "multiple_choice",
@@ -408,7 +676,7 @@
         },
         {
           "type": "note",
-          "text": "La construcción y ejecución de esta nueva biblioteca en Windows, las capturas reales y la reconstrucción de U4L3 siguen pendientes de acreditación. La siguiente etapa será leer varias líneas y aplicar la primera admisión válida y la detección de duplicados."
+          "text": "Esta etapa reúne la biblioteca de un registro y su comprobador con una construcción Windows verificada. Conserva sus cuatro archivos y las pruebas. La preparación sobre un equipo sin componentes y la construcción del proyecto completo mantienen sus comprobaciones propias.\n\nLa siguiente etapa incorporará varias líneas y distinguirá la primera admisión válida de los identificadores repetidos. La referencia del autor no acredita por sí sola tu variante propia ni la terminación del portafolio."
         }
       ]
     }
@@ -436,63 +704,121 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "bb6b52c6ede9a3fb91b35019bdd2487695d0720fe80c5c307ee6030840624935",
-        "spans": []
+        "sourceSha256": "3501d0d90aa808a474ecf902e65e024994653730292c3deb56e61a2a197bb841",
+        "spans": [
+          {
+            "start": 61,
+            "end": 75,
+            "text": "Roca malla 240",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 239,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "40e1a6865ad157e3905254e7bee11a94a0a898c690db0fc041227f8caea8162f",
+        "sourceSha256": "8836012c22fabfb58e3540b74bc1e2b523aaa41dc3867c7c9b550948bf8f64ee",
         "spans": [
           {
-            "start": 75,
-            "end": 95,
+            "start": 61,
+            "end": 81,
             "text": "id tipo tamano_bytes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 557,
+            "end": 559,
+            "text": "id",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 134,
-            "end": 142,
-            "text": "80 bytes",
+            "start": 737,
+            "end": 741,
+            "text": "tipo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 766,
+            "end": 773,
+            "text": "textura",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 272,
-            "end": 289,
-            "text": "1 a 12 caracteres",
+            "start": 777,
+            "end": 782,
+            "text": "malla",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 401,
-            "end": 424,
-            "text": "textura, malla o sonido",
+            "start": 787,
+            "end": 793,
+            "text": "sonido",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 456,
-            "end": 481,
-            "text": "uno a cinco dígitos ASCII",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 511,
-            "end": 520,
-            "text": "1 y 30000",
-            "role": "data",
-            "reading": "natural"
+            "start": 820,
+            "end": 832,
+            "text": "tamano_bytes",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "2cf951fa3141cd2da40289e4bb184190bf7166a4145a924f69f97a7263fd9bd6",
-        "spans": []
+        "sourceSha256": "dfa714251c3dd866fcad7d95e8d06dcca340214f23c58b194960a0bf8835179b",
+        "spans": [
+          {
+            "start": 91,
+            "end": 98,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "text": "ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 112,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 123,
+            "text": "TAMANO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 635,
+            "end": 659,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -551,14 +877,65 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "38460524f492109799752b9b1bb8f17709f44bc48c17a95f897797b734aea8f5",
-        "spans": []
+        "sourceSha256": "a9c937ebe1d17a4f73ee37df7de1eea9e607b56508e1a242e55780483ce6b073",
+        "spans": [
+          {
+            "start": 85,
+            "end": 93,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 221,
+            "text": "tamano_bytes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 248,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 267,
+            "text": "enum class",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 315,
+            "text": "aceptado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "b18f2c40a961fb2ce8a2c4250c5d95faddae4dc4a5d8684dae6a3e63b2671b7d",
-        "spans": []
+        "sourceSha256": "110ca57856ea307aa49bdcd274752219a977ea409d2580c1c40012096e1ebda0",
+        "spans": [
+          {
+            "start": 36,
+            "end": 78,
+            "text": "AssetCheck/include/assetcheck/registro.hpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 142,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -617,41 +994,112 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "69c10f89e563d96d3631b4aa780e4bbc6f1c4df1f4fbfd68ae5a3799adf20d0e",
-        "spans": []
+        "sourceSha256": "ea653ad62ae7273be89339c437f53fb092c47b6ed8413f3e0470b1df4935b3c3",
+        "spans": [
+          {
+            "start": 47,
+            "end": 58,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 108,
+            "text": "linea.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 248,
+            "text": "\\t",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "d2e47af4a096425a99cccf451c35d54ed8ad6d542fa71f339264d5f87356cfb9",
+        "sourceSha256": "74534b9aff47c894b505505ad059cb5e62dfff6beb485d04466613653565dc48",
         "spans": [
           {
-            "start": 95,
-            "end": 113,
+            "start": 66,
+            "end": 84,
             "text": "std::istringstream",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 128,
-            "end": 130,
+            "start": 203,
+            "end": 205,
             "text": ">>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 390,
-            "end": 410,
-            "text": "Roca malla 240 extra",
+            "start": 301,
+            "end": 303,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 311,
+            "text": "tipo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 322,
+            "text": "tamano",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 443,
+            "text": "+12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 531,
-            "end": 548,
-            "text": "ID, TIPO y TAMANO",
+            "start": 448,
+            "end": 451,
+            "text": "12x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 551,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 585,
+            "end": 590,
+            "text": "extra",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 658,
+            "end": 665,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 748,
+            "end": 768,
+            "text": "Roca malla 240 extra",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -730,14 +1178,107 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "0431e004ac8033726dc9a1fbdef235dab43d17290011eb6df6959a74dcb03f6d",
-        "spans": []
+        "sourceSha256": "a4dd73535df82e26a08eb7fd408c288468b190be0f0b9a6cafb4844c8861ed6e",
+        "spans": [
+          {
+            "start": 44,
+            "end": 45,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "Z",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "a",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "z",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 311,
+            "end": 315,
+            "text": "Roca",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 324,
+            "text": "roca",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "a6c550123b096c4c83fb0152271531894a34cd3806a2487d9a5e82ff3db6376c",
-        "spans": []
+        "sourceSha256": "8aef7307c06c05910be91f03580f5ce8b0439c038cf0e4b7b9aa1cd87e55ea0d",
+        "spans": [
+          {
+            "start": 75,
+            "end": 82,
+            "text": "textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 91,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 102,
+            "text": "sonido",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 219,
+            "text": "_A material 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 288,
+            "text": "ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 347,
+            "text": "A material 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 433,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -796,14 +1337,58 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "fd0b601930044d74f3455c8f3cdb4ebc43e1b3c0159578b4fd44ad539ccba81a",
-        "spans": []
+        "sourceSha256": "6296b97426275134353a6745ecbe72406500b843e449101fe31915f82276d2a3",
+        "spans": [
+          {
+            "start": 170,
+            "end": 173,
+            "text": "'0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 181,
+            "text": "'9'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 317,
+            "text": "00009",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 375,
+            "text": "000001",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "f6257846840b4501eddd82cafad9df04b5243d7aa7e3be6cdd85596403258abc",
-        "spans": []
+        "sourceSha256": "4524d1b5d77e3b2a35cb8346c628235fe30d60e672fae5199b06753ab2bc056c",
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "240",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -856,8 +1441,44 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "a45943394e5399658d5e1a3774f262cf0022ee108f4abbd093a2274e96f2e14f",
-        "spans": []
+        "sourceSha256": "7fbdf553af777811a0fbb61d87c7501adeb372c5e2f61f9dd0c818b2a25aa761",
+        "spans": [
+          {
+            "start": 67,
+            "end": 80,
+            "text": "tamano_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 116,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 213,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 299,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 343,
+            "end": 348,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -868,14 +1489,177 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "d7c38a4f8910664729f5bb718bfe416cd29c9cfb1989fef574069a97bc92a133",
-        "spans": []
+        "sourceSha256": "e54e2b6ff6852664b11887bc57eaec062c0d1173fd18a2ebce939b7122bd03a8",
+        "spans": [
+          {
+            "start": 21,
+            "end": 34,
+            "text": "tamano_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 203,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 274,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 298,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 736,
+            "end": 741,
+            "text": "1:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 810,
+            "end": 816,
+            "text": "0:0:91",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "982f33339804e3e73a36602740bc8f69b0fcdbfa0d428ee53b98a19f96531d75",
-        "spans": []
+        "sourceSha256": "65647ba76c0dfc8bdc7eeca5625aeea26aab1be943d366d2d78ea06ecf5fab9c",
+        "spans": [
+          {
+            "start": 243,
+            "end": 248,
+            "text": "1:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 288,
+            "text": "30000:1:30000",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 324,
+            "text": "00001:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 353,
+            "text": "0:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 386,
+            "text": "+12:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 411,
+            "end": 419,
+            "text": "12x:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 447,
+            "end": 458,
+            "text": "000001:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 485,
+            "end": 495,
+            "text": "30001:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 522,
+            "end": 535,
+            "text": "29999:1:29999",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 562,
+            "end": 572,
+            "text": "00000:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 599,
+            "end": 608,
+            "text": "00009:1:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 631,
+            "end": 636,
+            "text": "5:1:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 661,
+            "end": 669,
+            "text": "abc:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 693,
+            "end": 700,
+            "text": "-1:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 727,
+            "end": 737,
+            "text": "99999:0:91",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 765,
+            "end": 776,
+            "text": "030000:0:91",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -934,14 +1718,86 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "7542ce40a94c6853d2b35f9a7661e6ae2f519dace247ee2f8aa1f0198aefd848",
-        "spans": []
+        "sourceSha256": "331b2f4a0fd8a778bd0e54de1a8e28d208e0d6f1b0386c338db07929cd70ad64",
+        "spans": [
+          {
+            "start": 41,
+            "end": 50,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 92,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 262,
+            "text": "destino = candidato;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 339,
+            "text": "return true;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "0a426f1b8e81e23c486e62f498f25a870e7ed448ff18fdd5a85319fef5647e0e",
-        "spans": []
+        "sourceSha256": "39f0b8b2286a87e63573bb0c25b01131369b539ab4c6af4fe820f0b440b8f61f",
+        "spans": [
+          {
+            "start": 61,
+            "end": 66,
+            "text": "00009",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 233,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 245,
+            "text": "12x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 367,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 472,
+            "end": 477,
+            "text": "30001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 555,
+            "end": 560,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -952,54 +1808,132 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "200af038055a9a7d08d4afb3825b8592f619d7526b6debeb11ad2ba65d1b349a",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0003",
-        "path": "/text",
-        "sourceSha256": "1137094f2fce499d6465f410fbfd58e42a47e61b3d1479c3bad62da219ac034a",
+        "sourceSha256": "4d3eac99442d9ff2fd32c93ecfa427a4540c42b06163a9f1c37b8c919e542f00",
         "spans": [
           {
-            "start": 35,
-            "end": 45,
+            "start": 77,
+            "end": 87,
             "text": "AssetCheck",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 114,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 211,
+            "text": "include/assetcheck/registro.hpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 255,
+            "text": "Registro",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 153,
-            "end": 206,
-            "text": "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug",
+            "start": 259,
+            "end": 268,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 273,
+            "end": 286,
+            "text": "leer_registro",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 291,
-            "end": 338,
-            "text": "cmake --build build --target comprobar_registro",
-            "role": "cpp",
+            "end": 307,
+            "text": "src/registro.cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 413,
-            "end": 441,
-            "text": "build\\comprobar_registro.exe",
-            "role": "cpp",
+            "start": 369,
+            "end": 386,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 527,
-            "end": 569,
-            "text": "ctest --test-dir build --output-on-failure",
-            "role": "cpp",
+            "start": 472,
+            "end": 486,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "157160030f83a3268bc2f7581e79b5045d74347a91831950369b218d7592a8a5",
+        "spans": [
+          {
+            "start": 77,
+            "end": 87,
+            "text": "AssetCheck",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 670,
-            "end": 685,
+            "start": 138,
+            "end": 143,
+            "text": "ctest",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 158,
+            "text": "where ctest",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 214,
+            "text": "ctest --version",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 271,
+            "end": 280,
+            "text": "dir /s /b",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 411,
+            "end": 427,
+            "text": "registro.cpp.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 448,
+            "text": "registro.hpp.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 569,
+            "end": 584,
             "text": "01_prueba_cmake",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           }
         ]
@@ -1007,8 +1941,30 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "50032bdff556bf6ad646884ef8020e328c2fa243550d55dfe49acb4e819ee0ff",
-        "spans": []
+        "sourceSha256": "a06911edcf7230b745911e35d469aff27fadbd8c1272d0e4b8150a0b50d5a3d2",
+        "spans": [
+          {
+            "start": 190,
+            "end": 207,
+            "text": "Casos=28 Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 412,
+            "text": "-std:c++latest",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1524,
+            "end": 1526,
+            "text": "-B",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
@@ -1067,13 +2023,35 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "2c55e6c3e35f59cb1600c70c227787ded636d1eee4405bddbd29cdb56c3ee092",
-        "spans": []
+        "sourceSha256": "366f8371db79ae75a32237567718debc8010e81dcbed49131a9e3f2358b99412",
+        "spans": [
+          {
+            "start": 324,
+            "end": 338,
+            "text": "Puerta malla 8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 421,
+            "text": "Puerta sonido +9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 555,
+            "end": 570,
+            "text": "Puerta sonido 9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "7426429ce0e582148579da19b36e20aae437db531dfacb7ce55c8dc4f56866ed",
+        "sourceSha256": "64d3cda30add7613f6112e5d5c7999d2b634fed263f0819c485d7b3afd1b8797",
         "spans": []
       },
       {
@@ -1127,8 +2105,1121 @@
       {
         "block": "block_0008_0004",
         "path": "/text",
-        "sourceSha256": "1a0bd679bb3703cd08c2db3e9ac7281ed5e6b8d10d080755e361bf78130eba14",
+        "sourceSha256": "9470d9d35127f22319a34502bf785b2bae38ca4c0331d213630824cba1162397",
         "spans": []
+      },
+      {
+        "block": "u4l4_leer_declaracion",
+        "path": "/text",
+        "sourceSha256": "425cc5e52ce989509df331f5d22a460f0805c44ebad3f52e6b7b37962504996e",
+        "spans": [
+          {
+            "start": 22,
+            "end": 35,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 111,
+            "text": "const std::string& linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 220,
+            "text": "Registro& destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 368,
+            "end": 377,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 454,
+            "text": "Resultado::formato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 515,
+            "end": 535,
+            "text": "namespace assetcheck",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 621,
+            "end": 641,
+            "text": "assetcheck::Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 645,
+            "end": 657,
+            "text": "#pragma once",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_inicial_no_admision",
+        "path": "/text",
+        "sourceSha256": "6a6d28d3edcb17ecd7fc086685dc1b5773ac17cad8100accf983e4e5f8fc9e1b",
+        "spans": [
+          {
+            "start": 26,
+            "end": 38,
+            "text": "tamano_bytes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 241,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_bytes_sin_signo",
+        "path": "/text",
+        "sourceSha256": "fe55d8fab81c1a911676c76244a19ca258250e429588c103c9cc3b859236da93",
+        "spans": [
+          {
+            "start": 18,
+            "end": 31,
+            "text": "unsigned char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 389,
+            "end": 403,
+            "text": "Roca malla 240",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_condicion_extraccion",
+        "path": "/text",
+        "sourceSha256": "9d60825c747abb0a767e64d4f4880284d2c2add072d55d455df0eb594c7c3324",
+        "spans": [
+          {
+            "start": 69,
+            "end": 103,
+            "text": "!(entrada >> id >> tipo >> tamano)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 167,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 269,
+            "text": "entrada >> extra",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_recorrer_identificador",
+        "path": "/text",
+        "sourceSha256": "898599da9718392790bad3f8d78305cacfa1c1ceabd9cdb329ad56caec8d9202",
+        "spans": [
+          {
+            "start": 1,
+            "end": 12,
+            "text": "letra_ascii",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 29,
+            "text": "digito_ascii",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 174,
+            "text": "id_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 230,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 236,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 333,
+            "text": "id.empty()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 370,
+            "text": "id[0]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 465,
+            "end": 470,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 558,
+            "end": 570,
+            "text": "return true;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_valor_de_una_cifra",
+        "path": "/text",
+        "sourceSha256": "65354248156340700bf6356a58c35277c0d847d27b2bfb2fc32097935a446fdd",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "'4'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 88,
+            "text": "'0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 96,
+            "text": "'9'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 132,
+            "text": "c - '0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 181,
+            "text": "c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 203,
+            "text": "c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 217,
+            "text": "'4'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 298,
+            "text": "c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 313,
+            "end": 346,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 443,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 531,
+            "end": 534,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 707,
+            "end": 724,
+            "text": "(Microsoft, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_preparar_raiz",
+        "path": "/text",
+        "sourceSha256": "7e91d4149368421ccced6448efdb0e0934703473a7564851a7130c730ed68e39",
+        "spans": [
+          {
+            "start": 181,
+            "end": 256,
+            "text": "E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 446,
+            "text": "cd /d",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 488,
+            "end": 490,
+            "text": "cd",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 523,
+            "end": 529,
+            "text": "dir /b",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_crear_subcarpetas",
+        "path": "/text",
+        "sourceSha256": "6be812b2901c541a260ac7f94dc2cac97b7a2cb0d1d0f6f10ff6f5b384f7801d",
+        "spans": [
+          {
+            "start": 22,
+            "end": 32,
+            "text": "AssetCheck",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 78,
+            "text": "mkdir",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_guardar_cuatro_archivos",
+        "path": "/text",
+        "sourceSha256": "a68b014e3650df2873252a3d0792a2d116dfbe377966274eb367eca13c3c712d",
+        "spans": [
+          {
+            "start": 583,
+            "end": 625,
+            "text": "AssetCheck\\include\\assetcheck\\registro.hpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 723,
+            "end": 727,
+            "text": ".hpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 738,
+            "end": 742,
+            "text": ".txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_preparar_implementacion",
+        "path": "/text",
+        "sourceSha256": "a7e3ee301fa2c552d4ee22a107f9ebbd3a2b6c120d2f44207d865c7a3d57e188",
+        "spans": [
+          {
+            "start": 12,
+            "end": 39,
+            "text": "AssetCheck\\src\\registro.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 154,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 199,
+            "text": "<sstream>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 247,
+            "text": "<locale>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 404,
+            "end": 413,
+            "text": "namespace",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 453,
+            "text": "namespace { ... }",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 527,
+            "end": 540,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 581,
+            "end": 591,
+            "text": "assetcheck",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 619,
+            "end": 652,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_recorrido_implementacion",
+        "path": "/text",
+        "sourceSha256": "5a556389fd5bad7affb95c6eeb183df22dd3c6f27d94f1487cf411690f345be2",
+        "spans": [
+          {
+            "start": 19,
+            "end": 32,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 222,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 289,
+            "end": 297,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 378,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 395,
+            "end": 402,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 432,
+            "end": 448,
+            "text": "Puerta sonido +9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 552,
+            "end": 569,
+            "text": "Resultado::tamano",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 588,
+            "end": 608,
+            "text": "destino = candidato;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 718,
+            "end": 727,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_clasificacion_fija",
+        "path": "/text",
+        "sourceSha256": "715743a59943e85e07966302bccb91056093755cc5f8f5829302258db8f39c68",
+        "spans": [
+          {
+            "start": 148,
+            "end": 185,
+            "text": "entrada.imbue(std::locale::classic())",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 279,
+            "text": "std::locale::classic()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 648,
+            "end": 681,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_preparar_comprobador",
+        "path": "/text",
+        "sourceSha256": "329d8b31fb130642590570582a3206d8a4b571968a9e9695fb74b6902054faa0",
+        "spans": [
+          {
+            "start": 6,
+            "end": 34,
+            "text": "AssetCheck\\pruebas\\casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 136,
+            "text": "registro.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 251,
+            "text": "pruebas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 331,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 599,
+            "end": 623,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_leer_comprobador",
+        "path": "/text",
+        "sourceSha256": "d7bdf3efc7890558082076c23526438afd9a6e76af8b0cd23424452002a8c7fb",
+        "spans": [
+          {
+            "start": 12,
+            "end": 19,
+            "text": "iguales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 166,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 203,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 291,
+            "text": "for",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 367,
+            "end": 373,
+            "text": "fallos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 389,
+            "end": 398,
+            "text": "std::cerr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 599,
+            "end": 606,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 747,
+            "end": 752,
+            "text": "casos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 813,
+            "end": 819,
+            "text": "fallos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 958,
+            "end": 985,
+            "text": "return fallos == 0 ? 0 : 1;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_escribir_bytes_prueba",
+        "path": "/text",
+        "sourceSha256": "b7b73d14f12c5d08edf18ea7a26380e7d307cbb3b8093027580f2c76e53ba09c",
+        "spans": [
+          {
+            "start": 93,
+            "end": 113,
+            "text": "std::string(66, ' ')",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 266,
+            "text": "std::string(\"Roca\\0 malla 240\", 15)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 460,
+            "end": 462,
+            "text": "\\t",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 466,
+            "end": 468,
+            "text": "\\n",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 473,
+            "end": 475,
+            "text": "\\r",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 621,
+            "end": 643,
+            "text": "static_cast<char>(127)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 710,
+            "end": 718,
+            "text": "\\xC3\\x91",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_explicar_objetivos",
+        "path": "/text",
+        "sourceSha256": "2416be6743ef1bc8cd718e0f7032204cac464c4a47bf504ccb188b3ce8952ee4",
+        "spans": [
+          {
+            "start": 35,
+            "end": 60,
+            "text": "AssetCheck\\CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 117,
+            "text": "add_library",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 156,
+            "text": "assetcheck_registro",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 166,
+            "text": "STATIC",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 262,
+            "text": "src/registro.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 306,
+            "text": "target_include_directories",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 321,
+            "end": 328,
+            "text": "include",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 383,
+            "text": "PUBLIC",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 498,
+            "end": 521,
+            "text": "assetcheck/registro.hpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 526,
+            "end": 549,
+            "text": "target_compile_features",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 583,
+            "end": 593,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 597,
+            "end": 603,
+            "text": "PUBLIC",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 747,
+            "end": 768,
+            "text": "set_target_properties",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 782,
+            "end": 800,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 965,
+            "end": 979,
+            "text": "add_executable",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 987,
+            "end": 1005,
+            "text": "comprobar_registro",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1014,
+            "end": 1031,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1035,
+            "end": 1056,
+            "text": "target_link_libraries",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1119,
+            "end": 1126,
+            "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1182,
+            "end": 1195,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_explicar_ctest",
+        "path": "/text",
+        "sourceSha256": "b908a8a987c424afb680f6c786f8af305b83a116564128cba80e393977512172",
+        "spans": [
+          {
+            "start": 130,
+            "end": 146,
+            "text": "enable_testing()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 182,
+            "text": "add_test",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 222,
+            "text": "NAME",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 276,
+            "text": "comprobar_registro",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 298,
+            "text": "COMMAND",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 717,
+            "end": 730,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_configurar_pasos",
+        "path": "/text",
+        "sourceSha256": "46254392f2854e86820c6b7becc525cbecea934a6f3ca50498d7849c9d96eeff",
+        "spans": [
+          {
+            "start": 92,
+            "end": 96,
+            "text": "-S .",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "-B build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 214,
+            "text": "build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 226,
+            "text": "-G Ninja",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 274,
+            "text": "-DCMAKE_BUILD_TYPE=Debug",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 321,
+            "end": 344,
+            "text": "-DCMAKE_CXX_STANDARD=23",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 431,
+            "text": "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 704,
+            "end": 708,
+            "text": "echo",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 765,
+            "end": 777,
+            "text": "%ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1092,
+            "end": 1097,
+            "text": "build",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_construir_pasos",
+        "path": "/text",
+        "sourceSha256": "5826ba9d3d5b36b6beda9176d033efda1a0b7d362e05dfec1808734d7e4bffc6",
+        "spans": [
+          {
+            "start": 33,
+            "end": 46,
+            "text": "--build build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 122,
+            "text": "--target comprobar_registro",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 236,
+            "text": "registro.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 347,
+            "text": "comprobar_registro.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_ejecutar_pasos",
+        "path": "/text",
+        "sourceSha256": "96eec1d396a526ea80b2dfc0f0fe62dd7085b6d9f77b9844c8f51d8939f65e65",
+        "spans": [
+          {
+            "start": 34,
+            "end": 39,
+            "text": "build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 136,
+            "text": "casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 171,
+            "text": "Casos=28 Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l4_ctest_pasos",
+        "path": "/text",
+        "sourceSha256": "1fab50e63fdc3adc4dd03f337ff2ead821d7737021000a48d5e637e80e6aeeca",
+        "spans": [
+          {
+            "start": 39,
+            "end": 55,
+            "text": "--test-dir build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 131,
+            "text": "--output-on-failure",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 408,
+            "text": "Casos=28 Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 585,
+            "text": "enable_testing()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 590,
+            "end": 598,
+            "text": "add_test",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 600,
+            "end": 613,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1390,6 +3481,8 @@
           "block_0001_0000",
           "block_0001_0001",
           "block_0001_0002",
+          "u4l4_leer_declaracion",
+          "u4l4_inicial_no_admision",
           "block_0001_0003",
           "block_0001_0004"
         ]
@@ -1400,8 +3493,10 @@
           "block_0002_0000",
           "block_0002_0001",
           "block_0002_0002",
+          "u4l4_bytes_sin_signo",
           "block_0002_0003",
           "block_0002_0004",
+          "u4l4_condicion_extraccion",
           "block_0002_0005"
         ]
       },
@@ -1411,8 +3506,10 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
+          "u4l4_recorrer_identificador",
           "block_0003_0003",
-          "block_0003_0004"
+          "block_0003_0004",
+          "u4l4_relacionar_primera_causa"
         ]
       },
       {
@@ -1421,6 +3518,8 @@
           "block_0004_0000",
           "block_0004_0001",
           "block_0004_0002",
+          "u4l4_valor_de_una_cifra",
+          "u4l4_relacionar_acumulacion",
           "block_0004_0003",
           "block_0004_0004"
         ]
@@ -1449,8 +3548,36 @@
         "blocks": [
           "block_0007_0000",
           "block_0007_0001",
+          "u4l4_preparar_raiz",
+          "u4l4_comandos_raiz",
+          "u4l4_crear_subcarpetas",
+          "u4l4_comandos_carpetas",
+          "u4l4_guardar_cuatro_archivos",
+          "u4l4_imagen_guardado",
+          "u4l4_preparar_implementacion",
+          "u4l4_fuente_registro_completa",
+          "u4l4_recorrido_implementacion",
+          "u4l4_clasificacion_fija",
+          "u4l4_titulo_comprobador",
+          "u4l4_preparar_comprobador",
+          "u4l4_fuente_comprobador_completa",
+          "u4l4_leer_comprobador",
+          "u4l4_escribir_bytes_prueba",
+          "u4l4_titulo_objetivos",
           "block_0007_0002",
+          "u4l4_explicar_objetivos",
+          "u4l4_explicar_ctest",
+          "u4l4_imagen_cmake",
           "block_0007_0003",
+          "u4l4_comandos_ver_archivos",
+          "u4l4_configurar_pasos",
+          "u4l4_comandos_configurar",
+          "u4l4_construir_pasos",
+          "u4l4_comandos_construir",
+          "u4l4_ejecutar_pasos",
+          "u4l4_comandos_ejecutar",
+          "u4l4_ctest_pasos",
+          "u4l4_comandos_ctest",
           "block_0007_0004",
           "block_0007_0005"
         ]
@@ -1702,7 +3829,332 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u4l4_leer_declaracion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l4_inicial_no_admision",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l4_bytes_sin_signo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l4_condicion_extraccion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l4_recorrer_identificador",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l4_relacionar_primera_causa",
+        "sha256": "1d4db0f5baa898a8311e88daf71443856ba901405e3a2e9f939ca62067d5db8c",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l4_valor_de_una_cifra",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l4_relacionar_acumulacion",
+        "sha256": "f5a615bcbee20d53c3ecee0855144badd7020cbf7e16d17937141b1ff826d043",
+        "storage": {
+          "page": 9,
+          "block": 7
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l4_preparar_raiz",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 8
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_raiz",
+        "sha256": "4d4889b6c7155c0d044301197d113bd0bbbe404b04754d23c57df93ae8df0d53",
+        "storage": {
+          "page": 9,
+          "block": 9
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_crear_subcarpetas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 10
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_carpetas",
+        "sha256": "baf8e484c4d31dab18c783c652294d94ad6b63e92abd493aa1badc3960788dfa",
+        "storage": {
+          "page": 9,
+          "block": 11
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_guardar_cuatro_archivos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 12
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_imagen_guardado",
+        "sha256": "d5845adaad63f22eae94735b5ec57c6d9cb4289df0c04e88d7620233d2f38a4e",
+        "storage": {
+          "page": 9,
+          "block": 13
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_preparar_implementacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 14
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_fuente_registro_completa",
+        "sha256": "df5bacd77bcbbf1c105836ebd2979492f07cb03bf5ec124cf1528a9d18d8a25a",
+        "storage": {
+          "page": 9,
+          "block": 15
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_recorrido_implementacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 16
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_clasificacion_fija",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 17
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_titulo_comprobador",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 18
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_preparar_comprobador",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 19
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_fuente_comprobador_completa",
+        "sha256": "fb1e73ccc5bb7659debf1cb294e192dc5f16b1c9491a29624fdb5aad2c7437b2",
+        "storage": {
+          "page": 9,
+          "block": 20
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_leer_comprobador",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 21
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_escribir_bytes_prueba",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 22
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_titulo_objetivos",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 23
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_explicar_objetivos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 24
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_explicar_ctest",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 25
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_imagen_cmake",
+        "sha256": "04f9422c09dbd13e9dee520493a66dd1769ab380929ed96bd894848561c39eb0",
+        "storage": {
+          "page": 9,
+          "block": 26
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_ver_archivos",
+        "sha256": "9cb6debc339a4709d470178e67e42acf975edc5603fa784fd9df49e80ae3c3b6",
+        "storage": {
+          "page": 9,
+          "block": 27
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_configurar_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 28
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_configurar",
+        "sha256": "07f29ad686df2a56107e05e2b900a9c8a0a6b8a401fd40540612bbe920584e8b",
+        "storage": {
+          "page": 9,
+          "block": 29
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_construir_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 30
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_construir",
+        "sha256": "4b5aad5d08e2de336f9ddd2a99e17027190ce87da373c3aca57a8f1690552f15",
+        "storage": {
+          "page": 9,
+          "block": 31
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_ejecutar_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 32
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_ejecutar",
+        "sha256": "bcd1cf788065f5819a5a64ef52a394d88175685d755781bf230b9e0be58bcfc3",
+        "storage": {
+          "page": 9,
+          "block": 33
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_ctest_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 34
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l4_comandos_ctest",
+        "sha256": "beb154dfd09ed158421d52e94dde1daa2bfd10ad135efaf484ff4d6b2c490fd8",
+        "storage": {
+          "page": 9,
+          "block": 35
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0002",
@@ -1718,6 +4170,141 @@
         "id": "block_0007_0003",
         "beforeSha256": "d58c08aaf6341b7f8ee2e70266983808978290409a4c86d9ba028214beac0834",
         "afterSha256": "fe00342d07a0c12ded28bce94c6433669838a49ebbfe5fb13d67d8d0d1459c80"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "af5bcc3d734e4dcb9bde8effd922d018eb78dbd70172b40e80d1098de72ff1e7",
+        "afterSha256": "d9c837a4a40e2281397e2f2ae4b06ac133775491c26647c8e671f62c365b3350"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4b36e6556d998d306ea311f7dfc82c03f0c3eec4e3d83d2b449c827133364d49",
+        "afterSha256": "d925d3e03af48415cc6a1bf31846a2b207a25a81ccab1419aa85074e97cabf93"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "cbdedf4d62411914c14bd78feda98832e19deb4d9fe8325f79dd1e71057e7588",
+        "afterSha256": "0989f1c884c730fc74585d17d0cbb15afe8f3fa05fb2eaf324ea3d2af82624e0"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "d4aa4a3b94619e0805a84babb5631bef27db3512bc3e2672f60f0b93d6b577b6",
+        "afterSha256": "df21a148e35b443b695ed85c26be54c3babdb1fac4d92afd439da83147d51aed"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "9a83df417e9b350559846bbf9eb78506da7e9840313142b57f72919dda1e1fcf",
+        "afterSha256": "1cbbf8be9fbdbff249cfb2f1cf192c4202ab8ba824639d8f0bdfe2439ef4f883"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d6af62e114d1412de423cd1c91a055a66ef15e7aa703081c4d5b485f1e922dd0",
+        "afterSha256": "85b3001d631d237c7d5daf59433880937f774ce70b9a4846051b4d31e7bfbb5e"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "be3b515b4d08b6e7b547d7abc22c89ac1ec8cf302ebc3b5bca9af466a2789dbd",
+        "afterSha256": "fd91a0801b89e801a77f1b6f517cddd5155b07dc17ae2d552fed990bbcec906d"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "854d4e344fd0f8925f4590ffb53b4cbb46d5e601dffa9a5ad12a67e166aff539",
+        "afterSha256": "c4cbbf1a5bc6d522ce870efe4df3b4b4eb31e40ea2ca604a42fca9495802ab46"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "042eff52ba3f25a0577a59c264f346f9dfb6c65c24760d33fa516174f2550899",
+        "afterSha256": "774fc5e74ba3cc40651af972f97bc9b4e1d381800ad4dfe310d5ecc12da3d97c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "28473229dd3eb60d69d0cf0c49df66884b971aa2ac7a641f34d591392df66f0f",
+        "afterSha256": "0d8954bc6291339d0cc239b58f2ac1c0c87be6aad7b4938c25d86217b6643972"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "6f21a0f8e5e6d7d70f13adf31251dda32a6ec2ba6222820c1fdda90d068d2f48",
+        "afterSha256": "0d573b05399db44039fbbb18acb3ae4ebc5b5875457d1dd4c527a76b2bbdfe26"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "1cef58b23fe597dd4ec392ac1fd68308bfc7cea5aa1a0ae5a1c28655f114b837",
+        "afterSha256": "06de8a3d6ea36be7bc299466bd194fb64aa0cf3f65f430f517aacab1560a8780"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "8eb7ec5232fadfc4a488e8377719ccd3383006b3efbf1935ae9b5d14079ff28c",
+        "afterSha256": "45163f75691fe815aa4a2d37e47eb51a673a678075e139d1d45a309833d0f268"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "3824a08a3f6e3b8823ffb348fd2d83ec6188fe0e8a00d62fc9404f7d23351690",
+        "afterSha256": "6105b032b953f7c0d89d59311fada8b2da245dc3d9ddf8a776d554e95b96df16"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "3cb7c8e15ea9d72084b52fa50e980bb1c5803148a758484fcc8903313db75039",
+        "afterSha256": "08bd3ce551846134a5545124f24de5f5ff47a0098554dc999eaeba24f4bc22f1"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "1cbbf8be9fbdbff249cfb2f1cf192c4202ab8ba824639d8f0bdfe2439ef4f883",
+        "afterSha256": "678b49bf0f050af73955039a0fb4368e5ebf711a83f8934b36b7a7371999688f"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "678b49bf0f050af73955039a0fb4368e5ebf711a83f8934b36b7a7371999688f",
+        "afterSha256": "f8c56022cd870497c1a63e56208452bbc04cf2d5a7271f48e77247c5a78445c5"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "08bd3ce551846134a5545124f24de5f5ff47a0098554dc999eaeba24f4bc22f1",
+        "afterSha256": "debb7ddca08bbe0242338a249fd5dc2459b25232ab980cef7e44a2fde90b1ac5"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "2ba54712519883587c253e2e3cc3336b40a3e037d8345521ee846ab8e23978b7",
+        "afterSha256": "3e4eb1a6e9f75024fae6a3386eea684f4957b415c4b8124a80baa70220bb7d8c"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "659d4e58620da46251ebb803bbaf6dacd227757532386326219296cac3f167ac",
+        "afterSha256": "839ba10d4ff35d5b640e2bb2fb2e519a3a11a99a555cc8555ecc23a68077de10"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "fe00342d07a0c12ded28bce94c6433669838a49ebbfe5fb13d67d8d0d1459c80",
+        "afterSha256": "b69b8badf725036a54927de136b2fc410410d979087a53475a611aece48e5433"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "98ae9f512e47dea9e30f3f48d2e40f02e1026075790d205421aaeafc6cf680fa",
+        "afterSha256": "32446d68e711261f0aac922fd8188a431bb680fcae6bda4c3b661ece4337eb14"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "0b5f161e404da16e134fbbd52f2af7db21fcb460681b76fa8d8c388aa4f20b4a",
+        "afterSha256": "e1dbda245955fac539105d5ea4cf4939c8470c5160128a8a6228e2e2417fffe6"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "d76edbf9f4c99bf28297cea4b2445b8daa2d7ca1e83dfc1feba43114ce63a924",
+        "afterSha256": "2eda4d042c7b948330dcc0e313d1124348c89683ebaf9a4658835a2c54b854f4"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "d05989f194df6434abc964bde131e0fdaf7e3bc2f28b30501856ff697d313f37",
+        "afterSha256": "2a3939082c38ce3b67862ee277659a965927155589f07d4978f77c8dee527b1c"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "839ba10d4ff35d5b640e2bb2fb2e519a3a11a99a555cc8555ecc23a68077de10",
+        "afterSha256": "0c05fba8d70685ba3a50ae750f55f7cd7e286f46fb96b78d399b33606048e396"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "32446d68e711261f0aac922fd8188a431bb680fcae6bda4c3b661ece4337eb14",
+        "afterSha256": "91b764d2627b2aa1cb965b8628bafc408876d0baced25954e903bdad6639bee2"
       }
     ]
   }

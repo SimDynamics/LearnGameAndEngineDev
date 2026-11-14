@@ -14,15 +14,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta primera lección distinguirás un archivo fuente guardado, el proceso que lo convierte en un programa ejecutable y la ejecución concreta que observas. Relacionarás una discrepancia con su versión y prepararás un caso que permita investigar su causa. Los conocimientos nuevos son de trabajo con programas; no se exige CMake, Git ni un depurador previo."
+          "text": "En esta lección seguirás tres acciones diferentes:\nGuardar el archivo con el código fuente.\nConstruir el programa ejecutable a partir de los archivos guardados.\nEjecutar ese programa y observar su resultado.\n\nDespués investigarás un resultado que no cumple el requisito. Primero identificarás qué programa se ejecutó. A continuación elegirás los datos que permitan comprobar la comparación utilizada por su función. Utilizarás las funciones, los condicionales y las comprobaciones que practicaste en el curso anterior."
         },
         {
           "type": "paragraph",
-          "text": "Un pequeño gestor de existencias debe solicitar reposición cuando la cantidad disponible sea menor o igual que el mínimo. Su dominio es 0 ≤ disponibles ≤ 40 y 1 ≤ minimo ≤ 40; ambos valores son enteros. La función devuelve un bool y no modifica las cantidades. Aquí estudiaremos sólo llamadas de ese dominio. En la salida ordinaria de std::cout, sin boolalpha, false se imprime como 0 y true como 1."
+          "text": "Un pequeño gestor de existencias debe indicar si hace falta reponer unidades. Su regla es solicitar reposición cuando la cantidad disponible sea menor o igual que el mínimo.\n\nLos datos de cada llamada cumplen estas condiciones:\n`disponibles` es un entero entre cero y cuarenta, incluidos ambos extremos.\n`minimo` es un entero entre uno y cuarenta, incluidos ambos extremos.\nLa función no cambia ninguna de esas cantidades.\n\nLa respuesta tiene tipo `bool`: `true` significa que debe reponer; `false`, que no debe hacerlo. Por ejemplo, si la cantidad disponible coincide con el mínimo, corresponde solicitar reposición porque el requisito incluye la igualdad.\n\nEn estos programas, `std::cout` presenta el valor falso como `0` y el verdadero como `1`. No se utiliza `std::boolalpha`, que cambiaría esa presentación por las palabras false y true. Distingue el valor lógico que devuelve la función del dígito que ves en la consola."
         },
         {
           "type": "paragraph",
-          "text": "El reporte «con 5 unidades y mínimo 5 no solicita reposición» identifica un síntoma. Antes de explicar su causa, necesitamos saber qué programa recibió esos datos. Guardar una corrección no demuestra que la prueba haya ejecutado esa corrección; investigar una versión distinta desperdicia evidencia (Kernighan & Pike, 1999, p. 129)."
+          "text": "El reporte «con cinco unidades y mínimo cinco no solicita reposición» describe un resultado incorrecto. Es lo que se ha observado; todavía no explica su causa. Puede que el código utilice una comparación equivocada o que se haya ejecutado una versión anterior.\n\nPara investigar, necesitamos identificar el programa que recibió esos datos. Guardar una corrección cambia el archivo fuente, pero no demuestra que esa corrección forme parte del ejecutable probado. Antes de buscar el error, hay que comprobar que se está probando la versión que se quiere investigar (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -51,15 +51,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El archivo fuente es el texto que guardas. Un ejecutable es un resultado de una construcción anterior; no cambia automáticamente cada vez que editas el texto. Llamaremos revisión A y revisión B a dos estados guardados diferentes. Esos nombres identifican estados para este ejercicio; no son instrucciones ni requieren un sistema de control de versiones."
+          "text": "El archivo fuente contiene el código que guardas. El archivo ejecutable contiene el programa obtenido al construirlo. Editar y guardar el primero no cambia por sí solo el segundo.\n\nLlamaremos revisión A a un estado guardado del código y revisión B a otro estado posterior. Por ejemplo, A puede contener `<` y B, `<=`. Esos nombres nos permitirán indicar qué código se utilizó en cada construcción y en cada prueba."
         },
         {
           "type": "paragraph",
-          "text": "Al compilar una fuente C++, se comprueba y traduce su contenido; al enlazar, se combinan los resultados y las implementaciones necesarias para formar el programa. Una declaración puede permitir compilar una llamada, pero no sustituye la definición requerida al enlazar. En proyectos con varias fuentes, conocer la lista elegida forma parte de identificar lo que realmente se construyó. Un comando puede coordinar ambos pasos; que estén automatizados no borra sus diferencias. Una construcción también puede reutilizar resultados anteriores de fuentes que no cambiaron; no siempre vuelve a compilar todo."
+          "text": "Recupera la construcción con varios archivos que practicaste en el curso anterior. El compilador comprueba y traduce el código de cada archivo fuente. Después, el enlazador combina esos resultados con las otras implementaciones necesarias para obtener el programa.\n\nUna declaración puede permitir compilar una llamada porque informa del nombre y del tipo de la función. Pero el enlazador necesita también su definición. Si se omite el archivo que la proporciona, haber compilado la llamada no basta para completar el programa.\n\nUna misma orden puede coordinar compilación y enlace. Para identificar lo construido necesitas conocer qué archivos se eligieron y si el proceso terminó correctamente. También pueden reutilizarse resultados de fuentes que no cambiaron; construir no significa necesariamente volver a compilar todos los archivos."
         },
         {
           "type": "paragraph",
-          "text": "Construir tampoco es ejecutar. Una herramienta de construcción coordina el trabajo y registra si pudo completarlo; el programa obtenido se ejecuta después con sus datos. CMake prepara reglas para herramientas de construcción: no es otro nombre del compilador ni del programa del alumno. Estudiaremos su configuración y generación cuando construyamos proyectos reproducibles (Scott, 2025, cap. 1–2)."
+          "text": "Construir y ejecutar responden a preguntas distintas. Una construcción correcta indica que se pudo obtener el programa. Al ejecutarlo con datos concretos, observamos qué hace. Sólo al comparar ese resultado con el requisito podemos decidir si cumple ese caso.\n\nEn un proyecto, una herramienta de construcción organiza las compilaciones y el enlace que hacen falta. CMake permite describir el proyecto y preparar las reglas para esa herramienta. Puede coordinar su uso, pero no sustituye al compilador que traduce C++. Aprenderás a preparar y utilizar esas reglas al construir los proyectos del curso (Scott, 2025)."
         },
         {
           "type": "multiple_choice",
@@ -88,7 +88,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La revisión A mostrada en la actividad utiliza <. Calcula por separado lo que produce esa implementación y lo que exige el requisito, sin corregir el código durante la predicción. Después decide qué llamada aporta evidencia para distinguir ambas reglas. Probar condiciones a cada lado y en su frontera permite investigar supuestos precisos (Kernighan & Pike, 1999, pp. 140–141)."
+          "text": "La actividad muestra la revisión A, que utiliza `<`. Durante la predicción sigue el código tal como está: no cambies mentalmente la comparación por la que debería tener.\n\nPara cada llamada, distingue dos preguntas:\n¿Qué valor devuelve la comparación escrita en el programa?\n¿Qué valor exige la regla de solicitar reposición cuando la cantidad sea menor o igual que el mínimo?\n\nDespués elegirás una llamada que permita distinguir esas dos comparaciones. Cuando un requisito cambia de respuesta alrededor de un límite, conviene probar un valor por debajo, el propio límite y un valor por encima. Cada posición comprueba una parte diferente de la decisión (Kernighan & Pike, 1999)."
         },
         {
           "type": "output_prediction",
@@ -129,11 +129,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Supón este escenario de trabajo externo al lector: existencias.exe se construyó con la revisión A. Después guardas la revisión B cambiando < por <=. Al construir B aparece un error en otra parte del archivo y no se obtiene un ejecutable nuevo. El ejecutable A anterior permanece en su carpeta; luego lo ejecutas manualmente y vuelve a mostrar 1:0:0."
+          "text": "Imagina que trabajas con un archivo fuente y un ejecutable en una carpeta de Windows. Ocurre esta secuencia:\n\nConstruyes `existencias.exe` a partir de la revisión A, que utiliza `<`.\nCambias la comparación por `<=` y guardas la revisión B.\nIntentas construir B, pero un error en otra parte del archivo impide obtener un ejecutable nuevo.\nEl existencias.exe de A sigue en la carpeta. Lo ejecutas manualmente y observas `1:0:0`.\n\nEl archivo fuente contiene B, pero el programa ejecutado sigue siendo el construido con A. Para entender la salida necesitas seguir ambas cosas por separado."
         },
         {
           "type": "paragraph",
-          "text": "El resultado no refuta el cambio <=, porque no procede de una construcción correcta de B. Tampoco demuestra que B sea correcta: esa versión todavía no pudo construirse y probarse. Una carpeta puede contener artefactos de intentos anteriores. Este escenario describe una secuencia explícita; no afirma que el compilador integrado del lector ejecute automáticamente artefactos antiguos."
+          "text": "Esa salida no permite juzgar el comportamiento de B: todavía no se ha construido y ejecutado correctamente. Tampoco demuestra que el cambio a `<=` esté mal, porque el ejecutable observado conserva la comparación de A.\n\nUn intento de construcción fallido puede dejar en la carpeta un ejecutable de una construcción anterior. Por eso hay que revisar el resultado del intento y la procedencia del archivo que se inicia. En el escenario anterior, la ejecución del archivo antiguo es una acción manual explícita."
         },
         {
           "type": "multiple_choice",
@@ -154,7 +154,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando una corrección parece no tener efecto, verifica el estado guardado, el resultado completo de construcción y la ruta exacta del ejecutable usado. Si dos carpetas tienen archivos con el mismo nombre, ese nombre no resuelve la ambigüedad. Relaciona las entradas y el resultado con esa identificación. Reproduce el fallo y prueba tus suposiciones antes de culpar al entorno o cambiar varias partes a la vez (Thomas & Hunt, 2020, pp. 90–97)."
+          "text": "Si una corrección parece no cambiar el resultado, comprueba estos datos en orden:\n\nEl código guardado que querías construir.\nEl resultado completo de la construcción de ese código.\nLa ruta del ejecutable que realmente iniciaste.\nLos datos utilizados y la salida de esa ejecución.\n\nDos carpetas pueden contener archivos llamados igual, aunque procedan de construcciones diferentes. El nombre existencias.exe, por sí solo, no permite decidir cuál se probó. Verifica esas suposiciones antes de atribuir el fallo a las herramientas o de cambiar varias partes del programa a la vez (Thomas & Hunt, 2020)."
         },
         {
           "type": "multiple_choice",
@@ -183,11 +183,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En el editor de código, parte de la función de revisión A. Obtén del requisito los resultados esperados para (4,5), (5,5) y (6,5) y utilízalos en las comprobaciones de main que construirás a continuación. No los obtengas llamando a la misma función que estás investigando."
+          "text": "Ahora construirás un programa que compruebe la función de la revisión A. Una comprobación reúne tres elementos: los datos de la llamada, el resultado esperado según el requisito y el resultado obtenido al ejecutar la función.\n\nUtiliza estos tres casos, todos con mínimo cinco:\nCuatro disponibles: está por debajo del mínimo.\nCinco disponibles: coincide con el mínimo.\nSeis disponibles: está por encima del mínimo.\n\nObtén cada esperado de la regla de reposición. No lo calcules llamando a la misma función que intentas comprobar: si esa función tiene un error, su respuesta también puede estar equivocada."
         },
         {
           "type": "paragraph",
-          "text": "Implementa las tres comprobaciones en main. Cada una debe comparar debe_reponer con su esperado y mostrar qué caso falló. Si alguna falla, el programa de comprobación debe terminar con un código distinto de cero; si las tres pasan, con cero. Puedes usar condicionales, un bool acumulado o una estructura de casos que ya conozcas. Conserva la revisión A sin modificar: esta actividad debe acreditar que tu comprobador detecta su discrepancia, no reparar todavía la función.",
+          "text": "Completa `main` con las tres comprobaciones. Para cada una:\nLlama a `debe_reponer` con los datos del caso.\nCompara su respuesta con el esperado obtenido del requisito.\nSi no coinciden, muestra un mensaje que permita identificar el caso que falló.\n\nEjecuta las tres comparaciones aunque una falle. Al terminar, devuelve desde main un código distinto de cero si hubo alguna discrepancia; devuelve cero sólo si las tres coincidieron.\n\nPuedes organizar las comparaciones con condicionales, un bool que conserve si hubo fallos o una colección de casos. Conserva la función de la revisión A sin modificar. El resultado buscado es este: tu comprobador detecta su discrepancia. Aquí construyes la prueba que encuentra el error; la reparación de la función vendrá en otro editor.",
           "emphasis": [
             {
               "text": "tu comprobador detecta su discrepancia"
@@ -196,7 +196,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Separa las evidencias: el compilador puede construir correctamente un comprobador que termina con 1 al detectar una discrepancia. Ese código de terminación pertenece a la ejecución del comprobador; no es un error de compilación. Un main que retorna siempre 0 comunica un resultado satisfactorio incluso cuando alguna comparación falló.\n\nPara las llamadas (4,5), (5,5) y (6,5), el requisito determina los esperados true, true y false. Compáralos con lo obtenido de la función, conservando qué llamada produjo cada resultado. Si guardaras como referencia la salida de la función sospechosa sin contrastarla con la regla, podrías aceptar su error en todas las ejecuciones posteriores. Revisar los resultados esperados y el propio comprobador permite evitar esa referencia equivocada (Kernighan & Pike, 1999, pp. 146–150)."
+          "text": "Distingue el resultado de la construcción del resultado de la prueba. El compilador puede construir correctamente el comprobador. Después, al ejecutarse, ese comprobador puede detectar un error de la función y terminar con código uno. En ese caso, la construcción funcionó y la prueba encontró una discrepancia. No se trata de un error de compilación.\n\nLos esperados de esta práctica son:\nCuatro disponibles y mínimo cinco: `true`.\nCinco disponibles y mínimo cinco: `true`.\nSeis disponibles y mínimo cinco: `false`.\n\nProceden de la regla de reposición. Un criterio independiente para decidir si un resultado es correcto recibe el nombre de oráculo de pruebas; aquí lo forman esa regla y los esperados calculados a partir de ella. Guardar como esperada la respuesta de la función sospechosa, sin revisarla, podría convertir su error en el criterio de las pruebas futuras.\n\nEl comprobador también debe comunicar con fidelidad lo ocurrido. Si main devuelve siempre cero, comunica éxito aunque haya detectado un fallo. Por eso debemos revisar tanto los esperados como las comparaciones y el retorno del propio comprobador (Kernighan & Pike, 1999)."
         },
         {
           "type": "cpp_compiler",
@@ -225,7 +225,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente editor tiene su propio comprobador completo de los mismos tres casos. Modifica únicamente la comparación de debe_reponer para cumplir el requisito inclusivo. Conserva datos, esperados y las tres comparaciones: después de reparar, no debe haber diagnósticos de discrepancia y el programa de prueba debe terminar con 0. Los intentos de esta reparación no sustituyen el comprobador que construiste en la actividad anterior. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "El siguiente editor proporciona un comprobador completo. En esta actividad repararás únicamente la comparación de `debe_reponer` para que incluya la igualdad, como exige el requisito.\n\nConserva los datos, los esperados y las tres llamadas del comprobador. Al utilizar «Compilar, ejecutar y comprobar», contrasta lo que hace la función reparada con esos esperados. Si coinciden las tres respuestas, no aparecerán mensajes de discrepancia y el programa terminará con código cero.\n\nEste editor tiene su propia fuente. Cambiarlo no modifica el comprobador que construiste en la actividad anterior. Distingue la construcción de una prueba, que era su objetivo, de la reparación de la función, que es el objetivo de este editor."
         },
         {
           "type": "cpp_compiler",
@@ -258,7 +258,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una prueba válida de A acepta las decisiones de (4,5) y (6,5), detecta el fallo de (5,5) y retorna un código no nulo. Tras corregir sólo la comparación a <=, las tres llamadas deben coincidir y el programa de prueba retornar 0. El registro de cada ejecución debe identificar la revisión, los tres casos y el resultado, sin atribuir a una revisión salidas producidas por otra."
+          "text": "El comprobador de referencia prueba A, que conserva `<`. En las llamadas con cuatro y seis disponibles, la respuesta coincide con la regla. En la llamada con cinco disponibles y mínimo cinco, A responde false, pero la regla exige true. El comprobador debe identificar esa discrepancia y terminar con un código distinto de cero.\n\nAl cambiar sólo la comparación a `<=`, las tres respuestas coinciden con los esperados. El comprobador ya no muestra mensajes de discrepancia y termina con cero.\n\nSon dos ejecuciones distintas: una prueba A y otra prueba la versión corregida. Al interpretar sus resultados, conserva la relación entre la versión utilizada, los datos de cada llamada y el resultado obtenido."
         },
         {
           "type": "code",
@@ -267,7 +267,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada comprobación se ejecuta aunque una anterior falle. Una expresión con && puede omitir llamadas posteriores por cortocircuito; que el resultado final sea false no demuestra que se hayan observado todos los casos. La siguiente variación recupera esa independencia al ampliar la batería a otra frontera."
+          "text": "La referencia llama por separado a `comprobar` para cada caso. Si una llamada devuelve false, guarda el fallo en `correcto`, pero continúa con la siguiente. Así puede detectar más de una discrepancia en una sola ejecución.\n\nEn cambio, al evaluar `comprobar(4, 5, true) && comprobar(5, 5, true)`, C++ omite la segunda llamada si la primera devuelve false: el resultado del conjunto ya no podría ser true. Esa omisión se llama cortocircuito. Puede ser útil en otras decisiones, pero no sirve aquí si impide ejecutar un caso de prueba.\n\nUn resultado final false indica que algo falló; no demuestra, por sí solo, que se hayan ejecutado todos los casos. La ampliación siguiente debe conservar una llamada para cada comparación y ejecutar todas."
         },
         {
           "type": "multiple_choice",
@@ -288,7 +288,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al continuar, usaremos la identificación del programa, los datos y los esperados para contrastar causas. Mantén separadas la observación, la construcción y el cumplimiento del requisito: cuando alguno cambia, debes saber qué comparación sigue siendo válida."
+          "text": "Para investigar los próximos fallos, mantendremos estas preguntas separadas:\n¿Qué versión se construyó y se ejecutó?\n¿Qué datos recibió cada llamada?\n¿Qué resultado exigía el requisito?\n¿Qué resultado produjo el programa?\n\nSi cambias la función, tendrás que construirla y probarla de nuevo. Si cambias el requisito, tendrás que revisar también los esperados. Una salida anterior sigue describiendo la ejecución que la produjo; no se convierte automáticamente en evidencia de una versión nueva."
         },
         {
           "type": "heading",
@@ -296,7 +296,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva la función corregida y las tres comprobaciones anteriores. Añade en main las llamadas (7,8), (8,8) y (9,8), comparadas por separado con sus esperados obtenidos de la regla. Conserva los tres controles de mínimo cinco y la ejecución de todos los casos aunque uno falle.\n\nRevisa en el código que estén las seis llamadas y que cada resultado se compare con su esperado. Comprueba también que ninguna llamada quede omitida por el fallo de otra. Después compila y ejecuta esta revisión: con la función inclusiva, las seis comparaciones deben coincidir, la consola no debe mostrar diagnósticos de discrepancia y el retorno final debe ser 0. Una consola vacía y ese retorno también pueden obtenerse sin haber añadido las llamadas; por eso debes contrastarlos con el código que acabas de ejecutar."
+          "text": "El editor conserva la función corregida y las tres comprobaciones de mínimo cinco. Ampliarás el programa para probar también el mínimo ocho.\n\nAñade en `main` estas llamadas, cada una comparada con el esperado que exige la regla:\n`debe_reponer(7, 8)`: cantidad inferior al mínimo.\n`debe_reponer(8, 8)`: cantidad igual al mínimo.\n`debe_reponer(9, 8)`: cantidad superior al mínimo.\n\nConserva las tres comprobaciones anteriores. El programa completo debe ejecutar las seis, aunque encuentre un fallo. El objetivo de esta actividad es construir esa batería de pruebas: el conjunto de casos y comparaciones que ejecuta el propio programa. No son seis intentos opcionales que selecciones en el editor.\n\nAntes de construir, comprueba en tu código que están las seis llamadas y que cada una utiliza el esperado correspondiente. Al ejecutar la función corregida, las seis respuestas deben coincidir; no debe haber mensajes de discrepancia y el retorno debe ser cero.\n\nLa consola vacía y el retorno cero no bastan para demostrar que añadiste las tres llamadas: el programa inicial ya puede producir ambos resultados. Necesitas relacionar lo observado con las comprobaciones que realmente contiene y ejecuta tu código."
         },
         {
           "type": "cpp_compiler",
@@ -1128,6 +1128,96 @@
         "id": "block_0005_0008",
         "beforeSha256": "ac1aceecdc31bd23119197550d23419abfaea15d48331b68b58e7cbd0a7d15a5",
         "afterSha256": "9c30865040352431c8b6b3b59b500a0f012daf2f31fb533f41a075de400bd0ab"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "c4273f3ffb85562471eaeb6e2faa7ed3986f87195eae6c09140d9fdd1aa0644d",
+        "afterSha256": "bc4baf9fdbdeb23efb3d0dd807e81988d87ad0562fae76dac5f4f3f82260439e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "c923c046b17850340e62e08ba7ae98817bded5a027e712aa91c20728bc90495c",
+        "afterSha256": "0b9cf1115decd22ddbb5571bc5eb1e1e5c8a145c274fc01c597110d63a7c7bf1"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "72c3fd3f1a2400d501acbbadf0288100d027964e937607ef03f32406f0c01935",
+        "afterSha256": "c44e09da35ca1f8df5c5b202d5420a1816f592fa8f638d07fed49f5bf66f9e23"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "c74f7ea4554b13f837929a43867b7023decd0c113962432a145e5f18a74419c7",
+        "afterSha256": "9bd07b30d56e15a33c91a6953b57d8e0344cefb5bfb69991f30e26b39c6e4dfd"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "9e453dc5e9c6b6a6793608384ef5cdfedb103ab1780d4ea41ba48b60ded2909a",
+        "afterSha256": "c90662e33c197d4f972e20ccf7eb5613f98ca233a3a3c5341269919672c81908"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "ba51da7b7680792e87e191b6ed80d329b65f5e8f462f46c76145f572292577ab",
+        "afterSha256": "0ba740975848b4e0dd2857f0a1ca3945653980a71b73dbfbe784f308e652a23e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "f2179e2213e1e0bb6dfcbff6579ede57070e92b4d903ff736b4ed970a28e071a",
+        "afterSha256": "9bd200eb5d04ecc43b81eb42bdb33a6559ddeac93f4f5c42c6f360788460065f"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "1a2ffc7903d013acf9bc6ccf46ff7d39beaeeb34904efa41da12399bc3dce089",
+        "afterSha256": "9d8f1763c7c1dd6682dce22a10670059ef378af72b0763b657c21c5ed97d0c63"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "82c7a05d989cc9dd0cc63151c47ca578da1b86e6e14373a89034d70767aaad00",
+        "afterSha256": "5cf6075ae6eb2d59c8b1ba6d301aee99aeeb985c9e021e0265a9d8f4bbb236e3"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "d7968957df7eaaa07f1b734cc33f6568dd3d739bf766b9524b79e7a800ceeb13",
+        "afterSha256": "0b60b3672de76dbc69174794ccc3bf971314ca74797ff8ba9b822a5056fcd260"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "758c184d638ecc629b175193924e221c255b48ffcef7d6dcf6517998f7f4d697",
+        "afterSha256": "fa5aa5175448e562f960b322891fe08924bd10f120e1f77203e961851f1d7e33"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "0994f88bce4fb743cf4f6260cacba1e22f5e2e210a20fa4d5c2026e12d9171c0",
+        "afterSha256": "b8f7fa4a2233a08410288bcb0858bc846075a02426e1effcb97e8022e6ee48b2"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "e9fb19fca500adbaba358eb62bafdfd42ed8d33480789960070576cd474c5239",
+        "afterSha256": "65d1781b1c8725203249707eb4bd296d9c0c84891505e7cccd0824a9a68e35c8"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "1dcf5f8323f230f9910944813e091543d5dee085c478e3ba12ac5364fe4c4113",
+        "afterSha256": "d33ac05e57da6f3482509116882c1e44d1d098ef3d5be28238680690e12f3e3b"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "3c95a9c92323df4c2de3ec0a5649408121fb3bfac11e8b26debf29d4e3d2250e",
+        "afterSha256": "79e714c37aca9589937dca0e9514ee3d88870728b3397e3248a1e48c60947389"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "ed895af97ad538fd1e33a50e231013a1c083adf1c3152631df447fc4f1f63813",
+        "afterSha256": "a68f40d3532794492ddc30e359eaef68ccdebf4356d874ac3ec6dc71a8de5a2f"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "ee97edc9045e7b3d31e80a6c315f6ee05c1b9f53e8eb1d9d9c68a2f6985e1382",
+        "afterSha256": "2e443d81460020e035a9a6366d05d07772c1102044c5d26314d1998d92a2f6fc"
+      },
+      {
+        "id": "block_0005_0008",
+        "beforeSha256": "9c30865040352431c8b6b3b59b500a0f012daf2f31fb533f41a075de400bd0ab",
+        "afterSha256": "2740c00cb01d9746300be4cd285ec70d31119c4c61a6e4af56f3114e0d594f57"
       }
     ]
   },
@@ -1149,97 +1239,79 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "3a63641396f1c94b788c3db91972c45f21074a0c6aa87922eb8ab0334f692c4d",
+        "sourceSha256": "47615a5417f99e84b6a32a1c7203bf17ced46f91cff98c6d5514a2428c5affbd",
         "spans": []
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "beedf832c0ceeaf380b908fe31c0cc853a4c12f9b8d68c57f18150ba153245fd",
+        "sourceSha256": "e138f307a0cd851606fd25482ea0a73d6fb23f3dd5d1760dbb423896dbe08889",
         "spans": [
           {
-            "start": 136,
-            "end": 156,
-            "text": "0 ≤ disponibles ≤ 40",
-            "role": "math",
-            "reading": "natural"
+            "start": 229,
+            "end": 240,
+            "text": "disponibles",
+            "role": "cpp"
           },
           {
-            "start": 159,
-            "end": 174,
-            "text": "1 ≤ minimo ≤ 40",
-            "role": "math",
-            "reading": "natural"
+            "start": 305,
+            "end": 311,
+            "text": "minimo",
+            "role": "cpp"
           },
           {
-            "start": 226,
-            "end": 230,
+            "start": 449,
+            "end": 453,
             "text": "bool",
             "role": "cpp"
           },
           {
-            "start": 335,
-            "end": 344,
-            "text": "std::cout",
-            "role": "cpp"
-          },
-          {
-            "start": 350,
-            "end": 359,
-            "text": "boolalpha",
-            "role": "cpp"
-          },
-          {
-            "start": 361,
-            "end": 366,
-            "text": "false",
-            "role": "cpp"
-          },
-          {
-            "start": 383,
-            "end": 384,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 387,
-            "end": 391,
+            "start": 457,
+            "end": 461,
             "text": "true",
             "role": "cpp"
           },
           {
-            "start": 397,
-            "end": 398,
+            "start": 492,
+            "end": 497,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 680,
+            "end": 689,
+            "text": "std::cout",
+            "role": "cpp"
+          },
+          {
+            "start": 721,
+            "end": 722,
+            "text": "0",
+            "role": "output"
+          },
+          {
+            "start": 745,
+            "end": 746,
             "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
+          },
+          {
+            "start": 764,
+            "end": 778,
+            "text": "std::boolalpha",
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "49be605d42e0d58277b1a9de414a8f0027aeed815175642bd57b076614e48729",
+        "sourceSha256": "ae296d6df537f9397f65ecb5606844f6e5ad98305599ba6e7ac5c2aecb89b1c9",
         "spans": [
           {
-            "start": 16,
-            "end": 17,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 36,
-            "end": 37,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 299,
-            "end": 331,
-            "text": "(Kernighan & Pike, 1999, p. 129)",
+            "start": 562,
+            "end": 586,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1339,24 +1411,37 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "47ef028afb7e19b9ed44af60a155e4726959edecf631cb8ee77122c33341452c",
-        "spans": []
+        "sourceSha256": "548a5549adab7e23333588cbfe0b8b027395687abc19e18faf3105d9e7f6d37a",
+        "spans": [
+          {
+            "start": 304,
+            "end": 305,
+            "text": "<",
+            "role": "cpp"
+          },
+          {
+            "start": 313,
+            "end": 315,
+            "text": "<=",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "c0391941785d9138449a33fb9cd4a25220789be1760d312e6c1a51e3bd6144e0",
+        "sourceSha256": "e26b5137f232a8faedc57cc075d124cd472809d366329c54e927fbb86bdb84f1",
         "spans": []
       },
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "b29f51a299c480c2e6a8c31555f7c178a7b7dcdd47572cc81e5df78eb6dabe8a",
+        "sourceSha256": "3200d2b5c06c2d8cea0103a4405a3507dab64db36d63ff44d1d669ee8c511f59",
         "spans": [
           {
-            "start": 374,
-            "end": 397,
-            "text": "(Scott, 2025, cap. 1–2)",
+            "start": 600,
+            "end": 613,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1449,18 +1534,18 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "5e70550e0832ec21f87782232cbfd9cb724211c75f0384feffcb30eb9c0b24e9",
+        "sourceSha256": "be5f47ea4d36bc3d0779a44fabe0c8de830b852ba8fd823a1bfb356c9635e58f",
         "spans": [
           {
-            "start": 47,
-            "end": 48,
+            "start": 49,
+            "end": 50,
             "text": "<",
             "role": "cpp"
           },
           {
-            "start": 340,
-            "end": 377,
-            "text": "(Kernighan & Pike, 1999, pp. 140–141)",
+            "start": 653,
+            "end": 677,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1652,44 +1737,42 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "d4e3dde6fb44ea78854553385c00c8d0627c5894e49d506ec4c0a3df5ef1b3c7",
+        "sourceSha256": "c80bc6042ff08c9819f1e78f91c792cbd5434126c495ec239d5e6eb534d2e551",
         "spans": [
           {
-            "start": 51,
-            "end": 66,
+            "start": 122,
+            "end": 137,
             "text": "existencias.exe",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 139,
-            "end": 140,
+            "start": 179,
+            "end": 180,
             "text": "<",
             "role": "cpp"
           },
           {
-            "start": 145,
-            "end": 147,
+            "start": 211,
+            "end": 213,
             "text": "<=",
             "role": "cpp"
           },
           {
-            "start": 343,
-            "end": 348,
+            "start": 419,
+            "end": 424,
             "text": "1:0:0",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "84d6f7db3f83130386c1f7386fda3d768082550ac2a536dca8d6b24cc87ee18b",
+        "sourceSha256": "8b018bd3bb5733150461efe966af56f8f924f57702514d71a9da2d69a57ab63a",
         "spans": [
           {
-            "start": 33,
-            "end": 35,
+            "start": 143,
+            "end": 145,
             "text": "<=",
             "role": "cpp"
           }
@@ -1746,12 +1829,12 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "d4a84d7d6bc1d07724b67c5dc5cef724d238bff19e063980984b00ca536c6e94",
+        "sourceSha256": "9d6003d1e2f1a4b42988e96ad35d6ccde66402b206066a2b602a96b38508534c",
         "spans": [
           {
-            "start": 410,
-            "end": 442,
-            "text": "(Thomas & Hunt, 2020, pp. 90–97)",
+            "start": 577,
+            "end": 598,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1873,86 +1956,24 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "95002d5683faa4bbb818e110eb90456e43e2a5b8f625c2f962caa0bf18d2bcd4",
-        "spans": [
-          {
-            "start": 109,
-            "end": 114,
-            "text": "(4,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 116,
-            "end": 121,
-            "text": "(5,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 124,
-            "end": 129,
-            "text": "(6,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 168,
-            "end": 172,
-            "text": "main",
-            "role": "cpp"
-          }
-        ]
+        "sourceSha256": "768a05ee6eaa7c8eb99f68a33c63227a0f9ba173a7c31c3d211395109141b474",
+        "spans": []
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "e04e29abaefb3089a672e5e201f3bfeafd8e2fa49101fd5ae65cf277ec5a1c87",
+        "sourceSha256": "b7eb77719e1a8da2b61dacaa31056846d4b051586994b4caa018336bb926c24a",
         "spans": [
           {
-            "start": 15,
-            "end": 19,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 38,
-            "end": 42,
+            "start": 10,
+            "end": 14,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 67,
-            "end": 79,
+            "start": 69,
+            "end": 81,
             "text": "debe_reponer",
-            "role": "cpp"
-          },
-          {
-            "start": 207,
-            "end": 211,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 220,
-            "end": 224,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 236,
-            "end": 240,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 272,
-            "end": 276,
-            "text": "bool",
             "role": "cpp"
           }
         ]
@@ -1960,60 +1981,30 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "c892487b1bb17dba8414479f7938201f8a77fafd5558c17be3d07d9321dbbfdb",
+        "sourceSha256": "19b1e2c0351973df2544a94e766e3c597e779307f62ec82334c8036a58d30d05",
         "spans": [
           {
-            "start": 98,
-            "end": 99,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 232,
-            "end": 236,
-            "text": "main",
+            "start": 425,
+            "end": 429,
+            "text": "true",
             "role": "cpp"
           },
           {
-            "start": 257,
-            "end": 258,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "start": 467,
+            "end": 471,
+            "text": "true",
+            "role": "cpp"
           },
           {
-            "start": 355,
-            "end": 360,
-            "text": "(4,5)",
-            "role": "data",
-            "reading": "natural"
+            "start": 508,
+            "end": 513,
+            "text": "false",
+            "role": "cpp"
           },
           {
-            "start": 362,
-            "end": 367,
-            "text": "(5,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 370,
-            "end": 375,
-            "text": "(6,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 414,
-            "end": 432,
-            "text": "true, true y false",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 780,
-            "end": 817,
-            "text": "(Kernighan & Pike, 1999, pp. 146–150)",
+            "start": 1118,
+            "end": 1142,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2115,34 +2106,13 @@
       {
         "block": "block_0004_0007",
         "path": "/text",
-        "sourceSha256": "984306cf064a9e5a156d3bffdbedba1a1bac654c793a92c3861b9fad3a692dbd",
+        "sourceSha256": "23d169ab53a57bc7862e2639cbba39f032908e596310dc4ba880714b3321404a",
         "spans": [
           {
-            "start": 71,
-            "end": 75,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 121,
-            "end": 133,
+            "start": 115,
+            "end": 127,
             "text": "debe_reponer",
             "role": "cpp"
-          },
-          {
-            "start": 203,
-            "end": 207,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 328,
-            "end": 329,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
@@ -2182,75 +2152,44 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "989a675cbefaa7d449fc8b2e49aca293a18531ff474a708b1735dbfdbd3592d6",
+        "sourceSha256": "5e6dbcf81065f45c27a88bb835147efc3d2cc52cda97900bf848b858dc80a8e7",
         "spans": [
           {
-            "start": 48,
-            "end": 53,
-            "text": "(4,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 56,
-            "end": 61,
-            "text": "(6,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
-            "end": 88,
-            "text": "(5,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 154,
-            "end": 156,
-            "text": "<=",
+            "start": 53,
+            "end": 54,
+            "text": "<",
             "role": "cpp"
           },
           {
-            "start": 162,
-            "end": 166,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 225,
-            "end": 226,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 292,
-            "end": 296,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
+            "start": 363,
+            "end": 365,
+            "text": "<=",
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "55d2929f8c29c0568d96a6bbf3b6357fca9bf7f6a723398afe1239d2e0c0d724",
+        "sourceSha256": "c0e395f8105de256c0ccf49d46dda92c18c08cc5d4a451361eb8179b6a612012",
         "spans": [
           {
-            "start": 74,
-            "end": 76,
-            "text": "&&",
+            "start": 36,
+            "end": 45,
+            "text": "comprobar",
             "role": "cpp"
           },
           {
-            "start": 157,
-            "end": 162,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "start": 114,
+            "end": 122,
+            "text": "correcto",
+            "role": "cpp"
+          },
+          {
+            "start": 247,
+            "end": 293,
+            "text": "comprobar(4, 5, true) && comprobar(5, 5, true)",
+            "role": "cpp"
           }
         ]
       },
@@ -2415,7 +2354,7 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "aa45adbe70b2476b82c84f90678f6f91679183e8e904564e3e12408d21498f4c",
+        "sourceSha256": "ea5d7a7ff04c410112fdb4bbb7ef0b9fefa5e1e14763ff0b07de5451737c31aa",
         "spans": []
       },
       {
@@ -2427,76 +2366,31 @@
       {
         "block": "block_0005_0008",
         "path": "/text",
-        "sourceSha256": "c28b42d328fe0f9754985d174fcb0f264f8678d83d73a8cbe5bac06239db884e",
+        "sourceSha256": "62f25cf212bbc31cda461e8d0397a82855ad03648d7802a0a96312262a43be48",
         "spans": [
           {
-            "start": 48,
-            "end": 52,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 89,
-            "end": 93,
+            "start": 152,
+            "end": 156,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 107,
-            "end": 112,
-            "text": "(7,8)",
-            "role": "data",
-            "reading": "natural"
+            "start": 230,
+            "end": 248,
+            "text": "debe_reponer(7, 8)",
+            "role": "cpp"
           },
           {
-            "start": 114,
-            "end": 119,
-            "text": "(8,8)",
-            "role": "data",
-            "reading": "natural"
+            "start": 281,
+            "end": 299,
+            "text": "debe_reponer(8, 8)",
+            "role": "cpp"
           },
           {
-            "start": 122,
-            "end": 127,
-            "text": "(9,8)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 207,
-            "end": 211,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 232,
-            "end": 237,
-            "text": "cinco",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 325,
-            "end": 329,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 533,
-            "end": 537,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 653,
-            "end": 654,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "start": 329,
+            "end": 347,
+            "text": "debe_reponer(9, 8)",
+            "role": "cpp"
           }
         ]
       }

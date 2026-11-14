@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya construiste comprobaciones con esperados independientes y conservaste los casos anteriores al añadir otros. Una batería reúne esas comprobaciones para repetirlas juntas. Ahora la guardarás en un proyecto con dos ejecutables: la aplicación muestra los resultados que necesita su usuario; el comprobador llama al componente, compara sus respuestas con los esperados y comunica si encontró discrepancias. Cada ejecutable tendrá su propio main y su propio objetivo de CMake, pero ambos usarán la misma biblioteca."
+          "text": "Ya has reunido comprobaciones para repetirlas juntas: eso es una batería de pruebas. En cada comprobación, el esperado debe proceder del requisito, independientemente del resultado que devuelva la función.\n\nAhora guardarás esa batería en un proyecto con dos programas:\nLa aplicación llama al componente y muestra los resultados que necesita su usuario.\nEl comprobador llama al mismo componente, compara sus respuestas con los esperados y avisa si alguna no coincide.\n\nCada programa tendrá su propio `main` y su propio objetivo de CMake. Ambos utilizarán la misma biblioteca. Por eso el título llama segundo consumidor al comprobador: es otro programa que utiliza ese componente."
         },
         {
           "type": "paragraph",
-          "text": "Guardar la batería como una fuente del proyecto permite reconstruirla y ejecutarla después de modificar el componente. Si el comprobador incluyera una copia independiente de la función, reparar la biblioteca de la aplicación no actualizaría necesariamente esa copia. Repetir las comparaciones ayuda a descubrir cambios de comportamiento; para interpretar sus resultados, también hay que revisar que las expectativas conservadas procedan de requisitos correctos (Kernighan & Pike, 1999, pp. 149–150)."
+          "text": "La batería quedará escrita en un archivo fuente del proyecto. Después de cambiar el componente, podrás reconstruir el comprobador y ejecutar de nuevo sus comparaciones.\n\nPor ejemplo, si corriges la función en la biblioteca, el comprobador reconstruido utilizará esa corrección. Si hubieras pegado otra definición de la función dentro del comprobador, tendrías dos cuerpos por mantener: reparar uno no repararía automáticamente el otro.\n\nConservar las pruebas permite repetirlas después de los cambios. También hay que revisar sus esperados: conservar un valor equivocado haría que las ejecuciones posteriores se juzgaran con el mismo error (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -43,11 +43,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La función cajas_para recibe una cantidad entera de piezas entre 0 y 20, ambos incluidos. Cada caja admite hasta cuatro piezas. Debe devolver el menor número de cajas que permita guardar todas las piezas; cero piezas requiere cero cajas. Una caja parcialmente ocupada también cuenta. En esta práctica el acuerdo sólo establece el comportamiento para ese dominio: no define qué hacer con cantidades negativas o superiores a veinte."
+          "text": "La función `cajas_para` recibe una cantidad entera de piezas entre cero y veinte, incluidos ambos extremos. Cada caja admite hasta cuatro piezas. La función debe devolver el menor número de cajas que permita guardar todas las piezas.\n\nSi no hay piezas, se necesitan cero cajas. Si la última caja queda parcialmente ocupada, también cuenta: no podemos dejar fuera las piezas que sobran.\n\nEste acuerdo sólo establece qué debe ocurrir con las cantidades del dominio indicado. La práctica no exige rechazar cantidades negativas ni superiores a veinte, porque no define qué hacer con ellas."
         },
         {
           "type": "paragraph",
-          "text": "Por ejemplo, seis piezas requieren dos cajas: una no tiene capacidad suficiente y dos sí. Este cálculo procede del acuerdo, antes de mirar un cuerpo de función. Mantén separadas dos preguntas: qué produce una revisión y qué debería producir."
+          "text": "Por ejemplo, para guardar seis piezas:\nUna caja ofrece cuatro plazas y deja dos piezas fuera.\nDos cajas ofrecen ocho plazas y permiten guardarlas todas.\n\nPor tanto, el mínimo es dos cajas. Podemos obtener ese esperado desde la capacidad acordada, antes de mirar cómo está escrita la función. Luego compararemos con él el resultado que realmente produzca cada revisión del programa."
         },
         {
           "type": "output_prediction",
@@ -88,7 +88,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El archivo publico/envio/cajas.h declara cajas_para y su acuerdo; src/cajas.cpp contiene su definición. CMake reúne esa implementación en la biblioteca envios. El ejecutable consultar_cajas se construye desde app/consulta.cpp y el ejecutable comprobar_cajas desde pruebas/cajas_casos.cpp. Cada uno tiene un main distinto en su propia fuente; la biblioteca no contiene ninguno. Así, las llamadas de la aplicación y las comparaciones de la batería utilizan una misma implementación del componente."
+          "text": "El proyecto separa los archivos según su función:\n`publico/envio/cajas.h` declara la función `cajas_para` y documenta su acuerdo.\n`src/cajas.cpp` contiene la definición que se incorpora a la biblioteca `envios`.\n`app/consulta.cpp` contiene el `main` de la aplicación `consultar_cajas`.\n`pruebas/cajas_casos.cpp` contiene el `main` del comprobador `comprobar_cajas`.\n\nLa biblioteca no contiene ningún `main`. Cada ejecutable tiene el suyo y se enlaza con `envios`. Así, la aplicación y el comprobador reciben la implementación de la misma fuente, sin copiar la definición en sus propios archivos."
         },
         {
           "type": "code",
@@ -97,7 +97,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La orden target_include_directories declara publico como búsqueda PUBLIC de envios: sirve para compilar la biblioteca y se transmite a sus consumidores. Cada target_link_libraries conecta uno de los ejecutables con envios; el alcance PRIVATE de ese enlace no impide que el ejecutable reciba la búsqueda pública de la biblioteca (Scott, 2025, pp. 20–21, 176).\n\nConstruir comprobar_cajas obtiene el comprobador y las dependencias necesarias. Ese enlace no ejecuta sus llamadas: las comparaciones ocurren al ejecutar el programa. Su main permanece fuera de consultar_cajas y no hace falta copiar cajas_para en las pruebas."
+          "text": "La descripción conecta los archivos de este modo:\n`target_include_directories(envios PUBLIC publico)` permite buscar cabeceras desde `publico` al compilar la biblioteca y sus consumidores. Así se encuentra `envio/cajas.h`.\n`target_link_libraries(consultar_cajas PRIVATE envios)` enlaza la aplicación con la biblioteca y le transmite los requisitos públicos de ésta.\n`target_link_libraries(comprobar_cajas PRIVATE envios)` hace lo mismo para el comprobador.\n\nEl alcance PRIVATE de esos enlaces no impide recibir el directorio público de cabeceras de la biblioteca (Scott, 2025).\n\nConstruir `comprobar_cajas` obtiene el ejecutable y las dependencias que necesita. Todavía no se han realizado sus comparaciones: éstas ocurren al ejecutar ese programa. El `main` del comprobador permanece separado del de la aplicación."
         },
         {
           "type": "multiple_choice",
@@ -144,11 +144,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En cada llamada, comprobar ejecuta cajas_para una vez y guarda su respuesta en obtenido. La expresión obtenido == esperado calcula coincide; ese bool determina el mensaje y el valor devuelto. En main, correcto comienza en true. Si una llamada devuelve false, su if asigna false a correcto; ninguna llamada posterior vuelve a ponerlo en true. Los if separados permiten examinar los demás casos aunque ya haya un fallo. Al final, correcto decide entre el resumen Bateria: FALLO con retorno 1 y el resumen Bateria: OK con retorno 0."
+          "text": "Cada llamada a `comprobar` realiza estos pasos:\n1. Llama una vez a `cajas_para` y guarda su respuesta en `obtenido`.\n2. Evalúa `obtenido == esperado` y guarda ese resultado lógico en `coincide`.\n3. Muestra los datos de la comparación y escribe `OK` si coinciden o `FALLO` si discrepan.\n4. Devuelve el valor lógico de `coincide` al `main`.\n\nEn `main`, la variable `correcto` comienza en `true`. Cuando una llamada devuelve `false`, su `if` deja `correcto` en `false`. Las comprobaciones que coinciden después no vuelven a ponerlo en `true`: se conserva el fallo ya encontrado.\n\nLos `if` separados permiten llegar a todas las llamadas. Al final, un fallo produce el resumen `Bateria: FALLO` y el retorno `1`. Si ninguna comparación falló, se muestra `Bateria: OK` y se retorna `0`."
         },
         {
           "type": "paragraph",
-          "text": "Esta batería inicial conserva cuatro entradas: 0,4,8,20. Sus esperados se pueden justificar desde la capacidad. Que los cuatro casos pasen sólo dice que esa revisión coincide en esas llamadas. El texto OK no demuestra que hayas elegido casos capaces de distinguir el defecto que estás investigando."
+          "text": "La batería inicial comprueba estas entradas y cantidades de cajas esperadas:\nCero piezas → cero cajas.\nCuatro piezas → una caja.\nOcho piezas → dos cajas.\nVeinte piezas → cinco cajas.\n\nEn todos esos casos, las piezas llenan cajas completas o no hay ninguna pieza. Por eso la división `piezas / 4` obtiene el resultado requerido en los cuatro, aunque falle con cantidades que dejan piezas sobrantes. Ver cuatro líneas `OK` todavía no demuestra que la batería detecte ese defecto."
         },
         {
           "type": "multiple_choice",
@@ -194,11 +194,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva las cuatro comprobaciones iniciales. En «Objetivo CMake», selecciona consultar_cajas; pulsa «Configurar y generar», después «Construir objetivo» y finalmente «Ejecutar objetivo construido». Relaciona su salida con las llamadas de app/consulta.cpp. Cambia entonces el objetivo a comprobar_cajas, construye ese ejecutable y ejecútalo. Su informe procede de pruebas/cajas_casos.cpp. Compartir la biblioteca no hace intercambiables las observaciones de los dos programas."
+          "text": "Trabaja en el editor de esta página y conserva, de momento, las cuatro comprobaciones iniciales.\n\n1. En «Objetivo CMake», selecciona `consultar_cajas`.\n2. Pulsa «Configurar y generar», después «Construir objetivo» y finalmente «Ejecutar objetivo construido».\n3. Compara su salida con las llamadas de `app/consulta.cpp`: ese programa sólo muestra los resultados para cuatro y ocho piezas; no los compara con esperados.\n4. Cambia el objetivo a `comprobar_cajas`, construye ese ejecutable y ejecútalo. El informe de `pruebas/cajas_casos.cpp` muestra las cuatro comparaciones y su resumen.\n\nAmbos programas utilizan la misma biblioteca, pero ejecutan instrucciones distintas. Un resultado de la aplicación no cuenta como una comparación realizada por el comprobador."
         },
         {
           "type": "paragraph",
-          "text": "Calcula desde la capacidad acordada los esperados para 1, 5 y 17 piezas y escríbelos al añadir esas llamadas en pruebas/cajas_casos.cpp. Conserva las cuatro anteriores y src/cajas.cpp sin cambios. Con comprobar_cajas seleccionado, reconstruye y ejecuta el programa; contrasta las siete líneas y el código final. El objetivo de esta actividad es construir una batería que detecte la implementación defectuosa. La reparación del componente tiene su propio editor posterior."
+          "text": "El objetivo ahora es ampliar la batería para que detecte el defecto de la biblioteca; todavía no debes reparar la función.\n\n1. Calcula, a partir de la capacidad de cada caja, cuántas se necesitan para una, cinco y diecisiete piezas.\n2. Añade esas tres llamadas y sus esperados en `pruebas/cajas_casos.cpp`. Conserva las cuatro llamadas iniciales y no cambies `src/cajas.cpp`.\n3. Con `comprobar_cajas` seleccionado, reconstruye y ejecuta el comprobador.\n4. Revisa las siete líneas del informe. Cada una debe mostrar sus datos, el esperado, el obtenido y si coinciden. El programa debe comunicar el fallo con su resumen y un código final distinto de cero, sin dejar de examinar los casos posteriores.\n\nAquí las siete comparaciones forman parte de la batería que estás construyendo. La reparación del componente se realizará en otro editor."
         },
         {
           "type": "cpp_compiler",
@@ -262,7 +262,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con piezas / 4, las entradas 0, 4, 8 y 20 producen exactamente sus esperados porque no dejan piezas sobrantes. En cambio, una pieza necesita una caja aunque el cociente entero sea cero; cinco necesitan dos aunque el cociente sea uno; diecisiete necesitan cinco aunque el cociente sea cuatro. Los tres casos añadidos hacen observable el defecto y los cuatro anteriores siguen comprobándose."
+          "text": "Con `piezas / 4`, los cuatro casos iniciales coinciden con sus esperados. En cambio, las nuevas llamadas muestran estas diferencias:\nUna pieza → la función devuelve cero cajas; se necesita una.\nCinco piezas → devuelve una caja; se necesitan dos.\nDiecisiete piezas → devuelve cuatro cajas; se necesitan cinco.\n\nLa división entera cuenta las cajas que quedan completamente llenas, pero omite la caja de las piezas sobrantes. Los tres casos añadidos muestran ese error. Los cuatro anteriores se conservan para seguir comprobando los comportamientos que ya coincidían con el requisito."
         },
         {
           "type": "code",
@@ -271,7 +271,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una implementación posible es (piezas + 3) / 4. Para cuatro piezas calcula 7 / 4 y devuelve una caja; para cinco calcula 8 / 4 y devuelve dos. El desplazamiento de tres hace que las piezas sobrantes alcancen el siguiente múltiplo de cuatro. Si no había resto, sumar tres todavía no alcanza ese múltiplo y conserva el cociente.\n\nLa división entera de cantidades no negativas sólo puede dejar restos de cero, uno, dos o tres; esos casos explican la regla. Con cero piezas se calcula 3 / 4 y se devuelve cero. En el dominio acordado, el mayor numerador es 23, que cabe en int. Las siete comprobaciones permiten repetir la observación de sus datos; el razonamiento explica por qué funciona la fórmula en todo el dominio."
+          "text": "Una implementación posible calcula `(piezas + 3) / 4`. Para entenderla, separa primero las piezas en grupos completos de cuatro y en las que sobren. Cada grupo completo necesita una caja. Si sobra alguna pieza, hace falta una caja más.\n\nSumar tres antes de dividir hace contar esa caja adicional:\nSi no sobra ninguna pieza, sumar tres no completa otro grupo de cuatro. El cociente se conserva.\nSi sobra una pieza, una más tres forman cuatro: el cociente aumenta en uno.\nSi sobran dos, dos más tres forman cinco: se cuenta un grupo adicional de cuatro.\nSi sobran tres, tres más tres forman seis: también se cuenta un solo grupo adicional.\n\nPor ejemplo, para cuatro piezas se calcula `7 / 4` y se devuelve una caja. Para cinco se calcula `8 / 4` y se devuelven dos. Para cero se calcula `3 / 4` y se devuelven cero.\n\nCon las cantidades acordadas, el mayor numerador es veintitrés y cabe en `int`. Los posibles restos explican por qué la fórmula cumple el acuerdo en todo ese dominio; las siete comprobaciones permiten repetir la observación de los casos elegidos."
         },
         {
           "type": "code",
@@ -301,7 +301,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente conserva siete casos ya escritos y la implementación que redondea hacia abajo. Repara sólo src/cajas.cpp para cumplir el mínimo de cajas de cuatro plazas. Mantén seleccionado comprobar_cajas y usa «Compilar, ejecutar y comprobar»; conserva todos los datos, esperados y comparaciones. El cliente sigue utilizando esa misma biblioteca."
+          "text": "Este editor independiente conserva la batería ampliada y una función que todavía calcula `piezas / 4`. Ya no tienes que escribir los siete casos: tu tarea es reparar la definición de `src/cajas.cpp` para que devuelva el mínimo de cajas de cuatro plazas.\n\nMantén seleccionado `comprobar_cajas` y utiliza «Compilar, ejecutar y comprobar». Conserva los datos, esperados y comparaciones del comprobador: cambiar los esperados para hacerlos coincidir con el defecto no repararía la biblioteca. La aplicación seguirá utilizando esa misma biblioteca cuando se reconstruya su objetivo."
         },
         {
           "type": "cpp_compiler",
@@ -356,7 +356,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una prueba es otro programa y también puede contener errores. Si la biblioteca devuelve cinco cajas para diecisiete piezas y el comprobador tenía esperado=4, la discrepancia no obliga a cambiar la biblioteca. Vuelve al acuerdo: cuatro cajas sólo admiten dieciséis piezas. El origen del esperado debe poder revisarse, incluso si se conserva desde una ejecución anterior (Kernighan & Pike, 1999, p. 150)."
+          "text": "El comprobador también es un programa y puede contener errores. Supón que la biblioteca devuelve cinco cajas para diecisiete piezas, pero el caso guardado tiene `esperado=4`.\n\nRevisa la capacidad antes de modificar nada:\nCuatro cajas ofrecen dieciséis plazas y dejan una pieza fuera.\nCinco cajas ofrecen veinte plazas y bastan para todas las piezas.\n\nEl esperado correcto es cinco. En este caso hay que corregir la prueba, no cambiar la biblioteca para que devuelva cuatro. Un esperado guardado necesita una justificación válida, aunque se haya utilizado en ejecuciones anteriores (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -377,7 +377,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Tampoco obtengas el esperado llamando al mismo cuerpo que estás evaluando. Si escribes esperado=cajas_para(piezas) y luego lo comparas con otra llamada igual, ambas pueden repetir el defecto. Compartir la biblioteca evita copias divergentes de la implementación; mantener independientes los esperados evita que la prueba copie automáticamente su respuesta."
+          "text": "Tampoco calcules el esperado mediante `esperado=cajas_para(piezas)` para compararlo después con otra llamada igual. Si la función defectuosa devuelve cuatro para diecisiete piezas, las dos llamadas devolverán cuatro. La comparación coincidirá, aunque cuatro cajas no basten.\n\nEl comprobador necesita utilizar la biblioteca real para obtener su respuesta. El esperado, en cambio, debe calcularse desde el requisito: para diecisiete piezas son cinco cajas. Compartir la implementación evita mantener copias distintas; obtener el esperado por separado permite detectar sus errores."
         },
         {
           "type": "multiple_choice",
@@ -418,7 +418,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una contraprueba introduce un defecto conocido para comprobar si la batería lo detecta. Por ejemplo, al cambiar la biblioteca correcta por piezas / 4, diecisiete piezas dan cuatro cajas, pero el esperado independiente sigue siendo cinco. La comparación debe fallar y el retorno conjunto debe comunicarlo. Después se recupera la implementación correcta y se repite la misma batería. Examinar así las propias pruebas y conservar los casos que descubren fallos ayuda a que sigan siendo útiles (Thomas & Hunt, 2020, pp. 277–278)."
+          "text": "Una contraprueba consiste aquí en introducir un defecto conocido y observar si la batería avisa. Así comprobamos también la capacidad del comprobador para detectar ese error (Thomas & Hunt, 2020).\n\nEl procedimiento para nuestro ejemplo es:\n1. Parte de los siete esperados correctos y de una biblioteca que los cumple.\n2. Cambia únicamente la función de la biblioteca para que calcule `piezas / 4`.\n3. Reconstruye el comprobador y ejecútalo. Para diecisiete piezas, por ejemplo, devolverá cuatro frente al esperado de cinco. Esa comparación debe fallar y el programa debe comunicar un retorno no nulo.\n4. Recupera la función correcta, reconstruye y repite la misma batería.\n\nConservar los datos y esperados durante este control permite comprobar qué resultado cambia al introducir y retirar el defecto."
         },
         {
           "type": "multiple_choice",
@@ -447,11 +447,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta ubicación empieza con una biblioteca que usa la regla de referencia y con una batería guardada. Configura, construye y ejecuta comprobar_cajas. Decide, desde el acuerdo y los datos de cada línea, si la primera discrepancia procede del cuerpo o del esperado. Corrige sólo lo que contradice el contrato y conserva los siete casos."
+          "text": "Este editor empieza con la biblioteca de referencia y una batería guardada. Selecciona `comprobar_cajas`, configura el proyecto, construye ese objetivo y ejecútalo.\n\nEn cada línea, compara el esperado y el obtenido con la capacidad acordada. Si discrepan, revisa cuál de los dos contradice el requisito: no supongas que el esperado es correcto por estar guardado. Corrige sólo el dato o el cuerpo que incumple el contrato, conservando los siete casos."
         },
         {
           "type": "paragraph",
-          "text": "Los esperados se revisan desde el requisito. Una vez corregidos en esta actividad, conserva los siete casos y comprueba la batería completa. El control deliberado de la implementación se realiza después en un proyecto independiente, sin sustituir este borrador ya revisado. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Después de revisar la causa, vuelve a construir y comprobar la batería completa. Utiliza «Compilar, ejecutar y comprobar» para contrastar el informe de este editor con el solicitado.\n\nLa actividad siguiente de control tiene un editor separado. Allí podrás introducir y retirar la implementación defectuosa sin sustituir este borrador, en el que acabas de revisar las expectativas."
         },
         {
           "type": "cpp_compiler",
@@ -523,7 +523,7 @@
         },
         {
           "type": "note",
-          "text": "Para 17 piezas el caso debe esperar 5. Los cuatro casos iniciales y los tres añadidos permanecen en pruebas/cajas_casos.cpp; no se sustituyen por una sola entrada que falle."
+          "text": "Para diecisiete piezas, el esperado debe ser cinco cajas. Conserva en `pruebas/cajas_casos.cpp` las cuatro llamadas iniciales y las tres añadidas. Revisar el dato erróneo no requiere eliminar los demás casos."
         },
         {
           "type": "code",
@@ -532,7 +532,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con piezas / 4 fallan los casos de 1, 5 y 17 piezas; los otros cuatro siguen observándose. Con (piezas + 3) / 4, los siete coinciden. Después de editar, reconstruye el objetivo que vayas a ejecutar para observar la nueva revisión. La batería queda guardada y puede repetirse sin reescribir sus comparaciones. Conservar las fuentes, la descripción, las entradas y las expectativas permite relacionar cada resultado con el proyecto que lo produjo (Thomas & Hunt, 2020, pp. 274–275). Volver a comprobar comportamientos ya aceptados ayuda a detectar una regresión: un cambio que estropea algo que antes funcionaba según su acuerdo (Kernighan & Pike, 1999, p. 149)."
+          "text": "La misma batería permite comparar las dos revisiones:\nCon `piezas / 4`, fallan las llamadas de una, cinco y diecisiete piezas. Las otras cuatro también se ejecutan y coinciden.\nCon `(piezas + 3) / 4`, coinciden las siete comparaciones.\n\nDespués de editar, reconstruye el objetivo que vayas a ejecutar. Así observarás el programa obtenido con la nueva fuente, no un ejecutable anterior.\n\nGuarda las fuentes del componente y del comprobador, la descripción del proyecto y sus datos. Eso permite reconstruirlos y repetir las comparaciones, conservando qué se comprobó y con qué expectativas (Thomas & Hunt, 2020).\n\nSi un cambio estropea un comportamiento que antes cumplía su acuerdo, se ha producido una regresión. Por ejemplo, una reparación para cinco piezas que empezara a devolver una caja para cero introduciría otro error. Conservar y repetir el caso de cero permite descubrirlo (Kernighan & Pike, 1999)."
         },
         {
           "type": "order_code",
@@ -576,7 +576,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva siete esperados correctos y una biblioteca que usa piezas / 4. Con comprobar_cajas seleccionado, usa «Compilar, ejecutar y comprobar» y observa las discrepancias de 1, 5 y 17, con retorno 1. La comparación de esta revisión debe fallar. Recupera después la regla correcta modificando sólo src/cajas.cpp y repite la acción para contrastar las siete líneas OK y el retorno 0. Las expectativas se mantienen durante el control."
+          "text": "Este editor conserva los siete esperados correctos y una biblioteca que calcula `piezas / 4`. Selecciona `comprobar_cajas` y utiliza «Compilar, ejecutar y comprobar».\n\nLa revisión inicial debe mostrar discrepancias para una, cinco y diecisiete piezas y terminar con retorno uno. En este control, ese rechazo es lo que permite observar que la batería detecta el defecto.\n\nDespués modifica sólo `src/cajas.cpp` para recuperar la regla correcta. Repite la acción sin cambiar los casos ni los esperados. El informe debe mostrar las siete comparaciones coincidentes y terminar con retorno cero."
         },
         {
           "type": "cpp_compiler",
@@ -631,11 +631,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora lotes_para recibe entre 0 y 18 piezas y devuelve el mínimo número de lotes de seis plazas que permite guardarlas; cero piezas necesita cero lotes. El proyecto ya tiene biblioteca lotes y cliente consultar_lotes. verificar_lotes es otro ejecutable enlazado con la misma biblioteca, pero su main inicial todavía no compara nada."
+          "text": "Ahora la función `lotes_para` recibe entre cero y dieciocho piezas, incluidos los extremos. Cada lote admite seis piezas. Debe devolver el mínimo número de lotes que permita guardarlas todas; para cero piezas, debe devolver cero lotes.\n\nEl proyecto incluye la biblioteca `lotes` y la aplicación `consultar_lotes`. También declara el ejecutable `verificar_lotes`, enlazado con esa biblioteca. Sin embargo, el `main` inicial de este comprobador todavía no compara ningún resultado. Tendrás que construir sus comprobaciones."
         },
         {
           "type": "paragraph",
-          "text": "Calcula los esperados para 0, 6, 7 y 18 desde la capacidad de seis plazas y escribe las cuatro comparaciones en pruebas/lotes_casos.cpp. Cada caso debe llamar a lotes_para, comparar su respuesta y mostrar un diagnóstico; todos deben ejecutarse aunque alguno discrepe. Conserva la biblioteca, el cliente y la descripción CMake. Con verificar_lotes seleccionado, configura, construye y ejecuta la batería: debe terminar con 0 si todas las comparaciones coinciden y con 1 si hay alguna discrepancia. No obtengas los esperados de la misma función evaluada. Se admiten nombres, mensajes y organización equivalentes; el control con una implementación alterada tiene otro editor."
+          "text": "Trabaja en `pruebas/lotes_casos.cpp` y conserva la biblioteca, la aplicación y la descripción CMake.\n\n1. Calcula desde la capacidad de seis plazas los esperados para cero, seis, siete y dieciocho piezas. No los obtengas llamando a la función que estás evaluando.\n2. Escribe una comprobación para cada uno de esos cuatro datos. Cada comprobación debe llamar a `lotes_para`, comparar la respuesta con su esperado y mostrar un diagnóstico que permita reconocer el dato, el esperado, el obtenido y si coinciden.\n3. Organiza el comprobador para ejecutar los cuatro casos aunque alguno falle. Debe terminar con cero cuando todos coincidan y con uno cuando haya alguna discrepancia.\n4. Con `verificar_lotes` seleccionado, configura, construye y ejecuta tu batería. Compara su informe con los resultados que calculaste desde el acuerdo.\n\nAquí estás construyendo una batería de cuatro comparaciones, no eligiendo entre cuatro ensayos opcionales del editor. Puedes variar los nombres internos, los mensajes y la organización si conservas esas comparaciones y su significado. El control con una biblioteca alterada se realizará en otro editor."
         },
         {
           "type": "cpp_compiler",
@@ -695,7 +695,7 @@
         },
         {
           "type": "note",
-          "text": "Esta referencia organiza las cuatro llamadas con el mecanismo ya conocido. El acuerdo de lotes de seis plazas determina los esperados, independientemente de la fórmula que utilice la biblioteca."
+          "text": "La referencia utiliza las cuatro llamadas pedidas y conserva los casos posteriores aunque uno falle. Sus esperados proceden de la capacidad de seis plazas, sin copiar el resultado de la función:\nCero piezas → cero lotes.\nSeis piezas → un lote.\nSiete piezas → dos lotes.\nDieciocho piezas → tres lotes."
         },
         {
           "type": "code",
@@ -704,7 +704,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La biblioteca usa (piezas + 5) / 6. Para seis piezas calcula 11 / 6 y obtiene un lote; para siete calcula 12 / 6 y obtiene dos. Sumar cinco conserva el cociente de los múltiplos de seis y hace contar el lote adicional cuando sobran piezas. Para cero, 5 / 6 devuelve cero; el mayor numerador del dominio es 23.\n\nLa alteración piezas / 6 devuelve un solo lote para siete piezas y la batería debe señalar esa discrepancia, conservando también los otros tres casos. Al recuperar la regla correcta, repite todas las comparaciones. El cliente sólo muestra los resultados de seis y doce piezas: esas dos llamadas no sustituyen la batería."
+          "text": "La biblioteca calcula `(piezas + 5) / 6`. Cada grupo completo de seis piezas necesita un lote. Si sobran entre una y cinco piezas, hace falta otro lote.\n\nSumar cinco conserva ese resultado: cuando no sobra ninguna pieza, cinco no llegan a completar otro grupo de seis. Si sobra alguna, al sumar cinco se completa un grupo adicional, pero no dos.\n\nPara seis piezas se calcula `11 / 6` y se devuelve un lote.\nPara siete se calcula `12 / 6` y se devuelven dos.\nPara cero se calcula `5 / 6` y se devuelven cero.\n\nEn el dominio acordado, el mayor numerador es veintitrés. La regla cumple el mínimo pedido sin superar la capacidad de `int`.\n\nSi se sustituye por `piezas / 6`, siete piezas producen un solo lote y queda una pieza fuera. El caso de siete debe detectar esa discrepancia; los otros tres se siguen ejecutando. En cambio, la aplicación sólo llama con seis y doce piezas: en esos dos datos la división sin corrección también coincide con el acuerdo. Sus dos resultados no sustituyen la batería."
         },
         {
           "type": "code",
@@ -746,7 +746,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva el comprobador completo y una implementación de piezas / 6. Con verificar_lotes seleccionado, usa «Compilar, ejecutar y comprobar» para observar qué caso detecta la alteración y el retorno que comunica el fallo. Recupera después el mínimo de lotes de seis plazas modificando sólo motor/cantidad.cpp. Repite la acción con los cuatro casos conservados para contrastar el informe final y la terminación con 0."
+          "text": "Este editor conserva el comprobador completo y una biblioteca que calcula `piezas / 6`. Con `verificar_lotes` seleccionado, utiliza «Compilar, ejecutar y comprobar». Localiza la comparación que falla y el retorno que comunica esa discrepancia.\n\nDespués repara únicamente `motor/cantidad.cpp` para devolver el mínimo de lotes de seis plazas. Repite la acción, conservando los cuatro casos y sus esperados. Compara el informe final y comprueba que el programa termine con cero."
         },
         {
           "type": "cpp_compiler",
@@ -2455,6 +2455,136 @@
         "id": "block_0011_0009",
         "beforeSha256": "53fd4025f65a729135bd0554046cf41c426f249d3d5b1ab9543ccb722e3fb6b1",
         "afterSha256": "5e9d8dffab8b0e35e3374ce506a28e605d4dd695230c48f821423577b81cec3f"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "9dbe04544757f5998788b5f307364db38d1901d48a62d882af57d744f5c9eaac",
+        "afterSha256": "62348ee4709b46a48a5a66e9ee9eec81b953e22ee348d5c4f8b9e223f8ae981a"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f0a9c8b6796a08ff4f1824a88cb63641dd34d033e64ab0d9fa6a138bb04ac29b",
+        "afterSha256": "e2c09ea431810abdd360534b75bb825279d8647f23c534379013caf274a18f96"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a224b59cb61e713a10a848a18ad56a550dafb58affdafcb02b39786d31bfa8da",
+        "afterSha256": "85cef298f496208da49f082c04e08c2dd45ad69bd7d1bb00732e50b9a1cceaf2"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "1905e2e2da2096f2d936fb467ed724d3fba6873187ffe39a0f359833c5c2b48f",
+        "afterSha256": "37271089af840768dff32fae2190cf6b62abd80c7e6604f974bb5eb2a926ca2e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "9a5457d6b8ac3bd5012e1a369a6bd7d2a50db49fdb11528ed4ce4d9ef6da39ba",
+        "afterSha256": "490f6c89e1d26dd8c41468ae0699f8469d10d1eb7327c4f2d04fc1a057ea8d9f"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "285ce3be5cdc9b4ff2bdf31ffd9f1a69953e2b3861a06649365cb580626fee06",
+        "afterSha256": "b59b2a7f5cf93cb57dddcf8a182bfa4cd68c19f00ed5b8babe28b26db57b5766"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8c008f71d698f84b05009bd218bb3de6a9ef5752f7bad6019e7076b736be7be3",
+        "afterSha256": "927a8bb464193cf640455274fb16c6d17be6836020e6b471767bda6003740e8a"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "130cc31178a617ba6b3f8fcd7e57d93ad0fd4d7b900901dfc34bb43d285ba940",
+        "afterSha256": "3b9073b9ebe92704e20c51d6f136309fde93c2e8976fc972cd6a4cabf52d01ca"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "fd850b3da66bb885a16638f5f25fc704b29e2f3d9d0587408c40481171980aa1",
+        "afterSha256": "572800d41e4d8ad7705efc96032e4416992f644f635d565a8022d6aad08e2e2a"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "032e176f032ce83a0233a4383424bb536fb7f796024447adc05c7215f65a4f57",
+        "afterSha256": "de0d936976863d1269065afd78745eaa4abc456a272dfbb5c21c7d3f87f616c4"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "d77fef7cef1062c2f92045d1c4be0c7d81db0599fac8780d605f506861bf32c5",
+        "afterSha256": "67c06895d707b167302d2603878c5a7d21eda065b1db68fc4382533a0986fc07"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "47fbd0f3fb7ed4512b0fe39d0765cbfd86bc06d37fb28ba84a2400b4809f9fa8",
+        "afterSha256": "727ac6ae9b2d3da5ede274008b68cbd49654e3a2fcec99b78b1a6aec7ed38c61"
+      },
+      {
+        "id": "block_0005_0008",
+        "beforeSha256": "9aceff009e7f1a233ed883e5d2c25364ac33ff207fcb94f12f178f6fe0c7d147",
+        "afterSha256": "c529da1f9f28d37ee311bce93115fdf767cc201ccdcece2f21d2016211773ae5"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "cf653894ecfa9222871bd7c5e925daabc1f490a54040dafb43aa771b56dee397",
+        "afterSha256": "5e033aadf93f0bb98f19f7906c78324fdc9e4cb2d0868d51121684db602d98db"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "418ee9598574eca92050e4ed0943d6217b47379e98439ba2a4cee14b31be9f06",
+        "afterSha256": "d6b94f7d0e94083d6319492548aef526eeb00fd4dbce02d56df5d7a435c5dc7e"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "877d1d98b21c1f42225ddc5e36fb8d24370ff8ba0a23f310d6edf9c9389d9b10",
+        "afterSha256": "1653958e76622e3bf81c1cd73494912673850e0b8cdb3db60ad1f502e0df93f9"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "d66ed5ce76b8b860048836d8af21f640365277264da33ebd23c4c3b2ba86b6bf",
+        "afterSha256": "f0628b2ecf2f6f4becf5829f6292e5518e49dda294868c264ecba032f0a88e91"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "e2df659477ddfa93d2cd658ecc759eb4e8321a97745a3a56966e02d4c74bb6d9",
+        "afterSha256": "09a126414ffc0b2edd5ce6c95b0e81cd979df332cf7f6cc0909f3e67f4254c9f"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "abe2e25a86e42d7b21e8d17793cf8a62148334f6dbd08601a8dcc9dcd637c325",
+        "afterSha256": "98717f48d1deebaf11f3ecf7ee16c6673c170c669213f623ebe0829b9aa987ad"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "d6dcde3184a71c258a6410eb3f6fd8727a459e05fd296f2feb133d1ffe062d51",
+        "afterSha256": "c0eae3dd4da1f7794eb1f4be480f79c32bdb0ad3cc75b77a2d195bcc5ab8c35f"
+      },
+      {
+        "id": "block_0009_0007",
+        "beforeSha256": "748b924f73fb3db00d6dae95a1f884986eec8a46209992cd41cf40e3e8eab339",
+        "afterSha256": "f230a349276d4b7a464d63ccf1f3b8515985e1934b93fe1f7c7439a1ed6d3562"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "c2f67e34441028ee8cbba2cffffa0de812a1ccad88ba63233369e83568f1e047",
+        "afterSha256": "fea96dbb0edbe7c1ee83b431b5bc59095df369302d437664a828e8a81346f66c"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "91f72a3bce305ed66352443086bdaf13ba23e6f46536d86b434ac20f31bc6319",
+        "afterSha256": "0f22310498dd62860745ca604732c888936bc26a1c2588c4d4147ba4d7a1c517"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "be54c3ca4794b4d36782a9b2871db16b73986d9ce19055a37055203da7862e2b",
+        "afterSha256": "83a1601eece44b071de78ed21fcdc30319f67f02a73848760622ae27f52e32d6"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "8cc229fb3b8c1cd215af4452f02727b4da082c5c30a0ebba6fc78da11ba273f0",
+        "afterSha256": "19b03ac7e505ab0ca6b724167ccbdc7d4d9728d5597a57187f962f083b1f397f"
+      },
+      {
+        "id": "block_0011_0008",
+        "beforeSha256": "ed8cb6bc55f6f6b2270039d698596dcc483b1325350358b0f97a1945272f4fd0",
+        "afterSha256": "7261a5877a6e8084e15832dc690ac9f231f5ce1de60a343b09941741f3c89883"
       }
     ]
   },
@@ -2470,25 +2600,26 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "3259adedac183a6eb3e584cfe94c6f12f01b8b65b76f86bb0c89d1b05f0d0b3c",
+        "sourceSha256": "4924da424de7b1b7ba9299e4935b11f4c9b7f41be6438926fc58613d60b74816",
         "spans": [
           {
-            "start": 438,
-            "end": 442,
+            "start": 500,
+            "end": 504,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "49628fa69f87d4a52d34660f1cf8eafe860416600ca63f95e067b24c0ec48192",
+        "sourceSha256": "d0ccb569b231bf325bfcf181a2b33523231f5cf125792627c8fe79d08e03e38e",
         "spans": [
           {
-            "start": 461,
-            "end": 498,
-            "text": "(Kernighan & Pike, 1999, pp. 149–150)",
+            "start": 640,
+            "end": 664,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2558,18 +2689,19 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3a7730fdae249952365cccacbb68bd8fbdaa7e6728758a885135a25b3b2451fa",
+        "sourceSha256": "667e18a0e04ceb9662297a85dcf5d4243433464c0a0f8d5dcbf14e6810eea7b9",
         "spans": [
           {
-            "start": 11,
-            "end": 21,
+            "start": 12,
+            "end": 22,
             "text": "cajas_para",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 71,
-            "text": "0 y 20",
+            "start": 67,
+            "end": 80,
+            "text": "cero y veinte",
             "role": "data",
             "reading": "natural"
           }
@@ -2578,7 +2710,7 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "cc41bb746973c42b42d60d92c8d6c4433ccaeefae9b9f323e1ae465994a0bec7",
+        "sourceSha256": "4907ef8fddcbde48e58039844eee4b54f8c09ba988b6c1396f6681a109978a1e",
         "spans": []
       },
       {
@@ -2697,157 +2829,161 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "89dd579d52e4fa974db1719f33a83380d96c926a08367f3a21efbd0706b88adb",
+        "sourceSha256": "cbf639c9dd1c1d620a8a78d5f0b8ff2271afe7b0a6765307448cfc92556fc70c",
         "spans": [
           {
-            "start": 11,
-            "end": 32,
+            "start": 51,
+            "end": 72,
             "text": "publico/envio/cajas.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 41,
-            "end": 51,
+            "start": 94,
+            "end": 104,
             "text": "cajas_para",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 79,
+            "start": 131,
+            "end": 144,
             "text": "src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 152,
-            "end": 158,
+            "start": 203,
+            "end": 209,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 174,
-            "end": 189,
-            "text": "consultar_cajas",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 209,
-            "end": 225,
+            "start": 213,
+            "end": 229,
             "text": "app/consulta.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 242,
-            "end": 257,
-            "text": "comprobar_cajas",
+            "start": 244,
+            "end": 248,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 283,
+            "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 264,
-            "end": 287,
+            "start": 287,
+            "end": 310,
             "text": "pruebas/cajas_casos.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 307,
-            "end": 311,
+            "start": 325,
+            "end": 329,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 348,
+            "end": 363,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 401,
+            "end": 405,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 455,
+            "end": 461,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "a29ee1c304ce910cbd31d6a01e9d9e8c6523c78e19bd1073e8c1f79d54b6364f",
+        "sourceSha256": "804fcb347419244bf8dac33982ac47eb951b2079a5ce5aaabd89402b523a6587",
         "spans": [
           {
-            "start": 9,
-            "end": 35,
-            "text": "target_include_directories",
+            "start": 51,
+            "end": 100,
+            "text": "target_include_directories(envios PUBLIC publico)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 51,
+            "start": 134,
+            "end": 141,
             "text": "publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 72,
-            "text": "PUBLIC",
+            "start": 207,
+            "end": 220,
+            "text": "envio/cajas.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 76,
-            "end": 82,
-            "text": "envios",
+            "start": 224,
+            "end": 277,
+            "text": "target_link_libraries(consultar_cajas PRIVATE envios)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 158,
-            "end": 179,
-            "text": "target_link_libraries",
+            "start": 367,
+            "end": 420,
+            "text": "target_link_libraries(comprobar_cajas PRIVATE envios)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 215,
-            "end": 221,
-            "text": "envios",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 241,
+            "start": 469,
+            "end": 476,
             "text": "PRIVATE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 328,
-            "end": 357,
-            "text": "(Scott, 2025, pp. 20–21, 176)",
+            "start": 563,
+            "end": 576,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 370,
-            "end": 385,
+            "start": 590,
+            "end": 605,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 530,
-            "end": 534,
+            "start": 753,
+            "end": 757,
             "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 554,
-            "end": 569,
-            "text": "consultar_cajas",
-            "role": "data",
+            "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 593,
-            "end": 603,
-            "text": "cajas_para",
-            "role": "cpp"
           }
         ]
       },
@@ -3026,129 +3162,158 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "f3eef30d786228410b013123bf25b5c9346dca18fcc55a96e9ad82c0d9e6ff0f",
+        "sourceSha256": "90558f5545dc34d101efd28bcbaf2f709f3bc93c70abc62f6efb0af8f0a44583",
         "spans": [
           {
-            "start": 17,
-            "end": 26,
+            "start": 16,
+            "end": 25,
             "text": "comprobar",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 45,
+            "start": 68,
+            "end": 78,
             "text": "cajas_para",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 79,
-            "end": 87,
+            "start": 106,
+            "end": 114,
             "text": "obtenido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 102,
-            "end": 122,
+            "start": 128,
+            "end": 148,
             "text": "obtenido == esperado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 139,
+            "start": 184,
+            "end": 192,
             "text": "coincide",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 145,
-            "end": 149,
-            "text": "bool",
-            "role": "cpp"
-          },
-          {
-            "start": 195,
-            "end": 199,
-            "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 201,
-            "end": 209,
-            "text": "correcto",
-            "role": "cpp"
-          },
-          {
-            "start": 222,
-            "end": 226,
-            "text": "true",
-            "role": "cpp"
-          },
-          {
-            "start": 252,
-            "end": 257,
-            "text": "false",
+            "start": 245,
+            "end": 247,
+            "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 262,
-            "end": 264,
-            "text": "if",
-            "role": "cpp"
+            "start": 265,
+            "end": 270,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 272,
-            "end": 277,
-            "text": "false",
-            "role": "cpp"
+            "start": 318,
+            "end": 326,
+            "text": "coincide",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 280,
-            "end": 288,
-            "text": "correcto",
-            "role": "cpp"
+            "start": 332,
+            "end": 336,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 336,
-            "end": 340,
-            "text": "true",
-            "role": "cpp"
-          },
-          {
-            "start": 346,
+            "start": 344,
             "end": 348,
-            "text": "if",
-            "role": "cpp"
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 428,
-            "end": 436,
+            "start": 364,
+            "end": 372,
             "text": "correcto",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 461,
-            "end": 475,
+            "start": 387,
+            "end": 391,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 423,
+            "end": 428,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 435,
+            "end": 437,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 445,
+            "end": 453,
+            "text": "correcto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 459,
+            "end": 464,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 533,
+            "end": 537,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 582,
+            "end": 584,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 673,
+            "end": 687,
             "text": "Bateria: FALLO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 488,
-            "end": 489,
+            "start": 703,
+            "end": 704,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 503,
-            "end": 514,
+            "start": 749,
+            "end": 760,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 527,
-            "end": 528,
+            "start": 776,
+            "end": 777,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -3158,18 +3323,74 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "b79270b8fac9916e6fb10d2b3b0a722bc9be598f4384677bd87960373f1ab747",
+        "sourceSha256": "2813fa49a1df05c0f766836ba620dc2df9ac9478a9883ca7fe57cc85c88772fa",
         "spans": [
           {
-            "start": 47,
-            "end": 55,
-            "text": "0,4,8,20",
+            "start": 77,
+            "end": 88,
+            "text": "Cero piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 202,
-            "end": 204,
+            "start": 91,
+            "end": 101,
+            "text": "cero cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 116,
+            "text": "Cuatro piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 127,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 140,
+            "text": "Ocho piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 152,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 167,
+            "text": "Veinte piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 181,
+            "text": "cinco cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 294,
+            "text": "piezas / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 417,
+            "end": 419,
             "text": "OK",
             "role": "output",
             "reading": "natural"
@@ -3396,32 +3617,32 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "e2119606faacaae91e0f2df5617c29dfce116e58a24d72dfe3008cd7677aba95",
+        "sourceSha256": "9846d57918c27baa83f0b2d64c92fa6021ed8d1b35a4f67aee5d4b4e96bce357",
         "spans": [
           {
-            "start": 78,
-            "end": 93,
+            "start": 134,
+            "end": 149,
             "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 239,
-            "end": 255,
+            "start": 301,
+            "end": 317,
             "text": "app/consulta.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 287,
-            "end": 302,
+            "start": 443,
+            "end": 458,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 364,
-            "end": 387,
+            "start": 514,
+            "end": 537,
             "text": "pruebas/cajas_casos.cpp",
             "role": "data",
             "reading": "technical"
@@ -3431,32 +3652,32 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "b36c702ea1eee34f4884acad062d40cf197d573a864475820ba5b5dc898a19d4",
+        "sourceSha256": "b3e61f60cb715b46b68c416b02046f48b853ac76af216dc2631ddf8700a5d9a9",
         "spans": [
           {
-            "start": 55,
-            "end": 64,
-            "text": "1, 5 y 17",
+            "start": 201,
+            "end": 231,
+            "text": "una, cinco y diecisiete piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 135,
+            "start": 281,
+            "end": 304,
             "text": "pruebas/cajas_casos.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 183,
+            "start": 360,
+            "end": 373,
             "text": "src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 216,
+            "start": 384,
+            "end": 399,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
@@ -3563,19 +3784,76 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "6d7934e59593e51d5129cf9fa7122ae7d3a11ecb2bf464cd8e8c29e17d219e51",
+        "sourceSha256": "3a5f2bd7846172f056a0b7e12177052a2700415f7da9b17d7d10d75925ac737d",
         "spans": [
           {
-            "start": 4,
-            "end": 14,
+            "start": 5,
+            "end": 15,
             "text": "piezas / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 29,
-            "end": 41,
-            "text": "0, 4, 8 y 20",
+            "start": 69,
+            "end": 72,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 142,
+            "text": "Una pieza",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 175,
+            "text": "cero cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 192,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 206,
+            "text": "Cinco piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 226,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 263,
+            "text": "Diecisiete piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 287,
+            "text": "cuatro cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 307,
+            "text": "cinco",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3583,44 +3861,49 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "ceb0e8a367bd54f57c64251750265818e7162c1940c6de9f41efa0ecf80e3333",
+        "sourceSha256": "625a4d15013bafbc9b81ddd5f8c60e8ea911e4d82ae80354a2c2c325989d920e",
         "spans": [
           {
-            "start": 30,
-            "end": 46,
+            "start": 36,
+            "end": 52,
             "text": "(piezas + 3) / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 75,
-            "end": 80,
+            "start": 683,
+            "end": 688,
             "text": "7 / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 126,
+            "start": 737,
+            "end": 742,
             "text": "8 / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 481,
-            "end": 486,
+            "start": 786,
+            "end": 791,
             "text": "3 / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 553,
-            "end": 555,
-            "text": "23",
+            "start": 867,
+            "end": 877,
+            "text": "veintitrés",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 569,
-            "end": 572,
+            "start": 889,
+            "end": 892,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3712,18 +3995,25 @@
       {
         "block": "block_0005_0008",
         "path": "/text",
-        "sourceSha256": "d3597273d09a9288030af33b29a5d97dc5feb70ebca2864c7cbc8208eef645bd",
+        "sourceSha256": "4f840bcdd929a32690599952cbbaba8883e518f14431e3a17bac51bbfd3e2862",
         "spans": [
           {
-            "start": 117,
-            "end": 130,
+            "start": 90,
+            "end": 100,
+            "text": "piezas / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 197,
             "text": "src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 216,
+            "start": 276,
+            "end": 291,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
@@ -3788,18 +4078,19 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "3c3a27620a4ae3cb215b8a2fc1f12f03f4e750ffc447f7becf807cd51737edb2",
+        "sourceSha256": "0e124aba081aaae703ea2c68a2d435326dfa602659c31fd48ced4251e2611171",
         "spans": [
           {
-            "start": 146,
-            "end": 156,
+            "start": 162,
+            "end": 172,
             "text": "esperado=4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 369,
-            "end": 401,
-            "text": "(Kernighan & Pike, 1999, p. 150)",
+            "start": 581,
+            "end": 605,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3894,13 +4185,14 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "6cbb660634b5da393b624b72855b4cd6b7b16e06ffbc3c406ead47cbd3b47d9e",
+        "sourceSha256": "326e503e17e8bbd7067e820e8bc67d861a417c7c3cb135ea432ab93fad232b0d",
         "spans": [
           {
-            "start": 87,
-            "end": 114,
+            "start": 39,
+            "end": 66,
             "text": "esperado=cajas_para(piezas)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4029,20 +4321,21 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "ec656692da413c8e7d8df183da312c768862e34413adb49ad1dee35103370d0a",
+        "sourceSha256": "0ce79eb37d14e99b41df66e069134490e0da8882cb8ec5aa917647c24c273c0b",
         "spans": [
           {
-            "start": 139,
-            "end": 149,
-            "text": "piezas / 4",
-            "role": "cpp"
-          },
-          {
-            "start": 490,
-            "end": 524,
-            "text": "(Thomas & Hunt, 2020, pp. 277–278)",
+            "start": 174,
+            "end": 195,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 395,
+            "text": "piezas / 4",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4117,11 +4410,11 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "13e70acf1c89afafcde2b74b3b2810a1ce638442d334ea6c944f2455144f4b5f",
+        "sourceSha256": "7ca726da04fbeb7e70756070ceb52d7e47850c8721bc2dc51bd03fd37a83f7ba",
         "spans": [
           {
-            "start": 132,
-            "end": 147,
+            "start": 88,
+            "end": 103,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
@@ -4131,7 +4424,7 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "030fe34b4bb75975169ba687a86182e91009aeeaf7a646a4c69e2741459294cf",
+        "sourceSha256": "062677d7654752329d045d51c7324d97d95ee48f1210e908378ec62fea950a94",
         "spans": []
       },
       {
@@ -4243,25 +4536,25 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "7a1704f9cbe7c41f0b763e01522afd11723b50de9a195e4c1e4b47199814d7aa",
+        "sourceSha256": "d4378cc061f00c926c898f874d4ef44b8696bf950718fe7f2102036262e1601d",
         "spans": [
           {
             "start": 5,
-            "end": 7,
-            "text": "17",
+            "end": 22,
+            "text": "diecisiete piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 37,
-            "text": "5",
+            "start": 45,
+            "end": 56,
+            "text": "cinco cajas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 100,
-            "end": 123,
+            "start": 71,
+            "end": 94,
             "text": "pruebas/cajas_casos.cpp",
             "role": "data",
             "reading": "technical"
@@ -4271,38 +4564,40 @@
       {
         "block": "block_0009_0003",
         "path": "/text",
-        "sourceSha256": "8e0dfafc8017980df71b33135be2964fe14147ac631f896e2ce9059f676bc9de",
+        "sourceSha256": "afe6c78d46baadf8e1cf071688524edb99e91772dca037c2d523692ba986f6b5",
         "spans": [
           {
-            "start": 4,
-            "end": 14,
+            "start": 59,
+            "end": 69,
             "text": "piezas / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 44,
-            "text": "1, 5 y 17",
+            "start": 95,
+            "end": 125,
+            "text": "una, cinco y diecisiete piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 95,
-            "end": 111,
+            "start": 182,
+            "end": 198,
             "text": "(piezas + 3) / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 445,
-            "end": 479,
-            "text": "(Thomas & Hunt, 2020, pp. 274–275)",
+            "start": 588,
+            "end": 609,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 627,
-            "end": 659,
-            "text": "(Kernighan & Pike, 1999, p. 149)",
+            "start": 883,
+            "end": 907,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -4391,53 +4686,47 @@
       {
         "block": "block_0009_0007",
         "path": "/text",
-        "sourceSha256": "df95bb009ec17193d49c764ee0928142d16338a4ec3d468d71ff9f644f17ddfb",
+        "sourceSha256": "33c3bc468bb4af0c189a42b59ef3820ecd45d5333c5e4085b6faed0946c72021",
         "spans": [
           {
-            "start": 74,
-            "end": 84,
+            "start": 81,
+            "end": 91,
             "text": "piezas / 4",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 105,
+            "start": 106,
+            "end": 121,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 197,
-            "text": "1, 5 y 17",
+            "start": 220,
+            "end": 250,
+            "text": "una, cinco y diecisiete piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 211,
-            "end": 212,
-            "text": "1",
+            "start": 274,
+            "end": 277,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 311,
-            "end": 324,
+            "start": 394,
+            "end": 407,
             "text": "src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 377,
-            "end": 379,
-            "text": "OK",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 393,
-            "end": 394,
-            "text": "0",
+            "start": 584,
+            "end": 588,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -4493,95 +4782,98 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "12c65781f1a315fc65b1db80368f85781583c36cd259c155b6583510023be3cd",
+        "sourceSha256": "d025726d632e5f8f60232cb88e0bff1568b5dafb7d4108dbc856013a877238a1",
         "spans": [
           {
-            "start": 6,
-            "end": 16,
+            "start": 18,
+            "end": 28,
             "text": "lotes_para",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 30,
-            "end": 36,
-            "text": "0 y 18",
+            "start": 43,
+            "end": 59,
+            "text": "cero y dieciocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 185,
-            "end": 190,
+            "start": 272,
+            "end": 277,
             "text": "lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 216,
+            "start": 296,
+            "end": 311,
             "text": "consultar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 233,
+            "start": 345,
+            "end": 360,
             "text": "verificar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 295,
-            "end": 299,
+            "start": 409,
+            "end": 413,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0010_0002",
         "path": "/text",
-        "sourceSha256": "aef5520a882594e9cb3d359ba75163ebdf841a02ea4462681ad020dcf8839af1",
+        "sourceSha256": "f529612718f11b126e37598f5624319c358ca8b123958b84e9b9e9c7aa601b38",
         "spans": [
           {
-            "start": 27,
-            "end": 39,
-            "text": "0, 6, 7 y 18",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 135,
+            "start": 12,
+            "end": 35,
             "text": "pruebas/lotes_casos.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 161,
-            "end": 171,
-            "text": "lotes_para",
-            "role": "cpp"
+            "start": 166,
+            "end": 202,
+            "text": "cero, seis, siete y dieciocho piezas",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 331,
-            "end": 346,
-            "text": "verificar_lotes",
-            "role": "data",
+            "start": 301,
+            "end": 304,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 370,
+            "text": "lotes_para",
+            "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 422,
-            "end": 423,
-            "text": "0",
+            "start": 605,
+            "end": 609,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 467,
-            "end": 468,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "start": 684,
+            "end": 699,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
@@ -4692,50 +4984,119 @@
       {
         "block": "block_0011_0001",
         "path": "/text",
-        "sourceSha256": "8cd58114eb8a7db5d9d6568f51cf5d6b2bc1f451ba81600629006198ad35a2c1",
-        "spans": []
-      },
-      {
-        "block": "block_0011_0003",
-        "path": "/text",
-        "sourceSha256": "b4271225d86c8aef4599bc26900a29c5d65e805b2ae5e18c5df50c21cda2c069",
+        "sourceSha256": "1de31d447be366c79f2b5b02962d429d8d49f85eba98cab19b06c08f61b59594",
         "spans": [
           {
-            "start": 18,
-            "end": 34,
-            "text": "(piezas + 5) / 6",
-            "role": "cpp"
+            "start": 195,
+            "end": 206,
+            "text": "Cero piezas",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 61,
-            "end": 67,
-            "text": "11 / 6",
-            "role": "cpp"
-          },
-          {
-            "start": 106,
-            "end": 112,
-            "text": "12 / 6",
-            "role": "cpp"
-          },
-          {
-            "start": 251,
-            "end": 256,
-            "text": "5 / 6",
-            "role": "cpp"
-          },
-          {
-            "start": 306,
-            "end": 308,
-            "text": "23",
+            "start": 209,
+            "end": 219,
+            "text": "cero lotes",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 325,
-            "end": 335,
+            "start": 221,
+            "end": 232,
+            "text": "Seis piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 242,
+            "text": "un lote",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 256,
+            "text": "Siete piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 268,
+            "text": "dos lotes",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 286,
+            "text": "Dieciocho piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 299,
+            "text": "tres lotes",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0003",
+        "path": "/text",
+        "sourceSha256": "7a01c3cd96f8a6f875ea25553f68a7bd06abeae1b98614a0ca1c993cb9eb43fd",
+        "spans": [
+          {
+            "start": 23,
+            "end": 39,
+            "text": "(piezas + 5) / 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 382,
+            "text": "11 / 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 430,
+            "end": 436,
+            "text": "12 / 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 485,
+            "text": "5 / 6",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 555,
+            "end": 565,
+            "text": "veintitrés",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 629,
+            "end": 632,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 657,
+            "end": 667,
             "text": "piezas / 6",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4830,32 +5191,33 @@
       {
         "block": "block_0011_0008",
         "path": "/text",
-        "sourceSha256": "4ab6b394dfd01bdba231de4cc5ed8b6b675110962bf1547a91c3ab8d850bc920",
+        "sourceSha256": "e7fdf4910edbf2649d4ab3b11130ec2bcc6b996c8e4a4eb3d1e98efbd6570a11",
         "spans": [
           {
-            "start": 69,
-            "end": 79,
+            "start": 75,
+            "end": 85,
             "text": "piezas / 6",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 100,
+            "start": 93,
+            "end": 108,
             "text": "verificar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 319,
+            "start": 272,
+            "end": 290,
             "text": "motor/cantidad.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 425,
-            "end": 426,
-            "text": "0",
+            "start": 470,
+            "end": 474,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }

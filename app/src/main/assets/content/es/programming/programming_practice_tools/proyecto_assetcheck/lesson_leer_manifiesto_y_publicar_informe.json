@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En U4L4 se validaba una línea sin consultar otras. En U4L5 el lote conserva la primera admisión válida de cada ID y detecta duplicados. Esta etapa añade la lectura de los bytes de un archivo, la distinción de sus terminadores, los fallos globales y un cliente que sólo publica resultados cuando conoce el desenlace completo."
+          "text": "Ya construimos dos partes de AssetCheck. `leer_registro` decide si una línea cumple el formato y los dominios acordados. `procesar_linea` utiliza esa decisión y consulta las admisiones anteriores para detectar un ID duplicado.\n\nAhora recibiremos la ruta de un archivo de manifiesto. El programa tendrá que abrirlo, obtener cada línea con su número original y entregarla al lote. También tendrá que reconocer si llegó al final o si la revisión quedó interrumpida.\n\nEl cliente de consola mostrará las admisiones, los rechazos y el resumen sólo cuando haya terminado la revisión completa. Si no puede completarla, mostrará una causa global y no presentará los resultados de una parte como si correspondieran a todo el archivo."
         },
         {
           "type": "paragraph",
-          "text": "AssetCheck sigue siendo un verificador de declaraciones de recursos: id tipo tamano_bytes. No abre las texturas, mallas ni sonidos anunciados, no mide archivos ni comprueba formatos multimedia. El usuario puede interpretar el informe, corregir el manifiesto y volver a ejecutarlo."
+          "text": "Cada declaración sigue teniendo tres campos: `id tipo tamano_bytes`. Esos campos son lo que revisa AssetCheck. Por ejemplo, una declaración puede decir que Atlas es una textura de doce bytes; aceptar la declaración significa que cumple nuestro acuerdo, no que se haya abierto ni medido esa textura.\n\nEl programa permite localizar las líneas que se deben corregir y volver a revisar el manifiesto. La existencia, el formato multimedia y el contenido real de los recursos declarados quedan fuera de esta versión."
         },
         {
           "type": "paragraph",
-          "text": "El contrato ya fijado permite hasta 80 bytes de contenido por línea, cien líneas físicas por archivo y LF o CRLF como terminadores. Cada línea localmente inválida se rechaza y la revisión continúa; no abrir el archivo, una lectura fallida o encontrar la línea 101 son errores globales que impiden publicar un informe parcial (Kernighan & Pike, 1999, capítulos 4 y 6)."
+          "text": "Conservamos los límites elegidos para este proyecto:\n\nCada línea puede contener hasta ochenta bytes de contenido, sin contar su terminador.\n\nEl archivo puede tener hasta cien líneas físicas, incluidas las vacías y las que se rechacen.\n\nLos terminadores permitidos son LF y CRLF; en las páginas siguientes veremos qué bytes los forman.\n\nUn error local, como un tamaño inválido, rechaza esa línea y permite revisar las siguientes. Un error global impide considerar completa la revisión: no poder abrir el archivo, fallar al leerlo o encontrar una línea ciento uno. En esos casos no se publica un informe parcial. Son reglas del contrato de AssetCheck, no límites generales del lenguaje C++."
         },
         {
           "type": "multiple_choice",
@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En Windows, una apertura de texto puede transformar ciertos finales de línea antes de que el programa los examine. Para distinguir exactamente LF, CRLF y CR aislado, el archivo del manifiesto se abre con std::ifstream y std::ios::binary. El modo binario no convierte la entrada en un archivo multimedia: sólo evita traducciones de bytes del flujo de texto."
+          "text": "Al abrir un archivo en modo de texto en Windows, la biblioteca puede entregar un LF donde el archivo contiene la pareja CRLF. Si observáramos sólo ese resultado, habríamos perdido la diferencia entre los bytes originales. El modo binario evita esas traducciones (Microsoft, 2022).\n\nPara esta lectura utilizaremos `std::ifstream`, el flujo de entrada asociado a un archivo, y la opción `std::ios::binary`. Binario describe aquí cómo se entregan los bytes al programa. El manifiesto sigue conteniendo declaraciones de texto; no se transforma en una imagen ni en otro formato multimedia.\n\nEn el fragmento, ruta identifica el archivo que pide el cliente. `is_open()` comprueba si la apertura tuvo éxito. Si no lo tuvo, la función registra la causa apertura y devuelve false; no empieza a revisar líneas."
         },
         {
           "type": "code",
@@ -56,11 +56,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Un intento de apertura fallido sólo acredita que el programa no logró abrir ese origen. No permite atribuir sin evidencia la causa a permisos, ausencia del archivo, otro proceso o antivirus. El cliente mostrará ERROR causa=APERTURA y terminará con código 2, sin filas de aceptación ni resumen."
+          "text": "Una apertura fallida permite afirmar que el programa no logró abrir ese origen. Para saber por qué necesitaríamos más información: el archivo podría no existir, la ruta podría ser incorrecta o podría haber otro problema de acceso. No atribuyas una causa concreta sólo por recibir false.\n\nEl cliente comunica este resultado con `ERROR causa=APERTURA` en el canal de error y termina con código dos. El canal de salida queda vacío: no hay admisiones ni resumen que correspondan a una revisión terminada."
         },
         {
           "type": "paragraph",
-          "text": "Usaremos una interfaz std::istream& para probar la lectura con flujos en memoria. Así se puede inyectar un error sin depender de desconectar un disco, alterar archivos personales ni asumir condiciones particulares del equipo (Kernighan & Pike, 1999, capítulo 6)."
+          "text": "La función que revisa el contenido recibirá `std::istream&`. Esa referencia le permite operar sobre el mismo flujo que proporciona el llamador. Un flujo de archivo y un flujo preparado en memoria pueden ofrecer las mismas operaciones de lectura, aunque obtengan los bytes de lugares distintos.\n\nAsí podremos comprobar la revisión con entradas pequeñas y exactas antes de probarla con un archivo físico. También podremos preparar un origen de ensayo que falle al entregar bytes, sin desconectar un disco ni modificar archivos personales. Aislar un componente con entradas controladas ayuda a comprobarlo sin depender de todo el entorno a la vez (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -89,11 +89,11 @@
         },
         {
           "type": "paragraph",
-          "text": "LF es el byte de valor 10. CRLF es la pareja de valores 13 y 10. Cuando llega LF, cerramos una línea y retiramos un único CR únicamente si conocemos que estaba inmediatamente antes de ese LF. En el fragmento siguiente, linea conserva todos los bytes recibidos, sin recorte. Un CR interior, incluso cuando le sigue otro CR, queda como contenido y produce FORMATO al validar la línea. Cuando se use un búfer limitado, primero habrá que saber si se descartó algún byte."
+          "text": "En el manifiesto de este proyecto, LF es el byte de valor diez y CR es el byte de valor trece. Un LF por sí solo cierra una línea. Un CR seguido inmediatamente de LF forma el terminador CRLF.\n\nEl fragmento siguiente recibe los bytes uno a uno. Mientras no llega LF, los añade a la cadena `linea`. Al llegar LF, mira el último byte guardado. Si es CR, lo retira porque ese CR forma parte del terminador que acabamos de recibir. Después entrega el contenido al lote y vacía la cadena para empezar la siguiente línea.\n\nSe retira un único CR. En la secuencia CR CR LF, sólo el segundo CR pertenece al terminador; el primero permanece en el contenido y provoca el rechazo local por formato. Un CR situado entre otros caracteres también se conserva."
         },
         {
           "type": "paragraph",
-          "text": "El terminador no participa en el límite de 80 bytes. Una declaración con exactamente 80 bytes de contenido seguida de CRLF es válida en longitud; 81 bytes de contenido deben producir FORMATO. El fragmento siguiente todavía no limita el tamaño de linea: sirve para estudiar los terminadores, no para implementar por sí solo el búfer acotado del proyecto. Un tabulador cuenta como un byte, aunque ocupe varias columnas en pantalla."
+          "text": "El límite de ochenta bytes corresponde al contenido, no al terminador. Con ochenta bytes de contenido y CRLF, se han recibido ochenta y un bytes antes de LF: los ochenta del contenido y el CR. Retirar ese CR deja los ochenta que se deben validar.\n\nCon ochenta y un bytes de contenido y LF, quedan ochenta y uno: la línea excede el límite y se rechaza por FORMATO. Un tabulador cuenta como un byte, aunque al mostrarlo parezca ocupar varias posiciones.\n\nEste primer fragmento guarda toda la línea para estudiar cómo separar su terminador. En la página siguiente limitaremos la cantidad de contenido retenido. No basta con recortar una línea larga y validar únicamente la parte que haya quedado."
         },
         {
           "type": "code",
@@ -102,7 +102,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un archivo vacío tiene cero líneas. «A malla 1» sin terminador final tiene una línea; «A malla 1\\n» también tiene una, no dos. «A malla 1\\n\\n» contiene dos: la segunda es vacía y se rechaza por FORMATO. El archivo se interpreta según la presencia real de bytes, no añadiendo líneas por conveniencia."
+          "text": "Cuenta las líneas a partir de los bytes presentes:\n\nArchivo sin ningún byte: cero líneas.\n\nA malla 1, sin terminador: una línea, que se cierra al llegar al final del archivo.\n\nA malla 1 seguido de un LF: una línea. El LF cierra esa línea; no crea otra después.\n\nA malla 1 seguido de dos LF: dos líneas. El primero cierra la declaración y el segundo cierra una línea vacía, que se rechaza por FORMATO.\n\nEn las etiquetas del ejercicio, la barra inversa de `\\n` indica un LF y la de `\\r` indica un CR. Cada escape representa un solo byte de esos datos; no se trata de una barra y una letra escritas en el manifiesto."
         },
         {
           "type": "math_puzzle",
@@ -177,7 +177,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Al alcanzar EOF normalmente, hay que procesar la última línea si permanecieron bytes desde el terminador anterior. Si acabábamos de consumir LF, no hay una línea adicional. Un CR al final sin LF sigue siendo contenido inválido, no se convierte automáticamente en terminador."
+          "text": "EOF significa final de la entrada, del inglés end of file. No es un byte extra que debamos añadir al archivo. Cuando la lectura termina normalmente, revisamos si se habían recibido bytes desde el último terminador.\n\nSi queda contenido, hay una última línea que procesar aunque no termine con LF. Si el último byte leído fue LF, esa línea ya se cerró y no queda otra por contar. Si el archivo acaba con CR sin LF, ese CR sigue siendo contenido de la última línea y provoca FORMATO; no se elimina como si hubiese formado CRLF."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el fragmento siguiente se usa `entrada.get()` sin parámetro. Esta forma devuelve un valor que representa el carácter obtenido o un indicador especial cuando no obtuvo ninguno. Es distinta de get(c), que guarda el carácter en c y permite comprobar el flujo devuelto.\n\nLa expresión `std::char_traits<char>::eof()` proporciona ese indicador especial. `auto` conserva el tipo del resultado de get(). Primero se compara con el indicador; sólo cuando es un carácter se convierte a char mediante `static_cast<char>(dato)`. Hacer la conversión antes de la comparación podría perder la distinción que necesitamos (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\n`for (;;)` deja sin escribir la condición del encabezado y repite mientras el cuerpo no salga mediante break o return. Aquí cada llamada a get() intenta obtener el byte siguiente; el break abandona el recorrido cuando ya no se obtiene otro carácter."
         },
         {
           "type": "code",
@@ -186,11 +190,34 @@
         },
         {
           "type": "paragraph",
-          "text": "El lector local de U4L4 recibe bytes, no un texto recortado para facilitar su aceptación. Rechazará NUL, acentos UTF-8, CR aislado, más de ochenta bytes y campos incompletos. La decisión FORMATO no sustituye la causa de un fallo al leer del sistema, que pertenece a la operación completa."
+          "text": "Separar el terminador no significa limpiar el contenido para que pase la validación. El lector local recibe los bytes que pertenecen a la línea: conserva los CR sueltos y rechaza NUL, bytes fuera del repertorio permitido, exceso de longitud o campos incompletos.\n\nQue el lector devuelva FORMATO indica un problema en esa línea recibida. No significa que haya fallado la operación de lectura. En ese caso se registra el rechazo local y se continúa con la línea siguiente."
         },
         {
           "type": "paragraph",
-          "text": "Para limitar la memoria, conserva como máximo los primeros 81 bytes de cada línea y sigue consumiendo los demás, aunque ya no quepan. Usa el indicador linea_truncada para recordar si se descartó algún byte:\n\n1. Al comenzar cada línea, establece linea_truncada en false.\n2. Guarda los bytes que caben en el búfer. Si llega uno más allá del límite de 81, cambia linea_truncada a true y sigue leyendo hasta LF.\n3. Al recibir LF, retira un único CR final almacenado sólo si linea_truncada sigue siendo false: así sabes que ese CR estaba inmediatamente antes del LF. Cierra la línea y reinicia el búfer y el indicador.\n\nComprueba el límite: 80 bytes de contenido seguidos de CRLF ocupan 81 antes de LF. No hay truncamiento y quedan 80 bytes válidos. En cambio, 80 bytes de contenido seguidos de CR CR LF o CR X LF exceden el búfer y producen FORMATO, aunque el último byte retenido parezca un CR terminador. Si hubo bytes descartados, no retires ninguno de los bytes conservados."
+          "text": "Para limitar el contenido que guardamos, la cadena utilizada como búfer conservará como máximo los primeros ochenta y un bytes de una línea. Búfer significa aquí el lugar donde retenemos temporalmente esos bytes. Hace falta una posición más que el máximo de contenido para poder conservar el posible CR de un terminador CRLF.\n\nEl indicador `linea_truncada` recuerda si hubo algún byte que no se pudo guardar. Sigue estos pasos:\n\n1. Empieza la línea con la cadena vacía y linea_truncada en false.\n\n2. Guarda cada byte distinto de LF mientras la cadena tenga menos de ochenta y un bytes. Si llega otro que ya no cabe, conserva la cadena anterior, cambia linea_truncada a true y sigue leyendo hasta LF o hasta el final del origen.\n\n3. Al llegar LF, retira el CR final guardado sólo si linea_truncada es false. Así sabes que ese CR fue el byte inmediatamente anterior a LF. Si se descartaron bytes, el último guardado podría estar lejos del terminador real.\n\n4. Procesa la línea, vacía la cadena y restablece el indicador para la siguiente. La cantidad de bytes conservados queda limitada; los bytes descartados también se consumen para llegar al comienzo real de la línea siguiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta estas tres secuencias, usando ochenta bytes de contenido antes de los signos indicados:\n\nContenido y CRLF: se guardan ochenta y un bytes antes de LF y no se descarta ninguno. Se retira el CR, quedan ochenta y la longitud cumple el límite.\n\nContenido y CR CR LF: se guardan el contenido y el primer CR. El segundo CR no cabe y activa linea_truncada. No se retira el CR retenido; la línea se rechaza por FORMATO.\n\nContenido y CR X LF: se retienen el contenido y el CR; se descarta X. Ese CR no era parte de CRLF. El indicador impide eliminarlo para aparentar que sólo había ochenta bytes válidos.\n\nEn los dos rechazos, la lectura sigue hasta consumir LF y la siguiente línea se revisa con su número original. Si el archivo acaba antes de LF, todavía existe una última línea: haber descartado bytes no debe hacer que olvidemos que los recibimos. El indicador de contenido pendiente permanece activo hasta cerrar esa línea."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_buffer_no_equivale_validez",
+          "question": "Se reciben ochenta y un bytes de contenido, sin CR, y después LF. El búfer puede guardar los ochenta y uno; linea_truncada sigue en false. ¿Qué debe ocurrir al validar la longitud?",
+          "options": [
+            "Aceptar la línea porque no se descartó ningún byte.",
+            "Rechazarla por FORMATO: el contenido supera el máximo de ochenta bytes.",
+            "Eliminar el último byte para que la declaración quepa.",
+            "Tratarla como fallo global de lectura y cancelar el archivo."
+          ],
+          "correctIndex": 1,
+          "explanation": "La capacidad temporal incluye una posición para un posible CR terminador. Aquí no había CR y los ochenta y un bytes son contenido. No haber truncado permite conocer el final retenido; no demuestra que la longitud sea válida.",
+          "reviewFeedback": [
+            "El indicador recuerda bytes descartados, no la validez de la longitud.",
+            "El lector local debe rechazar el exceso de contenido sin borrar bytes para aceptarlo.",
+            "Recortar cambia los datos que recibió el programa.",
+            "Una línea recibida completa pero demasiado larga es un rechazo local."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -219,11 +246,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El máximo de cien se aplica a líneas físicas, no a admisiones. Cien líneas con tamaño cero son cien rechazos normales y producen un informe completo. Si aparece una línea 101, aunque fuese válida o inválida, el archivo supera el alcance acordado."
+          "text": "El máximo de cien se aplica a todas las líneas físicas, no sólo a las admisiones. Por ejemplo, cien declaraciones con tamaño cero producen cien rechazos locales. Si se pudieron leer completas y no hay más líneas, se publica el informe con esos rechazos.\n\nAl encontrar una línea ciento uno se supera el máximo del archivo. Su contenido puede ser válido, inválido o vacío: en los tres casos ya existe una línea de más. Una última línea sin terminador también cuenta si contiene bytes."
         },
         {
           "type": "paragraph",
-          "text": "La detección de la línea 101 es global: error LIMITE_LINEAS, código 2, stdout vacío y un único mensaje en stderr. No se puede sustituir esa salida por el resumen de las cien líneas anteriores, porque aparentaría haber revisado todo el archivo. Una línea 101 sin terminador también supera el límite."
+          "text": "La causa global de ese exceso es `LIMITE_LINEAS`. El cliente termina con código dos, deja vacío el canal de salida y escribe un único diagnóstico en el canal de error. No muestra el resumen de las cien líneas anteriores como si hubiese terminado de revisar todo el archivo.\n\nDistingue el final después de cien LF del caso con ciento un LF. En el primero se cerraron cien líneas y no queda otra pendiente. En el segundo, el último LF cierra una línea ciento uno, aunque esté vacía, y por eso se supera el límite."
         },
         {
           "type": "code",
@@ -232,7 +259,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el lector de referencia se usa una colección local candidato. Sólo después de terminar satisfactoriamente se sustituye destino. Esto evita publicar una revisión incompleta y mantiene un informe anterior en memoria sin presentarlo como si perteneciera al nuevo archivo."
+          "text": "La revisión utiliza un objeto `Lote candidato` nuevo. Cada línea del archivo actual modifica ese candidato, mientras `destino` conserva el último lote completo que tenía el llamador.\n\nSi termina correctamente la lectura, el candidato sustituye a destino. Si aparece un error global, la función devuelve false sin hacer esa sustitución. Por ejemplo, un destino anterior con dos admisiones sigue intacto cuando el archivo nuevo supera cien líneas, aunque su candidato ya haya reunido otros registros.\n\nConservar ese estado anterior no autoriza al cliente a imprimirlo como resultado de la revisión fallida. El retorno indica si los datos de destino corresponden al archivo que se acaba de revisar. Distinguir las modificaciones del llamador y los efectos de la biblioteca mantiene explícito ese acuerdo (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -261,7 +288,11 @@
         },
         {
           "type": "paragraph",
-          "text": "std::istream::get devuelve un indicador especial cuando no obtiene otro carácter. Después se debe comprobar si el flujo terminó normalmente o si ocurrió un error. Un fallo real de lectura impide garantizar la cobertura completa: la causa global es LECTURA y el cliente no presenta resultados parciales."
+          "text": "Recibir el indicador de `get()` sólo dice que no se obtuvo otro carácter. Para decidir por qué, se consulta también el estado del flujo (ISO/IEC JTC 1/SC 22/WG 21, 2023):\n\n`eof()` indica que la operación encontró el final de la entrada.\n\n`bad()` indica un problema grave registrado por el flujo durante la operación.\n\n`fail()` es true cuando están activos failbit o badbit. Al intentar leer después del final normal, get() también activa failbit porque no obtuvo un carácter. Por eso fail() por sí solo no permite distinguir ese final de un error de lectura.\n\nEl fragmento siguiente da prioridad a bad(): si hay un fallo grave, la revisión falla aunque también esté marcado EOF. Si no hay bad(), sólo se acepta como final normal que eof() sea true. Recibir el indicador sin ese final registrado también se clasifica como LECTURA."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento supone la configuración habitual del flujo, sin habilitar excepciones por los indicadores de estado. En esa configuración, la llamada puede devolver el indicador especial y el código consulta después bad() y eof().\n\nSi el llamador utiliza `exceptions(...)` para pedir una excepción cuando cambien ciertos indicadores, get() puede lanzar en vez de retornar. Incluso alcanzar el final normal puede activar esa vía si la configuración incluye failbit o eofbit. La revisión completa tendrá que contemplar esa configuración y consultar la causa; no debe considerar fallo global cualquier excepción sin distinguir el final normal. Aquí estudiamos primero la rama en la que get() devuelve un resultado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
         },
         {
           "type": "code",
@@ -270,11 +301,30 @@
         },
         {
           "type": "paragraph",
-          "text": "El resultado de abrir el archivo y el resultado de consumirlo son operaciones diferentes. Un archivo accesible puede fallar durante su lectura. Para las pruebas se puede usar un std::streambuf de ensayo que falle después de entregar algunos bytes; no hace falta provocar fallos sobre un disco real (Kernighan & Pike, 1999, capítulo 5)."
+          "text": "En `entrada.bad() || !entrada.eof()`, basta que una de las dos condiciones sea verdadera para entrar en la rama de error. Si no se entra, el break termina el recorrido: todavía habrá que comprobar si quedaron bytes de una última línea sin terminador.\n\nAbrir un archivo y consumirlo son operaciones distintas. Una apertura correcta no garantiza completar todas sus lecturas. Para ensayar ese caso, prepararemos un origen que entregue algunos bytes y después falle. El componente de biblioteca que suministra esos bytes al flujo se llama `std::streambuf`; la prueba controlará ese componente, sin provocar un problema en un disco real.\n\nAsí podremos comprobar dos efectos por separado: que la biblioteca conserve el destino anterior y que el cliente no publique datos del intento incompleto. El mecanismo de prueba concreto se construirá con el lector completo, después de practicar aquí la clasificación de los resultados."
         },
         {
           "type": "paragraph",
-          "text": "Al terminar una revisión correcta, stdout contiene todas las admisiones y un resumen, stderr los rechazos, y el código es 0 si no hubo ninguno o 1 si los hubo. Un error global cambia ese desenlace: stdout vacío, stderr con una sola línea ERROR causa=APERTURA, LECTURA o LIMITE_LINEAS y código 2."
+          "text": "El contrato del cliente distingue tres desenlaces:\n\nRevisión completa sin rechazos: las admisiones y el resumen van a stdout; stderr queda vacío y el código es cero.\n\nRevisión completa con rechazos: las admisiones y el resumen van a stdout; los rechazos van a stderr y el código es uno. El informe comprende todas las líneas del archivo.\n\nError global: stdout queda vacío, stderr contiene una sola línea `ERROR causa=APERTURA`, `ERROR causa=LECTURA` o `ERROR causa=LIMITE_LINEAS`, según lo ocurrido, y el código es dos. Ninguna admisión ni resumen del candidato se publica como una revisión terminada.\n\nstdout y stderr son canales distintos. Sus contenidos se contrastan por separado; no se exige que una consola combine sus líneas en un orden determinado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_final_con_failbit",
+          "question": "get() no obtuvo otro carácter. El flujo usa su configuración predeterminada y ahora eof() es true, fail() es true y bad() es false. ¿Cómo debe interpretar este final la revisión?",
+          "options": [
+            "Como LECTURA sólo porque fail() es true.",
+            "Como una nueva línea vacía después del archivo.",
+            "Como final normal: comprobar si quedó contenido de una última línea.",
+            "Como APERTURA, porque el archivo nunca llegó a abrirse."
+          ],
+          "correctIndex": 2,
+          "explanation": "Al agotarse la entrada, get() no obtiene un carácter y puede dejar activos eofbit y failbit. No hay badbit y eof() identifica el final. Después se procesa una última línea sólo si recibió bytes desde el último terminador.",
+          "reviewFeedback": [
+            "fail() también puede ser true tras un intento de lectura en EOF normal.",
+            "La falta de un carácter nuevo no crea contenido ni una línea adicional.",
+            "La combinación dada corresponde a la rama de final normal del fragmento.",
+            "El estado descrito procede de una lectura; no demuestra una apertura fallida."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -303,7 +353,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor usa bytes preparados en memoria para practicar la regla de terminadores antes de abrir archivos. Completa únicamente contar_lineas. Cuenta líneas, vacías y líneas con CR suelto. Al encontrar la 101, devuelve sólo el indicador excedido y pone a cero los recuentos parciales. No modifiques los datos de cada escenario ni la función main."
+          "text": "Completa únicamente `contar_lineas`. Recibe una cadena mediante `const std::string& bytes` y devuelve un objeto `Conteo`. Conserva la preparación de datos y main: este ejercicio utiliza bytes en memoria y no abre archivos del equipo.\n\nConteo tiene cuatro miembros, que empiezan con tres ceros y false:\n\nlineas: cantidad de líneas físicas, incluidas las vacías y las que contienen un CR suelto.\n\nvacias: cantidad de líneas sin contenido después de separar el terminador. Una línea con espacios tiene contenido y no se cuenta como vacía.\n\ncr_sueltos: cantidad de líneas que contienen al menos un CR que no pertenece a CRLF. Dos CR sueltos dentro de una misma línea aumentan este contador una sola vez.\n\nexcedido: true si se encontró la línea ciento uno. En ese caso el resultado completo debe ser `{0, 0, 0, true}`: los tres contadores vuelven a cero y sólo queda activo el indicador de exceso.\n\nCuenta una última línea al agotarse la cadena sólo si contiene bytes desde el último terminador. Una cadena vacía tiene cero líneas; un LF final cierra su línea sin crear otra después. Este contador no valida los campos de las declaraciones, no busca duplicados y no aplica el límite de ochenta bytes."
+        },
+        {
+          "type": "paragraph",
+          "text": "El campo Entrada recibe nombres de escenarios. Por ejemplo, LF hace que main llame a `datos(\"LF\")`, que devuelve dos declaraciones terminadas por LF y las proporciona a contar_lineas. No escribas en Entrada los textos de las declaraciones ni sus comillas: escribe los nombres que aparecen en cada ensayo.\n\nCada nombre provoca una llamada nueva. Los contadores no se acumulan entre nombres, aunque main reciba varios en el mismo proceso. Los datos preparados son:\n\nVACIO: una cadena sin bytes.\n\nLF: dos declaraciones, cada una terminada por LF.\n\nCRLF: las mismas dos declaraciones, cada una terminada por CRLF.\n\nULTIMA: dos declaraciones, la segunda sin terminador final.\n\nBLANCO: tres líneas; la intermedia está vacía.\n\nCRSUELTO: una línea con CR dentro del contenido y un LF final.\n\nFINALCR: una línea que acaba con CR, sin LF.\n\nCIEN y CIENTOUNO: cien o ciento una repeticiones de una declaración terminada por LF. Sus IDs repetidos no afectan al conteo de este ejercicio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada salida utiliza el orden nombre:lineas:vacias:cr_sueltos:excedido. Los dos puntos separan los campos. El bool final se imprime como cero para false y uno para true.\n\nPor ejemplo, `BLANCO:3:1:0:0` indica tres líneas físicas, una vacía, ninguna con CR suelto y límite no excedido. Cada fila termina con un salto de línea.\n\nEl uno final de `CIENTOUNO:0:0:0:1` pertenece al resultado Conteo. No es el código de terminación del proceso: este main termina normalmente con código cero también en ese escenario. El futuro cliente completo tendrá el código dos ante un error global, pero este programa está mostrando el resultado del contador."
         },
         {
           "type": "cpp_compiler",
@@ -345,7 +403,98 @@
         },
         {
           "type": "paragraph",
-          "text": "Los escenarios VACIO, LF, CRLF, ULTIMA, BLANCO, CRSUELTO, FINALCR, CIEN y CIENTOUNO permiten diferenciar soluciones defectuosas que coincidirían con un solo archivo simple. La aplicación debe compilar el programa C++ y comparar las salidas por caso; superar las muestras no demuestra todavía la apertura de un archivo real."
+          "text": "Los cuatro casos publicados del editor reúnen los nueve escenarios en los grupos que se muestran debajo. El primer caso es el grupo VACIO, LF y CRLF; los otros tres casos son ensayos opcionales. En cada entrada se escriben sólo los nombres, separados por espacios o saltos; la salida debe conservar una fila por nombre y el salto al final de cada fila.\n\nSon llamadas independientes: cada una empieza con un Conteo nuevo. Los grupos actuales no se necesitan para conservar un estado común. Las muestras permiten detectar, por ejemplo, inventar una línea tras el último LF, borrar un CR aislado o conservar los recuentos de las primeras cien líneas cuando ya apareció otra.\n\nSuperar estos casos comprueba el conteo ensayado en memoria. No acredita todavía abrir un archivo ni reconocer un fallo del origen de lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Caso 1, primer caso publicado. Entrada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "VACIO LF CRLF\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "VACIO:0:0:0:0\nLF:2:0:0:0\nCRLF:2:0:0:0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Caso 2, ensayo opcional. Entrada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "ULTIMA BLANCO\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "ULTIMA:2:0:0:0\nBLANCO:3:1:0:0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Caso 3, ensayo opcional. Entrada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "CRSUELTO FINALCR\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "CRSUELTO:1:0:1:0\nFINALCR:1:0:1:0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Caso 4, ensayo opcional. Entrada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "CIEN CIENTOUNO\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "CIEN:100:0:0:0\nCIENTOUNO:0:0:0:1\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_dos_cr_misma_linea",
+          "question": "En el contador del laboratorio se recibe una sola línea con dos CR interiores y después LF. Ninguno de esos CR forma pareja con LF. ¿Cuánto aumentan lineas y cr_sueltos?",
+          "options": [
+            "lineas aumenta uno y cr_sueltos aumenta dos.",
+            "Ambos aumentan cero porque la línea sería inválida en el manifiesto.",
+            "lineas aumenta dos y cr_sueltos aumenta uno.",
+            "Ambos aumentan uno: hay una línea y contiene algún CR suelto."
+          ],
+          "correctIndex": 3,
+          "explanation": "El LF cierra una única línea. cr_sueltos cuenta líneas que contienen al menos un CR sobrante, por lo que esa línea aumenta el contador una vez aunque tenga dos CR. Aquí no se valida la declaración ni se cuenta cada CR por separado.",
+          "reviewFeedback": [
+            "El segundo contador no mide cuántos bytes CR contiene la línea.",
+            "El laboratorio cuenta también líneas que resultarían rechazadas por el lector completo.",
+            "Los CR interiores no son terminadores; sólo el LF dado cierra la línea.",
+            "La unidad contada por ambos miembros en este caso es una línea."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -374,7 +523,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Después del intento, contrasta esta función con la tuya. El punto decisivo es cerrar líneas únicamente cuando llega LF o cuando EOF deja bytes pendientes, retirar sólo el CR de CRLF y reiniciar el recuento ante la línea 101. Esta referencia sirve para el ejercicio en memoria; no sustituye la biblioteca del archivo."
+          "text": "La referencia cierra una línea al encontrar LF o cuando se agota la cadena con contenido pendiente. En el primer caso retira únicamente el CR que forma CRLF. En ambos utiliza la misma operación de cierre para contar y comprobar el límite.\n\nEsa operación se guarda bajo el nombre `terminar`. Para escribirla dentro de contar_lineas, el código utiliza una expresión lambda: crea un objeto que puede llamarse como una función. Declararlo prepara la operación; sus instrucciones se ejecutan al llamar a `terminar()` (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee la declaración `const auto terminar = [&]() -> bool` por partes:\n\n`auto` obtiene el tipo del objeto que prepara la expresión lambda. Se guarda con el nombre terminar.\n\n`[&]` permite que el cuerpo utilice por referencia las variables locales exteriores que necesita: resultado, linea y hay_bytes. Por eso modifica esos mismos objetos en vez de trabajar con copias independientes.\n\n`()` indica que la operación no recibe parámetros. `-> bool` declara que devuelve true o false.\n\nLas llaves contienen las instrucciones de la operación y el punto y coma posterior cierra la declaración. const no convierte en constantes las variables exteriores utilizadas por referencia (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nSe llama a esta misma operación desde dos lugares: después de un LF y al quedar una última línea sin terminador. Así no hace falta duplicar las instrucciones de cierre."
         },
         {
           "type": "code",
@@ -383,7 +536,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La prueba separada de referencia ejecutada en Linux utilizó C++23. En el proyecto externo real se añade además la detección de error de lectura, la validación de registros y la conservación de admisiones. Un contador correcto no acredita esas otras responsabilidades."
+          "text": "Sigue las dos salidas al superar cien líneas. Dentro de terminar, se asigna `Conteo{0, 0, 0, true}` y `return false;` termina sólo esa llamada a la lambda.\n\nEl recorrido exterior consulta ese resultado en `if (!terminar()) return resultado;`. Si recibe false, la negación es true y ese segundo return sí termina contar_lineas, con el exceso marcado.\n\nEn una línea permitida, `linea.empty()` detecta contenido vacío. `linea.find('\\r') != std::string::npos` pregunta si hay al menos un CR restante y aumenta cr_sueltos una vez. Después se vacían los datos de la línea y se desactiva hay_bytes para empezar la siguiente.\n\nAl agotarse la cadena, `if (hay_bytes) terminar();` cierra la última línea pendiente. No se utiliza el retorno de esa llamada porque inmediatamente se devuelve resultado, que ya contiene la decisión, incluido el posible exceso de la línea ciento uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia del contador se compiló y ejecutó con MSVC y C++23 en Windows. Coincidieron los resultados de los nueve escenarios publicados y de seis fronteras adicionales: sólo LF, sólo CRLF, sólo CR, CR CR LF, dos CR sin terminador y una línea ciento uno sin LF. Las ejecuciones terminaron con código cero y canal de error vacío.\n\nEsta comprobación corresponde a bytes preparados en memoria. El programa no abre un archivo del equipo, no valida los campos del registro y no conserva admisiones. Una cantidad de líneas correcta tampoco demuestra por sí sola que un archivo se haya leído completo: el lector real tendrá que comprobar su origen y devolver una causa global cuando no pueda terminar."
         }
       ]
     },
@@ -395,7 +552,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La biblioteca nueva se llama assetcheck_manifiesto y depende de assetcheck_lote, que a su vez depende de assetcheck_registro. Su función revisar_archivo recibe la ruta como dato; revisar_flujo recibe un std::istream& para permitir pruebas. Ambas escriben la causa global por separado y sólo sustituyen el Lote destino si la revisión se completó."
+          "text": "La nueva biblioteca `assetcheck_manifiesto` utiliza la biblioteca del lote, que ya utiliza el lector de registros. Esta relación permite incorporar la lectura del archivo sin copiar las comprobaciones que construimos antes.\n\nSu interfaz separa dos entradas. `revisar_archivo` recibe una ruta, abre ese archivo en modo binario y entrega su flujo al revisor. `revisar_flujo` recibe directamente un std::istream&, por lo que también permite comprobar el comportamiento con un origen preparado en memoria.\n\nEn ambas funciones distinguimos tres datos de la llamada: el bool devuelto indica si la revisión se completó; ErrorGlobal& proporciona la causa global, si la hubo; Lote& destino conserva el resultado de la revisión completa. Una revisión terminada con rechazos locales devuelve true: completar el archivo no significa aceptar todas sus líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera siguiente se guardará en `include/assetcheck/manifiesto.hpp`. Reutiliza lote.hpp para disponer de Lote y de los datos del registro.\n\n`<filesystem>` declara std::filesystem::path, que representa una ruta. Preparar un objeto path no abre el archivo ni demuestra que exista. La función de archivo lo recibe por referencia constante para consultar esa ruta sin modificarla.\n\n`<iosfwd>` proporciona las declaraciones de los tipos de flujo que necesitamos nombrar en esta interfaz. La implementación incluirá <istream> y <fstream> para utilizar sus operaciones completas. <string> permite declarar las funciones que devuelven texto. Esta separación mantiene visible qué ofrece la biblioteca sin obligar al cliente a conocer todos sus pasos internos (Kernighan & Pike, 1999)."
         },
         {
           "type": "code",
@@ -404,7 +565,130 @@
         },
         {
           "type": "paragraph",
-          "text": "En src/manifiesto.cpp el lector procesa cada byte y conserva hasta 81 bytes por línea, junto con linea_truncada para indicar que hubo bytes descartados. Sólo elimina el CR previo a LF si no hubo truncamiento; después entrega la línea y su número original a procesar_linea, reiniciando búfer e indicador. Este detalle evita aceptar líneas de 82 o más bytes cuyo prefijo retenido termine en CR. Una lectura completa de un archivo vacío entrega el resumen de cero líneas; una apertura fallida no produce resumen."
+          "text": "Lee los resultados de las dos funciones de revisión:\n\ntrue y ErrorGlobal::ninguno: se obtuvo una revisión completa. destino se sustituye por el lote nuevo, incluidas todas sus admisiones y rechazos. Esto también ocurre con un archivo vacío: el lote nuevo queda vacío.\n\nfalse y ErrorGlobal::apertura, lectura o limite_lineas: el intento no produjo un lote completo. destino conserva todos sus campos anteriores; el cliente debe atender a la causa y no imprimir ese lote antiguo como resultado del archivo nuevo.\n\nErrorGlobal es un dato de tipo enumeración: sus alternativas nombran las causas que elegimos para el contrato. No es una excepción de C++. Si se propaga una excepción que esta interfaz no convierte en causa global, la llamada no devuelve un bool. Explicaremos esa rama al estudiar la implementación.\n\nLas otras cuatro funciones preparan las dos cadenas del informe, la cadena de diagnóstico global y el código de terminación. No escriben en consola. El cliente utilizará esos resultados en la página siguiente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_manifiesto_resultados_interfaz",
+          "prompt": "Relaciona cada intento con el retorno, la causa global y el efecto sobre destino. En todos los casos, destino ya contenía un lote completo anterior. No se produce ninguna excepción ajena a los resultados descritos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "apertura",
+                  "label": "No se pudo abrir la ruta del archivo."
+                },
+                {
+                  "id": "local",
+                  "label": "Se leyó completo; una línea se rechazó por tamaño."
+                },
+                {
+                  "id": "lectura",
+                  "label": "Se interrumpió la lectura después de admitir dos líneas."
+                },
+                {
+                  "id": "limite",
+                  "label": "Se encontró una línea física ciento uno."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "ra",
+                  "label": "false; APERTURA; destino anterior conservado."
+                },
+                {
+                  "id": "rl",
+                  "label": "true; NINGUNO; destino sustituido por el lote completo con el rechazo."
+                },
+                {
+                  "id": "re",
+                  "label": "false; LECTURA; destino anterior conservado."
+                },
+                {
+                  "id": "rm",
+                  "label": "false; LIMITE_LINEAS; destino anterior conservado."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "apertura": "ra",
+                  "local": "rl",
+                  "lectura": "re",
+                  "limite": "rm"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El bool indica si se completó la revisión. Un rechazo local permite terminar y sustituir el lote; apertura, lectura interrumpida y exceso de líneas impiden esa sustitución.",
+            "incorrect": "Distingue rechazar una línea recibida de no poder completar el archivo. La causa global describe el segundo caso y el destino anterior no se convierte en resultado del intento nuevo."
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Guardar las fuentes desde PowerShell"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora construiremos esta biblioteca en el mismo proyecto externo. Las dos fuentes nuevas son manifiesto.hpp y manifiesto.cpp; se conservan las bibliotecas y los comprobadores del registro y del lote.\n\nUtiliza una consola PowerShell de desarrollo x64 de Visual Studio, preparada como en Programación 1. Esta sección escribe los archivos mediante comandos de texto. No requiere cambiar de editor ni guardar un archivo de órdenes .ps1. El procedimiento se comprobó con Windows PowerShell 5.1; sus comandos de escritura también están disponibles en PowerShell 7.\n\nSet-Location cambia la carpeta actual. -LiteralPath utiliza la ruta indicada sin interpretarla como un patrón. Las comillas reúnen la ruta como un solo dato. Ejecuta el bloque siguiente; sustituye la ruta sólo si guardaste tu proyecto en otro lugar. Get-ChildItem lista su contenido: deben aparecer CMakeLists.txt y las carpetas include, src y pruebas."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Set-Location -LiteralPath 'E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck'\nGet-ChildItem"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba primero si ya existen los dos archivos que vamos a crear. Test-Path consulta cada ruta y muestra True si existe o False si no existe. Las dos respuestas esperadas en esta etapa nueva son False.\n\nSi alguno ya existe, léelo con Get-Content antes de continuar y conserva el trabajo que contenga. Set-Content crea el archivo o sustituye su contenido; no se debe ejecutar sobre otro archivo por confundir la ruta. Los nombres siguientes son concretamente los de esta etapa."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Test-Path -LiteralPath '.\\include\\assetcheck\\manifiesto.hpp'\nTest-Path -LiteralPath '.\\src\\manifiesto.cpp'"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para guardar varias líneas sin cambiar las comillas del código, PowerShell permite encerrar el texto entre una apertura @' y un cierre '@, cada uno en su posición mostrada. Ese bloque de texto se llama here-string. Al usar comillas simples se conservan literalmente sus comillas, barras y otros caracteres, sin sustituir nombres de variables de PowerShell (Microsoft, 2025).\n\nEl signo | entrega ese texto al comando que lo sigue. Set-Content escribe el contenido en el archivo de -LiteralPath; -Encoding UTF8 selecciona UTF-8. En Windows PowerShell 5.1 incluye una marca inicial de codificación que el compilador admite. Esa marca pertenece al archivo fuente, no a los datos de un manifiesto que el programa vaya a leer.\n\nEjecuta el bloque completo de la cabecera. Incluye el cierre '@ al comienzo de su renglón y el comando de escritura: la parte encerrada es el código que quedará guardado; los delimitadores y Set-Content son órdenes de consola y no forman parte del C++."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "@'\n#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <filesystem>\n#include <iosfwd>\n#include <string>\nnamespace assetcheck {\nenum class ErrorGlobal { ninguno, apertura, lectura, limite_lineas };\nbool revisar_flujo(std::istream& origen, Lote& destino,\n                   ErrorGlobal& error);\nbool revisar_archivo(const std::filesystem::path& ruta, Lote& destino,\n                    ErrorGlobal& error);\nstd::string salida_admisiones(const Lote& lote);\nstd::string salida_rechazos(const Lote& lote);\nstd::string diagnostico_global(ErrorGlobal error);\nint codigo_terminacion(ErrorGlobal error, const Lote& lote);\n}\n'@ | Set-Content -LiteralPath '.\\include\\assetcheck\\manifiesto.hpp' -Encoding UTF8"
+        },
+        {
+          "type": "paragraph",
+          "text": "Set-Content normalmente termina sin imprimir un mensaje. En PowerShell, `$?` permite comprobar si el comando anterior terminó correctamente: ejecuta la primera línea siguiente inmediatamente después de la escritura. El valor esperado es True. Get-Content lee después el archivo para contrastar la cabecera guardada.\n\nSi la escritura informa de un error, detente y revisa la ruta antes de continuar. No confundas un fallo al crear la fuente con un error de compilación: todavía no hemos llamado al compilador."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$?\nGet-Content -LiteralPath '.\\include\\assetcheck\\manifiesto.hpp'"
+        },
+        {
+          "type": "heading",
+          "text": "Completar la lectura antes de sustituir el destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "La implementación conserva un candidato, una cadena con los bytes retenidos de la línea y dos indicadores: si recibió contenido pendiente y si descartó algún byte por falta de espacio en esa cadena.\n\nLa operación local terminar_linea incrementa el número original, comprueba el máximo de cien y entrega la línea al lote candidato. Después prepara la cadena y los indicadores para la siguiente. Como en la referencia del contador, se llama tanto después de LF como al quedar una última línea sin terminador.\n\nLa cadena retiene como máximo ochenta y un bytes. El posible CR anterior a LF sólo se retira cuando no hubo bytes descartados. Un CR final sin LF sigue siendo contenido, y haber descartado bytes no elimina la existencia de esa última línea. Así se conservan las reglas que acabamos de practicar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro del recorrido, el bloque try abarca únicamente `origen.get()`. No incluye la inserción de registros, el crecimiento de los vectores ni la sustitución del destino.\n\nSi get() devuelve el indicador especial, se consulta el estado: bad() o ausencia de eof() producen LECTURA; en el caso contrario se sale del recorrido por final normal.\n\nSi get() lanza, las ramas catch permiten distinguir lo siguiente:\n\nUna std::bad_alloc que llegue a esta captura se vuelve a lanzar. Ese tipo indica un problema al obtener memoria; no se convierte en un informe de contenido inválido.\n\nAnte otra excepción con bad() activo, se registra LECTURA y se devuelve false.\n\nSi no hay bad() y sí eof(), se trata del final normal y se sale del recorrido para comprobar la última línea.\n\nSi no existe ninguna de esas marcas, se vuelve a lanzar la excepción en lugar de atribuir una causa de lectura que no se observó. throw; vuelve a lanzar la excepción que ya se está atendiendo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta distinción se aplica a la información que entrega el flujo. Con su configuración predeterminada, get() puede atender por sí mismo una excepción de su origen y dejar badbit activo, sin proporcionar al revisor el tipo original. No se promete recuperar un tipo de excepción que el flujo ya no ha entregado.\n\nLas operaciones sobre el candidato quedan fuera de ese try. Si alguna lanza, no se oculta como LECTURA ni se alcanza la asignación final de destino. En esa salida excepcional no hay un retorno false que el cliente pueda interpretar como una revisión ordinaria."
+        },
+        {
+          "type": "paragraph",
+          "text": "El fragmento breve que sigue destaca dónde se confirma el resultado. El candidato reúne las decisiones del archivo actual. Hasta llegar a la asignación de destino, las admisiones y rechazos del lote anterior siguen intactos.\n\nEn `destino = std::move(candidato);`, std::move permite utilizar la operación que transfiere las colecciones del candidato ya completo. La sustitución la realiza la asignación: escribir std::move por sí solo no mueve ni borra los datos. No dependemos de que el candidato quede vacío; después de confirmar el destino, la función devuelve true (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
         },
         {
           "type": "code",
@@ -413,7 +697,97 @@
         },
         {
           "type": "paragraph",
-          "text": "La implementación externa de referencia incluye pruebas para las tres causas globales. Un fallo simulado de lectura no obliga a cambiar el sistema operativo; demuestra que la biblioteca separa correctamente datos incompletos y salida pública. Las pruebas de este componente y de la CLI se describen en las siguientes páginas."
+          "text": "El bloque de consola siguiente guarda `src/manifiesto.cpp` completo. Utiliza las mismas reglas de escritura que la cabecera.\n\n<fstream> y <istream> permiten abrir y leer el origen; <new> declara std::bad_alloc; <utility> proporciona std::move. <sstream> prepara las cadenas del informe y <locale> permite fijar su representación numérica. La inclusión de manifiesto.hpp mantiene las definiciones vinculadas con la interfaz que acabamos de guardar.\n\nLa declaración std::char_traits<char>::int_type dato utiliza el tipo que puede representar tanto un carácter como el indicador especial de get(). dato se declara antes del try para poder comprobarlo después de una lectura que retorna. Las ramas que atienden una excepción terminan, salen del recorrido o relanzan; no continúan utilizando un dato que no se haya obtenido.\n\nAl empezar revisar_flujo se asigna ErrorGlobal::ninguno a error. Así la causa describe el intento actual, aunque el llamador hubiera conservado la causa de un intento anterior."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "@'\n#include \"assetcheck/manifiesto.hpp\"\n#include <fstream>\n#include <istream>\n#include <locale>\n#include <new>\n#include <sstream>\n#include <utility>\n\nnamespace assetcheck {\nnamespace {\nconst char* nombre_causa(Resultado resultado) {\n    switch (resultado) {\n        case Resultado::aceptado: return \"ACEPTADO\";\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        case Resultado::duplicado: return \"DUPLICADO\";\n    }\n    return \"DESCONOCIDA\";\n}\n} // namespace\n\nbool revisar_flujo(std::istream& origen, Lote& destino, ErrorGlobal& error) {\n    error = ErrorGlobal::ninguno;\n    Lote candidato;\n    std::string linea;\n    std::size_t numero = 0;\n    bool tiene_bytes = false;\n    bool linea_truncada = false;\n\n    const auto terminar_linea = [&]() -> bool {\n        ++numero;\n        if (numero > 100) {\n            error = ErrorGlobal::limite_lineas;\n            return false;\n        }\n        procesar_linea(linea, numero, candidato);\n        linea.clear();\n        tiene_bytes = false;\n        linea_truncada = false;\n        return true;\n    };\n\n    for (;;) {\n        // El try cubre solo la extraccion del origen. No cubre las operaciones\n        // sobre cadenas, vectores, el lote candidato ni el destino.\n        std::char_traits<char>::int_type dato;\n        try {\n            dato = origen.get();\n        } catch (const std::bad_alloc&) {\n            throw;\n        } catch (...) {\n            if (origen.bad()) {\n                error = ErrorGlobal::lectura;\n                return false;\n            }\n            if (origen.eof()) {\n                break;\n            }\n            throw;\n        }\n\n        if (dato == std::char_traits<char>::eof()) {\n            if (origen.bad() || !origen.eof()) {\n                error = ErrorGlobal::lectura;\n                return false;\n            }\n            break;\n        }\n        const char c = static_cast<char>(dato);\n        if (c == '\\n') {\n            // Si se descarto algun byte, el ultimo CR retenido podria no\n            // ser el inmediatamente anterior a LF: en ese caso no se retira.\n            if (!linea_truncada && !linea.empty() && linea.back() == '\\r') {\n                linea.pop_back();\n            }\n            if (!terminar_linea()) {\n                return false;\n            }\n        } else {\n            tiene_bytes = true;\n            if (linea.size() < 81) {\n                linea.push_back(c);\n            } else {\n                linea_truncada = true;\n            }\n        }\n    }\n\n    // Un CR final sin LF sigue siendo contenido de esta ultima linea.\n    if (tiene_bytes && !terminar_linea()) {\n        return false;\n    }\n    destino = std::move(candidato);\n    return true;\n}\n\nbool revisar_archivo(const std::filesystem::path& ruta, Lote& destino,\n                     ErrorGlobal& error) {\n    std::ifstream archivo(ruta, std::ios::binary);\n    if (!archivo.is_open()) {\n        error = ErrorGlobal::apertura;\n        return false;\n    }\n    return revisar_flujo(archivo, destino, error);\n}\n\nstd::string salida_admisiones(const Lote& lote) {\n    std::ostringstream salida;\n    salida.imbue(std::locale::classic());\n    for (const auto& admision : lote.admitidos) {\n        salida << \"ACEPTADO linea=\" << admision.linea\n               << \" id=\" << admision.registro.id\n               << \" tipo=\" << admision.registro.tipo\n               << \" bytes=\" << admision.registro.tamano_bytes << '\\n';\n    }\n    salida << \"RESUMEN lineas=\" << lote.admitidos.size() + lote.rechazados.size()\n           << \" aceptados=\" << lote.admitidos.size()\n           << \" rechazados=\" << lote.rechazados.size() << '\\n';\n    return salida.str();\n}\n\nstd::string salida_rechazos(const Lote& lote) {\n    std::ostringstream salida;\n    salida.imbue(std::locale::classic());\n    for (const auto& rechazo : lote.rechazados) {\n        salida << \"RECHAZO linea=\" << rechazo.linea\n               << \" causa=\" << nombre_causa(rechazo.causa);\n        if (rechazo.causa == Resultado::duplicado) {\n            salida << \" primera=\" << rechazo.primera;\n        }\n        salida << '\\n';\n    }\n    return salida.str();\n}\n\nstd::string diagnostico_global(ErrorGlobal error) {\n    switch (error) {\n        case ErrorGlobal::ninguno: return \"\";\n        case ErrorGlobal::apertura: return \"ERROR causa=APERTURA\\n\";\n        case ErrorGlobal::lectura: return \"ERROR causa=LECTURA\\n\";\n        case ErrorGlobal::limite_lineas: return \"ERROR causa=LIMITE_LINEAS\\n\";\n    }\n    return \"\";\n}\n\nint codigo_terminacion(ErrorGlobal error, const Lote& lote) {\n    if (error != ErrorGlobal::ninguno) {\n        return 2;\n    }\n    return lote.rechazados.empty() ? 0 : 1;\n}\n} // namespace assetcheck\n'@ | Set-Content -LiteralPath '.\\src\\manifiesto.cpp' -Encoding UTF8"
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$?\nGet-Content -LiteralPath '.\\src\\manifiesto.cpp'"
+        },
+        {
+          "type": "heading",
+          "text": "Preparar el informe sin escribir todavía en consola"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las funciones restantes mantienen separadas la lectura y la presentación:\n\nrevisar_archivo prepara un ifstream binario a partir de la ruta. Si no puede abrirlo, asigna apertura y devuelve false. Si se abre, llama a revisar_flujo con ese mismo archivo.\n\nsalida_admisiones devuelve una cadena con las admisiones, en su orden, y un resumen. La cantidad de líneas del resumen es la suma de admitidos y rechazados. Después de una revisión completa, cada línea recibida tiene una decisión en una de esas colecciones.\n\nsalida_rechazos devuelve los rechazos, en su orden. Sólo un duplicado añade el campo primera, que identifica la admisión original.\n\ndiagnostico_global devuelve la línea ERROR de la causa o una cadena vacía cuando no hay error global.\n\ncodigo_terminacion devuelve dos si hay una causa global; sin causa global, devuelve cero si no hay rechazos y uno si los hay. No imprime ese número ni termina el proceso: el cliente lo utilizará como retorno de main.\n\nLos dos formadores de informes usan un ostringstream propio y la configuración clásica, para que el texto de las cantidades no dependa del formato de otro flujo ni de la configuración regional global. Las cadenas quedan preparadas; el cliente decidirá si corresponde publicarlas y en qué canal."
+        },
+        {
+          "type": "heading",
+          "text": "Construir la biblioteca y conservar las pruebas anteriores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade ahora el objetivo de la biblioteca a CMakeLists.txt. Primero consulta con Get-Content el archivo y comprueba que todavía no contiene un add_library para assetcheck_manifiesto. Ejecuta la ampliación una sola vez: repetirla añadiría dos objetivos con el mismo nombre.\n\nEl bloque utiliza Add-Content, que añade texto al final y conserva las líneas anteriores. Se mantienen las bibliotecas y los comprobadores del registro y del lote; esta ampliación todavía no crea un cliente ni registra una tercera prueba."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Get-Content -LiteralPath '.\\CMakeLists.txt'"
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "@'\n\nadd_library(assetcheck_manifiesto STATIC src/manifiesto.cpp)\ntarget_include_directories(assetcheck_manifiesto PUBLIC include)\ntarget_link_libraries(assetcheck_manifiesto PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_manifiesto PUBLIC cxx_std_23)\nset_target_properties(assetcheck_manifiesto PROPERTIES\n    CXX_STANDARD_REQUIRED ON\n    CXX_EXTENSIONS OFF)\n'@ | Add-Content -LiteralPath '.\\CMakeLists.txt' -Encoding UTF8"
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$?\nGet-Content -LiteralPath '.\\CMakeLists.txt'"
+        },
+        {
+          "type": "paragraph",
+          "text": "add_library define assetcheck_manifiesto como biblioteca estática y compila su única fuente. target_include_directories publica include para encontrar las cabeceras.\n\nEl enlace PUBLIC con assetcheck_lote expresa tanto la llamada de implementación a procesar_linea como el uso de Lote en la cabecera pública. Los consumidores reciben los requisitos de uso de los objetivos conectados, sin copiar sus fuentes (Scott, 2025).\n\ncxx_std_23 declara el modo mínimo elegido para este objetivo. CXX_STANDARD_REQUIRED mantiene la petición y CXX_EXTENSIONS OFF solicita el modo sin extensiones propias cuando el compilador distingue esos modos. No se afirma que todo uso de una extensión deba producir un error. La configuración de construcción sigue seleccionando C++23 también para los objetivos anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde esta carpeta AssetCheck, configura y construye los tres objetivos que se muestran debajo. Ejecuta cada comando por separado y consulta inmediatamente su `$LASTEXITCODE`: cero es el resultado esperado de las herramientas nativas. Esa variable no es el mismo indicador True/False de los comandos de escritura de PowerShell.\n\n-S . selecciona las fuentes de la carpeta actual; -B build separa los archivos generados; -G Ninja elige el generador. Las opciones -D seleccionan Debug, C++23 y la exigencia de mantener ese estándar.\n\n--build build utiliza ese árbol generado. --target pide la biblioteca nueva y los dos comprobadores anteriores. CMake construye también las bibliotecas que necesitan. Una biblioteca estática no se ejecuta como programa: el éxito de su construcción comprueba su compilación; su comportamiento se debe contrastar con llamadas de prueba.\n\nUtiliza sólo una caché de estas mismas fuentes, generador y compilador. Si la carpeta build pertenece a otro árbol, elige otra carpeta de construcción y cambia su ruta en todas las órdenes posteriores. Si una herramienta devuelve otro código, corrige el primer error antes de continuar."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=23 -DCMAKE_CXX_STANDARD_REQUIRED=ON\n$LASTEXITCODE\ncmake --build build --target assetcheck_manifiesto comprobar_registro comprobar_lote\n$LASTEXITCODE"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta los dos comprobadores anteriores para comprobar que la ampliación conserva sus resultados. Las rutas relativas comienzan por .\\ porque los programas están debajo de la carpeta actual de PowerShell.\n\nEl registro debe conservar `Casos=28 Fallos=0`. El lote debe conservar `Comprobaciones=31 Fallos=0`. Ambos terminan con código cero y canal de error vacío.\n\nCTest utiliza --test-dir build para localizar el árbol configurado y --output-on-failure para mostrar la salida de una prueba que falle. Debe seguir ejecutando dos pruebas: sólo se han registrado los dos comprobadores anteriores. Esta regresión no sustituye las pruebas del manifiesto ni demuestra por sí sola su comportamiento."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": ".\\build\\comprobar_registro.exe\n$LASTEXITCODE\n.\\build\\comprobar_lote.exe\n$LASTEXITCODE\nctest --test-dir build --output-on-failure\n$LASTEXITCODE"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comprobaciones de esta etapa deben observar todos los campos de las admisiones y rechazos, sus líneas y su orden, además del retorno y la causa global. Así se puede distinguir conservar un lote anterior de reemplazarlo por los resultados del intento nuevo.\n\nEntre las fronteras necesarias están la pareja CRLF después de ochenta bytes, los excesos que retienen un CR engañoso, la última línea sin terminador y la línea ciento uno. También se debe preparar un origen que falle después de haber entregado datos y comprobar el final normal con excepciones por estado habilitadas. El cliente y la batería reproducible de este componente se desarrollarán en las páginas siguientes; la construcción de una biblioteca no los acredita por anticipado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La biblioteca de esta etapa se configuró y construyó en Windows con MSVC, Ninja y Debug, seleccionando C++23 requerido. Se conservaron los resultados de los comprobadores de registro y lote, con veintiocho y treinta y un casos sin fallos; CTest siguió ejecutando esas dos pruebas.\n\nUn programa de comprobación separado contrastó treinta y siete expectativas de las seis funciones nuevas: contenidos y orden del lote, terminadores y longitudes, línea ciento uno, conservación y sustitución del destino, final normal con excepciones por estado y un fallo provocado del origen. También comprobó la apertura binaria, las cadenas de informe y los códigos. Terminó con código cero y sin diagnósticos de error.\n\nEsa prueba focal del autor no se cuenta como una tercera prueba de CTest ni como un cliente ya construido. Las fuentes nuevas forman parte del proyecto educativo; el cliente de consola y el comprobador reproducible de esta biblioteca se enseñarán en las páginas siguientes. La referencia verificada no acredita la variante propia del estudiante."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_manifiesto_vacio_sustituye",
+          "question": "destino contiene dos admisiones y un rechazo de una revisión anterior. revisar_flujo recibe ahora un flujo vacío válido y llega a EOF normal. ¿Qué resultado corresponde al archivo nuevo?",
+          "options": [
+            "true, causa ninguno y destino vacío: el archivo se revisó completo y no tenía líneas.",
+            "false, causa lectura y destino anterior intacto: faltaban datos para leer.",
+            "true y destino anterior intacto: un archivo vacío no proporciona registros para sustituirlo.",
+            "false, causa limite_lineas y destino vacío: no se admite una colección sin registros."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un origen vacío puede revisarse por completo. El candidato nuevo contiene cero admisiones y cero rechazos; al terminar sustituye destino. Conservar el informe anterior se exige ante fallo global, no ante una revisión válida que resulte vacía.",
+          "reviewFeedback": [
+            "No se exige que un archivo completo contenga alguna línea.",
+            "EOF normal en un flujo vacío no es por sí solo un fallo de lectura.",
+            "El resultado anterior no pertenece al archivo nuevo; el éxito confirma el candidato vacío.",
+            "El límite máximo no impone una cantidad mínima de líneas."
+          ]
         },
         {
           "type": "multiple_choice",
@@ -709,7 +1083,9 @@
       "blocks": [
         "block_0007_0000",
         "block_0007_0001",
-        "block_0007_0002"
+        "block_0007_0002",
+        "u4l6_introducir_lambda_local",
+        "u4l6_dos_retornos_distintos"
       ]
     }
   ],
@@ -725,19 +1101,42 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "7abbd5d53a0d8275c50d7115f0597e99e5e7a232ec68c0e9d3b880ceabe2ce98",
-        "spans": []
+        "sourceSha256": "de5238858b13a34885618e4021f8a54e9b8a84e3475fecf9705ac0a5382d8a1c",
+        "spans": [
+          {
+            "start": 42,
+            "end": 55,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 136,
+            "text": "procesar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "a7ba17036e01f4db724066e4246f6e46b7726cbfe17d4ed1229c706cf224e551",
-        "spans": []
+        "sourceSha256": "2a93ffec607864437dfa87acad352df537694201e358f4a8731abc6a792aaf30",
+        "spans": [
+          {
+            "start": 46,
+            "end": 66,
+            "text": "id tipo tamano_bytes",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "f922e86b15d914d5aa1d7ec8642f393a6c0f4eed2440b5b0a8eb0cfecd211e5d",
+        "sourceSha256": "cb8fcb0577cfc79d62cd340d63c915bed7d6a62f1677196c3e302d45ec2f0678",
         "spans": []
       },
       {
@@ -797,20 +1196,72 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "819d63ab297351c6af44e6f89d799b47eaec538a320d336e1dae7862bce8f398",
-        "spans": []
+        "sourceSha256": "d2bfa46f595ea90f461cc7aabd41845f622b18dd74acf8260890f2853b0fad3a",
+        "spans": [
+          {
+            "start": 262,
+            "end": 279,
+            "text": "(Microsoft, 2022)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 327,
+            "text": "std::ifstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 402,
+            "text": "std::ios::binary",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 652,
+            "end": 661,
+            "text": "is_open()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "b76bbfd2724071427ab506b4e032f1024445c75ebcc1de3540dad34e2c4b7606",
-        "spans": []
+        "sourceSha256": "6e257ce6b49bd4cfa85892fbf756b9545dd20cdd92e118246e59c95ec4169bc2",
+        "spans": [
+          {
+            "start": 328,
+            "end": 348,
+            "text": "ERROR causa=APERTURA",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "9f9b45ae6072e5b49c9275d76a2f21e7f87c4f5fe6f80da269fbaca5abdb2c4c",
-        "spans": []
+        "sourceSha256": "9b9aa6a7a840f3e46c3f0451de7d4e6c86531fcb726e81b0e6ffa4e9f4e228c6",
+        "spans": [
+          {
+            "start": 45,
+            "end": 58,
+            "text": "std::istream&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 644,
+            "end": 668,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0005",
@@ -869,20 +1320,43 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "8bf7ceebb8ba2ee0e746c485677f9cbe6762abd237118a298ccf25f94e9fad55",
-        "spans": []
+        "sourceSha256": "ecd8c5a5c43da1c8ea60164e0ea0679d300aa5b5c68745431d62f656279dbd5b",
+        "spans": [
+          {
+            "start": 289,
+            "end": 294,
+            "text": "linea",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "632d3fdad1f8ab2bce28663f3e9e385b74f784ddcdc289717007982cdb6d8a06",
+        "sourceSha256": "b4e93c6f28d61cc337a4cb27f3327aaec283cf456da71fe0c1081bf7102a0253",
         "spans": []
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "9c4bca28e76c6bd353d8d8b0bef62d43a92e95196151a3ea93385721d69fe0a6",
-        "spans": []
+        "sourceSha256": "0674803b84aa75d791e7851fc405cca8209ef96b7416830447446fdd708077bc",
+        "spans": [
+          {
+            "start": 455,
+            "end": 457,
+            "text": "\\n",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 481,
+            "end": 483,
+            "text": "\\r",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0005",
@@ -959,54 +1433,26 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "20cd910a6edc827cc1477e93a900f8f19533eac63dfdde4895a4e1d5a9add944",
+        "sourceSha256": "27df484c9aee075d27cb96f2468bac01d5fe74e5879ba38523ec5d55a5c6f0bc",
         "spans": []
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "ca8cbabbef9ef657dc7323b15cf1932eabf6035d3167e3807d253679504d2bb6",
+        "sourceSha256": "c5bc4488d81261a5678e1e51682da6ecf7e2f157bbdbf76c9b03e97da11b8ab3",
         "spans": []
       },
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "d14e472731e77bb5f6bf0abf936180a3ed668337b383d1d23aedf505b16c9043",
+        "sourceSha256": "d26dc0adbaf9a06c59037c458521c45f6780b6768c412d5df12879bfc90e0c24",
         "spans": [
           {
-            "start": 59,
-            "end": 67,
-            "text": "81 bytes",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 151,
-            "end": 165,
+            "start": 341,
+            "end": 355,
             "text": "linea_truncada",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 263,
-            "end": 268,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 377,
-            "end": 381,
-            "text": "true",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 837,
-            "end": 844,
-            "text": "FORMATO",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
@@ -1067,20 +1513,50 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "76deb07ee266ddf829f91dec406226e69afcbebef3d4876a702e4527dce5a736",
+        "sourceSha256": "d0368fa00deca6c3dca46c6cb36c79a700f80f5019014e88c9fcf843461f175a",
         "spans": []
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "f041ee7bb6a79f4022bd7de9b67e7dbc13c003ffe1aa10f204ac42970461df67",
-        "spans": []
+        "sourceSha256": "6d11fb868fde446308c7ada644614290acb4c1db0dd552bbcacd7f759b74031e",
+        "spans": [
+          {
+            "start": 34,
+            "end": 47,
+            "text": "LIMITE_LINEAS",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "8068da5e25e73dfa801806722ac8c706222f1f0b0ba43280377eaf4b782be874",
-        "spans": []
+        "sourceSha256": "1966e1fbab49ca51c31cd0f96f5594f3e415678818fff3fd56ff1674f0af0051",
+        "spans": [
+          {
+            "start": 31,
+            "end": 45,
+            "text": "Lote candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 125,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 801,
+            "end": 825,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0005",
@@ -1139,20 +1615,93 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "f4e6844dc8b1778cf2de0376058c29bf1fa7403920d5edff05cabae7ea1aa378",
-        "spans": []
+        "sourceSha256": "200662714795b902dd62cdd1d7dc0dc449546045a75f3c8bd54049720cdacd5d",
+        "spans": [
+          {
+            "start": 25,
+            "end": 30,
+            "text": "get()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 169,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 178,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 244,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 325,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "037486199e242300e56347acdc56a9f4b800d6da06f52b804fe89a52be77d204",
-        "spans": []
+        "sourceSha256": "2f39adb76560bdab066f79023cd2fce02ebd1b5f98e71a079cfcf2bee6c335e1",
+        "spans": [
+          {
+            "start": 4,
+            "end": 35,
+            "text": "entrada.bad() || !entrada.eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 537,
+            "end": 551,
+            "text": "std::streambuf",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "9071d9108be553008e63a01baa4550e84e96eefd603ed3cceba39530c2fb000a",
-        "spans": []
+        "sourceSha256": "8ab76683c1a2544a88d9f4c6fa72057fb14f8fb1797a123512a6f0184a3a6c5c",
+        "spans": [
+          {
+            "start": 405,
+            "end": 425,
+            "text": "ERROR causa=APERTURA",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 448,
+            "text": "ERROR causa=LECTURA",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 453,
+            "end": 478,
+            "text": "ERROR causa=LIMITE_LINEAS",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0005",
@@ -1211,8 +1760,37 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "22dc863a6aa1794e42195f46d6168321c94e5b5ccfee60fcdef588623d04dac2",
-        "spans": []
+        "sourceSha256": "36ad1b3ee8ab1bf60338e5f508a085ff60bd19e92c87cfaa7c4432005369d13f",
+        "spans": [
+          {
+            "start": 21,
+            "end": 34,
+            "text": "contar_lineas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 89,
+            "text": "const std::string& bytes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 119,
+            "text": "Conteo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 796,
+            "end": 811,
+            "text": "{0, 0, 0, true}",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",
@@ -1241,7 +1819,7 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "3ac754059b8514ebc5e6c822c02ab8faf2cf003e87590d7c99349d58f57108b7",
+        "sourceSha256": "795e3133535b4e8f4172953a2f3f7672bb8f97490a7263f8909f52cfcdba0600",
         "spans": []
       },
       {
@@ -1301,13 +1879,35 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "b95a09dbc3e1c56fe204ca36a6ab2184d0724fd974d0297ea3960ab41b039c93",
-        "spans": []
+        "sourceSha256": "76b1d3b2bfb9543be2ab93a4ca70670b716adb5e0017e9681ab171ea0f3658c4",
+        "spans": [
+          {
+            "start": 280,
+            "end": 288,
+            "text": "terminar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 500,
+            "end": 510,
+            "text": "terminar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 512,
+            "end": 545,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "5f037789a03c1beb5f7af4acb764ed6a7a0a7e464976e6f1ca9c6267f9552ec0",
+        "sourceSha256": "fcfbdb6fa3c4690819ec4d0411120de15d173f2f91e70feaed5a1e844d590752",
         "spans": []
       },
       {
@@ -1319,19 +1919,41 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "47e10e044c58b693409c3251fc94abb13e59fa0420b7b9daccc3e799d5b0d177",
-        "spans": []
+        "sourceSha256": "0fe269090e156ef5982bbcbb9fbe55e3bc50244799d28b1fecacaeb89a8ac7a7",
+        "spans": [
+          {
+            "start": 21,
+            "end": 42,
+            "text": "assetcheck_manifiesto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 274,
+            "text": "revisar_archivo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 358,
+            "end": 371,
+            "text": "revisar_flujo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "20887bda9c374a76e8eada38167ab5bcc1040241d04fb42076bff6ec4d547b35",
+        "sourceSha256": "94dd589ffa8bdea0a2748eb32d30e52efc1b43358b125b01b1bb7e6fc04737bf",
         "spans": []
       },
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "c559ab06bca1c7885b49a85dfd590d8b67f2e4b2a889009791a76cefe5eaceeb",
+        "sourceSha256": "74ae488d300b41dd4e0e8eabf31b75b1ef81b21a08c558615e8d483ff0721ad7",
         "spans": []
       },
       {
@@ -1834,6 +2456,803 @@
         "path": "/reviewFeedback/2",
         "sourceSha256": "243bbf5a79b9dfe71517ebc6aaf2b9dff454e460c868339d81fedb084017b725",
         "spans": []
+      },
+      {
+        "block": "u4l6_get_sin_parametro",
+        "path": "/text",
+        "sourceSha256": "e9e1fdf60980e788de0f4ad512739feabb585addc63f3d23de397266da5101da",
+        "spans": [
+          {
+            "start": 34,
+            "end": 47,
+            "text": "entrada.get()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 313,
+            "text": "std::char_traits<char>::eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 356,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 493,
+            "end": 516,
+            "text": "static_cast<char>(dato)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 607,
+            "end": 640,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 644,
+            "end": 652,
+            "text": "for (;;)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_fronteras_del_buffer",
+        "path": "/text",
+        "sourceSha256": "e65510cdb02c821a65769ceb319ee7b8e51920d4674d4bc4a14e9285161a2717",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/question",
+        "sourceSha256": "d49a4b07e0ae2588c380b5fe901f59a22f5ec3e0c55c2fd85422f7b03bbea319",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/explanation",
+        "sourceSha256": "32d42a0fa233cbc559ea574ef0c7f11e8c290aa64ecf80a1ccb139efb638fbd4",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/options/0",
+        "sourceSha256": "7c3090a0e939b240e4fd449507d82cab967d4accc7b8f2e0c9fddade6b4c4ece",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/options/1",
+        "sourceSha256": "4032e62d76188b71ff7a4d62e9dfde648726064be9622c37bf5fef281e414215",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/options/2",
+        "sourceSha256": "ae497634c35056a6a99f55c766e12a8a38defe31f88e77a7c0aa3182f5dc7890",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/options/3",
+        "sourceSha256": "d71715562795a29532643b3fffdd7b6176a92aa67131471a685702836d258655",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "4a990482ffa5bbd2b8423a95a216f490b022e1b4aa08a6b95940fa9f14adcd47",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "87e491d4acaecab4915b3682f521642f9804887c876200640db2d9507eb74c3e",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "db79c4db937dda511f6e7eddc83eb5cd9dbf868da8125f97673db0fe54217cd7",
+        "spans": []
+      },
+      {
+        "block": "u4l6_buffer_sin_truncamiento_no_basta",
+        "path": "/reviewFeedback/3",
+        "sourceSha256": "b578d75b6f599da0864d4d8186b9f79b7c57dd279a05da514969347762b9200f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_estado_y_excepciones",
+        "path": "/text",
+        "sourceSha256": "3133d5b53a004d0ae5d9f547e3eb3575ca3805bb7f5a0d8841f4c0e615950893",
+        "spans": [
+          {
+            "start": 255,
+            "end": 270,
+            "text": "exceptions(...)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 710,
+            "end": 743,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/question",
+        "sourceSha256": "34ed34a42860f8a42273959031b822c959a17bb710cdc679a97b4d102d81e4b4",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/explanation",
+        "sourceSha256": "48b835271dc76ee069bc1b3a804b6d685a67642e457e6a01ed2c0b23106092bb",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/options/0",
+        "sourceSha256": "4d88f5ab5ce59e3218a3c8984c74a00758cf633de0d914a5279510a6f527be25",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/options/1",
+        "sourceSha256": "6ca0d228e6594c8b8c8514bfc7811380d55dbd6199020ca4e0a0aa33428765a8",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/options/2",
+        "sourceSha256": "16e894a65b06fbb5592e7db3ac92acfe6185c3dd1164e72eb7c4d61436df5e42",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/options/3",
+        "sourceSha256": "2bd3823f25f859b6925f7d0e2b14fcf28e1c8dbb618c3affd5c77bddec3c247a",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "154e3199911a72638e94199f17a68c5bc402400564055a44196ac4756b26afcc",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "0d36329edfbd6102d6a1f9d93286523be253a50117e0a0a96891236d0438d7f6",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0ea54549d9a8a945fd6e44731dabf327ba28c4ce57b73ae64776d47682a975c6",
+        "spans": []
+      },
+      {
+        "block": "u4l6_final_normal_con_failbit",
+        "path": "/reviewFeedback/3",
+        "sourceSha256": "a494d3dd0b8307b9ce117c9248098fe392994c21c030114e21cd197db9d15d85",
+        "spans": []
+      },
+      {
+        "block": "u4l6_datos_preparados_del_editor",
+        "path": "/text",
+        "sourceSha256": "6399ca2d195246ab562a187c53d9decb1e856ceb084b86926a72763715fa6e49",
+        "spans": [
+          {
+            "start": 86,
+            "end": 97,
+            "text": "datos(\"LF\")",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_columnas_del_conteo",
+        "path": "/text",
+        "sourceSha256": "448c9898b70bbb34f2f181663ec5554782406dd8c7a6c4bcf79cc8333888ddf5",
+        "spans": [
+          {
+            "start": 184,
+            "end": 198,
+            "text": "BLANCO:3:1:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 359,
+            "text": "CIENTOUNO:0:0:0:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_caso_1_titulo",
+        "path": "/text",
+        "sourceSha256": "c7281e2e9934fa57359926b69da8142fc903bcc6eec5ea1da69ae9a7e90e8830",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_1_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "13b08d70dd51a2c82b32fb4b56c5b2f26f529e06ac92b7318e8c68b204fd2f2f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_2_titulo",
+        "path": "/text",
+        "sourceSha256": "b7a72641766c6721e325003bc934a6775e53c0414c63a8808a5d5f65048f7df3",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_2_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "13b08d70dd51a2c82b32fb4b56c5b2f26f529e06ac92b7318e8c68b204fd2f2f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_3_titulo",
+        "path": "/text",
+        "sourceSha256": "e00f9f4b3c506b9a2ccc3042fc654823a953a26ef6f2bab536830900ca615289",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_3_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "13b08d70dd51a2c82b32fb4b56c5b2f26f529e06ac92b7318e8c68b204fd2f2f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_4_titulo",
+        "path": "/text",
+        "sourceSha256": "981ee5315f1c91c3a5dcf3bd70a9c57fdbad2bc75b414c833079c0f6f2056d18",
+        "spans": []
+      },
+      {
+        "block": "u4l6_caso_4_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "13b08d70dd51a2c82b32fb4b56c5b2f26f529e06ac92b7318e8c68b204fd2f2f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/question",
+        "sourceSha256": "80cac3938b91a4c580538b3f3cbe7f78708c9011ced086a098c34b7878c3aef4",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/explanation",
+        "sourceSha256": "a9c706da3e21c41a6d4aba4cc1f0e482cf2cdd72fc89620b6e3c4f306cce828f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/options/0",
+        "sourceSha256": "cbed6856b05fb590e8df13089834c099678d954648795d23c413e3aa8f12406c",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/options/1",
+        "sourceSha256": "ad4966f985c03cf579502f7df385ab0b67d93494d0ef73aa8e0cbc6702277aaf",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/options/2",
+        "sourceSha256": "91ecec2a4e6828671175477414124d0911e9f8374627f901bcf58dca6d2dec84",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/options/3",
+        "sourceSha256": "0df9432cdc3e0007f28a4f9e50e8d11d9e2ec0e11306df3fae5d29979f1731d3",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "cf3f2f386769ac46526b31715fd7c92d390c929ef7f9bf2a8e57611b8c906085",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "622a64fd960328eb7bf0205ece207fb611531c390325e9327270456549355114",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "ae5c61eaf3f22342853010b413c97e2c28a9d19c41b64c0c7f6870bceb1142d2",
+        "spans": []
+      },
+      {
+        "block": "u4l6_contar_lineas_con_dos_cr",
+        "path": "/reviewFeedback/3",
+        "sourceSha256": "c8a875b436d557d31f787c7a4429b3392d18196464de45ecaf66db8772e08c62",
+        "spans": []
+      },
+      {
+        "block": "u4l6_introducir_lambda_local",
+        "path": "/text",
+        "sourceSha256": "37398d95226a7ee5168e7bdb23b7737581d47777e884a378b6116b13d0d42e34",
+        "spans": [
+          {
+            "start": 20,
+            "end": 55,
+            "text": "const auto terminar = [&]() -> bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 176,
+            "text": "[&]",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 385,
+            "end": 387,
+            "text": "()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 443,
+            "text": "-> bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 671,
+            "end": 704,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_dos_retornos_distintos",
+        "path": "/text",
+        "sourceSha256": "b6bcab3e09956c2832bc2b5a92fa10653fa6cb84cdbab37bb13977e82d3cebf6",
+        "spans": [
+          {
+            "start": 77,
+            "end": 98,
+            "text": "Conteo{0, 0, 0, true}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 116,
+            "text": "return false;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 240,
+            "text": "if (!terminar()) return resultado;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 389,
+            "text": "linea.empty()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 417,
+            "end": 454,
+            "text": "linea.find('\\r') != std::string::npos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 643,
+            "end": 669,
+            "text": "if (hay_bytes) terminar();",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_interfaz_cabeceras",
+        "path": "/text",
+        "sourceSha256": "6fd0efa6fa578aea030cb95521a3cb46c6a865f4cb5a341fd98e0f89810a7368",
+        "spans": [
+          {
+            "start": 38,
+            "end": 71,
+            "text": "include/assetcheck/manifiesto.hpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 158,
+            "text": "<filesystem>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 392,
+            "text": "<iosfwd>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 755,
+            "end": 779,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_tres_resultados_del_revisor",
+        "path": "/text",
+        "sourceSha256": "0c755b45f8ca574938fa36f56d500fcb5fd8e483efdb7843e33d455460d9d4a4",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/prompt",
+        "sourceSha256": "2084d325199e44d357a7b01eab4fcc93df3e814017756dff2e469f88a912876f",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/feedback/correct",
+        "sourceSha256": "e38ad5e17a08bf54990cc39b2eb580537db83c8eb97253dd69dc8c07e8733200",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "685764b0c8f2bcc7fd4ec708eef9289bb8498debdea9deec3883468e8961681b",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "163074d30c77022a23fa1b77ba31fd23a2bdc5bd42b3ff53d73e168e18ddc2ea",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "54ebc35f02c43ff5df9b35caaa861ddbf05da6ec963c97dda33be6fcc448d803",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "36ae8c1d04e09155d87eea3a1dff7274e76bc98cb03b618c8ebd84b7b1d512b8",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "cc400ce7b5f1e0ac29fc31bc90628af295ff2e3eade2cbb7eae327ddad8f9202",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "caa038a7f82bdb2faa38d284d11b0505327615801efe8e92c5853b29b1abf9bc",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "0d4b95e6ab3016e9016f3a97fbda45dfd01be8c28a9465e294b75453999ec07a",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "c7acab146fffa249375d013ce275b52a1cf292e9ebfc58e93293d2c2f4e193b2",
+        "spans": []
+      },
+      {
+        "block": "u4l6_relacionar_resultados_interfaz",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "175213508be3985c4ef497cd6f18171c0d9c353fab64475dd3df8a7fde82d014",
+        "spans": []
+      },
+      {
+        "block": "u4l6_crear_fuentes_desde_consola",
+        "path": "/text",
+        "sourceSha256": "4769c271a9fec724155faa6e80fe4bcd495d122095b9fad9b51f4676e869d1cb",
+        "spans": []
+      },
+      {
+        "block": "u4l6_comprobar_archivos_nuevos",
+        "path": "/text",
+        "sourceSha256": "0351b48ba6aec85ed7658b7b792333d6cb9caeb0cb567464d9a8c0a6127cd19a",
+        "spans": []
+      },
+      {
+        "block": "u4l6_explicar_here_string",
+        "path": "/text",
+        "sourceSha256": "b34f9a50aa60ad8169a39a6d5da6fc06d50811b248183f569779676998eca4d6",
+        "spans": [
+          {
+            "start": 356,
+            "end": 373,
+            "text": "(Microsoft, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_confirmar_cabecera",
+        "path": "/text",
+        "sourceSha256": "039334ea76c07dcc083db39b4cbb50bea4ad705ffa381818b72e0ea2fda54efd",
+        "spans": [
+          {
+            "start": 73,
+            "end": 75,
+            "text": "$?",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_explicar_try_acotado",
+        "path": "/text",
+        "sourceSha256": "d03aaa6234c1d2eea392ff54758493dbdfc6e8b22d9a0dcffaff6dfb9f892fa6",
+        "spans": [
+          {
+            "start": 55,
+            "end": 67,
+            "text": "origen.get()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 958,
+            "end": 991,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_alcance_excepciones_origen",
+        "path": "/text",
+        "sourceSha256": "73679d72042aaeabdb71dfa9bbf27e5c0d05663bca120fc047feba913e414d4c",
+        "spans": []
+      },
+      {
+        "block": "u4l6_guardar_implementacion",
+        "path": "/text",
+        "sourceSha256": "a047b2472a1ca1629c0a1b7de6055c38b7a42022a223b9d69258db763091d001",
+        "spans": [
+          {
+            "start": 39,
+            "end": 57,
+            "text": "src/manifiesto.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_sustitucion_final_del_lote",
+        "path": "/text",
+        "sourceSha256": "732a3268cfe8d9d5d2a42c8d1ffa68339f2b7b47211a2dc7651dab02c86c625c",
+        "spans": [
+          {
+            "start": 230,
+            "end": 261,
+            "text": "destino = std::move(candidato);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 568,
+            "end": 601,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_funciones_de_presentacion",
+        "path": "/text",
+        "sourceSha256": "ff6f3ce51e62369829ea4687f01f0edfc3ddb98c67ee565d52f1e7aecd0985d7",
+        "spans": []
+      },
+      {
+        "block": "u4l6_completar_cmake_biblioteca",
+        "path": "/text",
+        "sourceSha256": "15245776d3a1da5bbd2c8e4118a518dcea457bda1a36c09378591763ed3ecfb3",
+        "spans": []
+      },
+      {
+        "block": "u4l6_objetivo_y_dependencia",
+        "path": "/text",
+        "sourceSha256": "7351cc1ae14853fdf112c9cfe6ab82eec875e02158fdb493531eee44fa5646ae",
+        "spans": [
+          {
+            "start": 407,
+            "end": 420,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_construir_solo_biblioteca",
+        "path": "/text",
+        "sourceSha256": "9d161f9d91c178e30823b1c92afa8893e58020f23a9c7277b9fbdec2bdfae5de",
+        "spans": [
+          {
+            "start": 160,
+            "end": 173,
+            "text": "$LASTEXITCODE",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_regresion_heredada",
+        "path": "/text",
+        "sourceSha256": "5249e3ab911206190d81f222ef0f7ffcd7aa2996bcbe07fdd366b9263e5817fe",
+        "spans": [
+          {
+            "start": 235,
+            "end": 252,
+            "text": "Casos=28 Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 305,
+            "text": "Comprobaciones=31 Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/question",
+        "sourceSha256": "7db6a2b59a96f8f95cbc2b888ca2a565338c653edbd302780ce032be3caf84ad",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/explanation",
+        "sourceSha256": "43cd208b32e9bfd5b8da28392892f33d8b047c411aee8d5559fb0f67e22d54ad",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/options/0",
+        "sourceSha256": "c9c808ba81f559f43d263f77a955f8927d15df53bf1f5d7e67b0f6ac387608d8",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/options/1",
+        "sourceSha256": "5e198c0192c27edb5dce08adaa3729425b44bda37bb9899dff190dd2a6375095",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/options/2",
+        "sourceSha256": "cc5a762fbfacaf9f59ffa44fe2272f68b81528ad2f409b88bd5afb9c99104f64",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/options/3",
+        "sourceSha256": "812b82fd740e05feae36c02f566d19c8ee680196e5b52befd7a3d7a5be6d1a5d",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d804e1152d2ab2a4d19bb1d839f6e6a57fd5d4ebb75b0b87a12154e9eeabd1fb",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "3444f06746090a6a7510c47916b1375e4bb1f84aa120144178c5a6b59a29817c",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c843936656d9cc2f104736f89a3f88039876999553a2252033753afa7a2f0e3e",
+        "spans": []
+      },
+      {
+        "block": "u4l6_vacio_sustituye_destino",
+        "path": "/reviewFeedback/3",
+        "sourceSha256": "acf712eb3b73415d79a11824f895d54eedc33df0a63bfb7f83c03cb54c79ba65",
+        "spans": []
+      },
+      {
+        "block": "u4l6_titulo_crear_fuentes",
+        "path": "/text",
+        "sourceSha256": "61a6c148d2312729ebee5c0486e07d6c891788d9890f1c76d8813244c1b7ea6c",
+        "spans": []
+      },
+      {
+        "block": "u4l6_titulo_lectura_completa",
+        "path": "/text",
+        "sourceSha256": "7436e3a8ec6710d02acd4878904bc353c902d21e5d0af181c8251af3beb46c4d",
+        "spans": []
+      },
+      {
+        "block": "u4l6_titulo_preparar_textos",
+        "path": "/text",
+        "sourceSha256": "0dfeed21e98f67ef4e03edb301964116993cb72176e94f29dc9930de558e11b3",
+        "spans": []
+      },
+      {
+        "block": "u4l6_titulo_construccion_lib",
+        "path": "/text",
+        "sourceSha256": "11317e42a9ed54409845375eefad1dca59f547b573729c3955f39a40cebdf3ff",
+        "spans": []
+      },
+      {
+        "block": "u4l6_comprobacion_de_la_biblioteca",
+        "path": "/text",
+        "sourceSha256": "e0e6564f2ee87b0dbc7db02c26daa328acd632bea382dbf2695914fc5ec0544c",
+        "spans": []
       }
     ],
     "rootFields": [
@@ -2293,9 +3712,12 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
+          "u4l6_get_sin_parametro",
           "block_0003_0002",
           "block_0003_0003",
           "block_0003_0004",
+          "u4l6_fronteras_del_buffer",
+          "u4l6_buffer_sin_truncamiento_no_basta",
           "block_0003_0005"
         ]
       },
@@ -2315,9 +3737,11 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
+          "u4l6_estado_y_excepciones",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004",
+          "u4l6_final_normal_con_failbit",
           "block_0005_0005"
         ]
       },
@@ -2326,8 +3750,27 @@
         "blocks": [
           "block_0006_0000",
           "block_0006_0001",
+          "u4l6_datos_preparados_del_editor",
+          "u4l6_columnas_del_conteo",
           "block_0006_0002",
           "block_0006_0003",
+          "u4l6_caso_1_titulo",
+          "u4l6_caso_1_entrada",
+          "u4l6_caso_1_salida_titulo",
+          "u4l6_caso_1_salida",
+          "u4l6_caso_2_titulo",
+          "u4l6_caso_2_entrada",
+          "u4l6_caso_2_salida_titulo",
+          "u4l6_caso_2_salida",
+          "u4l6_caso_3_titulo",
+          "u4l6_caso_3_entrada",
+          "u4l6_caso_3_salida_titulo",
+          "u4l6_caso_3_salida",
+          "u4l6_caso_4_titulo",
+          "u4l6_caso_4_entrada",
+          "u4l6_caso_4_salida_titulo",
+          "u4l6_caso_4_salida",
+          "u4l6_contar_lineas_con_dos_cr",
           "block_0006_0004"
         ]
       },
@@ -2336,7 +3779,9 @@
         "blocks": [
           "block_0007_0000",
           "block_0007_0001",
+          "u4l6_introducir_lambda_local",
           "block_0007_0002",
+          "u4l6_dos_retornos_distintos",
           "block_0007_0003"
         ]
       },
@@ -2345,10 +3790,43 @@
         "blocks": [
           "block_0008_0000",
           "block_0008_0001",
+          "u4l6_interfaz_cabeceras",
           "block_0008_0002",
+          "u4l6_tres_resultados_del_revisor",
+          "u4l6_relacionar_resultados_interfaz",
+          "u4l6_titulo_crear_fuentes",
+          "u4l6_crear_fuentes_desde_consola",
+          "u4l6_ps_carpeta",
+          "u4l6_comprobar_archivos_nuevos",
+          "u4l6_ps_existen",
+          "u4l6_explicar_here_string",
+          "u4l6_ps_guardar_cabecera",
+          "u4l6_confirmar_cabecera",
+          "u4l6_ps_leer_cabecera",
+          "u4l6_titulo_lectura_completa",
           "block_0008_0003",
+          "u4l6_explicar_try_acotado",
+          "u4l6_alcance_excepciones_origen",
+          "u4l6_sustitucion_final_del_lote",
           "block_0008_0004",
+          "u4l6_guardar_implementacion",
+          "u4l6_ps_guardar_implementacion",
+          "u4l6_ps_leer_implementacion",
+          "u4l6_titulo_preparar_textos",
+          "u4l6_funciones_de_presentacion",
+          "u4l6_titulo_construccion_lib",
+          "u4l6_completar_cmake_biblioteca",
+          "u4l6_ps_ver_cmake",
+          "u4l6_ps_ampliar_cmake",
+          "u4l6_ps_confirmar_cmake",
+          "u4l6_objetivo_y_dependencia",
+          "u4l6_construir_solo_biblioteca",
+          "u4l6_ps_configurar_construir",
+          "u4l6_regresion_heredada",
+          "u4l6_ps_regresion",
           "block_0008_0005",
+          "u4l6_comprobacion_de_la_biblioteca",
+          "u4l6_vacio_sustituye_destino",
           "block_0008_0006"
         ]
       },
@@ -2824,7 +4302,539 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u4l6_get_sin_parametro",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l6_fronteras_del_buffer",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l6_buffer_sin_truncamiento_no_basta",
+        "sha256": "72cbb8349ae432e7eb153bf4d0d6dffbfb5504107972ec5fae2dffc6c7231765",
+        "storage": {
+          "page": 14,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l6_estado_y_excepciones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l6_final_normal_con_failbit",
+        "sha256": "ae9d28adbfacfd70fad3618d8fd39264c550d90814c28a83317832734e756277",
+        "storage": {
+          "page": 14,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l6_datos_preparados_del_editor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_columnas_del_conteo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_1_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 7
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_1_entrada",
+        "sha256": "6b833fac2d6100fa5fe99982230b6148ac41d75c528f78f9ac2870ad3b523fc2",
+        "storage": {
+          "page": 14,
+          "block": 8
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_1_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 9
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_1_salida",
+        "sha256": "5c7cc13fe2309f67c5979c72ba220a80ececd2aa021ac558396423115d57732a",
+        "storage": {
+          "page": 14,
+          "block": 10
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_2_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 11
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_2_entrada",
+        "sha256": "1de58bfaa28ea4d920165ff80a5991d336d008b8382a287d6bce934ed4273a42",
+        "storage": {
+          "page": 14,
+          "block": 12
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_2_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 13
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_2_salida",
+        "sha256": "9259f7ebeed16017cbc4d39db9f9511e37868eee3fa710a97c808bfeca03e4c5",
+        "storage": {
+          "page": 14,
+          "block": 14
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_3_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 15
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_3_entrada",
+        "sha256": "7e96fabd1c18417f67d9b67b0029f9daecb1542301413cf06fa67ada2591140f",
+        "storage": {
+          "page": 14,
+          "block": 16
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_3_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 17
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_3_salida",
+        "sha256": "6f6bcbe7e6a04dfe2641d860ca867516faaf7a72f390fd2109c7aba025d419e0",
+        "storage": {
+          "page": 14,
+          "block": 18
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_4_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 19
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_4_entrada",
+        "sha256": "27d2d9dd8ba7b8dda0de65569b9daa787f7815ce97d253baf2ec2dc6aede1eeb",
+        "storage": {
+          "page": 14,
+          "block": 20
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_4_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 21
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_caso_4_salida",
+        "sha256": "d28bf48bac13353b77599e340c706cd8c603835fc9199f3bc4e49bd895b4fce0",
+        "storage": {
+          "page": 14,
+          "block": 22
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_contar_lineas_con_dos_cr",
+        "sha256": "a558aed7a4d65d0c8b8b7fe155b495ffbf4ed3c22dc00c973fdcc34e46385a2a",
+        "storage": {
+          "page": 14,
+          "block": 23
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l6_introducir_lambda_local",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 24
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l6_dos_retornos_distintos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 25
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l6_interfaz_cabeceras",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 26
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_tres_resultados_del_revisor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 27
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_relacionar_resultados_interfaz",
+        "sha256": "7f6124a3a548c93536d705fff0137c3da31b624791dc1eaf72c3f3a733c0c31b",
+        "storage": {
+          "page": 14,
+          "block": 28
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_crear_fuentes_desde_consola",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 29
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_carpeta",
+        "sha256": "3081ea6efd163753f0ddb45f5c94d91e8c9ee978b73bcdaf4d15bd46a9a17144",
+        "storage": {
+          "page": 14,
+          "block": 30
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_comprobar_archivos_nuevos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 31
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_existen",
+        "sha256": "f05488cb500f841f0af72490b84abd20488d7978e8b5c6d8cd4060156c4b2365",
+        "storage": {
+          "page": 14,
+          "block": 32
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_explicar_here_string",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 33
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_guardar_cabecera",
+        "sha256": "3e620adb533980ee856de6f6e3c1f7a7b00e2b49e826457a63f19a6d9489648c",
+        "storage": {
+          "page": 14,
+          "block": 34
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_confirmar_cabecera",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 35
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_leer_cabecera",
+        "sha256": "0cf5d2165e92464b69198d0e42abb5f3b7e74bad43a9268e6e995029d11389ab",
+        "storage": {
+          "page": 14,
+          "block": 36
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_explicar_try_acotado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 37
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_alcance_excepciones_origen",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 38
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_guardar_implementacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 39
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_guardar_implementacion",
+        "sha256": "4dd5a1015997d1d9555384745e109d76c1d25a694e9d2a5858a93f87afcaa164",
+        "storage": {
+          "page": 14,
+          "block": 40
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_leer_implementacion",
+        "sha256": "7398a7fff00d94cafa799d8a7d1695f6b5b5968e665da65c3136160f2ad69cb0",
+        "storage": {
+          "page": 14,
+          "block": 41
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_sustitucion_final_del_lote",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 42
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_funciones_de_presentacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 43
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_completar_cmake_biblioteca",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 44
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_ver_cmake",
+        "sha256": "b7b6df4796c43bbee52e9e1824cbdc0f413c11fb8cf741c04458e4e7e784c4e8",
+        "storage": {
+          "page": 14,
+          "block": 45
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_ampliar_cmake",
+        "sha256": "0c09576f7aa3a6cff46873ceca946a1d08a9a77469068c4e173a3fef4620a5a2",
+        "storage": {
+          "page": 14,
+          "block": 46
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_confirmar_cmake",
+        "sha256": "bd8ac4dce26fc70230cf28a5480b8fd0f92b0faea6cf45d082a8119f0a63b0e4",
+        "storage": {
+          "page": 14,
+          "block": 47
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_objetivo_y_dependencia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 48
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_construir_solo_biblioteca",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 49
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_configurar_construir",
+        "sha256": "0e0650e9d49f41f3f62b414dfccb906247e87864eacbb07070ca533fc0659462",
+        "storage": {
+          "page": 14,
+          "block": 50
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_regresion_heredada",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 51
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_ps_regresion",
+        "sha256": "ce0d391f5adad668150cf0dd01549d0c3259fb7a570c324c9ed7c4520b3c995c",
+        "storage": {
+          "page": 14,
+          "block": 52
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_vacio_sustituye_destino",
+        "sha256": "5988838a13321de99965b73cb32fd72dce22761e78eb4995f27623e5610efa00",
+        "storage": {
+          "page": 14,
+          "block": 53
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_titulo_crear_fuentes",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 54
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_titulo_lectura_completa",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 55
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_titulo_preparar_textos",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 56
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_titulo_construccion_lib",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 57
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l6_comprobacion_de_la_biblioteca",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 58
+        },
+        "progressPage": "page_0008"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0001",
@@ -2860,6 +4870,131 @@
         "id": "block_0012_0001",
         "beforeSha256": "9379c633cf3095a4eb9e4552aa2a3e0857f59325790ee11317a1ba0d157cbbae",
         "afterSha256": "bb7fa2bafff551f3433a878b81070b42fe3a465bbf85beaf320d05e60f76b010"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "adab27f0db1d74badd42632c16f69c8c0c82ae5dcb65992048a95f289942a976",
+        "afterSha256": "e241419d86a678d2ffc7c7eddc945d7e75daab9dc45e525d5b3300eec9e0f165"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "dddcbba331684a55143f67c45cf41ea26aa9387699dd2da6c28d90510328c14d",
+        "afterSha256": "b660ef1791e1dbd56e688c74d95ae8a0bcbe8c7f91645abb0a00a2c00402e35c"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1b97c84b83c476fd5c6216bd4c1c5a1819f70149c13c56513228b652016918bc",
+        "afterSha256": "0d545126a2cbd919481c88f5c54ffdc31adfdd44a60b372a0df702cb004c91c9"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "9194c821d598de8d5a626ac0f7125e0b462279e451478ec49069b41778f130c4",
+        "afterSha256": "bf90adbbf6106b0c2bc55a62cf94c76fac1feb1e0a36931aa4acc9dcda560ce0"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "1cbcb8f93b85aacaae2406f994c7c68741bd1c258a5ddc3d5733e6c96155cc8c",
+        "afterSha256": "56bc4c9ae0f9268de05f64793597fe6363feaac97c6bfee9b8bd76422205a189"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "451ef1604b8f3518a28d6e2bc2e2dd3d9ba5cfa69754cb06cda87a6645f41255",
+        "afterSha256": "add651442ac3188f356a576180ef8ccc1db961f620478d3bb7f8a1dcac3bc05c"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3a5820fc32584fd28bd2ed61290fb0700f98f55f2aad78b5a7607fbd0f9b46ee",
+        "afterSha256": "90e7a2b9cb753dcc328e61a0a689056505c5f5f0ce23a324fc5a312c5c8e2f7e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "6b772c4a2c1215ccc25952328e0f8d9228008fd162713ecd84c8d669419e3ab6",
+        "afterSha256": "d425ecca8fa359948dbaadb0c3f5ef5bc9caae5b5595c9c53cf0e8ff43046632"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "39b60fca4f5d06bc8b560c56c3a73c4acdba3f9d013f1368e3e9c577ecbafe68",
+        "afterSha256": "3290a145506e646e0c1fe3930f14fc78c9c99a677437db031d09db748cc15c04"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d7de3d6db0429c667a4a8c457dc0887984bda0d4cca0529bdc52ebf8c87fdd10",
+        "afterSha256": "cf607879b5d5e1f57a097a202a5cba9b1a01d5d56d3baa0016267a0e7b636975"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "ce29cc6c2d28f8caba36d234f98deefe91d760ad5908bd1ea93ec27bdf99773a",
+        "afterSha256": "f3603fe3fd9d99959038baebe3f027d6fbf651f0e7fab7ca7df5440a57be2a7b"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "66ff7536a4aa512362d44c8b4d0fd02a5dbcea743adacace8ed44e7cd3803d99",
+        "afterSha256": "dbebed9b6be270b2d5c4707605da3a7eeac7ebf2e41c9ca67fd2c7e5b374214c"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "5e1c4fa90558fcca4643f365b17f4508afa68ac3a742b73c72cc2afe81ed9bd4",
+        "afterSha256": "78a362860e0660434630fa79592612a4b6c2849434896c8b2710e049596d0140"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "0543a388ee3649c527cdf1108e08807c1582f21548d2d435acf89b363da32e68",
+        "afterSha256": "11b734dd8d0c364ac223de16cebee066e56eda9a9ffc8a1ccf1fdbfda4e0c678"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "e4a26c5434b04898abe80655404a553108f1588a703be79f5dee2f1a63dcced4",
+        "afterSha256": "a08ec0c79ea08c86162c3d5af4e581e198a5a0c3674c51fb997f26e1c35aeb38"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "ccf0b9f18d0de67edf3e26eaaa9b42670f7fd8e2ba83aaa459b1df0fa1b24cc6",
+        "afterSha256": "6bce5a13f600a7e89fe3c9ac5a41a517b0c767a7deb5acb668b4f96598bd9083"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "c07bec9d71112ddaf3085421ded984d36c2b8fb24de50b07fb67aab4d154775f",
+        "afterSha256": "9f8d0c5b82fdd799ddb7b94d48d18084517589f91dd78f81a8f1beb5bcf6c342"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "e6b9ef7bf403f20b0f62eea43d03f2e027a7bc1f421074d785482d17829b90fe",
+        "afterSha256": "4e6d08219827bd2e6dda9605cd23338263613d1803e2eaed15a4b34d9aa188be"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "357d8d0e44b6780f2b3802c3ae04edaaa70ccb961cdb27dd47cf9fafd02527f7",
+        "afterSha256": "1c5e1c0850454031fdcc232a7bff77890e66ee8dc0237b71cfc7c2e4cf041576"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "de8fb67a9d160ff5b6b292060325f62add66b3b4342d416a2026e072c06f611a",
+        "afterSha256": "42cf8bbacc633e3bc30777220cab98464534bbf280e957292d7f4023458a725c"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "318df7a10fe90f16144c10d54c0c4201a7152e67d72b1cde333ff7a7e4235875",
+        "afterSha256": "aaa182e99cee21759e7d0c56d6d523aeb24c408824fc288662d281c6b39e383b"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "35ff39308fc3ec7d98a7d83de1ff4094cd7bfe3d1a9cccf7a19e0ab6e3d6f181",
+        "afterSha256": "215b4f4ee15eb179e7f8bf45877054918da9ade415de5c29eef5641e234a2452"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "43f1f08e78666e73067754f2176ccdf45b69d6355059d83e5fa6409addacc69e",
+        "afterSha256": "8f01375a013e7e24c33e5c82878d0fa0cbca9548cbd81f17715fdbe0dbe0b9b3"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "94ba39b05bee3bc90e033da95a25cfecb6d2f73fe874fcac67cc142e265de14a",
+        "afterSha256": "cf4bcb9778e1515c7630e4c31004c6899262327841e1005b3ffd5a6e993d0837"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "c2df72f9e0c0861c0eea1032bf38b8d2ca2014f5b12aaa3b93db005843999936",
+        "afterSha256": "293bec592b4f17d267c466e6c62b9f59435bae85f4acd1b9eb7d8bb029c3ab0f"
       }
     ]
   }

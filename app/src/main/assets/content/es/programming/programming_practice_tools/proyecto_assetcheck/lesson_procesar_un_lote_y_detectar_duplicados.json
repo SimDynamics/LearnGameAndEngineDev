@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En U4L4, leer_registro recibe una declaración y devuelve ACEPTADO o su primera causa local de rechazo sin modificar el destino si falla. Ahora llegan varias líneas, y sus decisiones dependen de qué registros ya fueron admitidos. Una línea válida por sí sola puede ser DUPLICADO."
+          "text": "En la lección anterior, `leer_registro` comprobaba una línea por separado. Por ejemplo, `Caja malla 3` cumple las reglas de formato, ID, tipo y tamaño. Ahora queremos conservar varios registros y evitar que dos admisiones utilicen el mismo ID.\n\nSi ya se aceptó Caja malla 3 y después llega `Caja sonido 7`, la línea nueva también cumple esas cuatro reglas. Sin embargo, no debe sustituir el registro guardado: su ID ya está admitido. La nueva causa de rechazo será `DUPLICADO`.\n\nLlamamos lote a las admisiones y los rechazos que reunimos al revisar una misma secuencia de líneas. Para decidir sobre un duplicado necesitaremos consultar ese estado anterior, además de validar la línea nueva."
         },
         {
           "type": "paragraph",
-          "text": "El acuerdo de AssetCheck conserva la primera aparición localmente válida de cada ID, con su tipo, tamaño y número original de línea. Si antes apareció Voz sonido 0, esa línea fue rechazada por TAMANO y no reservó Voz; una posterior Voz sonido 6 todavía puede ser la primera admisión."
+          "text": "Se conserva la primera línea de cada ID que haya superado todas las comprobaciones y se haya admitido en el lote. Junto con su ID se guardan el tipo, el tamaño y el número de línea de esa admisión.\n\nConsidera estas dos líneas, en este orden:\n\nLínea uno: `Voz sonido 0`. Se rechaza porque el tamaño cero no está permitido. No se guarda una admisión con ID Voz.\n\nLínea dos: `Voz sonido 6`. Sus tres campos son válidos y todavía no hay ninguna admisión con ID Voz. Se acepta y su origen es la línea dos.\n\nQue el nombre haya aparecido escrito antes no basta para convertirlo en duplicado: debe existir una admisión previa con ese mismo ID."
         },
         {
           "type": "paragraph",
-          "text": "La prioridad completa es FORMATO → ID → TIPO → TAMANO → DUPLICADO. Sólo después de superar las cuatro primeras reglas se consulta el estado. Rechazar nunca significa normalizar, reemplazar ni mezclar campos. Esta regla deriva del contrato de U4L2, no de una propiedad general de C++."
+          "text": "La revisión se hará en este orden: `FORMATO`, `ID`, `TIPO`, `TAMANO` y `DUPLICADO`. Las cuatro primeras comprobaciones sólo necesitan el texto de la línea. La última compara el ID válido con los registros que ya fueron admitidos.\n\nUn rechazo no cambia los campos de las admisiones anteriores. Sí añade una incidencia a la colección de rechazados, para conservar la línea y la causa del problema. Así podemos informar del error sin reemplazar el primer registro válido. Éstas son las reglas que hemos elegido para AssetCheck; C++ permite programar otras políticas, pero no serían el acuerdo de este proyecto."
         },
         {
           "type": "multiple_choice",
@@ -47,7 +47,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un lote necesita distinguir el contenido conservado de las incidencias. Admision guarda Registro más su primera línea. Rechazo guarda la línea observada, la causa y, sólo para DUPLICADO, el origen de la primera admisión. La colección comienza vacía en cada revisión; nunca se comparte entre archivos distintos."
+          "text": "Representaremos por separado lo que se admitió y lo que se rechazó:\n\n`Admision` reúne un `Registro` completo y el número de línea donde fue aceptado.\n\n`Rechazo` reúne el número de la línea rechazada y su causa. Cuando la causa es duplicado, añade también el número de línea de la primera admisión con ese ID.\n\n`Lote` contiene dos vectores: `admitidos` y `rechazados`. Ambos empiezan vacíos. Al aceptar una línea se añade una admisión; al rechazarla se añade un rechazo y se conservan las admisiones que ya había.\n\nPara revisar otra secuencia independiente se crea un lote nuevo. Si reutilizáramos las admisiones de un archivo anterior, podríamos rechazar como repetido un ID que todavía no aparece en el archivo actual."
         },
         {
           "type": "code",
@@ -56,7 +56,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ampliaremos Resultado con duplicado en registro.hpp, sin cambiar la firma de leer_registro ni hacer que ese lector dependa del lote. Valor 0 en Rechazo.primera significa que la causa no es DUPLICADO; las líneas de origen de una revisión empiezan en 1. El cliente final será responsable de decidir qué mostrar y por qué canal (Kernighan & Pike, 1999, capítulo 4)."
+          "text": "En el proyecto, `Resultado` incorporará la alternativa `duplicado`. Esa ampliación permite guardar la causa de un rechazo del lote; no cambia la firma de `leer_registro` ni hace que el lector busque en otras líneas.\n\nEn `Rechazo`, `linea` identifica dónde ocurrió el rechazo. `primera` identifica el origen del registro repetido y sólo se utiliza para esa causa. Un rechazo local conserva cero en `primera`; cero no es el número de una línea del manifiesto, pues su numeración empieza en uno.\n\nSeparar los datos del diagnóstico de su presentación permite que el cliente decida después qué texto mostrar y en qué canal, sin hacer que la biblioteca imprima por su cuenta (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función `procesar_linea` recibirá tres argumentos:\n\n`texto`: la línea que se va a revisar, sin el terminador que la separa de la siguiente.\n\n`numero`: su número original de línea. Lo proporciona el código que llama a la función. Las llamadas se realizan en el orden de lectura, con números positivos, empezando por uno; una línea vacía o rechazada también cuenta.\n\n`lote`: el objeto donde se conservan las decisiones anteriores y donde se añadirá la decisión nueva. El parámetro `Lote&` permite modificar ese mismo objeto del llamador.\n\nEl tipo `std::size_t` de los números de línea es un entero sin signo, el mismo tipo que se utiliza para representar tamaños de colecciones. Que pueda representar cero no convierte cero en una línea válida del acuerdo. Esta función recibe la numeración preparada por quien la llama; todavía no es el lector que cuenta las líneas de un archivo."
         },
         {
           "type": "multiple_choice",
@@ -85,7 +89,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada llamada construye una candidata local y pregunta a leer_registro si sus tres campos cumplen el contrato de U4L4. Si devuelve FORMATO, ID, TIPO o TAMANO, se agrega un único rechazo y se retorna. Esa candidata no participa en la búsqueda de duplicados. El registro anterior del lote queda intacto."
+          "text": "Cada llamada empieza con un `Registro candidata` local. `leer_registro` recibe el texto y sólo completa esa candidata si los tres campos son válidos. Mientras se realiza esa comprobación, no se escribe en ninguna admisión anterior.\n\nSi el retorno es distinto de `Resultado::aceptado`, se añade un elemento a `lote.rechazados` con el número de la línea, la causa local y cero como origen de duplicado. A continuación, `return;` termina esta llamada a `procesar_linea`. La candidata rechazada no llega a la búsqueda ni se añade a `lote.admitidos`.\n\nTerminar la llamada no termina la revisión del lote: el código que la llamó puede proporcionar la línea siguiente utilizando el mismo objeto."
         },
         {
           "type": "code",
@@ -94,7 +98,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Por ejemplo, si Caja malla 3 ya fue admitido, «Caja material 0» tiene dos defectos locales. La causa es TIPO; no se comunica DUPLICADO. La posterior «Caja malla 7» sí puede ser rechazada por DUPLICADO porque sus datos locales cumplen todo el contrato."
+          "text": "En `lote.rechazados.push_back({numero, local, 0});`, las llaves proporcionan los miembros del nuevo `Rechazo` en el orden de su declaración: línea, causa y primera admisión. `push_back` lo añade al final del vector.\n\nLa colección de rechazados crece en un elemento. El vector de admitidos y los tres campos de cada registro que contiene permanecen iguales. Conservar lo admitido y registrar el rechazo son dos acciones compatibles; conservar el estado anterior no significa borrar la incidencia ni ignorar que llegó otra línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que la línea uno, `Caja malla 3`, ya se admitió. Al llegar `Caja material 0` en la línea dos, el lector obtiene tres campos y un ID válido. El tipo material no está permitido, así que devuelve la causa `TIPO` antes de revisar el tamaño.\n\nSe guarda el rechazo de la línea dos con esa causa y sin origen de duplicado. La admisión de Caja sigue siendo la de la línea uno, con tipo malla y tamaño tres.\n\nSi la línea tres es `Caja malla 7`, sus tres campos sí cumplen el contrato local. Ahora corresponde buscar su ID entre los admitidos. Se encuentra Caja, se registra `DUPLICADO` con primera admisión en la línea uno y se conserva el registro original. El tamaño siete del texto rechazado no sustituye al tamaño tres que ya estaba guardado."
         },
         {
           "type": "multiple_choice",
@@ -123,7 +131,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No basta con comparar contra el último registro: un ID puede repetirse después de varios diferentes. Para este paquete pequeño, recorrer std::vector<Admision> de principio a fin es sencillo y auditable. Compara anterior.registro.id exactamente con candidata.id, sin transformar mayúsculas ni minúsculas."
+          "text": "Para buscar un ID repetido se recorre `lote.admitidos` desde el primer elemento. En cada paso se compara `anterior.registro.id` con `candidata.id`, respetando mayúsculas y minúsculas. El recorrido termina al encontrar una coincidencia o al llegar al final sin encontrarla.\n\nConsultar únicamente el último registro no sería suficiente. Por ejemplo, después de admitir Caja y Sol, otra Caja repite el primer ID aunque el último sea Sol. El registro intermedio no libera el nombre de Caja."
         },
         {
           "type": "code",
@@ -132,7 +140,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada aceptación sólo añade un registro nuevo. Como nunca se reemplaza uno admitido, la primera coincidencia ya contiene la primera línea de origen de ese ID. La búsqueda lineal cuesta O(A) comparaciones por candidata, donde A es el número de admisiones previas. El manifiesto está limitado a cien líneas físicas; por ahora importan más claridad y evidencia que una estructura prematuramente compleja (Kernighan & Pike, 1999, capítulo 2)."
+          "text": "En este recorrido, `const auto& anterior` permite consultar cada admisión sin copiarla ni modificarla a través de ese nombre. Aquí equivale a escribir `const Admision& anterior`, pues el vector contiene objetos de tipo `Admision` (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nSi los IDs coinciden, se añade un rechazo con el número actual, la causa `Resultado::duplicado` y `anterior.linea` como origen. El `return;` termina la llamada antes de insertar una admisión.\n\nSi no aparece una coincidencia, se termina el recorrido y se ejecuta `lote.admitidos.push_back({numero, candidata});`. Se guarda una admisión nueva con su línea original y su registro completo. Cuando el vector está vacío, el recorrido no entra ni una vez y también se llega a esa inserción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al no reemplazar ninguna admisión, la coincidencia encontrada conserva el origen del primer registro aceptado con ese ID. Repetirlo con otro tipo o tamaño no cambia ese origen.\n\nEste método compara los elementos uno a uno y se llama búsqueda lineal (Kernighan & Pike, 1999). Con tres admisiones, encontrar el ID en la primera posición requiere una comparación; encontrarlo en la tercera requiere tres. Si no existe, se comparan las tres antes de añadirlo. Con un vector vacío se realizan cero comparaciones de IDs.\n\nEl manifiesto de nuestro proyecto estará limitado a cien líneas físicas. Ese límite pertenece al acuerdo de AssetCheck. En esta etapa usamos un recorrido que podemos seguir y comprobar con los conocimientos ya practicados, sin introducir otra organización de datos antes de enseñarla."
         },
         {
           "type": "multiple_choice",
@@ -150,6 +162,25 @@
             "Un registro intermedio no libera identificadores anteriores.",
             "El tamaño no participa en la comparación de IDs."
           ]
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_comparaciones_hasta_coincidir",
+          "question": "El lote contiene, en este orden, los IDs Norte, Este, Sur y Oeste. Llega otra línea localmente válida con ID Este. La búsqueda recorre desde el primero y termina al encontrarlo. ¿Cuántas comparaciones de IDs realiza?",
+          "options": [
+            "Cuatro, porque siempre debe llegar al final.",
+            "Una, porque sólo consulta la última admisión.",
+            "Dos: compara con Norte y después con Este.",
+            "Cero, porque la línea es localmente válida."
+          ],
+          "correctIndex": 2,
+          "explanation": "La primera comparación, con Norte, no coincide. La segunda, con Este, sí. Se registra el duplicado y return termina la llamada; no se consulta Sur ni Oeste y no se añade otra admisión.",
+          "reviewFeedback": [
+            "El return tras la coincidencia evita continuar hasta el final.",
+            "El recorrido empieza en Norte, no en el último elemento Oeste.",
+            "La coincidencia en la segunda admisión determina el origen del duplicado.",
+            "La validez local permite comenzar la búsqueda; no elimina la consulta del lote."
+          ]
         }
       ]
     },
@@ -161,7 +192,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recorre estas seis líneas desde un lote inicialmente vacío. No cambies sus textos ni completes por intuición los campos que se rechazaron: cada línea produce exactamente una decisión. Los números de línea son originales, no posiciones compactadas por las admisiones."
+          "text": "El bloque siguiente muestra seis líneas en su orden original. Los números anteriores a los dos puntos son rótulos para seguir la explicación; no forman parte de los tres campos del manifiesto.\n\nPartimos de un lote vacío y tomamos una decisión por cada línea. Se conserva el número original aunque esa línea sea rechazada: la segunda línea sigue siendo la dos, incluso si la primera no produjo ninguna admisión."
         },
         {
           "type": "code",
@@ -170,7 +201,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Resultado razonado: línea 1 TAMANO; línea 2 ACEPTADO (primera Puerta); línea 3 ACEPTADO (Caja con 12 bytes); línea 4 DUPLICADO primera=2; línea 5 ACEPTADO (puerta es otro ID); línea 6 DUPLICADO primera=3. Hay tres admisiones y tres rechazos. El tipo y los bytes de Puerta siguen siendo malla y 3."
+          "text": "Sigue cómo cambia ese lote:\n\nLínea uno, `Puerta malla 0`: se rechaza por tamaño. Hay cero admisiones y un rechazo; Puerta todavía no está reservada.\n\nLínea dos, `Puerta malla 3`: se acepta y conserva como origen la línea dos. Hay una admisión y un rechazo.\n\nLínea tres, `Caja textura 00012`: se acepta como Caja, textura y doce, con origen en la línea tres. Hay dos admisiones y un rechazo.\n\nLínea cuatro, `Puerta sonido 7`: pasa las comprobaciones locales, pero repite el ID admitido en la línea dos. Se añade un rechazo por duplicado con ese origen. Puerta sigue guardada como malla y tres.\n\nLínea cinco, `puerta sonido 5`: se acepta porque puerta y Puerta son IDs diferentes. Su origen es la línea cinco.\n\nLínea seis, `Caja malla 4`: repite el ID admitido en la línea tres. Se registra otro duplicado con origen en esa línea, sin sustituir textura y doce por malla y cuatro.\n\nAl terminar hay tres admisiones, procedentes de las líneas dos, tres y cinco, y tres rechazos, en las líneas uno, cuatro y seis. Los números originales no se sustituyen por las posiciones cero, uno y dos del vector."
         },
         {
           "type": "math_puzzle",
@@ -234,6 +265,69 @@
             "correct": "Una línea inválida no reserva el ID. Sólo las admisiones previas producen DUPLICADO; el rechazo local tiene prioridad y la comparación distingue mayúsculas.",
             "incorrect": "Clasifica primero la línea localmente; busca ID sólo entre las admisiones completas anteriores."
           }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_lote_transferir_origen_y_estado",
+          "prompt": "Un lote comienza vacío y recibe estas seis líneas en orden. Los rótulos indican su número original. Relaciona cada consulta con su resultado final.\n\nLínea 1: Faro sonido 0\nLínea 2: Caja malla 8\nLínea 3: Faro sonido 4\nLínea 4: Caja textura 7\nLínea 5: faro sonido 4\nLínea 6: Faro material 0",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "faro",
+                  "label": "Primera línea de admisión del ID Faro"
+                },
+                {
+                  "id": "caja",
+                  "label": "Primera línea de admisión del ID Caja"
+                },
+                {
+                  "id": "tipo",
+                  "label": "Tipo conservado en la admisión de Caja"
+                },
+                {
+                  "id": "causa",
+                  "label": "Causa de rechazo de la línea 6"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "t_tipo",
+                  "label": "TIPO"
+                },
+                {
+                  "id": "t_tres",
+                  "label": "3"
+                },
+                {
+                  "id": "t_malla",
+                  "label": "malla"
+                },
+                {
+                  "id": "t_dos",
+                  "label": "2"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "faro": "t_tres",
+                  "caja": "t_dos",
+                  "tipo": "t_malla",
+                  "causa": "t_tipo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La línea 1 no reserva Faro porque su tamaño es cero; Faro se admite por primera vez en la 3. Caja se admite en la 2 y el duplicado de la 4 no sustituye su tipo malla. La línea 6 se rechaza por TIPO antes de buscar duplicados. faro, en minúscula, es otro ID.",
+            "incorrect": "Sigue las seis líneas en orden desde el lote vacío. Guarda sólo las admisiones válidas; al rechazar, conserva sus campos y orígenes. Revisa el tipo antes de consultar si un ID ya existe."
+          }
         }
       ]
     },
@@ -245,7 +339,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor trae una versión autosuficiente del lector local. Completa sólo procesar_linea después de la validación: busca el ID en todas las admisiones, emite el origen de un duplicado sin modificar el vector y, si no existe, guarda la candidata completa. Main conserva un mismo lote durante toda la entrada. La traza A/R en stdout simplifica este ejercicio: NO es todavía el cliente final con stdout, stderr y resumen separados."
+          "text": "En el editor de esta página completarás la búsqueda y la inserción dentro de `procesar_linea`. La validación local ya está escrita: consérvala junto con las funciones auxiliares y `main`.\n\nDespués del comentario TODO, recorre todas las admisiones anteriores. Si encuentras el mismo ID, escribe el rechazo con su línea de origen y termina la llamada sin cambiar esas admisiones. Si no lo encuentras, añade el registro completo con el número actual y escribe su admisión.\n\nEsta práctica muestra cada decisión en `std::cout`. El programa mantendrá el mismo vector mientras lea las líneas de una sesión. Los rótulos A y R sirven para comprobar la lógica; el cliente final del proyecto incorporará su propio informe y sus canales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconoce las diferencias de nombres y tipos de esta versión reducida:\n\nEn el proyecto, el tamaño se llama `Registro::tamano_bytes`; en este editor, se llama `Registro::bytes`. Ambos representan el tamaño numérico del registro.\n\nEn el proyecto, una admisión se declara con `linea` antes de `registro`. En el editor, `Admision` declara primero `registro` y después `primera`. Por eso la inserción del editor debe proporcionar `{candidata, numero}`, en ese orden.\n\nEl editor recibe directamente `std::vector<Admision>& admitidos`. No almacena una colección de rechazados: imprime cada rechazo cuando ocurre. Para un duplicado escribe su rótulo como texto, sin añadir una alternativa a su `Resultado` local.\n\n`numero` y `primera` son enteros `int` en esta práctica. `main` empieza a contar en uno e incluye las líneas vacías, por lo que el origen se conserva igual que en el modelo del proyecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee las líneas de salida por partes:\n\nUna admisión comienza con A, seguido del número original de línea, el ID, el tipo y el tamaño, separados por espacios. En `A 1 A malla 1`, la primera A es el rótulo de admisión y la segunda es el ID del registro.\n\nUn rechazo local comienza con R, el número de línea y su causa. `R 1 TAMANO` identifica el tamaño inválido de la primera línea.\n\nUn duplicado añade al final la primera línea donde se admitió ese ID. `R 2 DUPLICADO 1` significa que se rechazó la línea dos porque repite una admisión de la línea uno.\n\nLa función auxiliar `nombre` selecciona el literal de texto que corresponde al resultado local. Su retorno `const char*` indica dónde empieza ese texto en memoria y permite leer sus caracteres sin modificarlos a través de ese valor. Aquí se utiliza al imprimir la causa; no necesitas modificar esa función para completar la búsqueda."
         },
         {
           "type": "cpp_compiler",
@@ -287,7 +389,79 @@
         },
         {
           "type": "paragraph",
-          "text": "Los cuatro conjuntos prueban repetición inmediata, primera aparición inválida, duplicado con otra admisión intermedia, sensibilidad a mayúsculas y línea vacía. Un intento que sólo imprima los esperados sin consultar datos no demuestra el algoritmo. La referencia permanece oculta hasta intentar la actividad."
+          "text": "Cada caso del editor es una sesión completa: empieza con un vector vacío y conserva ese mismo vector durante todas sus líneas. El primer ensayo es el de dos líneas con ID A; acertarlo permite avanzar. Los otros tres son ensayos opcionales completos.\n\nNo separes las líneas de una sesión en ejecuciones nuevas. Si reiniciaras el vector antes de la segunda línea, ya no existiría la primera admisión y no podrías comprobar el duplicado. Entre un ensayo y otro sí se crea un vector nuevo.\n\nA continuación se muestran las entradas y salidas exactas de cada ensayo. Copia sólo sus líneas de datos en el campo Entrada, sin añadir números de línea ni los títulos. Cada renglón de la salida termina con un salto de línea. En la cuarta entrada, conserva también la línea vacía entre las dos últimas líneas con ID X. Utiliza las entradas para ejecutar la función que has escrito; no sustituyas su lógica por impresiones fijas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo 1, obligatorio. Entrada de la sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "A malla 1\nA sonido 4\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada para esa sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "A 1 A malla 1\nR 2 DUPLICADO 1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo 2, opcional. Entrada de la sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "B sonido 0\nB sonido 3\nB malla 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada para esa sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "R 1 TAMANO\nA 2 B sonido 3\nR 3 DUPLICADO 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo 3, opcional. Entrada de la sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "A textura 1\nb malla 2\nA sonido 3\na malla 4\nb sonido 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada para esa sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "A 1 A textura 1\nA 2 b malla 2\nR 3 DUPLICADO 1\nA 4 a malla 4\nR 5 DUPLICADO 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo 4, opcional. Entrada de la sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "X texture 2\nX textura 1\n\nX textura 8\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada para esa sesión:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "R 1 TIPO\nA 2 X textura 1\nR 3 FORMATO\nR 4 DUPLICADO 2\n"
         },
         {
           "type": "multiple_choice",
@@ -316,7 +490,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Tras intentar el laboratorio, contrasta sólo la parte nueva. La validación local ya estaba implementada y comprobada en el código de partida; ahora se recorren las admisiones. La salida de la traza depende del número de línea recibido, no de la cantidad actual de admitidos."
+          "text": "La referencia recorre el vector y compara el ID de cada admisión con el de la candidata. Al encontrarlo, imprime el rechazo y su primera línea de origen; el `return;` evita tanto continuar la búsqueda como añadir otra admisión.\n\nSi termina el recorrido sin encontrarlo, añade `{candidata, numero}`. En el editor, ése es el orden de los miembros de `Admision`: primero el registro y después su primera línea. La impresión utiliza el número recibido, no la cantidad de elementos del vector."
         },
         {
           "type": "code",
@@ -325,7 +499,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Repara una solución propia si necesita comparar sólo con el último, si cambia los campos anteriores, si acepta Caja y caja como el mismo ID o si reserva nombres de registros inválidos. Las salidas de esta traza se comprobaron con GCC 14.2 en Linux; eso no acredita el laboratorio nativo Windows ni la app completa."
+          "text": "Las cuatro sesiones del laboratorio se comprobaron con MSVC en Windows: sus catorce líneas produjeron las salidas esperadas, con terminación cero y canal de error vacío. Esa comprobación corresponde al programa del editor; la construcción de la biblioteca de lote en el proyecto externo se realizará en la sección siguiente.\n\nAl comparar tu implementación, revisa también qué datos modifica. La búsqueda debe consultar cada admisión sin cambiarla, y sólo debe añadir otra al no encontrar una coincidencia. Comparar únicamente con el último registro puede dejar pasar un duplicado intermedio; cambiar mayúsculas puede confundir Caja con caja; guardar registros inválidos puede reservar un ID que todavía no fue admitido.\n\nUna traza que parece correcta no muestra por sí sola todos los campos que quedaron en memoria. Por eso la función debe respetar las escrituras previstas y el comprobador del proyecto contrastará también los datos conservados."
         }
       ]
     },
@@ -337,7 +511,43 @@
         },
         {
           "type": "paragraph",
-          "text": "En el proyecto externo AssetCheck, conservar registro.hpp y src/registro.cpp de U4L4. Crear include/assetcheck/lote.hpp y src/lote.cpp con el nuevo estado y procesar_linea. Sólo el lote conoce admisiones anteriores. El componente local sigue aceptando o rechazando una línea sin consultar otras."
+          "text": "Amplía el mismo proyecto AssetCheck que construiste en la lección anterior. Conserva `src/registro.cpp` y `pruebas/casos.cpp`: volveremos a compilar y ejecutar ese comprobador para detectar cambios en el comportamiento del lector.\n\nTrabaja dentro de `E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck`. Si elegiste otra ubicación para tu proyecto, utiliza su carpeta AssetCheck. Las carpetas include/assetcheck, src y pruebas ya existen.\n\nRealiza los cambios en este orden: ampliar Resultado, guardar la cabecera del lote, guardar su implementación y ampliar CMake. En la página siguiente crearás el comprobador antes de configurar y construir los objetivos."
+        },
+        {
+          "type": "paragraph",
+          "text": "1. Abre `include/assetcheck/registro.hpp` en el Bloc de notas. En la declaración de `Resultado`, añade una coma después de `tamano` y la alternativa `duplicado` antes de cerrar las llaves. La línea completa queda como en el bloque siguiente. Conserva las otras declaraciones y utiliza Archivo → Guardar.\n\nLa ampliación proporciona una causa para los rechazos del lote. El lector `leer_registro` conserva su firma y sus cuatro causas locales: no consulta otras líneas ni devuelve duplicado. Esa decisión corresponde a `procesar_linea`."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "enum class Resultado { aceptado, formato, id, tipo, tamano, duplicado };"
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l5_resultado_duplicado",
+          "src": "images/programming2/p2_u4l5_resultado_duplicado.jpg",
+          "alt": "Cabecera registro.hpp abierta con duplicado añadido al final de Resultado.",
+          "caption": "La captura real muestra la única ampliación de la cabecera de registro. La función del lector conserva su declaración."
+        },
+        {
+          "type": "paragraph",
+          "text": "2. En el Bloc de notas, abre Archivo → Nueva pestaña. Escribe el contenido completo de la cabecera siguiente, incluida su primera línea `#pragma once`. Esa protección evita definir de nuevo sus tipos si el mismo archivo se incluye por varios caminos dentro de una unidad de traducción.\n\nAbre Archivo → Guardar como. En Nombre de archivo escribe la ruta completa de tu carpeta AssetCheck seguida de `\\include\\assetcheck\\lote.hpp`. Selecciona Todos los archivos en Tipo y UTF-8 en Codificación. Pulsa Guardar y comprueba que la pestaña se llama lote.hpp. Así se conserva la extensión .hpp y no se añade .txt."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#pragma once\n// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l5_guardar_lote_hpp",
+          "src": "images/programming2/p2_u4l5_guardar_lote_hpp.jpg",
+          "alt": "Guardar como muestra la ruta de lote.hpp, el tipo Todos los archivos y la codificación UTF-8.",
+          "caption": "Selecciona Todos los archivos antes de guardar una cabecera. Sustituye la ruta de la captura por la ubicación que elegiste para tu proyecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "3. Crea otra pestaña y escribe el bloque de `src/lote.cpp`. Guarda el archivo con ese nombre dentro de src, mediante Guardar como, Todos los archivos y UTF-8, igual que hiciste con la cabecera.\n\nLa cabecera declara los datos y la función; este archivo contiene las instrucciones que la implementan. En cada llamada se valida una candidata, se busca un ID repetido sólo si es válida y se añade una decisión a la colección correspondiente. No copies aquí el código de registro.cpp: se reutiliza mediante la llamada a `leer_registro`."
         },
         {
           "type": "code",
@@ -345,8 +555,15 @@
           "code": "// src/lote.cpp\n#include \"assetcheck/lote.hpp\"\nnamespace assetcheck {\nvoid procesar_linea(const std::string& texto,\n                    std::size_t numero, Lote& lote) {\n    Registro candidata;\n    const Resultado local = leer_registro(texto, candidata);\n    if (local != Resultado::aceptado) {\n        lote.rechazados.push_back({numero, local, 0});\n        return;\n    }\n    for (const auto& anterior : lote.admitidos) {\n        if (anterior.registro.id == candidata.id) {\n            lote.rechazados.push_back(\n                {numero, Resultado::duplicado, anterior.linea});\n            return;\n        }\n    }\n    lote.admitidos.push_back({numero, candidata});\n}\n}"
         },
         {
+          "type": "image",
+          "imageId": "p2_u4l5_lote_cpp",
+          "src": "images/programming2/p2_u4l5_lote_cpp.jpg",
+          "alt": "Archivo lote.cpp guardado con validación local, búsqueda del duplicado e inserción de la candidata.",
+          "caption": "La implementación conserva el primer registro admitido. Los mensajes del comprobador se escribirán desde el archivo de pruebas, no desde esta biblioteca."
+        },
+        {
           "type": "paragraph",
-          "text": "En registro.hpp, añadir duplicado al final de enum class Resultado. No introducir el valor como resultado local de leer_registro. El código conserva el comportamiento y la cabecera pública de la primera biblioteca, salvo esa ampliación del vocabulario de resultados."
+          "text": "4. Abre el CMakeLists.txt que está directamente dentro de AssetCheck. Conserva todo su contenido, incluidos `enable_testing()` y la prueba de `comprobar_registro`. Añade al final el bloque siguiente. Después añade también la línea de propiedades mostrada justo debajo y guarda el archivo.\n\n`assetcheck_lote` compila src/lote.cpp como biblioteca estática. Su directorio público include permite encontrar la cabecera. El enlace `PUBLIC` con `assetcheck_registro` expresa que la implementación llama al lector y que su cabecera pública necesita los tipos Registro y Resultado. CMake comunica los requisitos de uso a los objetivos conectados (Scott, 2025)."
         },
         {
           "type": "code",
@@ -354,8 +571,20 @@
           "code": "# Añadir después de definir assetcheck_registro.\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_20)\nset_target_properties(assetcheck_lote PROPERTIES CXX_EXTENSIONS OFF)\n\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)"
         },
         {
+          "type": "code",
+          "language": "cmake",
+          "code": "set_target_properties(comprobar_lote PROPERTIES CXX_EXTENSIONS OFF)"
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l5_objetivos_cmake",
+          "src": "images/programming2/p2_u4l5_objetivos_cmake.jpg",
+          "alt": "CMakeLists.txt conserva el lector y añade la biblioteca del lote, su ejecutable y la segunda prueba.",
+          "caption": "El archivo guardado mantiene los dos comprobadores. La última línea aplica CXX_EXTENSIONS OFF también al ejecutable nuevo."
+        },
+        {
           "type": "paragraph",
-          "text": "Desde la raíz de AssetCheck, abre la consola de desarrollo x64 de Visual Studio. Ejecuta estos comandos en orden:\n\n1. Configurar y generar: cmake -S . -B build -G Ninja. La opción -S . selecciona la raíz de fuentes, -B build separa los archivos generados y -G Ninja escoge el generador.\n\n2. Construir el objetivo: cmake --build build --target comprobar_lote. Así se construye la batería del lote.\n\n3. Ejecutar las pruebas: ctest --test-dir build --output-on-failure. Revisa el resultado de CTest y el código de retorno.\n\nAntes del primer comando, comprueba que build pertenezca a esta raíz. Si pertenece a otra, elige un directorio de construcción exclusivo y sustituye build por ese nombre en los tres comandos. No reutilices ni borres cachés de otros proyectos (Scott, 2025, capítulos 2, 4 y 5)."
+          "text": "El ejecutable `comprobar_lote` enlaza con `assetcheck_lote` y recibe también los requisitos que esa biblioteca publica. No necesita compilar otra copia de src/registro.cpp. `add_test` registra una prueba que ejecutará ese comprobador; no lo construye ni sustituye al comprobador del registro (Scott, 2025).\n\nEl requisito `cxx_std_20` conserva el mínimo de las bibliotecas. La configuración que utilizaremos pide C++23 y exige mantener esa selección. `CXX_EXTENSIONS OFF` solicita el modo sin extensiones propias cuando el compilador distingue ese modo; no significa que cualquier extensión deba producir un error.\n\nGuarda ahora la configuración. Antes de ejecutarla crea pruebas/lote_casos.cpp en la página siguiente: CMake necesita encontrar ese archivo que acabamos de nombrar. Después construiremos ambos objetivos y ejecutaremos las dos pruebas."
         },
         {
           "type": "multiple_choice",
@@ -384,7 +613,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El comprobador de lote debe comparar datos, causas y primeras líneas, no sólo conteos. Incluye: vacío; IDs únicos; repetición inmediata e intermedia; primera línea inválida seguida de admisión válida; Caja frente a caja; repetición con TIPO o TAMANO inválidos; conservación del registro original después del duplicado; dos lotes nuevos sucesivos."
+          "text": "El comprobador del lote debe contrastar los datos que quedaron guardados, además de las cantidades. Dos lotes pueden contener una admisión y un rechazo y, aun así, diferir en el tipo conservado, el tamaño o el origen del duplicado.\n\nEl fragmento siguiente recupera cuatro llamadas sobre un mismo lote: Pieza con tamaño cero, Pieza válida, Caja válida y Pieza repetida. Al terminar deben conservarse Pieza malla 3 de la línea dos y Caja textura 12 de la línea tres. Los rechazos corresponden a las líneas uno y cuatro; el segundo señala la admisión de la línea dos.\n\nLas comparaciones del fragmento sólo muestran una parte del estado. Faltan, por ejemplo, el ID y el tipo de cada admisión y los datos del primer rechazo. A continuación construiremos el comprobador completo, con una expectativa explícita para cada colección."
         },
         {
           "type": "code",
@@ -393,11 +622,116 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia parcial de esta etapa se compiló con GCC 14.2 en Linux y pasó 31 comprobaciones independientes, integradas mediante CMake y CTest. El dato describe sólo el código educativo de referencia, no una reconstrucción de AssetCheck en Windows. Sigue pendiente verificarlo con MSVC, registrar la ejecución de CTest y obtener las capturas manuales reales."
+          "text": "Crea otra pestaña en el Bloc de notas. Los tres bloques C++ que aparecen en esta sección son partes consecutivas de un solo archivo: escríbelos en ese orden, sin copiar los títulos ni las explicaciones entre ellos. Guarda el conjunto en `pruebas/lote_casos.cpp`, con Todos los archivos y UTF-8.\n\nEl archivo reúne funciones para comparar estados, una tabla con entradas y expectativas, y el recorrido que ejecuta todos los ensayos. Los auxiliares quedan en el espacio de nombres sin nombre, igual que los del lector anterior. Las declaraciones using permiten escribir Lote, Registro y Resultado sin repetir assetcheck::; no crean otros tipos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <iostream>\n#include <string>\n#include <vector>\n\nnamespace {\nusing assetcheck::Lote;\nusing assetcheck::Registro;\nusing assetcheck::Resultado;\n\nbool mismo_registro(const Registro& obtenido, const Registro& esperado) {\n    return obtenido.id == esperado.id\n        && obtenido.tipo == esperado.tipo\n        && obtenido.tamano_bytes == esperado.tamano_bytes;\n}\n\nbool mismo_lote(const Lote& obtenido, const Lote& esperado) {\n    // La igualdad de tamanos detecta tanto elementos faltantes como sobrantes.\n    if (obtenido.admitidos.size() != esperado.admitidos.size()\n        || obtenido.rechazados.size() != esperado.rechazados.size()) {\n        return false;\n    }\n    // Se comparan posiciones, no conjuntos: tambien importa el orden.\n    for (std::size_t i = 0; i < esperado.admitidos.size(); ++i) {\n        if (obtenido.admitidos[i].linea != esperado.admitidos[i].linea\n            || !mismo_registro(obtenido.admitidos[i].registro,\n                               esperado.admitidos[i].registro)) {\n            return false;\n        }\n    }\n    for (std::size_t i = 0; i < esperado.rechazados.size(); ++i) {\n        if (obtenido.rechazados[i].linea != esperado.rechazados[i].linea\n            || obtenido.rechazados[i].causa != esperado.rechazados[i].causa\n            || obtenido.rechazados[i].primera != esperado.rechazados[i].primera) {\n            return false;\n        }\n    }\n    return true;\n}\n\nconst char* nombre(Resultado resultado) {\n    switch (resultado) {\n        case Resultado::aceptado: return \"ACEPTADO\";\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        case Resultado::duplicado: return \"DUPLICADO\";\n    }\n    return \"RESULTADO_DESCONOCIDO\";\n}\n\nvoid mostrar_lote(const Lote& lote) {\n    std::cerr << \"Admitidos=\" << lote.admitidos.size()\n              << \" Rechazados=\" << lote.rechazados.size() << '\\n';\n    for (const auto& admision : lote.admitidos) {\n        std::cerr << \"A \" << admision.linea << ' ' << admision.registro.id\n                  << ' ' << admision.registro.tipo << ' '\n                  << admision.registro.tamano_bytes << '\\n';\n    }\n    for (const auto& rechazo : lote.rechazados) {\n        std::cerr << \"R \" << rechazo.linea << ' ' << nombre(rechazo.causa)\n                  << ' ' << rechazo.primera << '\\n';\n    }\n}\n\nstruct Caso {\n    const char* nombre;\n    std::vector<std::string> lineas;\n    Lote esperado;\n};\n} // namespace"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primera parte: comparar y mostrar los datos.\n\nmismo_registro recibe el registro obtenido y el esperado por referencia constante. Devuelve true sólo si coinciden id, tipo y tamano_bytes. Caja malla 3 no coincide con Caja sonido 3, aunque ambos conserven el mismo ID y tamaño.\n\nmismo_lote compara primero los tamaños de ambas colecciones. Si falta o sobra una admisión o un rechazo, devuelve false. Sólo después consulta posiciones: con tamaños iguales puede recorrer las mismas posiciones de obtenido y esperado sin salir de sus vectores.\n\nEl primer recorrido compara, por posición, la línea y los tres campos de cada admisión. El segundo compara la línea, la causa y la primera admisión de cada rechazo. También se exige el mismo orden; no se ordenan los datos para hacerlos coincidir. Sólo se devuelve true después de completar ambos recorridos sin diferencias.\n\nnombre proporciona el rótulo de cada alternativa de Resultado. mostrar_lote escribe por std::cerr los conteos y todos los elementos, para poder localizar una diferencia cuando falle un ensayo. Son diagnósticos del comprobador, no el informe final del manifiesto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Segunda parte: declarar las entradas y los estados esperados.\n\nCada Caso contiene un nombre para identificarlo, sus líneas y un Lote esperado. Las expectativas se escriben con los resultados acordados; no se calculan con leer_registro ni con procesar_linea. Si la misma función decidiera también su respuesta esperada, un error compartido podría hacer coincidir ambas. Conservar entradas y expectativas permite repetir las comprobaciones (Kernighan & Pike, 1999).\n\nEn la fila «tamano invalido antes de admision», las entradas son Voz sonido 0 y Voz sonido 6. El esperado declara una admisión de la línea dos, con ID Voz, tipo sonido y tamaño seis; también declara un rechazo de la línea uno, con causa TAMANO y origen cero.\n\nLas primeras llaves de Lote reúnen la lista de admitidos; las siguientes, la de rechazados. Cada elemento proporciona sus miembros en el orden de declaración. Un par de llaves vacío deja vacía esa colección. Ése es el mismo procedimiento de inicialización que hemos utilizado para las admisiones y los rechazos de la biblioteca."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    // Cada fila declara sus entradas y su estado final esperado sin consultar\n    // procesar_linea ni leer_registro para calcular la expectativa.\n    const std::vector<Caso> casos = {\n        // 1. Sin llamadas, ambas colecciones deben quedar vacias.\n        {\"lote vacio\", {}, Lote{{}, {}}},\n        // 2-4. Se conservan los tres campos y la linea de una unica admision.\n        {\"una malla\", {\"A malla 1\"},\n            Lote{{{1, {\"A\", \"malla\", 1}}}, {}}},\n        {\"una textura y ceros iniciales\", {\"Caja textura 00012\"},\n            Lote{{{1, {\"Caja\", \"textura\", 12}}}, {}}},\n        {\"un sonido de tamano maximo\", {\"Voz sonido 30000\"},\n            Lote{{{1, {\"Voz\", \"sonido\", 30000}}}, {}}},\n        // 5-6. IDs distintos deben admitirse en los dos sentidos de orden.\n        {\"distintos A despues B\", {\"A malla 3\", \"B sonido 7\"},\n            Lote{{{1, {\"A\", \"malla\", 3}}, {2, {\"B\", \"sonido\", 7}}}, {}}},\n        {\"distintos B despues A\", {\"B sonido 7\", \"A malla 3\"},\n            Lote{{{1, {\"B\", \"sonido\", 7}}, {2, {\"A\", \"malla\", 3}}}, {}}},\n        // 7. El orden de admision no es el orden alfabetico.\n        {\"tres admisiones en orden de llegada\",\n            {\"Z sonido 9\", \"A malla 2\", \"M textura 6\"},\n            Lote{{{1, {\"Z\", \"sonido\", 9}}, {2, {\"A\", \"malla\", 2}},\n                  {3, {\"M\", \"textura\", 6}}}, {}}},\n        // 8-11. El ID decide el duplicado incluso al variar los otros campos.\n        {\"repeticion inmediata identica\", {\"Caja malla 3\", \"Caja malla 3\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::duplicado, 1}}}},\n        {\"duplicado con otro tipo\", {\"Caja malla 3\", \"Caja sonido 3\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::duplicado, 1}}}},\n        {\"duplicado con otro tamano\", {\"Caja malla 3\", \"Caja malla 7\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::duplicado, 1}}}},\n        {\"duplicado con otro tipo y tamano\", {\"Caja malla 3\", \"Caja sonido 7\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::duplicado, 1}}}},\n        // 12-13. Buscar solo el ultimo elemento no basta.\n        {\"duplicado de la primera tras otra admision\",\n            {\"Caja malla 3\", \"Sol textura 4\", \"Caja sonido 7\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}, {2, {\"Sol\", \"textura\", 4}}},\n                 {{3, Resultado::duplicado, 1}}}},\n        {\"duplicado de una admision intermedia\",\n            {\"Norte textura 2\", \"Este malla 3\", \"Sur sonido 4\", \"Este sonido 8\"},\n            Lote{{{1, {\"Norte\", \"textura\", 2}}, {2, {\"Este\", \"malla\", 3}},\n                  {3, {\"Sur\", \"sonido\", 4}}}, {{4, Resultado::duplicado, 2}}}},\n        // 14. Los rechazos repetidos conservan el primer origen y su orden.\n        {\"dos duplicados del mismo origen\",\n            {\"Caja textura 12\", \"Caja malla 4\", \"Caja sonido 9\"},\n            Lote{{{1, {\"Caja\", \"textura\", 12}}},\n                 {{2, Resultado::duplicado, 1}, {3, Resultado::duplicado, 1}}}},\n        // 15-17. Rechazar localmente no reserva el ID para una linea posterior.\n        {\"tamano invalido antes de admision\", {\"Voz sonido 0\", \"Voz sonido 6\"},\n            Lote{{{2, {\"Voz\", \"sonido\", 6}}}, {{1, Resultado::tamano, 0}}}},\n        {\"tipo invalido antes de admision\", {\"X texture 2\", \"X textura 1\"},\n            Lote{{{2, {\"X\", \"textura\", 1}}}, {{1, Resultado::tipo, 0}}}},\n        {\"formato invalido antes de admision\", {\"Caja malla 3 extra\", \"Caja malla 3\"},\n            Lote{{{2, {\"Caja\", \"malla\", 3}}}, {{1, Resultado::formato, 0}}}},\n        // 18-19. La comparacion distingue mayusculas; cada ID conserva su origen.\n        {\"Caja y caja son distintos\", {\"Caja malla 3\", \"caja sonido 5\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}, {2, {\"caja\", \"sonido\", 5}}}, {}}},\n        {\"duplicados de ambas variantes\",\n            {\"Caja malla 3\", \"caja sonido 5\", \"Caja textura 8\", \"caja malla 9\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}, {2, {\"caja\", \"sonido\", 5}}},\n                 {{3, Resultado::duplicado, 1}, {4, Resultado::duplicado, 2}}}},\n        // 20-23. El rechazo local tiene prioridad sobre una coincidencia de ID.\n        {\"TIPO antes de DUPLICADO\", {\"Caja malla 3\", \"Caja material 7\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::tipo, 0}}}},\n        {\"TAMANO antes de DUPLICADO\", {\"Caja malla 3\", \"Caja sonido 0\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::tamano, 0}}}},\n        {\"FORMATO antes de DUPLICADO\", {\"Caja malla 3\", \"Caja sonido 7 extra\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::formato, 0}}}},\n        {\"TIPO antes de TAMANO y DUPLICADO\", {\"Caja malla 3\", \"Caja material 0\"},\n            Lote{{{1, {\"Caja\", \"malla\", 3}}}, {{2, Resultado::tipo, 0}}}},\n        // 24. Un rechazo intermedio no borra ni sustituye la admision anterior.\n        {\"origen conservado tras rechazo local\",\n            {\"Voz sonido 0\", \"Voz sonido 6\", \"Voz material 0\", \"Voz malla 9\"},\n            Lote{{{2, {\"Voz\", \"sonido\", 6}}},\n                 {{1, Resultado::tamano, 0}, {3, Resultado::tipo, 0},\n                  {4, Resultado::duplicado, 2}}}},\n        // 25. Ejemplo de la pagina 9, con todos los campos comparados.\n        {\"Pieza invalida valida intermedia y duplicada\",\n            {\"Pieza malla 0\", \"Pieza malla 3\", \"Caja textura 00012\", \"Pieza sonido 9\"},\n            Lote{{{2, {\"Pieza\", \"malla\", 3}}, {3, {\"Caja\", \"textura\", 12}}},\n                 {{1, Resultado::tamano, 0}, {4, Resultado::duplicado, 2}}}},\n        // 26. Traza completa de la pagina 5: no se renumeran las admisiones.\n        {\"traza Puerta y Caja\",\n            {\"Puerta malla 0\", \"Puerta malla 3\", \"Caja textura 00012\",\n             \"Puerta sonido 7\", \"puerta sonido 5\", \"Caja malla 4\"},\n            Lote{{{2, {\"Puerta\", \"malla\", 3}}, {3, {\"Caja\", \"textura\", 12}},\n                  {5, {\"puerta\", \"sonido\", 5}}},\n                 {{1, Resultado::tamano, 0}, {4, Resultado::duplicado, 2},\n                  {6, Resultado::duplicado, 3}}}},\n        // 27. Aqui el llamador proporciona todos los numeros, incluso el blanco.\n        {\"linea vacia entre admision y duplicado\",\n            {\"X textura 1\", \"\", \"X textura 8\"},\n            Lote{{{1, {\"X\", \"textura\", 1}}},\n                 {{2, Resultado::formato, 0}, {3, Resultado::duplicado, 1}}}},\n        // 28. Se conserva la primera causa local, no la ultima encontrada.\n        {\"ID antes de TIPO y TAMANO\", {\"9X material 0\", \"X malla 2\"},\n            Lote{{{2, {\"X\", \"malla\", 2}}}, {{1, Resultado::id, 0}}}},\n        // 29. Un prefijo comun no convierte dos identificadores en iguales.\n        {\"A y AA son distintos\", {\"A malla 2\", \"AA malla 2\"},\n            Lote{{{1, {\"A\", \"malla\", 2}}, {2, {\"AA\", \"malla\", 2}}}, {}}},\n        // 30-31. Dos lotes nuevos sucesivos pueden admitir el mismo ID.\n        {\"primer lote con Reinicio\", {\"Reinicio malla 0\", \"Reinicio malla 3\"},\n            Lote{{{2, {\"Reinicio\", \"malla\", 3}}}, {{1, Resultado::tamano, 0}}}},\n        {\"segundo lote nuevo con Reinicio\", {\"Reinicio sonido 7\"},\n            Lote{{{1, {\"Reinicio\", \"sonido\", 7}}}, {}}}\n    };"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los comentarios de la tabla permiten localizar los objetivos de sus treinta y un ensayos:\n\nFila uno: lote vacío. No se realizan llamadas y ambas colecciones deben seguir vacías.\n\nFilas dos a siete: registros completos, tres tipos, ceros iniciales, tamaño máximo y orden de admisión. Un orden alfabético impuesto por error debe detectarse.\n\nFilas ocho a catorce: duplicados inmediatos, con otro tipo o tamaño, tras una admisión distinta y en una posición intermedia. Se conservan los datos y el origen de la primera admisión, también al rechazar varias repeticiones.\n\nFilas quince a diecinueve: una línea inválida no reserva su ID; Caja y caja son distintos y cada repetición señala su origen exacto.\n\nFilas veinte a veinticuatro: las causas locales se resuelven antes del duplicado. Caja material 0 se rechaza por TIPO aunque Caja ya esté admitida y el tamaño también sea inválido. Un rechazo intermedio no sustituye la admisión anterior.\n\nFilas veinticinco a veintinueve: las secuencias completas Pieza y Puerta, una línea vacía que cuenta en la numeración, la primera causa local y los IDs distintos A y AA. Se compara cada campo, no sólo los conteos.\n\nFilas treinta y treinta y uno: dos lotes nuevos sucesivos. El primero termina con una admisión Reinicio en la línea dos y un rechazo. El segundo admite Reinicio sonido 7 en su propia línea uno y no hereda rechazos ni admisiones del anterior. Entregar el estado mediante el argumento evita una dependencia oculta entre revisiones independientes (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tercera parte: ejecutar y contar los ensayos.\n\nmain inicia comprobaciones y fallos con cero. El recorrido exterior crea un Lote obtenido nuevo para cada fila. El recorrido interior conserva ese lote mientras proporciona todas las líneas de la fila, en su orden. Cada texto recibe el número i + 1: el índice empieza en cero y la numeración empieza en uno. Una cadena vacía también ocupa una posición y provoca una llamada.\n\nAl terminar la fila, se incrementa comprobaciones una vez y se compara el estado final completo. Si no coincide, aumenta fallos y se escriben el nombre y los estados Esperado y Obtenido. No hay un return que abandone el recorrido ante ese fallo: se ejecutan también los ensayos restantes.\n\nLas filas son independientes entre sí, pero las llamadas dentro de cada fila comparten el estado necesario para comprobar duplicados. Crear otro lote entre esas llamadas eliminaría la admisión que se necesita consultar. El número del resumen cuenta estados finales contrastados; no cuenta cada campo ni cada llamada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "    int comprobaciones = 0;\n    int fallos = 0;\n    for (const Caso& caso : casos) {\n        Lote obtenido; // Estado nuevo para cada ensayo completo.\n        for (std::size_t i = 0; i < caso.lineas.size(); ++i) {\n            assetcheck::procesar_linea(caso.lineas[i], i + 1, obtenido);\n        }\n        ++comprobaciones;\n        if (!mismo_lote(obtenido, caso.esperado)) {\n            ++fallos;\n            std::cerr << \"Comprobacion \" << comprobaciones << \": \" << caso.nombre\n                      << \"\\nEsperado:\\n\";\n            mostrar_lote(caso.esperado);\n            std::cerr << \"Obtenido:\\n\";\n            mostrar_lote(obtenido);\n        }\n    }\n    std::cout << \"Comprobaciones=\" << comprobaciones << \" Fallos=\" << fallos << '\\n';\n    return fallos == 0 ? 0 : 1;\n}"
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l5_comprobador_lote",
+          "src": "images/programming2/p2_u4l5_comprobador_lote.jpg",
+          "alt": "Archivo lote_casos.cpp guardado con las dos últimas filas y el recorrido que compara cada estado final.",
+          "caption": "Cada vuelta exterior crea un lote nuevo. Dentro de la vuelta se procesan juntas todas las líneas de ese ensayo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los archivos guardados, abre la misma consola de desarrollo x64 de Visual Studio comprobada en U4L3. Utiliza su intérprete CMD. En el bloque siguiente, cd cambia de carpeta y /d permite cambiar también de unidad. Las comillas conservan la ruta como un solo argumento. Sustituye sólo esa ruta si guardaste tu proyecto en otra ubicación.\n\nComprueba que dir muestre las carpetas AssetCheck y 01_prueba_cmake. Ese comando lista la carpeta actual; no modifica sus archivos. Ejecutaremos CMake desde esa raíz del proyecto del curso, igual que en la etapa anterior."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cd /d \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\"\ndir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta cada comando por separado, en el orden mostrado. Después de cada operación, ejecuta inmediatamente su línea echo: %ERRORLEVEL% se sustituye por el código de la operación anterior. El valor esperado es cero. Si no lo es, detente, corrige el primer error y repite esa operación antes de continuar; un ejecutable anterior no acredita el código que acabas de guardar.\n\nLa primera orden configura y genera los archivos de construcción:\n\n-S AssetCheck selecciona la carpeta de fuentes que contiene CMakeLists.txt.\n\n-B AssetCheck/build selecciona la carpeta de caché y archivos generados.\n\n-G Ninja selecciona el generador.\n\n-DCMAKE_BUILD_TYPE=Debug selecciona la configuración de depuración de este generador.\n\n-DCMAKE_CXX_STANDARD=23 solicita C++23 y -DCMAKE_CXX_STANDARD_REQUIRED=ON exige mantener esa selección en lugar de sustituirla por un estándar anterior (Scott, 2025).\n\nLa caché debe pertenecer a estas fuentes, generador y compilador. Si build corresponde a otro árbol, elige otra carpeta exclusiva y cambia su ruta en todos los comandos siguientes, sin borrar la caché anterior. Ante un diagnóstico de ruta demasiado larga, aplica también el procedimiento de la lección anterior: selecciona una ruta de construcción más corta y úsala en toda la receta."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cmake -S AssetCheck -B AssetCheck/build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=23 -DCMAKE_CXX_STANDARD_REQUIRED=ON\necho CodigoConfiguracion=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "La orden siguiente construye los dos comprobadores. --build selecciona el árbol que acabas de configurar; --target proporciona los nombres comprobar_registro y comprobar_lote. CMake construye también las bibliotecas que necesitan, a través de las dependencias declaradas.\n\nReconstruir ambos evita conservar un comprobador de registro anterior a la ampliación de Resultado. Si CMake informa de que no encuentra lote_casos.cpp, revisa su carpeta y extensión: debe estar en AssetCheck/pruebas, con nombre lote_casos.cpp, no lote_casos.cpp.txt. Corrige el nombre mediante Guardar como y vuelve a configurar."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cmake --build AssetCheck/build --target comprobar_registro comprobar_lote\necho CodigoConstruccion=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos rutas siguientes ejecutan los programas recién construidos. No requieren entrada de consola: sus datos están declarados en el código. La extensión .exe identifica el ejecutable de Windows.\n\nEl comprobador de registro debe conservar su resumen de veintiocho casos. El del lote debe indicar treinta y una comparaciones y cero fallos. Cada resumen termina con un salto de línea. Ambos dejan vacío el canal de error y terminan con código cero.\n\nSi el lote difiere del esperado, el comprobador muestra en el canal de error la fila, su nombre y ambos estados, sigue con las filas restantes y termina con código uno. Utiliza esa diferencia para localizar el primer campo o elemento que no coincide; después revisa la llamada que lo añadió o modificó."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "AssetCheck\\build\\comprobar_registro.exe\necho CodigoRegistro=%ERRORLEVEL%\nAssetCheck\\build\\comprobar_lote.exe\necho CodigoLote=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Resumen esperado de comprobar_registro.exe:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Casos=28 Fallos=0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Resumen esperado de comprobar_lote.exe:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Comprobaciones=31 Fallos=0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Por último, ejecuta las pruebas registradas con CTest. --test-dir selecciona el árbol generado; --output-on-failure muestra la salida de las pruebas que fallen (Scott, 2025).\n\nCTest debe ejecutar dos pruebas, comprobar_registro y comprobar_lote, y terminar con código cero. Cuenta dos porque registramos dos ejecutables con add_test. No cuenta cincuenta y nueve pruebas por sumar las comprobaciones internas de esos programas. Con esta opción, normalmente no se muestran los resúmenes de las pruebas correctas; por eso también los ejecutamos directamente."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "ctest --test-dir AssetCheck/build --output-on-failure\necho CodigoCTest=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia de esta sección se configuró y construyó en Windows con MSVC x64, Ninja y Debug, solicitando C++23 requerido. CMake seleccionó el modo -std:c++latest de ese compilador; el nombre del modo no acredita por sí solo la implementación completa de cada característica de C++23.\n\nSe ejecutaron los dos comprobadores: el registro conservó veintiocho casos sin fallos y el lote contrastó treinta y un estados finales sin fallos. Ambos terminaron con código cero y canal de error vacío. CTest ejecutó sus dos pruebas correctamente. Se utilizó una carpeta de construcción aislada y herramientas ya instaladas: esta comprobación no equivale a preparar un Windows vacío.\n\nLas capturas muestran la creación y edición reales de los archivos de esta etapa. La referencia del autor permite contrastar resultados, pero no acredita que hayas construido tu variante ni completado el proyecto del curso."
         },
         {
           "type": "note",
-          "text": "Queda pendiente una etapa diferente: leer el archivo físico completo, distinguir LF y CRLF, detectar la línea 101, clasificar fallos globales y publicar stdout/stderr únicamente tras una revisión completa. U4L5 todavía no garantiza esos comportamientos ni constituye el cliente final."
+          "text": "Esta etapa revisa textos ya entregados a procesar_linea. Todavía falta abrir el archivo físico, separar correctamente sus líneas, distinguir sus terminadores y detectar una línea ciento uno. También falta decidir cómo informar de un fallo global sin publicar un resumen parcial. Esas tareas necesitan su propia implementación y comprobación antes de atribuirlas al programa."
         },
         {
           "type": "multiple_choice",
@@ -418,7 +752,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la siguiente sección incorporaremos una lectura física acotada del manifiesto y el informe transaccional completo. Antes de atribuirle éxito, habrá que reconstruir y ejecutar todas sus etapas en el entorno Windows real."
+          "text": "En la siguiente lección incorporaremos la lectura del manifiesto completo. El lector obtendrá una línea y su número original antes de entregarlos al lote; al terminar decidirá si puede publicar el informe. Contrastaremos por separado el final normal del archivo, un fallo de lectura y la superación del límite de líneas, conservando el trabajo correcto que ya construimos."
         }
       ]
     }
@@ -446,20 +780,100 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "c535dc0a81e01bda3aaaeae9c5527c73720fd4d86089eed2c5ce17f190ff5c33",
-        "spans": []
+        "sourceSha256": "25cd069033da529df1ee5b09c12c9a8937d563ac8bdb28ccf8500bada2dc0deb",
+        "spans": [
+          {
+            "start": 25,
+            "end": 38,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 101,
+            "text": "Caja malla 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 304,
+            "text": "Caja sonido 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 475,
+            "text": "DUPLICADO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "1445b210cc354339f58f96cb866a3c1ad21c5f38c9d377eae7bc0ba4e250aa90",
-        "spans": []
+        "sourceSha256": "9f9d5205c38384bb9b5c69c062847e78c2497dc1bdb28759e1e4a036caf794a3",
+        "spans": [
+          {
+            "start": 255,
+            "end": 267,
+            "text": "Voz sonido 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 385,
+            "text": "Voz sonido 6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "e443ce65326ccdcfb0b95a0db192aba0bae6a0c613b637b5747b0bba3d761c35",
-        "spans": []
+        "sourceSha256": "a5301fa282c808b70f29c77de260dedcb0e13d97457a396b93515c22ed2f6413",
+        "spans": [
+          {
+            "start": 36,
+            "end": 43,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 49,
+            "text": "ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 57,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 67,
+            "text": "TAMANO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 81,
+            "text": "DUPLICADO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -518,14 +932,114 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "a87caffaf25045aa1a5a12d3a02c608fa652b447a79a05c4fc971d575f45dcf8",
-        "spans": []
+        "sourceSha256": "d3e7fa2d27919b54d84ebd921c47953dc71412c0e6a5c6c6cbf88482ebe3253d",
+        "spans": [
+          {
+            "start": 70,
+            "end": 78,
+            "text": "Admision",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 98,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 159,
+            "text": "Rechazo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 315,
+            "text": "Lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 350,
+            "text": "admitidos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 355,
+            "end": 365,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "66ff3d692d5b21ceeb6e3cccd4d8bc93e3c95be47969b6fc2ded5b99cdf947f8",
-        "spans": []
+        "sourceSha256": "551f205fdb05697458a4b86a5de720759e858f654a88d2c5d502aefeec5fa289",
+        "spans": [
+          {
+            "start": 17,
+            "end": 26,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 65,
+            "text": "duplicado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 168,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 221,
+            "end": 228,
+            "text": "Rechazo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 237,
+            "text": "linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 284,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 398,
+            "end": 405,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 669,
+            "end": 693,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -584,14 +1098,100 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "9082be1cf74bac38d8567ecf567a9331a86cdf978130b62832bdb155e2bb1d4d",
-        "spans": []
+        "sourceSha256": "05f7011d4129210c37d7647f9e2b68d4d5bf9ca5d2db1674fd76c78965e08e12",
+        "spans": [
+          {
+            "start": 29,
+            "end": 47,
+            "text": "Registro candidata",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 70,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 282,
+            "text": "Resultado::aceptado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 309,
+            "end": 324,
+            "text": "lote.rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 418,
+            "end": 425,
+            "text": "return;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 465,
+            "text": "procesar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 543,
+            "text": "lote.admitidos",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "b6c9f8e418a49bb30cec34d5a31271affb89978890c5c2e9fdb49ad4641075c5",
-        "spans": []
+        "sourceSha256": "3fd00e2c00dd966aef4b38434bfb300c424bbfe77a8de467274b9010ffd41ca1",
+        "spans": [
+          {
+            "start": 25,
+            "end": 37,
+            "text": "Caja malla 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 81,
+            "text": "Caja material 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 213,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 427,
+            "end": 439,
+            "text": "Caja malla 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 572,
+            "end": 581,
+            "text": "DUPLICADO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -650,14 +1250,44 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "bfc65812ef98c274cd288ddf5b8f183951f7988e5001f13aea7628aa38b9e1c5",
-        "spans": []
+        "sourceSha256": "60ef6087ccb774fb7ea86bccf4285df82a814114d77234dcf46cc3bedfd9dd5e",
+        "spans": [
+          {
+            "start": 39,
+            "end": 53,
+            "text": "lote.admitidos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 126,
+            "text": "anterior.registro.id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 145,
+            "text": "candidata.id",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "d06b27cc6a5b489f1a4e023be31f8a0c65c872d1693e3ddc844a34fa9d07a54d",
-        "spans": []
+        "sourceSha256": "736f889a7eeb44de3791b734f6bd6cccf215ac73d8af6f56fe2c36c7162ab619",
+        "spans": [
+          {
+            "start": 249,
+            "end": 273,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -716,14 +1346,57 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "7b6e96dd095e06aa5d079bc028b75bdf14bb1e9c82b19333a561b45e66ce232f",
+        "sourceSha256": "d20018854cc3e9f6138d9345aa6cc9f226891d20d52d2eb5721dce270bd4a363",
         "spans": []
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "fef4c2e7eff751edfce8b70a04210443f505d5afb5c108a67ce5f3fe6703ad79",
-        "spans": []
+        "sourceSha256": "472ca398e45fe7ada0b99b5f3a5f1fbe493f9a5f677d0aad10c504981b43783a",
+        "spans": [
+          {
+            "start": 41,
+            "end": 55,
+            "text": "Puerta malla 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 176,
+            "text": "Puerta malla 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 289,
+            "text": "Caja textura 00012",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 422,
+            "text": "Puerta sonido 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 608,
+            "end": 623,
+            "text": "puerta sonido 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 722,
+            "end": 734,
+            "text": "Caja malla 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -800,8 +1473,30 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "52c3217667fe403b73678939187c64e2ed1c5a980b20dd75768bd91114590414",
-        "spans": []
+        "sourceSha256": "b1e6624570ec296c5dfa03ed61a5f93708946922af1785ded344ec66b197ca64",
+        "spans": [
+          {
+            "start": 78,
+            "end": 92,
+            "text": "procesar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 185,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 511,
+            "end": 520,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -830,7 +1525,7 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "b52d7e42317bbc0c0900f41250b94f529f0139d969e7a2215904bc26097898da",
+        "sourceSha256": "0538a37c6cdbefec5d7bf40f1bd61a81c2e76d49fdb07e390a35a75d46eb18d9",
         "spans": []
       },
       {
@@ -890,13 +1585,35 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "03641c4189b52c608c3e77338d16fdd4232154fc47cccce85deb994c5dc30543",
-        "spans": []
+        "sourceSha256": "73e578f07eade933fb398727404b18e11547739e61e841439133dd7afa49a4d2",
+        "spans": [
+          {
+            "start": 158,
+            "end": 165,
+            "text": "return;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 296,
+            "text": "{candidata, numero}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 349,
+            "end": 357,
+            "text": "Admision",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "dcb636356570d6cb50b7e27a33266dd6e6dfd3218de4b02697b133389dc544cc",
+        "sourceSha256": "9b425629cbfbb40d9ed7573c1c3115e02e00d9e88e93c69438ad6591c89f8603",
         "spans": []
       },
       {
@@ -908,52 +1625,124 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "0534433f70cba7d6d1c4ff7edd49daed4ba5bca192b725c746f2ee20cae7faa1",
-        "spans": []
+        "sourceSha256": "a455116348bee1570d9f5f0fb48cb5f336513ee604c9e688c8d47e7f14fd7ca4",
+        "spans": [
+          {
+            "start": 86,
+            "end": 102,
+            "text": "src/registro.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 124,
+            "text": "pruebas/casos.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 337,
+            "text": "E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "1c9343d57db02a78ab862c534be691d61fdd76f3497f34672e5207d12e9ebb13",
-        "spans": []
+        "sourceSha256": "6623eba76578799aa41378c3c892dab96ec64bdc03de105c14311dbef4afa3ef",
+        "spans": [
+          {
+            "start": 9,
+            "end": 40,
+            "text": "include/assetcheck/registro.hpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 94,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "tamano",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 159,
+            "text": "duplicado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 380,
+            "end": 393,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 518,
+            "end": 532,
+            "text": "procesar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "8cad537eb60f6e69b960f93b079d0484fd554ce14a23bb6684e70763ce953f85",
+        "sourceSha256": "4de98d252cf047b20b72085bec38e67d02a0c738676f629af3a51268e72ca520",
         "spans": [
           {
-            "start": 17,
-            "end": 27,
-            "text": "AssetCheck",
+            "start": 15,
+            "end": 29,
+            "text": "comprobar_lote",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 140,
-            "end": 168,
-            "text": "cmake -S . -B build -G Ninja",
+            "start": 43,
+            "end": 58,
+            "text": "assetcheck_lote",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 314,
-            "end": 357,
-            "text": "cmake --build build --target comprobar_lote",
+            "start": 174,
+            "end": 182,
+            "text": "add_test",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 423,
-            "end": 465,
-            "text": "ctest --test-dir build --output-on-failure",
+            "start": 292,
+            "end": 305,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 332,
+            "text": "cxx_std_20",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 490,
-            "end": 495,
-            "text": "CTest",
+            "start": 451,
+            "end": 469,
+            "text": "CXX_EXTENSIONS OFF",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1016,19 +1805,19 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "d4ca97a54b22acb8c673b21926c703266aaf95878c0a80e70eba0ecb918cdfe7",
+        "sourceSha256": "0556ad93d6ea42654121210205a013942d87a11541577cbefcfded64ae5d3cbb",
         "spans": []
       },
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "b16bf9facda52a958f9cea4646d90ddfe3349df8521e6e8a1fc9e4558073b6ea",
+        "sourceSha256": "197439eaeed9811655d7b74ba2da1c22fbc94ad65bbbfafd19630678752e5735",
         "spans": []
       },
       {
         "block": "block_0008_0004",
         "path": "/text",
-        "sourceSha256": "b4a22511d522300a2db4517dd617b49cd3966b9db0f3c097bf55201f60652eeb",
+        "sourceSha256": "31fc9e68d8f99a9c83f5cd1cfd7dd6c4305c5c079654d327821683e958e1f468",
         "spans": []
       },
       {
@@ -1082,8 +1871,606 @@
       {
         "block": "block_0008_0006",
         "path": "/text",
-        "sourceSha256": "9bd95b47b339eba5c8680ef7ed78ee4178417d07ce6a9cfd57ef5e0423dfa40a",
+        "sourceSha256": "7dd8ee412e238de4583419f81e0ea10c5ca125e9889177b7d041d81ae751c2b9",
         "spans": []
+      },
+      {
+        "block": "u4l5_parametros_y_numeracion",
+        "path": "/text",
+        "sourceSha256": "39818f856a868ac932e692c3d890b1f044e846c345a0467a82f3803d61e25bbc",
+        "spans": [
+          {
+            "start": 12,
+            "end": 26,
+            "text": "procesar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 61,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 151,
+            "text": "numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 373,
+            "text": "lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 483,
+            "end": 488,
+            "text": "Lote&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 549,
+            "end": 560,
+            "text": "std::size_t",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_leer_rechazo_agregado",
+        "path": "/text",
+        "sourceSha256": "2fc38e26d905474b2a94ed5d11eb13725ecdd2f11474c586dd9da783efae7678",
+        "spans": [
+          {
+            "start": 4,
+            "end": 50,
+            "text": "lote.rechazados.push_back({numero, local, 0});",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 108,
+            "text": "Rechazo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 184,
+            "text": "push_back",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_leer_busqueda_e_insercion",
+        "path": "/text",
+        "sourceSha256": "e72acb4764bddfcd12057d1c9c8a48a9c1f9453887e4ebabf031470504bd0dd0",
+        "spans": [
+          {
+            "start": 20,
+            "end": 40,
+            "text": "const auto& anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 176,
+            "text": "const Admision& anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 228,
+            "text": "Admision",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 263,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 360,
+            "text": "Resultado::duplicado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 379,
+            "text": "anterior.linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 398,
+            "end": 405,
+            "text": "return;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 575,
+            "text": "lote.admitidos.push_back({numero, candidata});",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_diferencias_del_editor",
+        "path": "/text",
+        "sourceSha256": "2c42d55fff3879e58a56f7b245e17f37f18d2fa86f646518e6d770fdd404e1ee",
+        "spans": [
+          {
+            "start": 107,
+            "end": 129,
+            "text": "Registro::tamano_bytes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 173,
+            "text": "Registro::bytes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 273,
+            "end": 278,
+            "text": "linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 298,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 324,
+            "text": "Admision",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 343,
+            "end": 351,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 371,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 444,
+            "text": "{candidata, numero}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 493,
+            "end": 525,
+            "text": "std::vector<Admision>& admitidos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 686,
+            "end": 695,
+            "text": "Resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 706,
+            "end": 712,
+            "text": "numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 717,
+            "end": 724,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 739,
+            "end": 742,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 763,
+            "end": 767,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_leer_traza_y_auxiliar",
+        "path": "/text",
+        "sourceSha256": "a0b8727d4619bcc32fabaaf660f96f01f6ebe8ca2cb2cf16143231c2319cdc8c",
+        "spans": [
+          {
+            "start": 161,
+            "end": 174,
+            "text": "A 1 A malla 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 327,
+            "text": "R 1 TAMANO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 467,
+            "text": "R 2 DUPLICADO 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 573,
+            "end": 579,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 660,
+            "end": 671,
+            "text": "const char*",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_ensayo_1_entrada_titulo",
+        "path": "/text",
+        "sourceSha256": "cf3ae70aec54ec8d049567143b6c6a7c34d16a5a16adc2ff664e68082e499e56",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_1_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "aaeaae85e3f389e80646a4983d8bb930643f878380d9c4041c89fb1f05338fcf",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_2_entrada_titulo",
+        "path": "/text",
+        "sourceSha256": "d2a3a5f9af7e3eef58eecf4b4e6f60a85a584b838adda5fad4d5810785f0063c",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_2_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "aaeaae85e3f389e80646a4983d8bb930643f878380d9c4041c89fb1f05338fcf",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_3_entrada_titulo",
+        "path": "/text",
+        "sourceSha256": "e63de3b23d9a33b6634477a689bfdb31bf281aee1393c8de83c071a6e90aba8a",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_3_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "aaeaae85e3f389e80646a4983d8bb930643f878380d9c4041c89fb1f05338fcf",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_4_entrada_titulo",
+        "path": "/text",
+        "sourceSha256": "e9dd51abe5f492841ea09648ad61968c414f2b1dd6287518669bd97fd070f2a4",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ensayo_4_salida_titulo",
+        "path": "/text",
+        "sourceSha256": "aaeaae85e3f389e80646a4983d8bb930643f878380d9c4041c89fb1f05338fcf",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_enum",
+        "path": "/alt",
+        "sourceSha256": "e9d2bb27b464ba82a65bd23ec2da3ebae7334d2bf1c9a859fa39545d944bfbf6",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_enum",
+        "path": "/caption",
+        "sourceSha256": "86300477b6ef3dbbcc91fdaa52960aca50378e8c82cb4820be078f6b86dda36b",
+        "spans": []
+      },
+      {
+        "block": "u4l5_guardar_cabecera",
+        "path": "/text",
+        "sourceSha256": "77e801007829d57ba5a16a396998ff60fa92370281bbfe5ab3c7975719d31f73",
+        "spans": [
+          {
+            "start": 137,
+            "end": 149,
+            "text": "#pragma once",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 427,
+            "text": "\\include\\assetcheck\\lote.hpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_captura_guardar_hpp",
+        "path": "/alt",
+        "sourceSha256": "390d748b849b05124c4465dd0c3428c40759584e43a655952f9961efd08125c2",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_guardar_hpp",
+        "path": "/caption",
+        "sourceSha256": "fb5f73ab74c4fd0f3bc6a21904f30b0ce34b438b9a04f82cca74668d0893ebdd",
+        "spans": []
+      },
+      {
+        "block": "u4l5_guardar_fuente",
+        "path": "/text",
+        "sourceSha256": "54cceed49a867cd82929d3ba583a4f7e07f4f5e67211028828a78c8b9a78d642",
+        "spans": [
+          {
+            "start": 45,
+            "end": 57,
+            "text": "src/lote.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 516,
+            "end": 529,
+            "text": "leer_registro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_captura_fuente",
+        "path": "/alt",
+        "sourceSha256": "8f97b1bb10973f8c0bdcb79e53e619864ffc6f84583031ff996c20098a463ad4",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_fuente",
+        "path": "/caption",
+        "sourceSha256": "3fd33633f1f540d20d6767a36bc0ff83a2217df4cc08c2fcd86f544bd60abd33",
+        "spans": []
+      },
+      {
+        "block": "u4l5_preparar_cmake",
+        "path": "/text",
+        "sourceSha256": "35f4ddfaf734828d592e26510c5f7ff91385e1fa20a90b1ee4fccecc4e06efb7",
+        "spans": [
+          {
+            "start": 109,
+            "end": 125,
+            "text": "enable_testing()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 161,
+            "text": "comprobar_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 306,
+            "text": "assetcheck_lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 427,
+            "end": 433,
+            "text": "PUBLIC",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 459,
+            "text": "assetcheck_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 638,
+            "end": 651,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_captura_cmake",
+        "path": "/alt",
+        "sourceSha256": "6ad6864e4871c063c1d7b4b1cd1b5b36fb11dbf06518dd641ee5c01dcf743338",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_cmake",
+        "path": "/caption",
+        "sourceSha256": "015763567e681246fc846069dbb3225128fde9da1efe84fa6465b9c840c18708",
+        "spans": []
+      },
+      {
+        "block": "u4l5_crear_archivo_pruebas",
+        "path": "/text",
+        "sourceSha256": "fdbfd2379bffeedda945422df0d1ac612a61a3e048f9249d2374f8160208200f",
+        "spans": [
+          {
+            "start": 238,
+            "end": 260,
+            "text": "pruebas/lote_casos.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_comparar_todos_campos",
+        "path": "/text",
+        "sourceSha256": "f97fb2bcbb262d953aa8fe730485c8566bef32c966cf2ef855d1bb332339a748",
+        "spans": []
+      },
+      {
+        "block": "u4l5_tabla_expectativas",
+        "path": "/text",
+        "sourceSha256": "4d4ed949cbba23d564377dcab342c652e501bcb9c0a9e7d57cec87a5721163df",
+        "spans": [
+          {
+            "start": 438,
+            "end": 462,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_grupos_de_ensayos",
+        "path": "/text",
+        "sourceSha256": "d8ab9a83ac483e24235bcdd3ded00992ffa1575e153c3f2142585681e1db75ac",
+        "spans": [
+          {
+            "start": 1499,
+            "end": 1523,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_recorrido_de_pruebas",
+        "path": "/text",
+        "sourceSha256": "12577e631915fa8010cc6173d4dc180da7317b6d59692e6266bfbc52541d3fbd",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_comprobador",
+        "path": "/alt",
+        "sourceSha256": "0a7a564704ee8fec6c68902479c4d261eaf4209b4c63348eda5d408c3c01932a",
+        "spans": []
+      },
+      {
+        "block": "u4l5_captura_comprobador",
+        "path": "/caption",
+        "sourceSha256": "8224c345d1729d7b87192a7bf06be30d43293d77c6c18cb39739fba0c32c87cc",
+        "spans": []
+      },
+      {
+        "block": "u4l5_consola_y_carpeta",
+        "path": "/text",
+        "sourceSha256": "c0af0a12b0a6de544e7199871b897546bbae5db27c62a23140d452d207a7114e",
+        "spans": []
+      },
+      {
+        "block": "u4l5_comandos_configurar",
+        "path": "/text",
+        "sourceSha256": "58ff457266a1d7925147704d1cc0a0796539a84d1e84e1a0dc68fe7c3de5b2fb",
+        "spans": [
+          {
+            "start": 865,
+            "end": 878,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l5_comandos_construir",
+        "path": "/text",
+        "sourceSha256": "bcbce3e994b802501b01d756bc9da3fbde59c585baa0632e132397d04ff2581e",
+        "spans": []
+      },
+      {
+        "block": "u4l5_comandos_ejecutar",
+        "path": "/text",
+        "sourceSha256": "328c427c2ec00af6dec5337cf13255ed508b4062a4c03e50bbb3b08b25791f5f",
+        "spans": []
+      },
+      {
+        "block": "u4l5_resumen_registro",
+        "path": "/text",
+        "sourceSha256": "590dd5082d1110134645206d8d0bdad9063b71943f988b1c40155a115a11723a",
+        "spans": []
+      },
+      {
+        "block": "u4l5_resumen_lote",
+        "path": "/text",
+        "sourceSha256": "5d5539047290a3a65cc1444eea23dfc0a88bf01b0a2ecb3f796f62f1a123d2e1",
+        "spans": []
+      },
+      {
+        "block": "u4l5_ctest_explicado",
+        "path": "/text",
+        "sourceSha256": "74dcab6109309bbdcc70dc82f06b39587e321d0beb29089f47d1444490cac056",
+        "spans": [
+          {
+            "start": 160,
+            "end": 173,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1354,6 +2741,7 @@
           "block_0001_0001",
           "block_0001_0002",
           "block_0001_0003",
+          "u4l5_parametros_y_numeracion",
           "block_0001_0004"
         ]
       },
@@ -1363,6 +2751,7 @@
           "block_0002_0000",
           "block_0002_0001",
           "block_0002_0002",
+          "u4l5_leer_rechazo_agregado",
           "block_0002_0003",
           "block_0002_0004"
         ]
@@ -1373,8 +2762,10 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
+          "u4l5_leer_busqueda_e_insercion",
           "block_0003_0003",
-          "block_0003_0004"
+          "block_0003_0004",
+          "u4l5_comparaciones_hasta_coincidir"
         ]
       },
       {
@@ -1384,7 +2775,8 @@
           "block_0004_0001",
           "block_0004_0002",
           "block_0004_0003",
-          "block_0004_0004"
+          "block_0004_0004",
+          "u4l5_transferir_origen_y_estado"
         ]
       },
       {
@@ -1392,8 +2784,26 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
+          "u4l5_diferencias_del_editor",
+          "u4l5_leer_traza_y_auxiliar",
           "block_0005_0002",
           "block_0005_0003",
+          "u4l5_ensayo_1_entrada_titulo",
+          "u4l5_ensayo_1_entrada",
+          "u4l5_ensayo_1_salida_titulo",
+          "u4l5_ensayo_1_salida",
+          "u4l5_ensayo_2_entrada_titulo",
+          "u4l5_ensayo_2_entrada",
+          "u4l5_ensayo_2_salida_titulo",
+          "u4l5_ensayo_2_salida",
+          "u4l5_ensayo_3_entrada_titulo",
+          "u4l5_ensayo_3_entrada",
+          "u4l5_ensayo_3_salida_titulo",
+          "u4l5_ensayo_3_salida",
+          "u4l5_ensayo_4_entrada_titulo",
+          "u4l5_ensayo_4_entrada",
+          "u4l5_ensayo_4_salida_titulo",
+          "u4l5_ensayo_4_salida",
           "block_0005_0004"
         ]
       },
@@ -1411,9 +2821,19 @@
         "blocks": [
           "block_0007_0000",
           "block_0007_0001",
-          "block_0007_0002",
           "block_0007_0003",
+          "u4l5_enum_ampliado",
+          "u4l5_captura_enum",
+          "u4l5_guardar_cabecera",
+          "u4l5_cabecera_completa",
+          "u4l5_captura_guardar_hpp",
+          "u4l5_guardar_fuente",
+          "block_0007_0002",
+          "u4l5_captura_fuente",
+          "u4l5_preparar_cmake",
           "block_0007_0004",
+          "u4l5_extensiones_comprobador",
+          "u4l5_captura_cmake",
           "block_0007_0005",
           "block_0007_0006"
         ]
@@ -1424,6 +2844,29 @@
           "block_0008_0000",
           "block_0008_0001",
           "block_0008_0002",
+          "u4l5_crear_archivo_pruebas",
+          "u4l5_comprobador_auxiliares",
+          "u4l5_comparar_todos_campos",
+          "u4l5_tabla_expectativas",
+          "u4l5_comprobador_tabla",
+          "u4l5_grupos_de_ensayos",
+          "u4l5_recorrido_de_pruebas",
+          "u4l5_comprobador_recorrido",
+          "u4l5_captura_comprobador",
+          "u4l5_consola_y_carpeta",
+          "u4l5_carpeta_cmd",
+          "u4l5_comandos_configurar",
+          "u4l5_configurar_cmd",
+          "u4l5_comandos_construir",
+          "u4l5_construir_cmd",
+          "u4l5_comandos_ejecutar",
+          "u4l5_ejecutar_cmd",
+          "u4l5_resumen_registro",
+          "u4l5_salida_registro",
+          "u4l5_resumen_lote",
+          "u4l5_salida_lote",
+          "u4l5_ctest_explicado",
+          "u4l5_ctest_cmd",
           "block_0008_0003",
           "block_0008_0004",
           "block_0008_0005",
@@ -1675,12 +3118,627 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u4l5_parametros_y_numeracion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l5_leer_rechazo_agregado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l5_leer_busqueda_e_insercion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l5_comparaciones_hasta_coincidir",
+        "sha256": "3184d0f6cf6ddf2e344774691c3b5e8f4621646e64ee0b739a6db4b5c453d401",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l5_transferir_origen_y_estado",
+        "sha256": "2c02e149f0c506ab21099597ddcfa9936be66775eded6235fb34b45c1f8c9045",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l5_diferencias_del_editor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_leer_traza_y_auxiliar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_1_entrada_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_1_entrada",
+        "sha256": "f1668254a108d36dbf3b21731dd02a588c00a7c150ccda55906c4cc5e331a8eb",
+        "storage": {
+          "page": 9,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_1_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 9
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_1_salida",
+        "sha256": "a59b10397c68d37be23454c4b813f96f37adeea075736b573ba6b3cb71866168",
+        "storage": {
+          "page": 9,
+          "block": 10
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_2_entrada_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 11
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_2_entrada",
+        "sha256": "149fd328766de59c26a423b9b15c40b65d42f59479d99d156cdb00a203cd983c",
+        "storage": {
+          "page": 9,
+          "block": 12
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_2_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 13
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_2_salida",
+        "sha256": "7b33523e921964acd87734004b4bef0891a7071e5faa5f7850735742f2e40c9a",
+        "storage": {
+          "page": 9,
+          "block": 14
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_3_entrada_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 15
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_3_entrada",
+        "sha256": "9b115c00894258eadc05d27bf54763815eac04f18f97b89a22b1ef6f5922281e",
+        "storage": {
+          "page": 9,
+          "block": 16
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_3_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 17
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_3_salida",
+        "sha256": "2738fd79b927daf1b56faf61e48dd49528e8de6020e2bf4638a53d7d6824173d",
+        "storage": {
+          "page": 9,
+          "block": 18
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_4_entrada_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 19
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_4_entrada",
+        "sha256": "5a19e0ad50786c86e2ffe07fce15bba7fb556965cef40383ccd9e9e98015e04c",
+        "storage": {
+          "page": 9,
+          "block": 20
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_4_salida_titulo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 21
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_ensayo_4_salida",
+        "sha256": "b2a424cb7d77004c3d38166c5a353758c93c9e53bb62804a3b505c87a3a30b87",
+        "storage": {
+          "page": 9,
+          "block": 22
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l5_enum_ampliado",
+        "sha256": "72acda4e992a30fd703df81c5a4ff473127d86a1baf49c7f135dfb851c2ee439",
+        "storage": {
+          "page": 9,
+          "block": 23
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_captura_enum",
+        "sha256": "8c04de44096eda71ae24c70a48db46dd44204de8f42779e54314ea208a5efa41",
+        "storage": {
+          "page": 9,
+          "block": 24
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_guardar_cabecera",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 25
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_cabecera_completa",
+        "sha256": "82a7564301701bd2b8b3e4015ef3f38a541d269a90087c8af916cea74a44f083",
+        "storage": {
+          "page": 9,
+          "block": 26
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_captura_guardar_hpp",
+        "sha256": "b7705a1015fa7a7de093c4215fbd4e18569c4e1baa44a250f5259f1046c0b538",
+        "storage": {
+          "page": 9,
+          "block": 27
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_guardar_fuente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 28
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_captura_fuente",
+        "sha256": "5f360f3958cbb28fe8b70dddd72b325d9ccda1b67a7c409d5f4a5405062ce0b4",
+        "storage": {
+          "page": 9,
+          "block": 29
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_preparar_cmake",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 30
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_extensiones_comprobador",
+        "sha256": "a77e31eb8c724826dc59bab9b406ae8d19734ac9c56224f9329b1a57655aff71",
+        "storage": {
+          "page": 9,
+          "block": 31
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_captura_cmake",
+        "sha256": "8f5fb81e40db62ff7004bf011b1ff073d8537a696938b94d2a9288d246871e28",
+        "storage": {
+          "page": 9,
+          "block": 32
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l5_crear_archivo_pruebas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 33
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comprobador_auxiliares",
+        "sha256": "34951d04d244f9ad6347b0597df21921c80ad948539f923d03749438ad8674a3",
+        "storage": {
+          "page": 9,
+          "block": 34
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comparar_todos_campos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 35
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_tabla_expectativas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 36
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comprobador_tabla",
+        "sha256": "a3e2da2768439af0e9b86517cb3ef9b478a8a7ad98a56888d9f0602dbbe45bf9",
+        "storage": {
+          "page": 9,
+          "block": 37
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_grupos_de_ensayos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 38
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_recorrido_de_pruebas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 39
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comprobador_recorrido",
+        "sha256": "ba93e48a4052faee58867b599d7958a7e578fca4ed221474b7e13a4aac0740bc",
+        "storage": {
+          "page": 9,
+          "block": 40
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_captura_comprobador",
+        "sha256": "3f9011a367e036663d69c7a42daabce249886556af211756f1d01ce3bbb9eda7",
+        "storage": {
+          "page": 9,
+          "block": 41
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_consola_y_carpeta",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 42
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_carpeta_cmd",
+        "sha256": "d2aa00716b710aab516a5b7a3d852aed193532d1be9ae8fb45423bcb3ede0283",
+        "storage": {
+          "page": 9,
+          "block": 43
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comandos_configurar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 44
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_configurar_cmd",
+        "sha256": "c1900215ef5806650a48ee81c3e815328d6fbd9734fb9a7b33480d081bf0acf2",
+        "storage": {
+          "page": 9,
+          "block": 45
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comandos_construir",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 46
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_construir_cmd",
+        "sha256": "1b74531aa183e71a1537acb70be78a76aba01cd4c078da7be46926f327df683c",
+        "storage": {
+          "page": 9,
+          "block": 47
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_comandos_ejecutar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 48
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_ejecutar_cmd",
+        "sha256": "4dbe84cc087fdc505a0efe2d63bee031fda5f298510be64a2a9972d67180aa2a",
+        "storage": {
+          "page": 9,
+          "block": 49
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_resumen_registro",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 50
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_salida_registro",
+        "sha256": "279b706861028bc40afa3f25ba4116ee8276cd77dbe884b3b00e2c8b82f4f1e2",
+        "storage": {
+          "page": 9,
+          "block": 51
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_resumen_lote",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 52
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_salida_lote",
+        "sha256": "20ec780dd7975696d81b892a53e974b392d32e1dde6300621bfef0446a950a8c",
+        "storage": {
+          "page": 9,
+          "block": 53
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_ctest_explicado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 54
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u4l5_ctest_cmd",
+        "sha256": "1a9d29c8031744fd86ba1db9dbf95bb11e71a3494801746ccc29aac75ab00d2d",
+        "storage": {
+          "page": 9,
+          "block": 55
+        },
+        "progressPage": "page_0008"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0007_0005",
         "beforeSha256": "2e751c03de2caf5355210e51502005813d7213cba290c9a760c5b3f546459a8c",
         "afterSha256": "8cce916e459a0f1f618c1cc9aa4d5f246cd7be4c632f765fa0507282593e85be"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "bade8e8f53a13f6dcfecf57348c66056dc7187cb9dcc51de80450dd07d00dcc4",
+        "afterSha256": "5fa0f6d236b84e7943572428d0b8a2041996f654055df6ec5753d6c9c5b8c9e6"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4d3295bc68aafd641c7cc88f8c253849ecbb42563a683b4e838a086dfe8c0eaf",
+        "afterSha256": "7936b5ea63efc652a6171622076056da332a998818d00c322ba93692c5e920f8"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9bdba5cf128ce3c71bf3930498175eb8305f4ae618df80f55929cc7811e1ca29",
+        "afterSha256": "56a091bd6834c89abd32db2afc7520e9e6967ea25a04a1652205ac57d0d2bb71"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "dbbe9e0d92938044f0f9120a53d4ddfba43ba750a9d98b584c7c29e80bb8475b",
+        "afterSha256": "0a08745044d89418275ba384596aa85335d3d235c271e2919835fa8b1a546bfc"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "eee9dd8e7df8f4505686865bf9e726fd154947feacf124b4932456b8aff0e095",
+        "afterSha256": "efa9d308406fc436203b1916bf3252493d8beff3d32cf2a69606998979c858b4"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "8b5580a1655541bf7b5a56539949129864370edcb359243eeaa12b67031042a5",
+        "afterSha256": "3b984b34ea483cd51b36ea93278311a3c8530730fe13314159a6771774e24212"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "8eacc837250838e6bd25edefc8cecd286e97565cb57f604af5c4703319ceceaa",
+        "afterSha256": "904673f1f162582288ba22a0c4432759ced27a9e83f53650ed184a063d254a03"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "c240cb50e6afc5a8d15d115950fe9a2dab39cb1b104e5fce29c196eedd037134",
+        "afterSha256": "7e0b0aa3b18d6ba32881617879c1c744fe9a84e1b506cc5a6b888949b84af97f"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "b31425f92badf0112226d6b175be360ff40faada2a4c069a468500b83d7b1735",
+        "afterSha256": "0b2c17a045bf03b6c24121c259d5181439be17911f7d0165d0a081e42775bf96"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "aef5904967ba29a0a50f2249921e7653fae020f7ac9e9723e6510f698e1b7df4",
+        "afterSha256": "bdd78d1a47c7b2f78597d6105fc3262bc68c44dd9002afe93b9a13cbe77c270c"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "bcdd43cb90b72515cdfc4ffdbe7ce66cacf0b290b25b35947e0e3abd495996c0",
+        "afterSha256": "5ffee0eb60dc423fe4a5c0c256f9d91f815e7565d466d2e87a634af7762dd1d3"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c5c1d4273bf985f20b874f1bceea7b7f31e9ac8644af4982c6ffb581bfacca23",
+        "afterSha256": "e74bc7444761bb6acc06ad2b5ad5ca69176e1c33e2985f88fe9426188486ef07"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "4d65abe43fd1ff6b5e2aa88d2957dae6e9a363730ad845a56bc436c63ff0f20e",
+        "afterSha256": "d2c86a761d86085a3e573866c8ed87a18e304cb63fea32345f5fff4751e8752d"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "79cfb2752904f5e9244997f19671744cb988b3dd2e44539431f5032e6f189178",
+        "afterSha256": "094724a18d8028de568657763514f6e2ef094a1ccb3ee0140f3d4d9bdabc708a"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "7892871f1b583c744e8ebad138da18bdb1baa414b29873f3efa972a166c06dbc",
+        "afterSha256": "6dac5a38c91879203bb905715fdaceedc0ff92306a1d33e75e05e5ee23bed65f"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "7a9ce86ba7dbfc9f3e758acece0cd17b2eee983c038753771e7da22bcbdfed39",
+        "afterSha256": "62cacf4135396303d1b9b23890a71126626710969171dde3b03728c210d84936"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "1314f30d94a26bbedbe2b77e8511df79ce52b9de229fdac738f8fe5661e849bb",
+        "afterSha256": "765c85c8e77f0798271d713c3934397f382019a389b005e1610cac4ebf78f939"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "8cce916e459a0f1f618c1cc9aa4d5f246cd7be4c632f765fa0507282593e85be",
+        "afterSha256": "bc4f3489c355de6d5e264c366f6c618c8383b0af5a7abca1a7f3a753caf52ed6"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "67cb7f7e83463c2b6c1505cf19ad41fc60ff9e8dfa23ba6047504ee397672dc9",
+        "afterSha256": "eb033bec36709f8e2efb3ff553ce1a98d1fc640092ebd4e3e90121f0a5938f3f"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "46c42b7b2f2125c1806be96f546ffb6fdd39be12957220f3444c231bb780e1eb",
+        "afterSha256": "bc6dfe3c1ba476c5474afb8762a0ffc49c2a95dd45fcd34817fe64317d7c730d"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "b40318fb47f8cd133fed68ca4687215c1c919961b4aa03f6e9e8ec5f3325b340",
+        "afterSha256": "9494262a0a7cfec3500c56b731ef98522d6f2cc8fd5c47ff20cad61814041312"
+      },
+      {
+        "id": "block_0008_0006",
+        "beforeSha256": "48ed5372b5c4d93e5727a0bba4cdb7a5cf622babe7144d55164430396b7dd869",
+        "afterSha256": "b4a34719a9de4fcd93539236da2cf603f9b55de91fed3193af06e37bd0b202f1"
       }
     ]
   }

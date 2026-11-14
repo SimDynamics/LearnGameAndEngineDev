@@ -284,7 +284,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El contenido de una línea, sin su terminador, admite como máximo 80 caracteres. Su repertorio es el ASCII imprimible: letras latinas sin acento, dígitos, espacio y signos básicos, con códigos de 32 a 126. También se admite el tabulador de código 9. Los separadores siguen siendo únicamente el espacio y el tabulador; los demás signos permitidos por el repertorio se examinan dentro de sus campos. Una letra acentuada, un emoji u otro carácter de control provoca rechazo de formato.",
+          "text": "ASCII asigna un código numérico a cada carácter de su repertorio. Por ejemplo, la letra `A` tiene el código `65` y el espacio tiene el código `32`. Su tabla también incluye el tabulador, un carácter de control que puede desplazar la posición de escritura en pantalla en lugar de dibujar una letra o un signo (Cerf, 1969).\n\nPara el contenido de cada línea de este proyecto, sin contar el terminador, acordamos estas condiciones:\nEl contenido admite como máximo 80 caracteres.\nSe admiten los caracteres ASCII de códigos `32 a 126`: espacio, letras latinas sin acento, dígitos y signos básicos.\nTambién se admite el tabulador de código `9`.\n\nEl espacio y el tabulador son los únicos separadores entre campos. Los demás signos permitidos se examinan dentro del campo donde aparecen. Una letra acentuada, un emoji u otro carácter de control provoca rechazo de formato. El tabulador es la excepción permitida entre esos controles.",
           "emphasis": [
             {
               "text": "como máximo 80 caracteres",
@@ -446,7 +446,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El identificador tiene entre 1 y 12 caracteres. El primero debe ser una letra ASCII, de A a Z o de a a z. Los siguientes pueden ser esas letras, los dígitos de 0 a 9 o el guion bajo _. No se admiten espacios dentro del identificador. Estas reglas pertenecen al manifiesto; no se deducen de las reglas para nombres de variables de C++.",
+          "text": "El identificador se comprueba completo, con estas reglas:\nSu longitud debe estar entre 1 y 12 caracteres.\nEl primero debe ser una letra ASCII, de `A` a `Z` o de `a` a `z`.\nCada carácter posterior puede ser una de esas letras, un dígito de `0` a `9` o el guion bajo `_`.\n\nPor ejemplo, `A2_` cumple las tres condiciones. `_A` no las cumple porque empieza por guion bajo, aunque ese signo sí esté permitido en posiciones posteriores. Un espacio no puede formar parte del identificador: separaría campos. Estas reglas pertenecen al manifiesto; no se deducen de las reglas para nombres de variables de C++.",
           "emphasis": [
             {
               "text": "entre 1 y 12 caracteres",
@@ -888,7 +888,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El tercer campo se llama tamano_bytes. Debe contener de uno a cinco dígitos decimales, todos de 0 a 9, y representar un valor entre 1 y 30000 bytes, incluidos ambos límites. No admite signos, separador decimal, exponentes ni sufijos. Estos tamaños corresponden al paquete pequeño que hemos elegido; no establecen una limitación general para recursos de videojuegos.",
+          "text": "El tercer campo se llama `tamano_bytes` y debe cumplir estas dos condiciones a la vez:\nSu escritura contiene de `uno a cinco` dígitos, todos de `0` a `9`.\nSu valor decimal está entre `1 y 30000` bytes, incluidos ambos límites.\n\nNo se admiten signos, puntos, comas ni letras en ese campo. Por ejemplo, `+12`, `1.5`, `1e3` y `12bytes` incumplen la regla de sólo dígitos. No basta con que otra forma de escribir números permita interpretarlos.\n\nLos límites de tamaño corresponden al paquete pequeño que hemos elegido. No son una limitación general para los recursos de videojuegos.",
           "emphasis": [
             {
               "text": "incluidos ambos límites",
@@ -898,11 +898,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Se permiten ceros iniciales dentro del máximo de cinco dígitos. 00001 tiene 5 caracteres y representa 1 byte. 000001 representa la misma cantidad al interpretarlo como decimal, pero su escritura tiene 6 dígitos y se rechaza. 00000 sí tiene cinco dígitos, aunque su valor 0 queda fuera del intervalo. Longitud y valor son condiciones diferentes."
+          "text": "Los ceros iniciales están permitidos, pero también cuentan para el máximo de cinco dígitos. Compara por separado la escritura y su valor:\n`00001` tiene cinco caracteres y declara un byte: cumple ambas condiciones.\n`000001` declara ese mismo valor al interpretarse como decimal, pero tiene seis dígitos: se rechaza por su longitud.\n`00000` tiene cinco dígitos, pero declara cero bytes: se rechaza por su valor.\n\nPor tanto, una escritura con la longitud permitida todavía puede representar un valor fuera del intervalo. Y representar un valor permitido no compensa una escritura demasiado larga."
         },
         {
           "type": "paragraph",
-          "text": "Obtener una cantidad a partir del principio de un campo no lo valida por completo. 12x no puede aceptarse como si fuese 12; +12 tampoco cumple la regla de sólo dígitos. La futura conversión deberá rechazar una escritura excesiva antes de acumular una cantidad que desborde. Aquí establecemos el resultado exigido; la construcción del lector enseñará y comprobará cómo obtenerlo."
+          "text": "La comprobación debe abarcar el campo completo. Si una conversión obtiene doce al leer el principio de `12x`, todavía queda la letra: no podemos aceptar el campo como si se hubiera recibido sólo `12`. Del mismo modo, `+12` contiene un signo que el acuerdo no admite.\n\nPrimero se rechazará una longitud fuera de lo permitido. Durante la conversión, cada carácter deberá comprobarse como dígito antes de utilizarlo para formar el valor; si aparece otro carácter, se rechaza el campo. El valor obtenido se comparará con los límites. Un campo rechazado por su longitud no necesita convertirse: así tampoco intentamos acumular números extremadamente largos. Para los campos cuya longitud sí se permita, elegiremos un tipo que pueda guardar los valores intermedios del cálculo. Aquí fijamos el resultado exigido; al construir el lector enseñaremos cómo realizar esos pasos."
         },
         {
           "type": "math_puzzle",
@@ -1245,7 +1245,7 @@
         },
         {
           "type": "paragraph",
-          "text": "FORMATO significa repertorio inadmisible, más de ochenta caracteres o cantidad de campos distinta de tres. ID significa que el identificador incumple su regla. TIPO significa que la etiqueta no está entre las tres exactas. TAMANO cubre la escritura o el valor del tercer campo. Una línea que supera estas cuatro comprobaciones es válida por sí sola; todavía habrá que compararla con los identificadores del lote."
+          "text": "Los nombres de las causas corresponden a estas comprobaciones:\n`FORMATO`: hay un carácter no permitido, el contenido supera ochenta caracteres o la línea no tiene exactamente tres campos.\n`ID`: el primer campo incumple las reglas del identificador.\n`TIPO`: el segundo no coincide con una de las tres etiquetas exactas.\n`TAMANO`: el tercero incumple la escritura del número o el intervalo de su valor.\n\nSe comunican en ese orden: cuando una comprobación falla, su causa es la que corresponde a la línea. Superar las cuatro significa que la línea es válida por sí sola. Todavía no sabemos si su identificador ya apareció en otra línea del manifiesto; esa comparación pertenece a la revisión del lote."
         },
         {
           "type": "paragraph",
@@ -1532,7 +1532,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si una futura implementación acepta Roca malla 240, esa observación no basta para saber qué hace con un cuarto campo, con un signo o en el tamaño máximo. Para comprobar una regla, el caso debe cambiar de resultado cuando se introduce el defecto que queremos detectar. Examinar fronteras y entradas vacías permite descubrir errores y decisiones incompletas mientras se construye el programa (Kernighan & Pike, 1999, pp. 140–141)."
+          "text": "Supón que una implementación ignora un cuarto campo. Con `Roca malla 240`, tanto esa implementación como una correcta aceptarían la línea: este ejemplo no permite distinguirlas. Con `Roca malla 240 extra`, el contrato exige `FORMATO`, pero la implementación defectuosa seguiría aceptando los tres primeros campos.\n\nEl segundo caso permite descubrir ese error porque la decisión correcta y la defectuosa son distintas. El primero puede coincidir aunque el error siga presente. Ésa es la relación que buscamos al elegir una prueba; que un ejemplo permitido sea aceptado no comprueba todas las reglas.\n\nExaminar las fronteras, las entradas vacías y lo que sobra en una entrada ayuda a descubrir errores y decisiones incompletas mientras se construye un programa (Kernighan & Pike, 1999)."
         },
         {
           "type": "paragraph",
@@ -2569,7 +2569,63 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0937ee651fd8cd4927f536a13567bcc12cbc6f7d91d4b6d4d4241980afc12c00",
+        "afterSha256": "b4b926dc44cc390f05d2566b0a730994b8f7350e430e177272eeb62f8a75c0dd"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "066d2eda74bf321834a99a7ddb2e37574c19c9e27aca5d954334aa9dcce362f0",
+        "afterSha256": "fc6d45011839d4178ca88a716791a7bc970ea75cda89b916a14a34e2d1ab0164"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "1a430b53e4639f08175720a454828de28332a159edf9dcd67299a61d4496d110",
+        "afterSha256": "f4b54187dd19fec914b5170c379c6eed5d03b2b06e270cbe9922ef9f9aa9ee47"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "dd504f96a32fea53425babde80c24593ba98a5d5fef38e07ec1efddbcaaeab54",
+        "afterSha256": "d3334459e82e4c8c4b2aa7ea65c721580cb84fbebb3b2f35169aa222bc3a73ae"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "1e291dc11eab0cf8aef35bbe8f0be958f996fe5e13bdaaf9b15255d261ba73db",
+        "afterSha256": "d08430e1a25d05141c65f9fc71f0982d089780bb1295ca6114b0562fae1d61a0"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "559c43e3f4d1071075f39461304c5e75753274f64473675274949086f0f380a7",
+        "afterSha256": "8de010dbd95de6769ad0517e11420e1e399119fa30b58ba9c03ab9911b02d33d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "3678f06c6e22b3a2041ad4b8c061f53f56237c6ed12c42bf76def287be3acdaa",
+        "afterSha256": "bf5801daa9781009d98923072a2f24fa4ca3ce9009566b52cc022eb8f0ffe8b7"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b4b926dc44cc390f05d2566b0a730994b8f7350e430e177272eeb62f8a75c0dd",
+        "afterSha256": "0308b0ab19fd17ec1c8795be4781bc1899e2f03da15f3b92180152c6d7116667"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "fc6d45011839d4178ca88a716791a7bc970ea75cda89b916a14a34e2d1ab0164",
+        "afterSha256": "814507eca58aaca2c8e3dc4d80c9d5f733c41d2091014269365b10e0a1a19535"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "d08430e1a25d05141c65f9fc71f0982d089780bb1295ca6114b0562fae1d61a0",
+        "afterSha256": "385641b90e09951dd4d99757545e5ee3b1c225964fd176fd52a42a657fe328f1"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "385641b90e09951dd4d99757545e5ee3b1c225964fd176fd52a42a657fe328f1",
+        "afterSha256": "aefd83ed2755391caf711ef34ae17db3218a3222778883b49da18ae51d5dfa17"
+      }
+    ]
   },
   "textSemantics": {
     "version": 1,
@@ -3103,25 +3159,53 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "791554cad88bc36aa774d05477dc697a9d0d47a0821808906a23d6d383385728",
+        "sourceSha256": "a185df384837ba86234caadadc166fc0920c763190e5d902f92db439f618f876",
         "spans": [
           {
-            "start": 65,
-            "end": 67,
+            "start": 89,
+            "end": 90,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "65",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "32",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 320,
+            "text": "(Cerf, 1969)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 462,
             "text": "80",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 203,
+            "start": 519,
+            "end": 527,
             "text": "32 a 126",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 246,
-            "end": 247,
+            "start": 634,
+            "end": 635,
             "text": "9",
             "role": "data",
             "reading": "natural"
@@ -3380,70 +3464,77 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "7c8f893e5f138d5db309b0c4b69a0bd56caa24809458f0bc40c3c00d1ad92d09",
+        "sourceSha256": "9794907f9f64f14edc343b337fe5c6354b2577ca22c9ad30e2daccd9540ed1ef",
         "spans": [
           {
-            "start": 29,
-            "end": 35,
+            "start": 87,
+            "end": 93,
             "text": "1 y 12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 88,
-            "end": 89,
+            "start": 147,
+            "end": 148,
             "text": "A",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 92,
-            "end": 93,
+            "start": 153,
+            "end": 154,
             "text": "Z",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 99,
-            "end": 100,
+            "start": 162,
+            "end": 163,
             "text": "a",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 103,
-            "end": 104,
+            "start": 168,
+            "end": 169,
             "text": "z",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 160,
-            "end": 161,
+            "start": 240,
+            "end": 241,
             "text": "0",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 164,
-            "end": 165,
+            "start": 246,
+            "end": 247,
             "text": "9",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 182,
-            "end": 183,
+            "start": 266,
+            "end": 267,
             "text": "_",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 330,
-            "end": 333,
-            "text": "C++",
+            "start": 285,
+            "end": 288,
+            "text": "A2_",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
+          },
+          {
+            "start": 320,
+            "end": 322,
+            "text": "_A",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -4093,40 +4184,68 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "0f6b27a47e555f5f0db17a789a5ca18d53708e17683279a921e18dc5b9c67faa",
+        "sourceSha256": "6e4922bde52c144ca63959cdc349fb41ee8b8b133eb962702d36976d430bbe72",
         "spans": [
           {
-            "start": 25,
-            "end": 37,
+            "start": 26,
+            "end": 38,
             "text": "tamano_bytes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 67,
+            "start": 113,
+            "end": 124,
             "text": "uno a cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 97,
+            "start": 145,
+            "end": 146,
             "text": "0",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 100,
-            "end": 101,
+            "start": 151,
+            "end": 152,
             "text": "9",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 132,
-            "end": 141,
+            "start": 184,
+            "end": 193,
             "text": "1 y 30000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 305,
+            "text": "+12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 312,
+            "text": "1.5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 316,
+            "end": 319,
+            "text": "1e3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 331,
+            "text": "12bytes",
             "role": "data",
             "reading": "natural"
           }
@@ -4135,55 +4254,27 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "1ee4b4952b92480e5cc555de316819a6f51cacc2952e5116378855fbb6b57cdd",
+        "sourceSha256": "4767bf54bc62c2c4fdc6fabc007d8e6c1513702b19c73ee49e2d14a3b9cf98d0",
         "spans": [
           {
-            "start": 64,
-            "end": 69,
+            "start": 139,
+            "end": 144,
             "text": "00001",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 77,
-            "text": "5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 102,
-            "end": 103,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 110,
-            "end": 116,
+            "start": 215,
+            "end": 221,
             "text": "000001",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 201,
-            "end": 202,
-            "text": "6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 225,
-            "end": 230,
+            "start": 332,
+            "end": 337,
             "text": "00000",
             "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 271,
-            "end": 272,
-            "text": "0",
-            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4191,25 +4282,25 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "5e8a564d4739d7c4c563ce9de5997cadb06e8a2e33d8a3065e4644d9619d9cf0",
+        "sourceSha256": "fa6f76530e74d980d4b1d6b9ee561584ae77c93da3d07928acf6ebbd185629e8",
         "spans": [
           {
-            "start": 83,
-            "end": 86,
+            "start": 104,
+            "end": 107,
             "text": "12x",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 120,
-            "end": 122,
+            "start": 196,
+            "end": 198,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 124,
-            "end": 127,
+            "start": 218,
+            "end": 221,
             "text": "+12",
             "role": "data",
             "reading": "natural"
@@ -4589,32 +4680,32 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "c9a9137d01388156fe39f918843b51ddf9174dc6d6a6b9ac08ec2c9fb0f6891d",
+        "sourceSha256": "516c9218a18b3b83ba5971453477ca97764e9d5754c0193c8239df68b0c19c9b",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
+            "start": 64,
+            "end": 71,
             "text": "FORMATO",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 109,
+            "start": 189,
+            "end": 191,
             "text": "ID",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 160,
-            "end": 164,
+            "start": 250,
+            "end": 254,
             "text": "TIPO",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 223,
-            "end": 229,
+            "start": 320,
+            "end": 326,
             "text": "TAMANO",
             "role": "data",
             "reading": "natural"
@@ -4959,19 +5050,33 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "0cebf43a82c9f21b7b33760aba16b2bc8d257634c9ce5d35dec4499d2e3589ac",
+        "sourceSha256": "76340ab3500a35b1cf5545627b48524c5d386daf271a1ad92e0cb30541f63ddf",
         "spans": [
           {
-            "start": 36,
-            "end": 50,
+            "start": 58,
+            "end": 72,
             "text": "Roca malla 240",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 390,
-            "end": 427,
-            "text": "(Kernighan & Pike, 1999, pp. 140–141)",
+            "start": 183,
+            "end": 203,
+            "text": "Roca malla 240 extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 232,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 759,
+            "end": 783,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }

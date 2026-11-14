@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En el primer curso practicaste limpiar un programa conservando su comportamiento, elegir nombres y usar const. En este curso conservaste una biblioteca compartida por la aplicación y un comprobador con esperados independientes. Recuperarás esas habilidades para reconocer qué decisión expresa cada cifra de una implementación; después distinguirás esa mejora de un cambio autorizado del requisito."
+          "text": "En el primer curso utilizaste `const`, elegiste nombres y modificaste programas conservando sus resultados. Ahora aplicarás esas habilidades a la biblioteca que comparten la aplicación y el comprobador.\n\nPrimero darás nombre a la capacidad de las cajas y expresarás desde ella el cálculo. Debe seguir haciendo lo mismo para los mismos datos. Después cambiará el requisito: las cajas tendrán más plazas, pero el plazo de entrega seguirá igual. Esa segunda tarea sí exige revisar qué resultados deberían cambiar."
         },
         {
           "type": "paragraph",
-          "text": "Seguimos con piezas entre 0 y 20, cajas de cuatro plazas y el mínimo número de cajas suficiente, incluido cero para cero piezas. Esta revisión ya cumple ese acuerdo en el dominio. Primero mejoraremos cómo comunica la regla; no estamos reparando un defecto ni cambiando la capacidad."
+          "text": "Seguimos con cantidades entre cero y veinte piezas, incluidos ambos extremos. Cada caja admite cuatro piezas y la función debe devolver el mínimo número de cajas suficiente para guardarlas todas. Para cero piezas se necesitan cero cajas.\n\nLa función siguiente ya cumple ese acuerdo. En la primera práctica mejorarás cómo se expresa el cálculo, conservando la capacidad y los resultados."
         },
         {
           "type": "code",
@@ -23,7 +23,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un nombre comunica un papel dentro de su contexto. Llamar cuatro a una constante conserva la cifra en otra escritura, pero no explica por qué aparece allí. Tampoco ayuda alargar todos los nombres sin atender a lo que distinguen. La legibilidad y la corrección del cálculo necesitan revisiones propias (Kernighan & Pike, 1999, pp. 2–5)."
+          "text": "El número cuatro representa aquí la capacidad: cuántas piezas caben en una caja. Un nombre como `piezas_por_caja` permite reconocer ese significado. Un nombre como `numero_cuatro` sólo repite la cifra y deja sin explicar para qué se utiliza.\n\nEl nombre debe ser claro en su contexto, sin alargarlo innecesariamente. Aun con un buen nombre, hay que revisar el cálculo: llamar capacidad al divisor no añade por sí solo el ajuste de las piezas sobrantes (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -52,11 +52,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El 4 del divisor representa cuántas piezas caben en una caja. El 3 que se suma vale una plaza menos que esa capacidad; se obtiene de la misma regla, no de un segundo acuerdo. Con ocho piezas, la expresión suma 8 + 3 y divide 11 entre 4: devuelve 2 cajas. Con nueve piezas, suma 9 + 3 y divide 12 entre 4: devuelve 3, porque dos cajas sólo admiten ocho piezas. Con cero piezas, 3 dividido entre 4 devuelve 0.\n\nEn estas divisiones entre enteros no negativos se descarta la parte fraccionaria. El ajuste anterior a la división conserva los múltiplos exactos y cuenta una caja adicional cuando quedan piezas. Las cantidades de este dominio son pequeñas; esta expresión no promete que la suma sea segura para cualquier entero posible."
+          "text": "En `(piezas + 3) / 4`, el divisor `4` representa la capacidad de una caja. El valor `3` que se suma es una plaza menos que esa capacidad. A ese valor sumado antes de dividir lo llamaremos desplazamiento.\n\nObserva el cálculo para estas entradas:\nOcho piezas: se calcula `8 + 3`, y después `11 / 4`; se devuelven dos cajas.\nNueve piezas: se calcula `9 + 3`, y después `12 / 4`; se devuelven tres cajas. Dos cajas sólo tendrían ocho plazas.\nCero piezas: se calcula `3 / 4`; se devuelven cero cajas.\n\nCon enteros no negativos, la división descarta la parte fraccionaria. Sumar tres antes de dividir cuenta una caja adicional si sobra alguna pieza, y conserva el número de cajas si no sobra ninguna. Estamos razonando para el dominio acordado; esta suma no se puede dar por segura para cualquier valor de `int`."
         },
         {
           "type": "paragraph",
-          "text": "Si estudiamos una capacidad de seis plazas, la cantidad que se suma debe ser cinco. Para seis piezas, 11 dividido entre 6 devuelve 1; para siete, 12 dividido entre 6 devuelve 2. Mantener el divisor y el ajuste como cifras independientes permite cambiar uno y olvidar el otro. Nombrar la capacidad y calcular desde ella el ajuste hace visible esa relación, en vez de pedir al lector que la deduzca de dos literales (Kernighan & Pike, 1999, pp. 19–20)."
+          "text": "Para estudiar una capacidad de seis plazas, el desplazamiento sería cinco: una plaza menos que seis.\nCon seis piezas, `11 / 6` devuelve una caja.\nCon siete piezas, `12 / 6` devuelve dos cajas.\n\nSi escribimos el divisor y el desplazamiento como dos cifras independientes, podríamos cambiar seis y olvidar cambiar cinco. Dar nombre a la capacidad y calcular a partir de ella el desplazamiento evita mantener a mano ambos valores relacionados (Kernighan & Pike, 1999)."
         },
         {
           "type": "fill_code",
@@ -93,15 +93,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto recupera la descripción distribuida y la biblioteca ya reparada de la práctica anterior. Conserva comprobar_cajas en «Objetivo CMake», pulsa «Configurar y generar» y después «Compilar, ejecutar y comprobar» para observar la revisión inicial: sus siete casos deben pasar. Conserva las entradas y esperados, la cabecera, el cliente y ambas descripciones CMake. El acuerdo sigue siendo cuatro plazas y dominio 0..20."
+          "text": "El editor proporciona la descripción distribuida de CMake y la biblioteca correcta de la práctica anterior. El comprobador también está escrito; esta actividad pide mejorar el cuerpo de la función, no construir una batería nueva.\n\nSelecciona `comprobar_cajas` en «Objetivo CMake», pulsa «Configurar y generar» y después «Compilar, ejecutar y comprobar». La revisión inicial coincide con los esperados guardados. Conserva esos datos, la cabecera, el cliente y las dos descripciones CMake. El acuerdo sigue siendo capacidad de cuatro plazas y cantidades de cero a veinte piezas."
         },
         {
           "type": "paragraph",
-          "text": "Modifica sólo el cuerpo de cajas_para: declara dentro de esa función una const int con un nombre que indique la capacidad y deriva de ella la cantidad sumada. La constante es local porque se declara en el cuerpo y se utiliza allí. Puedes elegir otro nombre claro y una expresión equivalente. No lleves esa constante al comprobador ni fabriques sus esperados con la función evaluada. Después del cambio, conserva comprobar_cajas como objetivo al compilar, ejecutar y comprobar."
+          "text": "Modifica únicamente el cuerpo de `cajas_para`:\n1. Declara dentro de la función una `const int` con un nombre que indique cuántas piezas caben en una caja.\n2. Utiliza esa constante para el divisor y para calcular el desplazamiento de una plaza menos que la capacidad.\n3. Reconstruye y comprueba la revisión con `comprobar_cajas` seleccionado.\n\nLa constante será local porque se declara dentro de esa función y se utiliza allí. Puedes elegir otro nombre claro y una expresión equivalente. Conserva independientes los esperados del comprobador: no los calcules llamando a la función que quieres comprobar."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: se conserva el mínimo número de cajas para cada entrada del dominio; los siete casos y el cliente conservan exactamente sus salidas, y el comprobador termina con 0. Comprueba que las cifras del cuerpo expresan la misma capacidad y que el cálculo conserva los resultados: elegir un nombre no demuestra por sí solo la regla. Los casos son evidencia de esas llamadas, no de cualquier entero."
+          "text": "El cambio debe conservar el mínimo de cajas para cada cantidad del dominio. El comprobador y la aplicación conservarán sus resultados porque no ha cambiado la capacidad.\n\nRevisa también el cuerpo: la constante debe participar en el divisor y en el cálculo del desplazamiento. Declarar un nombre y dejar después las cifras iniciales no realiza esa mejora. La salida del programa permite comprobar sus resultados; no demuestra por sí sola cómo expresaste la relación."
         },
         {
           "type": "cpp_compiler",
@@ -177,7 +177,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta es una solución posible del código de esta práctica; no exige escoger este identificador exacto."
+          "text": "La referencia utiliza un nombre que indica la capacidad. Otro identificador claro o una expresión equivalente también pueden cumplir el objetivo."
         },
         {
           "type": "code",
@@ -186,11 +186,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La declaración const int piezas_por_caja{4}; guarda la capacidad en una constante local. El nombre se usa al sumar el ajuste y al dividir: ambos usos consultan esa misma capacidad. No hay dos valores que deban mantenerse a mano. El literal 1 expresa la relación «una plaza menos»; no representa una segunda capacidad configurable.\n\nLa elección de nombres debe ayudar a comprender y mantener el cálculo. No exige inventar una constante para toda cifra aislada, sino hacer visible el significado y evitar cambios duplicados que se puedan olvidar (Kernighan & Pike, 1999, pp. 20, 22)."
+          "text": "En `const int piezas_por_caja{4};`, el nombre `piezas_por_caja` identifica una constante local inicializada con cuatro. Su valor no se modifica durante esa ejecución de la función.\n\nLa expresión utiliza ese mismo nombre al sumar y al dividir. La cantidad sumada se calcula como capacidad menos uno; no hay que mantener además un tres escrito por separado. El literal `1` expresa «una plaza menos», no otra capacidad que pueda elegirse independientemente.\n\nConviene nombrar las cantidades cuyo significado necesita quedar claro y calcular desde ellas las que dependan de esa misma decisión. Eso no obliga a inventar un nombre para toda cifra aislada (Kernighan & Pike, 1999)."
         },
         {
           "type": "paragraph",
-          "text": "En la expresión nueva, piezas_por_caja vale 4. Por tanto, piezas + piezas_por_caja - 1 calcula lo mismo que piezas + 3 y el divisor sigue siendo 4. Para entradas de 0 a 20, el numerador final no supera 23; incluso la suma intermedia piezas + piezas_por_caja llega como máximo a 24 y cabe en int.\n\nEl cliente conserva 1:2. Las entradas 0, 4, 8, 20, 1, 5, 17 mantienen los esperados 0, 1, 2, 5, 1, 2, 5, respectivamente. La batería debe mostrar Bateria: OK y terminar con 0. Esa coincidencia comprueba el comportamiento observado; para revisar los nombres hay que reconocer qué decisión expresa cada uno en el cuerpo."
+          "text": "Como `piezas_por_caja` vale cuatro, `piezas + piezas_por_caja - 1` calcula lo mismo que `piezas + 3`. El divisor también sigue siendo cuatro. Para veinte piezas, la suma intermedia llega a veinticuatro y la resta deja veintitrés; ambas cantidades caben en `int`.\n\nLos casos conservados siguen dando estas cantidades de cajas:\nCero piezas → cero cajas.\nCuatro piezas → una caja.\nOcho piezas → dos cajas.\nVeinte piezas → cinco cajas.\nUna pieza → una caja.\nCinco piezas → dos cajas.\nDiecisiete piezas → cinco cajas.\n\nEl comprobador muestra `Bateria: OK` y termina con retorno cero. La aplicación sigue mostrando `1:2`. Estos resultados corresponden a las llamadas observadas; el significado de los nombres se revisa además en el cuerpo."
         },
         {
           "type": "multiple_choice",
@@ -219,7 +219,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un proyecto también decide si un envío llega dentro del plazo: para días entre 0 y 7, llega_a_tiempo devuelve true si tarda como máximo cuatro días. La capacidad de una caja y ese plazo valen cuatro, pero describen cantidades con unidades y motivos de cambio distintos."
+          "text": "El proyecto también decidirá si un envío llega dentro del plazo. La función `llega_a_tiempo` recibe una cantidad de días entre cero y siete y debe devolver `true` cuando sean como máximo cuatro.\n\nAhora tenemos dos requisitos:\nLa capacidad de una caja es de cuatro piezas.\nEl plazo máximo de entrega es de cuatro días.\n\nLos dos utilizan el número cuatro, pero miden cosas distintas. Aumentar las plazas de una caja no concede más días para entregar."
         },
         {
           "type": "code",
@@ -228,7 +228,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta revisión cumple ambos acuerdos actuales, pero las dos funciones consultan la misma constante limite. Si su valor se cambiara de cuatro a seis, cajas_para pasaría a usar seis plazas y llega_a_tiempo aceptaría también cinco o seis días. Cambiar la capacidad de una caja no autoriza por sí mismo ampliar el plazo.\n\nLa coincidencia de las cifras no prueba que representen una misma decisión. Evitar duplicación de conocimiento requiere reconocer qué acuerdo se mantendría en varios lugares y por qué tendría que cambiar junto. Dos decisiones independientes pueden compartir hoy un valor sin que convenga unirlas (Thomas & Hunt, 2020, pp. 31, 34)."
+          "text": "En esta revisión, las dos funciones consultan la misma constante `limite`, que vale cuatro. Por ahora cumple ambos requisitos.\n\nSi cambiáramos ese valor a seis:\n`cajas_para` calcularía con cajas de seis plazas.\n`llega_a_tiempo` aceptaría también entregas de cinco o seis días.\n\nEl segundo cambio no está autorizado por ampliar las cajas. Ocurre porque se utilizó una sola constante para dos decisiones independientes.\n\nPara evitar tener que corregir un mismo requisito en varios lugares, primero hay que reconocer qué decisión representa cada valor. Dos reglas pueden tener hoy la misma cifra y seguir necesitando representaciones separadas (Thomas & Hunt, 2020)."
         },
         {
           "type": "multiple_choice",
@@ -274,11 +274,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye y ejecuta primero comprobar_cajas en este proyecto: sus siete casos de piezas y dos casos de plazo deben pasar con los acuerdos actuales. La aplicación muestra 1:2:1:0. Ahora se autoriza ampliar las cajas a seis plazas, manteniendo el dominio de piezas de 0 a 20. El plazo permanece en cuatro días y su dominio sigue siendo de 0 a 7 días. Cambia únicamente el acuerdo de capacidad."
+          "text": "Primero configura, construye y ejecuta `comprobar_cajas` en este editor. La revisión inicial comprueba siete cantidades de piezas y dos cantidades de días con los acuerdos actuales. La aplicación muestra `1:2:1:0`.\n\nAhora se autoriza un cambio:\nLas cajas pasan de cuatro a seis plazas. El dominio de piezas sigue siendo de cero a veinte.\nEl plazo sigue siendo de cuatro días. El dominio de días sigue siendo de cero a siete.\n\nTendrás que modificar la capacidad y mantener el plazo, aunque antes compartieran la misma constante."
         },
         {
           "type": "paragraph",
-          "text": "Antes de editar el cuerpo, calcula los nuevos esperados de las siete entradas conservadas y añade las dos nuevas fronteras 6 y 7. Mantén las comprobaciones de días 4 y 5. Puedes actualizar los esperados porque cambió el requisito de capacidad; no porque una ejecución haya producido otros valores. El mismo intento debe actualizar el comprobador y la implementación para ese nuevo acuerdo."
+          "text": "Antes de modificar las funciones, calcula desde el nuevo requisito los esperados de las siete cantidades de piezas que ya se comprueban. Después añade dos comparaciones: seis piezas y siete piezas, para observar una caja completa y la primera cantidad que necesita otra.\n\nConserva las comparaciones de cuatro y cinco días con sus expectativas anteriores. En esta actividad sí amplías y actualizas la batería como parte del cambio de requisito. La capacidad nueva justifica revisar los esperados de cajas; copiar cualquier resultado que produzca la función no lo justificaría."
         },
         {
           "type": "fill_code",
@@ -295,11 +295,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Modifica la implementación para expresar los dos acuerdos con constantes locales de propósito. Actualiza el comentario de capacidad de la cabecera, pero conserva las firmas, el cliente y las descripciones CMake. Reconstruye y comprueba la batería completa: nueve casos de piezas y dos de plazo. El control deliberado que mezcla acuerdos se trabaja después en otro editor."
+          "text": "Realiza el cambio en estos lugares:\n1. En la implementación, utiliza una constante local para la capacidad y otra para el plazo. Cada función debe consultar la que le corresponde.\n2. En la cabecera, actualiza el comentario de capacidad a seis plazas. Conserva las firmas de las funciones y el plazo de cuatro días.\n3. En el comprobador, actualiza los esperados calculados y añade los dos casos de frontera pedidos.\n4. Reconstruye y comprueba la revisión con `comprobar_cajas` seleccionado.\n\nConserva el cliente y las descripciones CMake. La batería que estás adaptando reunirá nueve cantidades de piezas y dos de días. El control que mezcla de nuevo los acuerdos tiene otro editor."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: los nueve casos de piezas deben coincidir con el acuerdo de seis plazas, días 4/5 deben seguir dando true/false, ninguna comprobación se omite y el resultado final es Bateria: OK con terminación 0. Contrasta las entradas del cliente con las de la batería: sus datos permiten conservar la salida inicial aunque cambien los esperados de otras entradas."
+          "text": "La batería debe ejecutar sus comparaciones aunque alguna falle. Al terminar la adaptación, las nueve cantidades de piezas deben coincidir con la capacidad de seis plazas. Para cuatro días se debe obtener `true`; para cinco, `false`.\n\nCuando todas coincidan, el resumen será `Bateria: OK` y el programa terminará con retorno cero. Compara después las entradas del cliente con las de la batería: más adelante veremos por qué ese cliente puede conservar su salida aunque haya cambiado la capacidad."
         },
         {
           "type": "cpp_compiler",
@@ -363,7 +363,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La cabecera conserva las firmas de las dos funciones. Su comentario de cajas debe indicar seis plazas y el de días debe mantener cuatro días. En la implementación, piezas_por_caja pertenece al cuerpo de cajas_para y dias_maximos al de llega_a_tiempo. Cada función consulta su propia constante local: editar una capacidad deja de alterar la comparación del plazo."
+          "text": "Las firmas de la cabecera se conservan. El comentario de cajas indica ahora seis plazas y el de entrega mantiene cuatro días.\n\nEn la implementación:\n`piezas_por_caja` se declara dentro de `cajas_para` y sólo interviene en su cálculo de cajas.\n`dias_maximos` se declara dentro de `llega_a_tiempo` y sólo interviene en su comparación de días.\n\nAsí, editar la capacidad en la primera función no altera el plazo de la segunda. Cada constante tiene un nombre y un uso que permiten reconocer su propio requisito."
         },
         {
           "type": "code",
@@ -372,7 +372,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las entradas antiguas 0, 4, 8, 20, 1, 5, 17 se conservan; sus esperados nuevos son 0, 1, 2, 4, 1, 1, 3. Por ejemplo, tres cajas de seis plazas sólo admiten dieciocho piezas: veinte necesitan cuatro. Se añaden 6→1 y 7→2 para observar una caja completa y el primer dato que necesita otra. Los casos de días permanecen en 4→true y 5→false.\n\nCada función comprobar o comprobar_plazo obtiene su resultado una sola vez. Las llamadas están en if independientes: si una discrepancia pone correcto en false, los siguientes if todavía se ejecutan. Así se conservan todos los diagnósticos, además del resumen final."
+          "text": "Las entradas antiguas se conservan con los esperados que corresponden ahora a seis plazas:\nCero piezas → cero cajas.\nCuatro piezas → una caja.\nOcho piezas → dos cajas.\nVeinte piezas → cuatro cajas.\nUna pieza → una caja.\nCinco piezas → una caja.\nDiecisiete piezas → tres cajas.\n\nPor ejemplo, tres cajas ofrecen dieciocho plazas y no bastan para veinte piezas; cuatro sí bastan. Los casos añadidos son seis piezas → una caja y siete piezas → dos cajas. Los días conservan cuatro → `true` y cinco → `false`.\n\nCada llamada a `comprobar` o `comprobar_plazo` obtiene una vez la respuesta de su función. Los `if` separados permiten examinar las llamadas posteriores aunque `correcto` ya haya quedado en `false`. Por eso el informe conserva todos los diagnósticos, además del resumen."
         },
         {
           "type": "output_prediction",
@@ -409,7 +409,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva los nueve esperados de piezas para seis plazas y los dos esperados de plazo para cuatro días. La biblioteca usa por error seis también como límite de días. Observa qué caso distingue esa alteración y repara sólo la regla de plazo. Compila, ejecuta y comprueba la batería completa sin cambiar expectativas."
+          "text": "El comprobador de este editor ya contiene los nueve esperados de cajas de seis plazas y los dos esperados del plazo de cuatro días. La tarea es reparar únicamente la función del plazo; no tienes que construir otra batería.\n\nLa biblioteca utiliza por error seis también como máximo de días. Con `comprobar_cajas` seleccionado, compila y ejecuta para localizar qué comparación detecta el cambio indebido. Repara sólo esa regla en la implementación y vuelve a comprobar, conservando las expectativas y la capacidad de las cajas."
         },
         {
           "type": "cpp_compiler",
@@ -468,15 +468,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor reúne las funciones y el comprobador en un único programa C++. Para cantidades de artículos entre 0 y 10, precio_total calcula el total aritmético a cinco créditos por artículo, incluido 0→0. Por separado, alcanza_minimo indica si hay al menos cinco artículos. No añade un recargo ni cambia el cálculo del total cuando no se alcanza ese mínimo."
+          "text": "Este editor utiliza un solo programa C++, con las funciones y su comprobador ya escritos. Para cantidades entre cero y diez artículos, incluidos los extremos, aplica dos reglas:\n`precio_total` calcula cinco créditos por cada artículo. Para cero artículos devuelve cero créditos.\n`alcanza_minimo` indica si hay al menos cinco artículos.\n\nNo alcanzar ese mínimo no modifica el precio ni añade un recargo: la segunda función sólo devuelve si se cumple la cantidad mínima."
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta la revisión inicial y conserva los cinco datos de la batería. Se autoriza subir únicamente el precio a siete créditos por artículo: el mínimo sigue en cinco artículos. Antes de editar, calcula los nuevos totales esperados y decide qué expectativas no deben cambiar. Después separa los nombres de propósito y sus usos en las dos funciones; no alteres el método de comparación ni elimines datos."
+          "text": "Ejecuta primero la revisión inicial y conserva los cinco datos de su comprobador. Ahora se autoriza subir únicamente el precio a siete créditos por artículo; la cantidad mínima sigue siendo cinco artículos.\n\n1. Calcula los nuevos totales esperados desde el precio autorizado. Decide qué resultados de mínimo deben conservarse.\n2. Separa los nombres y usos de las dos reglas en `precio_total` y `alcanza_minimo`.\n3. Actualiza únicamente los esperados que cambia el requisito y vuelve a compilar, ejecutar y comprobar.\n\nEl método de comparación ya está proporcionado. No lo sustituyas por mensajes fijos ni elimines datos para esconder un fallo."
         },
         {
           "type": "paragraph",
-          "text": "Criterios finales: coinciden los cinco totales y los cinco resultados de mínimo, no se omiten llamadas, el resumen es Bateria: OK y la terminación es 0. La contraprueba que acopla ambos acuerdos dispone después de otro editor, para conservar esta implementación correcta. Una solución equivalente es válida; la referencia está en la página siguiente."
+          "text": "Cada comparación observa dos resultados para una misma cantidad: el total y si alcanza el mínimo. Ambos deben corresponder a sus reglas independientes. Cuando coincidan con sus esperados, el comprobador mostrará `Bateria: OK` y terminará con retorno cero.\n\nAdmite otros nombres claros y una organización equivalente que separen esas reglas. El control de una implementación que vuelve a mezclarlas tendrá otro editor; así se conservará el borrador de esta tarea."
         },
         {
           "type": "cpp_compiler",
@@ -510,7 +510,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los totales para 0, 4, 5, 6, 10 artículos pasan a 0, 28, 35, 42, 70 créditos. Los resultados de mínimo permanecen false, false, true, true, true. Para seis artículos, por ejemplo, el total nuevo es 42 créditos y sí se alcanza el mínimo de cinco artículos. Comparar los seis artículos con siete usaría el precio como si fuera el mínimo y rechazaría indebidamente el caso.\n\nCambió una cantidad medida en créditos por artículo; el mínimo medido en artículos no cambió. Los dos valores iniciales coincidían, pero sus unidades y sus motivos de cambio eran diferentes."
+          "text": "Con siete créditos por artículo y un mínimo de cinco artículos, los casos conservados dan:\nCero artículos → cero créditos; no alcanza el mínimo.\nCuatro artículos → veintiocho créditos; no alcanza el mínimo.\nCinco artículos → treinta y cinco créditos; sí alcanza el mínimo.\nSeis artículos → cuarenta y dos créditos; sí alcanza el mínimo.\nDiez artículos → setenta créditos; sí alcanza el mínimo.\n\nPara seis artículos, por ejemplo, el total es seis por siete: cuarenta y dos créditos. El mínimo se comprueba por separado: seis es mayor o igual que cinco, así que se cumple. Comparar esos seis artículos con siete utilizaría el precio como si fuera la cantidad mínima y rechazaría ese caso indebidamente.\n\nCambió el precio medido en créditos por artículo. No cambió el mínimo medido en artículos. Las cifras iniciales coincidían, pero representaban requisitos distintos."
         },
         {
           "type": "drag_fill_code",
@@ -553,7 +553,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor contiene los cinco casos completos y una revisión que comparte acuerdo=7 entre precio y mínimo. Los totales pueden coincidir y, aun así, fallar las peticiones que alcanzan el mínimo acordado. Conserva los casos y separa los dos nombres y sus usos: siete créditos por artículo y cinco artículos de mínimo. Compila, ejecuta y comprueba sin regresar al editor anterior."
+          "text": "Este editor proporciona las cinco comparaciones y una implementación que usa `acuerdo=7` tanto para el precio como para el mínimo. Con esa revisión, los totales pueden ser correctos mientras la decisión sobre el mínimo es errónea.\n\nRepara las dos funciones con nombres y usos separados: siete créditos por artículo y cinco artículos como mínimo. Conserva los datos, esperados y comparaciones del comprobador. Compila, ejecuta y comprueba en este editor, sin sustituir el borrador de la práctica anterior."
         },
         {
           "type": "cpp_compiler",
@@ -582,11 +582,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En la recuperación, piezas_por_caja completa el ajuste de la división porque representa cuántas piezas caben en una caja. dias_maximos completa la comparación del plazo porque representa cuántos días se permiten. piezas y dias varían con cada llamada: son los datos que se comparan con esas reglas, no sustitutos de ellas."
+          "text": "En el ejercicio del envío, `piezas_por_caja` completa el cálculo de cajas porque expresa la capacidad acordada. `dias_maximos` completa la comparación de días porque expresa el plazo permitido.\n\nLos parámetros `piezas` y `dias` tienen otro papel: reciben los datos de cada llamada. Por ejemplo, siete piezas se valoran con una capacidad de seis, y cinco días se comparan con un máximo de cuatro. Cambiar el dato de una llamada no cambia por sí solo esas reglas."
         },
         {
           "type": "paragraph",
-          "text": "Al revisar otro componente, identifica primero qué acuerdo se conserva y cuál cambia. Después relaciona cada constante con la decisión que representa, deriva de ella las cantidades que dependan de esa misma decisión y conserva separadas las reglas independientes. Finalmente reconstruye y ejecuta la batería correspondiente. Sus esperados se revisan desde el requisito; el resultado que acaba de producir la función no decide por sí solo lo que debería haber producido."
+          "text": "Para revisar otro componente, sigue este orden:\n1. Identifica qué requisito se conserva y cuál está autorizado cambiar.\n2. Relaciona cada constante con la cantidad que representa y con sus unidades.\n3. Calcula desde una misma constante las cantidades que dependan de esa decisión. Mantén separadas las reglas independientes.\n4. Revisa los esperados desde el requisito y reconstruye el programa para comprobar los resultados.\n\nLa función muestra lo que hace la implementación. El requisito determina lo que debería hacer; no se reemplaza por la última salida obtenida."
         }
       ]
     }
@@ -1967,6 +1967,141 @@
         "id": "block_0009_0002",
         "beforeSha256": "40d89409670c7d0d16b0146f2db58d05c2352ea0d245600b48dea52896a5eebd",
         "afterSha256": "54a7e872cad8bc5074f9c99a8884165551f6994120148829aa19cb638399301a"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "762f2977aa3eddb6ec5cad599e6575497acde4c4f7231f88e34917ace4666263",
+        "afterSha256": "46abb35159281d333db127b805e590cc44b8ebc014a3efb1eb0ef752d69a0d9d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "5c84faffecbd1fd012f7235425cc12bb568e7ec6e0d5effc2641c6cb2628f719",
+        "afterSha256": "740b1ae5a69e155aa07340ccc846ab62950794c4cba3473582a6c230dbc39366"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "2437dfbcbc9da154ff804cda1f4257ed01d09b9074ed5b24f9d6b55cf295bdbe",
+        "afterSha256": "05ca23813c3948f92505612587f3c69fe3646e39e8e9b1bd3f2efab90bf03190"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "9a8b3d12cac42d26c362bf183147fc9c1ee88d9fffe9995200b2c62d4eaf12b6",
+        "afterSha256": "a09cf8098bda52263d018afa5458a2b9b3f6def3637dbba0f15bc493dff2ec03"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "a3d8ab04277a940c14d0e7fb2436fd0a69837d7a2b114072ec67ae5794f70536",
+        "afterSha256": "0ff2d811e41bd3f462ed260ed2c124214bc32cff8d0c76166d1100c129b9b99a"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "dcf84c918a33ffa02bb7ca4f290282148b8fbb13e187a9a4dd70f91f49dd1688",
+        "afterSha256": "07e764c02690bebaba6ba66952b1caab3be950b858ed24460448d9235898fa7e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "87f8119f05fb77c8a774c44b38f4baece9aefa1c77bdcb8f9a87a1c6511ca382",
+        "afterSha256": "7f28629516be22c0c99686e9558150b95c1fde142159cc720da43fabb4d6b9b4"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "47c7478e2824103411b642cf4646c33e767ad12c67629a8aa85b12fdb06723fd",
+        "afterSha256": "fca2bd92d03d932f4c8f144598dc9d63b3abc373a7f8de324e7bebc0a6f406ef"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "3b6e89104697ffcc9ab66f3796a1dbd323e4d89c1ac96b4103c14d3378e97e11",
+        "afterSha256": "6bbead038513c0a3fc725504ebda7aa76ce8c41c9556c8b2323d6d97271573f2"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "0260479f2ea2094c240695c7d31cd502ba58a40cbf161a60b7701446e5c549ef",
+        "afterSha256": "2de0d82b41e97133345f45198c8e145724114d1f5c80d6d64b0253e8875e9915"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "8ea3a818cf8c36b5a91b6cd044c0f842b0257ac39e83ead1e9a4e05e3b58b718",
+        "afterSha256": "3b76b3774c206ebcc0ad1fcf478e0d20c680248576c33b764d00a29f6cd6f749"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "c98c5a132a2d8bbb81d3fe33ad54a0466a47070c8efe1a9d5812e84d469d7694",
+        "afterSha256": "7b3c2bad0f8b40383b763875ee4a3dc489caab332e590bbd39116efbe9ddb022"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "89a8dff2a62a23829e163c109730b92821a32c203f2eed45a44665fc5ff8f391",
+        "afterSha256": "79a8a3ddf30926019b37f281dd6920810a964c88b081d069f6d0b80c0161e23d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "46fc3b5e0563b2ecb658588ef716ff94be6983ca42fd375f471d00f0b4db60a4",
+        "afterSha256": "289d502f05f86791435f97ece3bdae34807fd540291c69f5d3785f8a48068c17"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "4705293d9dfc50495126b6e431ec15fe4450eb1ac05a9ad4e7601495772af0b0",
+        "afterSha256": "cdc4a07ef3536b2033baefcb1452792e87b15135b29d2ffd5a8f8f722215c914"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "6372d615e05a226b7cb812701ad7b1773429498ba3cea4a20812ec974f40915b",
+        "afterSha256": "435140889ee093cbec07d42c98f0af31abe3e133fc8f17c06dd3fcdd1de8c543"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "bd509cb3418c6e65bd31401ff8747cfe4ce60cc536d31a26132c226718eac555",
+        "afterSha256": "bd1e8a7837653a83d9032d80479ac7df6f27042d2d54f687748f444ff89fbf30"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "5e79606531bd265b1ba5042890f60d2aa1067fa6a26d31a98df3ce62f7cfadd6",
+        "afterSha256": "bb785d79c5d299b467e35aa5804d0c83491f31af190a779a432884995416412c"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "c39db3fc09a5991002f79f41ae443ac5c850139297ea4f0e76529ff9a5ade684",
+        "afterSha256": "b5ff56e83f372d6ef4eb8fe8fe52b1597b371c745c9fb530c3845348b562ed89"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "a8727136c0b2b78e9d6a3aea377cb3502518a559c712fa9f64e6f90dc4e4f033",
+        "afterSha256": "9dc606aeb6b6d4ae7d6d9661241dc4647905c44ef9936e03afe1dfa37d7f97e9"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "96bb2006f4266ce8a4e9c5f82df6122c84cd00322b49238199e22745a1c33f8a",
+        "afterSha256": "f9918973c4fd9a3919d3a994f15c5a59c9925255676b7c8490148ac44c3cfc0c"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "2edab44ff992b71b13ed7deef7811bafbd4b9a9e950494fd06f619e9560fc108",
+        "afterSha256": "84ed2c2b245bed0b9649fe831aa4033d94fb32b19990c5a141508da071e8ceb0"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "73be5a01dfe16558dc2df98de6efaef4208e5d6920b1501ce68539f367e5c3d9",
+        "afterSha256": "e65bd121be35eb8c4754af5d934bfa4c49577bad5a8e081bfb6a0f95a09333dd"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "f9adbd1ee6ddfd1f6562ff0d0daf72c554bac4faf0f0920f722ae6628b1aceb9",
+        "afterSha256": "7641ec3d2b8e76f19db9e6e57ee2c7c0ee71bdbe234c40813fe66d2886f17658"
+      },
+      {
+        "id": "block_0008_0006",
+        "beforeSha256": "5fc19c60f7689c034977c84f2b08c10924c6cba310d3d0aa8bad052a3f1f765e",
+        "afterSha256": "2de7a283e4fe08ed9b2194b0541c9c75a79aa62c2a2d2061115d8ccad1a84291"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "87e81be7482c23310fd530033d006eb6ba1654d5202bda559c6a48f5d688733c",
+        "afterSha256": "b00783883e90927c3cdf70199ed0b575281c08839b239eb0b8dd21c0bcd31686"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "54a7e872cad8bc5074f9c99a8884165551f6994120148829aa19cb638399301a",
+        "afterSha256": "defca45139c8c99933ed4a4a5471fbbbd832fce4a68db7bc5a71c6abccd0375f"
       }
     ]
   },
@@ -1982,11 +2117,11 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "1b92ad5899c945a8d048555ffd06e2309489ef95bdca37465b461a996a038061",
+        "sourceSha256": "55b6a9ab2598700d9c4291534eb4e0dc86d471e9c038c1e9468f14fec905fa99",
         "spans": [
           {
-            "start": 104,
-            "end": 109,
+            "start": 31,
+            "end": 36,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
@@ -1996,19 +2131,12 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "75348807c90acfb4fe5b6005993e7047e18dd219548435fb9a0f7d9148aaaa3e",
+        "sourceSha256": "f8c10f96f81ba92b79270c2bf6ded7cfe459b94f7a6829196aa35f20faa6b8e1",
         "spans": [
           {
-            "start": 26,
-            "end": 27,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 30,
-            "end": 32,
-            "text": "20",
+            "end": 43,
+            "text": "cero y veinte",
             "role": "data",
             "reading": "natural"
           }
@@ -2017,19 +2145,26 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "fedd7eee7b06eca5a054f6ed52c676d0226ab179d4994eb9eb8bcceb299778b6",
+        "sourceSha256": "55c9dfa284b3b9353692079975c0e9b0575e30b953f49ec5bd6ba7556d011dd4",
         "spans": [
           {
-            "start": 58,
-            "end": 64,
-            "text": "cuatro",
+            "start": 97,
+            "end": 112,
+            "text": "piezas_por_caja",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 334,
-            "text": "(Kernighan & Pike, 1999, pp. 2–5)",
+            "start": 165,
+            "end": 178,
+            "text": "numero_cuatro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 475,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2146,150 +2281,131 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "9df3bf6d888bc90c1d6e7b4539fa867fe0996f4a19a4e54541e6794070c08a4f",
+        "sourceSha256": "5af8327472689d9b035fcc697a579657e9ba12f295a0af991dccb0944b2818fb",
         "spans": [
           {
-            "start": 3,
-            "end": 4,
+            "start": 4,
+            "end": 20,
+            "text": "(piezas + 3) / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 36,
             "text": "4",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 66,
+            "start": 85,
+            "end": 86,
             "text": "3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 210,
-            "end": 215,
+            "start": 270,
+            "end": 275,
             "text": "8 + 3",
-            "role": "math"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 225,
-            "end": 227,
-            "text": "11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 234,
-            "end": 235,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 246,
-            "end": 247,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 278,
-            "end": 283,
-            "text": "9 + 3",
-            "role": "math"
-          },
-          {
-            "start": 293,
+            "start": 289,
             "end": 295,
-            "text": "12",
-            "role": "data",
-            "reading": "natural"
+            "text": "11 / 4",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 302,
-            "end": 303,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 314,
-            "end": 315,
-            "text": "3",
+            "start": 311,
+            "end": 320,
+            "text": "dos cajas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 378,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
+            "start": 348,
+            "end": 353,
+            "text": "9 + 3",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 394,
-            "end": 395,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
+            "start": 367,
+            "end": 373,
+            "text": "12 / 4",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 405,
-            "end": 406,
-            "text": "0",
+            "start": 389,
+            "end": 399,
+            "text": "tres cajas",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 468,
+            "text": "3 / 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 484,
+            "end": 494,
+            "text": "cero cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 801,
+            "end": 804,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "fdff982578fca2fda9a7c93a92467be96ed053121ec7212ec592e23d67cb8eb3",
+        "sourceSha256": "a8dd2e56c0d81f8474e5f426150142bf6b48e30a0edc1d251ea4c3dae6a63574",
         "spans": [
           {
-            "start": 102,
-            "end": 104,
-            "text": "11",
-            "role": "data",
-            "reading": "natural"
+            "start": 119,
+            "end": 125,
+            "text": "11 / 6",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 121,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 131,
-            "end": 132,
-            "text": "1",
+            "start": 136,
+            "end": 144,
+            "text": "una caja",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 146,
-            "end": 148,
-            "text": "12",
-            "role": "data",
-            "reading": "natural"
+            "start": 165,
+            "end": 171,
+            "text": "12 / 6",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 164,
-            "end": 165,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 175,
-            "end": 176,
-            "text": "2",
+            "start": 182,
+            "end": 191,
+            "text": "dos cajas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 414,
-            "end": 449,
-            "text": "(Kernighan & Pike, 1999, pp. 19–20)",
+            "start": 440,
+            "end": 464,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2372,33 +2488,19 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "a7ea1a3f69705890ba1976edcc99b9eeb1b0ef1ccc9171b4b7d14f33be4a3cc7",
+        "sourceSha256": "989b90115f32e69d0010b8317a7466a6f4742f3883e1167cb2d9f1caf852f245",
         "spans": [
           {
-            "start": 110,
-            "end": 125,
+            "start": 243,
+            "end": 258,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 144,
-            "text": "CMake",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 364,
-            "end": 369,
-            "text": "CMake",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 419,
-            "end": 424,
-            "text": "0..20",
+            "start": 555,
+            "end": 575,
+            "text": "cero a veinte piezas",
             "role": "data",
             "reading": "natural"
           }
@@ -2407,25 +2509,25 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "3593dc8a3371d33bd156ec8125902708d7e59e1f231daa5c5c908e71eb8bd396",
+        "sourceSha256": "c50ebddd8086aa128763c343b231215d71ef451277f2f2988a22e687b755bfad",
         "spans": [
           {
-            "start": 27,
-            "end": 37,
+            "start": 34,
+            "end": 44,
             "text": "cajas_para",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 82,
+            "start": 84,
+            "end": 93,
             "text": "const int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 412,
-            "end": 427,
+            "start": 311,
+            "end": 326,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
@@ -2435,16 +2537,8 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "7f0c7f3089e66c736eb62ae3b080175fa55d6f2f4e24e202b7dd0a593d2214a6",
-        "spans": [
-          {
-            "start": 173,
-            "end": 174,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "72fa5de95f42568f83d421eaf52718ee4d5c097d751bce073ccdb4b183f17245",
+        "spans": []
       },
       {
         "block": "block_0002_0004",
@@ -2479,32 +2573,39 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "8a02b88bfeea16934242d428d0994b71730050f536f284a23ddfa5eff391b2c7",
+        "sourceSha256": "00e1ff909cd8376e25681ef2efc60b032f40f593e8050f3f27dc6292f0012fbc",
         "spans": []
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "a5b9035c163a15dc3ea70bf1e0738b2c37ab97c9e69d98796d6be2a20c0b4b14",
+        "sourceSha256": "05fa4d20cb105ed0894ca98ad8b01801ddc3b322dee67576417477faaee0f13c",
         "spans": [
           {
-            "start": 15,
-            "end": 44,
+            "start": 4,
+            "end": 33,
             "text": "const int piezas_por_caja{4};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 241,
+            "start": 47,
+            "end": 62,
+            "text": "piezas_por_caja",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 368,
+            "end": 369,
             "text": "1",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 544,
-            "end": 580,
-            "text": "(Kernighan & Pike, 1999, pp. 20, 22)",
+            "start": 649,
+            "end": 673,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2513,117 +2614,166 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "cbed91696ed21b61b85c5daed21515d2fba83b20206f8b2936d5331f67ed4823",
+        "sourceSha256": "83cbf20fc4ba9a25b8c61f56100f7343c306a54d700bb5226a688751a3e66fde",
         "spans": [
           {
-            "start": 23,
-            "end": 38,
+            "start": 6,
+            "end": 21,
             "text": "piezas_por_caja",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 45,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 58,
-            "end": 86,
+            "start": 37,
+            "end": 65,
             "text": "piezas + piezas_por_caja - 1",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 118,
+            "start": 89,
+            "end": 99,
             "text": "piezas + 3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 145,
-            "end": 146,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 165,
-            "end": 166,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 169,
-            "end": 171,
-            "text": "20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 202,
-            "end": 204,
-            "text": "23",
+            "start": 189,
+            "end": 201,
+            "text": "veinticuatro",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 233,
-            "end": 257,
-            "text": "piezas + piezas_por_caja",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 278,
-            "end": 280,
-            "text": "24",
+            "start": 218,
+            "end": 228,
+            "text": "veintitrés",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 291,
-            "end": 294,
+            "start": 257,
+            "end": 260,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 317,
-            "end": 320,
-            "text": "1:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 335,
-            "end": 356,
-            "text": "0, 4, 8, 20, 1, 5, 17",
+            "start": 326,
+            "end": 337,
+            "text": "Cero piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 381,
-            "end": 400,
-            "text": "0, 1, 2, 5, 1, 2, 5",
+            "start": 340,
+            "end": 350,
+            "text": "cero cajas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 443,
-            "end": 454,
+            "start": 352,
+            "end": 365,
+            "text": "Cuatro piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 368,
+            "end": 376,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 389,
+            "text": "Ocho piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 392,
+            "end": 401,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 416,
+            "text": "Veinte piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 419,
+            "end": 430,
+            "text": "cinco cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 432,
+            "end": 441,
+            "text": "Una pieza",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 452,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 466,
+            "text": "Cinco piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 478,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 497,
+            "text": "Diecisiete piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 500,
+            "end": 511,
+            "text": "cinco cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 549,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 470,
-            "end": 471,
-            "text": "0",
+            "start": 573,
+            "end": 577,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 610,
+            "end": 613,
+            "text": "1:2",
             "role": "output",
             "reading": "natural"
           }
@@ -2718,32 +2868,25 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "e891d8512043793337c721f067351016c7b0e08df43bb0dc1042621055a5e947",
+        "sourceSha256": "e27a389d825e7b1af0097372ea9f8a5d30b652c83a504eea8829197da83e1ce3",
         "spans": [
           {
-            "start": 79,
-            "end": 80,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
-            "end": 84,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 100,
+            "start": 77,
+            "end": 91,
             "text": "llega_a_tiempo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 110,
-            "end": 114,
+            "start": 127,
+            "end": 139,
+            "text": "cero y siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 161,
             "text": "true",
             "role": "output",
             "reading": "natural"
@@ -2753,33 +2896,33 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "a59ad20fa8ecd6141d49a0f6579b01c41420cc59992da776653059661e74beee",
+        "sourceSha256": "71bcce51133df3154c2b6e20e971688f0d21b35d3992b4f9a5bff38f4c7a7a3a",
         "spans": [
           {
-            "start": 98,
-            "end": 104,
+            "start": 66,
+            "end": 72,
             "text": "limite",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 148,
-            "end": 158,
+            "start": 162,
+            "end": 172,
             "text": "cajas_para",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 202,
+            "start": 212,
+            "end": 226,
             "text": "llega_a_tiempo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 613,
-            "end": 646,
-            "text": "(Thomas & Hunt, 2020, pp. 31, 34)",
+            "start": 641,
+            "end": 662,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2906,47 +3049,33 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "7f9d01ac8b50f71e0e6a181c86d1b0c94f8b85caa5d777ca3cf84cfa0ca36129",
+        "sourceSha256": "874bceaec589f34f1ccd28fe02d5144e9828aeae3b88f03a2815b135d49a13e4",
         "spans": [
           {
-            "start": 28,
-            "end": 43,
+            "start": 40,
+            "end": 55,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 177,
+            "start": 205,
+            "end": 212,
             "text": "1:2:1:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 267,
-            "text": "0",
+            "start": 323,
+            "end": 336,
+            "text": "cero a veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 272,
-            "text": "20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 337,
-            "end": 338,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 341,
-            "end": 342,
-            "text": "7",
+            "start": 411,
+            "end": 423,
+            "text": "cero a siete",
             "role": "data",
             "reading": "natural"
           }
@@ -2955,33 +3084,26 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "45373ac23669a24686e077ce1992cd39d78b49a16ae6dcb9757b5e5a7dc1b470",
+        "sourceSha256": "fbf64dd9fe2a4cf37f2341542983829cb02afef8ce22b833e18468840532a732",
         "spans": [
           {
-            "start": 123,
-            "end": 124,
-            "text": "6",
+            "start": 170,
+            "end": 181,
+            "text": "seis piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 128,
-            "text": "7",
+            "start": 184,
+            "end": 196,
+            "text": "siete piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 164,
-            "end": 165,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 168,
-            "end": 169,
-            "text": "5",
+            "start": 302,
+            "end": 321,
+            "text": "cuatro y cinco días",
             "role": "data",
             "reading": "natural"
           }
@@ -3008,12 +3130,12 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "680221d9a953327675a65321bef6a55371ea996c6b1e89ae9c847035d748fe96",
+        "sourceSha256": "1a3355279716e9fe3e2ae65a512b2c4d7430945490caab2b3703b1b7d04dbd03",
         "spans": [
           {
-            "start": 205,
-            "end": 210,
-            "text": "CMake",
+            "start": 459,
+            "end": 474,
+            "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           }
@@ -3022,33 +3144,47 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "c25fb52d32e58f536f3b8a4bcb4cebbd443c7a495ddc95f7372d08a37e2f0de2",
+        "sourceSha256": "33d198d0c47589c4ea762bb148e5500aad55088e1c5bc2369db307d07256826d",
         "spans": [
           {
-            "start": 89,
-            "end": 92,
-            "text": "4/5",
+            "start": 176,
+            "end": 187,
+            "text": "cuatro días",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 122,
-            "text": "true/false",
+            "start": 205,
+            "end": 209,
+            "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 178,
-            "end": 189,
+            "start": 217,
+            "end": 222,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 230,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 286,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 206,
-            "end": 207,
-            "text": "0",
+            "start": 324,
+            "end": 328,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -3069,32 +3205,32 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "dffa8fd85acc8c8d69bdeb903f61ec9074a9b5dbb28c8da2305e9c5fa11dae5e",
+        "sourceSha256": "e339877020a792e2bc2bc6400edc4dcc63453899b00f8a3115aeaca2db7ab759",
         "spans": [
           {
-            "start": 164,
-            "end": 179,
+            "start": 150,
+            "end": 165,
             "text": "piezas_por_caja",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 213,
+            "start": 189,
+            "end": 199,
             "text": "cajas_para",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 216,
-            "end": 228,
+            "start": 244,
+            "end": 256,
             "text": "dias_maximos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 249,
+            "start": 280,
+            "end": 294,
             "text": "llega_a_tiempo",
             "role": "cpp",
             "reading": "technical"
@@ -3104,117 +3240,194 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "f71332362ae6d048ff7220454c5bff76d2170fa93cc2d812724a105cb1349491",
+        "sourceSha256": "023bf121b07837839a1b303a91f8959c98e628a33ffe7eed21211d4500cf88b0",
         "spans": [
           {
-            "start": 22,
-            "end": 43,
-            "text": "0, 4, 8, 20, 1, 5, 17",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
+            "start": 91,
             "end": 102,
-            "text": "0, 1, 2, 4, 1, 1, 3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 209,
-            "end": 210,
-            "text": "6",
+            "text": "Cero piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 211,
-            "end": 212,
-            "text": "1",
+            "start": 105,
+            "end": 115,
+            "text": "cero cajas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 215,
-            "end": 216,
-            "text": "7",
+            "start": 117,
+            "end": 130,
+            "text": "Cuatro piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 217,
+            "start": 133,
+            "end": 141,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 154,
+            "text": "Ocho piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 166,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 181,
+            "text": "Veinte piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 196,
+            "text": "cuatro cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 207,
+            "text": "Una pieza",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
             "end": 218,
-            "text": "2",
+            "text": "una caja",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 319,
-            "end": 320,
-            "text": "4",
+            "start": 220,
+            "end": 232,
+            "text": "Cinco piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 321,
-            "end": 325,
+            "start": 235,
+            "end": 243,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 262,
+            "text": "Diecisiete piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 275,
+            "text": "tres cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 411,
+            "text": "seis piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 414,
+            "end": 422,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 437,
+            "text": "siete piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 449,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 470,
+            "end": 476,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 484,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 328,
-            "end": 329,
-            "text": "5",
+            "start": 488,
+            "end": 493,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 335,
+            "start": 497,
+            "end": 502,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 351,
-            "end": 360,
+            "start": 522,
+            "end": 531,
             "text": "comprobar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 363,
-            "end": 378,
+            "start": 536,
+            "end": 551,
             "text": "comprobar_plazo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 436,
-            "end": 438,
+            "start": 602,
+            "end": 604,
             "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 480,
-            "end": 488,
+            "start": 667,
+            "end": 675,
             "text": "correcto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 492,
-            "end": 497,
+            "start": 697,
+            "end": 702,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 514,
-            "end": 516,
-            "text": "if",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3431,8 +3644,16 @@
       {
         "block": "block_0006_0008",
         "path": "/text",
-        "sourceSha256": "c01e54a138389df6d639b5784bac959dadd7697c75187dca911f1e8702c41079",
-        "spans": []
+        "sourceSha256": "f7fa113223c80ee38436cb781e87672f18d8fa44679131d7315988c1d2ec7bd4",
+        "spans": [
+          {
+            "start": 295,
+            "end": 310,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0009",
@@ -3449,53 +3670,39 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "680b6802943728b975f3f467ac828a88aa803c91753ff5489f199237d45721cd",
+        "sourceSha256": "ea9d50e65bd9658cb99ccd63ed7d0ef52a994c3b5b231ed932bb28eca679222d",
         "spans": [
           {
-            "start": 70,
-            "end": 73,
-            "text": "C++",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 110,
-            "end": 111,
-            "text": "0",
+            "start": 112,
+            "end": 133,
+            "text": "cero y diez artículos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 116,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 118,
-            "end": 130,
+            "start": 179,
+            "end": 191,
             "text": "precio_total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 200,
-            "text": "0",
+            "start": 240,
+            "end": 254,
+            "text": "cero artículos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 201,
-            "end": 202,
-            "text": "0",
+            "start": 264,
+            "end": 277,
+            "text": "cero créditos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 232,
+            "start": 280,
+            "end": 294,
             "text": "alcanza_minimo",
             "role": "cpp",
             "reading": "technical"
@@ -3505,25 +3712,40 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "579f12268591ce3eb267f7023642defee669f4d9d6e4fbf1108354b20b6f8e7d",
-        "spans": []
+        "sourceSha256": "d8965ce19ec04f4f777a6e1620bb9d50f13017a65168d74e4e1c9a1dd06a8664",
+        "spans": [
+          {
+            "start": 378,
+            "end": 390,
+            "text": "precio_total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 395,
+            "end": 409,
+            "text": "alcanza_minimo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "276378f2bc9270262e9cfc166b1274794a5d71b8b8c01e8c2bdae496e3b616af",
+        "sourceSha256": "fd661591236d65c68439977d65b10ffb5574a856c7fd5c410e7e0d092e9ddb9d",
         "spans": [
           {
-            "start": 118,
-            "end": 129,
+            "start": 213,
+            "end": 224,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 151,
-            "text": "0",
+            "start": 250,
+            "end": 254,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -3544,33 +3766,82 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "d88d6fba24003851b312acbd94379834b3863a1e7d23778513291f451de999de",
+        "sourceSha256": "4e67b0551c2c53febc33f5302f23719e9f325742b814820369d81bee4a441f76",
         "spans": [
           {
-            "start": 17,
-            "end": 31,
-            "text": "0, 4, 5, 6, 10",
+            "start": 91,
+            "end": 105,
+            "text": "Cero artículos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 50,
-            "end": 67,
-            "text": "0, 28, 35, 42, 70",
+            "start": 108,
+            "end": 121,
+            "text": "cero créditos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 144,
-            "text": "false, false, true, true, true",
+            "start": 145,
+            "end": 161,
+            "text": "Cuatro artículos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 183,
+            "text": "veintiocho créditos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 200,
-            "text": "42",
+            "start": 207,
+            "end": 222,
+            "text": "Cinco artículos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 249,
+            "text": "treinta y cinco créditos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 287,
+            "text": "Seis artículos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 313,
+            "text": "cuarenta y dos créditos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 351,
+            "text": "Diez artículos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 370,
+            "text": "setenta créditos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 480,
+            "text": "cuarenta y dos créditos",
             "role": "output",
             "reading": "natural"
           }
@@ -3680,11 +3951,11 @@
       {
         "block": "block_0008_0006",
         "path": "/text",
-        "sourceSha256": "3f2d2fdc62b5b6dd5fc68526fb13360dd784a62c606e5e8c8ca701526a6f4a6a",
+        "sourceSha256": "6051e8a9b6f16c081b169ba95406bb199c07860d4da8206047c6e48530397d35",
         "spans": [
           {
-            "start": 75,
-            "end": 84,
+            "start": 78,
+            "end": 87,
             "text": "acuerdo=7",
             "role": "cpp",
             "reading": "technical"
@@ -3706,25 +3977,25 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "537ca880423eeade58645b3a5479e2dbc4fb3a789f9e1e228060f35b089812a6",
+        "sourceSha256": "5dd09fc2ec53d60e9ce8e2c1931b63144bc1c5cbc38bb9dafb9aed4d0f53400a",
         "spans": [
           {
-            "start": 20,
-            "end": 35,
+            "start": 28,
+            "end": 43,
             "text": "piezas_por_caja",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 134,
+            "start": 113,
+            "end": 125,
             "text": "dias_maximos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 213,
-            "end": 219,
+            "start": 211,
+            "end": 217,
             "text": "piezas",
             "role": "cpp",
             "reading": "technical"
@@ -3741,7 +4012,7 @@
       {
         "block": "block_0009_0002",
         "path": "/text",
-        "sourceSha256": "b455d0eba0f1f32f0fa891bec5eab73e74056efe42ba24beac55304f273da74f",
+        "sourceSha256": "e95eb0b8b64c10aaaf566b048e1ef4711273070f69d5e5ab2fbea497b002c474",
         "spans": []
       }
     ],

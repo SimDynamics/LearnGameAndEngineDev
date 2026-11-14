@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta práctica integra dentro del editor de la app una biblioteca, un cliente y un comprobador. El caso consiste en calcular cuánto ajustar un valor para llevarlo a un intervalo permitido. Debes conservar el contrato de la biblioteca, el rechazo recuperable del cliente, las expectativas independientes del comprobador y la relación entre fuentes y objetivos construidos. Utilizarás los recursos ya estudiados, sin añadir un marco de pruebas. La primera solución se construye a partir de los requisitos.\n\nEl trabajo prepara la integración del proyecto externo de portafolio: su instalación de herramientas, desarrollo, depuración, variante propia, documentación y publicación tendrán su enseñanza y sus evidencias. Resolver este integrador dentro de la app acredita únicamente los objetivos que se comprueben aquí."
+          "text": "Esta práctica reúne una biblioteca y dos programas dentro del editor de la app. La biblioteca calcula cuánto debe cambiar un valor para llevarlo a un intervalo permitido. El cliente recibe peticiones y decide cómo presentar las aceptaciones y los rechazos. El comprobador llama a esa misma biblioteca y compara lo que obtiene con resultados deducidos antes de ejecutarla.\n\nConstruirás la primera solución desde los requisitos. Debes conservar tanto los acuerdos de cada programa como las relaciones de CMake que permiten construirlos, sin añadir un marco de pruebas.\n\nEste trabajo prepara la integración del proyecto externo de portafolio. Su preparación de herramientas, construcción, depuración, variante propia, documentación y publicación tendrán su enseñanza y sus evidencias. Resolver el integrador dentro de la app acredita únicamente los objetivos que se comprueben aquí."
         },
         {
           "type": "paragraph",
-          "text": "La interfaz pública es bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste). Acepta cuando los tres valores están entre -20 y 20, inclusive, y inferior no supera a superior. Al aceptar escribe en ajuste el cambio de menor magnitud que, sumado a valor, lo sitúa dentro del intervalo; devuelve true. Al rechazar devuelve false y conserva exactamente el destino anterior. La función no imprime ni termina el programa.\n\nSi el valor ya está dentro del intervalo, el ajuste es cero. Por debajo, debe llegar al extremo inferior: para 2 e intervalo [3,7], el ajuste es 1. Por encima, debe retroceder hasta el extremo superior: para 9 en ese mismo intervalo, el ajuste es -2. Ese resultado negativo es válido; su signo indica en qué dirección debe cambiar el valor."
+          "text": "La interfaz pública es bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste). Los tres primeros parámetros describen la petición; el último permite escribir el resultado en una variable del llamador. La función debe cumplir estas condiciones:\n\nAcepta si valor, inferior y superior están entre -20 y 20, inclusive, y además inferior no supera a superior.\nAl aceptar, escribe el cambio de menor magnitud que, sumado a valor, lo deja dentro del intervalo y devuelve true.\nAl rechazar, devuelve false y conserva exactamente el valor anterior del destino.\nNo imprime mensajes ni termina el programa: esas decisiones corresponden al cliente.\n\nEl signo del resultado indica hacia dónde debe cambiar el valor. Con el intervalo [3,7], una petición de 2 necesita sumar 1 para llegar al extremo inferior. Una petición de 9 necesita sumar -2 para bajar hasta el extremo superior. Si el valor ya está dentro del intervalo, incluidos sus extremos, el ajuste es cero: no hace falta cambiarlo. Por tanto, un resultado negativo o cero también puede ser una aceptación correcta."
         },
         {
           "type": "paragraph",
-          "text": "El tipo bool por sí solo no explica la política de la función ni qué ocurre con el destino en cada estado. El cliente debe conocer qué significa aceptar, qué datos se rechazan y quién decide cómo comunicarlo. Conservar esos acuerdos entre biblioteca y consumidores permite cambiar una implementación sin alterar inesperadamente el tratamiento del programa (Kernighan & Pike, 1999, pp. 105, 111–112). Aquí el entero sólo representa el resultado de la petición nueva cuando esa llamada fue aceptada; un destino conservado tras un rechazo pertenece al estado anterior."
+          "text": "El tipo bool no explica por sí solo qué promete la función. El llamador también necesita conocer qué entradas se aceptan, qué resultado se escribe y qué permanece igual cuando se rechaza la petición. Conservar esos acuerdos permite cambiar la implementación sin alterar inesperadamente el tratamiento del cliente (Kernighan & Pike, 1999).\n\nAquí hay que consultar primero la aceptación de la llamada actual. Si la función devuelve false, la variable de destino conserva un valor anterior; ese entero no representa el resultado de la petición rechazada. Que siga disponible no autoriza a contarlo o sumarlo como un ajuste nuevo."
         }
       ]
     },
@@ -30,7 +30,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En pruebas/casos.cpp, el archivo del comprobador que encontrarás en el editor, cada caso debe guardar estos datos: valor, extremo inferior, extremo superior, destino inicial, aceptación esperada y destino final esperado. Deduce los dos esperados del requisito antes de llamar a la función. Incluye valores por debajo, dentro y por encima del intervalo, y comprueba sus dos extremos; considera también un intervalo de un solo valor, los límites admitidos y rechazos por las condiciones del contrato. Elige destinos iniciales que hagan visible una escritura incorrecta al rechazar. Obtener un esperado llamando al mismo cálculo que se evalúa impediría contrastarlo con una expectativa independiente."
+          "text": "Construye tu batería en pruebas/casos.cpp, el archivo del comprobador que encontrarás en el editor. Cada caso necesita guardar estos datos:\n\nEl valor que se quiere ajustar.\nLos extremos inferior y superior del intervalo.\nEl destino inicial, antes de llamar a la biblioteca.\nLa aceptación esperada.\nEl destino final esperado.\n\nDeduce los dos esperados a partir del contrato antes de llamar a intentar_ajuste. Para una aceptación, determina dónde está el valor respecto del intervalo y qué cambio necesita. Para un rechazo, el esperado del destino debe ser exactamente su valor inicial. Elige destinos iniciales que permitan advertir si la función escribe cuando no debe hacerlo.\n\nIncluye casos por debajo, dentro y por encima del intervalo, así como valores situados exactamente en cada extremo. Contrasta también un intervalo de un solo valor, los límites admitidos y las condiciones que deben provocar rechazo. Cada caso debe responder a una de esas obligaciones. Obtener el esperado llamando al mismo cálculo que estás evaluando impediría disponer de una respuesta independiente con la que contrastarlo."
         },
         {
           "type": "paragraph",
@@ -38,7 +38,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en app/consulta.cpp un cliente para un máximo de ocho peticiones. Cada petición contiene una terna completa de int representables; después de la última llega el fin normal de la entrada. Dentro de ese dominio, el cliente debe procesarlas todas y numerarlas por su posición. Muestra sólo los ajustes aceptados; cada rechazo identifica la petición, sus tres valores, el intervalo admitido, la condición de orden y una acción para revisar los datos. Al final informa de las cantidades aceptada y rechazada y de la suma de los ajustes nuevos. Devuelve 1 si hubo algún rechazo y 0 en otro caso. Tanto un ajuste cero como uno negativo cuentan como resultados aceptados."
+          "text": "Construye el cliente en app/consulta.cpp. La entrada contiene un máximo de ocho peticiones, cada una con tres enteros int representables: valor, inferior y superior, en ese orden. Las ternas están completas; después de la última llega el fin normal de la entrada. Dentro de ese dominio, el cliente debe hacer lo siguiente:\n\nNumerar cada petición según su posición y llamar a la biblioteca una vez para ella.\nSi se acepta, mostrar su número y su ajuste en stdout, contarla como aceptada y sumar ese ajuste nuevo.\nSi se rechaza, contarla como rechazada e informar en stderr de su número, sus tres valores, los límites admitidos, la condición de orden y una acción para revisar los datos.\nContinuar con la petición siguiente también después de un rechazo.\nAl terminar, mostrar las cantidades aceptada y rechazada y la suma de los ajustes nuevos.\n\nEl proceso devuelve 1 si hubo algún rechazo y 0 en otro caso. Ese código resume el lote; no convierte un ajuste negativo en un rechazo. Tanto el cero como los ajustes negativos cuentan y se suman cuando la llamada actual acepta."
         },
         {
           "type": "paragraph",
@@ -54,11 +54,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva este árbol del editor: publico/control/ajuste.h declara la interfaz; src/ajuste.cpp la implementa; app/consulta.cpp contiene el cliente; pruebas/casos.cpp contiene el comprobador; CMakeLists.txt describe la construcción. La biblioteca se llamará ajustes y los ejecutables consultar_ajustes y comprobar_ajustes. Ambos deben enlazar con la misma biblioteca, cada uno con su propio main. Cada fuente que use la interfaz incluye \"control/ajuste.h\"; no copia el cuerpo del componente."
+          "text": "Conserva los cinco archivos del árbol del editor, cada uno con esta función:\n\npublico/control/ajuste.h: declara la interfaz pública y su contrato.\nsrc/ajuste.cpp: contiene la definición de la función de ajuste.\napp/consulta.cpp: contiene el cliente y su propio main.\npruebas/casos.cpp: contiene el comprobador y otro main.\nCMakeLists.txt: describe qué fuentes forman cada objetivo y cómo se relacionan.\n\nLa biblioteca se llamará ajustes. El ejecutable del cliente será consultar_ajustes y el del comprobador, comprobar_ajustes. Ambos deben enlazar con la misma biblioteca. Cada fuente que use la interfaz incluye \"control/ajuste.h\"; no copia la definición de la función ni compila por su cuenta otra copia de src/ajuste.cpp."
         },
         {
           "type": "paragraph",
-          "text": "CMakeLists.txt está vacío a propósito. Escribe la descripción: mínimo CMake 3.20, lenguaje C++ habilitado, los tres objetivos con sus fuentes, búsqueda pública de la cabecera y relaciones de enlace. Declara cxx_std_20 y extensiones desactivadas para los tres objetivos. Ese mínimo de características es compatible con construir en C++23; no exige un modo exactamente C++20.\n\nLas fuentes iniciales son borradores PENDIENTE: sus mensajes no demuestran que hayan ejecutado una prueba. Completa el componente, el cliente y un comprobador que compare tanto el bool como el destino de cada caso. Debe terminar con 1 si alguna comparación discrepa y con 0 si todas coinciden, sin omitir casos posteriores. Las llamadas y comparaciones necesarias deben permanecer fuera de assert.\n\nEn «Objetivo CMake», selecciona primero consultar_ajustes. Usa «Configurar y generar», «Construir objetivo» y «Ejecutar objetivo construido» con la entrada preparada. Después selecciona comprobar_ajustes, vacía el campo «Entrada», constrúyelo y ejecútalo: los casos del comprobador están en su código. Atribuye stdout, stderr y el retorno a la revisión y al objetivo correspondientes. Guarda tus casos en su archivo del proyecto: la consola muestra su ejecución, pero no sustituye las comparaciones programadas.",
+          "text": "CMakeLists.txt está vacío a propósito. Escribe una descripción que requiera como mínimo CMake 3.20 y habilite C++ como lenguaje del proyecto. Declara los tres objetivos con sus fuentes, la raíz de búsqueda pública de la cabecera y las relaciones de enlace de ambos ejecutables con la biblioteca.\n\nPide cxx_std_20 para cada objetivo y solicita el modo sin extensiones del compilador mediante CXX_EXTENSIONS OFF. Ese mínimo admite un modo C++20 o posterior, incluido C++23; no exige exactamente C++20 ni garantiza por sí solo que estén implementadas todas sus características concretas.\n\nCompleta después el componente, el cliente y el comprobador. Las fuentes iniciales son borradores: imprimir PENDIENTE no significa haber ejecutado una prueba. Construye un comprobador que compare tanto el bool como el destino de cada caso. Debe continuar después de una discrepancia y devolver 1 si hubo alguna, o 0 si todas las comparaciones coinciden. Las llamadas y comparaciones necesarias deben permanecer fuera de assert para que se ejecuten también cuando las aserciones estén desactivadas.\n\nComprueba cada programa con su objetivo y su entrada:\n\n1. En «Objetivo CMake», selecciona consultar_ajustes. Conserva la entrada preparada con las seis ternas del cliente.\n2. Usa «Configurar y generar» para procesar la descripción y preparar las reglas de construcción. Si esa fase termina correctamente, usa «Construir objetivo» para compilar y enlazar el cliente con la biblioteca.\n3. Usa «Ejecutar objetivo construido» y contrasta las aceptaciones, los rechazos y el resumen con el contrato.\n4. Selecciona comprobar_ajustes y vacía el campo «Entrada»: este programa obtiene sus casos del código de pruebas/casos.cpp. Construye ese objetivo y ejecútalo.\n\nRelaciona stdout, stderr y el retorno con el objetivo y la revisión ejecutados. Conserva los casos y sus comparaciones en pruebas/casos.cpp: la consola muestra lo que ocurrió al ejecutarlos, pero no sustituye esas comprobaciones programadas.",
           "emphasis": [
             {
               "text": "compare tanto el bool como el destino"
@@ -129,7 +129,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En CMakeLists.txt, src/ajuste.cpp pertenece sólo a la biblioteca ajustes; cada main tiene su propio ejecutable. Los dos consumidores enlazan con esa biblioteca. La búsqueda pública añade publico para que la biblioteca y sus consumidores puedan completar control/ajuste.h. Esa relación de uso transmite el requisito al construir cada consumidor (Scott, 2025, pp. 18–21, 182–183).\n\nLa referencia conserva las opciones -Wall, -Wextra y -Wpedantic estudiadas para GCC. Su significado pertenece al compilador: CMake las transmite, pero no las convierte automáticamente en opciones equivalentes de MSVC. Recupera la configuración de avisos adecuada al compilador activo y distingue sus diagnósticos del veredicto de la batería."
+          "text": "En CMakeLists.txt, la descripción reúne estas decisiones de construcción:\n\ncmake_minimum_required(VERSION 3.20) establece la versión mínima de CMake. project(AjustesConEvidencia LANGUAGES CXX) da nombre al proyecto y habilita el lenguaje C++.\nadd_library(ajustes STATIC src/ajuste.cpp) crea una biblioteca estática a partir de esa fuente. Su código compilado se archiva para incorporarlo a los ejecutables al enlazarlos; la biblioteca no es un programa con su propio main.\nLas dos llamadas a add_executable crean consultar_ajustes y comprobar_ajustes con el main de su fuente correspondiente.\ntarget_include_directories(ajustes PUBLIC publico) hace que la biblioteca busque la cabecera bajo publico y comunica esa raíz a sus consumidores. Así pueden completar la ruta control/ajuste.h.\nCada llamada a target_link_libraries conecta un ejecutable con ajustes. PRIVATE declara esa relación para el ejecutable; no es una regla de acceso de C++ ni impide que reciba los requisitos públicos de la biblioteca.\n\nEstas relaciones permiten que los dos consumidores usen la misma implementación y reciban la ruta que necesitan para compilar sus llamadas (Scott, 2025).\n\nLas tres llamadas a target_compile_features piden el mínimo cxx_std_20. set_target_properties aplica CXX_EXTENSIONS OFF a los tres objetivos: solicita el modo sin extensiones propias del compilador cuando este distingue esos modos.\n\nPor último, target_compile_options añade opciones a la compilación de las fuentes del objetivo nombrado. La referencia conserva -Wall, -Wextra y -Wpedantic, estudiadas para GCC. CMake las transmite al compilador y no las traduce a opciones equivalentes de MSVC. Un error por esas opciones pertenece a la construcción y no demuestra un fallo del cálculo ni un resultado de la batería. La configuración de avisos debe ser compatible con el compilador activo antes de poder comprobar los programas."
         },
         {
           "type": "code",
@@ -159,7 +159,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada preparada contiene seis peticiones. Se aceptan la primera, segunda, tercera y quinta, con ajustes 1, 0, -2 y 0. Se rechaza la cuarta por sus extremos invertidos y la sexta por el valor 21. El resumen es Aceptadas=4 Rechazadas=2 Suma=-1 y el retorno normal es 1.\n\nLa cuarta petición llega después del ajuste negativo de la tercera. El destino conserva ese resultado al rechazarse la cuarta, pero el cliente no vuelve a sumarlo: sólo suma cuando la llamada actual acepta. Contrasta cada diagnóstico con los tres valores de su petición. Los canales stdout y stderr se observan por separado, sin exigir un orden combinado entre ambos."
+          "text": "Las seis peticiones preparadas se procesan en su orden. La primera, segunda, tercera y quinta se aceptan con ajustes 1, 0, -2 y 0. La cuarta se rechaza porque sus extremos están invertidos; la sexta, porque valor es 21.\n\nEn stdout, el cliente de referencia muestra:\n\nPeticion=1 Ajuste=1\nPeticion=2 Ajuste=0\nPeticion=3 Ajuste=-2\nPeticion=5 Ajuste=0\nAceptadas=4 Rechazadas=2 Suma=-1\n\nEn stderr, informa de los dos rechazos:\n\nRechazo: peticion=4 valor=0 inferior=7 superior=3. Se admiten valores de -20 a 20 con inferior <= superior. Revise los tres valores.\nRechazo: peticion=6 valor=21 inferior=3 superior=7. Se admiten valores de -20 a 20 con inferior <= superior. Revise los tres valores.\n\nTodas esas líneas terminan con un salto de línea. El proceso termina normalmente con 1 porque hubo rechazos. Se observan los dos canales por separado, sin exigir un orden combinado entre ellos. Otras presentaciones pueden cumplir el mismo contrato si conservan la información pedida.\n\nLa cuarta petición llega después del ajuste -2 de la tercera. Al rechazarla, la biblioteca conserva ese destino. El cliente no vuelve a sumarlo: consulta la aceptación actual y sólo suma cuando esa llamada devuelve true. Por eso la suma final es -1 y no incluye resultados anteriores como si fueran nuevos."
         },
         {
           "type": "multiple_choice",
@@ -188,7 +188,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En pruebas/casos.cpp, cada llamada guarda un destino inicial y contrasta dos observaciones: aceptación y destino final. Los tres primeros casos observan un valor por debajo, dentro y por encima; el cuarto observa un intervalo de un valor. Los casos quinto y sexto alcanzan ajustes de magnitud cuarenta con datos admitidos. Los restantes comprueban rechazos por orden o límites y usan destinos iniciales diferentes.\n\nEsta selección de once casos es una referencia finita. Por ejemplo, no contiene un valor situado exactamente en cada extremo de un intervalo con extremos diferentes. Su coincidencia no demuestra por sí sola esas situaciones ni todas las demás entradas. Compara la selección con el contrato y conserva qué obligación observa cada caso; no confundas la cantidad de filas con una garantía de cobertura completa."
+          "text": "La batería de referencia de pruebas/casos.cpp guarda para cada llamada un destino inicial y contrasta tanto la aceptación como el destino final. Sus once casos se distribuyen así:\n\nLos tres primeros sitúan el valor por debajo, dentro y por encima del intervalo.\nEl cuarto usa un intervalo de un solo valor.\nEl quinto y el sexto alcanzan ajustes de magnitud cuarenta con datos admitidos.\nLos restantes provocan rechazos por el orden de los extremos o por los límites admitidos; usan destinos iniciales diferentes para comprobar su conservación.\n\nEsta selección es finita. Por ejemplo, no contiene un valor situado exactamente en cada extremo de un intervalo con extremos diferentes. Que sus once comparaciones coincidan no demuestra esas situaciones ni todas las demás entradas. Compara tu selección con el contrato e identifica qué obligación observa cada caso. La cantidad de filas no sustituye ese contraste."
         },
         {
           "type": "code",
@@ -226,7 +226,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto contiene el componente con el signo alterado y los once casos de referencia. Con comprobar_ajustes seleccionado en «Objetivo CMake», configura y construye. Vacía el campo «Entrada»: este comprobador usa los casos de su código y no lee las ternas del cliente. Al ejecutar el estado inicial, localiza las discrepancias de los casos 3 y 6, el resumen Fallos=2 y el retorno 1. Ese estado reproduce el defecto; todavía no satisface el objetivo final.\n\nRepara únicamente la resta de esa rama en src/ajuste.cpp y pulsa «Compilar, ejecutar y comprobar» con el mismo objetivo. Las once comparaciones deben coincidir, el resumen debe ser Fallos=0 y el retorno 0. Conserva los demás archivos, las entradas de los casos y sus expectativas. La coincidencia de salida comprueba el informe final; la reparación solicitada exige además conservar esas comparaciones y el recorrido desde el defecto."
+          "text": "Este editor independiente conserva la biblioteca con el signo alterado y los once casos ya escritos. La tarea es observar ese defecto y reparar sólo la resta, conservando las comparaciones.\n\n1. En «Objetivo CMake», selecciona comprobar_ajustes y vacía «Entrada». El comprobador usa los casos de pruebas/casos.cpp; no lee las ternas del cliente.\n2. Usa «Configurar y generar», «Construir objetivo» y «Ejecutar objetivo construido» con la fuente todavía alterada.\n3. Examina primero el caso 3: requiere -2, pero obtiene 2. El caso 6 también detecta la misma alteración: requiere -40 y obtiene 40. El informe inicial completo termina en Fallos=2 y el proceso devuelve 1 después de recorrer los casos. Es la reproducción del defecto, no el resultado final buscado.\n4. En src/ajuste.cpp, repara únicamente la resta de la rama superior. Conserva la validación, las demás ramas, los otros archivos y los esperados. Pulsa «Compilar, ejecutar y comprobar» con el mismo objetivo y el campo de entrada vacío.\n\nCon la resta reparada, el caso 3 vuelve a obtener -2 y el sexto, -40. El informe conservado muestra las once coincidencias, termina en Fallos=0 y devuelve 0. La salida final permite contrastar ese informe; por sí sola no demuestra que se observara primero el defecto ni que se conservaran los archivos y las comparaciones durante la reparación."
         },
         {
           "type": "cpp_compiler",
@@ -299,7 +299,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva la solución y los once casos de referencia. Añade en pruebas/casos.cpp una llamada independiente a comprobar con otro número de caso, una terna admitida o rechazada, un destino inicial y sus dos esperados deducidos del requisito. Puede observar, por ejemplo, un extremo de un intervalo con extremos diferentes o una condición de rechazo: tú eliges los datos. Conserva las once llamadas anteriores y la implementación; no obtengas los esperados llamando al cálculo evaluado.\n\nSelecciona comprobar_ajustes, vacía el campo «Entrada», configura, construye y usa «Ejecutar objetivo construido». Comprueba que aparece y se compara el caso nuevo, además de los anteriores. El resumen debe seguir siendo Fallos=0 con retorno 0. Ejecutar el inicial sin editar también produce ese resumen, pero no realiza la ampliación: la evidencia adicional es la nueva comparación con su expectativa independiente. Se admiten otras ternas correctas, sin exigir una salida literal única."
+          "text": "Este editor contiene la solución y los once casos de referencia. La tarea es ampliar esa batería con una comparación nueva, conservando las anteriores.\n\nEn pruebas/casos.cpp, dentro de main y antes de imprimir el resumen, añade una llamada independiente a comprobar. Usa un número de caso diferente de los existentes y elige una terna nueva, su destino inicial, la aceptación esperada y el destino final esperado. Puede observar, por ejemplo, un extremo de un intervalo con extremos diferentes o una condición de rechazo. Deduce los dos esperados del contrato antes de ejecutar; no los obtengas llamando al cálculo evaluado.\n\nHaz que una discrepancia de esa llamada incremente fallos, como en las comparaciones existentes. Imprimir otra fila sin comparar, o comparar sin incluir el resultado en el veredicto final, no realiza la ampliación pedida. Conserva las once llamadas anteriores, la implementación y los demás archivos.\n\nSelecciona comprobar_ajustes, vacía «Entrada», configura, construye y usa «Ejecutar objetivo construido». Localiza la nueva comparación con sus datos, su observación y sus esperados. Si todo coincide, el resumen sigue siendo Fallos=0 y el retorno es 0. El inicial sin editar ya produce ese mismo resumen: lo que aporta evidencia adicional es la nueva comparación que realmente se ejecutó. Se admiten otras ternas correctas, sin una salida literal única para todas las soluciones."
         },
         {
           "type": "cpp_compiler",
@@ -1349,6 +1349,71 @@
         "id": "block_0006_0010",
         "beforeSha256": "d5d2ea83d272b321b5d3ed67605a54def96e5a9e3e27b18495878ffac8da25b5",
         "afterSha256": "a3604dbf483069a0f775725477cb557604a3d6ad85f198d44dbcc872c20a5914"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "d8815265b0f90f551e707d1bf694f730a028199a0ddfdedf0aa341c9379bd94e",
+        "afterSha256": "236a184fc611d23891a100b30ca7b4c59d95c3af059b4c1aa7795bf7d66102d9"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4870e06739092c0460b5d4aefc865b64b1f80ab3bce00dd1e36f20269e46f8b7",
+        "afterSha256": "4a8871d15300956493e73e36f952146d4a2477327a323a9b75b51ce3d7e57fe2"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1899b3c2412b358de3dde1b32ced03b29a47a7b577a7f2b5cc84a670572a0221",
+        "afterSha256": "9d9c8193a99dadf2bf91a4544118b1141b1386067c4b199487914dcee4b1aa91"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "cdde546bacc849c8302b12d074cb45daafc5514187387b5f8a4a2f8fff5389ee",
+        "afterSha256": "d5c0bb1ae1a5497de3b09bdb46c584a5f3a148b0d1ac89dc58b3b01d33cad4a5"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "348fc128603555a691e3be51573435b7be814704d3249fd0641d4dc857088b9b",
+        "afterSha256": "7bd96e47c7ab8eea265b9fdea0115ff17e22026b614664484e10df0730e79ded"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "236925dbdc83106f0399b1c732d19843ebc8b5b7ccc4661d45e4746629ef7860",
+        "afterSha256": "6aa19ae332515a5cededfa926c51b9018db65d529425e1d0859b260708b6caf1"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "be6abdb6b96f9897b8f72d35fb1e45dc4150ee751648024ae06c3f9925574a31",
+        "afterSha256": "8c3a2a754d560a3663932679bb8c7f7e46d04cee060956e845ee2155b342d2ac"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "6b7e6c4cb4852212b7681e300a88f23417a4f452be9100ed8cbcd8631baf7fb2",
+        "afterSha256": "6065645859b9a00630293f38819f83092cd5bb012886eca8b04b6af1ce7ba852"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "2891c26c7264d10993bf84f0c15006dc4962af22225cb806db1da75d7b574c31",
+        "afterSha256": "968a113b993d95814d68c3fc3a40399ad358b51b43deced67e04242952ff2588"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "96770c00012e6b9d5ce63fcc22e39087a8877948c4e26dff4deac69fc560071d",
+        "afterSha256": "2cf856f6eb15ee5c27b917655e36e510dd6f45a3ec0e205818dcd2ccec076ece"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "3bb72d03261e481c7a6bcdf8253602a324dc73815305880af0bdf1f98d1bbe86",
+        "afterSha256": "19120f643bc0812b0335986ccfdad1665ebf7bffd3f561f7c33b4604bda19229"
+      },
+      {
+        "id": "block_0006_0010",
+        "beforeSha256": "a3604dbf483069a0f775725477cb557604a3d6ad85f198d44dbcc872c20a5914",
+        "afterSha256": "dd579b315663ca587fbb80867d87b0a2d6671d2233108f0cbe030132c9739804"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "8c3a2a754d560a3663932679bb8c7f7e46d04cee060956e845ee2155b342d2ac",
+        "afterSha256": "6c2e0f81bb3386ce7c4b33ebf799d0f51beda753b8a5a6abd1280a75c8108947"
       }
     ]
   },
@@ -1378,96 +1443,80 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "c090bd8fca7a70a65dc8ccbcc554d92cf17bc5556d55df0e08fa256839d3a7d8",
+        "sourceSha256": "8c19791fb75548334d9b16d4fa062bdd8b2428c03a18ba41ab30c8442a7fb8f3",
         "spans": []
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "ba8a5efdc0ab0352bd173ea21071e342c8a7f819f6bb6404e4b97fcb28458084",
+        "sourceSha256": "974cb41aead1a4085e007f3da43a55cba55aac9e84e346e70c2d825628e75ba7",
         "spans": [
           {
             "start": 23,
             "end": 95,
             "text": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 140,
-            "end": 148,
+            "start": 273,
+            "end": 299,
+            "text": "valor, inferior y superior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 320,
             "text": "-20 y 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 163,
-            "end": 171,
-            "text": "inferior",
-            "role": "cpp"
-          },
-          {
-            "start": 184,
-            "end": 192,
-            "text": "superior",
-            "role": "cpp"
-          },
-          {
-            "start": 216,
-            "end": 222,
-            "text": "ajuste",
-            "role": "cpp"
-          },
-          {
-            "start": 265,
-            "end": 270,
-            "text": "valor",
-            "role": "cpp"
-          },
-          {
-            "start": 312,
-            "end": 316,
+            "start": 482,
+            "end": 486,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 339,
-            "end": 344,
+            "start": 510,
+            "end": 515,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 547,
-            "end": 548,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 561,
-            "end": 566,
+            "start": 738,
+            "end": 743,
             "text": "[3,7]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 581,
-            "end": 582,
+            "start": 761,
+            "end": 762,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 778,
+            "end": 779,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 644,
-            "end": 645,
+            "start": 829,
+            "end": 830,
             "text": "9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 683,
-            "end": 685,
+            "start": 846,
+            "end": 848,
             "text": "-2",
             "role": "output",
             "reading": "natural"
@@ -1477,19 +1526,27 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "b4b8c2b2023fbc4a47e9ccbf71925268b7b2ddb0a268a5e420771df656bb28e2",
+        "sourceSha256": "d454ad39473ca38cbcbc9e551dc91b01129e7630b941cf6c01cb1f43d556356d",
         "spans": [
           {
             "start": 8,
             "end": 12,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 356,
-            "end": 398,
-            "text": "(Kernighan & Pike, 1999, pp. 105, 111–112)",
+            "start": 313,
+            "end": 337,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 435,
+            "text": "false",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1503,13 +1560,20 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3782c7f9d4affa4c9f739e51c9271d3e8d944605c5e5bd7bdd7686cf498cde50",
+        "sourceSha256": "ab3ff7cf4cbc6a3e3dacfb29808ad991dd6f931f10aed5f8231ca7b6261749c2",
         "spans": [
           {
-            "start": 3,
-            "end": 20,
+            "start": 24,
+            "end": 41,
             "text": "pruebas/casos.cpp",
             "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 406,
+            "text": "intentar_ajuste",
+            "role": "cpp",
             "reading": "technical"
           }
         ]
@@ -1531,31 +1595,53 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "c6513d94a7e65172e25617c70612b81ca4492a77f3e54bcab8f8e3dab9114997",
+        "sourceSha256": "1f35697d7a363d099a1471aec1cab44adae3785aaaa409bc0ca81efd1922722b",
         "spans": [
           {
-            "start": 13,
-            "end": 29,
+            "start": 24,
+            "end": 40,
             "text": "app/consulta.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 121,
-            "end": 124,
+            "start": 118,
+            "end": 121,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 558,
-            "end": 559,
+            "start": 138,
+            "end": 164,
+            "text": "valor, inferior y superior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 455,
+            "end": 461,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 565,
+            "end": 571,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 864,
+            "end": 865,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 584,
-            "end": 585,
+            "start": 890,
+            "end": 891,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -1598,82 +1684,98 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "fa58985a43049b1d6e327ca008c96c3519a01ce411ab082b9496850f10727d53",
+        "sourceSha256": "6b566df2dcffa9c6af2c8460d65d17d7d4864a34d24a2c9032750e7c00f03593",
         "spans": [
           {
-            "start": 32,
-            "end": 56,
+            "start": 78,
+            "end": 102,
             "text": "publico/control/ajuste.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 92,
+            "start": 147,
+            "end": 161,
             "text": "src/ajuste.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 124,
+            "start": 211,
+            "end": 227,
             "text": "app/consulta.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 163,
+            "start": 261,
+            "end": 265,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 284,
             "text": "pruebas/casos.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 189,
-            "end": 203,
+            "start": 317,
+            "end": 321,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 337,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 255,
-            "end": 262,
+            "start": 429,
+            "end": 436,
             "text": "ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 281,
-            "end": 298,
+            "start": 469,
+            "end": 486,
             "text": "consultar_ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 318,
+            "start": 509,
+            "end": 526,
             "text": "comprobar_ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 388,
-            "end": 392,
-            "text": "main",
-            "role": "cpp"
+            "start": 613,
+            "end": 631,
+            "text": "\"control/ajuste.h\"",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 434,
-            "end": 452,
-            "text": "\"control/ajuste.h\"",
-            "role": "cpp"
+            "start": 709,
+            "end": 723,
+            "text": "src/ajuste.cpp",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "bcf59436c2d982e567ef1b04a4e1efc53cfc3ee6654eba655b0c0012554ab60c",
+        "sourceSha256": "444fdc5b74afca866e531a5c7089a3d8ccd833130e2c591546e89dda306cf96f",
         "spans": [
           {
             "start": 0,
@@ -1683,98 +1785,128 @@
             "reading": "technical"
           },
           {
-            "start": 70,
-            "end": 80,
+            "start": 88,
+            "end": 98,
             "text": "CMake 3.20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 91,
-            "end": 94,
+            "start": 110,
+            "end": 113,
             "text": "C++",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 217,
+            "start": 302,
+            "end": 312,
             "text": "cxx_std_20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 331,
-            "end": 336,
-            "text": "C++23",
+            "start": 391,
+            "end": 409,
+            "text": "CXX_EXTENSIONS OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 367,
-            "end": 372,
+            "start": 437,
+            "end": 442,
             "text": "C++20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 412,
-            "end": 421,
+            "start": 465,
+            "end": 470,
+            "text": "C++23",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 493,
+            "end": 498,
+            "text": "C++20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 694,
+            "end": 703,
             "text": "PENDIENTE",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 555,
-            "end": 559,
+            "start": 791,
+            "end": 795,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 608,
-            "end": 609,
+            "start": 880,
+            "end": 881,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 647,
-            "end": 648,
+            "start": 900,
+            "end": 901,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 765,
-            "end": 771,
+            "start": 1006,
+            "end": 1012,
             "text": "assert",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 814,
-            "end": 831,
+            "start": 1175,
+            "end": 1192,
             "text": "consultar_ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 960,
-            "end": 977,
+            "start": 1594,
+            "end": 1611,
             "text": "comprobar_ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1085,
-            "end": 1091,
+            "start": 1686,
+            "end": 1703,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1752,
+            "end": 1758,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1093,
-            "end": 1099,
+            "start": 1760,
+            "end": 1766,
             "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1864,
+            "end": 1881,
+            "text": "pruebas/casos.cpp",
             "role": "data",
             "reading": "technical"
           }
@@ -1877,7 +2009,7 @@
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "c8d5d9af76229ff083cb286b7c644394d908546aac8937b6050d2d443c513236",
+        "sourceSha256": "fa8b3efb6a4b0f21b7d0c328743d382d4b6f8495ba43b92c3da2ddebef49138c",
         "spans": [
           {
             "start": 3,
@@ -1887,63 +2019,176 @@
             "reading": "technical"
           },
           {
-            "start": 19,
-            "end": 33,
-            "text": "src/ajuste.cpp",
+            "start": 75,
+            "end": 111,
+            "text": "cmake_minimum_required(VERSION 3.20)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 72,
-            "text": "ajustes",
+            "start": 150,
+            "end": 192,
+            "text": "project(AjustesConEvidencia LANGUAGES CXX)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 79,
-            "end": 83,
+            "start": 238,
+            "end": 241,
+            "text": "C++",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 285,
+            "text": "add_library(ajustes STATIC src/ajuste.cpp)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 467,
+            "end": 471,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 187,
-            "end": 194,
+            "start": 492,
+            "end": 506,
+            "text": "add_executable",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 513,
+            "end": 530,
+            "text": "consultar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 533,
+            "end": 550,
+            "text": "comprobar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 558,
+            "end": 562,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 593,
+            "end": 643,
+            "text": "target_include_directories(ajustes PUBLIC publico)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 691,
+            "end": 698,
             "text": "publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 270,
+            "start": 768,
+            "end": 784,
             "text": "control/ajuste.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 344,
-            "end": 377,
-            "text": "(Scott, 2025, pp. 18–21, 182–183)",
+            "start": 801,
+            "end": 822,
+            "text": "target_link_libraries",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 849,
+            "end": 856,
+            "text": "ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 858,
+            "end": 865,
+            "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 936,
+            "end": 939,
+            "text": "C++",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1143,
+            "end": 1156,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 416,
-            "end": 421,
+            "start": 1179,
+            "end": 1202,
+            "text": "target_compile_features",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1219,
+            "end": 1229,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1231,
+            "end": 1252,
+            "text": "set_target_properties",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1260,
+            "end": 1278,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1404,
+            "end": 1426,
+            "text": "target_compile_options",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1520,
+            "end": 1525,
             "text": "-Wall",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 423,
-            "end": 430,
+            "start": 1527,
+            "end": 1534,
             "text": "-Wextra",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 433,
-            "end": 443,
+            "start": 1537,
+            "end": 1547,
             "text": "-Wpedantic",
             "role": "data",
             "reading": "technical"
@@ -1985,49 +2230,77 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "d16a5e7677d0eff9752ad947d97439569a87bc573c75e111633188c86fe16066",
+        "sourceSha256": "7810154069e3f7dd2166b68aa7aafdea41a96e1e47d5273ed34dde628d9b92f4",
         "spans": [
           {
-            "start": 109,
-            "end": 121,
+            "start": 117,
+            "end": 129,
             "text": "1, 0, -2 y 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 196,
-            "end": 198,
+            "start": 216,
+            "end": 218,
             "text": "21",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 214,
-            "end": 246,
-            "text": "Aceptadas=4 Rechazadas=2 Suma=-1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 270,
-            "end": 271,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 557,
-            "end": 563,
+            "start": 224,
+            "end": 230,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 566,
-            "end": 572,
+            "start": 267,
+            "end": 380,
+            "text": "Peticion=1 Ajuste=1\nPeticion=2 Ajuste=0\nPeticion=3 Ajuste=-2\nPeticion=5 Ajuste=0\nAceptadas=4 Rechazadas=2 Suma=-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 391,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 423,
+            "end": 689,
+            "text": "Rechazo: peticion=4 valor=0 inferior=7 superior=3. Se admiten valores de -20 a 20 con inferior <= superior. Revise los tres valores.\nRechazo: peticion=6 valor=21 inferior=3 superior=7. Se admiten valores de -20 a 20 con inferior <= superior. Revise los tres valores.",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 776,
+            "end": 777,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1020,
+            "end": 1022,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1191,
+            "end": 1195,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1222,
+            "end": 1224,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2162,11 +2435,11 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "2d52cab0719dc03b6fe3c1505e807a93d8a4451a50d415ecd7be79cb6c6bf8d6",
+        "sourceSha256": "af0e4d5ac0a25cbb56b7689f77add182fd8e79e12d785594b2af1a98d0c01417",
         "spans": [
           {
-            "start": 3,
-            "end": 20,
+            "start": 28,
+            "end": 45,
             "text": "pruebas/casos.cpp",
             "role": "data",
             "reading": "technical"
@@ -2338,53 +2611,116 @@
       {
         "block": "block_0006_0007",
         "path": "/text",
-        "sourceSha256": "41e0e45605513cfa7d7feb85d554d2aa40c016c9e8a068c31813d0c009c2c5b8",
+        "sourceSha256": "37641694043b63f7291c8def640e5f915ef65dfc5159424ccdcead5e4e6246c2",
         "spans": [
           {
-            "start": 95,
-            "end": 112,
+            "start": 226,
+            "end": 243,
             "text": "comprobar_ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 344,
-            "end": 349,
-            "text": "3 y 6",
+            "start": 295,
+            "end": 312,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 489,
+            "end": 490,
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 362,
-            "end": 370,
+            "start": 501,
+            "end": 503,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 518,
+            "end": 519,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 529,
+            "end": 530,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 577,
+            "end": 580,
+            "text": "-40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 591,
+            "end": 593,
+            "text": "40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 642,
             "text": "Fallos=2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 384,
-            "end": 385,
+            "start": 665,
+            "end": 666,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 503,
-            "end": 517,
+            "start": 767,
+            "end": 781,
             "text": "src/ajuste.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 642,
-            "end": 650,
+            "start": 1030,
+            "end": 1031,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1049,
+            "end": 1051,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1064,
+            "end": 1067,
+            "text": "-40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1134,
+            "end": 1142,
             "text": "Fallos=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 664,
-            "end": 665,
+            "start": 1154,
+            "end": 1155,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2525,38 +2861,53 @@
       {
         "block": "block_0006_0010",
         "path": "/text",
-        "sourceSha256": "9e3deb2ba45a1789238ce11e01915b706b501ffaf0938be5ab49357c45263c90",
+        "sourceSha256": "94ad0e680bf04b9f2f00c6b2e753f683e73fbb4ff58c8380e3dd3f8721bd1b40",
         "spans": [
           {
-            "start": 74,
-            "end": 91,
+            "start": 156,
+            "end": 173,
             "text": "pruebas/casos.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 129,
-            "text": "comprobar",
-            "role": "cpp"
+            "start": 185,
+            "end": 189,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 507,
-            "end": 524,
+            "start": 256,
+            "end": 265,
+            "text": "comprobar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 677,
+            "end": 683,
+            "text": "fallos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 939,
+            "end": 956,
             "text": "comprobar_ajustes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 717,
-            "end": 725,
+            "start": 1153,
+            "end": 1161,
             "text": "Fallos=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 738,
-            "end": 739,
+            "start": 1178,
+            "end": 1179,
             "text": "0",
             "role": "output",
             "reading": "natural"

@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya tienes una biblioteca envios, una aplicación y un comprobador con siete casos conservados. En esta práctica sus archivos C++ ya están preparados: la cabecera y la definición están dentro de componente/, mientras app/ y pruebas/ siguen junto a la raíz. La descripción inicial conoce esas rutas desde un único CMakeLists.txt. Ahora repartirás esa descripción entre dos archivos, conservando el mismo componente y sus consumidores."
+          "text": "La biblioteca envios ya tiene dos programas que la utilizan: la aplicación y el comprobador con sus siete casos. En esta práctica, los archivos C++ están preparados en estas carpetas:\n\ncomponente/ contiene la cabecera y la definición de la función.\napp/ contiene el programa que muestra los resultados al usuario.\npruebas/ contiene el programa que compara las respuestas con los esperados.\n\nEl CMakeLists.txt de la raíz ya describe cómo construir los tres objetivos con esas rutas. Ahora repartirás esa descripción entre dos archivos. Conservarás el código C++, las llamadas y los esperados para comprobar qué efecto tiene cambiar sólo la organización de CMake."
         },
         {
           "type": "paragraph",
-          "text": "La raíz seguirá declarando el proyecto completo y sus dos consumidores. El archivo situado en componente/ describirá la biblioteca envios y sus requisitos de uso: qué fuente la construye y qué directorio de cabeceras necesitan sus clientes. Al reunir esas decisiones junto al componente, la raíz puede incorporarlo por su carpeta y relacionar los consumidores con envios sin enumerar sus archivos internos. Para hacerlo debemos saber qué descripción procesa CMake y desde dónde interpreta sus rutas (Scott, 2025, pp. 68–69, 79)."
+          "text": "Repartiremos las decisiones de esta manera:\n\nEl CMakeLists.txt de la raíz seguirá declarando el proyecto completo, la aplicación, el comprobador y los enlaces de ambos con envios.\nEl CMakeLists.txt de componente/ declarará la biblioteca envios: su fuente, su directorio público de cabeceras y sus requisitos de compilación.\n\nAsí, la raíz podrá incorporar la carpeta del componente y utilizar la biblioteca por su nombre, sin enumerar sus archivos internos. Situar las decisiones de construcción junto a los archivos a los que corresponden facilita esta organización (Scott, 2025). Para hacerlo correctamente, primero veremos cómo llega CMake al segundo archivo y desde dónde interpreta sus rutas."
         },
         {
           "type": "multiple_choice",
@@ -43,11 +43,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La orden add_subdirectory(componente), escrita en la raíz, hace que CMake procese componente/CMakeLists.txt en ese punto. Llamaremos hijo a ese archivo y al directorio que incorpora. Cuando termina de procesarlo, CMake continúa con la siguiente orden de la raíz. La carpeta debe contener su propio CMakeLists.txt; tener la carpeta preparada no basta para incorporarla. Aquí el argumento componente es una ruta de origen relativa al directorio de la raíz (Scott, 2025, p. 68)."
+          "text": "La llamada add_subdirectory(componente), escrita en el CMakeLists.txt de la raíz, indica a CMake que procese también la descripción de esa carpeta. Su argumento componente es la ruta de origen de la carpeta que se incorpora; aquí se interpreta desde la raíz del proyecto.\n\nEl recorrido ocurre en este orden:\n\nCMake llega a add_subdirectory(componente) mientras procesa la raíz.\nProcesa en ese momento componente/CMakeLists.txt. Llamaremos hijo a ese archivo y al directorio que se incorpora.\nCuando termina el hijo, continúa con la siguiente orden de la raíz.\n\nLa carpeta debe contener su propio CMakeLists.txt y la raíz debe incorporarla. Crear una carpeta no hace que CMake descubra y procese por sí solo su descripción (Scott, 2025)."
         },
         {
           "type": "paragraph",
-          "text": "Para observar ese recorrido usaremos message(STATUS \"texto\"). Durante la configuración esta orden escribe un aviso con el texto entre comillas. STATUS selecciona un mensaje informativo: no declara un objetivo ni ejecuta el programa C++. Las dos tarjetas siguientes representan archivos distintos. Al configurar pueden aparecer otros mensajes de las herramientas entre los tres avisos que hemos escrito (Scott, 2025, pp. 151–152)."
+          "text": "Podemos observar ese recorrido escribiendo mensajes desde la propia descripción. La llamada message(STATUS \"texto\") tiene dos argumentos: STATUS selecciona un mensaje informativo y \"texto\" proporciona lo que CMake debe escribir mientras configura el proyecto (Scott, 2025).\n\nEse mensaje ayuda a identificar por dónde va el procesamiento de los CMakeLists.txt. No crea un objetivo, no construye el programa C++ y no ejecuta su main. Las dos tarjetas siguientes contienen archivos distintos. Al configurar, pueden aparecer otros mensajes de las herramientas entre los tres textos que hemos elegido."
         },
         {
           "type": "note",
@@ -111,7 +111,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las rutas relativas de las fuentes de estos objetivos y de sus directorios de cabeceras parten del directorio de origen del CMakeLists.txt que las declara. En la raíz, componente/src/cajas.cpp llega a la definición. Dentro de componente/CMakeLists.txt, src/cajas.cpp llega al mismo archivo: componente/ ya forma parte del punto de partida. Repetir ese prefijo en el hijo conduciría a componente/componente/src/cajas.cpp, que no es la fuente preparada. Esta relación se refiere a las declaraciones que usamos aquí; no supone que toda ruta de cualquier comando de CMake tenga el mismo punto de partida (Scott, 2025, pp. 68–69, 183)."
+          "text": "Una ruta relativa necesita un directorio desde el cual interpretarla. En las llamadas a add_library y target_include_directories de estos ejemplos, ese punto de partida es el directorio de origen del CMakeLists.txt que contiene la llamada (Scott, 2025).\n\nEn la raíz, componente/src/cajas.cpp llega al archivo de la implementación.\nEn componente/CMakeLists.txt, src/cajas.cpp llega a ese mismo archivo, porque el punto de partida ya es componente/.\nSi repitiéramos componente/src/cajas.cpp dentro del hijo, se buscaría componente/componente/src/cajas.cpp. Ese archivo no existe en el proyecto preparado.\n\nPor eso, al trasladar una declaración, debemos revisar qué ruta nombra el mismo archivo desde su nueva ubicación. Esta regla describe las llamadas que estamos utilizando; otros comandos de CMake pueden interpretar sus argumentos de otra manera."
         },
         {
           "type": "code",
@@ -125,7 +125,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No se declaran ambas bibliotecas: las tarjetas comparan dos ubicaciones alternativas de la misma descripción. Al declarar PUBLIC publico en el hijo, CMake fija ese directorio respecto al origen del hijo y lo transmite como requisito a quienes enlazan envios. No vuelve a interpretarlo desde app/ o pruebas/. El include C++ \"envio/cajas.h\" sigue nombrando el tramo dentro de ese directorio público (Scott, 2025, pp. 69, 183)."
+          "text": "Las dos tarjetas comparan ubicaciones alternativas de las declaraciones; no hay que declarar dos veces la biblioteca.\n\nAl escribir PUBLIC publico en componente/CMakeLists.txt, CMake determina el directorio de búsqueda a partir de componente/. El requisito de envios queda referido a componente/publico y los dos consumidores reciben ese mismo directorio al enlazar la biblioteca. No se transforma después en app/publico ni en pruebas/publico (Scott, 2025).\n\nLa instrucción C++ #include \"envio/cajas.h\" conserva su texto. El compilador busca envio/cajas.h dentro del directorio público recibido y llega a la misma cabecera."
         },
         {
           "type": "multiple_choice",
@@ -171,15 +171,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Todos los archivos necesarios están preparados, incluido componente/CMakeLists.txt vacío. La descripción plana concentra las decisiones en el CMakeLists.txt de la raíz. Con consultar_cajas seleccionado, usa «Configurar y generar», «Construir objetivo» y «Compilar, ejecutar y comprobar»: debe mostrar 1:2, sin salto final, y terminar con 0. Selecciona después comprobar_cajas, constrúyelo y comprueba sus siete casos. Identifica las líneas, sus esperados y el retorno final que corresponden a cada objetivo antes de cambiar la descripción."
+          "text": "El editor prepara todos los archivos, incluido componente/CMakeLists.txt vacío. Por ahora, todas las declaraciones están en el CMakeLists.txt de la raíz; llamaremos plana a esta descripción concentrada en un solo archivo.\n\nAntes de repartirla, selecciona comprobar_cajas y usa «Configurar y generar», «Construir objetivo» y «Compilar, ejecutar y comprobar». El comprobador suministrado contiene siete llamadas y, con la implementación preparada, muestra OK en sus comparaciones, el resumen Bateria: OK y el código 0. Sus entradas y esperados ya están en pruebas/cajas_casos.cpp. La práctica se centra en reorganizar la descripción de CMake conservando ese comprobador.\n\nEl ensayo de consultar_cajas es opcional en el editor. Si lo realizas, selecciona ese objetivo, constrúyelo y compruébalo: debe mostrar 1:2, sin salto final, y terminar con 0. Sus dos llamadas están en app/consulta.cpp. Esta observación pertenece a la aplicación; no sustituye las siete comparaciones del comprobador."
         },
         {
           "type": "paragraph",
-          "text": "Edita sólo los dos CMakeLists.txt para localizar en el componente la biblioteca, su búsqueda pública, su mínimo de características de C++20 y su desactivación de extensiones. La raíz conservará project, los dos ejecutables y sus enlaces y requisitos. Haz que alcance el hijo con add_subdirectory. No dupliques envios ni cambies archivos C++ para acomodar una ruta mal interpretada. Conserva los nombres de los tres objetivos. Añade los avisos raiz_antes y raiz_despues alrededor de add_subdirectory y componente dentro del hijo."
+          "text": "Edita sólo los dos CMakeLists.txt y conserva los nombres de los tres objetivos.\n\nEn componente/CMakeLists.txt, declara la biblioteca envios con su fuente, su búsqueda pública de cabeceras y sus requisitos de compilación. El requisito cxx_std_20 debe seguir solicitando un modo del lenguaje C++20 o posterior; no certifica por sí solo la implementación de todas sus características. Conserva también CXX_EXTENSIONS OFF: solicita un modo sin extensiones cuando el compilador distingue ese modo de otro con extensiones.\n\nEn la raíz, conserva project, los dos ejecutables, sus requisitos y sus enlaces con envios. Incorpora la carpeta del hijo mediante add_subdirectory. No dupliques la biblioteca ni cambies las fuentes C++ para acomodar una ruta equivocada.\n\nUsa message con STATUS para añadir el texto raiz_antes antes de incorporar el hijo, raiz_despues al regresar a la raíz y componente dentro del hijo. Esos avisos permitirán seguir el recorrido de la descripción."
         },
         {
           "type": "paragraph",
-          "text": "Después de cambiar la descripción, vuelve a configurar; construye y comprueba los dos objetivos desde este mismo editor. Compara sus resultados con los anteriores: repartir la descripción debe conservar tanto el comportamiento como los requisitos y todos los archivos C++. Ejecutar de nuevo los casos conservados ayuda a detectar cambios no previstos; sus esperados siguen procediendo del requisito, no de copiar una salida nueva (Kernighan & Pike, 1999, pp. 149–150). La contraprueba que controla la sensibilidad de la batería se realiza en el editor independiente de la página siguiente."
+          "text": "Después de editar la descripción, vuelve a configurar para que CMake genere las reglas correspondientes a esos cambios. Construye comprobar_cajas y utiliza el comprobador suministrado para contrastar la reorganización en este mismo editor. Si realizaste también el ensayo opcional de la aplicación, reconstruye consultar_cajas y compara su nueva ejecución con la anterior.\n\nLa salida no distingue por sí sola una descripción plana de otra repartida. Revisa también que la biblioteca y sus requisitos estén en el hijo y que la raíz lo incorpore sin duplicarlos. Conserva las fuentes C++, los casos y los esperados. Repetir las comprobaciones después de un cambio ayuda a detectar que algo haya dejado de funcionar; para que esa comparación tenga valor, los esperados deben seguir justificados por el requisito, no por copiar una salida nueva (Kernighan & Pike, 1999). Aquí examinamos la reorganización de CMake. El control con un defecto conocido tiene su propio editor en la página siguiente."
         },
         {
           "type": "cpp_compiler",
@@ -268,7 +268,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la raíz, project declara el proyecto completo. El hijo aporta envios sin necesitar otra orden project. Cuando add_subdirectory termina de procesarlo, la raíz declara los dos ejecutables y relaciona cada uno con esa biblioteca. El selector de la app solicita el nombre lógico declarado para el objetivo: comprobar_cajas. La ubicación de su fuente en pruebas/ y la de la biblioteca en componente/ no se anteponen a ese nombre (Scott, 2025, pp. 68, 72, 79–80)."
+          "text": "En la raíz, project sigue declarando el proyecto completo. El archivo del hijo declara envios y sus necesidades, sin añadir otro project. Cuando termina add_subdirectory, la raíz continúa con las declaraciones de los dos ejecutables y sus enlaces con la biblioteca. Esta distribución mantiene juntas las decisiones del componente sin convertir cada carpeta en un proyecto distinto (Scott, 2025).\n\nPara solicitar el comprobador en el selector de la app, escribe comprobar_cajas, el nombre declarado con add_executable. La carpeta pruebas/ indica dónde está su fuente y componente/ indica dónde se describe la biblioteca; ninguna se antepone al nombre del objetivo."
         },
         {
           "type": "note",
@@ -290,7 +290,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La búsqueda pública queda declarada una sola vez, junto a envios. La raíz conoce el nombre de la biblioteca y la carpeta que incorpora; ya no enumera su definición ni su directorio de cabeceras. Los avisos deben aparecer en el orden raiz_antes, componente, raiz_despues. La aplicación conserva 1:2; la batería original correcta conserva sus siete OK y Bateria: OK con retorno cero."
+          "text": "La búsqueda pública se declara una sola vez, junto a envios. La raíz incorpora la carpeta del componente y utiliza el nombre de la biblioteca, sin repetir la ruta de su definición ni la de sus cabeceras.\n\nLos textos de los avisos aparecen en este orden: raiz_antes, componente, raiz_despues.\nEl comprobador conserva las siete comparaciones OK, el resumen Bateria: OK y el código de terminación 0.\nEl ensayo opcional de la aplicación conserva 1:2, sin salto final, y el código de terminación 0.\n\nLos avisos muestran el recorrido de CMake. Los otros resultados proceden de ejecutar los objetivos construidos con la descripción distribuida."
         },
         {
           "type": "order_code",
@@ -334,7 +334,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente tiene la organización distribuida completa, los siete casos y una alteración del componente a piezas/4. Construye comprobar_cajas y observa los casos que la distinguen; repara sólo el cuerpo de cajas_para y comprueba las siete comparaciones. Conserva ambos CMakeLists.txt, los esperados y los otros archivos."
+          "text": "Este editor pide reparar únicamente el cuerpo de cajas_para. Las dos descripciones de CMake y el comprobador con sus siete comparaciones ya están escritos.\n\nLa implementación se ha alterado deliberadamente a piezas / 4. Para una pieza devuelve cero cajas, aunque se necesita una caja para guardarla. Esa entrada permite distinguir la implementación alterada de la que cumple el contrato.\n\nSelecciona comprobar_cajas, configura, construye y ejecuta el programa para observar el rechazo de la implementación alterada. Después repara sólo el cuerpo de cajas_para en componente/src/cajas.cpp y utiliza «Compilar, ejecutar y comprobar» con el comprobador suministrado. Conserva los dos CMakeLists.txt, sus casos y esperados y los demás archivos. La tarea consiste en reparar la función; el comprobador ya preparado permite contrastar el resultado sin cambiar el criterio con que se evalúa."
         },
         {
           "type": "cpp_compiler",
@@ -393,11 +393,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Repetir un prefijo puede producir dos fallos en fases distintas. Si add_library nombra componente/src/cajas.cpp desde el hijo, intenta incorporar componente/componente/src/cajas.cpp. CMake lee la orden, pero no puede terminar de generar una construcción con esa fuente inexistente. Si la fuente está bien indicada y sólo se repite el prefijo en la búsqueda pública, CMake puede terminar de generar; después el compilador no encuentra envio/cajas.h al procesar el #include. El diagnóstico identifica qué fase falló: ninguno de esos dos resultados evalúa todavía el cálculo de cajas_para."
+          "text": "El mismo prefijo repetido puede causar fallos en dos fases diferentes:\n\nSi add_library contiene componente/src/cajas.cpp dentro del hijo, CMake intenta utilizar componente/componente/src/cajas.cpp. Puede leer la orden, pero no terminar de generar las reglas de construcción porque esa fuente no existe.\n\nSi la fuente está bien indicada y el prefijo sólo se repite en el directorio público, CMake puede terminar de generar. Después, al construir, el compilador busca envio/cajas.h desde un directorio equivocado y no encuentra la cabecera al procesar el #include.\n\nEn el primer caso no se ha podido completar la descripción de qué construir. En el segundo ya se ha llegado a compilar una fuente. Ninguno ha ejecutado todavía las comparaciones de cajas_para."
         },
         {
           "type": "paragraph",
-          "text": "Para decidir qué cambiar, une el origen de la declaración con su ruta relativa y compáralo con el archivo físico. Después revisa el mensaje de la herramienta. Una ruta de fuente selecciona un archivo que se compilará. Una ruta de búsqueda indica dónde empezar a buscar el nombre escrito en #include. No son argumentos intercambiables."
+          "text": "Para decidir qué corregir, identifica la declaración y combina su directorio de origen con la ruta escrita. Comprueba si esa combinación llega al archivo físico mostrado en el árbol. Relaciona después esa búsqueda con el diagnóstico de la herramienta.\n\nEl argumento de fuente de add_library selecciona el archivo .cpp que se va a compilar.\nEl directorio de target_include_directories indica dónde empezar a buscar el nombre escrito en #include.\n\nUna ruta nombra una fuente; la otra proporciona un punto de partida para buscar cabeceras. Cambiar una no corrige automáticamente un error en la otra."
         },
         {
           "type": "code",
@@ -448,11 +448,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto siguiente conserva la implementación correcta y los siete casos. Su hijo tiene dos rutas equivocadas; no las repares simultáneamente sin observar la fase. Antes de ejecutar, identifica en cada declaración qué ruta física se intentaría usar. Configura y conserva el primer diagnóstico. Repara sólo la fuente nombrada en add_library y vuelve a configurar."
+          "text": "La implementación y los siete casos del proyecto siguiente son correctos, pero componente/CMakeLists.txt tiene dos rutas equivocadas. Vamos a repararlas por separado para reconocer qué fase descubre cada problema.\n\nIdentifica desde qué carpeta se interpreta cada declaración del hijo y qué ruta física resulta.\nUsa «Configurar y generar» y examina el primer diagnóstico en el registro.\nCorrige únicamente la fuente nombrada en add_library y vuelve a configurar. Conserva por ahora el directorio de búsqueda tal como estaba para observar el segundo fallo."
         },
         {
           "type": "paragraph",
-          "text": "Construye después comprobar_cajas y relaciona el diagnóstico con el directorio de búsqueda pública. Repara ese directorio en el hijo y vuelve a configurar. Construye el comprobador y usa «Compilar, ejecutar y comprobar»; selecciona también consultar_cajas y compruébalo. Mantén intactos todos los archivos C++, sus includes, los casos y los esperados. Distingue en los registros de las herramientas la generación que no terminó, la construcción que no terminó y las dos ejecuciones posteriores."
+          "text": "Con comprobar_cajas seleccionado, solicita construir el objetivo. Ahora examina qué cabecera no encuentra el compilador y relaciona ese diagnóstico con la búsqueda pública declarada en el hijo.\n\nCorrige ese directorio en componente/CMakeLists.txt y vuelve a configurar.\nConstruye comprobar_cajas y utiliza «Compilar, ejecutar y comprobar» para contrastar la reparación de las rutas con el comprobador suministrado.\nComo ensayo opcional, selecciona consultar_cajas, constrúyelo y comprueba su salida.\n\nMantén intactos los archivos C++, sus inclusiones, los casos y los esperados. Distingue lo observado en cada paso: primero no se completó la generación; después no se completó la compilación; sólo al reparar ambas rutas se pudieron ejecutar los programas."
         },
         {
           "type": "cpp_compiler",
@@ -541,7 +541,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En componente/CMakeLists.txt, src/cajas.cpp se combina con componente/ y alcanza la fuente física. En la búsqueda de cabeceras, publico se combina con ese mismo origen y alcanza componente/publico, el directorio que contiene envio/. El objetivo sigue llamándose envios; ambos consumidores lo enlazan y reciben su requisito público. No se añade una copia de cajas.cpp a ninguno de los ejecutables."
+          "text": "Dentro de componente/CMakeLists.txt, la fuente src/cajas.cpp se interpreta desde componente/ y llega a componente/src/cajas.cpp.\n\nEl directorio publico se interpreta desde ese mismo origen y llega a componente/publico. Allí está envio/, la carpeta que contiene la cabecera que solicita el código C++.\n\nLa biblioteca sigue llamándose envios. Ambos consumidores enlazan ese objetivo y reciben su búsqueda pública. No se copia cajas.cpp dentro de los ejecutables ni se modifica la función para reparar estas rutas."
         },
         {
           "type": "code",
@@ -550,7 +550,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de estas reparaciones, reconstruir comprobar_cajas debe recuperar las siete comparaciones y su retorno cero. El cliente conserva 1:2. La cabecera sigue incluyéndose con \"envio/cajas.h\" porque el directorio público termina antes de envio/. El directorio de construcción correspondiente al hijo es un lugar para productos generados, no un sustituto de esa carpeta de origen (Scott, 2025, pp. 68–69, 183)."
+          "text": "Después de reparar las rutas, reconstruye y ejecuta comprobar_cajas para observar el efecto de la reparación. El comprobador suministrado contiene siete comparaciones y termina con 0 cuando todas coinciden. Construirlo por sí solo no ejecuta esas llamadas. La aplicación conserva 1:2 en su ensayo opcional.\n\nLa inclusión #include \"envio/cajas.h\" sigue siendo correcta: el directorio de búsqueda llega hasta componente/publico y el nombre incluido añade envio/cajas.h para llegar a la cabecera real.\n\nCMake también dispone de un directorio de construcción correspondiente al hijo, donde coloca productos generados. Ese lugar tiene una función distinta de la carpeta de origen que contiene las cabeceras; no debe sustituirla en esta búsqueda (Scott, 2025)."
         },
         {
           "type": "multiple_choice",
@@ -579,11 +579,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera lotes_para: recibe de cero a dieciocho piezas y calcula el mínimo número de lotes de seis plazas que permite guardarlas; cero piezas requiere cero lotes. Ya están conservadas la definición correcta y las comparaciones para 0,6,7,18. Esta vez los archivos físicos están en codigo/lotes/motor/ y codigo/lotes/publico/, y la aplicación está en programa/. La raíz sólo declara el proyecto y el hijo está vacío: todavía no hay objetivos descritos, aunque los archivos C++ existan."
+          "text": "En este proyecto, lotes_para recibe una cantidad entera de piezas entre cero y dieciocho, ambos incluidos. Cada lote admite seis piezas. La función devuelve el mínimo número de lotes suficiente para guardarlas todas; con cero piezas devuelve cero lotes.\n\nYa están preparadas la definición correcta y las comparaciones para 0, 6, 7 y 18 piezas. Conserva esa batería completa.\n\nLa implementación está en codigo/lotes/motor/.\nLas cabeceras están en codigo/lotes/publico/.\nLa aplicación está en programa/ y el comprobador, en pruebas/.\n\nEl CMakeLists.txt de la raíz sólo declara el proyecto y el del hijo está vacío. Los archivos C++ existen, pero todavía no se ha descrito ningún objetivo para construirlos."
         },
         {
           "type": "paragraph",
-          "text": "Escribe las dos descripciones sin cambiar esos archivos C++. Localiza en codigo/lotes/CMakeLists.txt la biblioteca lotes, su directorio público y sus requisitos. La raíz debe incorporar esa carpeta y declarar consultar_lotes y verificar_lotes enlazados con lotes. Exige como mínimo las características de C++20 y desactiva extensiones en los tres objetivos, como en las prácticas anteriores. Antes de ejecutar, comprueba las rutas desde cada declaración. Configura, construye y comprueba ambos consumidores; atribuye los cuatro casos al comprobador y 1:2 al cliente. CMake por sí solo puede terminar de configurar una descripción sin objetivos; en la app aún faltaría encontrar y construir el objetivo solicitado."
+          "text": "Escribe los dos CMakeLists.txt sin cambiar los archivos C++.\n\nEn codigo/lotes/CMakeLists.txt, declara la biblioteca lotes con su fuente, su directorio público de cabeceras y sus requisitos de compilación.\nEn la raíz, incorpora esa carpeta y declara consultar_lotes y verificar_lotes, cada uno enlazado con lotes.\nConserva en los tres objetivos el requisito cxx_std_20 y CXX_EXTENSIONS OFF, con el significado ya explicado: modo del lenguaje C++20 o posterior y solicitud del modo sin extensiones.\n\nAntes de configurar, comprueba cada ruta desde el directorio donde la has declarado. Configura, construye verificar_lotes y utiliza «Compilar, ejecutar y comprobar» con el comprobador dado. La tarea consiste en completar la descripción de CMake; el código de las comparaciones ya está suministrado. El ensayo de consultar_lotes es opcional y debe conservar 1:2.\n\nCMake puede terminar de configurar un proyecto que no declara objetivos. Eso no crea los que faltan: la app aún necesita encontrar y construir el objetivo que solicitas."
         },
         {
           "type": "cpp_compiler",
@@ -672,7 +672,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El hijo parte de codigo/lotes/, de modo que motor/cantidad.cpp y publico alcanzan sus archivos preparados. La raíz parte del proyecto, desde donde encuentra programa/consulta.cpp y pruebas/lotes_casos.cpp. Los dos consumidores obtienen el mismo requisito público al enlazar lotes. No hay que añadir codigo/lotes/ al nombre lógico de esa biblioteca."
+          "text": "En el hijo, el punto de partida es codigo/lotes/. Desde allí, motor/cantidad.cpp llega a codigo/lotes/motor/cantidad.cpp y publico llega a codigo/lotes/publico.\n\nEn la raíz, programa/consulta.cpp y pruebas/lotes_casos.cpp parten de la carpeta del proyecto. Cada ruta sigue llegando a su propia fuente.\n\nLos dos consumidores enlazan lotes y reciben su directorio público de búsqueda. lotes sigue siendo el nombre del objetivo de biblioteca; codigo/lotes/ es su ubicación en el proyecto y no se añade a ese nombre."
         },
         {
           "type": "note",
@@ -694,7 +694,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El comprobador conserva cuatro OK y Bateria: OK, con retorno cero. El cliente conserva 1:2. Relaciona cada resultado del editor con la descripción y el objetivo que lo produjeron. Cuando retomes un proyecto, verifica primero qué cambió: una descripción editada requiere volver a configurar; tras cambiar sólo un cuerpo C++ corresponde reconstruir el objetivo pertinente antes de atribuirle una nueva ejecución."
+          "text": "Al ejecutar el comprobador construido, sus cuatro comparaciones producen OK, el resumen es Bateria: OK y el código de terminación es 0. El ensayo opcional de la aplicación conserva 1:2.\n\nRelaciona cada resultado del editor con el objetivo que lo produjo y con la descripción usada para construirlo. Si editas un CMakeLists.txt, vuelve a configurar y después construye el objetivo pertinente. Si cambias sólo el cuerpo de una función C++, reconstruye el objetivo antes de ejecutarlo. Ejecutar un producto anterior no incorpora las ediciones que hiciste después de construirlo."
         },
         {
           "type": "multiple_choice",
@@ -723,11 +723,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conservar revisiones identificables y comparar sus diferencias permite localizar cambios y recuperar estados anteriores del trabajo (Thomas & Hunt, 2020, pp. 84–85). Aquí lo practicarás con el historial local del editor de código de la app. Una revisión registrada guarda los archivos en el estado que elegiste; el borrador conserva lo que estás editando ahora. Editar el borrador no actualiza automáticamente la revisión guardada.\n\nAl elegir una revisión, «Archivos de la revisión» muestra el estado de cada ruta respecto de ese punto. Al abrir una ruta puedes ver sus diferencias: − revisión registrada y + borrador actual. «Recuperar este archivo» afecta sólo a la ruta elegida y permite conservar una edición independiente de otro archivo."
+          "text": "Guardar estados identificables de los archivos y comparar sus diferencias permite localizar cambios y recuperar trabajo anterior (Thomas & Hunt, 2020). Aquí practicarás esas acciones con el historial local del editor de la app.\n\nUna revisión registrada guarda los archivos tal como estaban cuando elegiste registrarlos. El borrador contiene lo que estás editando ahora. Si modificas el borrador, la revisión guardada conserva su contenido anterior; no se actualiza automáticamente.\n\nAl abrir Historial y elegir una revisión, «Archivos de la revisión» muestra el estado de cada ruta comparado con ese punto guardado. Abre una ruta para examinar sus diferencias. La leyenda atribuye las líneas precedidas por − a la revisión registrada y las precedidas por + al borrador actual.\n\n«Recuperar este archivo» devuelve sólo la ruta elegida al estado de esa revisión. Las ediciones de los otros archivos permanecen en el borrador. Eso permite retirar una modificación de la fuente y conservar a la vez una modificación independiente de CMakeLists.txt."
         },
         {
           "type": "paragraph",
-          "text": "El proyecto siguiente tiene las dos descripciones distribuidas correctas y los siete casos 0, 4, 8, 20, 1, 5 y 17. Su objetivo es recuperar una fuente concreta desde una revisión registrada conservando un cambio independiente de CMakeLists.txt. Realiza todo el recorrido en este editor.\n\n1. Antes de editar, abre Historial, usa Registrar revisión y asigna una etiqueta que identifique esta base distribuida. Cierra Historial para continuar en el borrador.\n\n2. Cambia sólo el retorno de componente/src/cajas.cpp a piezas / 4 y añade a la raíz un comentario de CMake que quieras conservar, sin modificar sus órdenes. Son dos archivos cambiados con propósitos distintos.\n\n3. Configura, construye comprobar_cajas y ejecútalo. La batería debe revelar las discrepancias de 1, 5 y 17 piezas y terminar con 1; conserva los casos y esperados.\n\n4. Abre Historial, elige la base y compara las dos rutas con el borrador. Utiliza Recuperar este archivo únicamente para componente/src/cajas.cpp. El comentario de la raíz debe permanecer.\n\n5. Cierra Historial y, en este mismo editor, configura, construye y comprueba otra vez comprobar_cajas. Criterios finales: fuente recuperada igual a la revisión elegida, comentario independiente conservado y siete comparaciones OK con retorno 0. Registrar fuentes no acredita por sí solo su ejecución.",
+          "text": "Este proyecto proporciona las dos descripciones correctas y un comprobador ya escrito, con los casos 0, 4, 8, 20, 1, 5 y 17. No tienes que construir esa batería. El objetivo es recuperar una fuente concreta desde una revisión registrada, conservando un cambio independiente de CMakeLists.txt. Debes distinguir el rechazo de la fuente alterada y la aceptación de la recuperada, además de conservar la otra edición. Realiza este procedimiento en el editor que sigue.\n\n1. Antes de editar, abre Historial y pulsa «Registrar revisión». Escribe una etiqueta que identifique la base distribuida y confirma con «Registrar revisión». Comprueba que aparece en la lista. Cierra Historial para volver al borrador.\n\n2. En componente/src/cajas.cpp, cambia sólo el retorno a piezas / 4. En el CMakeLists.txt de la raíz, añade un comentario de CMake que quieras conservar: una línea que empiece por #, sin cambiar las órdenes. Has editado dos archivos con propósitos distintos.\n\n3. Selecciona comprobar_cajas, configura, construye y ejecuta el objetivo. La batería debe señalar discrepancias para 1, 5 y 17 piezas y terminar con 1. Mantén las siete llamadas y sus esperados.\n\n4. Abre Historial y elige la base que registraste. Abre CMakeLists.txt para comprobar que el comentario es una diferencia del borrador; cierra esa comparación sin recuperar la raíz. Abre después componente/src/cajas.cpp y examina sus diferencias. En esta comparación pulsa «Recuperar este archivo». El comentario de la raíz debe permanecer.\n\n5. Cierra las vistas de Historial para volver al mismo editor. Configura, construye y comprueba de nuevo comprobar_cajas. Al terminar, la fuente debe coincidir con la revisión elegida y el comentario independiente debe permanecer. La nueva ejecución del comprobador suministrado debe aceptar la fuente recuperada, mostrar Bateria: OK y terminar con código 0. Guardar o recuperar archivos no acredita por sí solo que se haya ejecutado el programa.",
           "emphasis": [
             {
               "text": "recuperar una fuente concreta"
@@ -802,7 +802,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La construcción del comprobador alterado permite observar tres discrepancias sin cambiar los siete casos. Esa ejecución se atribuye a piezas / 4; el resultado guardado de la aplicación no sería evidencia sobre las comparaciones de esa revisión."
+          "text": "Al construir y ejecutar el comprobador con piezas / 4, se observan tres discrepancias sin cambiar los siete casos. Para cinco piezas, por ejemplo, la función devuelve una caja y el comprobador espera dos. Esa observación corresponde al componente alterado. Una salida anterior de la aplicación no describe las comparaciones de este comprobador ni su revisión actual."
         },
         {
           "type": "paragraph",
@@ -843,7 +843,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La ejecución del comprobador alterado, después de construirlo, conserva OK para 0, 4, 8 y 20 piezas; para 1, 5 y 17 obtiene 0, 1 y 4, frente a los esperados 1, 2 y 5. Esas tres comparaciones producen FALLO y el final Bateria: FALLO, con retorno 1. Después de recuperar la fuente y reconstruir/ejecutar en el mismo editor, las siete comparaciones producen OK y el final Bateria: OK, con retorno 0. stderr queda vacío en ambos recorridos. Estos resultados pertenecen a sus respectivas construcciones, no al acto de registrar o abrir una revisión."
+          "text": "Con la implementación alterada, el comprobador produce estos resultados:\n\nPara 0, 4, 8 y 20 piezas, el valor obtenido coincide con el esperado y aparece OK.\nPara 1, 5 y 17 piezas, obtiene respectivamente 0, 1 y 4 cajas; los esperados son 1, 2 y 5. Cada una de estas comparaciones muestra FALLO.\nEl resumen es Bateria: FALLO y el código de terminación es 1.\n\nDespués de recuperar la fuente y reconstruir y ejecutar el comprobador en el mismo editor, las siete comparaciones muestran OK. El resumen es Bateria: OK y el código de terminación es 0. stderr queda vacío en ambas ejecuciones.\n\nCada informe procede de la construcción que se ejecutó. Registrar una revisión, abrir una comparación o recuperar un archivo no produce por sí solo esas observaciones del programa."
         },
         {
           "type": "multiple_choice",
@@ -869,7 +869,12 @@
       ]
     }
   ],
-  "compilerWorkflowChecks": [{"activity": "block_0010_0003", "kind": "cmakeSelectiveRecoveryV1"}],
+  "compilerWorkflowChecks": [
+    {
+      "activity": "block_0010_0003",
+      "kind": "cmakeSelectiveRecoveryV1"
+    }
+  ],
   "compilerPuzzlesRequired": true,
   "stateLayout": {
     "version": 2,
@@ -2764,6 +2769,176 @@
         "id": "block_0012_0001",
         "beforeSha256": "98b49e4100fb1eea41c79b371a9729587440c7c6a27b2a196190125b6adeb79d",
         "afterSha256": "cf493e69d22b485f5f3918102ba3a649cd69a39bdf53c8e4cb4a2d5986438759"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "b75de8f0df03ddcaa29fa2431aabfa357c75f6e5dde8aaf89bdae15f5898e967",
+        "afterSha256": "65db5f214781af4c41cefeb5d279da0e43473caf7d6e9a6cb6605c4054b050eb"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f9023e8f7c68adba1cb8314961e3acae70771d525a7cd16e8e085babb96a520f",
+        "afterSha256": "2aa09d81c755e47022872e8326df571019722f82a4db66c0f0ba3199f9ca2626"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "ffe6b36b559f59a6cb34b4ff19699f89b31f1357af84d70198218d51e5892182",
+        "afterSha256": "a326c00aad70b1441c194eb37a62102e74ad18b394c619896165955d6fec0244"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "24b300aaf0ed8cb53a8f4e54039b73328f14486bf63cf6a4598c946af18b996b",
+        "afterSha256": "19fed9db49b239db8ebcaaf11fcc61a56f8b8ce773d5dfc1528bf41405c660f3"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "de46b372e9a841b0dae6940c0453c2da362c932e404e0685687eb07152ba30f6",
+        "afterSha256": "f32adf9f4104df43edc3a9f99f48873a48f740c16492894895c64b330199db3c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "bddb319e463f19d4f1242496fd9a09fca02120ad17b5b4ab55f1a5908dfeeb1a",
+        "afterSha256": "39b80e8f61d5c03cf326dd68c78a024dd7fe55a6916d3dee5de1a1489287ae49"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "1d33c7d86afcafe03cbc1962bba96e3600067735bac5baaa73336177443997df",
+        "afterSha256": "51255fd3c136d972218f498790a40bd78992b03557a8fb27163b35058f06e104"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9aeda2a3569a494b9ab14678b5efc94ecdb5297f4391ba2a4c7ee2a238cd0358",
+        "afterSha256": "bee6c045644fc143c918c9d6de18e99513a00252d14df27ce165c9cbf415c10b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "e914d3569c04622c5fd5183a0b22173ffccb5cd63e1d526cb19790aa57617494",
+        "afterSha256": "e6ac4a73206ccdacdf6b7f654d91a99268b702f0ec7fbdcf406365b99099b63c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "6b08001e4e056d52730cfe48fbf77bda47006785fab9b64e7d124a205f87cc78",
+        "afterSha256": "2e9f83f370243c0569537e5f1a838131340060b8f869780ec45185dfb4645c26"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "c33cb3efa0d1c3d0513507c323e39b812dda738b1774d53e9f63f4ecefe44a35",
+        "afterSha256": "8c7bc627467bd20fb18125c4e4273269915853fe8f4f4001ff45511a59eb5d3d"
+      },
+      {
+        "id": "block_0004_0011",
+        "beforeSha256": "fb32ff098c67759fc8ece2eb79b2e9d30bdabc30bd896d4e5c9d379a3fd046e7",
+        "afterSha256": "a8872009ea4bd90ce345a5b7e312ed838d9962704f016910ab78170308d7ec90"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c7938f0af9ac20f2f39f1b6c5616575d63c259b6586ba88c652b53aaac0c7e19",
+        "afterSha256": "c6686b3b3a0f7c7bc3727a34b43bc980a26f6eb3a9cfd43b4497b03bf1b0b774"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "530a350cce0c8fbd4e20486b9de0e8f576a32d69c2866dfb75c6573b55551526",
+        "afterSha256": "95a63f2b6a745a483176c72eeb7fea14580a9d3f5b215ac0a25aaefc9b2227fc"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "24c0634dc1eefe16995dcb9dcef6fc7adb916dfeb3360a6a937d9f0fa8e729fc",
+        "afterSha256": "6086df05d838d104c0793776732bb7c65a03e35b62c071b3166e60d171f00775"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "fcb0d36bf0237198dd11526136d60b049a4cd33005d474f10fae58856ae888c7",
+        "afterSha256": "6b47d9bde638fd393194a04153b9e9aed45764cfc946017fb58c2a78f17b4e12"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "00734a4321ba1ef17b1587f959e7c6ea3bdcb854e2639b04271594f49cdcea90",
+        "afterSha256": "fd007655fb8a662dc903ccc19812c9974a6ab10e66181dbe7c11939f2f26a062"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "ad9787a9927123b0b325946b77a3cba42d0ef002ef6b9a91259101ef74939fbc",
+        "afterSha256": "9bfa4fd3f8d306c0da8d9297a3aeefc8654f692c788f058e7ccc90652fec3398"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "42fd9af8e954c2ecca35f14de3996058e72eb7d32007b9572a1f3252bce5064d",
+        "afterSha256": "2f8fd8477b7a7c13140dbc1338622cd28a35932bb7199009f88a3e0dcf1155ec"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "0b0e2ee1d7f9a94a7a6e427f8690dad9405bfd6be44c4c5a5aabe6c4e19d8c10",
+        "afterSha256": "cdaa83a4416429acce17d0ba6b8a46103b4cab08b55b2626e7b66f3b39e1fb27"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "a5656e23592b8d9e0674f365e479c85977fa7a4aa4132bc825b68473657ba278",
+        "afterSha256": "4fd302cf048d61240a6493442b2cc705eedf500951dadadfb7e7b8bd2008630a"
+      },
+      {
+        "id": "block_0009_0007",
+        "beforeSha256": "daf96549a1c291481c8c071c4e159059db256b4ee5cf976ad7cd3eb3b3e1e68f",
+        "afterSha256": "e540e6d64bfbf9a16e37463a47762da79c709da5f284597e195087efde421c05"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "fd6fe2c22cb3f9ab0fb8d867ab29e710c11ac0e5fc344a107473e79696d47e34",
+        "afterSha256": "0a0f96d8b37b9ac88b5bd1f2afffac1f4b4fb6245e4b3b901c5a5243aaedf96a"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "6d5550460d9eb49b76f8c821689e2a87d04f1a9ea7c707010ca72defcb321a1d",
+        "afterSha256": "d92aa9993abba69fa364ca030f77f1bb4043bfadc5ba69a1268d9651e908312d"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "0009f2cbef714b9fffef8abf228d8712a5f3dd80681859ccf6a66df37ee819c5",
+        "afterSha256": "c81da398d95dde14eb9654614397448855a7e2659d1f06692d4ea8e9edfa661a"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "90a7612305f3d0c542e77cce0ffb4243f04d92018c9c36304143d28d8f495ae0",
+        "afterSha256": "b76191f4fd66d14dd9326196342422e9c27b153ecf005fc35a527bfb381c016d"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "d92aa9993abba69fa364ca030f77f1bb4043bfadc5ba69a1268d9651e908312d",
+        "afterSha256": "8bbc32ba77283a456579b45be3e79a45a6ccb2939ba3157f1def83965f2d572b"
+      },
+      {
+        "id": "block_0004_0011",
+        "beforeSha256": "a8872009ea4bd90ce345a5b7e312ed838d9962704f016910ab78170308d7ec90",
+        "afterSha256": "f01d0f06d890a24229776d0d49e81bb778161b23ef41f3ef773d9763dfd33b6c"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "8bbc32ba77283a456579b45be3e79a45a6ccb2939ba3157f1def83965f2d572b",
+        "afterSha256": "d4afc9b4364a2db17bfb3dc4ef669c6349012891186512db6a5e1bda4f5eaf99"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "51255fd3c136d972218f498790a40bd78992b03557a8fb27163b35058f06e104",
+        "afterSha256": "70b8ad65c08cd440c107bdbc734f4227089b5e62e4e6ffc5c7c2806b58793e51"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "e6ac4a73206ccdacdf6b7f654d91a99268b702f0ec7fbdcf406365b99099b63c",
+        "afterSha256": "f3e531a63d6d7c07473c9a69f19d80ccbba7d96bb189644ad5ac2ce22fe76aba"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "6b47d9bde638fd393194a04153b9e9aed45764cfc946017fb58c2a78f17b4e12",
+        "afterSha256": "75524ca6234773433cd119c581ef392d58c13442bf28de46a95ec76a2b5dedfe"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "9bfa4fd3f8d306c0da8d9297a3aeefc8654f692c788f058e7ccc90652fec3398",
+        "afterSha256": "061098c18a6dea1e58baba408e43f137cc0f5987d89d1d99ed17059f91c60fa2"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "cdaa83a4416429acce17d0ba6b8a46103b4cab08b55b2626e7b66f3b39e1fb27",
+        "afterSha256": "7d3700ea5a76c2ff96e47fddae2f770325ffa9c2d504846de2fbbd794ea7fa8c"
       }
     ]
   },
@@ -2779,39 +2954,39 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "042c8e708cf0ba6c13326f9579ace6ceb2b069ef365ea4ecdc4aafd3091b6c9d",
+        "sourceSha256": "7533c0d11e38014a6cd508f52b010a6ebff6fa600659be246c7b9c939b225506",
         "spans": [
           {
-            "start": 25,
-            "end": 31,
+            "start": 14,
+            "end": 20,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 193,
-            "end": 204,
+            "start": 185,
+            "end": 196,
             "text": "componente/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 215,
-            "end": 219,
+            "start": 249,
+            "end": 253,
             "text": "app/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 222,
-            "end": 230,
+            "start": 314,
+            "end": 322,
             "text": "pruebas/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 311,
-            "end": 325,
+            "start": 394,
+            "end": 408,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
@@ -2821,33 +2996,47 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "58f7467a863767b30a9776e5e9fd2f677d45a798339e958046a4486fdee3f0f2",
+        "sourceSha256": "32e7e836049d42d16300ad313ceb85502e9f9822cd284f457b87d74dc3e36c86",
         "spans": [
           {
-            "start": 94,
-            "end": 105,
+            "start": 48,
+            "end": 62,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 178,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 197,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 212,
             "text": "componente/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 137,
+            "start": 237,
+            "end": 243,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 364,
-            "end": 370,
-            "text": "envios",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 499,
-            "end": 527,
-            "text": "(Scott, 2025, pp. 68–69, 79)",
+            "start": 566,
+            "end": 579,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2910,40 +3099,54 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "008115783f379c78da1194c8cac6e49a0927a874bba9209f94dcccfa60c66370",
+        "sourceSha256": "1dd96bfe6108a524b330fdeda64f648e5e8c6944cef54887fe1d34bf355d8f87",
         "spans": [
           {
-            "start": 9,
-            "end": 37,
+            "start": 11,
+            "end": 39,
             "text": "add_subdirectory(componente)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 107,
-            "text": "componente/CMakeLists.txt",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 298,
-            "end": 312,
+            "start": 55,
+            "end": 69,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 387,
-            "end": 397,
+            "start": 161,
+            "end": 171,
             "text": "componente",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 454,
-            "end": 474,
-            "text": "(Scott, 2025, p. 68)",
+            "start": 323,
+            "end": 351,
+            "text": "add_subdirectory(componente)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 401,
+            "end": 426,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 596,
+            "end": 610,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 722,
+            "end": 735,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2952,28 +3155,48 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "8422335221a74c86f45680bd4392dde4a780faa4ad7780253f5ba232c5c70fb8",
+        "sourceSha256": "945f588dbac0c41e97fde5440df57de63dfd21f2486e96241edbd942c18c1820",
         "spans": [
           {
-            "start": 37,
-            "end": 60,
+            "start": 92,
+            "end": 115,
             "text": "message(STATUS \"texto\")",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 144,
-            "end": 150,
+            "start": 138,
+            "end": 144,
             "text": "STATUS",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 402,
-            "end": 428,
-            "text": "(Scott, 2025, pp. 151–152)",
+            "start": 181,
+            "end": 188,
+            "text": "\"texto\"",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 272,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 358,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 426,
+            "end": 430,
+            "text": "main",
+            "role": "cpp"
           }
         ]
       },
@@ -3201,104 +3424,153 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "2bcfa624ed035e05c6d2bfe93ae703b2a4d506290a04052c9312839274e7e9de",
+        "sourceSha256": "63e2b6e1db20888d2b2d7ccbdb9c9367253ec474eff902486db124d1a868ab26",
         "spans": [
           {
-            "start": 124,
-            "end": 138,
+            "start": 88,
+            "end": 99,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 128,
+            "text": "target_include_directories",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 214,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 168,
-            "end": 192,
+            "start": 239,
+            "end": 252,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 291,
             "text": "componente/src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 226,
-            "end": 251,
+            "start": 334,
+            "end": 359,
             "text": "componente/CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 253,
-            "end": 266,
+            "start": 361,
+            "end": 374,
             "text": "src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 302,
+            "start": 435,
+            "end": 446,
             "text": "componente/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 384,
-            "end": 419,
-            "text": "componente/componente/src/cajas.cpp",
+            "start": 464,
+            "end": 488,
+            "text": "componente/src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 600,
-            "end": 629,
-            "text": "(Scott, 2025, pp. 68–69, 183)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 518,
+            "end": 553,
+            "text": "componente/componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "e343676f1602060169d77795d3d0c7c32698f1e806e31941934611c39a16dc4e",
+        "sourceSha256": "7ed248a6ad9dff7a0ab1fda6e709449f5acf1f868f0a406995cdfa1f78ea6bcd",
         "spans": [
           {
-            "start": 122,
-            "end": 136,
+            "start": 131,
+            "end": 145,
             "text": "PUBLIC publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 251,
-            "end": 257,
+            "start": 149,
+            "end": 174,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 241,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 265,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 295,
-            "text": "app/",
+            "start": 283,
+            "end": 301,
+            "text": "componente/publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 298,
-            "end": 306,
-            "text": "pruebas/",
+            "start": 408,
+            "end": 419,
+            "text": "app/publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 323,
-            "end": 338,
-            "text": "\"envio/cajas.h\"",
+            "start": 426,
+            "end": 441,
+            "text": "pruebas/publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 442,
+            "end": 455,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 477,
+            "end": 501,
+            "text": "#include \"envio/cajas.h\"",
             "role": "cpp"
           },
           {
-            "start": 397,
-            "end": 423,
-            "text": "(Scott, 2025, pp. 69, 183)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 541,
+            "end": 554,
+            "text": "envio/cajas.h",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
@@ -3538,47 +3810,82 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "bfe0950c5f899e184aaaa828e96c6a1709e800cb7d17acd7155e5d5c8b8d896b",
+        "sourceSha256": "d90c6b67a3b6bc45a4985e5c84c05ad054fa97d58c7bae704921cba90008ca18",
         "spans": [
           {
-            "start": 57,
-            "end": 82,
+            "start": 47,
+            "end": 72,
             "text": "componente/CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 156,
+            "start": 127,
+            "end": 141,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 173,
-            "end": 188,
-            "text": "consultar_cajas",
+            "start": 255,
+            "end": 270,
+            "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 301,
-            "end": 304,
-            "text": "1:2",
+            "start": 454,
+            "end": 456,
+            "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 338,
-            "end": 339,
+            "start": 490,
+            "end": 501,
+            "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 515,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 360,
-            "end": 375,
-            "text": "comprobar_cajas",
+            "start": 554,
+            "end": 577,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 683,
+            "end": 698,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 806,
+            "end": 809,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 843,
+            "end": 844,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 872,
+            "end": 888,
+            "text": "app/consulta.cpp",
             "role": "data",
             "reading": "technical"
           }
@@ -3587,7 +3894,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "787f833a3915418ad64d2e3084db40d4f15fcf4996408b8417d5d490c3d02409",
+        "sourceSha256": "0bd44b2e10622fd5de005ac88037f04f5fff2214ea32c88f47a042aaf0525d27",
         "spans": [
           {
             "start": 19,
@@ -3597,57 +3904,85 @@
             "reading": "technical"
           },
           {
-            "start": 134,
+            "start": 84,
+            "end": 109,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
             "end": 139,
-            "text": "C++20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 194,
-            "end": 201,
-            "text": "project",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 279,
-            "end": 295,
-            "text": "add_subdirectory",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 310,
-            "end": 316,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 443,
-            "end": 453,
-            "text": "raiz_antes",
-            "role": "output",
-            "reading": "natural"
+            "start": 234,
+            "end": 244,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 468,
-            "text": "raiz_despues",
-            "role": "output",
-            "reading": "natural"
+            "start": 399,
+            "end": 417,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 482,
-            "end": 498,
+            "start": 539,
+            "end": 546,
+            "text": "project",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 602,
+            "end": 608,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 649,
+            "end": 665,
             "text": "add_subdirectory",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 501,
-            "end": 511,
+            "start": 761,
+            "end": 768,
+            "text": "message",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 773,
+            "end": 779,
+            "text": "STATUS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 801,
+            "end": 811,
+            "text": "raiz_antes",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 841,
+            "end": 853,
+            "text": "raiz_despues",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 878,
+            "end": 888,
             "text": "componente",
             "role": "output",
             "reading": "natural"
@@ -3657,12 +3992,26 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "6ea16af1b2ddae5c3d13279f900aaf67739541510c6b0b6837c70f1e1d676801",
+        "sourceSha256": "2a55129a32f9100b05c346f8ecfe3a515feda138f45dac404bf2a21a49387214",
         "spans": [
           {
-            "start": 430,
-            "end": 467,
-            "text": "(Kernighan & Pike, 1999, pp. 149–150)",
+            "start": 130,
+            "end": 145,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 326,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 841,
+            "end": 865,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3754,7 +4103,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "15520cda93daeb8981643710fa7b61961b216e692b7e2c5f64a990e191a103fc",
+        "sourceSha256": "b662049140c057bb54cd6d3a3888621dae0d10d27e57b10d8d158373c241a865",
         "spans": [
           {
             "start": 12,
@@ -3764,53 +4113,60 @@
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 71,
+            "start": 87,
+            "end": 93,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 97,
-            "end": 104,
+            "start": 129,
+            "end": 136,
             "text": "project",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 113,
-            "end": 129,
+            "start": 153,
+            "end": 169,
             "text": "add_subdirectory",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 306,
-            "end": 321,
+            "start": 381,
+            "end": 394,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 461,
+            "end": 476,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 352,
-            "end": 360,
+            "start": 502,
+            "end": 516,
+            "text": "add_executable",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 537,
             "text": "pruebas/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 386,
-            "end": 397,
+            "start": 568,
+            "end": 579,
             "text": "componente/",
             "role": "data",
             "reading": "technical"
-          },
-          {
-            "start": 427,
-            "end": 459,
-            "text": "(Scott, 2025, pp. 68, 72, 79–80)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
@@ -3845,40 +4201,54 @@
       {
         "block": "block_0004_0007",
         "path": "/text",
-        "sourceSha256": "be3bb748aed694598624dd49313143ed3f124d6bc4b463f69c5a0c9399d96ff3",
+        "sourceSha256": "381d4e2831fa51860772eeb0fcec2c775ca93ccd3be8927af5798fb6edaee6fe",
         "spans": [
           {
-            "start": 58,
-            "end": 64,
+            "start": 53,
+            "end": 59,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 233,
-            "end": 269,
+            "start": 254,
+            "end": 290,
             "text": "raiz_antes, componente, raiz_despues",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 294,
-            "end": 297,
-            "text": "1:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 347,
-            "end": 349,
+            "start": 340,
+            "end": 342,
             "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 352,
-            "end": 363,
+            "start": 355,
+            "end": 366,
             "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 394,
+            "end": 395,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 445,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 491,
+            "end": 492,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           }
@@ -4006,30 +4376,64 @@
       {
         "block": "block_0004_0011",
         "path": "/text",
-        "sourceSha256": "1568032e8b097016d209dcab2dcc173fb186f22f2974a9cc6e12cafc47270240",
+        "sourceSha256": "498b28c6a473015889df6258536f67d5b0a3a5888781c18da78b55d2076e98c4",
         "spans": [
           {
-            "start": 120,
-            "end": 128,
-            "text": "piezas/4",
+            "start": 49,
+            "end": 59,
+            "text": "cajas_para",
             "role": "cpp"
           },
           {
-            "start": 140,
-            "end": 155,
+            "start": 208,
+            "end": 218,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 225,
+            "end": 234,
+            "text": "una pieza",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 254,
+            "text": "cero cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 283,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 415,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 220,
-            "end": 230,
+            "start": 549,
+            "end": 559,
             "text": "cajas_para",
             "role": "cpp"
           },
           {
-            "start": 283,
-            "end": 297,
+            "start": 563,
+            "end": 587,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 681,
+            "end": 695,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
@@ -4051,45 +4455,45 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "6df8208ce78c25759e058761d8398944ce375084065f1c5fcb9f0adb38370a86",
+        "sourceSha256": "2e45c7cc61242149d0a60be3712f0c9f7e00734151b8fcc27ff8fd90bd216300",
         "spans": [
           {
-            "start": 68,
-            "end": 79,
+            "start": 75,
+            "end": 86,
             "text": "add_library",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 87,
-            "end": 111,
+            "start": 96,
+            "end": 120,
             "text": "componente/src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 181,
+            "start": 161,
+            "end": 196,
             "text": "componente/componente/src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 434,
-            "end": 447,
+            "start": 466,
+            "end": 479,
             "text": "envio/cajas.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 463,
-            "end": 471,
+            "start": 553,
+            "end": 561,
             "text": "#include",
             "role": "cpp"
           },
           {
-            "start": 575,
-            "end": 585,
+            "start": 745,
+            "end": 755,
             "text": "cajas_para",
             "role": "cpp"
           }
@@ -4098,11 +4502,32 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "4a3d1a7add4f955f35ddf555689687823bd4eabf51640f9652ad5a12eddf92c6",
+        "sourceSha256": "a357ae07d1984b998b709ab9e1fcef36966fd50d62156e045df7abfa7a3739ad",
         "spans": [
           {
-            "start": 290,
-            "end": 298,
+            "start": 279,
+            "end": 290,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 313,
+            "end": 317,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 357,
+            "end": 383,
+            "text": "target_include_directories",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 435,
+            "end": 443,
             "text": "#include",
             "role": "cpp"
           }
@@ -4251,11 +4676,18 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "2e684e6e8aeed158a0f9d41b580ad84267f6b8b0e2dda83de11c46927540819f",
+        "sourceSha256": "5c2ca94807a9f1beb940a2d276080af7415dd0c8dc88b19dac16aa1b689e3dd3",
         "spans": [
           {
-            "start": 331,
-            "end": 342,
+            "start": 79,
+            "end": 104,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 427,
+            "end": 438,
             "text": "add_library",
             "role": "data",
             "reading": "technical"
@@ -4265,18 +4697,32 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "54e7bbfdca71fc5cd43bc818b9dee96625781bf93569f505f169eb3154eace2e",
+        "sourceSha256": "5798a2ab6cd56551916c8c7dcfc3be4af4e1737fd3d1ef952d67f2a54917e841",
         "spans": [
           {
-            "start": 18,
-            "end": 33,
+            "start": 4,
+            "end": 19,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 255,
+            "start": 221,
+            "end": 246,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 295,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 448,
+            "end": 463,
             "text": "consultar_cajas",
             "role": "data",
             "reading": "technical"
@@ -4361,60 +4807,67 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "d0a21511a51f063a5af41f571a85a27eebc6f926e9e09aa60e7f1b9d1868ab04",
+        "sourceSha256": "880afeac52d6cd60b04671db811a7464ee57fd20f6d91816d37e9a26d298a49b",
         "spans": [
           {
-            "start": 3,
-            "end": 28,
+            "start": 10,
+            "end": 35,
             "text": "componente/CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 30,
-            "end": 43,
+            "start": 47,
+            "end": 60,
             "text": "src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 70,
+            "start": 81,
+            "end": 92,
             "text": "componente/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 128,
-            "end": 135,
+            "start": 103,
+            "end": 127,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 151,
             "text": "publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 178,
-            "end": 196,
+            "start": 199,
+            "end": 217,
             "text": "componente/publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 225,
-            "end": 231,
+            "start": 229,
+            "end": 235,
             "text": "envio/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 262,
-            "end": 268,
+            "start": 333,
+            "end": 339,
             "text": "envios",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 357,
-            "end": 366,
+            "start": 424,
+            "end": 433,
             "text": "cajas.cpp",
             "role": "data",
             "reading": "technical"
@@ -4424,39 +4877,53 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "08082bb90ae89dba61c9ee032d7a6c09260f51fa90a8434d260c3c6a254add70",
+        "sourceSha256": "2ed04949ed848387e0b2753192fcbc9f31d59329e4852caf802afb92cbd4abf8",
         "spans": [
           {
-            "start": 43,
-            "end": 58,
+            "start": 52,
+            "end": 67,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 137,
-            "end": 140,
+            "start": 181,
+            "end": 182,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 283,
             "text": "1:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 192,
-            "text": "\"envio/cajas.h\"",
+            "start": 321,
+            "end": 345,
+            "text": "#include \"envio/cajas.h\"",
             "role": "cpp"
           },
           {
-            "start": 239,
-            "end": 245,
-            "text": "envio/",
+            "start": 407,
+            "end": 425,
+            "text": "componente/publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 380,
-            "end": 409,
-            "text": "(Scott, 2025, pp. 68–69, 183)",
+            "start": 453,
+            "end": 466,
+            "text": "envio/cajas.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 740,
+            "end": 753,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -4571,39 +5038,81 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "1d6aa5ec1692b1af4be4c33d47599ea7f77f0eb3b65c08573045060d06d15526",
+        "sourceSha256": "dd4324944d835fa5db324a7a1228a1ec7d46bfe75d12b4f5b1341d9a6f8ca7a7",
         "spans": [
           {
-            "start": 9,
-            "end": 19,
+            "start": 18,
+            "end": 28,
             "text": "lotes_para",
             "role": "cpp"
           },
           {
-            "start": 232,
-            "end": 240,
-            "text": "0,6,7,18",
+            "start": 72,
+            "end": 88,
+            "text": "cero y dieciocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 281,
-            "end": 300,
+            "start": 124,
+            "end": 135,
+            "text": "seis piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 232,
+            "text": "cero piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 252,
+            "text": "cero lotes",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 335,
+            "text": "0, 6, 7 y 18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 421,
             "text": "codigo/lotes/motor/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 324,
+            "start": 446,
+            "end": 467,
             "text": "codigo/lotes/publico/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 350,
-            "end": 359,
+            "start": 491,
+            "end": 500,
             "text": "programa/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 522,
+            "end": 530,
+            "text": "pruebas/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 536,
+            "end": 550,
+            "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           }
@@ -4612,53 +5121,81 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "0a865cb61677a485610673217ae40c1e35958aea082449a2faab350ef30365ab",
+        "sourceSha256": "bc03500dbc6909a7742081c2d557a5f07fda050ed286e65357f05e1417dcf6ff",
         "spans": [
           {
-            "start": 73,
-            "end": 100,
+            "start": 16,
+            "end": 30,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 92,
             "text": "codigo/lotes/CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 115,
-            "end": 120,
+            "start": 116,
+            "end": 121,
             "text": "lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 209,
-            "end": 224,
+            "start": 249,
+            "end": 264,
             "text": "consultar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 227,
-            "end": 242,
+            "start": 267,
+            "end": 282,
             "text": "verificar_lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 257,
-            "end": 262,
+            "start": 306,
+            "end": 311,
             "text": "lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 305,
-            "end": 310,
-            "text": "C++20",
+            "start": 357,
+            "end": 367,
+            "text": "cxx_std_20",
             "role": "data",
-            "reading": "natural"
+            "reading": "technical"
           },
           {
-            "start": 551,
-            "end": 554,
+            "start": 370,
+            "end": 388,
+            "text": "CXX_EXTENSIONS OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 604,
+            "end": 619,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 825,
+            "text": "consultar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 855,
+            "end": 858,
             "text": "1:2",
             "role": "output",
             "reading": "natural"
@@ -4758,53 +5295,74 @@
       {
         "block": "block_0009_0002",
         "path": "/text",
-        "sourceSha256": "25cb08c99d30ee963cc9b7636d917bc599579d315ce3938a95979c7782b4a8dd",
+        "sourceSha256": "3c0ff7460016943cca1c9453cfa00b47bb294d6395a6bcebb6a80c8a5eb2ae8d",
         "spans": [
           {
-            "start": 17,
-            "end": 30,
+            "start": 35,
+            "end": 48,
             "text": "codigo/lotes/",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 62,
+            "start": 62,
+            "end": 80,
             "text": "motor/cantidad.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 72,
+            "start": 89,
+            "end": 120,
+            "text": "codigo/lotes/motor/cantidad.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 123,
+            "end": 130,
             "text": "publico",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 157,
-            "end": 178,
+            "start": 139,
+            "end": 159,
+            "text": "codigo/lotes/publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 195,
             "text": "programa/consulta.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 181,
-            "end": 204,
+            "start": 198,
+            "end": 221,
             "text": "pruebas/lotes_casos.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 274,
-            "end": 279,
+            "start": 332,
+            "end": 337,
             "text": "lotes",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 299,
-            "end": 312,
+            "start": 383,
+            "end": 388,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 453,
             "text": "codigo/lotes/",
             "role": "data",
             "reading": "technical"
@@ -4842,28 +5400,42 @@
       {
         "block": "block_0009_0007",
         "path": "/text",
-        "sourceSha256": "60a4281e5c8a66a2492dc013624382686ae9ebadcb5307bdbcdeb92f7f1283ee",
+        "sourceSha256": "e8905919aefd26cddfee05052166c8dcf9e250493689e5d7b726ac0df6436dea",
         "spans": [
           {
-            "start": 31,
-            "end": 33,
+            "start": 73,
+            "end": 75,
             "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 47,
+            "start": 91,
+            "end": 102,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 90,
+            "start": 133,
+            "end": 134,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 184,
             "text": "1:2",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 312,
+            "end": 326,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
@@ -4940,108 +5512,136 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "f559c243d1b176e10ec6fb7357d3f0cfd2bbe4708196bbdbbf54bd89975007d0",
+        "sourceSha256": "7fadad0240652613932a5966ad729aff42f68e7a6174f086bff912feb07bbd6d",
         "spans": [
           {
-            "start": 132,
-            "end": 164,
-            "text": "(Thomas & Hunt, 2020, pp. 84–85)",
+            "start": 129,
+            "end": 150,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 583,
-            "end": 584,
+            "start": 707,
+            "end": 708,
             "text": "−",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 607,
-            "end": 608,
+            "start": 755,
+            "end": 756,
             "text": "+",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 1028,
+            "end": 1042,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0010_0002",
         "path": "/text",
-        "sourceSha256": "faae0f96416c03609e71dfa0836bc722661a34c80a30700b6e46965eacad605c",
+        "sourceSha256": "c66de3d161e89e70b48b4b33755d2aa837b7b2a7c6d3d43f2a841bf17179d3ed",
         "spans": [
           {
-            "start": 91,
-            "end": 113,
+            "start": 101,
+            "end": 123,
             "text": "0, 4, 8, 20, 1, 5 y 17",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 243,
+            "start": 277,
+            "end": 291,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 486,
-            "end": 510,
+            "start": 709,
+            "end": 733,
             "text": "componente/src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 513,
-            "end": 523,
+            "start": 760,
+            "end": 770,
             "text": "piezas / 4",
             "role": "cpp"
           },
           {
-            "start": 693,
-            "end": 708,
+            "start": 778,
+            "end": 792,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 883,
+            "end": 884,
+            "text": "#",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 977,
+            "end": 992,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 767,
-            "end": 776,
+            "start": 1081,
+            "end": 1090,
             "text": "1, 5 y 17",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 799,
-            "end": 800,
+            "start": 1113,
+            "end": 1114,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 956,
-            "end": 980,
+            "start": 1216,
+            "end": 1230,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1355,
+            "end": 1379,
             "text": "componente/src/cajas.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1112,
-            "end": 1127,
+            "start": 1607,
+            "end": 1622,
             "text": "comprobar_cajas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 1253,
-            "end": 1255,
-            "text": "OK",
+            "start": 1824,
+            "end": 1835,
+            "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1268,
-            "end": 1269,
+            "start": 1858,
+            "end": 1859,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -5090,13 +5690,34 @@
       {
         "block": "block_0011_0002",
         "path": "/text",
-        "sourceSha256": "f5a468905ede4249a3896752567abdb92644a6f32a0a7a0d7a9a080da19853dd",
+        "sourceSha256": "af816fdfc683905a8a7fc046f800884b9aa52d82acab57fafa14aaac5ae6410a",
         "spans": [
           {
-            "start": 134,
-            "end": 144,
+            "start": 43,
+            "end": 53,
             "text": "piezas / 4",
             "role": "cpp"
+          },
+          {
+            "start": 120,
+            "end": 132,
+            "text": "cinco piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 175,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 203,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -5291,88 +5912,88 @@
       {
         "block": "block_0012_0002",
         "path": "/text",
-        "sourceSha256": "cf750eeeb4286534c374b78f6d61377e059b00d15df89e7b41e83b4388826225",
+        "sourceSha256": "122e890dfcbb5c47335ad0c3d02daf6ed80cc618e5d93fb2002283944fb99b10",
         "spans": [
           {
-            "start": 72,
-            "end": 74,
-            "text": "OK",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 80,
-            "end": 92,
+            "start": 79,
+            "end": 91,
             "text": "0, 4, 8 y 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 106,
-            "end": 115,
-            "text": "1, 5 y 17",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 124,
-            "end": 132,
-            "text": "0, 1 y 4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 157,
-            "end": 165,
-            "text": "1, 2 y 5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 200,
-            "end": 205,
-            "text": "FALLO",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 217,
-            "end": 231,
-            "text": "Bateria: FALLO",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 245,
-            "end": 246,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 355,
-            "end": 357,
+            "start": 153,
+            "end": 155,
             "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 369,
-            "end": 380,
+            "start": 162,
+            "end": 171,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 212,
+            "text": "0, 1 y 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 246,
+            "text": "1, 2 y 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 293,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 323,
+            "text": "Bateria: FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 355,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 482,
+            "end": 484,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 500,
+            "end": 511,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 394,
-            "end": 395,
+            "start": 542,
+            "end": 543,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 397,
-            "end": 403,
+            "start": 545,
+            "end": 551,
             "text": "stderr",
             "role": "data",
             "reading": "technical"

@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "intentar_cajas ya decide si acepta una cantidad y conserva la variable de resultado al rechazar. Aquí no cambiaremos esa biblioteca ni su cálculo. El cliente debe comunicar el rechazo a una persona que prepara un lote y necesita corregir sus datos, sin conocer los nombres de nuestras funciones. El aprendizaje nuevo es elegir información que permita actuar, no añadir más texto porque sí."
+          "text": "intentar_cajas ya decide si una cantidad se acepta y conserva el valor anterior del resultado cuando la rechaza. En esta lección mantendremos esa biblioteca y su cálculo.\n\nEl trabajo está en el cliente: debe explicar un rechazo a la persona que prepara las cantidades de un lote. Esa persona necesita localizar la petición y revisar sus datos, aunque no conozca los nombres de nuestras funciones. Vamos a elegir la información que le permite actuar y a comprobar que el mensaje conserva los datos reales."
         },
         {
           "type": "paragraph",
-          "text": "Un diagnóstico útil relaciona la operación, la petición concreta y su dato con la condición que se incumplió. Debe ayudar al destinatario sin atribuir causas que el programa no comprobó. Identificar el origen del mensaje e indicar qué entrada se admite ayuda a localizar el problema y corregir el dato. La información se elige según lo que necesita hacer el destinatario y lo que conoce del programa (Kernighan & Pike, 1999, pp. 113–114; Thomas & Hunt, 2020, pp. 20–21)."
+          "text": "Un diagnóstico es un mensaje que ayuda a identificar qué ocurrió y qué se puede revisar. En este programa debe relacionar estos datos:\n\nLa operación que se estaba intentando realizar.\nLa petición concreta del lote y la cantidad que se recibió.\nLa condición que esa entrada debe cumplir.\nUna acción de revisión que respete el trabajo solicitado.\n\nIdentificar el origen del mensaje y la forma de entrada admitida ayuda a corregir el dato. También importa quién lo leerá: la información debe responder a su tarea y a lo que conoce del programa (Kernighan & Pike, 1999; Thomas & Hunt, 2020). El diagnóstico puede describir lo comprobado; no debe presentar como demostrada una causa que el programa no examinó."
         },
         {
           "type": "multiple_choice",
@@ -76,15 +76,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera std::cout para la salida ordinaria y std::cerr para la salida de diagnóstico. En esta práctica el cliente escribe un resultado por cada petición aceptada en stdout, el canal de cout. Los rechazos se explican en stderr, el canal de cerr. El cliente continúa con las peticiones posteriores y al final devuelve 1 si hubo algún rechazo; si no hubo ninguno devuelve 0. Ese código no es otro resultado impreso: main termina normalmente con él para resumir el lote. El retorno 1 indica que hubo un rechazo, no que el compilador fallara ni que el programa dejara de ejecutar las peticiones restantes."
+          "text": "Este cliente comunica tres cosas distintas:\n\nEn stdout, mediante std::cout, escribe un resultado por cada petición aceptada.\nEn stderr, mediante std::cerr, explica cada petición rechazada.\nAl terminar, main devuelve un código: 1 si hubo algún rechazo en el lote, o 0 si no hubo ninguno.\n\nEl código de terminación no es otra línea impresa. main lo devuelve para resumir el lote. En este programa, un rechazo no interrumpe el recorrido: el cliente continúa leyendo y tratando las peticiones posteriores. Cuando finalmente devuelve 1, comunica que hubo algún rechazo; no indica que el compilador fallara ni que se hubieran omitido las peticiones siguientes."
         },
         {
           "type": "paragraph",
-          "text": "La función de mensaje recibe std::ostream& destino. En la llamada informar_rechazo_cajas(std::cerr, peticion, piezas), el argumento std::cerr se vincula con destino: una inserción en destino escribe en stderr. Escribir directamente en std::cerr produciría el mismo canal en este cliente, pero ignoraría el flujo recibido y dejaría de permitir que quien llama elija otro destino.\n\nAl comparar una ejecución, distingue stdout, stderr y código final. No deduzcas un orden relativo entre los dos canales a partir de cómo los presenta una herramienta."
+          "text": "La función de mensaje recibe un flujo de salida: el objeto al que enviará los caracteres. El parámetro std::ostream& destino permite usar por referencia el flujo que se proporciona en la llamada.\n\nEn informar_rechazo_cajas(std::cerr, peticion, piezas), std::cerr es el argumento que recibe destino. Por eso, las inserciones escritas como destino << ... envían el mensaje a stderr. Los otros argumentos proporcionan el número de petición y la cantidad de piezas.\n\nEscribir directamente en std::cerr daría el mismo canal con este cliente, pero dejaría de respetar el flujo recibido. Quien llama debe poder elegir otro flujo sin cambiar la función de mensaje.\n\nAl comparar una ejecución, examina por separado stdout, stderr y el código final. Conserva el orden de las líneas dentro de cada canal. La presentación conjunta de una herramienta no establece un orden entre los dos canales que esta práctica no ha prometido."
         },
         {
           "type": "note",
-          "text": "Contrato de entrada de ambas prácticas: como máximo ocho peticiones completas, enteros representables por int y final normal del flujo. En la primera cada petición tiene un entero; en la segunda tiene dos. Un lote vacío es válido. La lectura usa std::cin hasta el fin de la entrada preparada (EOF); esta práctica no trata texto mal formado, pares incompletos ni fallos del dispositivo de entrada."
+          "text": "Las dos prácticas utilizan la entrada preparada del editor con estas condiciones:\n\nComo máximo ocho peticiones completas por lote.\nEn la primera práctica, cada petición contiene un entero: la cantidad de piezas.\nEn la segunda, cada petición contiene dos enteros: cobros y devoluciones.\nTodos los enteros deben poder representarse con int. Un lote vacío es válido.\n\nstd::cin lee los datos hasta llegar al final de la entrada, llamado EOF. Se supone un final normal del flujo. Aquí no se pide tratar texto mal formado, pares incompletos ni fallos del dispositivo de entrada."
         },
         {
           "type": "multiple_choice",
@@ -113,11 +113,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa inicial calcula y decide correctamente, pero Error no permite saber qué cantidad del lote se rechazó. En el editor de esta página, modifica únicamente el cuerpo de informar_rechazo_cajas. Conserva cajas_para, intentar_cajas, main y la entrada preparada para la primera ejecución. El mensaje debe identificar la operación de cajas, el número de petición, la cantidad recibida, el intervalo entero admitido y una acción de revisión que no modifique el encargo. Pulsa «Compilar y ejecutar» para observar el resultado de tu modificación."
+          "text": "El programa inicial calcula y decide correctamente, pero el mensaje Error no identifica qué cantidad se rechazó. En el editor de esta página, modifica sólo el cuerpo de informar_rechazo_cajas. Conserva cajas_para, intentar_cajas, main y la entrada preparada para la primera ejecución.\n\nTu mensaje debe identificar la operación de cajas, el número de petición y la cantidad recibida. Debe indicar qué enteros se admiten y proponer que se revise el dato, sin anunciar una modificación que el programa no realizó. Escribe mediante el flujo destino recibido por la función. Pulsa «Compilar y ejecutar» para observar el programa modificado."
         },
         {
           "type": "paragraph",
-          "text": "Con -1 0 21 5 se rechazan las peticiones primera y tercera; cero sí se acepta. Antes de ejecutar, deduce por separado los resultados y los datos que debe conservar cada diagnóstico. stdout debe contener Cajas=0 y Cajas=2, una línea por resultado; el código final es 1. Los dos diagnósticos se escriben en stderr y no deben anunciar falta de material ni una corrección que no se realizó.\n\nPara comprobar un lote sin rechazos, cambia después el campo «Entrada» a 0 1 20 4 en este mismo editor, sin cambiar el programa: stdout contiene Cajas=0, Cajas=1, Cajas=5 y Cajas=1, una línea por resultado; stderr queda vacío y el código es 0. Con el campo de entrada vacío, ambos canales quedan vacíos y el código es 0. Estas ejecuciones permiten contrastar que el diagnóstico sólo acompaña un rechazo real."
+          "text": "Para la primera ejecución, conserva -1 0 21 5 en el campo «Entrada». Se trata de un solo lote, leído en este orden:\n\nLa petición 1 recibe -1 y se rechaza.\nLa petición 2 recibe 0 y se acepta: cero piezas requiere cero cajas.\nLa petición 3 recibe 21 y se rechaza.\nLa petición 4 recibe 5 y se acepta: necesita dos cajas.\n\nstdout debe contener estas dos líneas, cada una con salto final:\n\nCajas=0\nCajas=2\n\nstderr debe contener dos diagnósticos: uno identifica la petición 1 y la cantidad -1; el otro, la petición 3 y la cantidad 21. Deben explicar el intervalo entero admitido y proponer revisar los datos. No deben anunciar falta de material ni una corrección automática. El código de terminación es 1 porque hubo rechazos; los resultados aceptados demuestran que el cliente continuó con el lote.\n\nComo ensayo opcional sin rechazos, cambia sólo el campo «Entrada» a 0 1 20 4. stdout contiene estas cuatro líneas:\n\nCajas=0\nCajas=1\nCajas=5\nCajas=1\n\nstderr queda vacío y el código de terminación es 0. Como otro ensayo opcional, deja vacío el campo «Entrada»: ambos canales quedan vacíos y el código es 0. Conserva el programa entre estos ensayos; así podrás comprobar que los mensajes acompañan sólo a peticiones realmente rechazadas."
         },
         {
           "type": "cpp_compiler",
@@ -127,7 +127,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una redacción distinta puede cumplir los criterios. Que el programa compile confirma que el compilador acepta su código; no confirma que el mensaje conserve la petición, los valores y la condición. Comparar sólo la salida ordinaria tampoco basta: el programa inicial ya produce los resultados previstos y termina con el código acordado, aunque sus diagnósticos no permiten corregir los datos."
+          "text": "Puedes elegir otra redacción que cumpla los criterios. Compilar comprueba que el compilador acepta el código, pero no que el mensaje conserve la petición, la cantidad y la condición válida.\n\nTampoco basta con comparar stdout y el código final. El programa inicial ya produce esos resultados y termina con el código previsto, aunque sólo escriba Error en sus diagnósticos. Para revisar la mejora hay que contrastar también los hechos que comunica cada mensaje y el flujo al que se envía."
         }
       ]
     },
@@ -148,7 +148,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la entrada inicial, stderr contiene dos líneas: la primera nombra la petición 1 y piezas=-1; la segunda, la petición 3 y piezas=21. Ambas indican de 0 a 20 incluidos. La petición 2 corresponde a cero y se aceptó; por eso el segundo diagnóstico conserva el número 3, no 2. No se exige copiar estas frases: sí mantener esos hechos y escribir en el destino recibido. Los resultados y los códigos de terminación conservan su significado anterior."
+          "text": "Para el lote inicial, los dos diagnósticos de stderr deben conservar estos hechos:\n\nEl primero corresponde a la petición 1 y muestra piezas=-1.\nEl segundo corresponde a la petición 3 y muestra piezas=21.\nAmbos indican que se admiten enteros de 0 a 20, incluidos los extremos, y orientan a revisar la cantidad.\n\nLa numeración cuenta todas las peticiones, también las aceptadas. La petición 2 fue la de cero piezas y se aceptó; por eso el diagnóstico siguiente conserva el número 3. No es el segundo intento del lote, aunque sí sea su segundo rechazo.\n\nLa referencia muestra una redacción posible. Otra puede ser válida si conserva esos hechos y escribe en el destino recibido. Los resultados ordinarios y los códigos de terminación mantienen el acuerdo de la práctica."
         },
         {
           "type": "multiple_choice",
@@ -193,7 +193,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al revisar tu propia función, localiza para cada campo su origen en la petición. Conserva el dato aunque no sea válido para calcular: precisamente ése es el dato que se necesita revisar. La función de mensaje no debe volver a ejecutar la operación para averiguarlo ni convertir un resultado anterior en la cantidad rechazada."
+          "text": "En informar_rechazo_cajas, el número de petición procede del parámetro peticion y la cantidad recibida procede de piezas. Al escribir cada etiqueta, comprueba que se inserta después el dato que le corresponde.\n\nLa cantidad debe conservarse aunque no sea válida para calcular: ése es el dato que la persona necesita revisar. La función de mensaje ya lo recibe; no necesita volver a ejecutar el cálculo ni presentar como cantidad rechazada el resultado que dejó una petición anterior."
         },
         {
           "type": "note",
@@ -209,11 +209,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor conserva calcular_saldo de la lección anterior. Acepta cada par cuando cobros y devoluciones están, por separado, entre 0 y 9 incluidos; cuando acepta, escribe la diferencia en saldo. El bool devuelto comunica si se aceptó el par. Desarrolla únicamente el cuerpo de informar_rechazo_saldo para una persona que prepara esos pares y necesita saber qué revisar. Conserva la biblioteca, main y la entrada preparada para la primera ejecución; pulsa «Compilar y ejecutar» para observar tu mensaje."
+          "text": "El editor conserva calcular_saldo de la lección anterior. La aceptación exige que los dos campos cumplan su condición:\n\ncobros debe ser un entero entre 0 y 9, ambos incluidos.\ndevoluciones debe ser un entero entre 0 y 9, ambos incluidos.\n\nCuando acepta el par, la función escribe cobros - devoluciones en saldo y devuelve true. Cuando rechaza, devuelve false y conserva el saldo anterior. Un resultado negativo puede pertenecer a una petición aceptada.\n\nDesarrolla sólo el cuerpo de informar_rechazo_saldo para la persona que prepara esos pares. Conserva el componente, main y la entrada preparada para la primera ejecución. Utiliza el flujo destino recibido y pulsa «Compilar y ejecutar» para observar los mensajes."
         },
         {
           "type": "paragraph",
-          "text": "La entrada preparada contiene cuatro peticiones: (2,3), (10,0), (0,-1), (5,5). stdout debe contener Saldo=-1 y Saldo=0, una línea por resultado. Los rechazos corresponden a las peticiones 2 y 3; el código final es 1. En stderr, identifica la operación, la petición y ambos campos por su nombre, con sus valores reales; indica la condición válida para cada campo y una acción de revisión. No clasifiques como error un saldo negativo ni anuncies un cobro o una devolución que no se realizó.\n\nCambia después el campo «Entrada» de este mismo editor a 2 3 0 0 9 0 0 9, conservando el programa: las cuatro peticiones son válidas y sus saldos son -1, 0, 9 y -9. stderr queda vacío y el código es 0; el signo del resultado no provoca un diagnóstico. Con el campo de entrada vacío, ambos canales quedan vacíos y el código es 0."
+          "text": "Conserva la entrada preparada 2 3 10 0 0 -1 5 5 para la primera ejecución. El programa lee cuatro peticiones completas:\n\nPetición 1: (2,3), aceptada.\nPetición 2: (10,0), rechazada.\nPetición 3: (0,-1), rechazada.\nPetición 4: (5,5), aceptada.\n\nstdout debe contener estas líneas, cada una con salto final:\n\nSaldo=-1\nSaldo=0\n\nEn stderr, cada diagnóstico debe identificar la operación de saldo, la petición y los dos campos por su nombre, con sus valores reales. Indica el intervalo entero admitido para cada campo y una acción de revisión. El código de terminación es 1 porque hubo rechazos. No trates el saldo negativo aceptado como un error ni anuncies un cobro o una devolución que el programa no realizó.\n\nComo ensayo opcional con pares válidos, cambia sólo «Entrada» a 2 3 0 0 9 0 0 9. stdout debe contener:\n\nSaldo=-1\nSaldo=0\nSaldo=9\nSaldo=-9\n\nstderr queda vacío y el código de terminación es 0. El signo de esos resultados no provoca un diagnóstico. Como otro ensayo opcional, deja vacío el campo «Entrada»: ambos canales quedan vacíos y el código es 0. Conserva el mismo programa entre las ejecuciones."
         },
         {
           "type": "cpp_compiler",
@@ -244,7 +244,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con el lote inicial, los diagnósticos describen cobros=10, devoluciones=0 en la petición 2, y cobros=0, devoluciones=-1 en la petición 3. Para el lote sólo válido se imprimen los saldos -1, 0, 9 y -9, en ese orden; stderr queda vacío y el código es 0. Los saldos negativos son resultados aceptados y no explicaciones de un rechazo."
+          "text": "Con el lote inicial, los dos diagnósticos conservan estas asociaciones:\n\nPetición 2: cobros=10, devoluciones=0.\nPetición 3: cobros=0, devoluciones=-1.\n\nCada línea conserva el par completo, aunque sólo uno de sus campos esté fuera del intervalo. El cliente sigue produciendo los resultados aceptados y termina con código 1 por los rechazos.\n\nEn el ensayo opcional que sólo contiene pares válidos, los saldos son -1, 0, 9 y -9, en ese orden. stderr queda vacío y el código es 0. Los resultados negativos se aceptaron porque sus dos campos estaban permitidos; no son explicaciones de un rechazo."
         },
         {
           "type": "multiple_choice",
@@ -294,7 +294,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vuelve al editor «Transferencia: diagnosticar una petición con dos campos» y cambia sólo su campo «Entrada». Prepara tres pares completos: en el primero, un campo por debajo de cero; en el último, un campo por encima de nueve; entre ellos, un par aceptado. Mantén el otro campo de cada rechazo dentro del intervalo válido y utiliza valores distintos de los de la entrada preparada.\n\nAntes de ejecutar, identifica qué hechos debe conservar cada diagnóstico. Pulsa «Compilar y ejecutar» y contrasta sus campos, canal y código final sin editar la biblioteca. La petición aceptada entre los rechazos debe seguir produciendo su resultado."
+          "text": "Como ensayo opcional, vuelve al editor «Transferencia: diagnosticar una petición con dos campos» y cambia sólo su campo «Entrada». Prepara un lote propio de tres pares completos con esta secuencia:\n\nEn el primer par, un campo está por debajo de cero y el otro está en el intervalo válido.\nEl segundo par tiene sus dos campos permitidos y se acepta.\nEn el último par, un campo está por encima de nueve y el otro está en el intervalo válido.\n\nElige valores distintos de los de la entrada preparada. Antes de ejecutar, identifica los números de petición y los datos que debe conservar cada diagnóstico, y calcula el saldo del par aceptado.\n\nPulsa «Compilar y ejecutar» sin modificar la biblioteca. Contrasta los campos de cada mensaje y sus canales: el resultado aceptado aparece en stdout y los dos rechazos, en stderr. El código final debe ser 1. Este recorrido comprueba que la petición aceptada situada entre dos rechazos sigue produciendo su resultado."
         },
         {
           "type": "note",
@@ -1349,6 +1349,76 @@
         "id": "block_0008_0003",
         "beforeSha256": "2e0e65abd63b0c64418fd966420559bf757e3ab000e21fc2c53d35768275d48e",
         "afterSha256": "497625f0c5af5ffff2dacb26590a454a49c61e915c522763edb3a670787ef222"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "75d5c009329cfee4c9a55acdf252cf2cc91d3274da21877dda58ad2a09236947",
+        "afterSha256": "dde364fa9fe2d235cf5b9cbfcedd3d9d5064358a22cb1ab0805c647ba2ea2278"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "097565075e840edf7adf3dc2557a0b652aa94fd1a201d2cf32a936b7a9005949",
+        "afterSha256": "a2149e6523a2492168553416da6dea081437af27e34c5ec41547eed0ea33c586"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "310c035c77c4d817222aaa1beb1444493d226c9c23512f4729603e2ecd958ba8",
+        "afterSha256": "45212d7c0418568261478f4da6ff7e772cca8a8509d6dd9ff7d101d92d59860c"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "f929137c2e48c64c4063730add6d8598a21662b1e1eb51f0ef97d79028cf47c4",
+        "afterSha256": "abbab3984277ecba5f6ed9d1ef8a4122123006ebbe101c0bad7bb5ccf40e3561"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "29244746fd3007cd8fa710f50c42a1b30930c07a1268d5e0fe6fc476a7e3da04",
+        "afterSha256": "7b091acab3f574b2e3cd862730aca1d8b44c7b72ce1fd5739fce1ad6aa643be6"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "97f0711e76f62d3038c393a626202579d2e33c1ec4d1a6504f004f07aa634c4e",
+        "afterSha256": "6764bfb97e985a6030e0ae5f7ec8e928d91e54a45afcf61bf13e2d154a627c27"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "de028e7baeae977f26ffe0ff3821f2b118a72eda190c15bfdc22682fd0cfd626",
+        "afterSha256": "0a037c40f9a0b0e931efe68ee8f53b58d7918b9d58c6890d9745d176938dbd08"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "5a7ca40b46b3b6d62452c6825022d0a2f47879994ab3a1aeeda4c3994dcc0483",
+        "afterSha256": "cfb02768d7d1c76216d104145c0f52dea6a624a1611f2c4207286647ec2a4f3d"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "7f363511262ebb5e95c4d33d2ca75915cd978a0ba1920d5640f3625393165612",
+        "afterSha256": "1889ea81beee2f3a4542f5a3d83a2d8bd84ab654af2840dab0e668a012d6f21d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "00da9349ae9db3e401ad4e261d73d2063def753190925722a89e00383330e2cb",
+        "afterSha256": "0a918adbe4d12eebc18fe939bb2618abb3ea5ac85177e20493fc33ac0360fec1"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "f6a4f3916d15c04cdb4b5193a88a1a49a0cdfb8f3a4d161b0a9d3d2f3851d890",
+        "afterSha256": "528ee1fc0db04398e5a33cc6e54d8aa7f3815e4a19b887f80002160acb2a1a08"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "4b3e75187ef4413f4932bbe5e6984d1fc8ef7b37a19c743d3ef9f3f5a1c961a7",
+        "afterSha256": "b38875f32f85745b34537137c62c74283f887ca2a5d7922128c4931ab72bb1bc"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "659deff7fb17abfb0eb9115db2ab68c1193a22ba6f20290934079ad9e68b6820",
+        "afterSha256": "00391ff8287e2bd0f28730225fc93e83abd4dadfc333702c02c2f54b22e0f0f3"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "497625f0c5af5ffff2dacb26590a454a49c61e915c522763edb3a670787ef222",
+        "afterSha256": "849ba7a680b273ba25729ab05da0e3691b08bf64e1f69d1d0fcc0e000af0dd8d"
       }
     ]
   },
@@ -1364,7 +1434,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "3b66864bddb84dbb93d26f8763a93a35a35b716a8b26fcee0ee112c0255548f0",
+        "sourceSha256": "05de891b8c55a3276441b1b61b2a2827d12c445fab520d0b10df209a0e3c0d34",
         "spans": [
           {
             "start": 0,
@@ -1378,12 +1448,12 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "122e8130aafd78c8d16b301631d803c50ecef1915a1fbd0c579c2fd351526bb9",
+        "sourceSha256": "8e7fcb4a0f153b083ee43070f71b020b4456a5a7660d4dd7d196530c1affc353",
         "spans": [
           {
-            "start": 400,
-            "end": 469,
-            "text": "(Kernighan & Pike, 1999, pp. 113–114; Thomas & Hunt, 2020, pp. 20–21)",
+            "start": 541,
+            "end": 586,
+            "text": "(Kernighan & Pike, 1999; Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1595,74 +1665,67 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "e7fd0d7a6ac52f423f4e7aaab296854ec116963813aa66dc576556d558e43c37",
+        "sourceSha256": "756b59af336e41762c06e748f1e0236725aa7fa072b14770d5958dfcd9e1fba9",
         "spans": [
           {
-            "start": 9,
-            "end": 18,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 46,
-            "end": 55,
-            "text": "std::cerr",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 166,
-            "end": 172,
+            "start": 48,
+            "end": 54,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 186,
-            "end": 190,
-            "text": "cout",
+            "start": 65,
+            "end": 74,
+            "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 220,
-            "end": 226,
+            "start": 128,
+            "end": 134,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 244,
-            "text": "cerr",
+            "start": 145,
+            "end": 154,
+            "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 317,
-            "end": 318,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 370,
-            "end": 371,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 414,
-            "end": 418,
+            "start": 202,
+            "end": 206,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 479,
-            "end": 480,
+            "start": 227,
+            "end": 228,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 266,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 343,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 530,
             "text": "1",
             "role": "output",
             "reading": "natural"
@@ -1672,67 +1735,67 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "378db8768329d4e043c138676718058de2dcd8af0579eefa861ffa0988d89ea2",
+        "sourceSha256": "6e0aa8b2d43c8011d52efa19cd31557b5fc148a3a1bd177cacc8d573a41070e3",
         "spans": [
           {
-            "start": 29,
-            "end": 50,
+            "start": 103,
+            "end": 124,
             "text": "std::ostream& destino",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 117,
+            "start": 200,
+            "end": 251,
             "text": "informar_rechazo_cajas(std::cerr, peticion, piezas)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 141,
+            "start": 253,
+            "end": 262,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 157,
-            "end": 164,
+            "start": 290,
+            "end": 297,
             "text": "destino",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 183,
-            "end": 190,
-            "text": "destino",
+            "start": 338,
+            "end": 352,
+            "text": "destino << ...",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 202,
-            "end": 208,
+            "start": 373,
+            "end": 379,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 235,
-            "end": 244,
+            "start": 488,
+            "end": 497,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 417,
-            "end": 423,
+            "start": 706,
+            "end": 712,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 425,
-            "end": 431,
+            "start": 714,
+            "end": 720,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
@@ -1742,25 +1805,32 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "b51d118ee2c7456bbafbc50b745859293fb46a74f33342a464fe73409f63c9b6",
+        "sourceSha256": "72cb10226e68a91a71315f30b9106d44297688787b4843129f4b040eeb9df298",
         "spans": [
           {
-            "start": 106,
-            "end": 109,
+            "start": 95,
+            "end": 99,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 337,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 246,
-            "end": 254,
+            "start": 365,
+            "end": 373,
             "text": "std::cin",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 293,
-            "end": 296,
+            "start": 433,
+            "end": 436,
             "text": "EOF",
             "role": "data",
             "reading": "technical"
@@ -1832,40 +1902,47 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "1d5aaff2d62075076aa2d1bfc90cf564ee1aeb3ae8a3595a951225b94848990f",
+        "sourceSha256": "bb4d6149f981ec019ef6bbcd847826a8debec504f1b399ce94b1496a13ed5ee6",
         "spans": [
           {
-            "start": 57,
-            "end": 62,
+            "start": 68,
+            "end": 73,
             "text": "Error",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 176,
-            "end": 198,
+            "start": 169,
+            "end": 191,
             "text": "informar_rechazo_cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 209,
-            "end": 219,
+            "start": 202,
+            "end": 212,
             "text": "cajas_para",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 221,
-            "end": 235,
+            "start": 214,
+            "end": 228,
             "text": "intentar_cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 237,
-            "end": 241,
+            "start": 230,
+            "end": 234,
             "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 537,
+            "end": 544,
+            "text": "destino",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1874,109 +1951,165 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "8f65b79b6f36a5de387199af5dae249efa514ec2481d2a757cf5fb5abdfad1fc",
+        "sourceSha256": "ada59a438bd39e30b5557d9a75cc90a1261b55f86d14638862c9f7b422a0c63d",
         "spans": [
           {
-            "start": 4,
-            "end": 13,
+            "start": 36,
+            "end": 45,
             "text": "-1 0 21 5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 188,
+            "start": 129,
+            "end": 130,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 168,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 177,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 237,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 247,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 275,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 284,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 319,
+            "end": 325,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 210,
-            "text": "Cajas=0",
+            "start": 385,
+            "end": 400,
+            "text": "Cajas=0\nCajas=2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 213,
-            "end": 220,
-            "text": "Cajas=2",
-            "role": "output",
-            "reading": "natural"
+            "start": 402,
+            "end": 408,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 266,
-            "end": 267,
+            "start": 468,
+            "end": 469,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 305,
-            "end": 311,
-            "text": "stderr",
-            "role": "data",
-            "reading": "technical"
+            "start": 484,
+            "end": 486,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 461,
-            "end": 469,
+            "start": 509,
+            "end": 510,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 527,
+            "text": "21",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 697,
+            "end": 698,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 863,
+            "end": 871,
             "text": "0 1 20 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 517,
-            "end": 523,
+            "start": 873,
+            "end": 879,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 533,
-            "end": 540,
-            "text": "Cajas=0",
+            "start": 911,
+            "end": 942,
+            "text": "Cajas=0\nCajas=1\nCajas=5\nCajas=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 542,
-            "end": 549,
-            "text": "Cajas=1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 551,
-            "end": 558,
-            "text": "Cajas=5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 561,
-            "end": 568,
-            "text": "Cajas=1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 595,
-            "end": 601,
+            "start": 944,
+            "end": 950,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 629,
-            "end": 630,
+            "start": 993,
+            "end": 994,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 706,
-            "end": 707,
+            "start": 1097,
+            "end": 1098,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -1986,8 +2119,23 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "45f5760efa438db5877d68acd1cc1a012822d61ee7c5f5a54c2e7cea8599a062",
-        "spans": []
+        "sourceSha256": "f039ba16d9c976471c5c368b8a1357033dcef41b28dcf1884468b615c08ad6ee",
+        "spans": [
+          {
+            "start": 218,
+            "end": 224,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 350,
+            "text": "Error",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0000",
@@ -2012,70 +2160,70 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "a26b7d43ef022b0bb0b50bcb166d61492a555b90048f8f33842bd7461af3f9d5",
+        "sourceSha256": "93560f8dd78a90b376516a4931c33d9ffff4a0438bbc8a8545e8e753d5326749",
         "spans": [
           {
-            "start": 25,
-            "end": 31,
+            "start": 46,
+            "end": 52,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 84,
+            "start": 121,
+            "end": 122,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 96,
+            "start": 133,
+            "end": 142,
             "text": "piezas=-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 123,
+            "start": 181,
+            "end": 182,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 135,
+            "start": 193,
+            "end": 202,
             "text": "piezas=21",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 160,
+            "start": 244,
+            "end": 250,
             "text": "0 a 20",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 185,
+            "start": 389,
+            "end": 390,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 268,
-            "end": 269,
+            "start": 478,
+            "end": 479,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 275,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
+            "start": 658,
+            "end": 665,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2278,8 +2426,30 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "e00ef2ea5fc9fd9828f97de8d122752d853b4df5178a4452c8e919debd3859dc",
-        "spans": []
+        "sourceSha256": "8f0433a77386295cfe014d9ddd6a0d6f893b41a180845e6908c0ad3a5875d49b",
+        "spans": [
+          {
+            "start": 3,
+            "end": 25,
+            "text": "informar_rechazo_cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 79,
+            "text": "peticion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "piezas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2296,7 +2466,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "4447e3b022f60f7c4ede201e161d4d9dac3340142dc7e2faa6f833f3402f1019",
+        "sourceSha256": "62b15e086f8f973d06974e13cd456ecfb8637014c2db3bdf47c5151cacc6b62a",
         "spans": [
           {
             "start": 19,
@@ -2306,51 +2476,86 @@
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 87,
+            "start": 120,
+            "end": 126,
             "text": "cobros",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 102,
-            "text": "devoluciones",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 130,
-            "end": 135,
+            "start": 152,
+            "end": 157,
             "text": "0 y 9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 187,
-            "end": 192,
+            "start": 176,
+            "end": 188,
+            "text": "devoluciones",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 219,
+            "text": "0 y 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 301,
+            "text": "cobros - devoluciones",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 310,
             "text": "saldo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 197,
-            "end": 201,
-            "text": "bool",
+            "start": 322,
+            "end": 326,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 358,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 378,
+            "text": "saldo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 276,
-            "end": 298,
+            "start": 483,
+            "end": 505,
             "text": "informar_rechazo_saldo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 393,
-            "end": 397,
+            "start": 570,
+            "end": 574,
             "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 642,
+            "end": 649,
+            "text": "destino",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2359,88 +2564,137 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "d1e0a0d9141110894a784e8b918cc91939ab6e66fb0fc39ecdc3d6405798233c",
+        "sourceSha256": "424c54fdd11981b94f034dbc67b895af34515492e4b4fb3d7e66f111515dbbd3",
         "spans": [
           {
-            "start": 49,
-            "end": 77,
-            "text": "(2,3), (10,0), (0,-1), (5,5)",
+            "start": 30,
+            "end": 47,
+            "text": "2 3 10 0 0 -1 5 5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 85,
+            "start": 130,
+            "end": 131,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 138,
+            "text": "(2,3)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 168,
+            "text": "(10,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 199,
+            "text": "(0,-1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 222,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 229,
+            "text": "(5,5)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 248,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 100,
-            "end": 108,
-            "text": "Saldo=-1",
+            "start": 304,
+            "end": 320,
+            "text": "Saldo=-1\nSaldo=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 118,
-            "text": "Saldo=0",
-            "role": "output",
-            "reading": "natural"
+            "start": 325,
+            "end": 331,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 193,
-            "text": "2 y 3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 214,
-            "end": 215,
+            "start": 564,
+            "end": 565,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 226,
-            "text": "stderr",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 547,
-            "end": 562,
+            "start": 770,
+            "end": 785,
             "text": "2 3 0 0 9 0 0 9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 640,
-            "end": 653,
-            "text": "-1, 0, 9 y -9",
+            "start": 787,
+            "end": 793,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 843,
+            "text": "Saldo=-1\nSaldo=0\nSaldo=9\nSaldo=-9",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 655,
-            "end": 661,
+            "start": 845,
+            "end": 851,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 689,
-            "end": 690,
+            "start": 894,
+            "end": 895,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 816,
-            "end": 817,
+            "start": 1053,
+            "end": 1054,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2476,53 +2730,60 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "3ff8bd55de5b63146a6630b24b1a9cf2cd5bffb6f2534f690f00a746f46ddc11",
+        "sourceSha256": "715aeae4c84d0c63c0e61eac82632118e9bffd0475cbac52ad0a471274f027e1",
         "spans": [
           {
-            "start": 48,
-            "end": 73,
-            "text": "cobros=10, devoluciones=0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 89,
-            "end": 90,
+            "start": 82,
+            "end": 83,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 94,
-            "end": 119,
-            "text": "cobros=0, devoluciones=-1",
+            "start": 85,
+            "end": 110,
+            "text": "cobros=10, devoluciones=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 136,
+            "start": 121,
+            "end": 122,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 186,
-            "end": 199,
+            "start": 124,
+            "end": 149,
+            "text": "cobros=0, devoluciones=-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 321,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 411,
+            "end": 424,
             "text": "-1, 0, 9 y -9",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 215,
-            "end": 221,
+            "start": 440,
+            "end": 446,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 249,
-            "end": 250,
+            "start": 474,
+            "end": 475,
             "text": "0",
             "role": "output",
             "reading": "natural"
@@ -2671,8 +2932,30 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "198e01bd7f85304b80bdc0565d56a77ed575970920de8eba15b11d33dfab97f3",
-        "spans": []
+        "sourceSha256": "c5c2becc67cbbf2136b5ea75e09a65d30dfaaae50a9ab84513c01413c852a488",
+        "spans": [
+          {
+            "start": 780,
+            "end": 786,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 816,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 843,
+            "end": 844,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0004",

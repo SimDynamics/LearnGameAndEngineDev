@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la muestra base, después de Mayor: rojo 3 aparecerán Registros rojo: 2 y Registros azul: 0, en ese orden. El registro 7[0;0] cuenta como uno. Un grupo ausente no tendrá línea. El conjunto sin grupos conserva las cuatro líneas del informe básico, terminando en Mayor: ninguno."
+          "text": "En la muestra base, rojo tiene dos registros. El de identificador siete contiene cero aceptados y cero rechazados. El de identificador dos contiene tres aceptados y un rechazado. Azul está presente sin registros. Después de la línea del mayor, la variante debe añadir estas dos líneas, con salto final:\n`Registros rojo: 2`\n`Registros azul: 0`\n\nEl registro de cantidades cero cuenta como uno porque está dentro de la colección de registros. El tamaño de esa colección no es la suma de aceptados ni de rechazados. Azul también tiene línea porque el grupo está presente, aunque el tamaño de su colección sea cero.\n\nUn grupo ausente no tendrá una línea nueva. Si el conjunto no contiene grupos, conserva sólo las cuatro líneas del informe básico y termina en `Mayor: ninguno`. Así la nueva información permite distinguir ausencia, grupo vacío y registros presentes con cantidades cero."
         },
         {
           "type": "paragraph",
@@ -42,7 +42,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la raíz del proyecto crea informe_variante.cpp a partir de informe.cpp. copy recibe primero el archivo de origen y después el de destino. Si ya existe una variante tuya, ábrela y conserva tu trabajo en vez de sustituirla. Después edita el archivo nuevo."
+          "text": "Utiliza cmd en la consola de desarrollo x64, desde la raíz de InspectionLog. Prepararás `informe_variante.cpp` a partir del informe correcto, `informe.cpp`, para poder construir por separado la aplicación base y la ampliada.\n\nAntes de copiar, revisa si ya tienes informe_variante.cpp en esa carpeta. Si contiene tu trabajo, conserva ese archivo y continúa editándolo. La orden de copia que sigue se utiliza para crear la variante cuando todavía no existe; no la ejecutes sobre tu variante ya preparada.\n\nEn `copy informe.cpp informe_variante.cpp`, copy recibe primero el archivo de origen y después el de destino. Copia el contenido guardado; no cambia las instrucciones del original ni construye un ejecutable. No dependas de que siempre aparezca una pregunta antes de sustituir un destino: ese comportamiento puede variar según la configuración de la consola.\n\nDespués abre el archivo variante con la orden de Bloc de notas. Conserva el nombre completo terminado en .cpp y el guardado UTF-8 que ya practicaste."
         },
         {
           "type": "paragraph",
@@ -54,11 +54,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva la firma de mostrar_informe, la validación inicial y las cuatro líneas originales. Añade después un recorrido de los grupos. Obtén su nombre con nombre_grupo y muestra el tamaño de grupo.registros, seguido de salto de línea. No ordenes el vector, no elimines registros de ceros y no añadas grupos ausentes. Conserva la comprobación final del flujo."
+          "text": "Conserva la firma de `mostrar_informe`, su validación inicial y las cuatro líneas del informe básico. La ampliación irá después de esas líneas y antes de la comprobación final del flujo.\n\nRecorre los grupos en el orden almacenado. Para cada grupo:\nObtén su nombre mediante `nombre_grupo`, usando el identificador de ese grupo.\nPresenta el rótulo Registros, un espacio, el nombre, dos puntos y un espacio.\nPresenta `grupo.registros.size()`, el tamaño de la colección de registros, y termina la línea con un salto.\n\nRecorrer los grupos presentes hace que aparezca también un grupo vacío, con tamaño cero. No necesitas consultar sus cantidades para decidir si un registro cuenta. Tampoco debes ordenar el vector ni añadir grupos que no estaban en los datos.\n\nLa función seguirá utilizando el flujo de salida que recibe. Conserva su comprobación final: haber calculado el tamaño correcto no demuestra por sí solo que se haya podido escribir el informe."
         },
         {
           "type": "paragraph",
-          "text": "En la actividad siguiente sólo necesitas completar informe_variante.cpp. Los otros archivos conservan el modelo y el cliente de comprobación. Ejecuta los cuatro casos y compara cada línea. Después lleva tu solución al archivo externo y guárdala."
+          "text": "En el editor completa únicamente `informe_variante.cpp`. Las cabeceras, el modelo y `comprobar_informe.cpp` proporcionan las otras partes de esta construcción.\n\nEl cliente de comprobación actual presenta cuatro muestras en una ejecución:\nBase: rojo con dos registros y azul vacío. Deben añadirse los tamaños dos y cero.\nVacío: no hay grupos. No debe inventarse ninguna línea de registros.\nPresente: sólo azul vacío. Debe añadirse su línea con cero.\nOrden: azul vacío aparece antes que rojo con un registro de ceros. Las líneas nuevas deben conservar ese orden y los tamaños cero y uno.\n\nCompila, ejecuta y compara las líneas con los datos de cada muestra. Los rótulos Caso permiten distinguir sus salidas; no son líneas que deba generar mostrar_informe. Después lleva la implementación al archivo externo de la variante y guarda. El programa que construirás desde la consola utilizará ese archivo guardado."
         },
         {
           "type": "cpp_compiler",
@@ -114,7 +114,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea pruebas_variante.cpp con el mismo estilo de comparación que ya construiste. Comprueba el informe completo de la muestra base, del conjunto vacío, de un grupo vacío, de grupos en orden diferente y de un grupo con un único registro de ceros. Añade un grupo con los diez registros y cantidades cero: su informe nuevo debe contar 10 registros, aunque el total aceptado siga siendo 0."
+          "text": "Crea `pruebas_variante.cpp` como comprobador independiente, con su propio main, utilizando el procedimiento de construcción de pruebas que ya practicaste. Cada esperado debe describir el informe ampliado completo, con los saltos de línea y los datos de su muestra.\n\nPrepara estas seis muestras separadas:\nLa base, con dos registros en rojo y azul vacío.\nUn conjunto sin grupos.\nUn único grupo azul vacío.\nAzul vacío antes de rojo con un registro de cantidades cero.\nUn grupo verde con un único registro de cantidades cero.\nUn grupo rojo con los diez identificadores de registro, todos con cantidades cero.\n\nEn las cinco primeras, comprueba presencia, orden y cantidades como antes, y añade las líneas de tamaños que correspondan. En la última, los totales de aceptados y rechazados siguen en cero, pero la línea nueva debe ser `Registros rojo: 10`. El tamaño se obtiene contando registros, no sumando sus cantidades."
         },
         {
           "type": "paragraph",
@@ -126,11 +126,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de cada llamada conserva una copia del conjunto y después compara sus datos, para acreditar que presentar el informe no lo modifica. Comprueba también que un conjunto inválido no añade texto al destino. Finalmente procesa una entrada real con la variante: el archivo guardado debe continuar en el formato de inspecciones, mientras el mensaje incluye las nuevas líneas. Repite un rechazo con MARCA como salida anterior."
+          "text": "Antes de cada llamada al informe, conserva una copia del conjunto. Después compara los datos con esa copia para comprobar que presentar la información no cambió grupos, registros, cantidades ni orden.\n\nPrepara también un conjunto inválido y un flujo de cadena que ya contenga MARCA. El informe debe rechazar el conjunto y dejar esa cadena intacta, sin añadir una parte del informe.\n\nPor último, comprueba el recorrido de archivos con la variante. Prepara una entrada real válida, llama a la operación de archivos y compara los datos aceptados y recuperados con los esperados. El archivo de salida debe seguir usando el formato de inspecciones. Los mensajes, en cambio, deben incluir las nuevas líneas de registros antes de Guardado verificado.\n\nRepite un rechazo con MARCA como contenido previo de la salida. El retorno debe identificar el rechazo, el conjunto debe conservar su estado anterior y el archivo debe conservar exactamente MARCA. Cambiar la presentación no elimina esos contratos del programa."
         },
         {
           "type": "paragraph",
-          "text": "Al construir el programa variante, incorpora informe_variante.cpp en lugar de informe.cpp. Ambos definen la misma función; no deben aparecer juntos en una orden de enlace. Los otros tres fuentes de la aplicación se conservan. La referencia siguiente mostrará una implementación y su comprobador."
+          "text": "Al construir el cliente variante, elige `informe_variante.cpp` como implementación de mostrar_informe. Conserva `modelo.cpp`, `archivos.cpp` y `main.cpp` como las otras partes de la aplicación.\n\n`informe.cpp` e informe_variante.cpp definen la misma función para dos construcciones alternativas. Incluir ambos en una sola orden no selecciona automáticamente uno: el enlazador recibiría dos definiciones. Del mismo modo, pruebas_variante.cpp tiene su propio main y se construye como otro ejecutable.\n\nEn el puzzle siguiente elige las fuentes de una sola aplicación. La referencia posterior mostrará la implementación del informe ampliado y, por separado, su comprobador."
         },
         {
           "type": "multiple_choice",
@@ -154,7 +154,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En informe_variante.cpp, la nueva parte utiliza el tamaño de cada vector de registros. No depende de que una cantidad sea positiva. El recorrido presenta los grupos en su orden y conserva la salida del informe básico."
+          "text": "La nueva parte de `informe_variante.cpp` utiliza el tamaño de cada colección de registros. Por eso cuenta un registro aunque sus dos cantidades sean cero. Para un grupo sin registros obtiene cero; para un grupo ausente no ejecuta ninguna vuelta y no inventa una línea.\n\nEl recorrido sigue el orden del vector de grupos y escribe en el flujo recibido. Las cuatro líneas iniciales conservan los cálculos del informe básico. La ampliación cambia la información presentada, sin modificar el conjunto ni el formato que guarda el compositor."
         },
         {
           "type": "code",
@@ -163,7 +163,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la raíz del proyecto, en la consola de desarrollo, ejecuta primero la orden de construcción. Consulta inmediatamente echo %ERRORLEVEL% antes de iniciar el programa: cero corresponde a una construcción sin errores; con otro código, revisa el diagnóstico, corrige y vuelve a construir. Lee también las advertencias (Microsoft, 2025a)."
+          "text": "Guarda los archivos y utiliza la consola de desarrollo x64 desde la raíz del proyecto. La orden siguiente reúne el modelo, la variante del informe, la operación de archivos y el main del cliente.\n\nLas opciones conservan sus funciones conocidas: /W4 solicita advertencias, /EHsc prepara el manejo de excepciones de esta receta y /Fe:inspectionlog_variante.exe elige el nombre del ejecutable. Las cabeceras se incorporan mediante las inclusiones de los fuentes. Construir todavía no ejecuta el programa.\n\nAl terminar la construcción, consulta inmediatamente `echo %ERRORLEVEL%` en una línea independiente. Se espera cero, que indica que cl terminó sin errores (Microsoft, 2025a). Revisa también sus advertencias. Si falla, corrige, guarda y repite la construcción antes de utilizar su ejecutable. Después ejecuta la orden que inicia la variante."
         },
         {
           "type": "paragraph",
@@ -175,7 +175,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Introduce ejemplos\\base.txt como entrada y resultados\\base_variante.txt como salida. Compara las dos nuevas líneas y comprueba la terminación inmediatamente después:"
+          "text": "La orden anterior inicia inspectionlog_variante.exe desde la carpeta actual. Cuando el programa pida las rutas, proporciona estas dos líneas por separado:\nEntrada: ejemplos\\base.txt\nSalida: resultados\\base_variante.txt\n\nEscribe sólo la ruta indicada después de cada petición, sin los rótulos Entrada y Salida de esta explicación y sin comillas. Son datos que recibe el programa mediante sus lecturas de línea; no son argumentos adicionales de cmd.\n\nLa carpeta resultados debe existir y la salida debe ser un archivo distinto de la entrada. Para esta muestra deben conservarse las cuatro líneas del informe básico y aparecer Registros rojo: 2 y Registros azul: 0 antes del mensaje final. Cuando termine, introduce la consulta siguiente inmediatamente, antes de leer el archivo con type."
         },
         {
           "type": "paragraph",
@@ -187,7 +187,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La terminación esperada es 0. El archivo de datos debe conservar el mismo formato que la copia del programa base. El informe ampliado aparece en consola; no se añade a la gramática del archivo."
+          "text": "La consulta del retorno debe mostrar cero: esta ejecución aceptó la muestra, guardó y recuperó sus datos y presentó el informe ampliado. La orden type muestra después el contenido del archivo que se acaba de guardar.\n\nCompara ese texto con el formato de la muestra base. Deben conservarse los dos grupos en su orden, los dos registros de rojo con sus cantidades y azul vacío. Las líneas Registros pertenecen al informe de consola; no deben aparecer dentro del archivo de datos.\n\nSi el informe parece correcto pero la copia no puede leerse como muestra completa, la ampliación no ha conservado el contrato del guardado. Presentación y persistencia necesitan comprobaciones distintas."
         }
       ]
     },
@@ -199,7 +199,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El comprobador compara el informe ampliado completo, conserva los datos y prueba el recorrido de archivos con esa implementación. La batería base permanece útil para la construcción base; sus esperados de consola no se reinterpretan como si ya incluyeran la variante."
+          "text": "El comprobador reúne nueve pruebas: seis informes de muestras válidas, el rechazo de un conjunto inválido, una operación de archivos válida y otra con contenido rechazado. Compara el informe completo y conserva los datos antes y después de presentarlo.\n\nLa operación válida debe añadir las líneas del nuevo informe a los mensajes, conservando el formato del archivo. La rechazada debe dejar el archivo marcado y el estado previo intactos. Esos dos recorridos comprueban la integración con la misma implementación del informe que utilizará el cliente variante.\n\nLa batería base se conserva para la construcción base. Sus esperados de texto describen cuatro líneas; no deben reinterpretarse como si ya incluyeran la ampliación. Cada comprobador debe corresponder al comportamiento declarado de la versión que se está construyendo."
         },
         {
           "type": "code",
@@ -208,7 +208,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la raíz y con pruebas_tmp creada, construye este comprobador. Consulta echo %ERRORLEVEL% inmediatamente después de la construcción, antes de ejecutarlo. Si no obtienes 0, revisa y corrige el fallo de construcción. La consulta posterior a la ejecución comprobará el resultado del propio comprobador."
+          "text": "Guarda `pruebas_variante.cpp` y comprueba que sigue existiendo pruebas_tmp en la raíz; el comprobador utiliza allí sus archivos de prueba. Desde esa raíz, en la consola de desarrollo, construye con la orden siguiente.\n\nEsta vez se utiliza pruebas_variante.cpp como único main y se elige informe_variante.cpp como única implementación del informe. El nombre pruebas_variante.exe distingue este comprobador del cliente. Las opciones /W4 y /EHsc conservan sus funciones; /Fe:pruebas_variante.exe fija el nombre del ejecutable.\n\nConsulta `echo %ERRORLEVEL%` inmediatamente después de construir, en una línea aparte. Continúa con la ejecución cuando el retorno sea cero y hayas revisado los diagnósticos. La consulta que sigue a esa ejecución comunicará el resultado de las pruebas, no el de la construcción."
         },
         {
           "type": "paragraph",
@@ -224,7 +224,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada caso debe terminar en OK, la última línea será Variante: OK y el proceso devolverá 0. Si cambias una política de tu variante propia, escribe primero sus esperados desde la nueva definición; conserva las pruebas del formato, la carga, el orden y el guardado."
+          "text": "Las nueve líneas de comprobación deben terminar en OK. El resumen debe ser `Variante: OK` y el proceso debe devolver cero. Si una comparación falla, localiza su nombre en el comprobador y relaciona los datos de la muestra con el texto o el estado esperado.\n\nAl preparar una variante propia, define primero qué resultado debe producir su indicador. Después añade o ajusta los esperados de presentación afectados por esa decisión. Conserva las pruebas de lectura, formato, presencia, orden y guardado: un nuevo rótulo no justifica perder esos comportamientos.\n\nNo cambies un esperado para hacer pasar un cálculo equivocado. Cambiar la definición de una función del programa y corregir un defecto son decisiones distintas; la documentación debe permitir saber qué comportamiento estás comprobando."
         }
       ]
     },
@@ -236,15 +236,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La ampliación guiada ofrece una referencia, pero tu entrega requiere una decisión propia. Elige un indicador adicional por grupo que puedas calcular con los conocimientos del curso. Por ejemplo, registros con al menos una inspección, registros sin ninguna inspección o total de inspecciones aceptadas y rechazadas. Define qué cuenta, qué rótulo presenta y cómo trata un grupo vacío y un registro de ceros antes de modificar el código."
+          "text": "Ahora toma una decisión propia para tu entrega. Elige otra cantidad por grupo que ayude a entender sus registros; a esa cantidad la llamaremos indicador. Debes poder calcularla con lo aprendido en el curso.\n\nPuedes elegir, por ejemplo:\nNúmero de registros que tienen al menos una inspección: cada registro cuenta una vez si aceptados o rechazados es mayor que cero.\nNúmero de registros sin inspecciones: cada registro cuenta una vez cuando ambas cantidades son cero.\nTotal de inspecciones del grupo: suma todas las cantidades de aceptados y rechazados.\n\nAntes de programar, define qué cuenta tu indicador, qué rótulo mostrará y cuál será su resultado para un grupo vacío y para un registro de ceros. Esas decisiones pertenecen a tu versión; el nombre del indicador debe describir lo que realmente calcula."
         },
         {
           "type": "paragraph",
-          "text": "Implementa la decisión en tu informe variante y conserva la carga, el formato y el guardado verificado. Usa nombres que indiquen lo que estás contando. Diseña al menos un caso en el que tu indicador difiera del número de registros: por ejemplo, un registro de ceros y otro con cantidades positivas. Añade un grupo vacío y cambia el orden de los grupos para comprobar presencia y orden."
+          "text": "Implementa tu indicador en `informe_variante.cpp`. Conserva las cuatro líneas del informe básico y los contratos de carga, formato y guardado. La información nueva debe proceder de los registros del grupo que se está recorriendo, sin modificar ni reordenar sus datos.\n\nElige los esperados antes de ejecutar. Incluye al menos una muestra que distinga tu indicador de contar todos los registros. Por ejemplo, un grupo con un registro de ceros y otro que contenga inspecciones permite obtener resultados distintos según la definición elegida.\n\nAñade un grupo vacío, prueba un registro que tenga sólo rechazados y cambia el orden de los grupos. Si cuentas registros con actividad, uno que tenga aceptados y rechazados positivos sigue contando una sola vez; no cuenta dos por cumplir ambas condiciones. Si sumas inspecciones, se suman las cantidades en lugar de contar el registro.\n\nAdapta o amplía tu comprobador con esos casos y con los rótulos de tu versión. Si conservas también las líneas del conteo guiado, sus esperados deben seguir comprobándose. La decisión propia se demuestra por lo que calcula y por las pruebas que lo distinguen, no sólo por cambiar un nombre."
         },
         {
           "type": "paragraph",
-          "text": "Compila, ejecuta el comprobador de tu variante y prueba el programa con un archivo propio de datos de práctica. Si falla un caso, utiliza el procedimiento de depuración aprendido: identifica el resultado que difiere, formula una hipótesis, observa los valores pertinentes, corrige la causa y reconstruye. La app no evalúa automáticamente ese archivo externo; su comportamiento queda revisable en el código, los casos, los resultados y la documentación."
+          "text": "Guarda el informe y el comprobador de tu versión. Utiliza, desde la raíz y en la consola preparada, las órdenes completas anteriores que construyen inspectionlog_variante.exe y pruebas_variante.exe. Conservan los mismos nombres de fuente; tu implementación guardada es lo que cambiará. Consulta el retorno de cada construcción antes de ejecutar.\n\nEjecuta el comprobador y consulta su retorno. Después prueba el cliente con un archivo propio de datos de práctica, utilizando una salida distinta de la entrada. Compara el informe con tus esperados y comprueba que la copia guardada conserva el formato y los datos.\n\nSi falla un caso, identifica la observación que difiere. Formula una hipótesis concreta, sigue los valores pertinentes con el procedimiento de depuración aprendido, corrige la causa, guarda y reconstruye antes de repetir. Por ejemplo, un registro contado dos veces permite revisar si se incrementa el contador por cada cantidad positiva en lugar de una sola vez por registro.\n\nLa app no corrige automáticamente estos archivos externos ni tu explicación libre. Tu trabajo queda revisable mediante su código, las entradas, los esperados, los resultados y la documentación que prepararás a continuación."
         },
         {
           "type": "multiple_choice",
@@ -268,11 +268,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Crea README.md en la raíz del proyecto. Será la presentación de tu repositorio: el problema que resuelve, el contrato, los archivos, los prerrequisitos, las órdenes completas, una demostración y las pruebas. La extensión .md identifica texto Markdown que GitHub puede presentar con títulos, listas y bloques de código. Aquí la documentación tiene un destinatario real: quien quiera construir y revisar tu trabajo. GitHub presenta el README del repositorio para explicar su utilidad y cómo comenzar a utilizarlo (GitHub, s. f.-a)."
+          "text": "Crea `README.md` en la raíz de InspectionLog. Será la presentación de tu repositorio para quien quiera comprender, construir y comprobar tu versión. Debe explicar el problema, el contrato, los archivos necesarios, los prerrequisitos, las órdenes completas, una demostración y las pruebas.\n\nLa extensión .md identifica un archivo de texto escrito con Markdown. Esa notación utiliza caracteres para señalar títulos, listas y bloques de código; GitHub los presenta con el formato correspondiente. El README del repositorio permite explicar la utilidad del proyecto y cómo empezar a utilizarlo (GitHub, s. f.-a).\n\nEscribe y guarda ese texto con la orden de Bloc de notas que aparece después de la explicación de los delimitadores. Conserva el nombre completo README.md, sin añadir .txt, y el guardado UTF-8."
         },
         {
           "type": "paragraph",
-          "text": "En el texto Markdown, una línea que empieza con # será el título principal y ## introducirá una sección. Una línea que empieza con - forma un elemento de lista. Para conservar varias líneas de comandos, escribe una línea de tres acentos graves seguida de bat, los comandos, y otra línea con los tres acentos graves para cerrar. Los ejemplos siguientes muestran el texto que guardarás en el archivo, incluidos esos delimitadores."
+          "text": "En el archivo Markdown escribirás los caracteres que indican su estructura:\nUna línea que empieza con # seguido de un espacio introduce el título principal.\nUna línea que empieza con ## seguido de un espacio introduce una sección.\nUn guion seguido de un espacio al comienzo de una línea introduce un elemento de lista.\n\nPara conservar varias líneas de órdenes en un bloque, escribe una línea con tres acentos graves y la palabra bat. Escribe debajo las órdenes y termina con otra línea de tres acentos graves. Esos delimitadores pertenecen al README; no se escriben en la consola al ejecutar las órdenes. La palabra bat identifica el tipo de texto del bloque, no inicia un programa.\n\nLos fragmentos posteriores muestran el texto que se guarda en el archivo, incluidos sus delimitadores. En GitHub podrás comprobar después cómo se presenta. Escribe contenido que corresponda a tu versión, no sólo los símbolos de formato."
         },
         {
           "type": "paragraph",
@@ -284,7 +284,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia las órdenes que realmente utilizaste desde estas lecciones, sin rutas privadas. Indica que se ejecutan desde la raíz en la consola de desarrollo y que se necesitan Visual Studio Community con C++ y Windows SDK. Presenta entrada, salida esperada, código de terminación y archivos producidos. Para las pruebas, registra versión del compilador, revisión probada y resultados observados; separa errores provocados de fallos encontrados y limita las conclusiones a lo que ejecutaste."
+          "text": "Documenta las órdenes que realmente utilizaste, completas y en su orden, con los nombres de tus archivos. Indica que se ejecutan desde la raíz de InspectionLog en la consola de desarrollo x64 y explica cómo reconocer esa carpeta. Usa rutas relativas del proyecto y evita rutas privadas del equipo del autor.\n\nEn la preparación, identifica Visual Studio Community con soporte de escritorio C++, el compilador MSVC y el SDK de Windows que comprobaste. Conserva la distinción entre un requisito y una herramienta que ya estaba instalada en tu equipo. Explica cómo consultar la instalación y enlaza las instrucciones oficiales pertinentes.\n\nPara cada demostración incluye la entrada, la salida esperada, el retorno y los archivos producidos. Distingue las órdenes de cmd de las dos rutas que recibe el programa después de iniciarse. Indica cuándo consultar el retorno de una construcción y cuándo el de una ejecución.\n\nPara las pruebas registra la versión del compilador, la revisión que utilizaste y los resultados observados. Separa los errores introducidos deliberadamente de los fallos encontrados durante tu trabajo. La referencia del autor tiene sus propias evidencias; tu README debe describir las tuyas y limitar sus conclusiones a lo comprobado."
         },
         {
           "type": "paragraph",
@@ -340,7 +340,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe una regla por línea. *.obj coincide con los objetos de compilación; las otras extensiones corresponden a ejecutables y productos de depuración. Una regla que termina en barra identifica una carpeta. Conserva ejemplos porque contiene la muestra que ayuda a reproducir la demostración."
+          "text": "Escribe las reglas siguientes en .gitignore, una por línea. El asterisco de `*.obj` hace que la regla coincida con los nombres que terminan en .obj. Las reglas de .exe, .pdb, .ilk e .idb identifican otros resultados de construcción y depuración que pueden regenerarse.\n\nLas reglas `resultados/` y `pruebas_tmp/` terminan en barra porque se refieren a carpetas. Son ubicaciones de las salidas generadas y de los archivos que utilizan los comprobadores. Conserva ejemplos: allí está la muestra que permite reproducir la demostración.\n\nEstas reglas no seleccionan por ti los archivos que arrastras a una página de subida. Al publicar deberás revisar también la lista concreta de archivos. Guarda .gitignore junto a las fuentes y README.md, sin convertirlo en un archivo terminado en .txt."
         },
         {
           "type": "paragraph",
@@ -1110,6 +1110,116 @@
         "id": "block_0003_0003",
         "beforeSha256": "5b337a65bc9b7e66d70b6b33229fc34919396e0bc1738889e55b83da6de9b95b",
         "afterSha256": "8e7f976d263f2df65e330fe374e944a160ff3266f0a604138262bbed68d123be"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "c2fcb3e99081d40f6432c4ffb474270e1bcfb14b2bab88a632a819382a7d1431",
+        "afterSha256": "fe0f1505b8462c4e3ecb66bbc369c207e7918782f9ceaeb7a4b038ee1b4d1af2"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "7c3b50bf470cef1ec074bcd7513a6a9a160e7afe12d9ed6796731a6fb38c4021",
+        "afterSha256": "3df233b567f928872125c4d52e2f32139eaaedb199f741b4b7ff8b42a638bf08"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "66f53a6500168b856bb9f207dde4a3325438fbd9717fb0297765ceadd6708484",
+        "afterSha256": "165436f31004e3568eed5920e2e65e412388a0fa1cbf4bb17e4466dfde6a9823"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "64f9ce621013a2c51f8dbf8bf565d2a287146fa0828028b5c94d0fcae37efba1",
+        "afterSha256": "76b5765435507abe5930aa5562cdd3bc73aada877a3149c7fcc55f6186550e48"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0dd456cb7c467d4388bfb622def45b0cd51429fcf882d9da740727bae7b3ada3",
+        "afterSha256": "414ddd9c149b4aa299ab77cc6efe22e3c796144f77be00ab1561ac3dab202f49"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "e25cb77dc29aab3ef0b6bbe2d9b298005b2b83f64605777112da9cd132038d60",
+        "afterSha256": "b7e96b9a0b5efe4032b2fe40bee0ec34ccd28ecd497bdf3515f3011a6a1e90ac"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "af182632c3f7460294d2db364c96eae9dbb78bd2549e5771464896ef3c9c861b",
+        "afterSha256": "abc34be5456a21845a8c2284e054c51685367331310c4dbfa67aab56f92a565b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "c720149df0ba5afd801789cfb8a80f4515dd30f64388bf2c5eb1e7365406841a",
+        "afterSha256": "8c05ac50d644f9bb2aecd9e7443c01624205d18160517b8e0cbe8aba6a4043ab"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "8e7f976d263f2df65e330fe374e944a160ff3266f0a604138262bbed68d123be",
+        "afterSha256": "ac8d785caa6754a4f80f98bdd09ac78d52aaf6a55a0f005ee831c1d535d826dd"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "8aac4c8580f824e46bf61480b83f149bf67eb62141ba7513e9b6ef33a1e9c975",
+        "afterSha256": "11bacb4ea688ec3be989f9bb97a789a63fd58af182aace2aee7c14d12eb6abfe"
+      },
+      {
+        "id": "block_0003_0009",
+        "beforeSha256": "5fe36f9e27a134b4bf38ca776166adf0d1d686ef9daa833524c476e3eda1d45c",
+        "afterSha256": "8356b1d74dca9bbf8d302ccc14fd12afb8f0c4799d785ceeb297d71579c1ee92"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "c4069dc53c9a52a97335f8879d315f74f43958efc98bb18e972ec792cb8cf905",
+        "afterSha256": "05fbadbabf62a7ba014f5608fda4892ee78b7be7de6572195d126729578d59a2"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "5304c4c497048296e463d03e8614eaad626563ead7a6ab5dcf080de0b9904630",
+        "afterSha256": "138c2f87dd7d26f6ab375826c5d8cffdd89d6ad56f9604fa98ca62beca00fe58"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "46ec5ed8f68ebba5c3fbede43533027bbfb46d276f47b94f5d7246ace5b23af8",
+        "afterSha256": "44582be4dde2966366090fbe087f81472ee44e282f5a3c8e2908a8861b12c39b"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "1559e12dd602da604b8385f6279535ee7e9b090e8863520f952b0694d04ba3aa",
+        "afterSha256": "65f94bc7c7049ad91fdedd2631b2400274e56264fda685823b24a824ed542de1"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "dd5c12a8e3e18bcdbef2ed17a03eda88b3902cb5e91c49366bd444e7b436770f",
+        "afterSha256": "7f4430365e15e3b8f4104f362b4191e59ea427bc7fca5a6d98d7793435e232ae"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "08f3b6c7b2af85198a4b795f30e73616e970ad427c5c96ee7cf7fb7faceefae6",
+        "afterSha256": "8d3b69413318126389fbdf06ccd198b8754fc14cf3e1e29e96fe6138404c9f4e"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "e5be65543aa19ef21e0d38fcbb98ad302538d81eae5ab7928eb5b73c7f7ac0ed",
+        "afterSha256": "9dcb2224971f6d9a9f5bc2d5108a203adc1ad1432c49f985d9ebd8045035989d"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "189d658e78ee258e790aafa82eb92d52d8ae4b90ed7bff520a7ece9c4c510236",
+        "afterSha256": "9d79360db3240e93346b2b8c6442fd1872363c176a3e0c743d07a899762e2db5"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "a28b34945717b869dcc8c8cde990c58047f0023ea971510600dcd0ceeb7cc693",
+        "afterSha256": "a5fa1536d656931b1973fdf052d0a19ed699fc5be2e8df94c7097f9d86199468"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "cb22bf6dda511b9ad6e841dbc875d426d4c62e5ef9a81b4081ce5125147a4e83",
+        "afterSha256": "18b4f669fdd462f97f2fb631f6f5e3d06f8b2c08ab8e049fbcb9f46179d71b76"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "fe0f1505b8462c4e3ecb66bbc369c207e7918782f9ceaeb7a4b038ee1b4d1af2",
+        "afterSha256": "0a0a0d36ff910805b4141131d6cbaabbe9e4b2e2dc18a861f4bf3b9b06074bea"
       }
     ]
   },
@@ -1131,49 +1241,25 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "80f91cc32aaef2e77e810b9382f6107e7dfefd07093548bc53bf1185e08295d8",
+        "sourceSha256": "17f29bb3db543324af17792a6b7814783871ae5ca71bbb9efa6521cce2b372f7",
         "spans": [
           {
-            "start": 33,
-            "end": 46,
-            "text": "Mayor: rojo 3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 58,
-            "end": 75,
+            "start": 304,
+            "end": 321,
             "text": "Registros rojo: 2",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 78,
-            "end": 95,
+            "start": 324,
+            "end": 341,
             "text": "Registros azul: 0",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 123,
-            "end": 129,
-            "text": "7[0;0]",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 142,
-            "end": 145,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 265,
-            "end": 279,
+            "start": 756,
+            "end": 770,
             "text": "Mayor: ninguno",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           }
         ]
       },
@@ -1312,28 +1398,25 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "8f207425813dddb5ddbc5bcfff64c45e0cab05ea15e947a0c759916cb5f3d6a1",
+        "sourceSha256": "ad905002c012f5701bd0d9f355fa810d03246cfa3d0161e0ca7484fb04f1af8d",
         "spans": [
           {
-            "start": 32,
-            "end": 52,
+            "start": 89,
+            "end": 109,
             "text": "informe_variante.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 65,
-            "end": 76,
+            "start": 143,
+            "end": 154,
             "text": "informe.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 78,
-            "end": 82,
-            "text": "copy",
-            "role": "data",
-            "reading": "technical"
+            "start": 508,
+            "end": 545,
+            "text": "copy informe.cpp informe_variante.cpp",
+            "role": "data"
           }
         ]
       },
@@ -1368,42 +1451,44 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "4cced2f625026e90890e7f1a3e918184dc7d8f464b99132e4ac832e021361209",
+        "sourceSha256": "b221d6968c216ac841e405282ebbcdc03578a43c7ec8690f7dcb887b8608a9f2",
         "spans": [
           {
-            "start": 21,
-            "end": 36,
+            "start": 22,
+            "end": 37,
             "text": "mostrar_informe",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           },
           {
-            "start": 154,
-            "end": 166,
+            "start": 274,
+            "end": 286,
             "text": "nombre_grupo",
-            "role": "cpp",
-            "reading": "auto"
+            "role": "cpp"
           },
           {
-            "start": 190,
-            "end": 205,
-            "text": "grupo.registros",
-            "role": "cpp",
-            "reading": "auto"
+            "start": 415,
+            "end": 437,
+            "text": "grupo.registros.size()",
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0001_0005",
         "path": "/text",
-        "sourceSha256": "4301a95c3d4c768e11a3b7806d96f833d2a9615e843fdd163108284eb450cf49",
+        "sourceSha256": "d276f0931bc7b3988ff916dbca45ac2bdcd4f5862a5faefe4e93f6a66b8439f3",
         "spans": [
           {
-            "start": 51,
-            "end": 71,
+            "start": 34,
+            "end": 54,
             "text": "informe_variante.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
+          },
+          {
+            "start": 85,
+            "end": 106,
+            "text": "comprobar_informe.cpp",
+            "role": "data"
           }
         ]
       },
@@ -1430,28 +1515,19 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "6343c13cd4c556d35e5f4a4434996e34424df15e34e64470701ed05283d53322",
+        "sourceSha256": "f3a3eae9724d03290925833affeaf94a95ce2cdcf2ccd0a682ee55cda710108f",
         "spans": [
           {
-            "start": 5,
-            "end": 25,
+            "start": 6,
+            "end": 26,
             "text": "pruebas_variante.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 331,
-            "end": 333,
-            "text": "10",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 382,
-            "end": 383,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "start": 828,
+            "end": 846,
+            "text": "Registros rojo: 10",
+            "role": "output"
           }
         ]
       },
@@ -1472,35 +1548,43 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "73c322241d5beb677996092555318329fe7a6d32c013cb16c7de0e0add138f43",
-        "spans": [
-          {
-            "start": 397,
-            "end": 402,
-            "text": "MARCA",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "02836a5e3d8f0c572affc4fa38abb5b92edf64d28eb89e98a81bd714d443df6d",
+        "spans": []
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "36e80c709b22655bad57216a40ce69171a93bd33a00164883b476458b7d8d7f5",
+        "sourceSha256": "a7679a1cd461f967bbdea3fa09224934a84ddd47ce95a5032373b2abed62ceb3",
         "spans": [
           {
-            "start": 45,
-            "end": 65,
+            "start": 41,
+            "end": 61,
             "text": "informe_variante.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 78,
-            "end": 89,
+            "start": 113,
+            "end": 123,
+            "text": "modelo.cpp",
+            "role": "data"
+          },
+          {
+            "start": 127,
+            "end": 139,
+            "text": "archivos.cpp",
+            "role": "data"
+          },
+          {
+            "start": 144,
+            "end": 152,
+            "text": "main.cpp",
+            "role": "data"
+          },
+          {
+            "start": 196,
+            "end": 207,
             "text": "informe.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           }
         ]
       },
@@ -1590,39 +1674,30 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "388810874d0b26a475af22e61a3066086d9b0c3c5e2d856fa294b8835cef73dc",
+        "sourceSha256": "0a73a4b084f5f9ef8f83e8e0363908e950c099734a9f9c1f82f7fb578cda020c",
         "spans": [
           {
-            "start": 3,
-            "end": 23,
+            "start": 19,
+            "end": 39,
             "text": "informe_variante.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           }
         ]
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "7b0c7bc7294f86a999f4ae3268ef98f9b21165d23701a3cd0a2497df2b742e95",
+        "sourceSha256": "4190ed70218d062a9534bd949c528c6303806f6dfb467c3ad2ed730b7ceff5a1",
         "spans": [
           {
-            "start": 123,
-            "end": 140,
+            "start": 557,
+            "end": 574,
             "text": "echo %ERRORLEVEL%",
-            "role": "data",
-            "reading": "technical"
+            "role": "data"
           },
           {
-            "start": 171,
-            "end": 175,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 319,
-            "end": 337,
+            "start": 658,
+            "end": 676,
             "text": "(Microsoft, 2025a)",
             "role": "citation",
             "reading": "natural"
@@ -1660,23 +1735,8 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "5629023dd6e587cc4b6d872bd679e40716b22aa23ac419473fd47fda1d8ef1d2",
-        "spans": [
-          {
-            "start": 10,
-            "end": 27,
-            "text": "ejemplos\\base.txt",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 43,
-            "end": 71,
-            "text": "resultados\\base_variante.txt",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "f8f2ec6d71a1cd5eebc2f90fc645f86798a6d3815f17d1f2288d280843403ef2",
+        "spans": []
       },
       {
         "block": "block_0003_0007",
@@ -1709,16 +1769,8 @@
       {
         "block": "block_0003_0009",
         "path": "/text",
-        "sourceSha256": "921bf8b6a99dea010a03ae8a6796517d4280e3f5c4d2e48ebe3a8ecf230d433c",
-        "spans": [
-          {
-            "start": 27,
-            "end": 28,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "c1ef9af1a18310d38c3d3f86d7eee19ca29c6a84c244dbc6efefe2651a1eb80a",
+        "spans": []
       },
       {
         "block": "block_0004_0000",
@@ -1729,34 +1781,25 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "408f88e117fa43e55c2ad77454a892facc6fd53d195b25ed169f6d689a78b6b0",
+        "sourceSha256": "94c3cf77101aa05074f0aa5981f1b92bb65eb5e35f6f18e9f689fc01cedead20",
         "spans": []
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "f980d23303f74bd98195a119e806fe6778433cdc98e52cbdc125131579629b28",
+        "sourceSha256": "7fc5e9c3106042a1693fc255df4cfff1f52675cab601a7a0e4693cc8e9696a0c",
         "spans": [
           {
-            "start": 20,
-            "end": 31,
-            "text": "pruebas_tmp",
-            "role": "data",
-            "reading": "natural"
+            "start": 8,
+            "end": 28,
+            "text": "pruebas_variante.cpp",
+            "role": "data"
           },
           {
-            "start": 77,
-            "end": 94,
+            "start": 535,
+            "end": 552,
             "text": "echo %ERRORLEVEL%",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 174,
-            "end": 175,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "role": "data"
           }
         ]
       },
@@ -1805,28 +1848,13 @@
       {
         "block": "block_0004_0007",
         "path": "/text",
-        "sourceSha256": "039d13aebf80b06bb66e845a5be325c9c71fc333cbb3ac837fd1103f9cc91be0",
+        "sourceSha256": "df7092017c49fa0a313757841ed5722928171552ed934d5a9c55b3eb50b248c8",
         "spans": [
           {
-            "start": 27,
-            "end": 29,
-            "text": "OK",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 52,
-            "end": 64,
+            "start": 76,
+            "end": 88,
             "text": "Variante: OK",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 88,
-            "end": 89,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           }
         ]
       },
@@ -1839,19 +1867,26 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "eef9171afcd1e7a2d22d0243e5c385fda0f1e973df24e25facd7246a2fa65db0",
+        "sourceSha256": "0940c4decac73413869452f509db37dab36f504a347c3ac0a4ac1fa760c80fcb",
         "spans": []
       },
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "059185468ca0c0ece27bd417917e7499598cd2aa3bea2d4df57d85f098a12c1b",
-        "spans": []
+        "sourceSha256": "47c93d6fb05b9771b24106435eae453d9584aa83bd3e0dfcdb9c167c3b219000",
+        "spans": [
+          {
+            "start": 28,
+            "end": 48,
+            "text": "informe_variante.cpp",
+            "role": "data"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "b2ca7376cf6f0dd0ced2c3131047ffdc28faf7ab5347a22bf6cc66242d0692ea",
+        "sourceSha256": "323f5490a6692c0d53208b4287a95e1fa66c15407113b944fe2864f8966d1290",
         "spans": []
       },
       {
@@ -2003,25 +2038,17 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "56bfd5bff1e7f61a16586a237f5da81268ed7db6471e019d0554b2411b0cf877",
+        "sourceSha256": "31b7f71ee4b0eba5cc95199bed19db70fbc565a7808073474aa929a19b3630f9",
         "spans": [
           {
-            "start": 5,
-            "end": 14,
+            "start": 6,
+            "end": 15,
             "text": "README.md",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 221,
-            "end": 224,
-            "text": ".md",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 511,
-            "end": 528,
+            "start": 590,
+            "end": 607,
             "text": "(GitHub, s. f.-a)",
             "role": "citation",
             "reading": "natural"
@@ -2031,37 +2058,8 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "7da83901619213bfcb571704564dc7877ad68d7a875f7c60578935907aa15818",
-        "spans": [
-          {
-            "start": 48,
-            "end": 49,
-            "text": "#",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 77,
-            "end": 79,
-            "text": "##",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 131,
-            "end": 132,
-            "text": "-",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 255,
-            "end": 258,
-            "text": "bat",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "3cf0b66d9378a5cbd3c9c5c2a9981c44d7999b00ce64f04171b139ac55bb6e85",
+        "spans": []
       },
       {
         "block": "block_0006_0003",
@@ -2086,7 +2084,7 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "da2fb0eb06071dda90ea982bea4c5788a4322576a893471e7ae3b095cab23c6e",
+        "sourceSha256": "36ec339e93c99bdb41b203157a13f9fb52f6606b128bf763970feacf024d56ef",
         "spans": []
       },
       {
@@ -2907,21 +2905,25 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "a6abba7d6f26aa66df825b514a85af08363072367e477dfb1f4211d2ccb19d19",
+        "sourceSha256": "99a8f58a32e9efa7fb6253caf51f44b620adf0218a3beaa42fba420054f8dac3",
         "spans": [
           {
-            "start": 29,
-            "end": 34,
+            "start": 77,
+            "end": 82,
             "text": "*.obj",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 216,
-            "end": 224,
-            "text": "ejemplos",
-            "role": "data",
-            "reading": "natural"
+            "start": 282,
+            "end": 293,
+            "text": "resultados/",
+            "role": "data"
+          },
+          {
+            "start": 298,
+            "end": 310,
+            "text": "pruebas_tmp/",
+            "role": "data"
           }
         ]
       },

@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En «Reducir un caso y contrastar hipótesis» quitaste datos sin perder el fallo de contar_altos. También comprobaste por qué la primera llamada y el orden podían preparar el estado que explicaba la segunda. Recuperamos ese mismo componente defectuoso: no volveremos a investigar su causa ni a repararlo. La tarea nueva es decidir qué código necesita una reproducción y retirar lo ajeno sin borrar la situación que queremos mostrar."
+          "text": "En «Reducir un caso y contrastar hipótesis» quitaste datos y conservaste un fallo de `contar_altos`: una llamada vacía devolvía un recuento de la consulta anterior. Ahora volveremos a utilizar esa versión defectuosa para aprender a reducir también el código que la rodea.\n\nLa tarea consiste en preparar un programa más pequeño que todavía muestre ese mismo error. Tendrás que distinguir qué instrucciones provocan la situación, cuáles permiten observarla y cuáles sólo añaden información ajena al fallo. El cuerpo de contar_altos permanecerá sin reparar durante la reducción."
         },
         {
           "type": "paragraph",
-          "text": "El contrato sigue exigiendo que cada llamada cuente sólo sus propios datos, con valores entre 0 y 9 y mínimo entre 1 y 9. Desde un proceso nuevo, contar_altos({2}, 2) debe dar 1 y después contar_altos({}, 2) debe dar 0. La versión investigada deja acumulado a 1 y devuelve también 1 en la segunda. Conservaremos esa contradicción: un recuento anterior aparece como respuesta de la llamada vacía."
+          "text": "Recupera el requisito: cada llamada a `contar_altos` debe contar sólo los elementos de su colección que sean mayores o iguales que el mínimo. Los elementos están entre cero y nueve, y el mínimo entre uno y nueve. Se admite la colección vacía; como no contiene elementos, su recuento debe ser cero.\n\nEn una ejecución nueva, el ejemplo realiza estas llamadas en orden:\n`contar_altos({2}, 2)` cuenta el único elemento, que coincide con el mínimo. Debe devolver uno.\n`contar_altos({}, 2)` recibe una colección vacía. Debe devolver cero, sin añadir el recuento anterior.\n\nLa versión investigada utiliza el contador exterior acumulado. La primera llamada lo deja en uno. La segunda no encuentra elementos que contar, pero devuelve ese uno conservado. Queremos que el programa reducido siga mostrando esa contradicción: la consulta vacía devuelve un recuento que pertenece a otra llamada."
         },
         {
           "type": "paragraph",
-          "text": "Una reproducción más pequeña permite examinar y comunicar el problema con menos código y datos que revisar. Podemos reducir la entrada y retirar partes del programa que no intervienen en la contradicción, comprobando después de cada cambio que ésta permanece. El resultado debe ser autosuficiente: quien lo recibe necesita poder construirlo y repetir el mismo fallo (Kernighan & Pike, 1999, pp. 124, 136). No buscamos una cantidad fija de líneas; buscamos conservar el contexto necesario para estudiar ese incumplimiento."
+          "text": "Un programa que permite repetir un fallo bajo condiciones conocidas es una reproducción de ese fallo. Hacerlo más pequeño facilita revisar su código y comunicar el problema a otra persona.\n\nPodemos quitar datos y partes del programa, pero después de cada cambio hay que comprobar dos cosas: que todavía se puede construir y que conserva el fallo que estamos investigando. El resultado debe incluir lo necesario para que otra persona pueda construirlo y ejecutar el mismo caso sin adivinar archivos o preparación que faltan (Kernighan & Pike, 1999).\n\nLa meta no es alcanzar cierto número de líneas. Un programa muy breve que ya no muestra el error no sirve como reproducción de ese caso."
         },
         {
           "type": "multiple_choice",
@@ -47,11 +47,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Un recorte no es sólo una captura de unas líneas interesantes. Tiene que conservar las declaraciones, definiciones, cabeceras y preparación que necesite para construirse y mostrar el problema. Recupera la autosuficiencia de las fuentes que ya practicaste: no des por disponible un nombre porque otra persona pueda adivinar qué archivo faltaba."
+          "text": "Una reproducción necesita un programa completo, no sólo las líneas donde aparece un resultado incorrecto. En este caso, para ejecutar las llamadas necesitamos la definición de `contar_altos` y el contador que utiliza. Para trabajar con sus colecciones y mostrar la respuesta, necesitamos también las cabeceras correspondientes.\n\nLlamamos dependencias a esos elementos necesarios para construir y ejecutar el caso. Antes de retirar una parte del archivo, comprueba si otra parte que permanecerá utiliza alguno de sus nombres o necesita el estado que prepara."
         },
         {
           "type": "paragraph",
-          "text": "Antes de retirar una parte, identifica qué usa, qué estado modifica y qué partes la necesitan. Predice si su ausencia conservará la construcción y la contradicción. Después de un cambio, comprueba ambas cosas. Haber quitado código no demuestra que fuera irrelevante; dejar de observar el fallo tampoco demuestra que lo hayas reparado."
+          "text": "Sigue este procedimiento al reducir el código:\n\nIdentifica qué hace la parte que quieres retirar y qué otras partes la utilizan.\nRetira una parte cuyo efecto puedas distinguir, conservando la función investigada.\nConstruye la fuente resultante. Si falta una declaración, una definición o una cabecera necesaria, recupera esa dependencia.\nEjecuta el programa construido y compara la respuesta de la llamada vacía con el cero que exige su contrato.\n\nSi el fallo deja de observarse, revisa qué cambió en la preparación de las llamadas o en la forma de mostrar su respuesta. El código puede seguir siendo defectuoso aunque esa ejecución ya no muestre el problema."
         },
         {
           "type": "multiple_choice",
@@ -72,7 +72,7 @@
         },
         {
           "type": "note",
-          "text": "Las prácticas siguientes trabajan con el mismo recuento pequeño y una ejecución secuencial conocida. Durante la reducción permanecen el cuerpo defectuoso de contar_altos y el comienzo del proceso con acumulado a cero."
+          "text": "En las prácticas de reducción, cada ejecución empieza con acumulado a cero y las llamadas se realizan una después de otra. Conservaremos el cuerpo defectuoso de contar_altos. Así podremos comprobar qué efecto tiene retirar el código que lo rodea, sin mezclar esa tarea con una reparación de la función."
         }
       ]
     },
@@ -84,11 +84,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa completo incorpora el recuento conocido dentro de un informe. Tu tarea es proponer una reproducción más pequeña del mismo incumplimiento. Antes de editar, identifica qué código necesita la llamada vacía para devolver aquel recuento anterior y qué partes sólo pertenecen al informe. Comprueba en cada recorte las dependencias que deban permanecer; no se proporciona una lista de borrados."
+          "text": "El editor contiene un programa completo que presenta un informe y utiliza la función defectuosa. Prepara en ese mismo editor una reproducción más pequeña del error de la llamada vacía.\n\nExamina por separado la función que cuenta, las llamadas que cambian su contador y las instrucciones que presentan información. Decide qué puedes retirar manteniendo la situación descrita y una salida que permita observarla. La actividad requiere elegir y comprobar los cambios; no seguir una lista de líneas que deban borrarse."
         },
         {
           "type": "paragraph",
-          "text": "Conserva el cuerpo investigado de contar_altos, el comienzo con acumulado a cero y la preparación causal de las llamadas originales, con sus datos y orden. La salida debe permitir localizar el resultado de la llamada vacía y compararlo con su cero requerido. No hace falta conservar los avisos accesorios ni todos los nombres locales. También puedes mantener la primera llamada sin guardar o imprimir su resultado, si su efecto sigue preparando la situación. La fuente final debe incluir por sí misma todo lo que use.\n\nConstruye y ejecuta el recorte antes de continuar. Debe conservar la llamada que prepara el estado y mostrar que la llamada vacía devuelve 1 en vez de su cero requerido. Revisa las dependencias si deja de construir o desaparece esa contradicción. No sustituyas el recuento por una cifra fija ni modifiques la función investigada.",
+          "text": "Conserva la definición investigada de `contar_altos` y el comienzo de acumulado en cero. Mantén las dos llamadas originales, con sus datos y en su orden: la consulta de un elemento prepara el recuento que después devuelve indebidamente la consulta vacía.\n\nLa salida debe permitir identificar el resultado de la llamada vacía y compararlo con su cero requerido. Puedes retirar avisos del informe y cambiar nombres locales. También puedes ejecutar la primera llamada sin guardar ni imprimir su retorno: su ejecución sigue modificando acumulado. Lo necesario es conservar la llamada que prepara el estado.\n\nConstruye y ejecuta el código reducido en el editor. Debe mostrar que la llamada vacía devuelve 1 en vez de su cero requerido. Si no construye o desaparece esa contradicción, revisa qué dependencia o preparación retiraste. La fuente final debe contener lo que utiliza; no sustituyas el recuento por una cifra fija ni cambies la función investigada.",
           "emphasis": [
             {
               "text": "la llamada que prepara el estado"
@@ -106,11 +106,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La ejecución del recorte termina normalmente con código 0: ese código no compara la función con el contrato. El dato que acredita la reproducción es el recuento anterior mostrado por la llamada vacía."
+          "text": "Esta práctica pide que el programa reducido termine normalmente con código cero. Ese retorno no demuestra que contar_altos cumpla su contrato.\n\nEn el programa inicial y en el recorte de referencia, main ejecuta las llamadas, presenta sus resultados y devuelve cero. Esas fuentes no contienen comparaciones automáticas entre la respuesta obtenida y el requisito.\n\nPara comprobar la reproducción debes relacionar el código ejecutado con la respuesta de la llamada vacía: tiene que seguir calculando el recuento anterior que no le corresponde. Una consola con ese número, sin las llamadas que lo producen, no basta para acreditar la reproducción."
         },
         {
           "type": "paragraph",
-          "text": "Una reproducción válida calcula la observación del incumplimiento y conserva sus dependencias. Puede retirar salidas accesorias, pero no reemplazar el cálculo por un literal ni eliminar la llamada que prepara el estado. La referencia muestra qué dependencias conserva un recorte posible."
+          "text": "Comprueba ambos aspectos de tu propuesta: el código conserva las llamadas y sus dependencias, y la salida permite observar el resultado calculado por la llamada vacía. Una impresión fija del número uno podría imitar ese texto sin reproducir la operación que falla.\n\nLa referencia siguiente muestra una reducción posible. Otras reducciones pueden presentar menos información si mantienen las condiciones y la observación solicitadas."
         }
       ]
     },
@@ -122,7 +122,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia retira el aviso auxiliar, la función que sólo lo presentaba, sus datos y el cierre del informe. El resultado de la llamada vacía sigue siendo visible. También desaparece el uso de std::string y, por eso, la inclusión directa de <string> ya no es necesaria. En cambio, std::vector y std::cout siguen usándose y la fuente conserva las cabeceras que los proporcionan."
+          "text": "La referencia elimina el aviso auxiliar, la función que lo presentaba, los datos de ese aviso y el mensaje final del informe. Conserva las dos llamadas a contar_altos y presenta sus respuestas.\n\nAl desaparecer la función auxiliar, ya no queda ningún uso de `std::string`; por eso se retira la inclusión directa de `<string>`. En cambio, las colecciones siguen utilizando `std::vector` y la impresión sigue utilizando `std::cout`. La fuente conserva `<vector>` e `<iostream>`, las cabeceras que corresponden a esos usos."
         },
         {
           "type": "code",
@@ -131,7 +131,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia construye un programa completo y produce Primera=1;Segunda=1 seguido de salto. stderr queda vacío y el código final es 0. La segunda respuesta conserva el mismo incumplimiento del contrato. Otra reproducción puede mostrar sólo esa respuesta si conserva la llamada que la prepara y permite comparar el 1 observado con el 0 requerido. La igualdad de todo el informe original no era el objetivo."
+          "text": "El programa de referencia muestra `Primera=1;Segunda=1`, con un salto de línea al final. No escribe mensajes en el canal de errores, stderr, y termina con código cero.\n\nLa segunda respuesta sigue incumpliendo el requisito: una colección vacía debe dar cero, pero aquí devuelve uno porque la primera llamada dejó ese valor en acumulado. La reducción conservó el fallo, aunque retiró otras líneas del informe.\n\nOtra reproducción válida podría mostrar sólo la segunda respuesta. Para ello tendría que conservar la ejecución de la primera llamada y permitir identificar el uno observado frente al cero requerido. No es necesario conservar todos los caracteres del informe original."
         },
         {
           "type": "code",
@@ -157,7 +157,7 @@
         },
         {
           "type": "note",
-          "text": "En un perfil concreto una cabecera puede llegar indirectamente a través de otra. Eso no reemplaza la justificación de las dependencias directas de la fuente. Aquí revisamos qué servicios siguen usándose; no exigimos que quitar <string> produzca el mismo diagnóstico en todos los perfiles."
+          "text": "Una cabecera de la biblioteca puede incluir otras. Por eso, en una instalación concreta, un nombre puede seguir disponible después de retirar su inclusión directa. Que esa prueba compile no demuestra que la fuente haya declarado de forma adecuada sus dependencias (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nSi la definición auxiliar todavía usa std::string, conservamos la inclusión de <string>. Si retiramos esa definición y todos los demás usos, cambia la necesidad de esa cabecera. No exigimos que quitarla provoque el mismo mensaje de error en todos los compiladores."
         }
       ]
     },
@@ -169,7 +169,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta candidata conserva el mismo cuerpo defectuoso y el comienzo con acumulado a cero, pero retira la primera llamada y sus usos. Lee la candidata y responde al puzzle de esta página sin sustituir tu reproducción en el editor de código. El programa mostrado permite seguir las llamadas y comprobar qué preparación se ha retirado."
+          "text": "La candidata siguiente conserva el cuerpo defectuoso y el comienzo de acumulado en cero, pero elimina la llamada que contaba el elemento de la primera colección. En main sólo queda la llamada con la colección vacía.\n\nExamina ese programa y responde al puzzle de esta página. Conserva tu reproducción anterior en su editor: aquí juzgarás otra propuesta de reducción, no la sustituirás."
         },
         {
           "type": "code",
@@ -195,7 +195,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El recorte escribe Segunda=0 seguido de salto, con stderr vacío y terminación 0. Eso no permite concluir que desapareciera el defecto del componente: su cuerpo sigue devolviendo el estado compartido. Recuperar las dos llamadas anteriores vuelve a crear la situación que queríamos mostrar. La retirada de esa preparación elimina la observación del recuento anterior; perder ese contexto no equivale a reparar la función."
+          "text": "Esta candidata muestra `Segunda=0`, con salto final, no escribe en stderr y termina con código cero. El nombre segunda sigue en el código, pero ahora su inicialización realiza la única llamada del programa.\n\nAl empezar acumulado en cero y no haber una consulta anterior, la colección vacía no lo incrementa y devuelve cero. El resultado coincide con el requisito en estas condiciones. Sin embargo, no se ha cambiado el cuerpo de contar_altos: al recuperar la llamada anterior vuelve a aparecer el error.\n\nLa candidata puede construirse, pero ya no reproduce el fallo que queríamos investigar. Quitó las condiciones que lo hacían visible."
         }
       ]
     },
@@ -207,7 +207,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reducir una reproducción conserva el incumplimiento investigado y puede retirar salidas accesorias. Refactorizar un programa conserva su comportamiento observable mientras cambia su organización. Reparar la función debe corregir la contradicción. Son objetivos diferentes, aunque todos puedan cambiar el texto del programa. Esta es la reparación de contar_altos que comprobaste en «Reducir un caso y contrastar hipótesis»:"
+          "text": "Conviene distinguir tres objetivos al cambiar código:\n\nReducir una reproducción: retirar lo que no hace falta para mostrar el fallo concreto. Puede cambiar parte de la salida, como los avisos del informe, si conserva la observación que investigamos.\nReorganizar conservando el comportamiento: cambiar la estructura interna sin cambiar lo que hace el programa. Por ejemplo, separar en una función auxiliar una presentación que siga mostrando los mismos datos en el mismo momento. A este trabajo se le llama refactorizar (Thomas & Hunt, 2020).\nReparar: cambiar lo necesario para que la función deje de incumplir el requisito.\n\nLa función siguiente es la reparación de contar_altos que ya comprobaste. Permitirá comparar qué cambia cuando el propósito es corregir el recuento."
         },
         {
           "type": "code",
@@ -216,11 +216,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Si esta función sustituye a la investigada y se conservan las dos llamadas originales, el contador se inicializa por llamada: primera da 1 y segunda da 0. Esa diferencia sí cambia el comportamiento defectuoso. No es una reproducción del fallo anterior. No necesitas repetir aquella práctica para distinguirlo; contrasta qué código cambió y qué propiedad pretende conservar cada tarea."
+          "text": "En la función reparada, la declaración de cantidad está dentro de su cuerpo. Cada llamada crea su propio contador y lo inicializa a cero antes de recorrer los datos.\n\nSi utilizas esta definición con las dos llamadas originales, la primera cuenta su elemento y devuelve uno. La segunda prepara otro contador, no encuentra elementos y devuelve cero. Ha cambiado la respuesta incorrecta que queríamos reproducir.\n\nAquí se modificó la función para reparar su comportamiento. En cambio, durante la reducción manteníamos esa función defectuosa y quitábamos otras partes sin perder el fallo. El propósito del cambio determina qué necesitamos conservar y qué debe ser diferente al terminar."
         },
         {
           "type": "note",
-          "text": "Después de reducir, todavía puede ser necesario investigar o reparar. Un caso pequeño facilita ese trabajo, pero pasar únicamente ese caso no demuestra la corrección general. Conserva los criterios y los contrastes anteriores cuando el objetivo vuelva a ser reparar."
+          "text": "Reducir el programa deja un caso más sencillo de investigar; todavía puede faltar reparar su función. Cuando el objetivo vuelva a ser reparar, recupera también las pruebas anteriores y otras consultas pertinentes. Acertar únicamente en la llamada pequeña no demuestra que la corrección funcione en todas las condiciones del contrato."
         }
       ]
     },
@@ -232,7 +232,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Revisa tu propuesta como si quien la recibe no conociera el informe original. Debe poder obtener el programa completo, reconocer el requisito, iniciar la ejecución con el estado indicado, repetir las llamadas y comparar el resultado requerido con el observado. Identifica las fuentes y las herramientas que realmente utilizaste. Si no consultaste una versión concreta, no la inventes. Un caso autosuficiente, acompañado de las versiones y condiciones pertinentes, permite que quien lo reciba investigue el mismo problema (Kernighan & Pike, 1999, pp. 135–136)."
+          "text": "Para que otra persona pueda repetir el caso, necesita estos datos relacionados entre sí:\n\nLa fuente completa que se construyó.\nLa regla que exige contar sólo los datos de cada llamada.\nEl comienzo de acumulado en cero y las dos llamadas, con sus datos y orden.\nEl cero requerido para la llamada vacía y el uno que devuelve la versión investigada.\nLas herramientas y condiciones utilizadas para construir y ejecutar esa fuente.\n\nAsí podrá repetir la preparación y comparar el mismo resultado, en lugar de tener que elegir sus propios datos o adivinar un archivo que falta. Identifica únicamente las versiones que realmente hayas consultado; no completes esos datos de memoria. Un informe útil aporta un caso pequeño y completo con la información pertinente para repetirlo (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -253,7 +253,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una reducción adicional sólo es útil si conserva lo necesario para construir y la preparación que hace visible el incumplimiento. Examina el recorte propuesto en el siguiente puzzle; no hace falta regresar al editor ni retocar una reproducción ya comprobada."
+          "text": "El puzzle siguiente propone retirar otro mensaje. Para decidir si se puede aceptar el cambio, comprueba qué código y qué salida permanecen. La fuente debe poder construirse y la consulta vacía debe seguir mostrando el recuento anterior que no le corresponde.\n\nResponde sobre la propuesta descrita. No es necesario reabrir el editor ni cambiar una reproducción que ya conserva el caso solicitado."
         },
         {
           "type": "note",
@@ -1159,6 +1159,116 @@
         "id": "block_0006_0001",
         "beforeSha256": "ef6471479125e46aafc84cc99dbc6c4a620b61f2455dea1f62bb9424461fbd5d",
         "afterSha256": "5b8e0caa9dce7d88c832843837cdea2904a43e781bd04fb33bdd83b86c2ec0bc"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "843b8be37b5e67d5b74cbd66c8689c763bfc7719012a19f916b9f2901be5f879",
+        "afterSha256": "90c78e4102aa4deba2a43b11684cc48d4438268ba3e2a4732a110c9999077612"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e881d2bf6ee3b381271d8c06c39d0d78e409322e84a2f23b2de6957d1717bb25",
+        "afterSha256": "c67a4f10efe4cfc6e27397ff0282643042bb0a7c1154eae560ff5cf01dbb99b2"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "2fc91e39fceb85bb21394d4046d50ca65655cf2e1585d646a0e9f99bb5b1547f",
+        "afterSha256": "6f8ae06b2f2ba593165a6a375e98a75c8fe551f8f3fa1d9f145dafad100b9357"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "c404c1fb07bb4e82c194d52c510783c62e714b91790df30dbc8afe6d000a7e11",
+        "afterSha256": "cea4f9d09d1b33ee710afe3f5b1a151cf22694edd7dddd1dedc526af23307e34"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "af0973d327035fee964a0d822972bb0cff6b5a8200f583a7ca86bb68254ed908",
+        "afterSha256": "a6627f93fa3b6d94fb89143e48cbae5c98a106734cd0b90f75d9678b18861c72"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "853f0a32646c818a1373ce22e802b316c7e17f6861f49f6906bda02e15eb2e7d",
+        "afterSha256": "25977dc54186b08a9ee65131b68cadc1e6744478232c3bb855c2900d71d9a970"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "60daf65fe6b5f35283884bc238a7b7d117c4617949a1bc00c53676cfa246fe69",
+        "afterSha256": "354b1348d19a636d4be4ed22c83eda36d683eb48fddcddc581f114a14d405dc2"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "da3bdd5ac05b7597e7eac1d3f0b65ef10cdae859731f8e77294c0a54ede7158c",
+        "afterSha256": "8abf638f0a0d6865d413b7deccb98b759254b437421a63d7133af38003279cbd"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "fe737353fab3833ee561818b101e33b569795743297416c352b8d8040908cd73",
+        "afterSha256": "789c6a9db3eb38035a55d8b40aca4fc158fb8a1bb621c4941f74cd8cdfb78b3d"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "ceb40d528bf62a8b9cafcef019fb5bf07238f086f143921944af8750cb8f4e83",
+        "afterSha256": "b71611dc8d233896320ce03eedc18676329a9cdd9dac46e3b2def04e2ada57b1"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "7828b3025f09a87c07a676a881b72e7225fb8fa3fa5b257b94fffec10fc68070",
+        "afterSha256": "3d1ffee3d43d2088030a363a402d25ef2871594089bab7b545581cb40e3d9a47"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "87a20a2b0bc331c7679643f8d410dd6ed95358dacc1c3a35b50de3038f24e0df",
+        "afterSha256": "e5085bb3efc973194b6ee569330f072bec48510fd4e982b9edcdb828d902a227"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "34f46e6eb7fc669d1942e3cbb3dc9c92d32dbfebac6f6632a79655722c72419d",
+        "afterSha256": "ac3b0922fdee59e369d36da99d8753c90d1c5287ba977c8d01f69df2b1bd936a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "99fae0f292d221d6eae48a006b3009b1b366fe816e2fad7169277d3aaa4d0bf1",
+        "afterSha256": "37340c8316710ad3bb79522659a4ebf45937e6a6b16f4f921390852218dbc4b5"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "d2f51d6c529dcadfaf6e745a60fddc0c24adb496685edbced5c291e4b438879f",
+        "afterSha256": "3ea127e0199d8afb9c8215b8ff598f8e3ce754d7ab7ee5513e47caac087a9fff"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "d1818632a690c08650f9fe328793cbe91664794c51e77b4bf475bd462b29bd0a",
+        "afterSha256": "8edf8a3c6888898c25e2bf4fcab5cbdb3bf89f4f8d43251202b231ce900c3c89"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "9df3ddb8042bd102aa92220b2b6d94fcb41c26497efbddda2d8403c9346d59ca",
+        "afterSha256": "09c229f8ff0a77dbe770f1a7e652066e4011b8462758239f5ffb6247f7fc2659"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "636fbc4468fea90ef2f9206cd53df25ccd9899312292cd34e14f2c3eb48c588a",
+        "afterSha256": "ddb061c349b2b33e862c4e89cafb6a09f2e5e26dc2f182efd3f678fbb045fa45"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "5b8e0caa9dce7d88c832843837cdea2904a43e781bd04fb33bdd83b86c2ec0bc",
+        "afterSha256": "5633c542bb76631b97098dabd3226b14793a15eee5609d106d868c1907f7c817"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "8a7e6d4d49d1db01174b98fcf6344fa618ffe8c8444a62812ed10fdd6b5f70ab",
+        "afterSha256": "9d9cdf69a2cbf92f97e4f2256c422b3eb1f348ef578ee955570cbf04c9f7679e"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "9d9cdf69a2cbf92f97e4f2256c422b3eb1f348ef578ee955570cbf04c9f7679e",
+        "afterSha256": "d38ef64bcd4df10ad2da9d200103c7b5e724f985c8d8de550f00d87b2c38aa93"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "789c6a9db3eb38035a55d8b40aca4fc158fb8a1bb621c4941f74cd8cdfb78b3d",
+        "afterSha256": "68a172f7d3170a6cfa121d25b36805df3dc2e35f76f32f2896b501eda633b981"
       }
     ]
   },
@@ -1174,11 +1284,17 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "ab655d07d7dc0eba7e1c2673012c85522a5220331ab738a7cdb3fc4783c1a076",
+        "sourceSha256": "3b3faf98b8688152b76f3de4cf7756a179e7e5cc6afe77ac4fd847210d9b7eee",
         "spans": [
           {
-            "start": 82,
-            "end": 94,
+            "start": 86,
+            "end": 98,
+            "text": "contar_altos",
+            "role": "cpp"
+          },
+          {
+            "start": 517,
+            "end": 529,
             "text": "contar_altos",
             "role": "cpp",
             "reading": "technical"
@@ -1188,82 +1304,44 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "dbe60168bf8dbd1fca57686c86eabdabb25f620724f08feb59c1675857eb5fe0",
+        "sourceSha256": "adf989d6cd968b9a0d7e0b285f3e0a5929f946c2c928df25d9ff8af00fdcafa7",
         "spans": [
           {
-            "start": 94,
-            "end": 99,
-            "text": "0 y 9",
-            "role": "data",
-            "reading": "natural"
+            "start": 39,
+            "end": 51,
+            "text": "contar_altos",
+            "role": "cpp"
           },
           {
-            "start": 115,
-            "end": 120,
-            "text": "1 y 9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 166,
+            "start": 368,
+            "end": 388,
             "text": "contar_altos({2}, 2)",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 176,
-            "end": 177,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 188,
-            "end": 207,
+            "start": 464,
+            "end": 483,
             "text": "contar_altos({}, 2)",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 217,
-            "end": 218,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 248,
-            "end": 257,
+            "start": 619,
+            "end": 628,
             "text": "acumulado",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 260,
-            "end": 261,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 281,
-            "end": 282,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "e291476aec28eced5810ee6b1e3970b66f78de9bbcec5299acc3643d90e12be1",
+        "sourceSha256": "a09cfb280a6827064422d7ac49ad10f9ea3c997827f2a3589e723becc3cb978a",
         "spans": [
           {
-            "start": 366,
-            "end": 404,
-            "text": "(Kernighan & Pike, 1999, pp. 124, 136)",
+            "start": 523,
+            "end": 547,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1326,13 +1404,20 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "eb749e11cb1d30ed7d4293a8d1ecf3bf0190823cf816e3a338361c214d3e9f60",
-        "spans": []
+        "sourceSha256": "024f661aaf12dcd62e86a0b6c8e326f564d4afe0b2f82dca26fdfa87a2b5e3cc",
+        "spans": [
+          {
+            "start": 177,
+            "end": 189,
+            "text": "contar_altos",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "d0bcf45d5b2b9c05cb33757b69052a82ac932058c03a927613c7b10db2bdf908",
+        "sourceSha256": "48b414032042f0916df03ea47873bd5a4c1d33faee6b2099e0d649273a94beee",
         "spans": []
       },
       {
@@ -1386,19 +1471,19 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "635862d38060502932229baff440cb220c23810168e1d11240f08cc19fc88b54",
+        "sourceSha256": "c11f268d5d0dd9463540806bd27a3f1907b519a0c19fd37b2cd6c5a383ca7282",
         "spans": [
           {
-            "start": 157,
-            "end": 169,
-            "text": "contar_altos",
+            "start": 58,
+            "end": 67,
+            "text": "acumulado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 200,
-            "end": 209,
-            "text": "acumulado",
+            "start": 161,
+            "end": 173,
+            "text": "contar_altos",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1413,55 +1498,67 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "aa14216d96e2460d7145612c26556486fcb2cb2746d42635c18ebbec53f981d4",
+        "sourceSha256": "838a98c0963358d2a153d4689eaf660d32e0c663927d454483b02653e64c1bf5",
         "spans": []
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "00c266c3344fe14a88b1308e3a6ac5d8d805f5551b4051b619875c3e9b5164bf",
+        "sourceSha256": "0c513bee28cc9d04525047501d0c0ed63452cf5ec7f57119cebf8474cf3f4cf5",
         "spans": [
           {
-            "start": 34,
-            "end": 46,
+            "start": 39,
+            "end": 51,
             "text": "contar_altos",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 64,
-            "end": 73,
+            "start": 70,
+            "end": 79,
             "text": "acumulado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 658,
-            "end": 659,
+            "start": 532,
+            "end": 541,
+            "text": "acumulado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 700,
+            "end": 701,
             "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           }
         ]
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "9372b10a7e223ffad2597d5e6b94e419188105d0c85b0048aeb6b3e5ba3c4ea3",
+        "sourceSha256": "f4d8185b40b867efb805d63bcce0daa07f999e7747e3a3fe44630b9a30748275",
         "spans": [
           {
-            "start": 56,
-            "end": 57,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "start": 110,
+            "end": 122,
+            "text": "contar_altos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 202,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "7ea9276ec0330b6af7692a7671a16cffcc5584d0e0592b8d04568dec814dd7b0",
+        "sourceSha256": "af38a086b778c456f09d66d437da410a569915e07fdb7de801a8badee62f512b",
         "spans": []
       },
       {
@@ -1473,77 +1570,70 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "6fea6221dba93b46d9addfbf5a8575b01838ee85c6015441428e4f00148413d0",
+        "sourceSha256": "12e5a178424719235f0708f317232b210493df6429fe615bf43f085cff9cf346",
         "spans": [
           {
-            "start": 196,
-            "end": 207,
+            "start": 154,
+            "end": 166,
+            "text": "contar_altos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 269,
             "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 244,
-            "end": 252,
+            "start": 315,
+            "end": 323,
             "text": "<string>",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 284,
-            "end": 295,
+            "start": 372,
+            "end": 383,
             "text": "std::vector",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 298,
-            "end": 307,
+            "start": 418,
+            "end": 427,
             "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
+          },
+          {
+            "start": 450,
+            "end": 458,
+            "text": "<vector>",
+            "role": "cpp"
+          },
+          {
+            "start": 463,
+            "end": 473,
+            "text": "<iostream>",
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "a555fa1b0f70963dd25ab4ec7458001222e20790626abf314698603ba70981ee",
+        "sourceSha256": "c8faa275562b72c0b03e8c6474d49b157c509c4cfb55d41c9caa7e6a10c3b5f5",
         "spans": [
           {
-            "start": 55,
-            "end": 74,
+            "start": 35,
+            "end": 54,
             "text": "Primera=1;Segunda=1",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 93,
-            "end": 99,
-            "text": "stderr",
+            "start": 325,
+            "end": 334,
+            "text": "acumulado",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 133,
-            "end": 134,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 315,
-            "end": 316,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 334,
-            "end": 335,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
@@ -1636,11 +1726,25 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "00216352dee0a479eccc89d9be6fa3038d4f1f55783ba5f220231c113a46c995",
+        "sourceSha256": "e0157eb8ceff79ae0fc4c9969c4026e48e92df470aadeddc32269c8d62f54ad8",
         "spans": [
           {
-            "start": 227,
-            "end": 235,
+            "start": 264,
+            "end": 297,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 349,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 379,
+            "end": 387,
             "text": "<string>",
             "role": "cpp",
             "reading": "technical"
@@ -1656,12 +1760,19 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "944a8bafdd954dc25b9b5528626fc242400ead14036f38aa29dc7bf0736ef9e4",
+        "sourceSha256": "8f5bfa2c1a693659ad1f1b44943fb81d2940025ecf4919efabcad1adab958e98",
         "spans": [
           {
-            "start": 69,
-            "end": 78,
+            "start": 70,
+            "end": 79,
             "text": "acumulado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 169,
+            "text": "main",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1748,28 +1859,27 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "3ab4268808082a5804bcc5edf9ddc18b86c2d47a547c7c4ce02d235726897106",
+        "sourceSha256": "de434112c41f2697ca11255bc68ccfe0d3e8c1617d31729692ac4d82211c314f",
         "spans": [
           {
-            "start": 19,
-            "end": 28,
+            "start": 24,
+            "end": 33,
             "text": "Segunda=0",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 51,
-            "end": 57,
-            "text": "stderr",
+            "start": 219,
+            "end": 228,
+            "text": "acumulado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 79,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "start": 429,
+            "end": 441,
+            "text": "contar_altos",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1782,11 +1892,18 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "7c566e0fe2b252f896456d03d9468565258b73435e6c8717d7b2bcd4c327f8d6",
+        "sourceSha256": "40605b1cbdd57c8f24c48d661b9ed6f66ec322394de4fff3cda8117852a4f637",
         "spans": [
           {
-            "start": 349,
-            "end": 361,
+            "start": 519,
+            "end": 540,
+            "text": "(Thomas & Hunt, 2020)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 666,
+            "end": 678,
             "text": "contar_altos",
             "role": "cpp",
             "reading": "technical"
@@ -1796,42 +1913,21 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "e974e40c03be7bf9e385c8bc337288f58995e7254555ae113acd6baf34a54b7b",
+        "sourceSha256": "5669ddc1796dcdd6c8d0e9dd389f2b68e8955451149d8e12b0216b4e0f4713a6",
         "spans": [
           {
-            "start": 126,
-            "end": 133,
-            "text": "primera",
+            "start": 42,
+            "end": 50,
+            "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 137,
-            "end": 138,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 141,
-            "end": 148,
-            "text": "segunda",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 152,
-            "end": 153,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "192cb32a8cb6b70c41e42fff82f280d15d79bed844a1af71779b4f0de23a8165",
+        "sourceSha256": "b61d0aff2ab8b38177f6b7eb430588011472812af3c83aff4f88eda7ec8064dd",
         "spans": []
       },
       {
@@ -1843,12 +1939,19 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "7f2d081f71da5dec4e225a83d4c4cabec8469bf99070909ad22b9487255514a5",
+        "sourceSha256": "33ace0dd12d78840622a67be7f65147ed83936878f27f93bc1272278502321dc",
         "spans": [
           {
-            "start": 521,
-            "end": 558,
-            "text": "(Kernighan & Pike, 1999, pp. 135–136)",
+            "start": 200,
+            "end": 209,
+            "text": "acumulado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 771,
+            "end": 795,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1905,7 +2008,7 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "9f35e5238c88881925ab86cd93d7889b9f02f652cc3c545d63d9a1e96696358c",
+        "sourceSha256": "41d00f1479e5c99506da7edcc8cf4e3240d8682bc3c1a283472ae7b2467e036e",
         "spans": []
       },
       {

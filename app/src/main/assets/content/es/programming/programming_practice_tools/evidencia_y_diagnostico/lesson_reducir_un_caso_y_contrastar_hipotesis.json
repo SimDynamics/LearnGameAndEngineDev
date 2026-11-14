@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya sabes relacionar una observación con la fuente, la construcción y el ejecutable utilizados. Ahora investigaremos un fallo que depende de la historia de llamadas dentro de una misma ejecución. El objetivo es elegir pruebas que distingan explicaciones, reducir el caso conservando el fallo y comprobar una reparación fuera de la situación inicial."
+          "text": "Ya sabes identificar los fuentes usados, comprobar que se construyeron correctamente y reconocer el ejecutable que produjo un resultado. Ahora investigaremos varias llamadas a una función dentro de una misma ejecución. Al iniciar el programa comienza un proceso: el programa está en marcha y puede realizar varias llamadas antes de terminar. Una llamada ejecuta el cuerpo de una función; no inicia por sí sola otro proceso.\n\nEstudiaremos un fallo en el que una llamada deja un contador modificado y la siguiente utiliza ese valor. Elegirás pruebas que permitan distinguir posibles causas, quitarás datos conservando la misma contradicción y comprobarás si una reparación también funciona con otras consultas."
         },
         {
           "type": "paragraph",
-          "text": "contar_altos recibe los parámetros std::vector<int> datos e int minimo. Devuelve cuántos elementos de ese vector son mayores o iguales que minimo. Cada llamada debe contar exclusivamente sus propios datos: no incorpora resultados de llamadas anteriores. En estos experimentos los valores están entre 0 y 9 y minimo entre 1 y 9. Las colecciones son pequeñas y el recuento cabe en int."
+          "text": "La función contar_altos recibe una colección de enteros en std::vector<int> datos y un límite en int minimo. Debe devolver cuántos elementos de datos son mayores o iguales que minimo. Por ejemplo, si un elemento coincide con ese límite, también hay que contarlo.\n\nCada llamada cuenta exclusivamente los elementos de la colección que recibe en ese momento. Su resultado no debe sumar los recuentos de llamadas anteriores. En estos experimentos los elementos están entre 0 y 9 y minimo entre 1 y 9. Admitimos una colección vacía. Las colecciones son pequeñas y el resultado cabe en int."
         },
         {
           "type": "paragraph",
-          "text": "Por ejemplo, contar_altos({1, 4, 7}, 4) debe devolver 2: califican 4 y 7. Con un vector vacío el resultado requerido es 0, cualquiera que sea el mínimo admitido. Calculamos estos resultados desde la consigna, sin usar como oráculo lo que imprima la versión investigada."
+          "text": "En contar_altos({1, 4, 7}, 4), compara cada elemento con el mínimo: 1 no lo alcanza; 4 es igual y cuenta; 7 es mayor y también cuenta. Por tanto, el resultado esperado es 2. Una colección vacía no contiene ningún elemento que pueda cumplir la condición: debe devolver 0 para cualquier mínimo admitido.\n\nEstos esperados se obtienen del requisito antes de consultar la versión investigada. Serán el criterio independiente con el que juzgaremos sus resultados; a ese criterio se le llama oráculo de prueba. Copiar sin revisar lo que devuelve la función sospechosa podría convertir su mismo error en el esperado."
         },
         {
           "type": "multiple_choice",
@@ -47,11 +47,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina que una primera prueba, ejecutada desde un comienzo nuevo, consulta {6} con mínimo 5 y devuelve 1. Esa observación coincide con el requisito, pero no explica cómo lo obtuvo el programa. Consideraremos dos hipótesis concretas: H_frontera cuenta por llamada, pero usa > en vez de >=; H_arrastre usa >=, pero suma los recuentos a un total que conserva entre llamadas."
+          "text": "Imagina que inicias un proceso nuevo, consultas {6} con mínimo 5 y obtienes 1. El resultado coincide con el requisito, pero todavía no sabemos cómo lo calculó la función. Una hipótesis es una explicación provisional que podemos poner a prueba. Consideraremos estas dos:\n\nH_frontera: cada llamada empieza a contar desde cero, pero compara con > en lugar de >=. Por eso excluiría un elemento igual al mínimo.\nH_arrastre: compara con >=, pero añade cada recuento a un total que conserva entre llamadas. Por eso una consulta podría incluir datos contados antes.\n\nEstos nombres identifican las dos explicaciones; no son nombres de funciones del programa."
         },
         {
           "type": "paragraph",
-          "text": "Ambas hipótesis predicen 1 para esa primera consulta: 6 supera 5 y no había un recuento anterior. No podemos elegir entre ellas repitiendo ese único caso. Formular una hipótesis no significa que sea cierta: sirve para anticipar qué deberíamos observar si lo fuera."
+          "text": "Para esa primera consulta las dos hipótesis predicen 1. Bajo H_frontera, 6 supera estrictamente 5 y se cuenta. Bajo H_arrastre, 6 también cumple la comparación y no existe todavía un recuento anterior que se pueda añadir.\n\nRepetir sólo esa primera consulta desde un proceso nuevo volvería a producir la misma coincidencia. Necesitamos otras condiciones para distinguir las explicaciones. Una hipótesis permite calcular una predicción; que una observación coincida con ella no demuestra que sea la única causa posible. Elegir casos que confirmen o contradigan una explicación concreta ayuda a orientar la investigación (Kernighan & Pike, 1999, p. 124)."
         },
         {
           "type": "multiple_choice",
@@ -72,7 +72,7 @@
         },
         {
           "type": "paragraph",
-          "text": "También podríamos sospechar que se ejecutó otra revisión. En este caso ya hemos comprobado la correspondencia entre la fuente investigada, la construcción satisfactoria y el artefacto ejecutado. Usaremos ese dato para descartar esa explicación aquí; en otro caso tendríamos que verificarlo otra vez. La procedencia comprobada reduce hipótesis, pero no demuestra que el código sea correcto."
+          "text": "También sería posible que se hubiera ejecutado una revisión diferente de la que se quería estudiar. Para este caso, toma como datos del escenario que se identificaron los fuentes, que su construcción terminó correctamente y que se ejecutó el programa obtenido de ellos. Por eso no utilizaremos aquí la confusión entre revisiones para explicar el resultado.\n\nEn una investigación real habría que comprobar esa correspondencia, como practicaste en la lección anterior. Identificar el programa permite atribuirle la observación; todavía hace falta comparar su comportamiento con el requisito."
         },
         {
           "type": "note",
@@ -88,7 +88,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una prueba aporta información para esta pregunta cuando las hipótesis prevén comportamientos diferentes. Queremos examinar tanto la frontera como lo que ocurre después de una llamada que contó un dato. Cada experimento empieza con un proceso nuevo. Dentro de él mantendremos las llamadas consecutivas: reiniciar entre ellas cambiaría la situación investigada."
+          "text": "Una prueba distingue estas hipótesis si cada una predice algo diferente para las mismas condiciones. Debemos examinar dos aspectos: qué ocurre con un dato exactamente igual al mínimo, al que llamaremos dato de frontera, y qué ocurre en una consulta posterior a otra que contó un elemento.\n\nCada experimento empezará al iniciar un proceso nuevo. Dentro de ese experimento mantendremos las llamadas consecutivas. Si cerramos el programa y lo iniciamos entre una llamada y otra, ya no podremos observar qué valor conserva de la primera a la segunda. En los puzzles siguientes elegirás la secuencia y calcularás por separado las predicciones."
         },
         {
           "type": "multiple_choice",
@@ -126,7 +126,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Según el requisito, la pareja esperada es 1:0. Mantén separados tres registros: el resultado requerido, lo que predice cada hipótesis y lo que realmente observarás. Si una observación contradice un modelo, ese modelo concreto queda descartado bajo las condiciones que acabamos de fijar; no hemos probado que no pueda existir otro defecto distinto."
+          "text": "El requisito exige 1:0 para esa secuencia: la primera llamada recibe un elemento igual al mínimo y debe contarlo; la segunda recibe una colección vacía y no tiene elementos que contar.\n\nDistingue ese resultado requerido de las predicciones de H_frontera y H_arrastre, que acabas de calcular. Después lo compararás con la salida de la implementación. Si la salida contradice la predicción de una hipótesis bajo las condiciones fijadas, esa explicación concreta queda descartada para el experimento. Que coincida con la otra no elimina por sí solo todas las causas que aún no hemos considerado."
         }
       ]
     },
@@ -138,11 +138,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta es la implementación investigada. La declaración int acumulado{0}; está fuera de las funciones: prepara un contador antes de empezar main. Las llamadas a contar_altos utilizan ese mismo contador; no vuelven a ejecutar su declaración exterior. El cuerpo de la función incrementa acumulado cuando un dato califica y devuelve el valor que haya quedado."
+          "text": "La implementación siguiente declara int acumulado{0}; fuera de las funciones. En este programa ese contador se inicializa antes de entrar en main y conserva su valor durante las llamadas posteriores. Llamar a contar_altos no vuelve a ejecutar la declaración exterior.\n\nDentro de contar_altos, cada elemento que cumple la comparación provoca un incremento de acumulado. Al terminar el recorrido, return devuelve el valor que tenga ese mismo contador. La función no contiene una instrucción que lo prepare de nuevo al comenzar otra consulta."
         },
         {
           "type": "paragraph",
-          "text": "Por tanto, debemos seguir tanto los argumentos de cada llamada como el valor de acumulado antes y después. No hace falta estudiar direcciones ni gestión de memoria para observar esta diferencia entre preparar el programa una vez y ejecutar el cuerpo de una función varias veces."
+          "text": "Para predecir la salida, sigue las instrucciones en su orden. Empieza con el valor inicial de acumulado. Atiende a los argumentos de la primera llamada, determina qué elementos cumplen la condición y aplica sus incrementos. Ese valor es el que permanece cuando comienza la segunda llamada.\n\nDespués recorre los datos de la segunda consulta y determina qué valor devuelve la función. Distingue una colección que no causa incrementos de una instrucción que vuelva a poner el contador a cero: son acciones diferentes. El puzzle pide la salida de este código, aunque difiera de lo exigido por el contrato."
         },
         {
           "type": "output_prediction",
@@ -183,11 +183,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El informe original podría contener una primera consulta {0, 2, 6, 9} con mínimo 2 y una segunda {0, 1} con mínimo 2. El requisito prevé 3:0; esta implementación devuelve 3:3. Investigar muchos datos a la vez puede distraer. Queremos conservar la contradicción: la segunda consulta devuelve un recuento anterior que no le corresponde."
+          "text": "Supón que el informe original contiene estas dos consultas dentro de un proceso nuevo, con mínimo 2 en ambas:\n\nPrimera consulta: {0, 2, 6, 9}. Cumplen la condición 2, 6 y 9: el recuento requerido es tres.\nSegunda consulta: {0, 1}. Ningún elemento alcanza el mínimo: el recuento requerido es cero.\n\nEl requisito exige 3:0. La implementación deja el contador en tres tras la primera consulta; la segunda no lo incrementa, pero devuelve ese valor conservado. Por eso produce 3:3. Queremos investigar esa contradicción concreta: la segunda consulta devuelve un recuento que pertenece a otra llamada."
         },
         {
           "type": "paragraph",
-          "text": "Reducir no exige conservar literalmente el número 3. Puedes eliminar datos de una reproducción y volver a calcular desde el requisito qué debería ocurrir. Comprueba después si persiste la misma clase de contradicción. No des por supuesto que quitar datos conserva un fallo: a veces el defecto depende de varios elementos o de su combinación."
+          "text": "Para reducir el caso, retira datos y vuelve a calcular qué exige el requisito para las colecciones que quedaron. Después sigue la implementación con esos mismos datos y comprueba si la consulta posterior todavía devuelve un recuento anterior que no le corresponde. Conserva el mismo código y el orden necesario para estudiar esa dependencia.\n\nNo hace falta mantener literalmente el resultado 3 del informe original. Debe permanecer la contradicción que investigamos. Si una reducción hace que los resultados coincidan con el requisito, esa candidata ya no muestra aquel fallo; no demuestra que hayas reparado la función. Reducir datos requiere comprobar el resultado después de cada cambio (Kernighan & Pike, 1999, p. 124)."
         },
         {
           "type": "multiple_choice",
@@ -237,7 +237,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Compara ahora dos experimentos. Cada uno comienza con acumulado a cero, al iniciar un proceso nuevo. En el primero el orden fue {2} y después {}. En el segundo conservamos las colecciones, el mínimo y el código, pero invertimos el orden: primero {} y después {2}. Dentro de cada experimento no reiniciamos entre llamadas."
+          "text": "Ahora compararemos dos experimentos cambiando sólo el orden de las consultas. A esta comparación la llamaremos control: permite examinar qué efecto tiene ese cambio concreto, manteniendo lo demás.\n\nEn ambos experimentos se inicia un proceso nuevo, de modo que acumulado empieza a cero. El primero consulta {2} y después {}, con el mismo mínimo. El segundo conserva el código, las dos colecciones y el mínimo, pero consulta primero {} y después {2}. Dentro de cada experimento las dos llamadas pertenecen al mismo proceso. Calcula la nueva salida sin trasladar el contador final del experimento anterior."
         },
         {
           "type": "output_prediction",
@@ -270,7 +270,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Probar desde un comienzo conocido permite comparar experimentos; mantener las llamadas dentro de un mismo proceso permite examinar su historia. Son decisiones diferentes. Si reinicias el programa antes de cada llamada, desaparece precisamente la condición que queríamos investigar. Relaciona cada cambio con la observación que permite distinguir las hipótesis en los puzzles y las ejecuciones de esta práctica."
+          "text": "Iniciar un proceso nuevo para cada experimento permite que ambos comiencen con el mismo valor del contador. En cambio, conservar las dos llamadas dentro de cada proceso permite comprobar si la primera afecta a la segunda.\n\nSi iniciáramos un proceso nuevo antes de cada llamada, el contador exterior volvería a prepararse y dejaríamos de probar esa dependencia. El control cambió únicamente el orden: que ahora coincidan los resultados no modifica la función ni borra el desacuerdo observado con el orden anterior."
         }
       ]
     },
@@ -282,15 +282,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Repara contar_altos para que cada consulta obtenga el recuento de sus propios datos. Conserva la comparación >=, las cinco consultas de main y el cálculo real de los resultados. Puedes cambiar la organización del contador. No sustituyas el trabajo por números constantes ni reinicies el programa entre consultas."
+          "text": "En el editor siguiente, repara contar_altos para que cada consulta devuelva el recuento de sus propios datos. Conserva la comparación >= y las cinco consultas de main, con sus datos y su orden. Puedes cambiar dónde se declara el contador o cuándo se prepara, pero los resultados deben calcularse recorriendo los datos.\n\nNo sustituyas las respuestas por números constantes ni cierres el programa entre consultas. La reparación debe permitir varias llamadas correctas dentro de la misma ejecución. Construye y ejecuta el código modificado con la comprobación de salida del editor."
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, deduce los resultados desde el contrato. La reproducción pequeña requiere Minimo:1:0. Después, las consultas {8, 1, 5} con mínimo 5; {6, 7} con mínimo 5; y {} con mínimo 9 requieren Nuevo:2:2:0. Las cinco llamadas pertenecen a una sola ejecución. La segunda tanda examina una consulta no vacía después de otra que ya contó datos."
+          "text": "Los esperados proceden del contrato. Las cinco consultas se ejecutan consecutivamente, sin reiniciar el programa:\n\n{2}, mínimo 2: cuenta su único elemento.\n{}, mínimo 2: no tiene elementos que contar.\nEstas dos respuestas forman la línea Minimo:1:0.\n\n{8, 1, 5}, mínimo 5: cuentan 8 y 5.\n{6, 7}, mínimo 5: cuentan los dos elementos de esa colección.\n{}, mínimo 9: vuelve a exigir un recuento vacío.\nEstas tres respuestas forman la línea Nuevo:2:2:0.\n\nLa segunda tanda no sólo repite el vacío: también exige contar una colección no vacía después de otra que ya produjo un recuento. Así permite detectar una reparación que trate especialmente el vacío y siga mezclando las demás consultas."
         },
         {
           "type": "paragraph",
-          "text": "Comprueba que cada llamada comienza su recuento desde cero y que las consultas posteriores ya no incorporan recuentos anteriores. Puedes conseguirlo con un contador local o restableciendo el contador exterior antes de recorrer los datos. La comprobación de salida corresponde a las cinco llamadas de este editor, en el orden que muestra main."
+          "text": "Al revisar tu código, localiza la instrucción que prepara el recuento de cada llamada. Puede crear un contador local a cero o restablecer el exterior antes del recorrido. Comprueba después que sólo se incrementa cuando un elemento de esa llamada cumple la comparación y que se devuelve ese recuento.\n\nContrasta cada respuesta con sus propios datos. La salida comprobada por el editor reúne las cinco llamadas de main en el orden mostrado; todas forman parte de esta prueba de varias consultas en un mismo proceso."
         },
         {
           "type": "cpp_compiler",
@@ -327,11 +327,11 @@
         },
         {
           "type": "paragraph",
-          "text": "cantidad se declara dentro del cuerpo de contar_altos. Cada llamada ejecuta su inicialización a cero, recorre únicamente los datos recibidos y devuelve su propio resultado. No necesita el total que hubiera dejado otra llamada. La salida calculada es Minimo:1:0 y, en la siguiente línea, Nuevo:2:2:0."
+          "text": "La referencia declara cantidad dentro del cuerpo de contar_altos. Cada vez que se llama a la función se ejecuta esa declaración y se inicializa el contador a cero. El recorrido incrementa ese contador únicamente por los elementos recibidos en esa llamada. Finalmente devuelve su resultado; la llamada siguiente vuelve a crear su propio recuento.\n\nPor eso la consulta vacía ya no devuelve lo que contó una consulta anterior. Las cinco llamadas de main producen Minimo:1:0 y, en la línea siguiente, Nuevo:2:2:0."
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección: contar también los datos iguales al mínimo, contar cada elemento válido una vez, devolver 0 para el vacío y conservar independencia de las llamadas anteriores. Esta solución local es una forma clara de expresar esa independencia. En este programa secuencial, restablecer el contador exterior al entrar en cada llamada, antes de recorrer, también puede satisfacer el contrato; compruébalo con los casos, sin confundir esa reparación con reiniciar el proceso entre consultas."
+          "text": "Comprueba la reparación con cuatro criterios: incluir los elementos iguales al mínimo, contar una vez cada elemento que cumple la condición, devolver 0 para una colección vacía y obtener el resultado de cada llamada sin añadir recuentos anteriores.\n\nEl contador local expresa directamente que ese recuento pertenece a una llamada. En este programa secuencial también puede funcionar restablecer el contador exterior al entrar en la función, antes de recorrer. En ambos casos se modifica la función para que admita varias consultas en el mismo proceso. Iniciar el programa de nuevo entre consultas sólo cambiaría las condiciones de la prueba."
         },
         {
           "type": "multiple_choice",
@@ -356,7 +356,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente invierte las dos consultas no vacías de la segunda tanda. Repara el contador conservando las cinco llamadas que aparecen ahora. Antes de ejecutar, relaciona cada recuento con sus propios datos; el orden nuevo no autoriza a incorporar datos de una consulta anterior. Compila, ejecuta y comprueba la reparación."
+          "text": "Este editor conserva cinco consultas, pero invierte las dos colecciones no vacías de la segunda tanda: ahora {6, 7} aparece antes que {8, 1, 5}. Repara el recuento manteniendo las llamadas, sus datos y su orden actual. Comprueba en el código qué colección recibe cada llamada y que cada una obtiene su propio resultado. Compila, ejecuta y comprueba esa reparación.\n\nLas dos colecciones no vacías deben devolver 2, por lo que la salida correcta sigue siendo Minimo:1:0 y, en la línea siguiente, Nuevo:2:2:0. Esa coincidencia de texto no permite acreditar por sí sola el orden ni la asociación de esas dos respuestas con sus colecciones: para ello revisa las llamadas que realmente contiene main. La comprobación de salida sí permite contrastar que no se sume un recuento anterior a esas respuestas."
         },
         {
           "type": "cpp_compiler",
@@ -384,7 +384,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Otra persona añade únicamente un retorno especial para el vector vacío. Su versión ya devuelve 1:0 en la reproducción pequeña, pero deja el contador exterior para los vectores no vacíos. Antes de dar esa reparación por buena, usa una situación que también exponga el recuento arrastrado sin depender del vacío."
+          "text": "Imagina una reparación que añade un retorno de cero únicamente cuando datos.empty() indica que la colección está vacía. Así puede obtener 1:0 en la reproducción pequeña. Sin embargo, para las colecciones no vacías conserva el mismo contador exterior y los incrementos de la versión defectuosa.\n\nLa predicción siguiente examina dos consultas no vacías. Primero determina si alguna utiliza ese retorno especial. Después sigue el contador a lo largo de ambas llamadas y compara el resultado con el recuento independiente que exige cada colección. Esta variación permite comprobar si la reparación eliminó la dependencia o sólo evitó mostrarla cuando no hay datos."
         },
         {
           "type": "output_prediction",
@@ -417,7 +417,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva la reproducción pequeña, el informe original y la variación no vacía como casos posteriores de comprobación. Cuando cambies la función otra vez, sirven para detectar si reaparece esa dependencia. Más adelante estudiaremos cómo organizar y automatizar pruebas; aquí ya puedes justificar las entradas y los resultados sin asumir un marco de pruebas."
+          "text": "Conserva como comprobaciones la reproducción pequeña, las dos consultas del informe original y la variación con dos colecciones no vacías. Cada una examina condiciones distintas: un vacío después de un recuento, los datos en que apareció el informe y otra consulta con datos después de haber contado.\n\nCuando cambies la función, compara de nuevo sus resultados con los esperados del requisito. Si alguna comparación vuelve a fallar, habrás detectado que el cambio perdió un comportamiento que debía mantenerse. Más adelante organizaremos y automatizaremos estas comprobaciones; aquí puedes seguir sus datos, sus llamadas y sus resultados con los recursos que ya conoces."
         },
         {
           "type": "note",
@@ -433,7 +433,7 @@
         },
         {
           "type": "paragraph",
-          "text": "No concluyas que cualquier dato conservado entre llamadas es incorrecto. Imagina ahora otro encargo: registrar_visita debe devolver el número de visitas registradas desde el inicio del programa. Para las tres llamadas de este experimento, el contrato exige los números 1, 2 y 3. Es una intención diferente del recuento independiente de una colección."
+          "text": "La ubicación exterior de un contador no lo convierte por sí sola en un error. Considera un encargo diferente: registrar_visita debe devolver cuántas visitas se han registrado desde que comenzó el programa. Cada llamada representa una nueva visita y debe incluir las anteriores de esa misma ejecución.\n\nPara tres llamadas consecutivas, el contrato exige 1, 2 y 3. Volver a empezar el recuento en cada llamada perdería las visitas previas. Contrasta el programa siguiente con este nuevo requisito, sin trasladarle la independencia que necesitaba contar_altos."
         },
         {
           "type": "output_prediction",
@@ -466,7 +466,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para transferir el método a otro fallo, empieza por el resultado requerido y la procedencia del programa. Formula hipótesis que produzcan predicciones comprobables. Elige datos que las separen; reduce conservando la reproducción; cambia una condición relevante a la vez. Después contrasta la reparación con el caso inicial y con una variación que pudiera refutar tu explicación. Si los datos no distinguen dos hipótesis, conserva la duda y busca otra observación."
+          "text": "En otro fallo, empieza por identificar qué resultado exige el requisito y qué revisión del programa produjo la observación. Propón explicaciones que permitan calcular predicciones distintas. En contar_altos, una consulta por encima del mínimo no distinguía las dos hipótesis; la igualdad y una consulta posterior permitieron contrastarlas.\n\nReduce los datos conservando el mismo incumplimiento y cambia una condición relevante a la vez, como hicimos con el orden. Después comprueba la reparación con la reproducción pequeña, el caso original y una variación que pueda revelar que la causa permanece. Si dos explicaciones siguen prediciendo lo mismo para tus datos, esa observación todavía no permite elegir entre ellas."
         }
       ]
     }
@@ -1721,6 +1721,126 @@
         "id": "block_0008_0005",
         "beforeSha256": "2a9e3186e5cf54bff40f623f17a484432d58b4d90293c7a510ff946c26471348",
         "afterSha256": "bbed6153e0d368a1153555e9d4838258a73bec45be0fd943c6b3f21b5d240015"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "e10f18744f08cd11e5e49f339c8227777ba6702d4fd3ac26bdcc2709d5c02262",
+        "afterSha256": "7d5b25e249ceb65d3aa1ea276c08e01d67ff70f55f79794a7bd38402cd521746"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "141c6baab3ddf07743f1d14a39bbb807f6a73509f597eb2b70a492ca37ba651b",
+        "afterSha256": "9bcaccb4219ab8a8f2ea3c9dcf747ab5fcb324c84b848d36360f260eac28420e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8fcc0d805e616bde2865f371db246f17bcdc6d5201c5628b8806c16ff4b77945",
+        "afterSha256": "dfe98f5da3c0f327e3e386f02c125f1ca635a1a784f6f16582ea632632a86b72"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "9391c440795a8bd5ccffa18f55e64e8c29ec3d0dd15c99ac1f46701e2c53d55b",
+        "afterSha256": "5585b7e8f80c4dc1c1c7f8a5d34a622c52d5c3a51dc3afd8364d45913080e159"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "bcd1351735caeb14c1bf1edfbe3a608cece33f139e40309fe4d92df9ba1fe416",
+        "afterSha256": "278314ecbd12d9368335547f620b862de17f2031ec5bb8f38f790a96b796a734"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "169bfc06b0a853651c265dec1886fd5c166c88f96286e31b536204e8695db8bf",
+        "afterSha256": "8d4dd2cf5407e9596bc799d1c480bf8e7e93bc20d1cf61bd50422681b108762f"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "300712b4316041526d72264ec89594a042ea71845a39a4d85a5d91f1707dc993",
+        "afterSha256": "31fd9fbd1c8c9d77242d0e54c505a98766aa7d9c5efdcccd2141250368734543"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "ed238cf659b150464270621c06b8d920c2c3a89ee9880624949bbde925b706ee",
+        "afterSha256": "8fdf103156d3b7065ca8d24c6b3e69f389d124968aafa5db22763fef4049d13b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "23fc859dbb38134cbe3d4b076c735c048c45bd64665bc6e4d1df7f7319d9e0a8",
+        "afterSha256": "d2e01f66c1ead32d06cfe4c858706e8b3c2a9c351184176418ce5ed29532a7c8"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "89caddde8db20c08ff099bc1377f4a6412ca6a67cbb79a97badd14e08ce5ef5a",
+        "afterSha256": "a3aa7d19b81421a9c363395986244dbb841f02f1616d31370a333a6670991f7e"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "6da206562fa12336e90af94d46bff45307ca2081a158609a0516faecad9e2540",
+        "afterSha256": "c45d20ddf3f2226869c67d45bf2ad37ef0e74b42cc402a65da60f06a6a38fb3c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "404397fc841a9a02b62d7f54f7de92b93435e544ee81ab3e005904e7dd8961e4",
+        "afterSha256": "b73701b7b15a700b84c1fc69bc07ec5b86d2f4401964ba44c9a9fc2667d37e39"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "9c7c64d456e591a72ba1df7d998261462e5d6fdab6a1fb8d75828f3d91bf3a1d",
+        "afterSha256": "9dc8173f8ed60893eb8fca8bf5d8da8f343c6e5a3151dd6c83b2127dabaaf3ef"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "f065577619e8ab8919b7a5f9fb59e8a62c40d58f940676070e7120bcbe1d8bec",
+        "afterSha256": "5b7c8a795fe8bf2a77213133da8680c2c7ef364f4258016010e9ea43af89cc86"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8254625ce94baf52cf4a63d6ffc9b8d37b677112ea32070f923a6363bd67f01c",
+        "afterSha256": "f52e30d915d5dc72c4e940fe354cca868e79b74c83780f9d44f2bce154d07534"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "748ad9ce068becadb0311d3d290b99840859f3ee64d14a4ce67ca47d9c1c2391",
+        "afterSha256": "04965f7055bcad775fc22f3828c15adf73ad3f550135df0edd9475d62dded773"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "7268e89afb15ddf101be5643feaa5029b12546cb32f2bdc6c84145b84344cda4",
+        "afterSha256": "4814dbdd254dbf90f31d9b0ce6f94bb4afaf846c6f63e181fb184ce9b0a962c9"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "d7d3422532f5d732143c4bbc166a0f2e5741fc35752b6c2a1dd1467ae85e5c36",
+        "afterSha256": "55fa1ea4413a9bbd8023563bdaf4904908e6a4286460c67d5a4de6d587b90cfd"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "6e5b15e9e9db6cba3e5a8914427bcace4509a02cb92edf0229a8a32f8ebd0727",
+        "afterSha256": "51f0b7fbbf7877c72ccc925dcce992ea1328855f4e08c63df2998319a9c59c59"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "56ac36bd79ae17b91a202b4c2f9866f5f9adaee866161072eb0acf77f05dda04",
+        "afterSha256": "419c2bcc54407e9d28d22f668a8c7448f95178a59a9005bcefa7318773dc4fa4"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "b6f0256ac31983cd7ce3f531638cfe6cea9a3aa7dc262bac84eafa59a18c0e45",
+        "afterSha256": "5da5e0ff6ccf9c0af98e27f7d95ec3d7b794f12457b006448666442e16172820"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "257f1b82e4af8d05b1208192f8fea9c011c3fd2ae9d08e2684252de69d9552d8",
+        "afterSha256": "4d008e3935545fd8fe444ceb037101c01946002c59216015811630ad1dab5ba1"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "5927bf3c8ae706812daa12afbc03bcd4e9afd2a0b9b55d3b62adf6f9b1e76652",
+        "afterSha256": "0b2a4258199b39f2c9291f2fed5aea1f5f556e38726ca70d98fc22ff49ab43e9"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "2db1d942648e77a91b4b871ba2542e6f5b2c574d94424130a82f79ba9eeacd90",
+        "afterSha256": "04a1a0003d177f139256614313f7c54f265c2d084b8cd19a05f63b72f0a81f5d"
       }
     ]
   },
@@ -1736,59 +1856,65 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "5f9580e014b156edcfd33f29a96500b0329d4b672356f6b16478b3a6a5259ee3",
+        "sourceSha256": "07753b929412eace3ccbb21fd7022cf030e2e6d317ff2ac8740608ce3580eb58",
         "spans": []
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "6165d36acc495802c4c04cd3ee3e3bea26e589f13cf2a1235f2dce4dd3abb5f3",
+        "sourceSha256": "f7ba632cea8903f00afc6b8c97443d237a814b104688fcdeee067db422f72ea1",
         "spans": [
           {
-            "start": 0,
-            "end": 12,
+            "start": 11,
+            "end": 23,
             "text": "contar_altos",
             "role": "cpp"
           },
           {
-            "start": 35,
-            "end": 57,
+            "start": 59,
+            "end": 81,
             "text": "std::vector<int> datos",
             "role": "cpp"
           },
           {
-            "start": 60,
-            "end": 70,
+            "start": 97,
+            "end": 107,
             "text": "int minimo",
             "role": "cpp"
           },
           {
-            "start": 139,
-            "end": 145,
+            "start": 144,
+            "end": 149,
+            "text": "datos",
+            "role": "cpp"
+          },
+          {
+            "start": 176,
+            "end": 182,
             "text": "minimo",
             "role": "cpp"
           },
           {
-            "start": 300,
-            "end": 305,
+            "start": 469,
+            "end": 474,
             "text": "0 y 9",
             "role": "data"
           },
           {
-            "start": 308,
-            "end": 314,
+            "start": 477,
+            "end": 483,
             "text": "minimo",
             "role": "cpp"
           },
           {
-            "start": 321,
-            "end": 326,
+            "start": 490,
+            "end": 495,
             "text": "1 y 9",
             "role": "data"
           },
           {
-            "start": 379,
-            "end": 382,
+            "start": 580,
+            "end": 583,
             "text": "int",
             "role": "cpp"
           }
@@ -1797,29 +1923,41 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "677893a8282e81ba8de5e62a9186013177ca365a869e0e8bb15c718824ccb5bc",
+        "sourceSha256": "27170df0963c8aea5e3fc523c46d30c9cedc36b1cd4e22a73783dba57b85d912",
         "spans": [
           {
-            "start": 13,
-            "end": 39,
+            "start": 3,
+            "end": 29,
             "text": "contar_altos({1, 4, 7}, 4)",
             "role": "cpp"
           },
           {
-            "start": 54,
-            "end": 55,
+            "start": 68,
+            "end": 69,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "4",
+            "role": "data"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "text": "7",
+            "role": "data"
+          },
+          {
+            "start": 171,
+            "end": 172,
             "text": "2",
             "role": "output"
           },
           {
-            "start": 67,
-            "end": 72,
-            "text": "4 y 7",
-            "role": "data"
-          },
-          {
-            "start": 120,
-            "end": 121,
+            "start": 268,
+            "end": 269,
             "text": "0",
             "role": "output"
           }
@@ -1941,53 +2079,53 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "3a14a102029457965a41155f589a98215a4beedff25216daa539f2c1041b31b2",
+        "sourceSha256": "c2199a32aaa5fac3aa1fef64e0c0af4fd9df2402f85e2c0222f30473e6ca2f14",
         "spans": [
           {
-            "start": 76,
-            "end": 79,
+            "start": 48,
+            "end": 51,
             "text": "{6}",
             "role": "data"
           },
           {
-            "start": 91,
-            "end": 92,
+            "start": 63,
+            "end": 64,
             "text": "5",
             "role": "data"
           },
           {
-            "start": 104,
-            "end": 105,
+            "start": 76,
+            "end": 77,
             "text": "1",
             "role": "output"
           },
           {
-            "start": 234,
-            "end": 244,
+            "start": 271,
+            "end": 281,
             "text": "H_frontera",
             "role": "data"
           },
           {
-            "start": 274,
-            "end": 275,
+            "start": 342,
+            "end": 343,
             "text": ">",
             "role": "cpp"
           },
           {
-            "start": 286,
-            "end": 288,
+            "start": 356,
+            "end": 358,
             "text": ">=",
             "role": "cpp"
           },
           {
-            "start": 290,
-            "end": 300,
+            "start": 407,
+            "end": 417,
             "text": "H_arrastre",
             "role": "data"
           },
           {
-            "start": 305,
-            "end": 307,
+            "start": 431,
+            "end": 433,
             "text": ">=",
             "role": "cpp"
           }
@@ -1996,25 +2134,49 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "03196656b3b582eda6f87b5a4af2092b18648fbe7b35d6e7993890b59ac0a075",
+        "sourceSha256": "8ea685227a815ee4d282ca86e4ff9af515d1c1861494619aac7dff0f802b1a3b",
         "spans": [
           {
-            "start": 25,
-            "end": 26,
+            "start": 53,
+            "end": 54,
             "text": "1",
             "role": "output"
           },
           {
-            "start": 54,
-            "end": 55,
+            "start": 61,
+            "end": 71,
+            "text": "H_frontera",
+            "role": "data"
+          },
+          {
+            "start": 73,
+            "end": 74,
             "text": "6",
             "role": "data"
           },
           {
-            "start": 63,
-            "end": 64,
+            "start": 96,
+            "end": 97,
             "text": "5",
             "role": "data"
+          },
+          {
+            "start": 116,
+            "end": 126,
+            "text": "H_arrastre",
+            "role": "data"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "text": "6",
+            "role": "data"
+          },
+          {
+            "start": 618,
+            "end": 650,
+            "text": "(Kernighan & Pike, 1999, p. 124)",
+            "role": "citation"
           }
         ]
       },
@@ -2109,7 +2271,7 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "363963d6487862f03b597d3f8a8a747d3b53914a00baef8d32ca6ebc668a0e4b",
+        "sourceSha256": "6a722cceebf84fb809c1b0c81844997bb91f7453ae6f232af1bbb37f3098e29f",
         "spans": []
       },
       {
@@ -2134,7 +2296,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "348c7555179808dc22ce57700064df459455a2cce9d123a25dbfcd4bf196bdc6",
+        "sourceSha256": "9d8bc8ad306a910226b333944b255d955a82ae19f54e2da5d2b21ea3bd117fb6",
         "spans": []
       },
       {
@@ -2418,13 +2580,25 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "f3fdc64ee16071b6b71104c97e7902690bcb1d0683da9d7a8d761df8b7908ad7",
+        "sourceSha256": "1a6d1c48b2864228b0e1bb8f8aa40cd472e94aa575151f27a2ea1e93d2ddc169",
         "spans": [
           {
-            "start": 42,
-            "end": 45,
+            "start": 19,
+            "end": 22,
             "text": "1:0",
             "role": "output"
+          },
+          {
+            "start": 243,
+            "end": 253,
+            "text": "H_frontera",
+            "role": "data"
+          },
+          {
+            "start": 256,
+            "end": 266,
+            "text": "H_arrastre",
+            "role": "data"
           }
         ]
       },
@@ -2437,30 +2611,42 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "acd865508ee3c94b952e51a510638413d19c2a9eb510477fd1b0da71d7d3a28f",
+        "sourceSha256": "d996fb4dafd97bba13859e3fbfe056498105565a5138a5e915f73b12100e7d93",
         "spans": [
           {
-            "start": 54,
-            "end": 71,
+            "start": 36,
+            "end": 53,
             "text": "int acumulado{0};",
             "role": "cpp"
           },
           {
-            "start": 138,
-            "end": 142,
+            "start": 141,
+            "end": 145,
             "text": "main",
             "role": "cpp"
           },
           {
-            "start": 159,
-            "end": 171,
+            "start": 209,
+            "end": 221,
             "text": "contar_altos",
             "role": "cpp"
           },
           {
-            "start": 283,
-            "end": 292,
+            "start": 279,
+            "end": 291,
+            "text": "contar_altos",
+            "role": "cpp"
+          },
+          {
+            "start": 358,
+            "end": 367,
             "text": "acumulado",
+            "role": "cpp"
+          },
+          {
+            "start": 395,
+            "end": 401,
+            "text": "return",
             "role": "cpp"
           }
         ]
@@ -2468,11 +2654,11 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "7eb9ef67e9cf1a1385a8c3cade927cb4476f72eaba1cc5624e5fc0689df04550",
+        "sourceSha256": "0b77ece7b0868a29dfb782f96ff428f9fbd5b155bd3937083f0b99bd5f2e1321",
         "spans": [
           {
-            "start": 80,
-            "end": 89,
+            "start": 94,
+            "end": 103,
             "text": "acumulado",
             "role": "cpp"
           }
@@ -2636,41 +2822,41 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "72b6c38fe383236fc60bead08f352adada65c5cac1e8789384e8b85a28483eea",
+        "sourceSha256": "b7b9e1b3a9505061474af81e4db0609865e6303c12f3599eb32bc995cddb1629",
         "spans": [
           {
-            "start": 57,
-            "end": 69,
+            "start": 98,
+            "end": 99,
+            "text": "2",
+            "role": "data"
+          },
+          {
+            "start": 129,
+            "end": 141,
             "text": "{0, 2, 6, 9}",
             "role": "data"
           },
           {
-            "start": 81,
-            "end": 82,
-            "text": "2",
+            "start": 164,
+            "end": 172,
+            "text": "2, 6 y 9",
             "role": "data"
           },
           {
-            "start": 97,
-            "end": 103,
+            "start": 223,
+            "end": 229,
             "text": "{0, 1}",
             "role": "data"
           },
           {
-            "start": 115,
-            "end": 116,
-            "text": "2",
-            "role": "data"
-          },
-          {
-            "start": 137,
-            "end": 140,
+            "start": 317,
+            "end": 320,
             "text": "3:0",
             "role": "output"
           },
           {
-            "start": 171,
-            "end": 174,
+            "start": 472,
+            "end": 475,
             "text": "3:3",
             "role": "output"
           }
@@ -2679,13 +2865,19 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "a8cf9fab289f6ad4ff1a0081f17b504b6f605b142a44cfd67e99806bf600e15d",
+        "sourceSha256": "2eb9a502268dfa52b33f6f5f0ac3a6948391cb0801a0aa462d5dcbe75e5c9f47",
         "spans": [
           {
-            "start": 50,
-            "end": 51,
+            "start": 392,
+            "end": 393,
             "text": "3",
             "role": "output"
+          },
+          {
+            "start": 690,
+            "end": 722,
+            "text": "(Kernighan & Pike, 1999, p. 124)",
+            "role": "citation"
           }
         ]
       },
@@ -2947,35 +3139,35 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "0cc71f1067555be93c44134a3af6de14b3efa6678caa3f26c04444247605e6f1",
+        "sourceSha256": "57ad97fb130eb27be6a720b592d8750109c69b1046b1675f32ccca7847ec7947",
         "spans": [
           {
-            "start": 54,
-            "end": 63,
+            "start": 260,
+            "end": 269,
             "text": "acumulado",
             "role": "cpp"
           },
           {
-            "start": 128,
-            "end": 131,
+            "start": 306,
+            "end": 309,
             "text": "{2}",
             "role": "data"
           },
           {
-            "start": 142,
-            "end": 144,
+            "start": 320,
+            "end": 322,
             "text": "{}",
             "role": "data"
           },
           {
-            "start": 246,
-            "end": 248,
+            "start": 431,
+            "end": 433,
             "text": "{}",
             "role": "data"
           },
           {
-            "start": 259,
-            "end": 262,
+            "start": 444,
+            "end": 447,
             "text": "{2}",
             "role": "data"
           }
@@ -3101,7 +3293,7 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "fa7f4be993559f44ba327438bae523692760b6639b9c2bbb2c3c5583e4128a64",
+        "sourceSha256": "9fb54b89729aab08a5d19430882906dbe27038122384e2837973d0e2b018b794",
         "spans": []
       },
       {
@@ -3113,23 +3305,23 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "9751d85995d52607b61b61013da799523a30ca698b1e2b63c0c294e53c059fe5",
+        "sourceSha256": "b6971d32fa0cdf2a78162c98d4d46ad06bce60e86aeb8b0a242f9d92fd43a6bb",
         "spans": [
           {
-            "start": 7,
-            "end": 19,
+            "start": 31,
+            "end": 43,
             "text": "contar_altos",
             "role": "cpp"
           },
           {
-            "start": 109,
-            "end": 111,
+            "start": 134,
+            "end": 136,
             "text": ">=",
             "role": "cpp"
           },
           {
-            "start": 136,
-            "end": 140,
+            "start": 162,
+            "end": 166,
             "text": "main",
             "role": "cpp"
           }
@@ -3138,53 +3330,83 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "9830a23eab591fe92f45a67e1c2370b402377d0f340703aca450bd72d7d0f7f0",
+        "sourceSha256": "8ef06c32767107ccc37810cc293972919ea5b3ca6ca1e351530b6fb4a99efc28",
         "spans": [
           {
-            "start": 93,
-            "end": 103,
-            "text": "Minimo:1:0",
-            "role": "output"
-          },
-          {
-            "start": 128,
-            "end": 137,
-            "text": "{8, 1, 5}",
+            "start": 115,
+            "end": 118,
+            "text": "{2}",
             "role": "data"
           },
           {
-            "start": 149,
-            "end": 150,
-            "text": "5",
+            "start": 120,
+            "end": 128,
+            "text": "mínimo 2",
             "role": "data"
           },
           {
-            "start": 152,
+            "start": 156,
             "end": 158,
-            "text": "{6, 7}",
-            "role": "data"
-          },
-          {
-            "start": 170,
-            "end": 171,
-            "text": "5",
-            "role": "data"
-          },
-          {
-            "start": 175,
-            "end": 177,
             "text": "{}",
             "role": "data"
           },
           {
-            "start": 189,
-            "end": 190,
-            "text": "9",
+            "start": 160,
+            "end": 168,
+            "text": "mínimo 2",
             "role": "data"
           },
           {
-            "start": 201,
-            "end": 212,
+            "start": 238,
+            "end": 248,
+            "text": "Minimo:1:0",
+            "role": "output"
+          },
+          {
+            "start": 251,
+            "end": 260,
+            "text": "{8, 1, 5}",
+            "role": "data"
+          },
+          {
+            "start": 262,
+            "end": 270,
+            "text": "mínimo 5",
+            "role": "data"
+          },
+          {
+            "start": 280,
+            "end": 285,
+            "text": "8 y 5",
+            "role": "data"
+          },
+          {
+            "start": 287,
+            "end": 293,
+            "text": "{6, 7}",
+            "role": "data"
+          },
+          {
+            "start": 295,
+            "end": 303,
+            "text": "mínimo 5",
+            "role": "data"
+          },
+          {
+            "start": 349,
+            "end": 351,
+            "text": "{}",
+            "role": "data"
+          },
+          {
+            "start": 353,
+            "end": 361,
+            "text": "mínimo 9",
+            "role": "data"
+          },
+          {
+            "start": 436,
+            "end": 447,
             "text": "Nuevo:2:2:0",
             "role": "output"
           }
@@ -3193,11 +3415,11 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "3c7d52f55a203142ced740d732235dae6f06eb3ad8244432be086bd39a279f1b",
+        "sourceSha256": "ad3a9ec6c44509dcb9b11497b8a0538eac879582d3213dc87cb298f3814c00e4",
         "spans": [
           {
-            "start": 337,
-            "end": 341,
+            "start": 412,
+            "end": 416,
             "text": "main",
             "role": "cpp"
           }
@@ -3224,29 +3446,35 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "54168192c00f04b906090e0c4b8e5fb310044b48c2aa3f7c336530ce1241e407",
+        "sourceSha256": "915a98ec6956b71bd85f89ee0e2fb06b317f9cfd337620362f24db5971c99a70",
         "spans": [
           {
-            "start": 0,
-            "end": 8,
+            "start": 22,
+            "end": 30,
             "text": "cantidad",
             "role": "cpp"
           },
           {
-            "start": 41,
-            "end": 53,
+            "start": 52,
+            "end": 64,
             "text": "contar_altos",
             "role": "cpp"
           },
           {
-            "start": 250,
-            "end": 260,
+            "start": 446,
+            "end": 450,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 460,
+            "end": 470,
             "text": "Minimo:1:0",
             "role": "output"
           },
           {
-            "start": 287,
-            "end": 298,
+            "start": 497,
+            "end": 508,
             "text": "Nuevo:2:2:0",
             "role": "output"
           }
@@ -3255,11 +3483,11 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "1884ecf50100177e4cdd57046b88430f9ba002e88f5e3a1cb30178db7aaf2d9e",
+        "sourceSha256": "e4c7d86fd1213ef1f441cdcc66c462654e6210fce3a3fe3f9e669d6d71f8073a",
         "spans": [
           {
-            "start": 115,
-            "end": 116,
+            "start": 150,
+            "end": 151,
             "text": "0",
             "role": "output"
           }
@@ -3322,8 +3550,45 @@
       {
         "block": "block_0007_0006",
         "path": "/text",
-        "sourceSha256": "d8cd559fb726ee7d30512d64be8b586652f8ded25897d6fb92ff7d1836d239f7",
-        "spans": []
+        "sourceSha256": "1f42c4015a41596b9a7bfd85fa5f3549b4362fa58d4e0f8748a9e25ed35848ca",
+        "spans": [
+          {
+            "start": 109,
+            "end": 115,
+            "text": "{6, 7}",
+            "role": "data"
+          },
+          {
+            "start": 134,
+            "end": 143,
+            "text": "{8, 1, 5}",
+            "role": "data"
+          },
+          {
+            "start": 411,
+            "end": 412,
+            "text": "2",
+            "role": "output"
+          },
+          {
+            "start": 457,
+            "end": 467,
+            "text": "Minimo:1:0",
+            "role": "output"
+          },
+          {
+            "start": 494,
+            "end": 505,
+            "text": "Nuevo:2:2:0",
+            "role": "output"
+          },
+          {
+            "start": 689,
+            "end": 693,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
       },
       {
         "block": "block_0007_0007",
@@ -3340,11 +3605,17 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "6a5ae9c1963877b37c26784932482c334432e92096970aa3128926e4a7aae722",
+        "sourceSha256": "f1b6ecb37b3584985ae82db6405414f95ca178bccd85b33bd01cd5d5de3a629c",
         "spans": [
           {
-            "start": 95,
-            "end": 98,
+            "start": 70,
+            "end": 83,
+            "text": "datos.empty()",
+            "role": "cpp"
+          },
+          {
+            "start": 138,
+            "end": 141,
             "text": "1:0",
             "role": "output"
           }
@@ -3476,7 +3747,7 @@
       {
         "block": "block_0008_0004",
         "path": "/text",
-        "sourceSha256": "7b0e0902251b855f5867fda5fb6bfa2cdd102b6dda7f2799ce89dff3328bcf3d",
+        "sourceSha256": "c178d6a7bf909097bb288f20ef15e4c312414ef8b5beecfea5c91cc26f0b4ce6",
         "spans": []
       },
       {
@@ -3501,19 +3772,25 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "49eb1cab04840aba3f2fc0be5f31503fbfb29a33a5a2a828eb1f35afefe0639f",
+        "sourceSha256": "6ce173f7c337ee1371630c05cf82f4369605fa27fdbb41b1ace32014a461ffd5",
         "spans": [
           {
-            "start": 101,
-            "end": 117,
+            "start": 110,
+            "end": 126,
             "text": "registrar_visita",
             "role": "cpp"
           },
           {
-            "start": 269,
-            "end": 277,
+            "start": 353,
+            "end": 361,
             "text": "1, 2 y 3",
             "role": "output"
+          },
+          {
+            "start": 544,
+            "end": 556,
+            "text": "contar_altos",
+            "role": "cpp"
           }
         ]
       },
@@ -3612,8 +3889,15 @@
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "bfd4c15d885fe4c876f786422985a1f41cd2ea4b7c08cc326666ac8b95c490a0",
-        "spans": []
+        "sourceSha256": "900ea6afa56ff8763cce7d932ba5eb0758e8eb723c9c545ac1adad2133f212ac",
+        "spans": [
+          {
+            "start": 194,
+            "end": 206,
+            "text": "contar_altos",
+            "role": "cpp"
+          }
+        ]
       }
     ],
     "rootFields": [

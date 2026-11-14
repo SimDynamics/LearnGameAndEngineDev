@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya distingues configurar, construir y ejecutar; también conservas una batería con resultados esperados independientes. Ahora incorporarás otra fuente de evidencia: los avisos que produce el compilador al analizar el código. Atenderlos puede ahorrar una investigación posterior; ignorarlos porque existe un ejecutable desperdicia información. Tampoco un compilador sin avisos puede demostrar todas las propiedades del programa (Kernighan & Pike, 1999, pp. 118, 120; Thomas & Hunt, 2020, pp. 90, 92)."
+          "text": "Al compilar, la herramienta puede aceptar el programa y también emitir un aviso: un mensaje que señala una construcción del código que conviene revisar. Producir un ejecutable no significa que debamos ignorar esos mensajes.\n\nAtender los avisos puede ayudar a encontrar un error antes de investigar su resultado durante la ejecución. Sin embargo, la ausencia de avisos tampoco demuestra que el programa cumpla todo su contrato. Conservaremos las pruebas con esperados independientes y compararemos ambas observaciones (Kernighan & Pike, 1999; Thomas & Hunt, 2020)."
         },
         {
           "type": "paragraph",
-          "text": "En C++, 0 <= dato <= 20 se agrupa como (0 <= dato) <= 20. Primero se calcula 0 <= dato. Al compararlo después con 20, el resultado false se convierte en 0 y true en 1: cualquiera de esos dos enteros es menor o igual que veinte. Por eso la condición final es verdadera incluso para valores exteriores al intervalo.\n\nLos paréntesis del proyecto hacen visible ese agrupamiento; no cambian su significado. La expresión es válida en el lenguaje, pero incumple el contrato que queremos comprobar. El compilador puede advertir sobre ella; la presencia y el texto de ese diagnóstico dependen de las opciones y del compilador usados."
+          "text": "Queremos aceptar sólo cantidades entre cero y veinte, incluidos los extremos. La escritura `0 <= dato <= 20` no comprueba esas dos condiciones a la vez: C++ la agrupa como `(0 <= dato) <= 20`.\n\nPara una cantidad de menos uno, ocurre esto:\n1. `0 <= dato` da `false`.\n2. Al compararlo con el entero veinte, ese resultado lógico se convierte en cero.\n3. La segunda comparación comprueba `0 <= 20`, que da `true`.\n\nCon veintiuno, la primera comparación da `true`. Al convertirse en uno, la segunda comprueba `1 <= 20` y también da `true`. La expresión termina aceptando ambos valores exteriores (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nLos paréntesis del proyecto hacen visible ese agrupamiento; no lo corrigen. La expresión es válida en C++, pero no realiza la comprobación que necesitamos. Un compilador puede emitir un aviso sobre ella; qué mensaje aparece depende de sus opciones y de su versión."
         },
         {
           "type": "multiple_choice",
@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto utilizará la biblioteca cantidades, que compila cantidad.cpp, y el ejecutable comprobar_cantidad, que consume su función. Recupera esa separación antes de leer la descripción. target_compile_options añade opciones a la compilación de un objetivo existente; PRIVATE las aplica a ese objetivo sin convertirlas en requisitos de compilación para sus consumidores. No se trata de una opción de ejecución ni de un ajuste universal de CMake (Scott, 2025, p. 184)."
+          "text": "La biblioteca `cantidades` compila `cantidad.cpp`, donde está definida `cantidad_admitida`. El ejecutable `comprobar_cantidad` compila su propio cliente y utiliza esa biblioteca.\n\nLa orden `target_compile_options` añade opciones al compilar un objetivo que ya existe. En la llamada siguiente:\n`cantidades` identifica el objetivo que recibe las opciones.\n`PRIVATE` hace que se apliquen al compilar ese objetivo, sin transmitirlas como requisitos a sus consumidores.\nLos argumentos restantes son las opciones que se entregarán al compilador (Scott, 2025).\n\nPor eso deben aplicarse al objetivo que compila la definición que queremos revisar. No son datos que se proporcionen al programa cuando se ejecuta."
         },
         {
           "type": "code",
@@ -52,7 +52,7 @@
         },
         {
           "type": "paragraph",
-          "text": "-Wall -Wextra -Wpedantic es el conjunto de opciones que conserva este ejemplo para compiladores GCC o Clang. Las opciones de compilación suelen ser específicas del compilador: target_compile_options transmite los argumentos al objetivo, pero no los traduce a los de otro compilador (Scott, 2025, p. 184).\n\nEl Laboratorio CMake actual de Windows utiliza MSVC. La descripción inicial de esta actividad conserva aquellas opciones y necesita una adaptación compatible a ese perfil; no debe presentarse como un proyecto ya verificado con MSVC. Si la construcción rechaza una opción, todavía no has alcanzado la investigación de cantidad_admitida. Ese diagnóstico tampoco equivale al aviso sobre su expresión. Para comparar las variantes de la función hay que disponer primero de opciones admitidas y mantenerlas constantes durante las construcciones."
+          "text": "El ejemplo conserva `-Wall -Wextra -Wpedantic`, un conjunto de opciones para compiladores GCC o Clang. Esas opciones dependen del compilador. `target_compile_options` transmite los argumentos indicados; no los convierte a los de otra herramienta (Scott, 2025).\n\nEl Laboratorio de Windows utiliza MSVC. La descripción inicial conserva aquellas opciones y su adaptación a este perfil sigue pendiente. No hay que interpretar esa línea como una manera universal de pedir avisos.\n\nUn diagnóstico sobre una opción rechazada o ignorada no es un aviso sobre el cálculo de `cantidad_admitida`. Primero hay que contar con opciones admitidas por el compilador. Después se deben conservar las mismas opciones al comparar las revisiones de la función."
         },
         {
           "type": "multiple_choice",
@@ -81,15 +81,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Contrato: cantidad_admitida acepta cualquier valor representable por int y devuelve true exactamente para los enteros de 0 a 20, incluidos ambos extremos. No modifica estado externo. Los esperados se fijan antes de ejecutar: -1 debe rechazarse, 0 y 20 deben admitirse, y 21 debe rechazarse. Los valores exteriores detectan una condición que admita todo; los extremos comprueban que la inclusión no se pierda. Estos cuatro casos no agotan todos los enteros."
+          "text": "La función `cantidad_admitida` puede recibir cualquier valor representable por `int`. Debe devolver `true` exactamente para los enteros entre cero y veinte, incluidos los extremos, y `false` para los demás. No modifica datos externos.\n\nEl comprobador ya está escrito con estos casos:\nMenos uno → debe rechazarse.\nCero → debe admitirse.\nVeinte → debe admitirse.\nVeintiuno → debe rechazarse.\n\nLos valores exteriores permiten detectar una condición que acepta todo. Los extremos permiten detectar una comparación que excluye por error el cero o el veinte. Son comprobaciones concretas, no todos los valores de `int`."
         },
         {
           "type": "paragraph",
-          "text": "Antes de editar la función, pulsa «Configurar y generar» y construye comprobar_cantidad con opciones compatibles con el perfil utilizado. Lee el panel de Construcción, incluso si termina correctamente. Si aparece un diagnóstico de código, identifica el archivo, la línea y, cuando se indique, la columna; lee su categoría y su explicación junto con las líneas de contexto (Thomas & Hunt, 2020, p. 92).\n\nEl formato de esa localización y el texto del mensaje pueden cambiar entre compiladores. Investiga la expresión realmente citada: un mensaje sobre una opción de compilación no localiza por sí solo un defecto en cantidad.cpp. Tampoco conviertas un diagnóstico observado con GCC o Clang en una promesa sobre el mensaje de MSVC."
+          "text": "Antes de modificar la función, selecciona `comprobar_cantidad`, pulsa «Configurar y generar» y construye ese objetivo con opciones compatibles con el compilador utilizado.\n\nLee el panel de Construcción aunque el proceso termine correctamente. Para interpretar un diagnóstico, identifica:\nEl archivo al que se refiere.\nLa línea y, si se indica, la columna.\nLa categoría del mensaje y su explicación.\nLas líneas de código que lo acompañan (Thomas & Hunt, 2020).\n\nEl formato de esa información puede cambiar entre compiladores. Un mensaje sobre una opción no señala por sí solo un defecto en `cantidad.cpp`. Lee la expresión realmente citada y no supongas que MSVC emitirá el mismo mensaje observado con GCC o Clang."
         },
         {
           "type": "paragraph",
-          "text": "Cuando la construcción haya terminado correctamente, ejecuta su batería inicial. Contrasta los esperados y obtenidos de cada caso y distingue la terminación de construir de la de ejecutar. Repara únicamente la expresión devuelta en cantidad.cpp para respetar el contrato; conserva cantidad.hpp, comprobar.cpp, los esperados y las opciones compatibles utilizadas para el contraste.\n\nConstruye y ejecuta de nuevo para que ambos resultados correspondan a la fuente modificada. Revisa los diagnósticos reales y los cuatro casos, sin cambiar el acuerdo para conseguir un panel vacío. Utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Una vez construido el programa, ejecútalo y compara los esperados y obtenidos del comprobador. La terminación de esta ejecución pertenece al programa; no es el resultado anterior de construirlo.\n\nRepara únicamente la expresión devuelta en `cantidad.cpp`. Conserva `cantidad.hpp`, `comprobar.cpp`, sus datos y esperados y las opciones compatibles utilizadas para el contraste. La actividad modifica la función con un comprobador dado; no pide construir una batería nueva.\n\nDespués reconstruye y ejecuta la revisión modificada. Utiliza «Compilar, ejecutar y comprobar» para contrastar su salida. Revisa por separado los mensajes de construcción y los resultados del programa: eliminar un aviso no sustituye comprobar el comportamiento."
         },
         {
           "type": "cpp_compiler",
@@ -140,7 +140,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia de cantidad.cpp une las dos comparaciones completas. El extremo 20 forma parte del contrato; no basta con que algunos valores interiores funcionen."
+          "text": "La referencia de `cantidad.cpp` combina dos comparaciones sobre el mismo dato. Una controla el límite inferior y otra el superior. El contrato incluye ambos extremos; aceptar algunos valores del interior no basta para comprobar esa inclusión."
         },
         {
           "type": "code",
@@ -149,7 +149,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia comprueba los dos límites sobre dato y combina sus resultados. Para -1 falla el límite inferior; para 21 falla el superior; 0 y 20 satisfacen ambos. Por eso las cuatro filas de esta construcción deben coincidir con los esperados conservados.\n\nLa comparación de un resultado booleano con veinte ha desaparecido del código. Comprueba por separado si desaparece el diagnóstico correspondiente en el perfil que lo produjo; lee cualquier otro mensaje antes de atribuirle la misma causa. Registrar la ausencia de aquel aviso en una construcción concreta no demuestra la ausencia de otros defectos (Kernighan & Pike, 1999, p. 120)."
+          "text": "La referencia exige que `dato` sea mayor o igual que cero y menor o igual que veinte:\nPara menos uno, falla la condición del límite inferior.\nPara veintiuno, falla la del límite superior.\nCero y veinte cumplen ambas.\n\nPor eso esos resultados coinciden con los esperados del comprobador. Ya no se utiliza el resultado lógico de una comparación como la cantidad que se compara con veinte.\n\nSi un compilador había emitido un aviso por la expresión anterior, comprueba si desaparece al reconstruir esta revisión. Lee por separado cualquier otro mensaje: no tiene por qué proceder de la misma causa. La ausencia de aquel aviso no demuestra que no haya otros errores (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -178,7 +178,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Regresa al mismo editor de código. Tras comprobar tu reparación, sustituye sólo la expresión devuelta por dato >= 0 && dato < 20. Conserva los cuatro esperados y las opciones de compilación utilizadas. Construye y vuelve a ejecutar; compara cada fila con la reparación inclusiva. La nueva expresión ya no compara un resultado booleano con veinte. Aunque deje de aparecer aquel aviso, falta comprobar si respeta ambos extremos."
+          "text": "Como ensayo adicional opcional, vuelve al mismo editor y cambia sólo la expresión devuelta por `dato >= 0 && dato < 20`. Conserva los esperados y las opciones utilizadas. Construye y ejecuta esa variante.\n\nObserva especialmente el resultado para veinte y compáralo con la reparación que incluía ese extremo. La variante ya no compara un resultado lógico con veinte. Aunque no produzca aquel aviso, todavía hay que revisar si cumple el contrato."
         },
         {
           "type": "code",
@@ -187,7 +187,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la entrada 20, el contrato exige true y esta variación devuelve false. El comprobador termina con 1 aunque la construcción haya terminado con 0: son estados de fases distintas. El compilador no conoce el acuerdo de incluir veinte sólo por ver una comparación válida.\n\nRestaura la reparación inclusiva, construye y ejecuta esa versión final. Comprueba otra vez los cuatro casos y el resumen Bateria: OK con terminación 0. La variante deliberadamente incorrecta sirve para contrastar evidencias; después queda restaurado el programa que cumple el acuerdo."
+          "text": "Con veinte, el contrato exige `true`, pero la variante con el límite estricto devuelve `false`. Esa discrepancia hace que el comprobador termine con código uno, aunque la construcción haya terminado con cero. Los dos códigos pertenecen a fases distintas.\n\nEl compilador puede aceptar una comparación válida sin saber que nuestro requisito incluye veinte. Por eso la ausencia del aviso anterior no sustituye ese caso de prueba.\n\nSi realizaste el ensayo opcional, restaura después la reparación que incluye ambos extremos, reconstruye y comprueba esa revisión. El programa de referencia vuelve a mostrar `Bateria: OK` y termina con cero."
         },
         {
           "type": "multiple_choice",
@@ -216,7 +216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Responde a los puzzles siguientes utilizando las evidencias de la investigación: fuente, objetivo y perfil usados, diagnóstico con localización y texto, casos con esperados, y resultados de construir y ejecutar. «Compila bien» o «falló» no distingue esas evidencias ni permite atribuir el resultado a una construcción concreta."
+          "text": "Para interpretar la investigación, distingue qué información aporta cada parte:\nLa fuente y las opciones identifican qué se construyó.\nEl diagnóstico dirige la atención a una opción o a un lugar concreto del código.\nLos casos y esperados indican qué resultados se debían obtener.\nLa ejecución muestra cuáles produjo esa construcción.\n\nDecir sólo «compila bien» o «falló» no aclara qué fase se observó ni qué parte del acuerdo se comprobó. Los puzzles siguientes recuperan esas diferencias."
         },
         {
           "type": "multiple_choice",
@@ -237,7 +237,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Atender los avisos y conservar observaciones precisas ayuda a investigar un fallo reproducible (Thomas & Hunt, 2020, p. 90). En este proyecto, la expresión citada y las discrepancias exteriores orientan una reparación. La variación del extremo muestra el límite de esa evidencia: puede carecer de aquel aviso y seguir incumpliendo el contrato. Conserva los diagnósticos pertinentes y los casos que permiten distinguir los comportamientos."
+          "text": "Leer los avisos y precisar las observaciones ayuda a investigar un fallo que se puede reproducir (Thomas & Hunt, 2020). En este ejemplo, la expresión citada y los resultados de las cantidades exteriores orientan hacia el cálculo incorrecto.\n\nLa variante que excluye veinte muestra por qué siguen haciendo falta los esperados: puede dejar de producir el aviso anterior y devolver un resultado que incumple el requisito. Conserva tanto los mensajes pertinentes como los casos que permiten detectar esa diferencia."
         },
         {
           "type": "multiple_choice",
@@ -987,6 +987,76 @@
         "id": "block_0005_0003",
         "beforeSha256": "12200134f5c28b069fe176069d18710d4bbfd47d6f24a105bd93aaeb558e6a1f",
         "afterSha256": "73616267354292f2f661a1a7cea96c5cd740226291edf524c6c0c993ba65ac50"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0b41c0a8859d45bae3d5f00c527435e9b01c4693a956ac85ab99d655716fea8c",
+        "afterSha256": "70df8b19ddd61e0064050438e6b0bf931e94351e703e457487a0242dd89447c4"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "62647ff9519e509810d7678efd303c391f97a9dee39a48320d0bdd41ed40a7e5",
+        "afterSha256": "e3f970635574b1903d4386f5db294d280c3d3d84e9d7b0136a84f7628dc35c1d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "86dcfdcd7db2109482fecd883e87626a6b20e8c26fd83e8cb01292989436b152",
+        "afterSha256": "6779fab8e502e60c12056bf57e34ec873ea4bc74b6e27f6d287be2cbf0925c64"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "6578ee537678b8ea846d3356e87a0b32c9ffeb5bf078670911e114ceedd18470",
+        "afterSha256": "2024248f11bcff1d0cab3549280872bd0a3e5ad8acb8619cd0147f5d8d4ab3ab"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "aa7d47a7c5c0d92f3b261ff9e824262f2803d47fb30a1d383f34c7edea253aca",
+        "afterSha256": "cf20c31e5053ae5e3fce36d2bf60e18758e517dcf9221a3615eecee40bc90153"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "539146e205002d0146d33073ba986bfbf1babcb3168815af9ec7b3bf4101e520",
+        "afterSha256": "bdbfaa8283b083da0c9cf83281c527508ef33cdb12ed05c21f2910715ecb55ed"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "c49e0aed818317364ce51284c56b1bdc926b99fd5af6d46c4ec4c3d80d98a009",
+        "afterSha256": "6817b5337ef1ff01ccfa728ffa87b32b89532de8185bf619f653cea76a54ffbc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "b52ea7320aaea9c6fda0ef439386d8da15b2f05b0e03c22b0b0dc24437726ff8",
+        "afterSha256": "5588cb497ac6dd708d44084b431068abca1f4cb5058af06cd013c13cbacb6f44"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "99b0bf86641ef3c88b70d9ece0e5f7c4c8ac37638a2ce80608538daefca74597",
+        "afterSha256": "3bc8cd463496ba0b5f7fd7ad3fe7f07b4dfb64bd76926f6b67ffcc15132b86e5"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "8e29288bfcc9778b09ca9d1edb2350da7b0c3cca8ad310eeba6a46ccc99be8ff",
+        "afterSha256": "2ed8055f3cd35640588bbf2a49458c92b2a558ace29b09e9ea50e274e323f147"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "f6364e6621a352664dbb131648d8a10b92f719ad4035a39250e9c4eff9b2ff64",
+        "afterSha256": "410f6a9a32671383b285d37653882263135417175ed6ec0fa8d54f3109f75865"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "e80dfa4ab66f98d769b46c74d42336e77e831c3b95e2ccae6ce00a5adc33ba35",
+        "afterSha256": "632346e8d92ae557b05783e0a33a0bf2133f0458ce5f812b152349ee14b956fb"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "73616267354292f2f661a1a7cea96c5cd740226291edf524c6c0c993ba65ac50",
+        "afterSha256": "a49f2b995cc1174666ebbfd5831c07a5744ef19ad481bdc547be9d3dd079bd4a"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e3f970635574b1903d4386f5db294d280c3d3d84e9d7b0136a84f7628dc35c1d",
+        "afterSha256": "70f4b321f6b88349c3580bc35a619f637f1c94d3ebc669f6c72e788ccaee9026"
       }
     ]
   },
@@ -1002,12 +1072,12 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "a883949c5c5989549338993213f76d9f923a72358b5a64c8a4e97685f18eded7",
+        "sourceSha256": "72cd68d72dfc2ec2331cc0917bc5cf2ffedd038c7ce5fede830792ebdb092dba",
         "spans": [
           {
-            "start": 426,
-            "end": 497,
-            "text": "(Kernighan & Pike, 1999, pp. 118, 120; Thomas & Hunt, 2020, pp. 90, 92)",
+            "start": 517,
+            "end": 562,
+            "text": "(Kernighan & Pike, 1999; Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1016,62 +1086,111 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "ffb633969a717f5288870755508187b0e4289554be26dba0294dc71f78c6139e",
+        "sourceSha256": "e3339281ce2fbf2c910f5976c2bfddd0897282f65f6b753fded5894f1526ee92",
         "spans": [
           {
-            "start": 8,
-            "end": 23,
+            "start": 39,
+            "end": 52,
+            "text": "cero y veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 107,
             "text": "0 <= dato <= 20",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 39,
-            "end": 56,
+            "start": 173,
+            "end": 190,
             "text": "(0 <= dato) <= 20",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 77,
-            "end": 86,
+            "start": 215,
+            "end": 224,
+            "text": "menos uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 243,
+            "end": 252,
             "text": "0 <= dato",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 116,
-            "text": "20",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 131,
-            "end": 136,
+            "start": 258,
+            "end": 263,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 153,
-            "end": 154,
-            "text": "0",
+            "start": 342,
+            "end": 346,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 161,
+            "start": 385,
+            "end": 392,
+            "text": "0 <= 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 403,
+            "end": 407,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 166,
-            "text": "1",
+            "start": 415,
+            "end": 424,
+            "text": "veintiuno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 453,
+            "end": 457,
+            "text": "true",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 481,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 505,
+            "end": 512,
+            "text": "1 <= 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 528,
+            "end": 532,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 591,
+            "end": 624,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -1148,47 +1267,61 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "2fdddbeea160a253f9bbf1162d18418148d7839ecc222c1e7a486f9da38ffa29",
+        "sourceSha256": "3ac933b02def8a6d8ed4dcff6c6d49197f0093a8e39af61dd19436f8335ddf3b",
         "spans": [
           {
-            "start": 36,
-            "end": 46,
+            "start": 15,
+            "end": 25,
             "text": "cantidades",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 72,
+            "start": 36,
+            "end": 48,
             "text": "cantidad.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 108,
+            "start": 72,
+            "end": 89,
+            "text": "cantidad_admitida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 125,
             "text": "comprobar_cantidad",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 210,
+            "start": 190,
+            "end": 212,
             "text": "target_compile_options",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 269,
-            "end": 276,
+            "start": 294,
+            "end": 304,
+            "text": "cantidades",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 355,
+            "end": 362,
             "text": "PRIVATE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 446,
-            "end": 467,
-            "text": "(Scott, 2025, p. 184)",
+            "start": 539,
+            "end": 552,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1197,32 +1330,32 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "01ca4e7e722be88dd5e5146a3c2b40c18f93d0e2a1f7fa9079ebea2bd817e64a",
+        "sourceSha256": "440928927f78039c730d60fb6941fd180ad216512e0a88a47dc9d27f4ed39bb7",
         "spans": [
           {
-            "start": 0,
-            "end": 24,
+            "start": 21,
+            "end": 45,
             "text": "-Wall -Wextra -Wpedantic",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 198,
+            "start": 143,
+            "end": 165,
             "text": "target_compile_options",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 282,
-            "end": 303,
-            "text": "(Scott, 2025, p. 184)",
+            "start": 246,
+            "end": 259,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 623,
-            "end": 640,
+            "start": 565,
+            "end": 582,
             "text": "cantidad_admitida",
             "role": "cpp",
             "reading": "technical"
@@ -1354,69 +1487,76 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "d383a4989b3b3054cc727d239ba719c2791f311e90bafc350d1b15aa0e1b3729",
+        "sourceSha256": "90ae9cea7acb397d88ef680581abb9149005763758bdeffbec5602b3a8c8fb0e",
         "spans": [
           {
-            "start": 10,
-            "end": 27,
+            "start": 12,
+            "end": 29,
             "text": "cantidad_admitida",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 72,
+            "start": 80,
+            "end": 83,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 84,
-            "end": 88,
+            "start": 101,
+            "end": 105,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 121,
-            "end": 122,
-            "text": "0",
+            "start": 142,
+            "end": 155,
+            "text": "cero y veinte",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 125,
-            "end": 127,
-            "text": "20",
-            "role": "data",
-            "reading": "technical"
+            "start": 184,
+            "end": 189,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 225,
-            "end": 227,
-            "text": "-1",
+            "start": 284,
+            "end": 293,
+            "text": "Menos uno",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 246,
-            "text": "0",
+            "start": 313,
+            "end": 317,
+            "text": "Cero",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 249,
-            "end": 251,
-            "text": "20",
+            "start": 336,
+            "end": 342,
+            "text": "Veinte",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 271,
-            "end": 273,
-            "text": "21",
+            "start": 361,
+            "end": 370,
+            "text": "Veintiuno",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 608,
+            "end": 611,
+            "text": "int",
+            "role": "cpp",
             "reading": "technical"
           }
         ]
@@ -1424,25 +1564,25 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "f7ca3b677648cf95e6ee54877e3506b3d2b00d9bbac0bd5fc6853191606cd143",
+        "sourceSha256": "cc952774501fccb3be446919d895fe1653c8a4878648cf3b92a5200fc939cf8a",
         "spans": [
           {
-            "start": 69,
-            "end": 87,
+            "start": 43,
+            "end": 61,
             "text": "comprobar_cantidad",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 372,
-            "end": 400,
-            "text": "(Thomas & Hunt, 2020, p. 92)",
+            "start": 437,
+            "end": 458,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 614,
-            "end": 626,
+            "start": 590,
+            "end": 602,
             "text": "cantidad.cpp",
             "role": "data",
             "reading": "technical"
@@ -1452,25 +1592,25 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "3493488c7fef760e78fa042b74ae263ede05defb9fe5c047354396bdf9428592",
+        "sourceSha256": "dd5c209a0aa7e1a4b235ebcb5f73a41345e34eab64a248a80390aef14020c98d",
         "spans": [
           {
-            "start": 232,
-            "end": 244,
+            "start": 240,
+            "end": 252,
             "text": "cantidad.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 281,
-            "end": 293,
+            "start": 265,
+            "end": 277,
             "text": "cantidad.hpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 295,
-            "end": 308,
+            "start": 281,
+            "end": 294,
             "text": "comprobar.cpp",
             "role": "data",
             "reading": "technical"
@@ -1535,19 +1675,12 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "5fbf17c5a4a19e8237170fe13cfd837efc79289221abaf5e5d8084a268b6c939",
+        "sourceSha256": "5052256564b2b00089a593681f32953dd3d25f4e899adade821dc54c32bf301b",
         "spans": [
           {
-            "start": 19,
-            "end": 31,
+            "start": 18,
+            "end": 30,
             "text": "cantidad.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 80,
-            "end": 82,
-            "text": "20",
             "role": "data",
             "reading": "technical"
           }
@@ -1556,47 +1689,40 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "3a7e71ee3d89f3c97cebbd5bae46f84427cf8ed59f29d3579a3775847845094a",
+        "sourceSha256": "2315a9adc5207556298c2d99a4ebe43a44e2320041a86ade0117b4f204a35d8a",
         "spans": [
           {
-            "start": 46,
-            "end": 50,
+            "start": 25,
+            "end": 29,
             "text": "dato",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 84,
-            "text": "-1",
+            "start": 91,
+            "end": 100,
+            "text": "menos uno",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 116,
-            "end": 118,
-            "text": "21",
+            "start": 147,
+            "end": 156,
+            "text": "veintiuno",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 138,
-            "end": 139,
-            "text": "0",
+            "start": 188,
+            "end": 201,
+            "text": "Cero y veinte",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 142,
-            "end": 144,
-            "text": "20",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 605,
-            "end": 637,
-            "text": "(Kernighan & Pike, 1999, p. 120)",
+            "start": 661,
+            "end": 685,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1718,68 +1844,75 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "a5ab1b4df4dc56ed278ea15fd53e978d2b2676a86cd24794bc07cc385e6d9930",
+        "sourceSha256": "3cf1ee2bea0359f5f99054085266d07cfb3186532455bba12d0fc3aa6a6cef3f",
         "spans": [
           {
-            "start": 106,
-            "end": 128,
+            "start": 96,
+            "end": 118,
             "text": "dato >= 0 && dato < 20",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 252,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "5c857b0217c3950081c5769529f2b55d72a2bf75b8227fdd96cb0163e12e1114",
+        "sourceSha256": "bf7095cd0e510b6a0ac4d190c334eb67a0a57ec928140c4aee52a278e62f7967",
         "spans": [
           {
-            "start": 16,
-            "end": 18,
-            "text": "20",
+            "start": 4,
+            "end": 10,
+            "text": "veinte",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 42,
+            "start": 31,
+            "end": 35,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 69,
-            "end": 74,
+            "start": 88,
+            "end": 93,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 104,
-            "text": "1",
+            "start": 156,
+            "end": 159,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 147,
-            "end": 148,
-            "text": "0",
+            "start": 203,
+            "end": 207,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 395,
-            "end": 406,
+            "start": 603,
+            "end": 614,
             "text": "Bateria: OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 423,
-            "end": 424,
-            "text": "0",
+            "start": 630,
+            "end": 634,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -1873,7 +2006,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "740f5b1e36a10ea5e93603395ada57fe19fa7f8efc13615f5dbd42cd67bca4ad",
+        "sourceSha256": "0ca015d89df5e04b1c3b011e9476ea5aa448914f5c264fb28dcaa1e6ede74a48",
         "spans": []
       },
       {
@@ -2037,12 +2170,12 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "1d259f7dc8586a7cd7b3e2c6151b3b4049de0922a92697e5cb3027d87adac852",
+        "sourceSha256": "b781ea3bd1d5b689e3736fef1976a8eba77309431d7455f76a4e33fbf8948f2c",
         "spans": [
           {
-            "start": 95,
-            "end": 123,
-            "text": "(Thomas & Hunt, 2020, p. 90)",
+            "start": 97,
+            "end": 118,
+            "text": "(Thomas & Hunt, 2020)",
             "role": "citation",
             "reading": "natural"
           }

@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya construiste cajas_para para cantidades de piezas entre 0 y 20, ambos incluidos. Exigir ese intervalo antes de llamarla es una precondición: una condición que su cliente debe cumplir para obtener el resultado prometido. El acuerdo anterior no establecía qué debía hacer fuera de ese dominio.\n\nAhora una función nueva recibirá cualquier int, decidirá si la cantidad está permitida y sólo entonces llamará al cálculo conocido. Actuará como adaptador entre las peticiones del cliente y la función anterior. Recuperas bool e int& de C++ 1; el trabajo nuevo es acordar qué comunica cada uno y cómo debe usarlos el cliente."
+          "text": "La función `cajas_para` ya calcula el mínimo de cajas de cuatro plazas, pero su acuerdo exige que la cantidad de piezas esté entre cero y veinte, incluidos los extremos. El programa que la llama debe cumplir esa condición antes de utilizarla. A una condición exigida antes de la llamada la llamamos precondición (Thomas & Hunt, 2020).\n\nEl acuerdo anterior no indicaba qué debía hacer `cajas_para` fuera de ese intervalo. Ahora construiremos otra función que sí admita recibir cualquier `int`: comprobará la cantidad y sólo llamará a `cajas_para` si está permitida. Si no lo está, comunicará el rechazo.\n\nEsa nueva función actúa como adaptador: recibe las peticiones del cliente y decide cuáles puede entregar al cálculo anterior. Recuperaremos `bool` y las referencias de C++ para separar la aceptación de la cantidad de cajas calculada."
         },
         {
           "type": "code",
@@ -19,7 +19,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Contrato de intentar_cajas: si piezas está entre 0 y 20, ambos incluidos, devuelve true y escribe en resultado el mínimo de cajas de cuatro plazas. Cero piezas es una petición válida y produce cero cajas. Fuera de ese intervalo devuelve false y conserva exactamente el valor anterior de resultado. La función no imprime ni termina el programa.\n\nEstas promesas sobre el retorno y el destino después de la llamada son sus postcondiciones. El bool indica aceptación o rechazo; la referencia permite entregar un resultado numérico al cliente. Conservar el destino al rechazar es una decisión explícita de este contrato, no una regla de todas las funciones. Al diseñar una interfaz hay que precisar sus efectos sobre los datos del cliente y cómo comunica los errores (Kernighan & Pike, 1999, pp. 105, 111–112)."
+          "text": "La declaración presenta dos maneras de comunicar información:\nEl retorno `bool` indica si la petición fue aceptada.\nEl parámetro `int& resultado` permite escribir la cantidad de cajas en la variable entera que proporciona el cliente. Llamaremos destino a esa variable.\n\nEl contrato de `intentar_cajas` es el siguiente:\nCon una cantidad entre cero y veinte piezas, incluidos los extremos, devuelve `true` y escribe en el destino el mínimo de cajas de cuatro plazas. Cero piezas es una petición válida que necesita cero cajas.\nCon cualquier cantidad fuera del intervalo, devuelve `false` y conserva exactamente el valor que tenía el destino antes de la llamada.\nLa función no imprime mensajes ni termina el programa.\n\nLas promesas sobre el retorno y el valor del destino después de la llamada son sus postcondiciones (Thomas & Hunt, 2020). Aquí conservar el destino al rechazar es una decisión del contrato; no es una propiedad automática de cualquier función con referencias. Una interfaz debe precisar esos efectos sobre los datos del cliente y cómo comunica el rechazo (Kernighan & Pike, 1999)."
         },
         {
           "type": "multiple_choice",
@@ -48,7 +48,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El parámetro int& resultado permite modificar el objeto entero que el cliente proporciona en la llamada; no crea una copia independiente de su valor. El retorno bool indica si esa petición fue aceptada. Si devuelve true, el destino contiene el resultado nuevo. Si devuelve false, este contrato exige conservar el valor que tenía inmediatamente antes de la llamada. Ese valor podría proceder de la inicialización o de una petición aceptada anterior.\n\nEl comprobador puede leerlo para verificar la conservación. El cliente que acumula resultados debe consultar primero el retorno: sumar ese valor después de un rechazo contaría como nuevo un dato que la llamada no produjo."
+          "text": "El parámetro `int& resultado` se refiere a la variable entera que el cliente entrega como segundo argumento. Escribir en `resultado` cambia esa misma variable; no modifica una copia independiente.\n\nPor ejemplo, si el destino vale doce antes de una llamada:\nCon nueve piezas, la petición se acepta, devuelve `true` y el destino pasa a contener tres cajas.\nCon veintidós piezas, la petición se rechaza, devuelve `false` y el destino conserva doce.\n\nEl valor conservado podría proceder de la inicialización o de una petición aceptada anterior. Se puede leer para verificar que no cambió, pero no contarlo como una cantidad calculada para la petición rechazada. El cliente que acumula resultados tiene que consultar primero el retorno de esa llamada."
         },
         {
           "type": "multiple_choice",
@@ -69,7 +69,7 @@
         },
         {
           "type": "paragraph",
-          "text": "También podría diseñarse otra interfaz que devolviera un único int y reservara un valor especial, llamado centinela, para comunicar el rechazo. Ese valor tendría que quedar fuera de todos los resultados normales y el cliente tendría que conocer su significado. En el ejemplo de cajas, reservar cero confundirá una petición rechazada con una petición válida que no necesita cajas. No sería la misma firma ni el mismo acuerdo que practicamos aquí. Elegir una señal exige conocer el conjunto completo de resultados (Kernighan & Pike, 1999, pp. 111–112)."
+          "text": "Otra interfaz podría devolver un solo `int` y reservar un valor especial para el rechazo. A ese valor reservado lo llamamos centinela. El cliente tendría que reconocerlo antes de utilizar el entero como un resultado normal (Kernighan & Pike, 1999).\n\nEn el cálculo de cajas, cero ya es un resultado válido: corresponde a cero piezas. Si también significara rechazo, el cliente no podría distinguir ambos casos leyendo sólo ese entero. Por eso el valor reservado tendría que quedar fuera de todos los resultados normales.\n\nEs una alternativa de diseño. Las prácticas de esta lección conservan su retorno `bool` y su parámetro de salida `int&`; no debes sustituirlos por esa otra interfaz."
         },
         {
           "type": "multiple_choice",
@@ -98,7 +98,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una prueba compara la pareja observada con la pareja exigida: el retorno de la función y el valor que dejó en el destino. Para -1 piezas y destino inicial 37 esperamos false y 37. El rechazo es correcto si ambas partes coinciden. Si devuelve false pero escribe cero, la petición se rechaza y, aun así, la función incumple la conservación.\n\nUsa distintos valores iniciales: empezar siempre en cero ocultaría una asignación accidental de cero. Un destino inicial 37 y otro -8 permiten distinguir conservar el dato recibido de escribir siempre una cifra fija."
+          "text": "Para comprobar una llamada hay que revisar dos resultados juntos: el retorno y el valor final del destino.\n\nSi la cantidad es menos uno y el destino comienza en treinta y siete:\nLa función debe devolver `false`, porque la cantidad está fuera del intervalo.\nEl destino debe seguir valiendo treinta y siete, porque el rechazo debe conservarlo.\n\nDevolver `false` y escribir cero no cumpliría el contrato: acertaría el rechazo y fallaría la conservación.\n\nTampoco conviene iniciar todas estas pruebas en cero. Una función que escribiera cero por error parecería conservar ese único valor. Utilizar treinta y siete en una prueba y menos ocho en otra permite detectar ese borrado y distinguirlo de conservar el dato recibido."
         },
         {
           "type": "code",
@@ -149,11 +149,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La función intentar_cajas del programa inicial compila y distingue los estados, pero escribe antes de validar. Repárala para cumplir el contrato de la primera página. Conserva cajas_para, comprobar_cajas, bateria_componente, los siete casos y sus esperados. No cambies el contrato para hacer coincidir un fallo."
+          "text": "La función `intentar_cajas` del programa inicial distingue qué cantidades debe rechazar, pero escribe en el destino antes de validarlas. Tu tarea es reparar únicamente esa función para cumplir también la conservación del valor anterior.\n\nEl comprobador ya está proporcionado. Conserva `cajas_para`, `comprobar_cajas`, `bateria_componente`, sus datos y esperados. No cambies un esperado para aceptar un comportamiento que contradice el contrato."
         },
         {
           "type": "paragraph",
-          "text": "El programa muestra piezas:estado:salida y después el veredicto de cada prueba. Un rechazo esperado debe acabar en OK; una discrepancia produce FALLO y hace que este comprobador termine con retorno 1. La coincidencia exige tanto el estado como el destino, no sólo que se haya devuelto un rechazo.\n\nTras reparar intentar_cajas deben pasar los siete casos, incluidos cero y las cantidades inmediatamente exteriores al intervalo. Utiliza «Compilar, ejecutar y comprobar» en este editor para contrastar el informe completo. La implementación de referencia aparece en la página siguiente."
+          "text": "Cada línea del informe muestra, en este orden:\nLa cantidad de piezas.\nEl retorno de la función, escrito como uno o cero.\nEl valor que dejó en el destino.\nEl veredicto `OK` o `FALLO` de esa comparación.\n\nLos tres primeros datos se separan mediante dos puntos. Un rechazo esperado puede terminar en `OK`: significa que coincidieron el retorno de rechazo y el destino que debía conservarse. Si alguno difiere, la comparación muestra `FALLO` y este comprobador termina con retorno uno.\n\nRepara la función y utiliza «Compilar, ejecutar y comprobar». El programa conserva las comprobaciones dadas, incluido el cero válido y las cantidades inmediatamente exteriores al intervalo. Estás reparando el componente con un comprobador ya escrito; la referencia posterior permite comparar una implementación posible."
         },
         {
           "type": "cpp_compiler",
@@ -182,7 +182,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reparación comprueba el intervalo antes de escribir en resultado. La petición -1 conserva 37 y la petición 21 conserva -8; en ambos casos el retorno es false y la prueba muestra OK. En el inicial, resultado = 0 se ejecutaba antes de rechazar y destruía esos valores. Comprobar sólo el bool habría dejado pasar ese defecto.\n\nCuando la petición se acepta, la función llama al cálculo conocido y escribe su respuesta. Las siete comparaciones ejercitan los casos declarados; que coincidan no demuestra por sí solo el comportamiento de todas las entradas posibles."
+          "text": "La referencia valida la cantidad antes de escribir en `resultado`:\nSi está fuera del intervalo, devuelve `false` sin realizar ninguna asignación al destino.\nSi está permitida, llama a `cajas_para`, escribe la respuesta en el destino y devuelve `true`.\n\nPor eso menos una pieza conserva treinta y siete, y veintiuna piezas conservan menos ocho en las pruebas dadas. Las dos llamadas son rechazadas correctamente y sus comparaciones muestran `OK`.\n\nEl inicial ejecutaba `resultado = 0` antes de rechazar. Perdía así los valores anteriores aunque devolviera el `bool` correcto. Revisar únicamente el retorno habría dejado pasar el defecto.\n\nLas comparaciones observan sus casos concretos. La lectura del cuerpo explica además por qué ninguna rama de rechazo llega a escribir en el destino."
         },
         {
           "type": "code",
@@ -223,7 +223,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El componente decide si puede producir el resultado prometido. El cliente decide qué hacer con el rechazo: por ejemplo, contar la petición y continuar, pedir otro dato o terminar su tarea. Nuestra biblioteca no toma esa decisión ni imprime por su cuenta. Esta separación permite a distintos clientes reaccionar de distinta manera (Kernighan & Pike, 1999, p. 111)."
+          "text": "La función informa de que una petición fue rechazada. El cliente decide cómo reaccionar: contarla y continuar, pedir otro dato o terminar su propia tarea.\n\nEn esta interfaz, la biblioteca no imprime ni termina el programa por su cuenta. Así, otro cliente puede utilizar el mismo cálculo y elegir una reacción diferente. Separar la detección de un problema de la decisión sobre cómo atenderlo permite esa reutilización (Kernighan & Pike, 1999)."
         },
         {
           "type": "code",
@@ -257,11 +257,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La biblioteca del programa inicial ya cumple su contrato y su batería pasa. El cliente recibe, en orden, 0, -1, 5, 21 y 4 piezas. Debe contar tres aceptadas y dos rechazadas, sumando sólo los resultados nuevos: 0 + 2 + 1 = 3. El programa inicial produce un total distinto. Repara el uso de la interfaz dentro del bucle; conserva biblioteca, pruebas del componente, datos y comparación final."
+          "text": "En este editor, la biblioteca ya cumple el contrato y sus comprobaciones coinciden. El defecto está en el cliente que recorre las peticiones.\n\nLos datos del cliente, en orden, son cero, menos uno, cinco, veintiuno y cuatro piezas. Según el acuerdo:\nCero piezas se acepta y aporta cero cajas.\nMenos uno se rechaza y no aporta un resultado nuevo.\nCinco se acepta y aporta dos cajas.\nVeintiuno se rechaza y no aporta un resultado nuevo.\nCuatro se acepta y aporta una caja.\n\nPor tanto, se requieren tres aceptadas, dos rechazadas y un total de tres cajas: cero más dos más una. El programa inicial obtiene otro total. Repara el uso de la interfaz dentro del bucle, conservando la biblioteca, sus comprobaciones, los datos y los esperados finales."
         },
         {
           "type": "paragraph",
-          "text": "Revisa en este editor qué valor conserva el destino después de cada llamada y en qué momento se añade al total. Repara únicamente el uso del bool dentro del bucle, conservando la biblioteca, los cinco datos y los tres esperados finales. El destino que conserva un rechazo no pertenece a una petición nueva. La variación del orden se trabaja después en otro editor. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar el informe completo."
+          "text": "Sigue el mismo destino durante las cinco llamadas: después de un rechazo conserva el valor anterior. Revisa en qué momento el bucle añade ese valor al total y si lo está contando como nuevo cuando la petición no fue aceptada.\n\nModifica únicamente el uso del retorno `bool` dentro del bucle. Conserva el orden de los cinco datos y los esperados de aceptadas, rechazadas y total. Utiliza «Compilar, ejecutar y comprobar» para observar la revisión.\n\nEstas cinco peticiones forman una sesión: comparten destino, contadores y total. No restablezcas esas variables entre llamadas. La variante que cambia el orden tiene otro editor."
         },
         {
           "type": "cpp_compiler",
@@ -290,7 +290,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la referencia, la suma se ejecuta únicamente cuando la llamada devuelve true, junto con el aumento de aceptados. La otra rama sólo aumenta rechazados. Con 0, -1, 5, 21 y 4 piezas se suman los resultados nuevos 0, 2 y 1. El inicial sumaba además el cero conservado al rechazar -1 y el dos conservado al rechazar 21: el primer error no alteraba el total, pero el segundo lo llevaba a cinco.\n\nMantener la misma biblioteca y su batería permite atribuir esta reparación al consumidor. Las siete pruebas del componente eran correctas; todavía no comprobaban cuándo el bucle añadía un resultado al acumulador."
+          "text": "En la referencia, el cliente utiliza el retorno de cada llamada para decidir qué actualizar:\nCon `true`, aumenta `aceptados` y suma el resultado nuevo.\nCon `false`, aumenta sólo `rechazados`.\n\nEn la sesión dada, las peticiones aceptadas aportan cero cajas, dos cajas y una caja: suman tres. El inicial también sumaba el cero conservado al rechazar menos uno y el dos conservado al rechazar veintiuno. Añadir el cero no cambiaba el total, pero añadir otra vez el dos lo elevaba de tres a cinco.\n\nLa biblioteca y sus pruebas se conservan porque el error estaba en ese uso del cliente. Comprobar que una función conserva el destino no comprueba por sí solo cuándo otro código lo añade a un acumulador."
         },
         {
           "type": "code",
@@ -320,7 +320,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente cambia sólo el orden a 21, 4, -1, 0 y 5. Repara el mismo uso del bool conservando los cinco datos y los tres esperados: tres aceptadas, dos rechazadas y total 3. El rechazo inicial conserva 77; ese valor no pertenece a una petición aceptada. La batería del componente y el comprobador final deben seguir intactos. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Este editor cambia el orden de las peticiones a veintiuno, cuatro, menos uno, cero y cinco piezas. Conserva ese orden y repara el mismo uso del retorno dentro del bucle.\n\nAhora la primera petición se rechaza y el destino conserva su valor inicial, setenta y siete. Ese valor no fue calculado para una petición aceptada y no debe añadirse al total.\n\nLa sesión debe terminar con tres aceptadas, dos rechazadas y total tres. Mantén la biblioteca, las comprobaciones del componente y la comparación final. Utiliza «Compilar, ejecutar y comprobar» en este editor; no sustituye el borrador de la sesión anterior."
         },
         {
           "type": "cpp_compiler",
@@ -349,7 +349,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye otra interfaz y su cliente. calcular_saldo recibe cualquier par de int; acepta exactamente cuando cobros y devoluciones están, cada uno, entre 0 y 9 incluidos. Al aceptar escribe cobros - devoluciones en saldo y devuelve true. Al rechazar devuelve false y conserva saldo. No imprime.\n\nEl rango de resultados normales es -9..9. Por ejemplo, dos cobros y tres devoluciones producen menos uno y siguen formando una petición aceptada. El signo del resultado no decide si los datos de entrada cumplen el acuerdo."
+          "text": "Construirás otra interfaz que admite recibir cualquier par de `int`. La función `calcular_saldo` debe aceptar exactamente cuando cada cantidad, `cobros` y `devoluciones`, esté entre cero y nueve, incluidos los extremos.\n\nAl aceptar, escribe `cobros - devoluciones` en `saldo` y devuelve `true`.\nAl rechazar, devuelve `false` y conserva el valor anterior de `saldo`.\nLa función no imprime mensajes.\n\nUn resultado aceptado puede ser negativo. Por ejemplo, cuatro cobros menos siete devoluciones dan un saldo de menos tres, con ambos datos permitidos. Los saldos normales van de menos nueve a nueve; su signo no decide si la petición fue aceptada."
         },
         {
           "type": "code",
@@ -358,7 +358,7 @@
         },
         {
           "type": "paragraph",
-          "text": "registrar debe llamar una sola vez al componente. Si acepta, suma ese saldo a total y aumenta aceptados; si rechaza, aumenta únicamente rechazados. Los tres destinos recibidos por referencia pertenecen al cliente. En esta práctica son objetos distintos, comienzan en cero y se utilizan en estas cuatro llamadas: (5,5), (2,3), (10,0), (0,9), en ese orden. Se exigen tres aceptadas, una rechazada y total -10. Implementa ambas funciones en el editor de código; conserva el comprobador y sus seis casos. El esqueleto es compilable, pero todavía no satisface el trabajo. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Implementa las dos funciones en el editor de esta página. `registrar` debe llamar una sola vez a `calcular_saldo` para cada petición:\nSi la acepta, añade el saldo a `total` y aumenta `aceptados`.\nSi la rechaza, aumenta únicamente `rechazados`.\n\nLos tres parámetros por referencia se refieren a variables distintas del cliente. Comienzan en cero y se conservan entre estas cuatro llamadas, en este orden:\nCinco cobros y cinco devoluciones.\nDos cobros y tres devoluciones.\nDiez cobros y cero devoluciones.\nCero cobros y nueve devoluciones.\n\nEsa sesión debe terminar con tres aceptadas, una rechazada y total menos diez. No reinicies los contadores ni el total en cada llamada a `registrar`.\n\nEl comprobador del componente ya proporciona seis casos; cada uno prepara su propio destino. Consérvalos junto con el método de comparación y las cuatro llamadas del cliente. El esqueleto compila, pero aún no realiza esas tareas. Completa las funciones y utiliza «Compilar, ejecutar y comprobar»."
         },
         {
           "type": "multiple_choice",
@@ -404,7 +404,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia comprueba los dos límites de cada operando antes de restar. Así, toda resta que ejecuta utiliza cantidades entre cero y nueve y su resultado queda entre menos nueve y nueve. El cliente decide con el retorno bool y suma los saldos aceptados, sean positivos, cero o negativos.\n\nPara las cuatro peticiones del cliente, los saldos nuevos son cero, menos uno y menos nueve; la petición de diez cobros se rechaza. La suma es menos diez. El comprobador del componente tiene otra tarea: también inspecciona el destino de un rechazo para verificar que quedó intacto."
+          "text": "La referencia valida ambos datos antes de restarlos. Sólo llega a `cobros - devoluciones` cuando cada uno está entre cero y nueve. Por eso el saldo que escribe queda entre menos nueve y nueve.\n\nEn la sesión del cliente:\nLa petición de cinco cobros y cinco devoluciones se acepta y aporta cero.\nLa de dos y tres se acepta y aporta menos uno.\nLa de diez y cero se rechaza; no aporta un saldo nuevo.\nLa de cero y nueve se acepta y aporta menos nueve.\n\nLos tres saldos nuevos suman menos diez. El cliente los incorpora utilizando el retorno `bool`, sin descartar los negativos.\n\nEl comprobador tiene otra tarea: en cada prueba de rechazo también lee el destino para verificar que quedó intacto. Ese valor conservado no se convierte por ello en un saldo nuevo del cliente."
         },
         {
           "type": "code",
@@ -446,7 +446,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva los seis controles anteriores y añade dos: cobros negativos con devoluciones permitidas, y devoluciones superiores a nueve con cobros permitidos. El componente inicial acepta indebidamente esas peticiones aunque pasa los seis controles antiguos.\n\nRepara únicamente calcular_saldo para cumplir el mismo contrato: cada operando debe estar entre 0 y 9, y cualquier rechazo debe conservar el destino. Mantén registrar, las ocho comparaciones, sus esperados y las cuatro llamadas del cliente. Utiliza «Compilar, ejecutar y comprobar»; el informe debe contener ocho OK, conservar tres peticiones aceptadas y una rechazada en el cliente, y terminar en Transferencia: OK con retorno 0. Se admite cualquier condición equivalente que respete ambos límites de cada operando."
+          "text": "Este editor proporciona los seis controles anteriores y dos más:\nUna petición con cobros negativos y devoluciones permitidas.\nOtra con devoluciones superiores a nueve y cobros permitidos.\n\nLa implementación inicial acepta esas dos peticiones por error, aunque coincide con los seis controles antiguos. Tu tarea es reparar únicamente `calcular_saldo`: cada dato debe estar entre cero y nueve, y todo rechazo debe conservar el destino.\n\nMantén `registrar`, las comparaciones, sus esperados y la sesión del cliente. Utiliza «Compilar, ejecutar y comprobar» para observar la revisión. La referencia posterior explica por qué las dos observaciones nuevas detectan los límites que faltaban. Se admite cualquier condición equivalente que respete los dos límites de cada dato."
         },
         {
           "type": "cpp_compiler",
@@ -475,7 +475,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El inicial sólo rechazaba cobros superiores a nueve o devoluciones negativas. Ninguno de los seis controles antiguos entregaba cobros negativos ni devoluciones superiores a nueve, así que una condición incompleta podía superarlos. Las peticiones (-1,0) y (0,10) aíslan los otros dos límites: un operando incumple el dominio mientras el otro permanece permitido.\n\nLa referencia comprueba los cuatro extremos antes de asignar saldo. Sus destinos iniciales, 23 y -4, permiten comprobar que ambos rechazos conservan exactamente el dato recibido. Pasar esta batería mejora la evidencia para esos casos concretos; no convierte una lista finita de ejecuciones en una demostración para cualquier programa."
+          "text": "El inicial rechazaba los cobros superiores a nueve y las devoluciones negativas. Le faltaban otras dos comprobaciones: cobros negativos y devoluciones superiores a nueve.\n\nLos controles antiguos no utilizaban esos dos tipos de datos. Por eso podían coincidir con una condición incompleta. Las nuevas peticiones separan ambos errores:\nCon `(-1,0)`, sólo cobros queda fuera del dominio. El destino comienza en veintitrés y debe conservarlo al rechazar.\nCon `(0,10)`, sólo devoluciones queda fuera. El destino comienza en menos cuatro y también debe conservarlo.\n\nLa referencia revisa los cuatro límites antes de asignar a `saldo`. Esos dos casos permiten detectar los defectos concretos que no observaban las pruebas antiguas. El resultado de la batería se refiere a las comparaciones realizadas, no a cualquier programa que pudiera escribirse."
         },
         {
           "type": "code",
@@ -488,7 +488,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Imagina otra versión, explícitamente distinta: al rechazar escribe cero en el destino y devuelve false; los casos aceptados no cambian. No adoptes ese comportamiento para reparar el código de las prácticas anteriores. Cambiar una postcondición requiere revisar las pruebas que dependían de ella y a sus clientes; una interfaz no se entiende sólo por sus tipos."
+          "text": "Considera ahora otra versión con un contrato distinto: al rechazar escribe cero en el destino y devuelve `false`. Las peticiones aceptadas mantienen su comportamiento.\n\nEse cambio obligaría a revisar los esperados de rechazo y los clientes que dependieran de conservar el valor anterior. Las firmas podrían ser iguales y, aun así, prometer un efecto distinto.\n\nEsta pregunta estudia esa nueva política. No la adoptes para reparar los laboratorios anteriores, donde el rechazo sigue teniendo que conservar el destino."
         },
         {
           "type": "multiple_choice",
@@ -514,7 +514,7 @@
         },
         {
           "type": "note",
-          "text": "Al volver a utilizar una interfaz, recupera su dominio, el significado del retorno, la salida que promete en cada estado y la decisión que corresponde al cliente. Comprueba ambos niveles con sus propios esperados; no cambies uno para ocultar el fallo del otro."
+          "text": "Antes de utilizar una interfaz, comprueba estas partes de su acuerdo:\nQué datos admite recibir.\nQué significa su retorno.\nQué escribe o conserva en el destino al aceptar y al rechazar.\nCómo debe reaccionar el cliente a cada resultado.\n\nComprueba la función y su uso por el cliente con esperados propios. Si uno incumple su tarea, no cambies el acuerdo del otro para ocultar el fallo."
         }
       ]
     }
@@ -1931,6 +1931,111 @@
         "id": "block_0010_0002",
         "beforeSha256": "f66f4b47934cceb6dfaaf0dd8284568fe612a0cb4897e21a5ccb2f561ee6d90a",
         "afterSha256": "cece5d383a7e5e2ce39366700b60da75f1e6a1aaffaef9e976d477e1f8f22398"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c6a939acfbad315fdfb75e0b9726eec69c5e0ecb35695be96901c580229ef99b",
+        "afterSha256": "fb1534754444d4bbc06b0dc40d05b24ee48b07f5726d28f5a85d952b26620aac"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ac3e2ab42b60bf7cde6511a0503ffb39b1c8d971cc33c9c3570d073ebf5289ca",
+        "afterSha256": "b06b7498343bbdb415b546bafa153ab6b791ff4117964ff6a2052194dd0510a6"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "78be1193372ada94641e0738c57ffa584a6b42362230a991e8a83b2613a0fac1",
+        "afterSha256": "b561da69dbcd3eb87c9a5fbe3d43d275a94912fd2f5981feb154d74865585acd"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "763efc40b466123f32b43b647f217af29e547273f797ab5568439e5eee30f98e",
+        "afterSha256": "f8a808c779b667ea7443cedc5e10e85a6d1d653c6e0db2eac6b6cc45bd377461"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "aa8ab173f0b60d61c924c9b8bdb0967e9b25e5970390ae3b536751fbe5c75630",
+        "afterSha256": "be2eb5e602c5ad06bd1e3964d2c01e90c0a6dae2068bd1cb4d3174a5dc7cd128"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "bb25b904cac0c89f9c2446fb9e3cd715c1ecf5725f1a24f1544d92fbac09c2a4",
+        "afterSha256": "c31c3c1c4baf5b689aeffb76c336c3da424b381342d50334c497a749f492d000"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "208395f3dd08165cc6b35a20755a3263e2a045529f885c0cf9232616b98fa9a3",
+        "afterSha256": "664c40a7e5c01fa32363ae89ceee30327b0f8271026986d07fd77c0cfb63d5b4"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "803a17aac945cd4d0eab74d30341cf2e445582cdf7b2a9bc3c75175294709caa",
+        "afterSha256": "48f2e2672d529c4d9310337f81dbfa9931bbfd1e359b3e55451778648b5ea121"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "7a37b160b7ba94eccfdd82e24f930b14168538e0f6576ded761986bd8bebd991",
+        "afterSha256": "0518772fe5d24c530ca7b1538316ebef60126c74c81241015940e0a602accfd5"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "3895d2ca6365bdacb10424f658850ce1fcae12657884bdc221a1313efb01c75a",
+        "afterSha256": "554da345ce84d2f561267d6cb3d00f54f813c9a8b40bbead42fa1fc9e890fee8"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "ab008f99aa80e9f216ecee095bfea06f4a623a2a5fcc3ac240e21fea42aa48ca",
+        "afterSha256": "d52fcbd55ddb8c12151a672193c8ddc895fca1c0cb38d9679315c3618bfd0220"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "d189a5311ea6426ef5c71b3aa8ecaa0c197645c00d98e4dc04042e6bdd05a9a2",
+        "afterSha256": "fbcf4323510ffee23f2217bb3b602371ee6a3b3d507c8de1aa1a53db82f1e57f"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "034677484d716eb828afcd7b425000bc99cfed4f9f627c29a328774f705766cd",
+        "afterSha256": "0c34c003bfb95e89c29ec7fad936ce3d593143f0db0d461f70bae396d73b7a5a"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "b98666e996003e103cf31bbd34a9a1dccbd148ba6ad32dbc5a08d196ccd44787",
+        "afterSha256": "096d69cb87f167e9983a66f72c49bfae1dad41300724da6b04a974f09bebe97c"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "f79967cb6eed743c7da9ebdfc5237a8fb7159811d380f8bc7d5e4ac7bb1aac56",
+        "afterSha256": "bb145c34bc1b4c6d062d30a7df900804cb46e93ec54519c2a85dd653a68ceaa4"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "cb375566d57c61d3176f0ef609601adc742499738503b01462789def5735416c",
+        "afterSha256": "a3dfcf3c16824a6d80015c5e75cefa4b5e5869d157aa23aedb44a1504bf283af"
+      },
+      {
+        "id": "u3l5_limites_saldo_consigna",
+        "beforeSha256": "8eaa477090fc40a0f2d2a852c36288923ef62618598ac40b787b596e1ac95b71",
+        "afterSha256": "9c0a0c2952ef8af175a3e13688167523ea45ac498798942ec968a524de461cd9"
+      },
+      {
+        "id": "u3l5_limites_saldo_referencia_texto",
+        "beforeSha256": "d51c76f351cc1e4888e151108b0d415ee2c46f50a4dfb8fc2bd828ad38b97c7a",
+        "afterSha256": "73fc1c99be4ac00b396463df805d15fe33fa74a9bb72fd8c284b5e81120031bc"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "c83463285c527e71b625fd1e977e4e27973b19de5d61783af73a729798df3490",
+        "afterSha256": "bab074cd7f60ea29d9eca9e892f298da14cff9ad781e9bd62f38fb357be3ee3a"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "e034cf36e3710412cd78c5dde6656fcd1b8caa933e3a0c4ad457c48ba7932d72",
+        "afterSha256": "72ddba864334d192cc7d4a1a2356cdf40b59d817889fd9f7e30f9e818c47d678"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "fbcf4323510ffee23f2217bb3b602371ee6a3b3d507c8de1aa1a53db82f1e57f",
+        "afterSha256": "c707ab4009c579bc2ddf874570bd0e816a4366d266b3d95e7758772819e8ca44"
       }
     ]
   },
@@ -1956,108 +2061,124 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "ec509dca28dbbffea77b4604199342f86309a0c132f54d81ec869808e8228390",
+        "sourceSha256": "9aa853ee1bb6dba2e7af3bd9184682332a58bcb4934a0fcbfd8b740c91ba65d6",
         "spans": [
           {
-            "start": 15,
-            "end": 25,
+            "start": 12,
+            "end": 22,
             "text": "cajas_para",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 64,
-            "text": "0 y 20",
+            "start": 131,
+            "end": 144,
+            "text": "cero y veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 338,
-            "end": 341,
+            "start": 312,
+            "end": 333,
+            "text": "(Thomas & Hunt, 2020)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 395,
+            "text": "cajas_para",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 487,
+            "end": 490,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 516,
-            "end": 520,
+            "start": 534,
+            "end": 544,
+            "text": "cajas_para",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 745,
+            "end": 749,
             "text": "bool",
-            "role": "cpp"
-          },
-          {
-            "start": 523,
-            "end": 527,
-            "text": "int&",
-            "role": "cpp"
-          },
-          {
-            "start": 531,
-            "end": 536,
-            "text": "C++ 1",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "7fb1933380e0eca2143f60c25f9b6fb506d7b51eea91a9ff5bbef525f64bef00",
+        "sourceSha256": "3a483d2f13c3c2e6dfead35a33f1b82d142323b15717f8aa8de8b1f028e4dbdd",
         "spans": [
           {
-            "start": 12,
-            "end": 26,
+            "start": 74,
+            "end": 78,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 144,
+            "text": "int& resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 300,
             "text": "intentar_cajas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 31,
-            "end": 37,
-            "text": "piezas",
-            "role": "cpp"
-          },
-          {
-            "start": 49,
-            "end": 55,
-            "text": "0 y 20",
+            "start": 342,
+            "end": 362,
+            "text": "cero y veinte piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 87,
+            "start": 398,
+            "end": 402,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 101,
-            "end": 110,
-            "text": "resultado",
-            "role": "cpp"
+            "start": 513,
+            "end": 523,
+            "text": "cero cajas",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 237,
-            "end": 242,
+            "start": 579,
+            "end": 584,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 287,
-            "end": 296,
-            "text": "resultado",
-            "role": "cpp"
+            "start": 815,
+            "end": 836,
+            "text": "(Thomas & Hunt, 2020)",
+            "role": "citation",
+            "reading": "natural"
           },
           {
-            "start": 440,
-            "end": 444,
-            "text": "bool",
-            "role": "cpp"
-          },
-          {
-            "start": 762,
-            "end": 804,
-            "text": "(Kernighan & Pike, 1999, pp. 105, 111–112)",
+            "start": 1070,
+            "end": 1094,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2174,31 +2295,68 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "aacb0a8c5e41b7a75f03e84f3c548db81545c3c3e601f3bd007a9781f5b02988",
+        "sourceSha256": "ed5c85a0aca67cf0c64415894b953a6bca416ff4fda2c0a33d44378225676e9a",
         "spans": [
           {
-            "start": 13,
-            "end": 27,
+            "start": 14,
+            "end": 28,
             "text": "int& resultado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 161,
-            "end": 165,
-            "text": "bool",
-            "role": "cpp"
+            "start": 122,
+            "end": 131,
+            "text": "resultado",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 215,
-            "end": 219,
+            "start": 230,
+            "end": 234,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 273,
+            "text": "nueve piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 312,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 278,
+            "start": 343,
+            "end": 353,
+            "text": "tres cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 375,
+            "text": "veintidós piezas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 411,
+            "end": 416,
             "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 444,
+            "text": "doce",
             "role": "output",
             "reading": "natural"
           }
@@ -2335,20 +2493,35 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "4bb1199def0b4100cb8bced02b14d65e215d817ce029aceccf6905a335125ba6",
+        "sourceSha256": "3478e4288f9987e896cb47612d4abdf9f732881351480d0b32948f4858b7dae7",
         "spans": [
           {
-            "start": 63,
-            "end": 66,
+            "start": 39,
+            "end": 42,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 512,
-            "end": 549,
-            "text": "(Kernighan & Pike, 1999, pp. 111–112)",
+            "start": 223,
+            "end": 247,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 603,
+            "end": 607,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 635,
+            "end": 639,
+            "text": "int&",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2504,54 +2677,54 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "ec9948485e542b9dfae75b35aff1488e0ca2b17001b24bf3dd73f1ad835556db",
+        "sourceSha256": "7df5e94865cf9fd000f5bcd2f692943607e8c95f2709bad516b3f0779af7ea89",
         "spans": [
           {
-            "start": 127,
-            "end": 129,
-            "text": "-1",
+            "start": 126,
+            "end": 135,
+            "text": "menos uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 155,
-            "end": 157,
-            "text": "37",
+            "start": 161,
+            "end": 176,
+            "text": "treinta y siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 173,
+            "start": 204,
+            "end": 209,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 176,
-            "end": 178,
-            "text": "37",
+            "start": 289,
+            "end": 304,
+            "text": "treinta y siete",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 242,
-            "end": 247,
+            "start": 353,
+            "end": 358,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 461,
-            "end": 463,
-            "text": "37",
+            "start": 594,
+            "end": 609,
+            "text": "treinta y siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 471,
-            "end": 473,
-            "text": "-8",
+            "start": 626,
+            "end": 636,
+            "text": "menos ocho",
             "role": "data",
             "reading": "natural"
           }
@@ -2737,72 +2910,77 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "48d52e78992f61943c2d1860f3c666e1c0b9fb11a96c1b54ce0ed12f16b228d7",
+        "sourceSha256": "8d46dfad4794dca61f0d074c3fb4be7d5ff1743ea5f145293fa2b600b2d2465a",
         "spans": [
           {
-            "start": 11,
-            "end": 25,
+            "start": 12,
+            "end": 26,
             "text": "intentar_cajas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 186,
+            "start": 286,
+            "end": 296,
             "text": "cajas_para",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 188,
-            "end": 203,
+            "start": 300,
+            "end": 315,
             "text": "comprobar_cajas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 223,
+            "start": 319,
+            "end": 337,
             "text": "bateria_componente",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "a064f582e9f168adf10cbaf0dffc87dc3e7af9f312733510ac435fc9219ed04b",
+        "sourceSha256": "19beccff9ed44816e0403184600acf9cae6e4baf92a39573875615dbe818409b",
         "spans": [
           {
-            "start": 20,
-            "end": 40,
-            "text": "piezas:estado:salida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 115,
-            "end": 117,
+            "start": 168,
+            "end": 170,
             "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 144,
-            "end": 149,
+            "start": 175,
+            "end": 180,
             "text": "FALLO",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 199,
-            "text": "1",
+            "start": 298,
+            "end": 300,
+            "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 311,
-            "end": 325,
-            "text": "intentar_cajas",
-            "role": "cpp"
+            "start": 431,
+            "end": 436,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 477,
+            "end": 480,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2871,67 +3049,70 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "5011efa81f00dc228836207d131071260e8c7bf28ac180811021a73289da2bd9",
+        "sourceSha256": "dc5a45d2d8da67fc4709c9189a492bd83c444de182f59ede3b46d465f1d25e1f",
         "spans": [
           {
-            "start": 58,
-            "end": 67,
+            "start": 55,
+            "end": 64,
             "text": "resultado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 83,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 93,
-            "end": 95,
-            "text": "37",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 110,
-            "end": 112,
-            "text": "21",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 124,
-            "text": "-8",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 155,
-            "end": 160,
+            "start": 106,
+            "end": 111,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 181,
-            "end": 183,
+            "start": 185,
+            "end": 195,
+            "text": "cajas_para",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 249,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 301,
+            "text": "treinta y siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 342,
+            "text": "menos ocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 443,
             "text": "OK",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 200,
-            "end": 213,
+            "start": 469,
+            "end": 482,
             "text": "resultado = 0",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 288,
-            "end": 292,
+            "start": 559,
+            "end": 563,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3093,12 +3274,12 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "797e074eb145526bb44a548b6bee82a7f3c86b13fc46c6ac422cfebe07747f65",
+        "sourceSha256": "2c22bad8a1225b13b61f3c25543bb261342f462b9cb179fd94e4a911ede8bf84",
         "spans": [
           {
-            "start": 330,
-            "end": 362,
-            "text": "(Kernighan & Pike, 1999, p. 111)",
+            "start": 418,
+            "end": 442,
+            "text": "(Kernighan & Pike, 1999)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3189,19 +3370,40 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "3c97efbfe5488bb18223038b4fb3e7a136f4ff11d9104c91db02686c1effab45",
+        "sourceSha256": "4c972f139a4636e33f1c2075eb91b6e916ff2fdab770a9a3e60a5fb7a3e540cb",
         "spans": [
           {
-            "start": 105,
-            "end": 121,
-            "text": "0, -1, 5, 21 y 4",
+            "start": 180,
+            "end": 229,
+            "text": "cero, menos uno, cinco, veintiuno y cuatro piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 211,
-            "end": 224,
-            "text": "0 + 2 + 1 = 3",
+            "start": 280,
+            "end": 290,
+            "text": "cero cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 379,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 468,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 540,
+            "end": 550,
+            "text": "tres cajas",
             "role": "output",
             "reading": "natural"
           }
@@ -3210,13 +3412,14 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "412826558eb3e3d9311d89bf1a556e4e678cab9052dc282cfd4ed0e896c0854d",
+        "sourceSha256": "4c8a52e8f9762a651d4452664dbe77a47609d49a5113b0da3107d266b0ed0769",
         "spans": [
           {
-            "start": 141,
-            "end": 145,
+            "start": 267,
+            "end": 271,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3278,53 +3481,76 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "305e37dc441bde397857e937188bc33867b9e5b58f04dcc50849008dbfd8931c",
+        "sourceSha256": "60153b14048f74e07b75f35a866485f91ad2c13d14e961370f6a274feef482d3",
         "spans": [
           {
-            "start": 75,
-            "end": 79,
+            "start": 98,
+            "end": 102,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 105,
-            "end": 114,
+            "start": 114,
+            "end": 123,
             "text": "aceptados",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 152,
-            "text": "rechazados",
-            "role": "cpp"
-          },
-          {
-            "start": 158,
-            "end": 174,
-            "text": "0, -1, 5, 21 y 4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 213,
-            "end": 221,
-            "text": "0, 2 y 1",
+            "start": 157,
+            "end": 162,
+            "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 279,
-            "end": 281,
-            "text": "-1",
-            "role": "data",
+            "start": 179,
+            "end": 189,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 255,
+            "text": "cero cajas",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 314,
-            "end": 316,
-            "text": "21",
-            "role": "data",
+            "start": 257,
+            "end": 266,
+            "text": "dos cajas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 277,
+            "text": "una caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 289,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 324,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 366,
+            "text": "dos",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3386,32 +3612,26 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "90f46f2c30fb304050307d5d292e55c239f3ab7c8471131fea2d77d3327a2163",
+        "sourceSha256": "d1052101d2a9da9fcfc90a7c34dc9a635ad103134db396a0091bc675031e1dbe",
         "spans": [
           {
-            "start": 49,
-            "end": 65,
-            "text": "21, 4, -1, 0 y 5",
+            "start": 48,
+            "end": 97,
+            "text": "veintiuno, cuatro, menos uno, cero y cinco piezas",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 95,
-            "text": "bool",
-            "role": "cpp"
-          },
-          {
-            "start": 185,
-            "end": 186,
-            "text": "3",
+            "start": 248,
+            "end": 263,
+            "text": "setenta y siete",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 218,
-            "text": "77",
+            "start": 377,
+            "end": 420,
+            "text": "tres aceptadas, dos rechazadas y total tres",
             "role": "output",
             "reading": "natural"
           }
@@ -3468,75 +3688,89 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "1acc54740be3d7bd5f5bf420d6718a12239fc89dca3ec06e5d79eec5b4cde184",
+        "sourceSha256": "9b76334731569f28eff767f592d469d8e927eee3249edd308a32a3650f34d5ee",
         "spans": [
           {
-            "start": 38,
-            "end": 52,
-            "text": "calcular_saldo",
-            "role": "cpp"
-          },
-          {
-            "start": 77,
-            "end": 80,
+            "start": 63,
+            "end": 66,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 114,
+            "start": 81,
+            "end": 95,
+            "text": "calcular_saldo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 151,
             "text": "cobros",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 117,
-            "end": 129,
+            "start": 156,
+            "end": 168,
             "text": "devoluciones",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 153,
-            "end": 158,
-            "text": "0 y 9",
+            "start": 182,
+            "end": 194,
+            "text": "cero y nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 189,
-            "end": 210,
+            "start": 242,
+            "end": 263,
             "text": "cobros - devoluciones",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 214,
-            "end": 219,
+            "start": 269,
+            "end": 274,
             "text": "saldo",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 231,
-            "end": 235,
+            "start": 288,
+            "end": 292,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 258,
-            "end": 263,
+            "start": 318,
+            "end": 323,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 275,
-            "end": 280,
+            "start": 358,
+            "end": 363,
             "text": "saldo",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 330,
-            "end": 335,
-            "text": "-9..9",
+            "start": 509,
+            "end": 519,
+            "text": "menos tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 595,
+            "text": "menos nueve a nueve",
             "role": "output",
             "reading": "natural"
           }
@@ -3545,45 +3779,84 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "63ef3c145e6903253fe2a21af7052f1ae545aef6f5a170a1cb8247365e4dc78e",
+        "sourceSha256": "5ce7dbde602feb7dc66af2fda38f739abc97bb4aabe4443ab725906ce5b18093",
         "spans": [
           {
-            "start": 0,
-            "end": 9,
+            "start": 59,
+            "end": 68,
             "text": "registrar",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 83,
+            "start": 98,
+            "end": 112,
+            "text": "calcular_saldo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 171,
             "text": "total",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 94,
-            "end": 103,
+            "start": 184,
+            "end": 193,
             "text": "aceptados",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 146,
+            "start": 231,
+            "end": 241,
             "text": "rechazados",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 312,
-            "end": 339,
-            "text": "(5,5), (2,3), (10,0), (0,9)",
+            "start": 404,
+            "end": 437,
+            "text": "Cinco cobros y cinco devoluciones",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 403,
-            "end": 406,
-            "text": "-10",
+            "start": 439,
+            "end": 469,
+            "text": "Dos cobros y tres devoluciones",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 502,
+            "text": "Diez cobros y cero devoluciones",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 504,
+            "end": 536,
+            "text": "Cero cobros y nueve devoluciones",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 616,
+            "text": "tres aceptadas, una rechazada y total menos diez",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 677,
+            "end": 686,
+            "text": "registrar",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3762,13 +4035,28 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "961930a49149f06eb9c11dcbc4c68a20a7e46b11900cf13a951ded72d00842db",
+        "sourceSha256": "a8e32f03be8006d15eed71465a2833699ac3d29a1e62d9dbb4c063b0cb76b6e5",
         "spans": [
           {
-            "start": 221,
-            "end": 225,
+            "start": 67,
+            "end": 88,
+            "text": "cobros - devoluciones",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 478,
+            "end": 488,
+            "text": "menos diez",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 542,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3975,47 +4263,28 @@
       {
         "block": "u3l5_limites_saldo_consigna",
         "path": "/text",
-        "sourceSha256": "e732fc5ccc13a7cceb493423de3cfe94c67d1a41c0b1bd0ad1b242d0bb433273",
+        "sourceSha256": "7596a84ad4c18b62302d10f976b59faf71368dbf27b7e86041c02adcdf7436da",
         "spans": [
           {
-            "start": 286,
-            "end": 300,
+            "start": 334,
+            "end": 348,
             "text": "calcular_saldo",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 364,
-            "end": 369,
-            "text": "0 y 9",
+            "start": 378,
+            "end": 390,
+            "text": "cero y nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 425,
-            "end": 434,
+            "start": 443,
+            "end": 452,
             "text": "registrar",
-            "role": "cpp"
-          },
-          {
-            "start": 581,
-            "end": 583,
-            "text": "OK",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 666,
-            "end": 683,
-            "text": "Transferencia: OK",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 696,
-            "end": 697,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4103,34 +4372,42 @@
       {
         "block": "u3l5_limites_saldo_referencia_texto",
         "path": "/text",
-        "sourceSha256": "7d49257ae460a67fdff691ba7733a810b336f910db05c820fc1bec096e430e9a",
+        "sourceSha256": "c859220e07f1e446dfd7c06d13ade95427a618e6b2f7fef3a924bb04d440424f",
         "spans": [
           {
-            "start": 246,
-            "end": 252,
+            "start": 339,
+            "end": 345,
             "text": "(-1,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 261,
+            "start": 408,
+            "end": 418,
+            "text": "veintitrés",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 462,
             "text": "(0,10)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 424,
-            "end": 429,
-            "text": "saldo",
-            "role": "cpp"
-          },
-          {
-            "start": 455,
-            "end": 462,
-            "text": "23 y -4",
+            "start": 519,
+            "end": 531,
+            "text": "menos cuatro",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 621,
+            "end": 626,
+            "text": "saldo",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4143,11 +4420,11 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "29e335ebb1a1c62236a92630dc65532e90280a57599b87f4f1b27c02ddc62c35",
+        "sourceSha256": "0534286809869c7b4237b6462e7651d1959c15318a7feeecb1ac982d9df35689",
         "spans": [
           {
-            "start": 97,
-            "end": 102,
+            "start": 106,
+            "end": 111,
             "text": "false",
             "role": "output",
             "reading": "natural"
@@ -4240,7 +4517,7 @@
       {
         "block": "block_0010_0004",
         "path": "/text",
-        "sourceSha256": "c15227f25a44d7a0ea5a8a5841a4b31595aa6a628e2875b6c85a00b84061b7be",
+        "sourceSha256": "b866f1c687c40ac0afb52f7bb33fd61d374ec69f4ca77ae71ac9f1e55285b7ed",
         "spans": []
       }
     ],

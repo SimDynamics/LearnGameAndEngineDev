@@ -18,7 +18,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al ejecutar el programa mínimo se observó «AssetCheck: entorno listo» y después «Codigo=0». Esta salida acredita el resultado de ese ejecutable; la transcripción compartida todavía no incluye los mensajes completos de configuración, generación ni capturas, y no permite afirmar que se instalaron herramientas desde cero."
+          "text": "En la comprobación local se configuró y construyó el programa mínimo con las herramientas presentes. Al ejecutarlo se obtuvo `AssetCheck: entorno listo` y código cero. También se guardó el cambio de mensaje y se comprobó la diferencia entre ejecutar el binario anterior y reconstruirlo.\n\nLas capturas de consola que verás proceden de otra reproducción: una prueba automatizada en Windows Server 2025 con Visual Studio Enterprise, CMake 4.4.5 y Ninja 1.13.2. Sus rutas y versiones pueden diferir de las de este equipo. Ninguna de esas pruebas acredita una instalación de Visual Studio desde cero ni la construcción del lector de manifiestos."
         },
         {
           "type": "multiple_choice",
@@ -51,7 +51,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Abre la consola de desarrollo x64 de Visual Studio. Comprueba que el entorno se inicializó para x64 y ejecuta cada consulta sin permisos de administrador. «where» muestra la herramienta que realmente se selecciona; su versión explica qué instalación se está usando."
+          "text": "Abre el menú Inicio de Windows, busca la consola de herramientas nativas x64 de tu versión de Visual Studio y ábrela normalmente, sin elegir «Ejecutar como administrador». Recupera la preparación de Visual Studio y sus componentes de C++ que realizaste en Programación 1. Esta consola configura las rutas del compilador, sus cabeceras y sus bibliotecas; una consola corriente recién abierta puede no tenerlas.\n\nLas órdenes siguientes pertenecen al Símbolo del sistema, CMD. Ejecútalas una por una en esa consola de desarrollo; no pegues el bloque en PowerShell.\n\n`where` enumera archivos que coinciden con el nombre buscado en la carpeta actual y en las rutas de `PATH`. Puede mostrar varias copias: no significa que todas se hayan ejecutado. Contrasta esa lista con la consulta de versión realizada en la misma consola (Microsoft, 2023)."
         },
         {
           "type": "code",
@@ -60,7 +60,18 @@
         },
         {
           "type": "paragraph",
-          "text": "En la comprobación del autor, cl /Bv mostró MSVC 19.51.36260.0 y también D8003, porque se pidió información del compilador sin proporcionar un archivo fuente. Ese mensaje no demostró por sí mismo un fallo de instalación. El CMake seleccionado provenía de Visual Studio, mientras Ninja informó la versión 1.13.2."
+          "text": "Interpreta las consultas por separado:\n`ver` muestra la versión de Windows.\n`echo` muestra el texto que lo sigue. En las cinco líneas que lo utilizan, los nombres entre signos de porcentaje se sustituyen por valores del entorno de esa consola.\n`VSINSTALLDIR` identifica la instalación de Visual Studio; `VCToolsInstallDir`, las herramientas de C++; `WindowsSDKVersion`, el SDK seleccionado.\n`VSCMD_ARG_HOST_ARCH` y `VSCMD_ARG_TGT_ARCH` identifican la arquitectura de las herramientas y la del programa que se construirá. En esta preparación ambas deben mostrar `x64`.\n`where cl`, `where cmake` y `where ninja` permiten examinar las ubicaciones encontradas de cada herramienta.\n`cl /Bv` pide información detallada de la versión del compilador.\n`cmake --version` y `ninja --version` consultan las versiones de esas dos herramientas.\n\nSi una variable necesaria aparece vacía o una herramienta no se encuentra, comprueba primero que abriste la consola de desarrollo correcta. Estas consultas no crean un proyecto ni compilan sus fuentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este equipo, `cl /Bv` informó MSVC 19.51.36260.0 y también `D8003`, con código dos: se pidió información del compilador sin proporcionarle una fuente que compilar. Este mensaje no demuestra por sí solo que la instalación esté dañada; se interpreta junto con la orden que lo produjo.\n\nEl CMake utilizado localmente procede de Visual Studio y muestra la versión 4.3.1-msvc1. La captura siguiente muestra otra instalación, la del entorno automatizado: allí se encontraron varias copias de CMake y la consulta de versión informó 4.4.5. En ambos casos Ninja mostró 1.13.2. No es necesario cambiar una instalación funcional sólo para que sus rutas coincidan con una captura."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_ci_herramientas",
+          "src": "images/programming2/p2_u4l3_ci_herramientas.png",
+          "alt": "Consola real de la prueba automatizada: Host y Destino x64, varias rutas de CMake, versión 4.4.5 y Ninja 1.13.2.",
+          "caption": "Reproducción automatizada en Windows Server 2025. Las líneas de where muestran ubicaciones; las consultas posteriores muestran versiones. El rótulo Administrator pertenece a ese entorno de prueba: esta práctica en tu equipo se realiza sin elevar la consola."
         },
         {
           "type": "multiple_choice",
@@ -81,7 +92,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si falta una herramienta en un equipo nuevo, hay que revisar la instalación de Visual Studio, MSVC x64, SDK y CMake/Ninja antes de descargar o configurar componentes. La sesión verificada partió de herramientas presentes; el recorrido inicial de instalación queda por documentar con pasos y capturas reales."
+          "text": "Si la consola de desarrollo correcta sigue sin encontrar una herramienta, vuelve a la preparación de Programación 1. En Visual Studio Installer revisa la carga «Desarrollo para el escritorio con C++» y los componentes de MSVC x64/x86, Windows SDK y herramientas de CMake para Windows, que aportan CMake y Ninja. La instalación y selección de componentes deben completarse antes de configurar esta prueba.\n\nEsta reproducción utilizó herramientas ya instaladas. Sus resultados no demuestran una instalación completa sobre un Windows vacío. Tampoco necesitas instalar las dependencias de narración o de la aplicación de cursos para construir este pequeño programa."
         }
       ]
     },
@@ -93,7 +104,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La raíz actual del curso es E:\\Projects\\LGAEDProjects. La antigua ruta E:\\PersonalFiles\\Projects ya no sirve. En la sesión inicial, cd /d falló y los siguientes comandos intentaron escribir dentro de Program Files\\Microsoft Visual Studio, produciendo «Acceso denegado». El error principal fue no comprobar el directorio tras la primera orden."
+          "text": "Elige primero dónde guardarás el proyecto. En el equipo del autor, la carpeta del curso es `E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional`. Las órdenes muestran esa ruta completa como ejemplo. En otro equipo puedes usar la carpeta de proyectos que preparaste en Programación 1; no necesitas disponer de una unidad E:.\n\nPara obtener tu ruta, abre la carpeta en el Explorador, selecciona su barra de direcciones y copia la ruta completa. Si es diferente, sustituye en los bloques de esta página la carpeta del curso por la tuya; conserva las comillas y el subdirectorio `01_prueba_cmake` cuando aparezca.\n\nEn una sesión anterior del autor se intentó usar la ruta antigua `E:\\PersonalFiles\\Projects`. El cambio de carpeta falló y las órdenes posteriores siguieron en Program Files de Visual Studio, donde recibieron «Acceso denegado». El problema inicial fue continuar sin comprobar dónde estaba la consola."
         },
         {
           "type": "code",
@@ -102,7 +113,23 @@
         },
         {
           "type": "paragraph",
-          "text": "La segunda orden debe mostrar la carpeta correcta; si no coincide, detén las operaciones de escritura y localiza la ubicación real. Para usar la prueba ya creada, entra en 01_prueba_cmake y revisa los archivos antes de editarlos. No vuelvas a sobrescribir archivos existentes con redirecciones sin comprobar su contenido."
+          "text": "La primera orden, `cd /d`, cambia a la ruta indicada; `/d` permite cambiar también de unidad. La orden `cd` sin argumentos muestra la carpeta actual. `dir /b` enumera los nombres de su contenido, sin la lista detallada. Comprueba ese resultado antes de crear archivos.\n\nSi todavía no existe `01_prueba_cmake`, créala en el Explorador:\n1. Abre la carpeta del curso que acabas de confirmar. Si falta la propia carpeta del curso, créala primero dentro de tu carpeta de proyectos con el mismo procedimiento.\n2. Pulsa Ctrl + Mayús + N para crear una carpeta.\n3. Escribe `01_prueba_cmake` y pulsa Intro.\n4. Abre esa carpeta con doble clic.\n\nSi ya existe, ábrela y conserva sus archivos: no crees otra copia ni sobrescribas contenido que no hayas revisado. En la captura se repitió la creación en una carpeta de comprobación del autor. Tú debes usar la ubicación que elegiste para tu proyecto; el nombre de la carpeta nueva es el mismo."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_crear_carpeta",
+          "src": "images/programming2/p2_u4l3_crear_carpeta.jpg",
+          "alt": "Explorador con la carpeta 01_prueba_cmake recién creada y seleccionada.",
+          "caption": "Resultado real de crear la carpeta. La ruta superior pertenece a la reproducción de estas acciones; localiza la carpeta equivalente dentro de tus proyectos."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cd /d \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\01_prueba_cmake\"\ncd\ndir /b"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta el bloque anterior para situar también la consola dentro de `01_prueba_cmake`, utilizando tu ruta si es distinta. La orden `cd` debe mostrar esa carpeta. Si falla el cambio o el resultado no coincide, detente y corrige la ubicación antes de escribir.\n\nEl bloque siguiente sirve para inspeccionar una prueba que ya tenga sus dos archivos: `type` muestra el contenido del archivo indicado. Si partes de una carpeta vacía, conserva esa carpeta y crea los archivos con las dos páginas siguientes. No ejecutes todavía sus órdenes `type`: los archivos aún no existen."
         },
         {
           "type": "code",
@@ -136,7 +163,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En 01_prueba_cmake, CMakeLists.txt describe el proyecto y su único ejecutable. Esta es una prueba de construcción, no la futura biblioteca de AssetCheck. Si el archivo ya existe, comprueba su contenido antes de modificarlo."
+          "text": "En `01_prueba_cmake` crearemos `CMakeLists.txt`: el archivo que describe el proyecto y su único ejecutable. Esta prueba todavía no contiene la biblioteca de AssetCheck.\n\nAbre Bloc de notas y elige Archivo → Nueva pestaña o la opción equivalente de documento nuevo. Usa texto sin formato y escribe el contenido siguiente. Si ya tienes ese archivo, ábrelo y compara su contenido antes de modificarlo; no lo reemplaces sin revisar lo que contiene."
         },
         {
           "type": "code",
@@ -145,7 +172,18 @@
         },
         {
           "type": "paragraph",
-          "text": "cmake_minimum_required establece CMake 3.20 como mínimo; project habilita C++; add_executable relaciona el objetivo preparar_entorno con main.cpp. target_compile_features declara capacidades mínimas de C++20, sin imponer una edición exacta del compilador. CXX_EXTENSIONS OFF indica que el objetivo no solicita extensiones del compilador."
+          "text": "Guarda la descripción dentro de la carpeta que acabas de crear:\n1. En Bloc de notas, abre Archivo → Guardar como.\n2. Entra en `01_prueba_cmake` dentro de tu carpeta del curso. Puedes pegar su ruta completa en «Nombre de archivo» y pulsar Intro para entrar en esa carpeta; después escribe el nombre del archivo.\n3. En «Nombre de archivo», escribe exactamente `CMakeLists.txt`.\n4. En «Tipo», selecciona «Todos los archivos»; en algunas versiones aparece como «Todos los archivos (*.*)».\n5. Comprueba que la codificación sea UTF-8 y pulsa «Guardar».\n\nLa pestaña debe mostrar `CMakeLists.txt`. Este nombre sí termina en `.txt`: no debe quedar como `CMakeLists.txt.txt`. La captura muestra los controles reales antes de guardar. La ubicación puede ser distinta en tu equipo; el nombre y la función de los controles son los que debes comprobar."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_guardar_cmake",
+          "src": "images/programming2/p2_u4l3_guardar_cmake.jpg",
+          "alt": "Guardar como en Bloc de notas con CMakeLists.txt, Tipo Todos los archivos y codificación UTF-8.",
+          "caption": "Comprueba la carpeta, el nombre CMakeLists.txt, el tipo Todos los archivos y UTF-8 antes de pulsar Guardar. En esta reproducción se guardó el archivo con ese nombre y contenido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada instrucción de la descripción tiene una función:\n`cmake_minimum_required(VERSION 3.20)` fija la versión mínima de CMake, no la versión del compilador.\n`project(PreparacionAssetCheck LANGUAGES CXX)` da nombre al proyecto y habilita el lenguaje C++.\n`add_executable(preparar_entorno main.cpp)` declara el objetivo ejecutable `preparar_entorno` y la fuente que lo formará, `main.cpp`.\n`target_compile_features(preparar_entorno PRIVATE cxx_std_20)` pide para ese objetivo un modo C++20 o posterior. `PRIVATE` aplica el requisito a su propia compilación; no lo declara como requisito que deban heredar otros objetivos.\n`set_target_properties(preparar_entorno PROPERTIES CXX_EXTENSIONS OFF)` solicita el modo sin extensiones propias del compilador cuando éste distingue esos modos (Scott, 2025).\n\nEl nombre del proyecto y el del objetivo son distintos. El modo mínimo tampoco garantiza por sí solo que el compilador implemente cada característica concreta de esa edición, y solicitar un modo sin extensiones no demuestra que rechazará cualquier extensión que se escriba."
         },
         {
           "type": "multiple_choice",
@@ -178,7 +216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda main.cpp junto a CMakeLists.txt. No necesita dependencias externas: std::puts escribe una línea en la salida estándar y return 0 indica terminación normal. El contenido deliberadamente pequeño permite separar fallos de construcción de las reglas del manifiesto que vendrán después."
+          "text": "Crea otro documento de texto sin formato mediante Archivo → Nueva pestaña; deja separado el archivo de CMake. Escribe el programa siguiente y guárdalo como `main.cpp` junto a `CMakeLists.txt`.\n\n`<cstdio>` proporciona la declaración de `std::puts`. Esta función escribe el texto recibido en la salida estándar y añade un salto de línea; por eso la cadena del ejemplo no necesita contenerlo. `return 0;` hace que `main` termine con código cero: no imprime por sí mismo ese número en la consola (ISO/IEC JTC 1/SC 22/WG 21, 2023).\n\nEl programa es deliberadamente pequeño para comprobar la construcción antes de incorporar las reglas del manifiesto. No requiere una biblioteca externa añadida por el estudiante."
         },
         {
           "type": "code",
@@ -187,7 +225,27 @@
         },
         {
           "type": "paragraph",
-          "text": "El texto mostrado por el programa se utiliza como evidencia. No demuestra que un archivo de recursos exista, que su tamaño real coincida con el declarado ni que el lote cumpla las reglas. Esas comprobaciones pertenecen a la implementación posterior."
+          "text": "En el documento que contiene C++, elige Archivo → Guardar como:\n1. Selecciona la misma carpeta `01_prueba_cmake`.\n2. Escribe `main.cpp` como nombre completo.\n3. Vuelve a elegir «Todos los archivos» y comprueba UTF-8.\n4. Pulsa «Guardar» y comprueba que la pestaña muestre `main.cpp`.\n\nEl nombre no debe terminar en `main.cpp.txt`. No guardes este programa sobre `CMakeLists.txt`: son dos archivos distintos y ambos son necesarios. Si el cuadro de guardado avisa de que el archivo ya existe, comprueba su contenido y su ubicación antes de decidir reemplazarlo."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_guardar_cpp",
+          "src": "images/programming2/p2_u4l3_guardar_cpp.jpg",
+          "alt": "Guardar como en Bloc de notas con el nombre main.cpp, Tipo Todos los archivos y UTF-8.",
+          "caption": "El nombre completo es main.cpp y el tipo es Todos los archivos. Los archivos guardados durante esta demostración se configuraron, construyeron y ejecutaron después: mostraron el mensaje inicial con código cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a la consola situada en `01_prueba_cmake` y ejecuta estas consultas, una por una. `dir /b` debe mostrar los nombres completos `CMakeLists.txt` y `main.cpp`; un `build` anterior puede aparecer si la prueba ya se había utilizado. Las dos órdenes `type` deben mostrar los contenidos que acabas de guardar. Si el Explorador oculta extensiones conocidas, esta lista permite comprobar el nombre completo sin cambiar esa preferencia."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "dir /b\ntype CMakeLists.txt\ntype main.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mensaje de la prueba mínima permite observar que ese programa se construyó y se ejecutó. Todavía no comprueba las reglas del manifiesto; esas reglas se implementarán después. AssetCheck validará las declaraciones recibidas: esta versión no abrirá los recursos para comprobar que existen ni medirá su tamaño real."
         },
         {
           "type": "multiple_choice",
@@ -216,7 +274,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde 01_prueba_cmake ejecuta la orden completa. -S . selecciona el árbol de fuentes, -B build separa los archivos generados, -G Ninja escoge el generador y -DCMAKE_BUILD_TYPE=Debug solicita la configuración de depuración para Ninja, que es de una sola configuración."
+          "text": "Desde `01_prueba_cmake`, con ambos archivos guardados, ejecuta cada línea del bloque por separado.\n\nEn la primera orden:\n`-S .` selecciona como árbol de fuentes la carpeta actual; el punto representa esa carpeta.\n`-B build` elige el directorio de resultados. Como la ruta es relativa, queda dentro de la carpeta actual, separado de las fuentes.\n`-G Ninja` pide a CMake generar las reglas para la herramienta Ninja.\n`-DCMAKE_BUILD_TYPE=Debug` establece una opción de configuración: `-D` introduce el nombre y el valor, separados por `=`. El generador Ninja utilizado aquí prepara una sola configuración en ese árbol, y elegimos Debug para depuración.\n\nLa segunda línea muestra el código devuelto por CMake. Si `CodigoConfiguracion` no es cero, detente y lee el primer diagnóstico antes de continuar. No construyas ni ejecutes un programa anterior como si procediera de una configuración que ha fallado."
         },
         {
           "type": "code",
@@ -225,7 +283,14 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando CMake termina normalmente, suele informar «Configuring done» y «Generating done». CMakeCache.txt y build.ninja son productos del directorio build; no se deben confundir con CMakeLists.txt, que es la fuente de la descripción. Si el directorio build ya pertenecía a otro generador, hay que usar uno nuevo o resolver esa diferencia expresamente."
+          "text": "Una configuración y generación correctas suelen terminar con `Configuring done` y `Generating done`. Comprueba también el código cero; esos mensajes no sustituyen leer un error anterior.\n\n`dir /b build` muestra los nombres del directorio de resultados. Allí se generan `CMakeCache.txt`, que conserva decisiones de configuración, y `build.ninja`, que contiene reglas para construir. Son productos de esta fase. `CMakeLists.txt` sigue siendo la descripción escrita por ti en el árbol de fuentes.\n\nSi ya existe un `build` de otra ubicación o de otro generador, no borres su contenido para seguir la receta. Revisa su procedencia y elige expresamente otro directorio de resultados, como aprendiste al separar construcciones. El nombre elegido con `-B` deberá ser el mismo que uses después al construir y localizar el ejecutable."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_ci_configurar",
+          "src": "images/programming2/p2_u4l3_ci_configurar.png",
+          "alt": "Consola real con la orden CMake, detección de MSVC, Configuring done, Generating done y CodigoConfiguracion=0.",
+          "caption": "Prueba automatizada en Windows Server 2025. La orden terminó con código cero y generó el árbol build. La ruta temporal y CMake 4.4.5 pertenecen a esa reproducción; no debes copiar su directorio en tu equipo."
         },
         {
           "type": "math_puzzle",
@@ -292,7 +357,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La documentación de CMake 4.3 sobre la línea de comandos confirma estas opciones y el comportamiento de --build. La sesión compartida sólo conserva el resultado final del ejecutable; para acreditar también esta etapa se necesitan sus mensajes y código de retorno."
+          "text": "Configurar y generar prepara las reglas que utilizará el sistema de construcción; aún no construye este objetivo ni ejecuta su programa (Scott, 2025).\n\nEn la reproducción local se conservaron los mensajes de esas fases y su retorno cero. La captura muestra el mismo procedimiento en el entorno automatizado. La evidencia de ambos tiene ese alcance: ninguno de esos resultados demuestra que se instalaron antes las herramientas sobre un Windows vacío."
         }
       ]
     },
@@ -304,7 +369,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La orden de construcción pide a CMake que invoque el sistema generado para preparar_entorno. Comprueba su código de salida inmediatamente. Después ejecuta el binario ubicado en build y consulta el retorno de ese proceso antes de ejecutar cualquier otra orden."
+          "text": "Ejecuta las líneas siguientes una por una. `cmake --build build --target preparar_entorno` utiliza las reglas del directorio `build` y solicita construir el objetivo `preparar_entorno`. CMake invoca Ninja, que compila y enlaza lo necesario.\n\nConsulta enseguida `CodigoConstruccion`. Si no es cero, detente y corrige el error antes de ejecutar el programa: una construcción fallida puede dejar un ejecutable anterior en la carpeta.\n\nSi la construcción termina correctamente, `build\\preparar_entorno.exe` ejecuta el archivo producido. La última orden `echo` consulta `%ERRORLEVEL%`, el código del proceso recién terminado, y lo muestra con el rótulo `Codigo=`. Ese rótulo lo imprime CMD; no forma parte del texto escrito por `std::puts`.\n\nNo pegues todo el bloque en una sola línea ni intercales otras órdenes antes de consultar el código correspondiente."
         },
         {
           "type": "code",
@@ -313,7 +378,14 @@
         },
         {
           "type": "paragraph",
-          "text": "La observación real del autor fue «AssetCheck: entorno listo» y «Codigo=0». El dato verifica que el ejecutable de prueba terminó satisfactoriamente en Windows x64 con las herramientas ya presentes. No se ha recibido todavía la salida completa de configuración, construcción ni una captura de la sesión."
+          "text": "En la reproducción local, la configuración, la construcción y la ejecución terminaron con código cero. El programa mostró `AssetCheck: entorno listo` seguido de salto de línea. Los dos archivos creados y guardados mediante Bloc de notas también produjeron ese resultado al comprobarlos.\n\nLa captura siguiente procede de la prueba automatizada con Windows Server 2025. Permite localizar la fuente, la construcción y la ejecución observadas allí. Son comprobaciones con herramientas presentes; no acreditan una instalación inicial ni la validación de un manifiesto."
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_ci_construir",
+          "src": "images/programming2/p2_u4l3_ci_construir.png",
+          "alt": "Consola real mostrando main.cpp inicial, construcción de preparar_entorno, mensaje AssetCheck: entorno listo y Codigo=0.",
+          "caption": "Prueba automatizada en Windows Server 2025. Se construyó y ejecutó el programa mínimo. El mensaje demuestra lo que hace esa fuente; Codigo=0 corresponde a esa ejecución y no a una validación de recursos."
         },
         {
           "type": "multiple_choice",
@@ -346,7 +418,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de guardar un cambio en main.cpp, ejecutar el .exe anterior no actualiza el programa. En esta práctica cambia sólo el texto que muestra std::puts y reconstruye el mismo objetivo. Un resultado viejo antes de reconstruir y el nuevo después permiten distinguir fuente editada de binario actualizado."
+          "text": "Abre el `main.cpp` de esta prueba en Bloc de notas. Cambia sólo el texto entregado a `std::puts` por el que aparece en la variante siguiente y elige Archivo → Guardar. Conserva `CMakeLists.txt` y la misma carpeta de resultados.\n\nGuardar la fuente no vuelve a construir el ejecutable. Primero ejecutarás el binario que ya existía; después reconstruirás el mismo objetivo y ejecutarás el nuevo. Comparar ambos mensajes permite reconocer qué revisión se ejecutó, incluso si las dos terminan con código cero."
         },
         {
           "type": "code",
@@ -357,6 +429,13 @@
           "type": "code",
           "language": "cmd",
           "code": "build\\preparar_entorno.exe\necho CodigoAntes=%ERRORLEVEL%\ncmake --build build --target preparar_entorno\necho CodigoConstruccion=%ERRORLEVEL%\nbuild\\preparar_entorno.exe\necho CodigoDespues=%ERRORLEVEL%"
+        },
+        {
+          "type": "image",
+          "imageId": "p2_u4l3_ci_reconstruir",
+          "src": "images/programming2/p2_u4l3_ci_reconstruir.png",
+          "alt": "Consola real con la fuente actualizada: el ejecutable anterior aún muestra entorno listo y, tras construir, muestra entorno actualizado con CodigoDespues=0.",
+          "caption": "Prueba automatizada en Windows Server 2025. El archivo fuente ya contiene actualizado cuando la primera ejecución todavía muestra listo. La construcción posterior actualiza el ejecutable y la última ejecución muestra el mensaje nuevo."
         },
         {
           "type": "multiple_choice",
@@ -377,7 +456,7 @@
         },
         {
           "type": "note",
-          "text": "La segunda reconstrucción es la siguiente comprobación práctica. El autor todavía no ha compartido el resultado de la variante «entorno actualizado», así que no se presenta como prueba realizada."
+          "text": "Ejecuta también este bloque línea por línea y detente si el código de construcción no es cero. En las reproducciones observadas, la ejecución previa a reconstruir mostró `AssetCheck: entorno listo`. Después de reconstruir mostró `AssetCheck: entorno actualizado`; ambas terminaron con código cero.\n\nLa coincidencia de los códigos no significa que se ejecutara la misma revisión: el mensaje es la observación que las distingue. Esta comprobación ya se realizó en una reproducción local y en la prueba automatizada de la captura."
         }
       ]
     },
@@ -456,7 +535,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para enseñar esta preparación desde cero aún se necesitan capturas reales de instalación y selección de componentes, además de imágenes legibles de la consola, la generación y la reconstrucción de la variante. No se sustituye esa evidencia con respuestas correctas de la app ni con capturas inventadas."
+          "text": "Las capturas de carpeta y guardado muestran acciones manuales reales; las de consola identifican la reproducción automatizada a la que pertenecen. No se atribuyen a tu equipo ni demuestran que tú hayas realizado esos pasos.\n\nLa instalación inicial y la selección de componentes de C++ se enseñaron en Programación 1. Si las herramientas no están disponibles en tu equipo, completa esa preparación y vuelve a comprobarlas antes de continuar. La reproducción de esta lección utiliza instalaciones presentes y no acredita una instalación integral de todas ellas sobre un Windows vacío."
         },
         {
           "type": "multiple_choice",
@@ -477,7 +556,7 @@
         },
         {
           "type": "note",
-          "text": "Continuación: completar las evidencias reales de preparación, conservar el programa mínimo y comenzar después la lectura y validación de un registro sin adelantar el cliente completo."
+          "text": "Conserva los dos archivos de esta prueba y su directorio de construcción. Haber configurado, construido y reconstruido el ejecutable mínimo comprueba ese recorrido del entorno; todavía no implementa AssetCheck. La etapa siguiente enseñará y construirá el lector y validador de un registro, con sus pruebas correspondientes."
         }
       ]
     }
@@ -556,8 +635,16 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "9ca3611f29e2f25d23badf3529d009179ce357318bffb6dcdae4f51a94aeff83",
-        "spans": []
+        "sourceSha256": "985473e6b83c4146d3139665bd1797ab19529c3bfeadd8c4aca826d77635de9b",
+        "spans": [
+          {
+            "start": 126,
+            "end": 151,
+            "text": "AssetCheck: entorno listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -622,39 +709,47 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "b1642df62e7704261e7c4043fa5ba144c640820bd053242a78a8550d843237ed",
-        "spans": []
+        "sourceSha256": "ae10d8d32c96f74f07062770f1bb2adf81d15b417ea62bbb3a0c4dc44db51fac",
+        "spans": [
+          {
+            "start": 564,
+            "end": 569,
+            "text": "where",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 664,
+            "end": 668,
+            "text": "PATH",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 820,
+            "end": 837,
+            "text": "(Microsoft, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "e6a6a8273d69e26818d5c172d408ae71f308cf8e048265aac7f7e244b683c5c5",
+        "sourceSha256": "6b741da8c38a1feab2c03de9904e268bb0e2dafe9ff2a53ceb47b2beeeb404ac",
         "spans": [
           {
-            "start": 30,
-            "end": 36,
+            "start": 17,
+            "end": 23,
             "text": "cl /Bv",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 62,
-            "text": "19.51.36260.0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 73,
-            "end": 78,
+            "start": 63,
+            "end": 68,
             "text": "D8003",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 304,
-            "end": 310,
-            "text": "1.13.2",
             "role": "output",
             "reading": "natural"
           }
@@ -711,7 +806,7 @@
       {
         "block": "block_0001_0005",
         "path": "/text",
-        "sourceSha256": "011cdde8a0aefb08918c2b1b459dc2215a38a9ec5b6784f6f74d3b34fc04b2b6",
+        "sourceSha256": "f00d8c925edef39052fb36c191fb20a19997f4711346118ecc5422ca4f6e12bc",
         "spans": []
       },
       {
@@ -723,19 +818,62 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "9bddac52e3829d7556ad5da811f4360476d5ed3888b136e64110b6c942ac4cbb",
-        "spans": []
+        "sourceSha256": "92879cabb373c9e360f938e28e5383d4e376bc07bd92b4257e827a3267cfb52f",
+        "spans": [
+          {
+            "start": 92,
+            "end": 167,
+            "text": "E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 599,
+            "end": 614,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 700,
+            "end": 725,
+            "text": "E:\\PersonalFiles\\Projects",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "5f2efd689cbb428a368f8ce927afd6ba142b8baa2a6470414ff976be93ed9e5d",
+        "sourceSha256": "b205c957e90ae04e5653972a277073b0accf4fc4d523183c65ac0fecb0ed053a",
         "spans": [
           {
-            "start": 172,
-            "end": 187,
+            "start": 69,
+            "end": 84,
             "text": "01_prueba_cmake",
-            "role": "cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 134,
+            "text": "cd",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 351,
+            "text": "type",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 534,
+            "end": 538,
+            "text": "type",
+            "role": "data",
             "reading": "technical"
           }
         ]
@@ -797,20 +935,20 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "c275efbf8a5106203f3fbef0c55f352f2c9ae4779e3fdc816991145b2ad8902d",
+        "sourceSha256": "8418712bc860aa4e98d0f5c898ca5ca3d0e8ad0950af609c97dab710b0b8eb4d",
         "spans": [
           {
-            "start": 3,
-            "end": 18,
+            "start": 4,
+            "end": 19,
             "text": "01_prueba_cmake",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 20,
-            "end": 34,
+            "start": 32,
+            "end": 46,
             "text": "CMakeLists.txt",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           }
         ]
@@ -818,63 +956,70 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "07e8415ea8708089f141fe1753e2734deaacc60c33e3823185428d0979325556",
+        "sourceSha256": "7cbac52fbca122a9eba9af9408e122869cea5bbce959d8892afd94ee123871c9",
         "spans": [
           {
-            "start": 0,
-            "end": 22,
-            "text": "cmake_minimum_required",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 39,
-            "end": 43,
-            "text": "3.20",
+            "start": 55,
+            "end": 91,
+            "text": "cmake_minimum_required(VERSION 3.20)",
             "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 64,
-            "text": "project",
-            "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 79,
-            "end": 93,
-            "text": "add_executable",
-            "role": "cpp",
+            "start": 157,
+            "end": 201,
+            "text": "project(PreparacionAssetCheck LANGUAGES CXX)",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 132,
+            "start": 254,
+            "end": 295,
+            "text": "add_executable(preparar_entorno main.cpp)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 329,
+            "end": 345,
             "text": "preparar_entorno",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 137,
-            "end": 145,
+            "start": 376,
+            "end": 384,
             "text": "main.cpp",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 147,
-            "end": 170,
-            "text": "target_compile_features",
-            "role": "cpp",
+            "start": 388,
+            "end": 448,
+            "text": "target_compile_features(preparar_entorno PRIVATE cxx_std_20)",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 274,
-            "text": "CXX_EXTENSIONS OFF",
-            "role": "cpp",
+            "start": 501,
+            "end": 508,
+            "text": "PRIVATE",
+            "role": "data",
             "reading": "technical"
+          },
+          {
+            "start": 620,
+            "end": 689,
+            "text": "set_target_properties(preparar_entorno PROPERTIES CXX_EXTENSIONS OFF)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 780,
+            "end": 793,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -941,43 +1086,72 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "bee546b28ff8a2662513664411eea6930234188737147b004a446f639379c5d4",
+        "sourceSha256": "913efcebeb6dff9046fda69a10c46559631d6334ebf86957c87f8adc3328a366",
         "spans": [
           {
-            "start": 7,
-            "end": 15,
+            "start": 157,
+            "end": 165,
             "text": "main.cpp",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 24,
-            "end": 38,
+            "start": 176,
+            "end": 190,
             "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 203,
+            "text": "<cstdio>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 75,
-            "end": 84,
+            "start": 236,
+            "end": 245,
             "text": "std::puts",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 135,
-            "text": "return 0",
+            "start": 391,
+            "end": 400,
+            "text": "return 0;",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 416,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 492,
+            "end": 525,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "4c8d8c5a39b9a05dc9648ad60a453cba5f99f3fef4843ebd47cffa0915de3b01",
-        "spans": []
+        "sourceSha256": "e4d747dacf947a38826f440923b46855c541486d7e7038a98bfd91a300bf57c3",
+        "spans": [
+          {
+            "start": 178,
+            "end": 188,
+            "text": "AssetCheck",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -1036,41 +1210,62 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "10cd12f76683310396bdc13c51dc9c3ec041c7f0bb43c700a4293072228f1fa7",
+        "sourceSha256": "a6918f2b0887aa0db03682cfa87591c1f6f53f5dc30ea8584f7e426bf9fe64b8",
         "spans": [
           {
-            "start": 6,
-            "end": 21,
+            "start": 7,
+            "end": 22,
             "text": "01_prueba_cmake",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 53,
+            "start": 122,
+            "end": 126,
             "text": "-S .",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 94,
+            "start": 214,
+            "end": 222,
             "text": "-B build",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 126,
-            "end": 134,
+            "start": 346,
+            "end": 354,
             "text": "-G Ninja",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 157,
-            "end": 181,
+            "start": 416,
+            "end": 440,
             "text": "-DCMAKE_BUILD_TYPE=Debug",
-            "role": "cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 482,
+            "end": 484,
+            "text": "-D",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 533,
+            "end": 534,
+            "text": "=",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 710,
+            "end": 729,
+            "text": "CodigoConfiguracion",
+            "role": "data",
             "reading": "technical"
           }
         ]
@@ -1078,55 +1273,62 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "0bbe8c95bcfaa113f6ec95237ebe2ad46d58896933033cd49bf2cd4b13b2c457",
+        "sourceSha256": "bb13c187b4fa9b5a913113aaa18167da6d2dd4fd97b25f0be89457dfa1972e72",
         "spans": [
           {
-            "start": 50,
-            "end": 66,
+            "start": 62,
+            "end": 78,
             "text": "Configuring done",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 86,
+            "start": 83,
+            "end": 98,
             "text": "Generating done",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 103,
+            "start": 189,
+            "end": 201,
+            "text": "dir /b build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 284,
             "text": "CMakeCache.txt",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 117,
+            "start": 332,
+            "end": 343,
             "text": "build.ninja",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 147,
-            "end": 152,
-            "text": "build",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 180,
-            "end": 194,
+            "start": 411,
+            "end": 425,
             "text": "CMakeLists.txt",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 249,
-            "end": 254,
+            "start": 512,
+            "end": 517,
             "text": "build",
-            "role": "cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 746,
+            "text": "-B",
+            "role": "data",
             "reading": "technical"
           }
         ]
@@ -1200,14 +1402,14 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "eadd697a4b73652496f891d6019f3d967356da17847acb3de6fcbf3e3fe23ba9",
+        "sourceSha256": "65f99963916e04ad00cc2bbe134f77f757c7753ae6bb21aefc9af2ed114dab1f",
         "spans": [
           {
-            "start": 104,
-            "end": 111,
-            "text": "--build",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 136,
+            "end": 149,
+            "text": "(Scott, 2025)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1220,19 +1422,68 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "ebb209ae249ee24cdb72839985279c74b5ea8f967de89d63265b86f028b9ce55",
+        "sourceSha256": "5360148d2390cff68918d6f217bd94860dad3a1e8260fe9e00e91696645b48c2",
         "spans": [
           {
-            "start": 75,
-            "end": 91,
-            "text": "preparar_entorno",
-            "role": "cpp",
+            "start": 44,
+            "end": 89,
+            "text": "cmake --build build --target preparar_entorno",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 177,
-            "end": 182,
+            "start": 126,
+            "end": 131,
             "text": "build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 183,
+            "text": "preparar_entorno",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 280,
+            "text": "CodigoConstruccion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 475,
+            "end": 501,
+            "text": "build\\preparar_entorno.exe",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 550,
+            "end": 554,
+            "text": "echo",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 566,
+            "end": 578,
+            "text": "%ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 649,
+            "end": 656,
+            "text": "Codigo=",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 724,
+            "end": 733,
+            "text": "std::puts",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1241,8 +1492,16 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "322c62e1a8f2e9aed26bf6ec3a1d31a01b9d62ed8bf39f55f90e559f052a29e5",
-        "spans": []
+        "sourceSha256": "f92ab04d2fd7b04c81fb5543aa36f7bec0605add28f7d314f7f3c69646740862",
+        "spans": [
+          {
+            "start": 123,
+            "end": 148,
+            "text": "AssetCheck: entorno listo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0004",
@@ -1307,27 +1566,27 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "c3cd66f04f646da82b6d03eba37e5bde7caa4c952974a6d90f25f0abe6849428",
+        "sourceSha256": "4e42d81509d1ff0185429456f6c72ccf6ed19f7553a54ca80226c27b4cfe89e4",
         "spans": [
           {
-            "start": 32,
-            "end": 40,
+            "start": 9,
+            "end": 17,
             "text": "main.cpp",
-            "role": "cpp",
+            "role": "data",
             "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 58,
-            "text": ".exe",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 144,
-            "end": 153,
+            "start": 86,
+            "end": 95,
             "text": "std::puts",
             "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 192,
+            "text": "CMakeLists.txt",
+            "role": "data",
             "reading": "technical"
           }
         ]
@@ -1383,8 +1642,23 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "5c1c1a2e848a535ec6791285a98f687d946fe597c3988a64ea65f936b0f550cd",
-        "spans": []
+        "sourceSha256": "9c316673b1b58a32280e91c59a7cd38c13b4e5fbba87765f973495202e31e7c0",
+        "spans": [
+          {
+            "start": 171,
+            "end": 196,
+            "text": "AssetCheck: entorno listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 261,
+            "text": "AssetCheck: entorno actualizado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0000",
@@ -1496,7 +1770,7 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "c7f4b510fd49cfae907dfbe514099af47a7a0fbb2cb99ad24b7efba8dcb0a39c",
+        "sourceSha256": "e3e07129b64fdcfa237dbada91ad0378d7b1a9388672a945f1a8c5122b0e6258",
         "spans": []
       },
       {
@@ -1550,8 +1824,295 @@
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "8fe2d70da10ce2bf7d096ec822d6a5aa98483f5005e04e293e8e4acc4e493293",
+        "sourceSha256": "4ea401ddd942d0ee6f00b6825ba79a406f2885cd5e05f4a7e247d782ae105011",
         "spans": []
+      },
+      {
+        "block": "u4l3_leer_consultas",
+        "path": "/text",
+        "sourceSha256": "838f9004299ca9bae68765462eb465597cd6b278ca529e99ac907ac11a88e107",
+        "spans": [
+          {
+            "start": 40,
+            "end": 43,
+            "text": "ver",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 81,
+            "text": "echo",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 257,
+            "text": "VSINSTALLDIR",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 321,
+            "text": "VCToolsInstallDir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 367,
+            "text": "WindowsSDKVersion",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 411,
+            "text": "VSCMD_ARG_HOST_ARCH",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 434,
+            "text": "VSCMD_ARG_TGT_ARCH",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 562,
+            "end": 565,
+            "text": "x64",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 577,
+            "text": "where cl",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 581,
+            "end": 592,
+            "text": "where cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 597,
+            "end": 608,
+            "text": "where ninja",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 678,
+            "end": 684,
+            "text": "cl /Bv",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 759,
+            "text": "cmake --version",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 764,
+            "end": 779,
+            "text": "ninja --version",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_crear_carpeta_pasos",
+        "path": "/text",
+        "sourceSha256": "8b6b3bed7cd02fc46cac4cce87569c2b8ac6b5da9702cfc38b801485729861a0",
+        "spans": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "cd /d",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 57,
+            "text": "/d",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 106,
+            "text": "cd",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 157,
+            "text": "dir /b",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 307,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 566,
+            "end": 581,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_guardar_cmake_pasos",
+        "path": "/text",
+        "sourceSha256": "94c8da9b2d6fae0fb25ac8382d2269b82aadbf1e5fc6eda5a5cb7359d52473ac",
+        "spans": [
+          {
+            "start": 127,
+            "end": 142,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 359,
+            "end": 373,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 573,
+            "end": 587,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 617,
+            "end": 621,
+            "text": ".txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 645,
+            "end": 663,
+            "text": "CMakeLists.txt.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_guardar_cpp_pasos",
+        "path": "/text",
+        "sourceSha256": "6f8e7f6e5057d33f5a94c3c834b7afa7fc320e6dd1cbacd761831d08ba9f6490",
+        "spans": [
+          {
+            "start": 96,
+            "end": 111,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 134,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 280,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 327,
+            "text": "main.cpp.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 362,
+            "end": 376,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_comprobar_nombres",
+        "path": "/text",
+        "sourceSha256": "b30637911048886cfa64409619a189b4194d34256a2441417bc1c76a9d972174",
+        "spans": [
+          {
+            "start": 32,
+            "end": 47,
+            "text": "01_prueba_cmake",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 96,
+            "text": "dir /b",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 148,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 161,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 173,
+            "text": "build",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "type",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1842,7 +2403,9 @@
           "block_0001_0000",
           "block_0001_0001",
           "block_0001_0002",
+          "u4l3_leer_consultas",
           "block_0001_0003",
+          "u4l3_imagen_herramientas",
           "block_0001_0004",
           "block_0001_0005"
         ]
@@ -1853,6 +2416,9 @@
           "block_0002_0000",
           "block_0002_0001",
           "block_0002_0002",
+          "u4l3_crear_carpeta_pasos",
+          "u4l3_imagen_carpeta",
+          "u4l3_entrar_carpeta_nueva",
           "block_0002_0003",
           "block_0002_0004",
           "block_0002_0005"
@@ -1864,6 +2430,8 @@
           "block_0003_0000",
           "block_0003_0001",
           "block_0003_0002",
+          "u4l3_guardar_cmake_pasos",
+          "u4l3_imagen_guardar_cmake",
           "block_0003_0003",
           "block_0003_0004",
           "block_0003_0005"
@@ -1875,6 +2443,10 @@
           "block_0004_0000",
           "block_0004_0001",
           "block_0004_0002",
+          "u4l3_guardar_cpp_pasos",
+          "u4l3_imagen_guardar_cpp",
+          "u4l3_comprobar_nombres",
+          "u4l3_comprobar_archivos_cmd",
           "block_0004_0003",
           "block_0004_0004"
         ]
@@ -1886,6 +2458,7 @@
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0003",
+          "u4l3_imagen_configurar",
           "block_0005_0004",
           "block_0005_0005"
         ]
@@ -1897,6 +2470,7 @@
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003",
+          "u4l3_imagen_construir",
           "block_0006_0004",
           "block_0006_0005"
         ]
@@ -1908,6 +2482,7 @@
           "block_0007_0001",
           "block_0007_0002",
           "block_0007_0003",
+          "u4l3_imagen_reconstruir",
           "block_0007_0004",
           "block_0007_0005"
         ]
@@ -2188,7 +2763,240 @@
         ]
       }
     },
-    "additions": [],
-    "editorial": []
+    "additions": [
+      {
+        "id": "u4l3_leer_consultas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_imagen_herramientas",
+        "sha256": "b47563fb8bb19f1bf1c1fce3c21a7a5b1294248c9a7788d3cc4102ed7e445868",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_crear_carpeta_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l3_imagen_carpeta",
+        "sha256": "023c5daeadbbfa1a8cf2493a457c6519255fb29b6f4727afced994b47e378827",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l3_entrar_carpeta_nueva",
+        "sha256": "b1148585c1ffb270ed164d2a9f84362e78332116e8d338b6a7225629a957e2ad",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u4l3_guardar_cmake_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l3_imagen_guardar_cmake",
+        "sha256": "209a4cc2994070a3dc237317be395ae96a0b94a6a9b1377f72974b3d37dcac52",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u4l3_guardar_cpp_pasos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 7
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l3_imagen_guardar_cpp",
+        "sha256": "8337f4e7f8bfa02c45d6ee01c521cf5d8442c1655b200b76f489ab20b358f0e7",
+        "storage": {
+          "page": 9,
+          "block": 8
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l3_comprobar_nombres",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 9
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l3_comprobar_archivos_cmd",
+        "sha256": "abc53d4bf9b149898599dbc42cdddf8bee8f045a666c93ea103268ff8b1457cf",
+        "storage": {
+          "page": 9,
+          "block": 10
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u4l3_imagen_configurar",
+        "sha256": "8bfd9ea87496939bea0f3db08351fb3afdb50b3b50be5eb932ad883884abc1ed",
+        "storage": {
+          "page": 9,
+          "block": 11
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u4l3_imagen_construir",
+        "sha256": "535d7d6056dbdfe2d27f1b5a705d732a533fedd4827243ede6ff18117400017e",
+        "storage": {
+          "page": 9,
+          "block": 12
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u4l3_imagen_reconstruir",
+        "sha256": "67ef744cdf858f3f6f63fbf63f8ebc01151cab2cfa2fab243f78d0086b9ef5bb",
+        "storage": {
+          "page": 9,
+          "block": 13
+        },
+        "progressPage": "page_0007"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "5f9a3b89f92d88054200ce06780048536663d7beba9c59253c9ce99f4cdc03a9",
+        "afterSha256": "e0ef479b49052a8416d1ab301fc63171a73290c1fb33dc468a58fff2ea5babca"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "0d3aaad7a566b4003f20cc6e50d7ed28accaea41eca88b950cfc71ebfb64c1b4",
+        "afterSha256": "cbc7e94bcffdfa8edadd1c0478f06bd44875f51894998029c3f9ec72f8ff96ad"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "e90e496788ef44b5332d7d4debfe1bb40a9fb436f98450b84b04a544600a5dfa",
+        "afterSha256": "ec3385811a29259b46f3f6cb1535ba4e78da9462c0e3da8df81090c8e7b91f02"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "bf1fee185db4f912c450854dc5d078a8bd0b3aa63ab988a6f464256c1ce7eb2a",
+        "afterSha256": "4e58ebe23848c18a59dbdaeba3de62a69e93e326d92d514dc877383bfeeeff9c"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "d61f77c8ddc0f8e8d15b2cd0ef358c34f26ee0ad923ff94429834847d420198f",
+        "afterSha256": "cd52b04113fd6f8dbb43c3dd027ea3157a739f09466403f795fb4fa7341ed70e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "4b5185ff23e016f99bd522b57f224c46f40296192842b70ba4793f2384dc4434",
+        "afterSha256": "3426728983fb7980196b54b9390e27e4e2b64a2a21dcf9fdf35ce70670894903"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "38f9a0e98217431c07a75baadf979ec185aa6f74565b8dfbb4e653e1586c4a7b",
+        "afterSha256": "483388f2a70d518df142bbfd25f079088ec12a31b30d0858b60e6df374a8048b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "6b6e6902ba3311797f7f20ee6417ebd0ba43ea7c50dfd81dc6f95c5867008a70",
+        "afterSha256": "142ef43b3a190ad76221930404debcea93ac3c40127b939ffc69e39af3f412e3"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d2912ff68ca25e288e06cf2e86244679e93939a362552327912226748702b92b",
+        "afterSha256": "471ca9b76ac2b8bafba0a1746ccef7fec0db838e2765158fa71d2ed20bdb3360"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e0977a5c8f8626cf61b5180f4df39e8b8119930b6b862f38cabe0c973914c6c2",
+        "afterSha256": "a9eeef0a8ea32140f24c93ab05dbea00cba170558d1ceb9463ff388e1ad9744e"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "d462959bc2bce310dfd924ad00f57982390dcea2cb777482258973451c3c44c4",
+        "afterSha256": "6416a62931c829519968b6521c4f260651171d8168b22cb4ea83f0d4738fae94"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "eb69c0be00c9208a8b1af118c2884986417fd449d0f705f4b5bc73de4c9d0e81",
+        "afterSha256": "676903d339cac1e5361f0993b90d8c5fbf9bbc951b08048abc4b4ce324b55d8d"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "993f95d91feab3d749ee4deb484e799a8da5c7a4802031a910742efb5f067606",
+        "afterSha256": "c38ff7eed4eb422c2882cf557eb8fb9fcbfe14ea8d55e8adaca44b8b7d53498d"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "d7d8dc84565b060fe402264a101cbfbf49557726a5b513acb5d2bda598088404",
+        "afterSha256": "156d55df2843165cb5042eefc52ca9e509c7540ab10c714e4dbdd6019bd176b5"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "01600ee022c1135599a4d89efbaae0289fd3367556e03785b64a44fd30e96d47",
+        "afterSha256": "f622e6b00c3d4484a5931217026669d405e5a2338fd0a0f5fd56e001cd6f21ed"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "d5299146cbddede81582937a8f802d7ecba420dfd9b8443fedb1a0ecb4604f6b",
+        "afterSha256": "d104d24b786b143361b543f405401f8d927eafec7a215f5a237c0c47e8e78b6f"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "f9b65e9e032e3c2a0a0da9864f1c3710e2989c30421e2805be50684e621c79cd",
+        "afterSha256": "b62b6883d234e1eb870dda7a7c16b89e6249e86d2252da4c89344649a312e1a7"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "025d9bd5bf71edac57fff74781b04e1e2b767f5a3286d0ecd7cea5f60b2d0150",
+        "afterSha256": "03e52f45fa6dc189d7d65ebdc3d8cddcb33f67703f8fad7d267801028edd9e27"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "336cd5657a66eae852409ae89483c4903b1374357679a1f30a58dd5928dc62b5",
+        "afterSha256": "95697086910511c15e6d06c1fa9651081833a399a7236907f0457380acd8c3f2"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "156d55df2843165cb5042eefc52ca9e509c7540ab10c714e4dbdd6019bd176b5",
+        "afterSha256": "c44a738146ac60243efcb831e6560b0d8366142684f0aafc1fbdba7222e102c3"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3426728983fb7980196b54b9390e27e4e2b64a2a21dcf9fdf35ce70670894903",
+        "afterSha256": "175b20b3cc8014f042aec6abd139071dd55f5cb020f4d5ef5024595476fefa6f"
+      }
+    ]
   }
 }

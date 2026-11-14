@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Una construcción reproducible necesita más que recordar dónde quedó un ejecutable. Debemos conservar las fuentes, la descripción del proyecto, las herramientas elegidas y las opciones utilizadas. CMake permite describir proyectos y preparar las reglas con las que otra herramienta coordina su construcción. Primero distinguiremos los elementos de ese proceso; después los utilizaremos en un proyecto real (Scott, 2025, pp. 7–10)."
+          "text": "Para volver a construir un programa necesitamos conservar sus fuentes y saber qué herramientas y ajustes utilizar. Si sólo guardamos el ejecutable que funcionó, no habremos explicado cómo obtenerlo de nuevo a partir del código.\n\nCMake permite escribir una descripción del proyecto: qué programas se quieren construir, qué archivos intervienen y qué requisitos deben aplicarse. A partir de esa descripción prepara reglas para una herramienta que organiza la compilación y el enlace. En esta lección distinguirás esas tareas y utilizarás un proyecto pequeño en el Laboratorio (Scott, 2025)."
         },
         {
           "type": "paragraph",
-          "text": "Llamaremos directorio de fuentes al lugar que conserva main.cpp y CMakeLists.txt. El primero contiene nuestro programa C++; el segundo describe su construcción con el lenguaje de CMake. El directorio de construcción recibe reglas generadas, comprobaciones y productos obtenidos. Elegimos directorios distintos para mantener separados esos papeles; también pueden existir varios directorios de construcción para unas mismas fuentes (Scott, 2025, pp. 7–8)."
+          "text": "Organizaremos los archivos en dos carpetas con funciones distintas:\n\nDirectorio de fuentes: contiene los archivos que mantenemos, entre ellos `main.cpp`, con el programa C++, y `CMakeLists.txt`, con la descripción escrita en el lenguaje de CMake.\nDirectorio de construcción: recibe las reglas generadas y los archivos producidos al construir el proyecto, como su ejecutable.\n\nEstos últimos se llaman también productos o artefactos de construcción. Pueden obtenerse otra vez utilizando las fuentes, herramientas y ajustes correspondientes. Mantenerlos separados ayuda a distinguir qué archivos editamos y cuáles se generan (Scott, 2025)."
         },
         {
           "type": "code",
@@ -23,7 +23,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este árbol describe una organización de ejemplo, no una instrucción para mover tu repositorio ni para borrar carpetas. La separación no depende de esos nombres: una carpeta llamada salida no se convierte en fuente o producto sólo por su nombre. Importa quién mantiene sus archivos y cómo se obtienen."
+          "text": "El árbol muestra una organización de ejemplo. En fuente conservamos la descripción y el programa; en construccion se guardan los resultados de las herramientas.\n\nPodríamos elegir otros nombres de carpetas sin cambiar esas funciones. También podemos preparar más de un directorio de construcción para las mismas fuentes, cada uno con sus propios ajustes y resultados. El nombre de una carpeta no decide qué archivos se compilan; esa decisión debe expresarse en la descripción del proyecto."
         },
         {
           "type": "multiple_choice",
@@ -52,11 +52,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Configurar interpreta la descripción del proyecto, establece opciones y comprueba las herramientas habilitadas. Generar produce reglas para la herramienta de construcción seleccionada, como Ninja. Normalmente una invocación de CMake realiza ambas fases, pero sus funciones son diferentes. La construcción posterior usa esas reglas para actualizar los productos necesarios (Scott, 2025, pp. 8–10).\n\nUn objetivo ejecutable reúne, bajo un nombre, las fuentes y las decisiones necesarias para construir un programa (Scott, 2025, p. 15). El de esta práctica se llamará consulta; utilizaremos ese nombre para pedir su construcción."
+          "text": "CMake realiza dos tareas antes de que construyamos nuestra aplicación:\n\nConfigurar: interpreta la descripción, establece los ajustes del proyecto y comprueba las herramientas de los lenguajes habilitados.\nGenerar: escribe las reglas que utilizará la herramienta de construcción elegida. Por ejemplo, puede preparar reglas para Ninja, una herramienta que organiza qué debe compilarse y enlazarse.\n\nUna invocación de CMake suele realizar ambas fases. Después se solicita construir el programa utilizando las reglas generadas (Scott, 2025).\n\nPara poder pedir un producto concreto, la descripción le asigna un nombre y relaciona con él sus fuentes y requisitos. Ese elemento se llama objetivo. En la práctica crearemos un objetivo ejecutable llamado `consulta`: pediremos construirlo para obtener el programa."
         },
         {
           "type": "paragraph",
-          "text": "Al habilitar C++, project puede comprobar el compilador construyendo y enlazando pequeños programas de prueba. Eso no significa que ya se haya compilado nuestra aplicación. También puede haber configuraciones sin cambios que reutilicen comprobaciones anteriores; leer un mensaje de éxito exige identificar a qué paso corresponde (Scott, 2025, pp. 14–15)."
+          "text": "Durante la configuración, CMake puede comprobar que el compilador C++ funciona construyendo y enlazando programas auxiliares. Esas pruebas utilizan sus propias fuentes; no equivalen a construir el main.cpp de nuestra aplicación.\n\nAdemás, una configuración posterior puede reutilizar comprobaciones anteriores cuando corresponda. Al leer un mensaje satisfactorio, identifica qué se comprobó: las herramientas, las reglas del proyecto o el programa que quieres ejecutar (Scott, 2025)."
         },
         {
           "type": "multiple_choice",
@@ -102,7 +102,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el siguiente ejemplo CMakeLists.txt usa tres instrucciones. cmake_minimum_required declara la versión mínima de CMake admitida por la descripción: VERSION 3.20 exige CMake 3.20 o posterior, no elige la versión de C++. project da nombre al proyecto y habilita C++, escrito CXX en el lenguaje de CMake. add_executable crea el objetivo ejecutable consulta: un elemento con nombre que reúne las fuentes y decisiones necesarias para construir ese programa. Aquí su fuente es main.cpp (Scott, 2025, pp. 13–15)."
+          "text": "El siguiente `CMakeLists.txt` contiene tres instrucciones. Lee cada una con sus argumentos:\n\n`cmake_minimum_required(VERSION 3.20)`: VERSION introduce la versión mínima de CMake que admite esta descripción. Se necesita CMake 3.20 o posterior; ese número no selecciona una versión de C++.\n`project(Existencias LANGUAGES CXX)`: Existencias es el nombre del proyecto. LANGUAGES introduce los lenguajes que se habilitan y CXX es el nombre que utiliza CMake para C++.\n`add_executable(consulta main.cpp)`: crea el objetivo ejecutable consulta y declara main.cpp como fuente de ese objetivo.\n\nCMake interpreta estas decisiones para preparar la construcción. Declarar el objetivo todavía no significa que se haya construido ni ejecutado su programa (Scott, 2025)."
         },
         {
           "type": "code",
@@ -111,7 +111,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto se llama Existencias y el objetivo consulta. El archivo ejecutable usa por defecto el nombre del objetivo con las convenciones de la plataforma: en el entorno Windows de este ejemplo será consulta.exe. No deduzcas que el proyecto y el archivo deben llamarse igual. La descripción mostrada aún no fija un estándar de C++ ni todas las opciones de un entorno; esos datos también deberán declararse al construir nuestro proyecto de trabajo."
+          "text": "Los tres nombres tienen funciones diferentes:\n`Existencias` nombra el proyecto.\n`consulta` identifica el objetivo que pediremos construir.\n`main.cpp` identifica el archivo C++ utilizado para obtenerlo.\n\nPor defecto, el archivo ejecutable toma el nombre del objetivo según las convenciones de la plataforma. En el entorno Windows de esta práctica será `consulta.exe`.\n\nEsta descripción mínima aún no expresa el estándar de C++ requerido ni todos los ajustes de la construcción. Los añadiremos a continuación; no se deducen del nombre del proyecto ni del archivo fuente."
         },
         {
           "type": "multiple_choice",
@@ -149,7 +149,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente trabajo consistirá en preparar los archivos, fijar las herramientas y opciones, configurar y generar, construir consulta y ejecutar el resultado con casos conocidos. Guardaremos por separado las evidencias de cada fase y volveremos a construir después de un cambio. Leer esta descripción prepara esas decisiones; la práctica con el proyecto es una parte necesaria de su aprendizaje."
+          "text": "La práctica seguirá este orden:\nPreparar los archivos y declarar los requisitos del objetivo.\nConfigurar y generar las reglas con las herramientas del Laboratorio.\nConstruir consulta con esas reglas.\nEjecutarlo y comparar sus respuestas con los casos conocidos.\nModificar una parte y volver a comprobar lo que depende de ese cambio.\n\nLos registros permitirán distinguir el resultado de cada acción. Una salida guardada antes de editar describe aquella versión; tendremos que construir y ejecutar la versión nueva para observar su comportamiento."
         }
       ]
     },
@@ -161,11 +161,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Las tres instrucciones anteriores describían el proyecto y su objetivo. Ahora añadimos dos decisiones: exigir como mínimo las características de C++20 y solicitar un modo sin extensiones propias del compilador. El pequeño programa de esta práctica no necesita todas las características de C++20; declaramos ese mínimo como requisito del proyecto. Un modo posterior puede satisfacerlo, como sucede con el perfil C++23 del que parte actualmente la app de Windows (Scott, 2025, pp. 214–217)."
+          "text": "Añadiremos dos decisiones a la descripción: pedir un modo de compilación de C++20 o posterior y solicitar que no se habiliten las extensiones propias del compilador.\n\nLas extensiones permiten aceptar formas de escribir el programa que no pertenecen al estándar solicitado y que otro compilador puede no admitir. Desactivarlas, cuando la herramienta ofrece esa distinción, ayuda a expresar qué modo queremos utilizar. No sustituye la comprobación del programa en las herramientas elegidas.\n\nEste ejemplo pequeño no necesita todas las novedades de C++20. Declaramos ese mínimo como requisito del proyecto, que también puede cumplirse con un modo posterior, como C++23 (Scott, 2025)."
         },
         {
           "type": "paragraph",
-          "text": "En CMake una instrucción tiene la forma nombre(argumentos). En estas descripciones, los argumentos se separan por espacios o saltos de línea; los paréntesis delimitan la lista. No copiamos las comas entre argumentos ni el punto y coma final de una llamada de C++. CMake interpreta estas instrucciones como lenguaje de construcción, mientras que el compilador C++ interpreta el programa de la fuente. Observa las palabras y el orden de los argumentos: cada instrucción les asigna una función distinta (Scott, 2025, pp. 12–15)."
+          "text": "Una instrucción de CMake tiene un nombre seguido de argumentos entre paréntesis. Por ejemplo, en `add_executable(consulta main.cpp)`, los argumentos son consulta y main.cpp.\n\nEn estas instrucciones los argumentos se separan por espacios o saltos de línea. No se añaden las comas entre argumentos ni el punto y coma final de una llamada de C++. CMake interpreta su propio lenguaje; el compilador C++ interpretará después el código del programa.\n\nEl orden también importa: cada instrucción asigna un significado a sus argumentos. Por eso hay que reconocer qué posición nombra un objetivo, cuál indica una fuente y cuál expresa un ajuste (Scott, 2025)."
         },
         {
           "type": "code",
@@ -174,15 +174,15 @@
         },
         {
           "type": "paragraph",
-          "text": "target_compile_features recibe el nombre del objetivo, el alcance y las características requeridas. Aquí consulta es el objetivo ya creado por add_executable; PRIVATE aplica el requisito a su propia compilación. Esta palabra pertenece al lenguaje de CMake y no es una declaración de acceso de una clase C++. cxx_std_20 pide un estándar que proporcione como mínimo las características de C++20; no obliga a un compilador a bajar de un modo posterior que ya las proporciona (Scott, 2025, pp. 216–217)."
+          "text": "En `target_compile_features(consulta PRIVATE cxx_std_20)`, los argumentos tienen estas funciones:\nconsulta identifica el objetivo ya creado.\nPRIVATE aplica el requisito a la compilación de ese objetivo.\ncxx_std_20 pide un modo de C++20 o posterior, en lugar de enumerar características individuales del lenguaje (Scott, 2025).\n\nPor tanto, utilizar C++23 puede cumplir el mínimo declarado. No se ha exigido utilizar exactamente C++20. Elegir ese modo tampoco demuestra que el compilador implemente todas las características de una edición del lenguaje: al compilar habrá que comprobar las operaciones concretas que use el programa."
         },
         {
           "type": "paragraph",
-          "text": "set_target_properties asigna propiedades a objetivos. En este caso PROPERTIES introduce el par nombre/valor CXX_EXTENSIONS OFF: pedimos a CMake el modo estándar frente al modo de extensiones para consulta, cuando el compilador distingue esos modos. Esta propiedad no demuestra que cualquier programa sea portable ni evita por sí sola utilizar una biblioteca que otro entorno no tenga. El estándar requerido y las extensiones son decisiones diferentes (Scott, 2025, pp. 214–215)."
+          "text": "Una propiedad es un ajuste con nombre asociado a un objetivo. `set_target_properties` permite asignar esos ajustes.\n\nEn `set_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)`:\nconsulta identifica el objetivo que se ajusta.\nPROPERTIES anuncia las parejas de propiedad y valor.\nCXX_EXTENSIONS es la propiedad que controla la solicitud de extensiones de C++.\nOFF pide desactivarlas cuando el compilador distingue ese modo (Scott, 2025).\n\nSon dos decisiones distintas: cxx_std_20 expresa el mínimo del modo de lenguaje y CXX_EXTENSIONS OFF expresa la solicitud sobre extensiones. Ninguna demuestra por sí sola que el programa pueda construirse en cualquier equipo."
         },
         {
           "type": "paragraph",
-          "text": "cmake_minimum_required(VERSION 3.20) fija la versión mínima de CMake admitida por esta descripción. También establece las políticas: reglas de compatibilidad que CMake aplica al interpretar el proyecto. No selecciona C++20, y el número elegido no pretende ser un mínimo universal para cualquier proyecto C++20. Mantén separadas la versión de CMake, las capacidades del compilador C++ y los requisitos del objetivo (Scott, 2025, p. 13)."
+          "text": "Vuelve a separar los números de la descripción. En `cmake_minimum_required(VERSION 3.20)`, 3.20 corresponde a CMake. En cxx_std_20, 20 corresponde al modo de C++.\n\nLa primera instrucción también establece reglas de compatibilidad para interpretar la descripción; CMake las llama políticas. Permiten relacionar el comportamiento que espera el proyecto con la versión indicada (Scott, 2025).\n\nElegir 3.20 aquí no significa que todo proyecto C++20 tenga ese mismo mínimo de CMake. Hay que declarar los requisitos de cada herramienta según las instrucciones que utilice el proyecto."
         },
         {
           "type": "multiple_choice",
@@ -228,11 +228,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa decide si hay que reponer existencias. debe_reponer(disponibles, minimo) debe devolver verdadero cuando disponibles sea menor o igual que minimo. Trabajaremos con enteros 0 ≤ disponibles ≤ 40 y 1 ≤ minimo ≤ 40. La igualdad pertenece al caso de reposición: llegar al mínimo todavía exige reponer."
+          "text": "El programa decidirá si hace falta reponer existencias. La función `debe_reponer(disponibles, minimo)` debe devolver verdadero cuando la cantidad disponible sea menor o igual que el mínimo.\n\nSus argumentos cumplen estas condiciones:\ndisponibles es un entero entre cero y cuarenta, incluidos los extremos.\nminimo es un entero entre uno y cuarenta, incluidos los extremos.\n\nLlegar exactamente al mínimo todavía exige reponer. Al calcular los esperados, utiliza esa regla antes de consultar la implementación."
         },
         {
           "type": "paragraph",
-          "text": "Usaremos tres llamadas en este orden: (4,5), (5,5) y (6,5). Antes de mirar una ejecución, calcula qué pide el contrato para cada pareja. std::cout muestra aquí bool como 1 o 0; los separaremos con dos puntos, sin espacios ni salto final. No se ha activado boolalpha."
+          "text": "Usaremos estas llamadas en el orden indicado:\nCuatro disponibles y mínimo cinco.\nCinco disponibles y mínimo cinco.\nSeis disponibles y mínimo cinco.\n\nEn el programa, `std::cout` mostrará los valores bool como `1` para verdadero y `0` para falso. No se activa std::boolalpha, que los presentaría como palabras. Los tres resultados se separarán con dos puntos, sin espacios ni salto final. En el puzzle calcula la salida que exige el contrato, conservando ese orden y formato."
         },
         {
           "type": "multiple_choice",
@@ -253,7 +253,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este resultado servirá como oráculo de estos casos: una referencia independiente con la que comparar la observación. Tres coincidencias serán evidencia sobre esas llamadas; no una prueba de todas las entradas del dominio. Conservaremos también qué fuente, descripción, herramientas y pasos produjeron cada observación."
+          "text": "El esperado que acabas de calcular procede del requisito. Lo utilizaremos como oráculo: el criterio con el que compararemos lo observado al ejecutar el programa.\n\nSi las tres respuestas coinciden, habremos comprobado esas tres llamadas en la versión ejecutada. No habremos probado automáticamente todas las entradas del dominio ni una versión que todavía no se ha construido. Mantén relacionados los archivos, las herramientas utilizadas y los resultados de cada ejecución."
         },
         {
           "type": "multiple_choice",
@@ -282,15 +282,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor de código conserva dos archivos editables. CMakeLists.txt contiene las decisiones de construcción del proyecto; main.cpp contiene el programa C++. El objetivo solicitado es consulta y el tipo de construcción inicial es Debug. Debug es una configuración de construcción, no una prueba de corrección ni un requisito para que la comparación sea inclusiva."
+          "text": "El editor ofrece dos archivos:\n`CMakeLists.txt`, para las decisiones de construcción.\n`main.cpp`, para el programa C++.\n\nEl objetivo solicitado es consulta. El tipo de construcción inicial es Debug: una configuración que agrupa ajustes de compilación y depuración. Ese nombre no indica que el programa ya esté comprobado ni decide qué comparación pide su contrato."
         },
         {
           "type": "paragraph",
-          "text": "En la app de Windows, CMake genera reglas para Ninja. Ninja coordina la compilación y el enlace con MSVC para obtener un ejecutable nativo x64; aquí será consulta.exe. La app proporciona las herramientas del perfil y parte del modo C++23. El mínimo cxx_std_20 de CMakeLists.txt puede cumplirse con ese modo posterior. Lee las herramientas y los comandos que identifica el registro para relacionar el artefacto con su construcción."
+          "text": "En el Laboratorio Windows de esta práctica, CMake genera reglas para Ninja. Ninja utiliza esas reglas para coordinar la compilación y el enlace con MSVC, el compilador de Microsoft, y obtener el ejecutable nativo `consulta.exe`.\n\nLa app utiliza un conjunto de herramientas y ajustes, al que llamaremos perfil. El perfil actual parte de C++23; el mínimo cxx_std_20 declarado en CMakeLists.txt puede cumplirse con ese modo posterior.\n\nConsulta en el registro qué herramientas y órdenes se utilizaron. Así podrás relacionar el ejecutable con la construcción que lo produjo. La preparación de herramientas fuera de la app se enseñará durante el proyecto; aquí utilizarás las disponibles en el Laboratorio."
         },
         {
           "type": "paragraph",
-          "text": "Primero pulsa «Configurar y generar» y lee su resultado. Después pulsa «Construir objetivo» y distingue ese registro del anterior. Cuando la construcción termine correctamente, usa «Compilar, ejecutar y comprobar»: este control vuelve a construir lo necesario y contrasta una ejecución nueva con la meta de la actividad. El proyecto no necesita entrada estándar; debe mostrar 1:1:0, sin salto final, y terminar con código 0. Si no coincide, revisa archivos, objetivo, perfil y registros antes de repetir. Cada éxito acredita solamente la fase y las condiciones que se comprobaron."
+          "text": "Realiza las acciones del editor en este orden:\n\nPulsa «Configurar y generar». Lee si CMake pudo interpretar la descripción y preparar las reglas.\nPulsa «Construir objetivo». Revisa si se pudo construir consulta; ese resultado pertenece a una acción diferente de la configuración.\nPulsa «Compilar, ejecutar y comprobar». El control construye lo necesario y compara una ejecución nueva con la meta de la actividad.\n\nEl proyecto actual no necesita entrada estándar. Sus tres llamadas deben mostrar `1:1:0`, sin salto final, y terminar con código cero. Si aparece una diferencia, identifica primero en qué acción ocurrió y qué archivo o resultado señala el registro. Corregirás ese dato antes de volver a comprobar."
         },
         {
           "type": "cpp_compiler",
@@ -342,7 +342,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida y la terminación pertenecen al proyecto realmente construido y ejecutado. Conservar un nombre de archivo o un resultado anterior no identifica por sí solo esa revisión."
+          "text": "Relaciona la salida con los archivos que acabas de construir y ejecutar. Un nombre como consulta.exe puede conservarse después de editar el código, pero el nombre por sí solo no demuestra qué versión contiene. La construcción y la ejecución nuevas son las que permiten observar el cambio."
         }
       ]
     },
@@ -354,7 +354,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Investigaremos una revisión que cambia únicamente <= por < en debe_reponer. La descripción CMake y las tres llamadas siguen iguales. Antes de construirla, predice lo que hará la implementación; mantén separado ese resultado del que exige el contrato."
+          "text": "La revisión siguiente cambia sólo `<=` por `<` en debe_reponer. CMakeLists.txt y las tres llamadas permanecen iguales.\n\nPredice lo que imprime esa comparación escrita, sin repararla mentalmente. Después podrás contrastar el resultado de la implementación con el esperado que exige el contrato."
         },
         {
           "type": "output_prediction",
@@ -370,7 +370,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa del editor de código empieza con la revisión estricta que acabas de predecir. Repara sólo la comparación de main.cpp para cumplir el contrato inclusivo y usa «Compilar, ejecutar y comprobar». Con este proyecto simple, el cuerpo de la función puede cambiar sin modificar rutas ni CMakeLists.txt; conserva esas decisiones y las tres llamadas. Un intento incorrecto puede corregirse y volver a comprobarse en esta misma actividad."
+          "text": "El editor empieza con la revisión estricta que acabas de predecir. Cambia únicamente la comparación de debe_reponer en `main.cpp` para incluir la igualdad. Conserva el resto de la función, las tres llamadas y CMakeLists.txt.\n\nUtiliza «Compilar, ejecutar y comprobar» para construir y comprobar la reparación. Aquí cambió el cuerpo de una función C++; las rutas y el objetivo siguen siendo los mismos. Una construcción puede terminar correctamente aunque la comparación todavía incumpla el requisito, de modo que debes revisar también sus resultados."
         },
         {
           "type": "cpp_compiler",
@@ -446,7 +446,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente editor conserva la función reparada y las llamadas originales. Sustituye únicamente sus tres parejas por (12,7), (7,7) y (3,7), en ese orden. Calcula sus resultados desde el contrato y usa «Compilar, ejecutar y comprobar» para construir y comprobar esta variación. Su meta es 0:1:1, sin salto final y con retorno 0. El editor independiente conserva tu reparación anterior y dispone de una meta acorde con los datos nuevos. Cada revisión necesita su propia evidencia: una salida anterior no corresponde automáticamente a fuentes modificadas."
+          "text": "El siguiente editor tiene su propio programa y conserva la función inclusiva. Cambia sólo los datos de sus tres llamadas para utilizar estas parejas, en este orden:\nDoce disponibles y mínimo siete.\nSiete disponibles y mínimo siete.\nTres disponibles y mínimo siete.\n\nEl resultado requerido es `0:1:1`, sin salto final y con retorno cero. Calcula cada respuesta con la regla de reposición y utiliza «Compilar, ejecutar y comprobar» para construir y ejecutar esta variación.\n\nCambiar este editor no sustituye el borrador de la reparación anterior. Tampoco convierte una salida antigua en prueba de las llamadas nuevas: cada observación debe corresponder a la fuente que realmente se ejecutó."
         },
         {
           "type": "cpp_compiler",
@@ -485,7 +485,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente ya conserva la regla inclusiva y examina (0,1), (1,1) y (40,1). Configura y construye el proyecto, ejecuta y comprueba la relación entre esos datos y el requisito. No necesitas modificar un programa anterior ni sustituir su borrador."
+          "text": "Este editor independiente ya utiliza la regla inclusiva y estas llamadas:\nCero disponibles y mínimo uno.\nUno disponible y mínimo uno.\nCuarenta disponibles y mínimo uno.\n\nConfigura y construye el proyecto; después ejecútalo y comprueba cómo se aplica la misma regla en esos extremos del dominio. Trabaja con los archivos de este editor, conservando el borrador anterior."
         },
         {
           "type": "cpp_compiler",
@@ -528,11 +528,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora CMakeLists.txt sigue siendo válido, pero main.cpp contiene un error sintáctico. Identifica la revisión completa antes de actuar. Configurar puede comprobar el compilador con programas auxiliares sin traducir este main.cpp; por eso no puedes dar por descartado un error del programa por el éxito de aquella fase."
+          "text": "En este proyecto, CMakeLists.txt sigue siendo válido, pero `main.cpp` contiene un error sintáctico. La configuración puede comprobar el compilador mediante programas auxiliares y generar las reglas sin traducir todavía ese main.cpp.\n\nPor eso, un éxito de configuración no descarta el error de la aplicación. Hay que solicitar construir consulta para observar qué ocurre al traducir su fuente."
         },
         {
           "type": "paragraph",
-          "text": "Predice hasta dónde debería llegar este proyecto. Configura y genera; después solicita construir consulta y lee el diagnóstico de la construcción. Localiza el punto y coma ausente en la sentencia de retorno de main. Corrige sólo ese detalle, conserva los demás archivos y reconstruye antes de intentar ejecutar. El diagnóstico concreto puede variar entre compiladores; su archivo y contexto importan más que memorizar una frase. Tras reparar, ejecuta y comprueba las tres llamadas conservadas: 1:1:0, sin salto final y con retorno 0."
+          "text": "Utiliza los controles del editor para seguir el proyecto por sus fases:\n\nConfigura y genera las reglas.\nSolicita construir consulta y lee el diagnóstico de esa construcción.\nLocaliza en main.cpp el punto y coma que falta en la sentencia de retorno de main y corrige sólo ese detalle.\nReconstruye la fuente corregida; después ejecútala y comprueba las llamadas conservadas.\n\nTras reparar la sintaxis, la salida requerida es `1:1:0`, sin salto final, y el retorno es cero. El texto exacto del diagnóstico puede cambiar entre compiladores. Lo necesario es identificar su archivo, su contexto y la fase en que apareció, en lugar de memorizar una frase."
         },
         {
           "type": "cpp_compiler",
@@ -584,7 +584,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reparación de referencia es return 0; al final de main. Una construcción satisfactoria permite ejecutar esa revisión; un fallo previo no produce evidencia sobre su comportamiento. Que un archivo anterior permanezca en una carpeta tampoco demuestra que se haya actualizado."
+          "text": "La reparación sintáctica de referencia es `return 0;` al final de main. Con esa sentencia completa se puede construir esta revisión y comprobar sus llamadas.\n\nEl intento que falló antes de producir el ejecutable no mostró el comportamiento de la fuente nueva. Si en una carpeta permanece un archivo de una construcción anterior, sigue siendo necesario identificar su procedencia antes de atribuirle un resultado."
         }
       ]
     },
@@ -596,11 +596,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El último editor de código conserva un inventario.cpp correcto con las llamadas (12,7), (7,7) y (3,7); CMakeLists.txt empieza vacío. Escribe una descripción que admita CMake desde 3.20, nombre el proyecto InventarioLocal, habilite C++, cree comprobar a partir de inventario.cpp y aplique a ese objetivo el requisito mínimo de C++20 con extensiones desactivadas. El objetivo solicitado ya es comprobar y el tipo Debug."
+          "text": "El último editor conserva `inventario.cpp` con la función correcta y las llamadas de doce, siete y tres disponibles, todas con mínimo siete. Su `CMakeLists.txt` empieza vacío.\n\nEscribe en ese archivo una descripción con estas decisiones:\nAdmitir CMake desde la versión 3.20.\nNombrar el proyecto InventarioLocal y habilitar C++.\nCrear el objetivo ejecutable comprobar a partir de inventario.cpp.\nAplicar a comprobar un mínimo de C++20 y desactivar sus extensiones.\n\nEl editor ya solicita el objetivo comprobar y utiliza Debug. Tendrás que crear ese objetivo en la descripción, además de conservar sus requisitos."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: las herramientas deben interpretar tu descripción; el objetivo comprobar debe construirse desde la fuente indicada; el registro de ejecución debe pertenecer a ese artefacto y mostrar 0:1:1, sin salto final, con terminación 0. Comprueba qué decisión expresa cada instrucción y qué resultado se exige en cada fase. No hay una única disposición textual válida: espacios, comentarios o instrucciones adicionales coherentes no cambian por sí solos esos criterios."
+          "text": "Comprueba cada fase con un criterio concreto:\nConfiguración y generación: CMake puede interpretar la descripción y preparar las reglas solicitadas.\nConstrucción: el objetivo comprobar se obtiene a partir de inventario.cpp con los requisitos declarados.\nEjecución: ese programa muestra `0:1:1`, sin salto final, y termina con código cero.\n\nUna disposición textual distinta puede cumplir esas decisiones. Los espacios, comentarios o instrucciones adicionales coherentes no hacen incorrecta una descripción por sí solos. La salida permite contrastar el programa, pero no demuestra por sí sola que hayas declarado el nombre del proyecto y todos los requisitos pedidos."
         },
         {
           "type": "cpp_compiler",
@@ -660,7 +660,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta es una solución de referencia de la práctica de construcción independiente. Se crea comprobar antes de asignarle requisitos y propiedades; inventario.cpp pertenece a la descripción de ese objetivo. Haber cambiado los tres nombres exige relacionar sus papeles, no sustituir todas las palabras por el mismo nombre."
+          "text": "La referencia crea comprobar antes de asignarle requisitos y propiedades. InventarioLocal nombra el proyecto; comprobar nombra el objetivo; inventario.cpp identifica su fuente.\n\nCada nombre ocupa una posición con una función diferente. La descripción conserva esa relación en lugar de sustituir todos los nombres por una misma palabra."
         },
         {
           "type": "code",
@@ -669,7 +669,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una descripción distinta puede ser válida si respeta los mismos criterios. No basta conseguir que cualquier ejecutable imprima una cadena fija: el programa debe conservar la función que decide según sus argumentos y utilizarla en las llamadas indicadas. La práctica consiste en construir el proyecto descrito y atribuirle su comportamiento, no en copiar una salida al registro."
+          "text": "Otra descripción puede ser válida si cumple los mismos criterios de construcción y utiliza el programa conservado. Conseguir una salida coincidente mediante otro archivo que sólo imprima números fijos no demostraría la construcción solicitada.\n\nLa función debe seguir calculando cada respuesta a partir de sus argumentos. Compara las decisiones de tu descripción con las de la referencia y relaciona la salida con el objetivo y la fuente utilizados."
         },
         {
           "type": "multiple_choice",
@@ -702,7 +702,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera el método: define el comportamiento y sus casos; identifica las fuentes, descripción y perfil; configura y genera; construye el objetivo; ejecuta y compara; tras un cambio, repite los pasos afectados y conserva su evidencia. Recuperas así la identificación de versiones y el contraste de hipótesis de la unidad anterior. En la continuación aplicaremos esta relación a varios archivos, dependencias y opciones de proyecto; esta práctica no da por cubiertos esos fundamentos ni el resto del curso."
+          "text": "En un nuevo proyecto, vuelve a seguir estas acciones:\n\nDefine qué debe hacer el programa y calcula sus casos esperados.\nIdentifica los archivos y declara qué objetivo se construirá con ellos.\nElige y comprueba las herramientas y ajustes necesarios.\nConfigura y genera las reglas de construcción.\nConstruye el objetivo, ejecútalo y compara sus resultados.\nSi cambias una parte, repite las acciones que dependan de ella para obtener una observación nueva.\n\nEn la continuación utilizaremos varios archivos y relacionaremos sus objetivos. Mantendremos el mismo cuidado que en la unidad anterior: distinguir el requisito, el código guardado y el programa que produjo cada resultado."
         }
       ]
     }
@@ -2266,6 +2266,166 @@
         "id": "block_0001_0001",
         "beforeSha256": "cd6415a89fe60a31098198c07e7c5bf680218243521737bcb4121e2061fbc35e",
         "afterSha256": "5892ace4c33aab4697d4b2ff730b0a3b54d157ec0f2fb9b5949e35b676fc799c"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "fb1993a581a744572008f42e73dbcabb562c4dacc8612657d953f92d913b5430",
+        "afterSha256": "b3c0cbf0d3639d429200786ef3717fada3fe34904712c6896538431ecacfccca"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "d5857a2b8d510e50b989065c4ffc02d1b56941775bf7c1faa0609fa625fbceee",
+        "afterSha256": "68b57fb40cf48b77c016c1d166117d0e4103c01ba9ffe1354300e63533b25ca4"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "2ca35e265a8b0d10b89b068fef3b4c81d7fbcfde802f0d4e3d1904519f815505",
+        "afterSha256": "91b5edf1a1071f065af69567e218ccab842f9967104f7b7678bccc7bb4bbebbb"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "5892ace4c33aab4697d4b2ff730b0a3b54d157ec0f2fb9b5949e35b676fc799c",
+        "afterSha256": "f8f330c84de05f953c9c14e52379063218b863ab6f0686b34920e295fdc46aa7"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "00473045df76b1828126a989d78058a9e9398d188536c8c87e844f976904bd18",
+        "afterSha256": "934873b43d0c0ab12f26c1aee82affa08dbdda1aa71f2309a229427e689dbf45"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "21c6c1afe665ccf48ea91d7a2e5f615f64e328e35ee50d9b9d6e52e1ea984e6b",
+        "afterSha256": "e28c650fef731844ee1a8b40e49158ac765a4b9224131a8bc2b33586565e1d29"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "64bf158ec6f1042c03aae145dbf0923bb96f5a829db5f1d46a55d62b1108892c",
+        "afterSha256": "a77835437ecc071b4f4f97aa9bed554482e67fb99efc867f0f2a215e66b8c158"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "b4aafb701a4e2ca4c88a430c415dc4617e4f23d45f43ed8e28a2a8ef94f859fb",
+        "afterSha256": "7b9e94f37127dc385d2de6059fcd1d83b49b028890ba2d1dc29ba07e80c22e02"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "22a665362aac6f25f188f0b97ab16f5de69ab30401fed9143d893ecbce4018b9",
+        "afterSha256": "b6da70f3d8832098c6071eec3c5dab592d283267cd28b8f80a063d3cd70fb98d"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "3db2b201701f5aab85ca05f41b9def5d51516297ab7bd9dac8417091e03a3c2c",
+        "afterSha256": "a41b39edc5192b6ef66ee2b2549e0c634975932a104d0b7aa838d8c592817313"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "81dbf0d14dc27ba7c4ea8f40ee6051eed66bee9208cae5ca46768c6d94a9c62f",
+        "afterSha256": "6ab4f15c3755330a2c9dd5b73d360b3e935ef3d18beede444acf0dc257391484"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "d7734415324f9ad812ae0db20d5c395a589f2233dcc2e657b1b65826b4da753e",
+        "afterSha256": "5536a7c363f2f16d4abbdafa7342467a9295e4971a75f8ee95d46aa23d363013"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "371fe452a1d10b75cc924ef38c027e9613d5cb65ef3fc4978563ae42ffc0561a",
+        "afterSha256": "72362ada0f22f2e7c7c9ac4bc824a653bd3e1daa8ce14ee60ebf03ee97bae9d6"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7064192d564f142601891db2915db84b240501d1859485669984ddfae33e0b16",
+        "afterSha256": "a78505e2a2179f0222dfc1598dd3ead921d059a11eb90b39b48750a65b6f4515"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "a44fbea4b820d6e57496b481a014af2829952d6ff6b871311e7f11a287cced4f",
+        "afterSha256": "2a3041c7d543618a7f5b1fb5f289a442f88a9d78377465627eb1aa2333579d93"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "a2d29a323b7ec72558372513987ce27928d9a78e0df315ed0dc6967cf81a14f9",
+        "afterSha256": "a49c6eae8a6b22c2127c9a9305405c247b896ed06668c232365088b4cbc77979"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "ce22e8e1b8af9ce6f3f363eede2b581212425ff2064a10fba30960a8ab482fe0",
+        "afterSha256": "a7c627168ebe2319190cb8a6c4813baff66b970b15c7ae87e111ff6dc2f62889"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "374794fe330725409e39f7a25e4aa6b5986691ba5028a32cbce975f7f14836c8",
+        "afterSha256": "166c0cac84c59d4520e2206d33fe63e7c2a7bc5f157ed0baf1b626de697ae98c"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "dd6fcc74e524a191fc54be9aec6def796aa53d843142ad04a8f23a65f74689c6",
+        "afterSha256": "23657b8cd8094cd4eacab2d6a4dffdc5a6d96dbc5d25976e59fbc7bf14742ae8"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "cc12a7a9814f0521b78ee3537064984292d9d0f0cc0db57f35a289939e2e0fe7",
+        "afterSha256": "42ace7fd38c9c10875e12698b877082f7e99a8eeef3b0fccbe86df94cf2940d7"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "847b6b498cbb9bfb967802804fd6436d2201ec9e84e0ceb452a9eaa1addf6a20",
+        "afterSha256": "6e4a3e14c52f0369b686ac7714d0d0b66683b9d8f03762c8928dc66199d7e9bf"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "eefef835ffba1cad1400b46e27cd7e528943cf6ffc883ce82515d9f18109af09",
+        "afterSha256": "223dd142747c0c01147d7d6f0e9a309200da2392d9c238ab2416f7ab9d8d0d60"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "aada9d98c7bc85cacc47945ce0263d906f130a80dc72db557810d494e3b6aef5",
+        "afterSha256": "28a9d4124e32097296295795accf333249a2cd3aafeed8f099a7e3edd1930b85"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "b824fff857459a1a2ce6cf39f93d5d266f49af435184af20861b393b8d08818f",
+        "afterSha256": "574f1fb0327fbb28d262f0f43a2a17ee167b759fa3d6de113a4afcc0eb131799"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "7b0f8bacf9eeb5dc130ef4f9a8119015d89199644aa0f9eaca660c78291aa461",
+        "afterSha256": "3a30bfcf0d937c98b43aa3d7fb54a5d565a1723b18eb6da843912818e26762a9"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "20dfb95794dcd32fe9aed5be8e4c6a1e7fd7c82bac5c5c050a09b20f6df3508a",
+        "afterSha256": "41c794454877239f93a3db500a07e0a52db8eda97c39295b7b9a30c537e105b4"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "cd63b013122f872a4a62206e512eb403867195da40e4c6dfc167a54005073f4a",
+        "afterSha256": "d21362fe19423e380e6511a45b0ba9bcc83b4a081c5128aa07c82ffab227f051"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "89749bd86f6766257ffc05cfccdc6373e296e2050681bfa6b2498ba48bc4ad2f",
+        "afterSha256": "cc55a39caa139a9d586d2a38251189c2e68b6bddac56ed83c5283919577b0191"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "69269b4ea87b0270389d73fe9606e26ef5b882bcb9682f9e1cef7598c31e4c55",
+        "afterSha256": "331cf1ab88be7d4bd5553413702bb0d13c18b419bd0113209495b05f182d1b78"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "64c976b02693c6e87997592461a273d96bd0133ec306dafee26a6afd01c5643b",
+        "afterSha256": "dcc7a600b45cf9bc1ce3ebef69a10219df6097dc29b96be4ba4fe4d3a107af18"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "464a9b591fbad1e69935a5ac3996d25a3383abf79d7d67982b80d8b8b92d328f",
+        "afterSha256": "c87009503790ed98354ce2ff828b2bacc80e5058bdee6618b171a2159440f4a6"
+      },
+      {
+        "id": "block_0010_0006",
+        "beforeSha256": "1b274b350734748d03ced86ac88de4b08931de94c3670ec355c53cc2f088a4d5",
+        "afterSha256": "4f9bbfd99702ee6ffed3206d55b4317e6b481ba08055a00feb3d5cf42a1ce8cd"
       }
     ]
   },
@@ -2281,12 +2441,12 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "da3907d28144439f27410ec453018635a8cfdc5a31097292ece95616e41ee1fa",
+        "sourceSha256": "f47adca5e24a2547d79a4dfbc85ee99e97b64f8ff5025fcfc08723e46fd1b266",
         "spans": [
           {
-            "start": 405,
-            "end": 428,
-            "text": "(Scott, 2025, pp. 7–10)",
+            "start": 574,
+            "end": 587,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2295,26 +2455,26 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "707e6899a4f00194df996b8fb50b28e016cf5fd3aefbff07fb4b58d09a303f31",
+        "sourceSha256": "fe97c80e928d465953f726b2329d7c9e52b9f1c2f96ce88ae7d8d35b54a7e9c4",
         "spans": [
           {
-            "start": 55,
-            "end": 63,
+            "start": 143,
+            "end": 151,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 80,
+            "start": 178,
+            "end": 192,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 431,
-            "end": 453,
-            "text": "(Scott, 2025, pp. 7–8)",
+            "start": 622,
+            "end": 635,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2323,16 +2483,8 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "707fbb8171d0f02b027f07c30916149ea529bcf7eb11b456e4de1818ba803006",
-        "spans": [
-          {
-            "start": 181,
-            "end": 187,
-            "text": "salida",
-            "role": "data",
-            "reading": "technical"
-          }
-        ]
+        "sourceSha256": "3f636366d0003c855b78fb19888aedd282d18a5a6f1a916b26991837b0bbe424",
+        "spans": []
       },
       {
         "block": "block_0000_0005",
@@ -2399,25 +2551,18 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "8b106cf0ceb15d602f8d5bb8f6a8d049ce45c598af8bac51b086c925108816eb",
+        "sourceSha256": "715cea92ac5826b799fbe92b1d8faa8244eec59a4b78926ddbfd81354d01d18c",
         "spans": [
           {
-            "start": 372,
-            "end": 395,
-            "text": "(Scott, 2025, pp. 8–10)",
+            "start": 523,
+            "end": 536,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 511,
-            "end": 531,
-            "text": "(Scott, 2025, p. 15)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 564,
-            "end": 572,
+            "start": 747,
+            "end": 755,
             "text": "consulta",
             "role": "data",
             "reading": "technical"
@@ -2427,19 +2572,19 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "d6c8e3ad42918693adfaca76c86ab9f9dca47c9c159c1a6cbb8294fe6fe64213",
+        "sourceSha256": "14e105d05d4f9b079d7132b90b6e09facba9be9ac211f1a056c16168a957a573",
         "spans": [
           {
-            "start": 18,
-            "end": 25,
-            "text": "project",
+            "start": 197,
+            "end": 205,
+            "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 329,
-            "end": 353,
-            "text": "(Scott, 2025, pp. 14–15)",
+            "start": 468,
+            "end": 481,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2605,75 +2750,40 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "89c73388e7080c81b6cf2f3f85b6138bd8e3ae07e3b43ab6bc60d2fc80e2c314",
+        "sourceSha256": "cbbe613ee86fe66d6a7ba059190f082c930751dc641312e20fadb673baf54b11",
         "spans": [
           {
-            "start": 24,
-            "end": 38,
+            "start": 14,
+            "end": 28,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 63,
-            "end": 85,
-            "text": "cmake_minimum_required",
+            "start": 94,
+            "end": 130,
+            "text": "cmake_minimum_required(VERSION 3.20)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 162,
-            "text": "VERSION 3.20",
+            "start": 289,
+            "end": 323,
+            "text": "project(Existencias LANGUAGES CXX)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 175,
-            "end": 179,
-            "text": "3.20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 221,
-            "end": 228,
-            "text": "project",
+            "start": 464,
+            "end": 497,
+            "text": "add_executable(consulta main.cpp)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 275,
-            "end": 278,
-            "text": "CXX",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 304,
-            "end": 318,
-            "text": "add_executable",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 347,
-            "end": 355,
-            "text": "consulta",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 473,
-            "end": 481,
-            "text": "main.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 482,
-            "end": 506,
-            "text": "(Scott, 2025, pp. 13–15)",
+            "start": 741,
+            "end": 754,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2682,25 +2792,32 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "a4bc9ba1aa9b9a61d7b13b0e70aa56e2727f8e7c4695714574ca8302a594c542",
+        "sourceSha256": "6af001f59cd97022eb03f0e8f998d806a9115642efa50440b554a6749d598b1c",
         "spans": [
           {
-            "start": 21,
-            "end": 32,
+            "start": 47,
+            "end": 58,
             "text": "Existencias",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 47,
-            "end": 55,
+            "start": 81,
+            "end": 89,
             "text": "consulta",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 200,
-            "end": 212,
+            "start": 140,
+            "end": 148,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 364,
             "text": "consulta.exe",
             "role": "data",
             "reading": "technical"
@@ -2958,11 +3075,11 @@
       {
         "block": "block_0002_0006",
         "path": "/text",
-        "sourceSha256": "137f50dacfbd81236475e511831884ec72ddbf5be4bff9af67e4408b51a56b31",
+        "sourceSha256": "80013cf89ca4dca5f72ca382eb1c5976889259ba6c6e43c6da6ae19580ee4199",
         "spans": [
           {
-            "start": 125,
-            "end": 133,
+            "start": 174,
+            "end": 182,
             "text": "consulta",
             "role": "data",
             "reading": "technical"
@@ -2978,33 +3095,12 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "2c75ed37f8fde465bda53ea31f26d252c84781a83e45930dc9eda28b67ce609e",
+        "sourceSha256": "32923ac83b40159d30eb54a09c6268d833e777aa94838559feeffa93b2bfab3d",
         "spans": [
           {
-            "start": 145,
-            "end": 150,
-            "text": "C++20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 289,
-            "end": 294,
-            "text": "C++20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 411,
-            "end": 416,
-            "text": "C++23",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 461,
-            "end": 487,
-            "text": "(Scott, 2025, pp. 214–217)",
+            "start": 666,
+            "end": 679,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3013,19 +3109,19 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "701c4e66c5224b8a79adca61bb9aed636c7b28e42bdb7b9f5a1e5dd713665ad2",
+        "sourceSha256": "d279e737f14268f6c4d0c8f7fe190b6b68e9fa8519dab47be970e19bae3de762",
         "spans": [
           {
-            "start": 40,
-            "end": 58,
-            "text": "nombre(argumentos)",
+            "start": 98,
+            "end": 131,
+            "text": "add_executable(consulta main.cpp)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 500,
-            "end": 524,
-            "text": "(Scott, 2025, pp. 12–15)",
+            "start": 635,
+            "end": 648,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3034,54 +3130,40 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "0a60cae1c6ada2385b91ce561f5f40ac0f430451d7a18d4c5f8665df4a784ec0",
+        "sourceSha256": "1ad148310c2b604530ce69b7fd2e83de635367dfbc436424b943de41254b3ae7",
         "spans": [
           {
-            "start": 0,
-            "end": 23,
-            "text": "target_compile_features",
+            "start": 4,
+            "end": 56,
+            "text": "target_compile_features(consulta PRIVATE cxx_std_20)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 105,
-            "end": 113,
+            "start": 98,
+            "end": 106,
             "text": "consulta",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 157,
-            "text": "add_executable",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 159,
-            "end": 166,
+            "start": 141,
+            "end": 148,
             "text": "PRIVATE",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 308,
-            "end": 318,
+            "start": 203,
+            "end": 213,
             "text": "cxx_std_20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 387,
-            "end": 392,
-            "text": "C++20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 472,
-            "end": 498,
-            "text": "(Scott, 2025, pp. 216–217)",
+            "start": 312,
+            "end": 325,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3090,75 +3172,103 @@
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "f25de42da28b18cf5c9d56b88ec04a609eba05d2e49db57fe68d30c0d76b9d1f",
+        "sourceSha256": "bf4a72a5eb01996dc87660548b4726ed03280281f3eaa1b64187b04666cf9c46",
         "spans": [
           {
-            "start": 0,
-            "end": 21,
+            "start": 63,
+            "end": 84,
             "text": "set_target_properties",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 77,
-            "text": "PROPERTIES",
+            "start": 121,
+            "end": 182,
+            "text": "set_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 108,
-            "end": 126,
-            "text": "CXX_EXTENSIONS OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 196,
-            "end": 204,
+            "start": 185,
+            "end": 193,
             "text": "consulta",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 451,
-            "end": 477,
-            "text": "(Scott, 2025, pp. 214–215)",
+            "start": 232,
+            "end": 242,
+            "text": "PROPERTIES",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 285,
+            "end": 299,
+            "text": "CXX_EXTENSIONS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 368,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 428,
+            "end": 441,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 474,
+            "end": 484,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 526,
+            "end": 540,
+            "text": "CXX_EXTENSIONS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 541,
+            "end": 544,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "9cdb8f02e991cc4baa78a5664e413ecb63e93d697d24e30d180187d50e114b78",
+        "sourceSha256": "d4f743117bb9ef17dcda98fcd543765efae7c12719fc0d3806f79831042722cd",
         "spans": [
           {
-            "start": 0,
-            "end": 36,
+            "start": 52,
+            "end": 88,
             "text": "cmake_minimum_required(VERSION 3.20)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 217,
-            "end": 222,
-            "text": "C++20",
+            "start": 120,
+            "end": 130,
+            "text": "cxx_std_20",
             "role": "data",
-            "reading": "natural"
+            "reading": "technical"
           },
           {
-            "start": 304,
-            "end": 309,
-            "text": "C++20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 414,
-            "end": 434,
-            "text": "(Scott, 2025, p. 13)",
+            "start": 375,
+            "end": 388,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3380,90 +3490,70 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "872555cbf76f030f2b461a6bbab84ff0a505a8f7c7ade0269038116ebb32d9a0",
+        "sourceSha256": "cbced9d49b021a7ca4721767878a00d88770bd724bc2de18c7c59219cca3bffc",
         "spans": [
           {
-            "start": 51,
-            "end": 84,
+            "start": 68,
+            "end": 101,
             "text": "debe_reponer(disponibles, minimo)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 127,
+            "start": 233,
+            "end": 244,
             "text": "disponibles",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 156,
+            "start": 305,
+            "end": 311,
             "text": "minimo",
-            "role": "cpp"
-          },
-          {
-            "start": 183,
-            "end": 203,
-            "text": "0 ≤ disponibles ≤ 40",
-            "role": "math"
-          },
-          {
-            "start": 206,
-            "end": 221,
-            "text": "1 ≤ minimo ≤ 40",
-            "role": "math"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "4380cbfa18200180886364b7e3b8de440cbfd61e142dc517d80148cc5692e565",
+        "sourceSha256": "7174c1d4994adbe64f7ef171604ee5f513d83fde48ba3660c02dbb5a9d2ec4f4",
         "spans": [
           {
-            "start": 38,
-            "end": 43,
-            "text": "(4,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 45,
-            "end": 50,
-            "text": "(5,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 53,
-            "end": 58,
-            "text": "(6,5)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 137,
-            "end": 146,
-            "text": "std::cout",
-            "role": "cpp"
-          },
-          {
-            "start": 160,
-            "end": 164,
-            "text": "bool",
-            "role": "cpp"
-          },
-          {
-            "start": 170,
+            "start": 166,
             "end": 175,
-            "text": "1 o 0",
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 202,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 265,
-            "text": "boolalpha",
-            "role": "cpp"
+            "start": 230,
+            "end": 231,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 272,
+            "text": "std::boolalpha",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3577,7 +3667,7 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "2e5e979f7bdadbf19f81551c695609f17b4fa13f50f40249951dcb29c632d8b0",
+        "sourceSha256": "62e51bea0e2049a5ea9d48663ebf9b0adfa8dcd197d30280414c04a2e4678538",
         "spans": []
       },
       {
@@ -3645,39 +3735,25 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "1fdccab638ffe897d889402c1826777f3811f7d2a59691c42dd7e078e4943bf1",
+        "sourceSha256": "412d9bbef2f5934f31343e1397506006551c1abdde205f93a02747924d1f6f4f",
         "spans": [
           {
-            "start": 55,
-            "end": 69,
+            "start": 32,
+            "end": 46,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 132,
+            "start": 87,
+            "end": 95,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 193,
-            "text": "consulta",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 231,
-            "end": 236,
-            "text": "Debug",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 238,
-            "end": 243,
+            "start": 192,
+            "end": 197,
             "text": "Debug",
             "role": "data",
             "reading": "technical"
@@ -3687,32 +3763,25 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "af1e5f894174f38805b98745e03de903bb76a613582ae3eddfcd995712f9f333",
+        "sourceSha256": "1720fe9f12a6f05930b73e9a13e64a3989240c8e2b4a2588a2b77a5bf53c3a5a",
         "spans": [
           {
-            "start": 154,
-            "end": 166,
+            "start": 214,
+            "end": 226,
             "text": "consulta.exe",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 232,
-            "end": 237,
-            "text": "C++23",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 249,
-            "end": 259,
+            "start": 353,
+            "end": 363,
             "text": "cxx_std_20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 277,
+            "start": 377,
+            "end": 391,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
@@ -3722,19 +3791,19 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "1fd2476e16e793a8463639bb8ffae8920400c62c8153b78b803d3855d63293e7",
+        "sourceSha256": "d2d12c8b776dfba1aa0b862c2fa134de4b298b660ee33fa0478722916aab330e",
         "spans": [
           {
-            "start": 376,
-            "end": 381,
-            "text": "1:1:0",
-            "role": "output",
-            "reading": "natural"
+            "start": 202,
+            "end": 210,
+            "text": "consulta",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 422,
-            "end": 423,
-            "text": "0",
+            "start": 496,
+            "end": 501,
+            "text": "1:1:0",
             "role": "output",
             "reading": "natural"
           }
@@ -3805,8 +3874,16 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "8e8a327f0b76fe197f761b4968b93d60d4a7685464940da343675b80ad44c717",
-        "spans": []
+        "sourceSha256": "6e7f22e1883170e47b8aba76e90cac23fe166809ff3afad803eddb325e635cb9",
+        "spans": [
+          {
+            "start": 88,
+            "end": 100,
+            "text": "consulta.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0000",
@@ -3817,25 +3894,28 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "8bb794afd72ceea37683dab42fc69c3a0e718120791af1345e8639b869761687",
+        "sourceSha256": "69e7df7a16d79a80fdbd4abf3f92b2d5ff52dc6413cd82e046ec303ac65a205c",
         "spans": [
           {
-            "start": 50,
-            "end": 52,
+            "start": 35,
+            "end": 37,
             "text": "<=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 57,
-            "end": 58,
+            "start": 44,
+            "end": 45,
             "text": "<",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 74,
-            "text": "debe_reponer",
-            "role": "cpp"
+            "start": 64,
+            "end": 78,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
@@ -3909,19 +3989,19 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "848ef97405667ac4f2b3185e91d4061dba8c1e60c914d4b8f3f80cf143e29896",
+        "sourceSha256": "f93c0eb6aaac3c6c4b8652c2b00cc1d86571d5a4cbdf3d535d415fe29a45e7b2",
         "spans": [
+          {
+            "start": 103,
+            "end": 115,
+            "text": "debe_reponer",
+            "role": "cpp",
+            "reading": "technical"
+          },
           {
             "start": 120,
             "end": 128,
             "text": "main.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 291,
-            "end": 305,
-            "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           }
@@ -4050,40 +4130,12 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "c4109ad8975cefa5e732707e69bb74e29504e8ef00e3c6e7353301ccf1568687",
+        "sourceSha256": "a7ffe0d2d83928eaf3e8e2669d2f4b0210b7c6bf1df11563bb38569358b35a25",
         "spans": [
           {
-            "start": 118,
-            "end": 124,
-            "text": "(12,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 126,
-            "end": 131,
-            "text": "(7,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 134,
-            "end": 139,
-            "text": "(3,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 289,
-            "end": 294,
+            "start": 293,
+            "end": 298,
             "text": "0:1:1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 326,
-            "end": 327,
-            "text": "0",
             "role": "output",
             "reading": "natural"
           }
@@ -4133,30 +4185,8 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "27e7b5b204ce5bb2b0eafa6b7864a1c2bcd9c915aa5b8747848cdb4d92884410",
-        "spans": [
-          {
-            "start": 67,
-            "end": 72,
-            "text": "(0,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 79,
-            "text": "(1,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 82,
-            "end": 88,
-            "text": "(40,1)",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "a54b6c8823e827ceb6553b025b1e15c4ef85efa4144ed6c35e351f4417d6b915",
+        "spans": []
       },
       {
         "block": "block_0007_0006",
@@ -4173,26 +4203,26 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "e95577f454e25553d3aea6c43d10dc7c83c254c35fe2ca4f856d445b0a11fb25",
+        "sourceSha256": "f8afadbead88d52558a9a953df3b2ee229fdd62d58faceac0902b6b2c91960a5",
         "spans": [
           {
-            "start": 6,
-            "end": 20,
+            "start": 18,
+            "end": 32,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 47,
-            "end": 55,
+            "start": 60,
+            "end": 68,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 219,
-            "end": 227,
-            "text": "main.cpp",
+            "start": 336,
+            "end": 344,
+            "text": "consulta",
             "role": "data",
             "reading": "technical"
           }
@@ -4201,32 +4231,33 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "29788e2bdd57162ae200441f80df82444678e797085690194ddf26d20208d855",
+        "sourceSha256": "bb938b4140dc3e5f7d60e0a4629437e6923475487c8f7b9dd49a99fd90e75a14",
         "spans": [
           {
-            "start": 97,
-            "end": 105,
+            "start": 123,
+            "end": 131,
             "text": "consulta",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 210,
-            "end": 214,
+            "start": 186,
+            "end": 194,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 255,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 494,
-            "end": 499,
+            "start": 424,
+            "end": 429,
             "text": "1:1:0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 531,
-            "end": 532,
-            "text": "0",
             "role": "output",
             "reading": "natural"
           }
@@ -4312,19 +4343,14 @@
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "3b7576d418f559ead8dae23dc37e66a157e4914e09325e8fe3f7ad35b133e1e9",
+        "sourceSha256": "8f328f566401eb850cf6d2bbf389da07f1650efaadce75ae8e33c1c2d24599ca",
         "spans": [
           {
-            "start": 31,
-            "end": 40,
+            "start": 43,
+            "end": 52,
             "text": "return 0;",
-            "role": "cpp"
-          },
-          {
-            "start": 53,
-            "end": 57,
-            "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4337,89 +4363,47 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "32a91a24475f8cfdfba96c4c5b6f762fcf9799798bfee57e71b18561dc91e01f",
+        "sourceSha256": "16b3ea2864ad5ebf535c5bbf7f7d5f80764c56c8de29d387077dae597d836a52",
         "spans": [
           {
-            "start": 39,
-            "end": 53,
+            "start": 27,
+            "end": 41,
             "text": "inventario.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 80,
-            "end": 86,
-            "text": "(12,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 88,
-            "end": 93,
-            "text": "(7,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 96,
-            "end": 101,
-            "text": "(3,7)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 103,
-            "end": 117,
+            "start": 145,
+            "end": 159,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 184,
-            "text": "3.20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 220,
+            "start": 295,
+            "end": 310,
             "text": "InventarioLocal",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 241,
-            "end": 250,
+            "start": 357,
+            "end": 366,
             "text": "comprobar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 277,
-            "text": "inventario.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 326,
-            "end": 331,
-            "text": "C++20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 391,
-            "end": 400,
+            "start": 405,
+            "end": 414,
             "text": "comprobar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 411,
-            "end": 416,
-            "text": "Debug",
+            "start": 499,
+            "end": 508,
+            "text": "comprobar",
             "role": "data",
             "reading": "technical"
           }
@@ -4428,26 +4412,26 @@
       {
         "block": "block_0009_0002",
         "path": "/text",
-        "sourceSha256": "f29d92848ffbb7ae4f896d1ae2aaf136426ea30070e7d8b9afdae63a2ee00d4b",
+        "sourceSha256": "3ce6fba983cf9e69c46db4c22660cc0eddad74a7de3a55400940ecdcd3eef237",
         "spans": [
           {
-            "start": 74,
-            "end": 83,
+            "start": 174,
+            "end": 183,
             "text": "comprobar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 194,
-            "end": 199,
-            "text": "0:1:1",
-            "role": "output",
-            "reading": "natural"
+            "start": 207,
+            "end": 221,
+            "text": "inventario.cpp",
+            "role": "data",
+            "reading": "technical"
           },
           {
-            "start": 234,
-            "end": 235,
-            "text": "0",
+            "start": 286,
+            "end": 291,
+            "text": "0:1:1",
             "role": "output",
             "reading": "natural"
           }
@@ -4599,18 +4583,32 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "b46e1640f80032badaa02bef85fbd8a2948e9ab7598b4942f7bb0c30a56da869",
+        "sourceSha256": "09f0da023a02c0bc086d121145e67771831116a3eaddf532cbd67c89ebfd919b",
         "spans": [
           {
-            "start": 89,
-            "end": 98,
+            "start": 19,
+            "end": 28,
             "text": "comprobar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 144,
-            "end": 158,
+            "start": 74,
+            "end": 89,
+            "text": "InventarioLocal",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "comprobar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 154,
             "text": "inventario.cpp",
             "role": "data",
             "reading": "technical"
@@ -4620,7 +4618,7 @@
       {
         "block": "block_0010_0003",
         "path": "/text",
-        "sourceSha256": "307436daff447abcaf0ba138190875399a8b44acd001b0a1e97ee6058ad7e9e2",
+        "sourceSha256": "3d80b2911f6bd2fbab86a7245b5f9efe058182ace84aaac57f505d303c359437",
         "spans": []
       },
       {
@@ -4772,7 +4770,7 @@
       {
         "block": "block_0010_0006",
         "path": "/text",
-        "sourceSha256": "728e89749ee8b98d036679a77f73c68a5cd19281ee9b04b5dc15c1efcf496ddb",
+        "sourceSha256": "fc83785928dc3ec8bec2bd492c61e3ad5c5271d107a3b6f34283bb4dc975d844",
         "spans": []
       }
     ],

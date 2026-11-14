@@ -16,11 +16,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En la lección anterior una comparación estricta era una revisión que incumplía el contrato inclusivo de Pases. Ahora el proyecto admite deliberadamente dos políticas: aceptar puntos iguales al mínimo o exigir que lo superen. No podemos decidir si una ejecución es correcta sin saber qué política se acordó y qué versión se construyó. Una opción de construcción conservará esa elección."
+          "text": "En Pases, el requisito anterior exigía aceptar también la igualdad. Por eso una comparación estricta incumplía aquel contrato. El proyecto de esta lección admite, en cambio, elegir entre dos reglas de admisión:\nAceptar cuando los puntos alcanzan el mínimo, incluida la igualdad.\nAceptar sólo cuando los puntos superan el mínimo.\n\nLlamaremos políticas de admisión a esas reglas. Tendremos que indicar cuál se acordó para cada construcción antes de juzgar sus resultados. Una opción de CMake permitirá conservar esa elección y seleccionar la implementación correspondiente."
         },
         {
           "type": "paragraph",
-          "text": "Ambas implementaciones usan la misma interfaz: bool admitir(int puntos, int minimo). Su dominio conserva puntos y minimo entre 0 y 20, inclusive. inclusiva.cpp define la comparación >=; estricta.cpp define >. El cliente puede llamar a la función sin cambiar su firma, pero la política seleccionada determina el significado del resultado."
+          "text": "Las dos implementaciones ofrecen la misma función: `bool admitir(int puntos, int minimo)`. Sus dos argumentos siguen siendo enteros entre cero y veinte, incluidos los extremos.\n\n`inclusiva.cpp` utiliza `>=` y acepta cuando los puntos son mayores o iguales que el mínimo.\n`estricta.cpp` utiliza `>` y acepta únicamente cuando los puntos son mayores que el mínimo.\n\nEl cliente puede utilizar las mismas llamadas con cualquiera de las dos implementaciones. Sin embargo, el resultado de una igualdad dependerá de cuál se haya construido. Conservar el nombre y los tipos de una función no decide por sí solo ese comportamiento."
         },
         {
           "type": "paragraph",
@@ -42,7 +42,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construiremos exactamente una de estas implementaciones dentro de la biblioteca regla, y el cliente revisar utilizará esa biblioteca. Las fuentes pueden conservarse juntas sin que ambas tengan que formar parte de un mismo producto. Recuperamos objetivos, cabecera y enlace; la parte nueva es describir la elección durante la configuración."
+          "text": "La biblioteca regla se construirá con una sola implementación: inclusiva.cpp o estricta.cpp. El ejecutable revisar utilizará el producto de esa biblioteca.\n\nPodemos mantener ambos archivos en el directorio de fuentes sin compilarlos juntos. La descripción decide cuál forma parte de regla. La novedad será realizar esa elección durante la configuración, conservando la cabecera y la relación de enlace que ya conoces."
         },
         {
           "type": "multiple_choice",
@@ -71,7 +71,7 @@
         },
         {
           "type": "paragraph",
-          "text": "option declara una opción booleana de CMake. En el siguiente ejemplo, ACEPTAR_IGUAL es su nombre, el argumento entre comillas es un texto de ayuda y ON es su valor inicial. Las comillas agrupan varias palabras como un solo argumento del lenguaje de CMake. Ese texto explica la intención; no ejecuta la comparación de puntos (Scott, 2025, pp. 34–38)."
+          "text": "Una opción booleana de CMake guarda una elección que puede interpretarse como verdadera o falsa al configurar el proyecto. La instrucción `option` permite declararla.\n\nEn la línea siguiente:\nACEPTAR_IGUAL es el nombre de la opción.\n\"Aceptar tambien la igualdad\" es un texto de ayuda que describe su propósito.\nON es el valor inicial que se propone para ella (Scott, 2025).\n\nLas comillas permiten que varias palabras formen un solo argumento. Ese texto de ayuda no realiza la comparación de puntos; necesitaremos instrucciones que consulten la elección y seleccionen una implementación."
         },
         {
           "type": "code",
@@ -80,11 +80,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Trabajaremos con ON para la elección verdadera y OFF para la falsa. Son valores de CMake, distintos de escribir una comparación C++ dentro de la descripción. CMake admite otras representaciones booleanas; aquí usamos estas dos para que la elección quede explícita. Conserva el nombre ACEPTAR_IGUAL: otro nombre o distintas mayúsculas no designan automáticamente la misma variable."
+          "text": "En esta lección utilizaremos ON para la elección verdadera y OFF para la falsa. CMake admite otras representaciones booleanas; estas dos permiten reconocer con claridad la elección del ejemplo.\n\nEl nombre ACEPTAR_IGUAL identifica la opción que consultaremos. Conserva su escritura, incluidas las mayúsculas: otro nombre no designa automáticamente la misma decisión. Sus valores pertenecen a la configuración; no son los puntos ni el mínimo que recibirá una llamada de C++."
         },
         {
           "type": "paragraph",
-          "text": "El valor inicial no es una orden de imponer ON en cualquier configuración. Actúa cuando no existe ya una elección conservada para esa opción. Una elección explícita o un valor conservado puede determinar otra decisión; los examinaremos por separado. Es necesario distinguir el texto de la descripción del valor que realmente se utiliza (Scott, 2025, pp. 36–40)."
+          "text": "El ON de option es un valor inicial, no una instrucción para reemplazar siempre la elección actual. En las descripciones de esta lección se utiliza cuando todavía no se ha proporcionado o conservado un valor para esa opción.\n\nPor ejemplo, podemos conservar ON en la línea de option y proporcionar OFF al configurar. En ese caso se utilizará OFF. Para predecir qué programa se obtendrá, tendremos que consultar la elección efectiva y no sólo el último argumento escrito en la descripción (Scott, 2025)."
         },
         {
           "type": "multiple_choice",
@@ -130,7 +130,7 @@
         },
         {
           "type": "paragraph",
-          "text": "if(ACEPTAR_IGUAL) consulta la elección y decide qué instrucciones de CMake se procesan. En este marco, ON selecciona la primera rama y OFF la rama de else(). endif() cierra el bloque condicional. Este if pertenece al lenguaje de CMake; actúa al configurar, antes de que el ejecutable reciba puntos y minimo (Scott, 2025, pp. 53–55)."
+          "text": "La instrucción `if(ACEPTAR_IGUAL)` consulta el valor de la opción durante la configuración.\n\nCon ON se procesan las instrucciones de la primera parte, que termina al llegar a `else()`.\nCon OFF se procesan las instrucciones de la alternativa, situada entre else() y `endif()`.\nendif() cierra el condicional (Scott, 2025).\n\nEste if pertenece al lenguaje de CMake. Decide qué instrucciones de la descripción se utilizan para preparar el proyecto. Después, al ejecutar el programa construido, la comparación de C++ calculará la respuesta para los puntos y el mínimo de cada llamada."
         },
         {
           "type": "code",
@@ -139,11 +139,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la rama verdadera se define regla usando inclusiva.cpp; con la falsa se define regla usando estricta.cpp. Las dos ramas son alternativas: cada configuración crea el mismo objetivo con una de las fuentes. Después se describe el cliente y su relación con la biblioteca, como en la lección anterior.\n\nEn ambos objetivos, cxx_std_20 exige un modo de lenguaje de al menos C++20 y CXX_EXTENSIONS OFF desactiva las extensiones del compilador. Ese mínimo admite un modo posterior que satisfaga el requisito (Scott, 2025, pp. 216–217). El Laboratorio de Windows prepara C++23; por eso conserva el requisito de la descripción sin reducir el modo utilizado a C++20."
+          "text": "Sigue la selección de fuentes en la descripción:\nCon ON, add_library crea regla a partir de inclusiva.cpp.\nCon OFF, add_library crea regla a partir de estricta.cpp.\n\nEn cada configuración se procesa una alternativa. El objetivo mantiene el nombre regla, pero utiliza una de las dos fuentes. Después se crea revisar desde main.cpp y se declara su relación con la biblioteca.\n\nLos dos objetivos conservan cxx_std_20, que pide un modo C++20 o posterior, y CXX_EXTENSIONS OFF, que solicita desactivar extensiones propias del compilador cuando existe esa distinción (Scott, 2025). El perfil Windows parte de C++23; ese modo puede cumplir el mínimo. El requisito no certifica por sí solo que todas las características concretas del estándar estén implementadas por el compilador."
         },
         {
           "type": "paragraph",
-          "text": "La cabecera regla.h declara admitir y mantiene la guarda ya conocida. El cliente main.cpp incluye esa cabecera. Cambiar la elección no cambia automáticamente el nombre ni los tipos de la función. El if de CMake selecciona la implementación; la comparación de C++ evalúa cada llamada de esa implementación con sus argumentos."
+          "text": "La cabecera regla.h sigue declarando admitir con los mismos tipos. main.cpp la incluye para poder utilizar esa declaración.\n\nLas dos decisiones ocurren en momentos distintos:\nAl configurar, el if de CMake selecciona la fuente que aporta la implementación.\nAl ejecutar, la comparación del cuerpo seleccionado utiliza los argumentos de cada llamada.\n\nProporcionar otros puntos a ese ejecutable no hace que vuelva a interpretar CMakeLists.txt ni que cambie de fuente."
         },
         {
           "type": "multiple_choice",
@@ -189,7 +189,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor de código siguiente declara ON como valor inicial, pero el campo de opciones contiene ACEPTAR_IGUAL=OFF. Esa elección utiliza estricta.cpp. Conservaremos las llamadas (6,6), (9,6) y (4,6): una igualdad, un caso por encima y otro por debajo. Calcula toda la salida antes de configurar."
+          "text": "El siguiente proyecto declara ON como inicial, pero su campo de opciones contiene `ACEPTAR_IGUAL=OFF`. Esa elección selecciona estricta.cpp.\n\nEl cliente realiza estas llamadas, en orden:\nSeis puntos y mínimo seis: una igualdad.\nNueve puntos y mínimo seis: puntos por encima del mínimo.\nCuatro puntos y mínimo seis: puntos por debajo del mínimo.\n\nPredice toda la salida de la implementación estricta antes de configurar, conservando los separadores y el orden del listado."
         },
         {
           "type": "output_prediction",
@@ -206,7 +206,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para una comparación controlada mantendremos archivos y llamadas iguales y cambiaremos sólo la elección. Las fuentes representan ambas políticas válidas; no repararemos una función para que oculte cuál se construyó. La revisión que se ejecuta y su elección deben corresponder al oráculo utilizado."
+          "text": "Para comparar las políticas, mantendremos los archivos y las llamadas. Cambiaremos únicamente la elección que recibe CMake y construiremos la revisión correspondiente.\n\nDespués compararemos cada salida con el esperado de esa política. Modificar además los datos o el cuerpo de una función mezclaría cambios diferentes y dificultaría saber qué causó la diferencia observada."
         }
       ]
     },
@@ -218,11 +218,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En «Opciones del proyecto» se escribe una línea ACEPTAR_IGUAL=OFF. No escribas allí el prefijo -D de una orden de terminal ni añadas :BOOL al nombre: este control conserva pares nombre=valor y la herramienta prepara sus argumentos. En «Objetivo CMake» debe figurar revisar, el ejecutable que se construirá; no el nombre de la opción ni una de las fuentes."
+          "text": "En «Opciones del proyecto», escribe la elección con este formato, una por línea: `ACEPTAR_IGUAL=OFF`. Ese campo recibe el nombre y su valor, separados por el signo igual.\n\nLa app prepara los argumentos para CMake. Por eso aquí se utiliza ese par y no una orden de terminal con -D ni un nombre terminado en :BOOL.\n\nEn «Objetivo CMake» debe figurar revisar. Es el objetivo ejecutable que quieres construir; el nombre de la opción y el de una fuente tienen otros papeles."
         },
         {
           "type": "paragraph",
-          "text": "Pulsa «Configurar y generar» y después «Compilar, ejecutar y comprobar», con revisar como objetivo. La segunda acción construye y ejecuta la revisión actual. Conserva el cliente, ambas implementaciones y las tres llamadas. Trabaja con la elección explícita OFF; la política inclusiva se practica después en otro editor."
+          "text": "Conserva las fuentes y la elección explícita OFF de este editor. Pulsa «Configurar y generar» para preparar la selección; después utiliza «Compilar, ejecutar y comprobar» con revisar como objetivo.\n\nLa segunda acción construye y ejecuta la revisión actual. Contrasta la salida con la predicción de la política estricta. La versión inclusiva tendrá su propia actividad, con los mismos datos, para que puedas comparar las dos elecciones sin sustituir este borrador."
         },
         {
           "type": "cpp_compiler",
@@ -272,7 +272,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La elección participa al configurar y determina una fuente para la construcción. Distingue la descripción, el valor elegido y la salida de esta revisión. El siguiente puzzle prepara el contraste con ON antes de ejecutar esa política en una actividad independiente."
+          "text": "Relaciona tres datos de esta prueba: la descripción conserva el inicial ON, el campo proporciona OFF y la configuración selecciona estricta.cpp. La salida observada pertenece al programa construido con esa elección.\n\nEl puzzle siguiente cambia a ON y pide una predicción nueva. Los archivos y las llamadas permanecerán iguales; la igualdad permitirá distinguir las dos reglas."
         }
       ]
     },
@@ -284,7 +284,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de elegir ON y volver a configurar y construir, inclusiva.cpp aporta la implementación. El siguiente listado reúne esa revisión y las mismas llamadas. No cambiaremos los datos para ocultar una diferencia de política; la igualdad sigue siendo el caso que separa las dos reglas."
+          "text": "Al elegir ON y volver a configurar y construir, inclusiva.cpp aporta la implementación. El listado siguiente reúne ese cuerpo y el mismo cliente para predecir su comportamiento.\n\nMantén los tres pares de puntos y mínimo. La igualdad sigue siendo el caso que permite observar la diferencia entre aceptar al alcanzar el mínimo y exigir superarlo."
         },
         {
           "type": "output_prediction",
@@ -318,7 +318,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La descripción, la elección y la revisión ejecutada pertenecen a la misma evidencia. Mantener el nombre revisar no prueba que un ejecutable anterior corresponda a la configuración nueva. Recupera el registro de procedencia aprendido al principio del curso."
+          "text": "Si el objetivo sigue llamándose revisar, su nombre no indica por sí solo qué política contiene el ejecutable. Para interpretar la salida necesitas conocer la elección utilizada y qué construcción produjo ese programa.\n\nUna salida anterior conserva su valor como observación de aquella ejecución. No demuestra qué hará una configuración nueva hasta que se haya construido y ejecutado su propio resultado."
         },
         {
           "type": "heading",
@@ -326,7 +326,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente conserva las fuentes y prepara ACEPTAR_IGUAL=ON. Configura, construye revisar y comprueba la salida. No modifiques el cliente ni sustituyas la política del editor anterior."
+          "text": "Este editor conserva las mismas fuentes y prepara `ACEPTAR_IGUAL=ON`. Configura, construye revisar y comprueba la salida de esta elección.\n\nMantén el cliente y sus llamadas. Trabaja con este proyecto independiente para conservar también el intento anterior con OFF."
         },
         {
           "type": "cpp_compiler",
@@ -384,11 +384,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La caché es información que CMake guarda en CMakeCache.txt, dentro del directorio de construcción, para reutilizarla en otras configuraciones. En estos proyectos, option usa el valor inicial cuando todavía no existe una elección conservada; no reemplaza cada vez el valor que ya está allí. El argumento -D permite proporcionar o cambiar esa elección desde una consola (Scott, 2025, pp. 36–40)."
+          "text": "CMake puede conservar información entre configuraciones en `CMakeCache.txt`, dentro del directorio de construcción. A esa información guardada se le llama caché.\n\nEn estos proyectos, option puede crear allí el valor inicial de una opción cuando todavía no existe la elección. Si el valor ya está guardado, repetir la configuración no lo elimina por omitir un argumento. Desde la consola, -D permite proporcionar o cambiar esa entrada de la caché (Scott, 2025)."
         },
         {
           "type": "paragraph",
-          "text": "Para leer las dos órdenes siguientes, considera una consola situada en una carpeta con el subdirectorio fuente, que contiene los cinco archivos del proyecto Politicas. Supón disponibles cmake, el compilador y la herramienta de construcción. -S fuente indica dónde está CMakeLists.txt; -B construccion señala el directorio que recibirá la caché y las reglas generadas. -DACEPTAR_IGUAL:BOOL=OFF crea o actualiza la entrada ACEPTAR_IGUAL de tipo booleano con OFF. La segunda orden usa los mismos directorios y omite únicamente esa elección; no elimina la caché. Son órdenes de ejemplo para comparar las invocaciones, no líneas para el campo de opciones del laboratorio."
+          "text": "Las dos órdenes siguientes son un ejemplo para leer y comparar invocaciones de CMake. Considera una consola situada en una carpeta que contiene el subdirectorio fuente, con los cinco archivos del proyecto Politicas. Para este ejemplo, las herramientas necesarias ya están disponibles.\n\nLos argumentos tienen estas funciones:\n`-S fuente` indica dónde está el CMakeLists.txt del proyecto.\n`-B construccion` indica dónde se guardarán la caché y las reglas; CMake crea ese directorio si hace falta.\n`-DACEPTAR_IGUAL:BOOL=OFF` crea o actualiza ACEPTAR_IGUAL con OFF. BOOL indica que esa entrada se trata como opción booleana.\n\nLa segunda orden conserva los mismos directorios y omite sólo -D. No ejecuta ninguna operación para retirar la caché. Estas líneas son órdenes completas de consola del ejemplo, no el contenido que se escribe en «Opciones del proyecto»."
         },
         {
           "type": "code",
@@ -397,7 +397,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Tras la primera orden, la caché contiene ACEPTAR_IGUAL con OFF. La segunda carga esa misma caché y no le entrega un valor nuevo, por lo que la decisión sigue siendo OFF. El ON escrito como valor inicial en option no sustituye esa entrada ya creada. Para interpretar la segunda orden necesitamos conocer tanto sus argumentos como el estado conservado del directorio."
+          "text": "Después de la primera orden, ACEPTAR_IGUAL queda guardada con OFF en la caché de construccion.\n\nLa segunda orden vuelve a utilizar ese directorio. Como no recibe un valor nuevo ni renueva la caché, conserva OFF. El ON escrito como inicial en option no reemplaza ese valor existente.\n\nPor eso no basta leer únicamente la segunda línea de la consola. También necesitamos saber qué directorio utiliza y qué elección quedó guardada allí."
         },
         {
           "type": "multiple_choice",
@@ -426,15 +426,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor de código utiliza --fresh al configurar. En ese perfil CMake renueva CMakeCache.txt y CMakeFiles y procesa la descripción y las elecciones actuales. No es una orden de borrar todo el directorio ni todos sus productos. --fresh requiere una herramienta CMake 3.24 o posterior; el perfil instalado satisface ese requisito, aunque la descripción de nuestro proyecto siga usando instrucciones válidas con mínimo 3.20 (Scott, 2025, p. 163)."
+          "text": "El editor curricular configura con la opción `--fresh`. Antes de procesar el proyecto, CMake retira CMakeCache.txt y CMakeFiles y vuelve a preparar esa información con la descripción y las elecciones actuales.\n\nEsta operación no equivale a borrar el directorio de construcción entero. --fresh requiere CMake 3.24 o posterior, y el perfil del Laboratorio cumple ese requisito (Scott, 2025).\n\nSon dos requisitos distintos: las instrucciones de nuestra descripción admiten CMake desde 3.20, mientras que la forma de invocar --fresh necesita una herramienta más reciente. El número de cmake_minimum_required no añade opciones de consola a una versión antigua."
         },
         {
           "type": "paragraph",
-          "text": "Por eso, en este editor de código quitar la línea ACEPTAR_IGUAL=OFF y configurar de nuevo deja que se use el valor inicial actual de option. Un campo vacío no equivale a escribir OFF: significa que no se proporciona esa elección explícita. Conserva esta diferencia respecto a la caché ordinaria del ejemplo de PC."
+          "text": "En este editor, si quitas `ACEPTAR_IGUAL=OFF` del campo y configuras de nuevo, --fresh retira la caché anterior. Como ya no proporcionas la elección explícita, option puede utilizar el inicial actual.\n\nUn campo vacío significa que no entregas una elección por ese control; no equivale a escribir OFF. La diferencia con las dos órdenes anteriores es la renovación de la caché: aquellas reutilizaban su valor, mientras el editor comienza la configuración sin él."
         },
         {
           "type": "paragraph",
-          "text": "Las actividades siguientes aíslan tres situaciones del perfil fresco: campo vacío con inicial ON, campo vacío con inicial OFF e inicial OFF con elección explícita ON. Cada proyecto tiene su propio editor y una única elección que comprobar; no necesitas regresar al primer proyecto."
+          "text": "Las tres actividades siguientes comparan estas situaciones:\nCampo vacío e inicial ON.\nCampo vacío e inicial OFF.\nInicial OFF con una elección explícita ON.\n\nCada actividad tiene su propio proyecto. Configura y comprueba la situación preparada en él, conservando su relación entre descripción, campo y salida. No necesitas cambiar el proyecto del primer intento para reunir esas observaciones."
         },
         {
           "type": "multiple_choice",
@@ -459,7 +459,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El campo de opciones está vacío y option conserva ON. Configura en el perfil fresco, construye revisar y comprueba qué política utilizan las mismas llamadas."
+          "text": "En este proyecto, «Opciones del proyecto» está vacío y option declara inicial ON. Configura con el perfil del editor, construye revisar y comprueba la implementación elegida para las mismas llamadas.\n\nEl campo no proporciona un valor que sustituya al inicial, y la configuración no reutiliza una caché anterior. Relaciona la salida con esas dos condiciones."
         },
         {
           "type": "cpp_compiler",
@@ -511,7 +511,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto cambia sólo el valor inicial de option a OFF y conserva vacío el campo de opciones. Configura, construye y comprueba esta revisión independiente."
+          "text": "Este proyecto independiente declara OFF como inicial y conserva vacío el campo de opciones. Configura, construye revisar y comprueba su salida.\n\nLa renovación de la caché permite utilizar ese inicial actual. Conserva las fuentes y el campo vacío para comparar esta situación con la actividad anterior."
         },
         {
           "type": "cpp_compiler",
@@ -563,7 +563,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva inicial OFF, pero el campo prepara ACEPTAR_IGUAL=ON. Configura, construye y comprueba; identifica si el valor inicial puede reemplazar esa elección explícita."
+          "text": "Aquí option conserva el inicial OFF, pero el campo entrega `ACEPTAR_IGUAL=ON`. Configura, construye revisar y comprueba el resultado.\n\nLa configuración renovada también puede recibir una elección explícita nueva. Sigue cuál de los dos datos se utiliza, en lugar de asumir que renovar obliga a escoger siempre el inicial."
         },
         {
           "type": "cpp_compiler",
@@ -621,11 +621,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ahora el cliente lee los dos primeros enteros de la entrada preparada, en orden puntos minimo. Es una recuperación de la entrada y las comprobaciones del primer curso. Debe obtener ambos y ambos deben pertenecer a 0..20. Si no, muestra Entrada invalida en stderr y termina con código 2, sin imprimir una respuesta de admitir. No se afirma que valide o consuma todo el texto restante de la entrada."
+          "text": "El cliente siguiente lee dos enteros de la entrada preparada: primero puntos y después minimo. Comprueba que pudo obtener ambos y que cada uno está entre cero y veinte.\n\nSi alguna extracción falla o un valor está fuera de ese intervalo, escribe `Entrada invalida` en stderr y termina con código `2`. No imprime una respuesta de admitir.\n\nEste cliente sólo comprueba esas dos extracciones y sus intervalos. No analiza todo el texto que pueda quedar después. Por ejemplo, disponer de dos enteros admitidos no demuestra que el resto de una entrada más larga tenga un formato determinado."
         },
         {
           "type": "paragraph",
-          "text": "Una elección ACEPTAR_IGUAL=OFF fija qué implementación utiliza el cliente. Los valores de entrada pertenecen a cada ejecución de ese cliente; no sustituyen el valor de la opción ni vuelven a interpretar CMakeLists.txt. El siguiente editor de código mantiene la misma descripción y los mismos cuerpos de las dos políticas; cambia sólo el cliente para leer datos.\n\nComprueba esta política con 6 6, 9 6 y 4 6. Conserva las fuentes y la opción; escribe cada par en Entrada y usa «Compilar, ejecutar y comprobar». Cada variación se interpreta con la misma política estricta.",
+          "text": "La elección `ACEPTAR_IGUAL=OFF` selecciona la implementación estricta al configurar. Los enteros del campo «Entrada» pertenecen a cada ejecución de ese programa: no cambian la opción ni vuelven a interpretar CMakeLists.txt.\n\nPrimero utiliza `6 6` y «Compilar, ejecutar y comprobar». La igualdad debe producir `0`. Este primer caso correcto permite continuar.\n\nConserva como ensayos opcionales, cada uno en su propia ejecución:\n`9 6` debe producir `1`.\n`4 6` debe producir `0`.\n\nMantén las fuentes y la opción durante esos ensayos. Los datos cambian, pero todos utilizan la misma política estricta.",
           "emphasis": [
             {
               "text": "la misma política estricta"
@@ -695,12 +695,12 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente puzzle llama «segundo editor de código» al editor de esta página, cuyo cliente lee puntos y minimo. Variar esos dos datos de entrada pone a prueba una misma política. Los valores de una corrida no cambian qué implementación eligió CMake ni sustituyen la construcción necesaria para cambiar esa elección."
+          "text": "El cliente del editor de esta página obtiene puntos y minimo de «Entrada». Esas dos cantidades se utilizan como argumentos de admitir durante la ejecución.\n\nVariar esa entrada permite probar la misma implementación con otros argumentos. Conserva la opción de construcción para examinar sólo el cambio de datos. Si quisieras seleccionar otra implementación, tendrías que cambiar la elección, configurar y construir la revisión correspondiente."
         },
         {
           "type": "multiple_choice",
           "id": "opc_mismos_archivos_datos_nuevos",
-          "question": "Quieres probar puntos nuevos con la implementación estricta ya construida del segundo editor de código. ¿Qué acción cambia sólo los datos de esa ejecución?",
+          "question": "Quieres probar puntos nuevos con la implementación estricta ya construida del editor de esta página. ¿Qué acción cambia sólo los datos de esa ejecución?",
           "options": [
             "Cambiar los enteros en la entrada preparada y ejecutar el programa vigente, manteniendo descripción, opción y fuentes.",
             "Cambiar ON por OFF en option y atribuir ese cambio a los argumentos de la función.",
@@ -724,7 +724,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una entrada incompleta plantea otra pregunta. Si el cliente recibe sólo 6, no obtiene minimo y debe rechazar antes de llamar a admitir. El puzzle distingue ese rechazo durante la ejecución de un problema al construir; la actividad independiente de esta página permite observar los tres canales de evidencia."
+          "text": "Si la entrada contiene únicamente `6`, la primera extracción obtiene puntos, pero la segunda llega al final sin obtener minimo. El cliente entra en su rama de rechazo y termina antes de llamar a admitir.\n\nEl puzzle distinguirá ese rechazo de datos de un fallo al construir. El editor de esta página permite observar, por separado, la salida normal, el canal de errores y el código de terminación de esa ejecución."
         },
         {
           "type": "multiple_choice",
@@ -745,15 +745,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Cambiar la política exige otra configuración y construcción; cambiar sólo sus argumentos no sustituye esa elección. Una segunda actividad de esta página prepara ON con entradas completas, sin modificar el proyecto estricto que ya comprobaste."
+          "text": "Para cambiar sólo los argumentos, conserva el ejecutable y proporciona otra entrada. Para seleccionar otra política de este proyecto, cambia la opción y vuelve a configurar y construir.\n\nOtra actividad de esta página prepara ON y una entrada completa. Su proyecto independiente conserva también el intento anterior de la política estricta."
         },
         {
           "type": "paragraph",
-          "text": "La política estricta no acepta 6 igual a 6; la inclusiva sí. Ambas rechazan 4 frente a un mínimo de 6. Cambiar el significado acordado de la función y cambiar sus argumentos son dimensiones distintas del experimento."
+          "text": "Con seis puntos y mínimo seis, la política estricta devuelve falso y la inclusiva devuelve verdadero. Con cuatro puntos y mínimo seis, las dos devuelven falso.\n\nEstos pares permiten distinguir dos cambios: seleccionar otra regla puede modificar la respuesta de la igualdad; proporcionar otros argumentos puede modificar la respuesta de una misma regla. Necesitamos registrar qué se cambió para interpretar la diferencia."
         },
         {
           "type": "paragraph",
-          "text": "En las tres actividades del perfil fresco: con campo vacío e inicial ON se elige inclusiva.cpp; con campo vacío e inicial OFF se elige estricta.cpp; con inicial OFF y elección explícita ON vuelve a elegirse inclusiva.cpp. Relaciona cada salida ya comprobada con la fuente y elección de su propio proyecto."
+          "text": "Recupera las tres configuraciones renovadas que ya comparaste:\nCampo vacío e inicial ON: se selecciona inclusiva.cpp.\nCampo vacío e inicial OFF: se selecciona estricta.cpp.\nInicial OFF y elección explícita ON: se selecciona inclusiva.cpp.\n\nEn cada una, el valor utilizado al configurar determina la fuente. Relaciona la salida observada con la descripción y el campo de ese proyecto, sin trasladarle elecciones de otro intento."
         },
         {
           "type": "heading",
@@ -761,7 +761,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva el único entero preparado y las fuentes. Pulsa «Configurar y generar», «Construir objetivo» y «Ejecutar objetivo construido» en ese orden, con revisar como objetivo y ACEPTAR_IGUAL=OFF. Compara los canales de la consola: stdout debe estar vacío; stderr debe contener Entrada invalida sin salto final; el código de terminación debe ser 2. Ese rechazo es del cliente; no es una respuesta incorrecta de admitir ni un error de construcción."
+          "text": "Conserva la entrada preparada, que contiene sólo el entero seis, y no edites las fuentes. El objetivo debe seguir siendo revisar y la elección `ACEPTAR_IGUAL=OFF`.\n\nPulsa estos controles en orden:\n«Configurar y generar».\n«Construir objetivo».\n«Ejecutar objetivo construido».\n\nContrasta las tres observaciones de la ejecución:\nstdout permanece vacío.\nstderr contiene `Entrada invalida`, sin salto final.\nEl código de terminación es `2`.\n\nEl programa se construyó y ejecutó; su cliente rechazó la entrada incompleta. Ese retorno no es una respuesta de admitir ni un fallo de compilación. Las observaciones deben proceder de la misma ejecución del proyecto conservado."
         },
         {
           "type": "cpp_compiler",
@@ -804,7 +804,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor prepara la política inclusiva y el par 6 6. Compila, ejecuta y comprueba ese caso; después utiliza 4 6 para examinar la misma regla. Conserva fuentes y opción durante ambas entradas. No necesitas recuperar ni modificar el borrador del proyecto OFF."
+          "text": "Este editor prepara la política inclusiva y la entrada `6 6`. Compila, ejecuta y comprueba ese primer caso: debe producir `1` y permite continuar al quedar correcto.\n\nComo ensayo opcional, utiliza después `4 6`; la misma regla debe producir `0`. Conserva las fuentes y la elección ON. El editor independiente mantiene el borrador de la política estricta sin sustituirlo."
         },
         {
           "type": "cpp_compiler",
@@ -870,7 +870,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La opción es una decisión nombrada de la descripción; no es el nombre de la biblioteca ni un literal que se entregue a la función C++. Recupera esa diferencia al leer el fragmento de otro proyecto."
+          "text": "La opción nombra una elección de la descripción. La biblioteca nombra un producto que se construirá. El archivo fuente contiene una implementación y los argumentos de una llamada son datos que utiliza el programa.\n\nEn el fragmento siguiente identifica qué nombre declara option y cuál consulta if. Así podrás recuperar la selección sin confundir esa elección con el nombre de la biblioteca o de su archivo."
         },
         {
           "type": "fill_code",
@@ -886,7 +886,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este fragmento practica la lectura del condicional y no es por sí solo un proyecto completo: las fuentes, el cliente y sus requisitos tendrían que existir. En la siguiente actividad tendrás los archivos y crearás una descripción completa con una política distinta."
+          "text": "El fragmento anterior permite practicar la condición, pero no contiene por sí solo todos los archivos de un proyecto. Para construirlo harían falta sus fuentes, el cliente y los requisitos correspondientes.\n\nEn la próxima actividad dispondrás de esos archivos y crearás una descripción completa. Aplicarás la elección a otra tarea: seleccionar una de dos tarifas."
         }
       ]
     },
@@ -898,11 +898,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto Cotizaciones ofrece precio(unidades), con unidades entre 0 y 8, inclusive. La tarifa normal calcula tres por unidad; la especial calcula dos por unidad. No se aplican otros cargos. precio.h conserva la declaración; normal.cpp y especial.cpp contienen las dos alternativas. muestra.cpp imprime los precios para 0, 2 y 5 unidades, en ese orden, con : y sin salto final."
+          "text": "El proyecto Cotizaciones ofrece la función `precio(unidades)`, para cantidades enteras entre cero y ocho. Tiene dos tarifas acordadas:\nNormal: tres por cada unidad.\nEspecial: dos por cada unidad.\n\nNo se añaden otros cargos. precio.h declara la función; normal.cpp y especial.cpp contienen las dos implementaciones.\n\nEl cliente muestra.cpp imprime los precios de cero, dos y cinco unidades, en ese orden, con dos puntos entre resultados y sin salto final. Obtén cada esperado de la tarifa seleccionada, sin atribuirle los cálculos de admisión del proyecto anterior."
         },
         {
           "type": "paragraph",
-          "text": "Escribe CMakeLists.txt desde el espacio vacío. Usa una opción TARIFA_ESPECIAL con inicial OFF: ON selecciona especial.cpp y OFF selecciona normal.cpp. Define la biblioteca estática tarifas con exactamente la implementación elegida y el ejecutable cotizar con muestra.cpp, enlazado a tarifas. Conserva el mínimo CMake 3.20, CXX habilitado, un requisito de al menos C++20 y extensiones desactivadas en ambos objetivos. El campo ya proporciona TARIFA_ESPECIAL=ON: el primer intento debe construir la tarifa especial aunque el inicial acordado sea OFF. Configura, construye cotizar y comprueba esta tarifa especial conservando fuentes y cantidades."
+          "text": "Completa el CMakeLists.txt vacío con estas decisiones:\nProyecto Cotizaciones, con mínimo CMake 3.20 y C++ habilitado mediante CXX.\nOpción TARIFA_ESPECIAL con valor inicial OFF.\nCon ON, seleccionar especial.cpp; con OFF, normal.cpp.\nBiblioteca estática tarifas, que contiene exactamente la implementación elegida.\nEjecutable cotizar, construido desde muestra.cpp y enlazado a tarifas.\nModo mínimo C++20 y extensiones desactivadas en los dos objetivos.\n\nEl campo ya proporciona `TARIFA_ESPECIAL=ON`. Configura y construye cotizar con esa elección para comprobar la tarifa especial. Conserva las fuentes y las cantidades del cliente.\n\nEl inicial OFF sigue siendo una decisión de la descripción, aunque este intento reciba ON. Una descripción que siempre escoja especial.cpp podría imitar la salida de ese intento sin implementar la opción solicitada."
         },
         {
           "type": "cpp_compiler",
@@ -952,7 +952,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Son válidas otras descripciones que satisfagan los mismos objetivos, elección, requisitos y relación; el orden superficial de instrucciones independientes no es el objetivo. La tarifa normal se comprueba en otra actividad."
+          "text": "Otra descripción puede ser válida si conserva los objetivos, las fuentes, la elección, sus requisitos y la relación de enlace. No se exige copiar una disposición única de instrucciones independientes.\n\nContrasta también en tu código qué fuente corresponde a cada elección y qué inicial has declarado. La ejecución especial permite comprobar sus precios, pero no demuestra por sí sola cómo respondería la configuración a OFF. La tarifa normal tendrá su propia actividad."
         }
       ]
     },
@@ -964,7 +964,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La siguiente descripción es una referencia para Cotizaciones. La opción elige la implementación de tarifas y la relación aporta su producto a cotizar. El campo de opciones y el valor inicial de la descripción cumplen papeles distintos, también aquí."
+          "text": "En la referencia de Cotizaciones, TARIFA_ESPECIAL decide qué implementación se utiliza para tarifas. El producto de esa biblioteca llega al enlace de cotizar mediante la relación declarada.\n\nCon el campo en ON se selecciona la tarifa especial. En una configuración renovada con el campo vacío, el inicial OFF seleccionará la normal. Sigue esos valores y sus momentos al comparar la referencia con tu descripción."
         },
         {
           "type": "code",
@@ -1007,7 +1007,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Utiliza este proyecto independiente con la descripción completa y el campo de opciones vacío. Configura en el perfil fresco, construye cotizar y comprueba las mismas cantidades sin alterar sus fuentes."
+          "text": "Este proyecto independiente contiene la descripción completa y deja vacío el campo de opciones. Configura con el perfil del editor, construye cotizar y comprueba los precios de las mismas cantidades.\n\nCon la caché renovada y sin elección explícita, utiliza el inicial OFF de TARIFA_ESPECIAL. Mantén las fuentes para contrastar la tarifa normal con la especial ya observada."
         },
         {
           "type": "cpp_compiler",
@@ -1063,7 +1063,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera admitir después de trabajar con precios. La implementación estricta corresponde a OFF y exige superar el mínimo. Este listado completo utiliza extremos del dominio; calcula cada llamada con esa regla y no con la tarifa ni con una observación anterior."
+          "text": "Volvemos a admitir, la función de puntos, después de trabajar con precios. OFF selecciona su implementación estricta: sólo acepta cuando los puntos superan el mínimo.\n\nEl listado siguiente utiliza extremos del dominio de esa función. Resuelve cada llamada con su comparación escrita, conservando el orden, sin trasladarle una tarifa ni la respuesta de otra configuración."
         },
         {
           "type": "output_prediction",
@@ -3089,6 +3089,231 @@
         "id": "block_0012_0006",
         "beforeSha256": "661f2f27ade62e63f7778f5dfdedcc2d5125d274835d152d1162f3c32e7c5368",
         "afterSha256": "8624fdf7d49f5a452c5c6f07060cb88ac3f80b832e5544ac8819cde18a4504df"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c3743852aaf865b9589fa7d0ab6cfb5a3630594ecd8a3f1cfafdb86955b60cd7",
+        "afterSha256": "b8722651e54d96db05517b613bfef9763161cfff01fd65d8b5ccec927d75b151"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "c75e9a78c614fdab5476f59bbb9c109c0dfd1eb1305a7f48fc3395bc209eda1a",
+        "afterSha256": "970734a90b33214df4ae67db1d4e90a3ad0ca30df3c87a06693f2268dcaf133b"
+      },
+      {
+        "id": "block_0000_0007",
+        "beforeSha256": "f1306076a537165735041e4a5b1e59d52b2cc00fdb61fe66b1dbeaa20cd8d305",
+        "afterSha256": "30d064a9f5ed732f0ee7de8f8c620e9f9bb341f9920b0e22a95c0ae2cf586c4c"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "251408bb1663ce8ad039ab55fb40b31a4bfc642a1eb0af434dce04fa86eb7238",
+        "afterSha256": "54ae5827fa31704bd2d2bfa8e930972e3a0cbd4b400a8a40998f951e0ec56cff"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "225a207c5e8176b9084f80cb161b76bd31bfa09b8071c4ffddbdb4e51ee76167",
+        "afterSha256": "605b00675dfb4947d48ba394c1ecfa2786e57dc424b6ab6fd8f26859b2b95e5a"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "8b1ade84453c6abcb8dc638222d4fe0b1ce60e941f8cdb9c5d7423812fe58420",
+        "afterSha256": "7201f7506090eabdf6ecfaf796bcefa1cddbdc09dc4bf189fad6ac8f1baadb34"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "5645e852232cb9af3791dd0383ba1d1910af567a6e11b6a4689a53bbad96453b",
+        "afterSha256": "fb463c3da72ffdb827bf13011c4355f39ac8ce1fd0646c319df772bb29d13479"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "3c7b79edba4fd01f00b1d054e5c6b5523e457792acd39a4c054718cc24238bd1",
+        "afterSha256": "406344dca2851d25d86f6800804655e4c0c8cd3ff460e8d19936c8429caae062"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "daa5d570d0ca0502daaa6dd7b02f3cd0fb1ec964b4b905a6ceae8f2cf776e277",
+        "afterSha256": "38681a1116f4696ebcb276097d012a26a3572f5da7ce62469a648029b27c8071"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9ee0595d65a581dfb607ece230b21beaba6e15ee6860c8eaa40615fa02f600d3",
+        "afterSha256": "54a52ff701b0a4cfd9dc1835f10e3c90ad227723a9232c74bc17878aeeb24493"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "b4c71a426d37217e4652f3dcf6465fe9aeff8bde3f39c95141c0cc26a4885362",
+        "afterSha256": "e69eda3ecef464b7592b72e6a331a1c42aea68a24b44cb4e641db86af6a59913"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "9202bad9ef522c29a958e536a422e3c5638deb057f0f585bcb2835fbcd807682",
+        "afterSha256": "09db8650fb102b0f9a20336f7eb6eeda0b645f6d558c6d74a4e6216896cf6a08"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "49a01e79124832eba7f5577576597e5e9e476286da47712d792339161562d07c",
+        "afterSha256": "0b25f007ee61618cdfdd9ede7e7586aa20730bb2e4e4aebb9792121e61f8afec"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "e511d7c61ee7b5356c31ebcc559191240ff0685ef122b110d372e8470cd8c7f6",
+        "afterSha256": "3f49fcbeb704abbae87a6607e4f2878333cdfa8e987af5b19ffc15ecaf534cfc"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "aae54cf86416f317fa0f72a2b9b8341dfae77b69b839496ec4274907dd665658",
+        "afterSha256": "a1fa93de0f518a14f964890a856dc2ad12628ce30f6f8c7cc0169f7b6c653ac8"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "05d745b83279e18a9615ccd4e65df6a81f69c30a65a3f88ca183f9de7b3d71ef",
+        "afterSha256": "f1aabf114ab1abd93338b2da5c0895e22dbf69d5a52a9790e006fe512a263894"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "58f66bafc71897f18aef8f00ef7d8974709843c66e3871d4addecaa34a0ce094",
+        "afterSha256": "d2ea6a52893d9fef6234946927a81afebde4a385b1584c9a4bbea7235dc273a4"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "9358f9e399716947ea0c8d62acae63deabe7dab9a330a324262b6bf0918d9a78",
+        "afterSha256": "87230c6b2bcb12382ff12fb8d038d28d2a3815ad9c5d6034ed9d329078847444"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "dc78af55d1f77137ecebe29253408eca867b383eff8372530164ec01e750c998",
+        "afterSha256": "ae9d4280e58d77a637f97741c0d95ea20916f3f3e1f8971f7bb2db94d0bd7a00"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "4a426057ebf8e347a9d5241dffa4bb963dd80cb3df6de8300aa7770108bacbc8",
+        "afterSha256": "aeedb38d104e52c49fbe25fdeda8a833bc8ba4c8d53a2dc6d914d245e7498ce8"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "fe5da99076549c30fb763138a63d2f8f46faf3740830f2145c52607cd02bb611",
+        "afterSha256": "a668d429466860bea10c18071e9ed70577793890c2b6602070335d0fabfb593d"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "56b2a727b58cce3b2f8fdc677a9669bbb05799aacbedf55cb217a545df5201bb",
+        "afterSha256": "17604cd62e6489caa87aa3155e9a5afa58730178c2b4428e2ea9420a0447137b"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "5e4e2692e6fda703e69ccb8f96717709dfe305adea08f75b4a301ec20aa4dcd9",
+        "afterSha256": "5292ac751fb617629216fb804ad72f5f3f8a2fda3efe7899d3722bf8b21cbd69"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "86b2d33db2f8e9c9913202d19788c925114ddfacb3b0d003d6ba22641a35167f",
+        "afterSha256": "40b698b669997d4fb801e8c13bd198dc5b775490e7b8bb1cf129a09dbf517909"
+      },
+      {
+        "id": "block_0007_0009",
+        "beforeSha256": "c88c03ac0fa6c03bb016e2d7ac43b1f8033f8b010b522ee0003644581dd9a7f8",
+        "afterSha256": "2ecfefbb9368732d087806a0c2d339ae6e4869ef74c27c1d314c733c8d559763"
+      },
+      {
+        "id": "block_0007_0012",
+        "beforeSha256": "2288407ca883ecd505bd55b2c1587029263adf3bcd1f5126322f852bdbe32f67",
+        "afterSha256": "11083a0b8d99c40b35235de8c43bed76f8b7b8d9609d675fdc9790e5358fe2f3"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "fb6a09ee0d3a68f4598666f996cc5c83193bce0ba63c178443cfd9d7e0cd14c5",
+        "afterSha256": "5d66b0bd05209c16fd1df2c61b2c5f94802aa4ffcb61def341a10f44bbb62882"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "183e8ddcc4f3e506afb5e0806c116f62ae6a8dac913a9df2ebde4986aaa79a39",
+        "afterSha256": "6067c134ce9afe1917ee09b5ae2827a21fecc9abab1079153bef4ceffed55320"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "82c9921db56bdff94a482ed8b7d8f031694ffa91161b2a3cbd9c2f3d0421738d",
+        "afterSha256": "f1ec424ce11351e11ff3e1ddada0b0c1db983b0765fbc9c52e7ba278dd73a943"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "305c3f7ee28c4d35f89a005f8066cc242dfa6b8c64fc8d8414ca45baf6fc6a17",
+        "afterSha256": "ba8061006953f689e44d308eb75757b6d620b154e8173c373da36a4ec85b7b39"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "e852c2ad788005ec3b2838ea398a22d1ea58dbfd2a90520d8e80ca72c19bf2e0",
+        "afterSha256": "7459ce5247b622ad6d389c52b1badc0ffe8924dfe6fc52882f681abef60b387d"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "530ff46630ca8c64626ff179bf928b883ac0a0deb31fbb9ea299c5452e321404",
+        "afterSha256": "8d3432c95ad279b84bcbe345cd33b12f0edbf44caa00e7378e0b117017c18c12"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "8c5a360f64f51ceb973c98e17920bcbddfdef9c18cafa8287b81cdc923a0cb3b",
+        "afterSha256": "f65fc1bd015c8a4fbc2b6151eb1c0f677c4ec02e160ab9fe2316f98bf30d1f26"
+      },
+      {
+        "id": "block_0009_0007",
+        "beforeSha256": "9ba441c526ae02e89f08c450cbef09ca559f2298ef28b78ddb945e55f2028af7",
+        "afterSha256": "ac484318fe87fdbad23148adce61b7dcb90fb4a3df527f10d1e1356685084463"
+      },
+      {
+        "id": "block_0009_0010",
+        "beforeSha256": "ced8bded2360ff89f4032efa2ff1de12cce3cf3b8deffc906a2215ab5f8fb947",
+        "afterSha256": "9345fbea85481659450f13578343b56cbb167467b89ef419235620f054e00f86"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "80f6b701d315a2bf5dcdb1cac4daf3dde254fb22bd127d9c5bcdaaab82362ddd",
+        "afterSha256": "2b7d554fe43180d963ccb8cb462c41568851844aef955b4af8c84dcbb5c3f3db"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "f192611bc99a26612041df52219de5259991574af87b8947e933c188aa44c46d",
+        "afterSha256": "0690d623ce7897e407f9edc3c6c0b45c906167abae8b13c3aac5c706a45aec51"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "0f0fca47e885cb5260e004e10f15f7794056da78fd9eb4321441c400644a27ff",
+        "afterSha256": "0a03d964cced6fba1d8f8b0c43d2f2bb4f0df797a4d6e6e773a09d9462899ba6"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "75810e95357e73a50511fbd425d774889c608d6944568d3ba4fdaecfe8f77ac2",
+        "afterSha256": "c749ecb4207b2921da3a98c4fac456e281e069ee1deef0aa377f0d3398ce967f"
+      },
+      {
+        "id": "block_0011_0004",
+        "beforeSha256": "1360140126fc7ae95c346cd35ed32bf0ba37253b2285d92cfb5bc3f1807f4ca6",
+        "afterSha256": "ce616265bd6ff0a88fdea6cb860e868e076bcfb24d177e5e42aef70752b74db2"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "28478640873d7752a20829c403bf7220d471149a65ff625447988f5721bd327c",
+        "afterSha256": "58fb465dfb21de508f22dd1a4ad862ed5eb5feb77a3a60f6d91aca3034482462"
+      },
+      {
+        "id": "block_0012_0006",
+        "beforeSha256": "8624fdf7d49f5a452c5c6f07060cb88ac3f80b832e5544ac8819cde18a4504df",
+        "afterSha256": "52397a61071b0679432ac26dd1913baed106636bfd5d3758cbaa05b51ab6fe05"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "dc3073c9c201be4873295f3cc534d179106bbd17b7de6b2c9bcb9c4c5e96aac2",
+        "afterSha256": "9c41c8e474ec4b5c32de681d6c8f2fb69a8ce36e15edb4e600fa4195d93864c0"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "f1ec424ce11351e11ff3e1ddada0b0c1db983b0765fbc9c52e7ba278dd73a943",
+        "afterSha256": "5eba70701ca28230b92c0f1a3ba55996e4309b05f3c625c4eaf77f3e64633c47"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "b2bb26489670c58e07ec0784e3d4081b8877d4de72f479ed2d36cdb5d99bab2c",
+        "afterSha256": "92e2fadf65dd544d7baed6e7bdf69fa5556da9fef7283b187fb69de422f692fe"
       }
     ]
   },
@@ -3104,81 +3329,45 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "18b35b2cf90e034c943c631fab80e892d6b4662aad416557176ad057ce76dbc8",
-        "spans": [
-          {
-            "start": 104,
-            "end": 109,
-            "text": "Pases",
-            "role": "data",
-            "reading": "technical"
-          }
-        ]
+        "sourceSha256": "693d79dc9d3b57b69490f96fb57b887b75175fdef07bd07760c9714a4b32c383",
+        "spans": []
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "79da31a27dd1cdcd41ffa43e2bb5a8a25fec5cc3255c01f75172428b28ed9852",
+        "sourceSha256": "198b00561d60bf38743975eb3b48d5dc4d1e603e6d7acb2272f2fee9a6413843",
         "spans": [
           {
-            "start": 47,
-            "end": 83,
+            "start": 52,
+            "end": 88,
             "text": "bool admitir(int puntos, int minimo)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 105,
-            "end": 111,
-            "text": "puntos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 114,
-            "end": 120,
-            "text": "minimo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 127,
-            "end": 128,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 131,
-            "end": 133,
-            "text": "20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 159,
+            "start": 179,
+            "end": 192,
             "text": "inclusiva.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 182,
-            "end": 184,
+            "start": 203,
+            "end": 205,
             "text": ">=",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 186,
-            "end": 198,
+            "start": 272,
+            "end": 284,
             "text": "estricta.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 207,
+            "start": 295,
+            "end": 296,
             "text": ">",
             "role": "cpp",
             "reading": "technical"
@@ -3216,18 +3405,25 @@
       {
         "block": "block_0000_0007",
         "path": "/text",
-        "sourceSha256": "ec54bc44ae1e60934ce7f417ff5c7a01c2948fb50b07dac38f42fb41972686d5",
+        "sourceSha256": "ff12be6b5817314675b1d8b5e34139a842905fc3f620b407f6747355f41a393a",
         "spans": [
           {
-            "start": 80,
-            "end": 85,
+            "start": 14,
+            "end": 19,
             "text": "regla",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 100,
-            "end": 107,
+            "start": 63,
+            "end": 76,
+            "text": "inclusiva.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 114,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
@@ -3299,33 +3495,33 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "2a3a970b7fd03cd1fb2a85499ce21e6c633bc81daec851356901682196ff3480",
+        "sourceSha256": "16c2f293c3c47a202a524d9dd254f6cd529eda588ca349dd7a3809f820d44f34",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
+            "start": 139,
+            "end": 145,
             "text": "option",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 70,
-            "end": 83,
+            "start": 191,
+            "end": 204,
             "text": "ACEPTAR_IGUAL",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 149,
-            "end": 151,
+            "start": 310,
+            "end": 312,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 324,
-            "end": 348,
-            "text": "(Scott, 2025, pp. 34–38)",
+            "start": 358,
+            "end": 371,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3334,25 +3530,25 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "dccfdd980cd919b8974c4a27185a50326dbdd94e3f5197bca58aaca2f3365c7e",
+        "sourceSha256": "5ff4f5b8a9374a17c7bda36ba86325ce65f3e995a314eb0852cecbcec6d99349",
         "spans": [
           {
-            "start": 17,
-            "end": 19,
+            "start": 29,
+            "end": 31,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 52,
+            "start": 61,
+            "end": 64,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 284,
-            "end": 297,
+            "start": 205,
+            "end": 218,
             "text": "ACEPTAR_IGUAL",
             "role": "data",
             "reading": "technical"
@@ -3362,19 +3558,47 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "fff9956ff95cdd8605e5c02031d7fdd9856bfdc8d91033f6de38525e6ae2c92c",
+        "sourceSha256": "c6b817ac5c67a1cfd11e4606ea7c9e5bac214b88b5bb305784b6ebce9a866143",
         "spans": [
           {
-            "start": 44,
-            "end": 46,
+            "start": 3,
+            "end": 5,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 336,
-            "end": 360,
-            "text": "(Scott, 2025, pp. 36–40)",
+            "start": 9,
+            "end": 15,
+            "text": "option",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 259,
+            "text": "ON",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 281,
+            "text": "option",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 300,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 487,
+            "end": 500,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3592,154 +3816,168 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "7239cb080d29de89b41d38802e67c5f65fdc3c3ac53626ade840f50307cadf26",
+        "sourceSha256": "6ca560fe210692997f1bbf964cf1e14c44bba801b9cfbd7983171cf35ae7efcd",
         "spans": [
           {
-            "start": 0,
-            "end": 17,
+            "start": 16,
+            "end": 33,
             "text": "if(ACEPTAR_IGUAL)",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 103,
-            "end": 105,
+            "start": 97,
+            "end": 99,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 135,
-            "end": 138,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 150,
-            "end": 156,
+            "start": 176,
+            "end": 182,
             "text": "else()",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 158,
-            "end": 165,
+            "start": 189,
+            "end": 192,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 256,
+            "end": 262,
+            "text": "else()",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 273,
             "text": "endif()",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 203,
-            "text": "if",
+            "start": 276,
+            "end": 283,
+            "text": "endif()",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 297,
-            "text": "puntos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 300,
-            "end": 306,
-            "text": "minimo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 307,
-            "end": 331,
-            "text": "(Scott, 2025, pp. 53–55)",
+            "start": 306,
+            "end": 319,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 327,
+            "end": 329,
+            "text": "if",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "8a6a0a63955cc13cbc99b2923f2d597038c54dd0a007ec0a1ad671fdcaaa5a3e",
+        "sourceSha256": "14ee7d65796d542204bcb3a9c773af1cc739bae4fc61730e4bef015e979dadc5",
         "spans": [
           {
-            "start": 32,
-            "end": 37,
+            "start": 53,
+            "end": 55,
+            "text": "ON",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 68,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 79,
             "text": "regla",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 45,
-            "end": 58,
-            "text": "inclusiva.cpp",
+            "start": 111,
+            "end": 114,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 88,
+            "start": 116,
+            "end": 127,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 138,
             "text": "regla",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 108,
-            "text": "estricta.cpp",
+            "start": 247,
+            "end": 252,
+            "text": "regla",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 322,
-            "end": 332,
+            "start": 307,
+            "end": 314,
+            "text": "revisar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 321,
+            "end": 329,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 403,
+            "end": 413,
             "text": "cxx_std_20",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 371,
-            "end": 376,
-            "text": "C++20",
+            "start": 468,
+            "end": 471,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 379,
-            "end": 397,
-            "text": "CXX_EXTENSIONS OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 503,
-            "end": 529,
-            "text": "(Scott, 2025, pp. 216–217)",
+            "start": 561,
+            "end": 574,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
-          },
-          {
-            "start": 565,
-            "end": 570,
-            "text": "C++23",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 652,
-            "end": 657,
-            "text": "C++20",
-            "role": "data",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "2a72f164b380e407c9352b0cf0c128ca7a5bffbd3cc1dd6f540f977fabe9ea3a",
+        "sourceSha256": "0f0b36b6a74c868deecabee245661d87c2ccae36a831a9187dbec9f198fc4190",
         "spans": [
           {
             "start": 12,
@@ -3749,23 +3987,30 @@
             "reading": "technical"
           },
           {
-            "start": 28,
-            "end": 35,
+            "start": 37,
+            "end": 44,
             "text": "admitir",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 89,
+            "start": 67,
+            "end": 75,
             "text": "main.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 201,
+            "start": 193,
+            "end": 195,
             "text": "if",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 439,
+            "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           }
@@ -3976,49 +4221,21 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "3ffa4ff1d459650afb9c24ecaba25e56901cdb677dfba41f726d14a1318c5a7a",
+        "sourceSha256": "c00e49a3bb971ba1f968002ec8b6cc56f32ee9154113331e2605a16c36c1ed02",
         "spans": [
           {
-            "start": 38,
-            "end": 40,
+            "start": 30,
+            "end": 32,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 113,
+            "start": 83,
+            "end": 100,
             "text": "ACEPTAR_IGUAL=OFF",
             "role": "data",
             "reading": "technical"
-          },
-          {
-            "start": 136,
-            "end": 148,
-            "text": "estricta.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 177,
-            "end": 182,
-            "text": "(6,6)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 184,
-            "end": 189,
-            "text": "(9,6)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 192,
-            "end": 197,
-            "text": "(4,6)",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
@@ -4095,7 +4312,7 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "0615df7f00c9a113f5eeb97adfe9f1345bf1947f4380d6b0718b6de5c3d1931d",
+        "sourceSha256": "f59dcc61da36fc66c9123475c19287f7a86d07c49246cb162e520bf539d3fa65",
         "spans": []
       },
       {
@@ -4107,40 +4324,19 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "5fb01ed51e0a2c7afc32c2ef36ddbeb3450a8e71242543d1b471c791760db667",
+        "sourceSha256": "f31145c1b88cc48d2eb802b0e41b11b0063b619a583f94f5369d389376060d24",
         "spans": [
           {
-            "start": 48,
-            "end": 65,
+            "start": 82,
+            "end": 99,
             "text": "ACEPTAR_IGUAL=OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 95,
-            "end": 97,
+            "start": 277,
+            "end": 279,
             "text": "-D",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 133,
-            "end": 138,
-            "text": ":BOOL",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 178,
-            "end": 190,
-            "text": "nombre=valor",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 265,
-            "end": 272,
-            "text": "revisar",
             "role": "data",
             "reading": "technical"
           }
@@ -4149,19 +4345,19 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "d7fd327f876fc5555eeb15b6f8c996d3d773031bee089e564dab8003a921da7d",
+        "sourceSha256": "accd6c3f91e22f1903d585652b3aee88ec9844f7296602ef47bd6621d4023a48",
         "spans": [
           {
-            "start": 77,
-            "end": 84,
-            "text": "revisar",
+            "start": 45,
+            "end": 48,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 257,
-            "end": 260,
-            "text": "OFF",
+            "start": 175,
+            "end": 182,
+            "text": "revisar",
             "role": "data",
             "reading": "technical"
           }
@@ -4198,11 +4394,25 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "c31325d3cd81f79194842496052a27da55c7f22fc7e7781a0cf376eaf1d38f36",
+        "sourceSha256": "51658949cbe3f0e6be11f42add675fc551e2f9e87c5a237772d202174289cb04",
         "spans": [
           {
-            "start": 199,
-            "end": 201,
+            "start": 72,
+            "end": 74,
+            "text": "ON",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 100,
+            "text": "OFF",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 248,
             "text": "ON",
             "role": "data",
             "reading": "technical"
@@ -4218,18 +4428,18 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "169d530fface10dd6a4246ac6ed59fcee9f79f120b99b7bf91583928fe63b51f",
+        "sourceSha256": "a9d2dd9a0db3b9c6d6a86864d2ac926cd0022b01406904eea8a8ca7f10445275",
         "spans": [
           {
-            "start": 18,
-            "end": 20,
+            "start": 10,
+            "end": 12,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 69,
+            "start": 48,
+            "end": 61,
             "text": "inclusiva.cpp",
             "role": "data",
             "reading": "technical"
@@ -4404,11 +4614,11 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "dc0c6f136f9e0fac931f53149a8ddad4bac5add2cb2d379f7e5defdfdfd62b71",
+        "sourceSha256": "6153c9a4b8d8069208babe730aaeee54b9939806830310f739a14e4d8a69e754",
         "spans": [
           {
-            "start": 104,
-            "end": 111,
+            "start": 32,
+            "end": 39,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
@@ -4424,18 +4634,18 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "a18454cc5e6916dd915a0dc5f16f15ff6164c8462abc35f6129ee9436ef4ee55",
+        "sourceSha256": "1e32385aaa36a15b155fa25de69b8f38a6f26d2a1e9059f9bf10ca9c863b95b2",
         "spans": [
           {
-            "start": 57,
-            "end": 73,
+            "start": 51,
+            "end": 67,
             "text": "ACEPTAR_IGUAL=ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 96,
-            "end": 103,
+            "start": 91,
+            "end": 98,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
@@ -4465,33 +4675,33 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "33acf6c068fe3f815b898571f8ae03503d9f55d43598471856ab2e4569f75e28",
+        "sourceSha256": "9f4fe2b49fe2004c0a6da3cafc782f1b669e7e8e1c837b59d7b5c008aab368fb",
         "spans": [
           {
-            "start": 44,
-            "end": 58,
+            "start": 60,
+            "end": 74,
             "text": "CMakeCache.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 163,
-            "end": 169,
+            "start": 183,
+            "end": 189,
             "text": "option",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 305,
+            "start": 388,
+            "end": 390,
             "text": "-D",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 368,
-            "end": 392,
-            "text": "(Scott, 2025, pp. 36–40)",
+            "start": 446,
+            "end": 459,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
           }
@@ -4500,68 +4710,54 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "4d295aefe1b04962849682fef3159c78607ce67057925157d3a5e307a0041a99",
+        "sourceSha256": "919c17f45ad1212450a7ace8967315b6e66662ceee71cd46c65f111d7cf7c3b7",
         "spans": [
           {
-            "start": 104,
-            "end": 110,
+            "start": 161,
+            "end": 167,
             "text": "fuente",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 157,
-            "end": 166,
-            "text": "Politicas",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 186,
-            "end": 191,
-            "text": "cmake",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 241,
-            "end": 250,
+            "start": 326,
+            "end": 335,
             "text": "-S fuente",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 269,
-            "end": 283,
+            "start": 358,
+            "end": 372,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 300,
+            "start": 388,
+            "end": 403,
             "text": "-B construccion",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 368,
-            "end": 392,
+            "start": 496,
+            "end": 520,
             "text": "-DACEPTAR_IGUAL:BOOL=OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 421,
-            "end": 434,
+            "start": 539,
+            "end": 552,
             "text": "ACEPTAR_IGUAL",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 459,
-            "text": "OFF",
+            "start": 562,
+            "end": 566,
+            "text": "BOOL",
             "role": "data",
             "reading": "technical"
           }
@@ -4570,39 +4766,32 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "93f5a14bf150878587176dc5afb9d51e7cc3f736101160958c6d9b9ea00fb46b",
+        "sourceSha256": "a1a5668a51e7c7a9b60a8e4c7e5a06a8e3308e9d2520ee906aba12e7dae42288",
         "spans": [
           {
-            "start": 41,
-            "end": 54,
+            "start": 29,
+            "end": 42,
             "text": "ACEPTAR_IGUAL",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 62,
+            "start": 62,
+            "end": 65,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 168,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 173,
-            "end": 175,
+            "start": 215,
+            "end": 217,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 212,
+            "start": 242,
+            "end": 248,
             "text": "option",
             "role": "data",
             "reading": "technical"
@@ -4741,82 +4930,82 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "9d400bbd23d3881b13fb55ed1d2cc573787ccd909b4ea3728757043a0c569a4d",
+        "sourceSha256": "1cb1af2b924df98a3695f5212355f112566974095a2d42e251ed06b7f3a6947e",
         "spans": [
           {
-            "start": 30,
-            "end": 37,
+            "start": 46,
+            "end": 53,
             "text": "--fresh",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 95,
+            "start": 100,
+            "end": 114,
             "text": "CMakeCache.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 98,
-            "end": 108,
+            "start": 117,
+            "end": 127,
             "text": "CMakeFiles",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 230,
-            "end": 237,
+            "start": 285,
+            "end": 292,
             "text": "--fresh",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 269,
-            "end": 273,
-            "text": "3.24",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 419,
-            "end": 423,
-            "text": "3.20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 424,
-            "end": 445,
-            "text": "(Scott, 2025, p. 163)",
+            "start": 375,
+            "end": 388,
+            "text": "(Scott, 2025)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 528,
+            "text": "--fresh",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 581,
+            "end": 603,
+            "text": "cmake_minimum_required",
+            "role": "data",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "669da54981ba789fda80af737a3ff6f2ee9b4636869aec7ed906e02811412a03",
+        "sourceSha256": "3ecc424aecf803f182b239cc81316fc048c62fea47ba9137a95330562132a0fd",
         "spans": [
           {
-            "start": 50,
-            "end": 67,
+            "start": 27,
+            "end": 44,
             "text": "ACEPTAR_IGUAL=OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 133,
-            "end": 139,
-            "text": "option",
+            "start": 79,
+            "end": 86,
+            "text": "--fresh",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 179,
-            "end": 182,
-            "text": "OFF",
+            "start": 160,
+            "end": 166,
+            "text": "option",
             "role": "data",
             "reading": "technical"
           }
@@ -4825,33 +5014,12 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "77c56543b95c7211ddf7e5c61814e26aaaf907249989709c8577d84b754f5004",
+        "sourceSha256": "6edbc3a556418ad7bd4e89cc9b3fff4bc4b7f14237b236df288049290efb6766",
         "spans": [
           {
-            "start": 94,
-            "end": 96,
-            "text": "ON",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 122,
-            "end": 125,
+            "start": 121,
+            "end": 124,
             "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 136,
-            "end": 139,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 163,
-            "end": 165,
-            "text": "ON",
             "role": "data",
             "reading": "technical"
           }
@@ -4983,25 +5151,18 @@
       {
         "block": "block_0007_0006",
         "path": "/text",
-        "sourceSha256": "6536f008d4fc62acc91942ac60c2301c4c150addcd04f2a77f89f356b1418aef",
+        "sourceSha256": "6b113811bacc7c9f486ff9d48223d03c4f4f0c03f146a4492846b3f3faacffb1",
         "spans": [
           {
-            "start": 34,
-            "end": 40,
+            "start": 55,
+            "end": 61,
             "text": "option",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 50,
-            "end": 52,
-            "text": "ON",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 95,
-            "end": 102,
+            "start": 128,
+            "end": 135,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
@@ -5031,19 +5192,19 @@
       {
         "block": "block_0007_0009",
         "path": "/text",
-        "sourceSha256": "aed82688dd0a8055260f9aee1a39733530b2badac278696a59a703eb59c8abd2",
+        "sourceSha256": "331b34a3d734b27c5f4ae94fb73f316202cb0e4290ba505de4e3f5571c67fd9a",
         "spans": [
           {
-            "start": 46,
-            "end": 52,
-            "text": "option",
+            "start": 36,
+            "end": 39,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 58,
-            "text": "OFF",
+            "start": 113,
+            "end": 120,
+            "text": "revisar",
             "role": "data",
             "reading": "technical"
           }
@@ -5072,19 +5233,33 @@
       {
         "block": "block_0007_0012",
         "path": "/text",
-        "sourceSha256": "352a42020c79b457b19e5f207fadcf18ac8027bda3a0772265ac9bdaaa4d3653",
+        "sourceSha256": "f019ead748affeb69d3a790d76e72c4a410f7c596678dfca705cb7b985ae4624",
         "spans": [
           {
-            "start": 31,
-            "end": 34,
+            "start": 5,
+            "end": 11,
+            "text": "option",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 35,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 74,
+            "start": 60,
+            "end": 76,
             "text": "ACEPTAR_IGUAL=ON",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 107,
+            "text": "revisar",
             "role": "data",
             "reading": "technical"
           }
@@ -5105,63 +5280,42 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "0da9a269b04ac9d26f4b205979650fd34ebfad93e75bb093055a9928a8822a5e",
+        "sourceSha256": "49f7a60aa51a413b32988ae6b615570e7b97cae04d75a049b9242154ca2e695a",
         "spans": [
           {
-            "start": 80,
-            "end": 86,
+            "start": 70,
+            "end": 76,
             "text": "puntos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 87,
-            "end": 93,
-            "text": "minimo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 214,
-            "end": 219,
-            "text": "0..20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 236,
-            "end": 252,
+            "start": 246,
+            "end": 262,
             "text": "Entrada invalida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 262,
+            "start": 267,
+            "end": 273,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 284,
-            "end": 285,
+            "start": 296,
+            "end": 297,
             "text": "2",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 317,
-            "end": 324,
-            "text": "admitir",
-            "role": "cpp",
-            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "a4c91b1caed91981f6e8fd00ce4ad2a8c2562ef7242a47880da75c7ac73a6ad7",
+        "sourceSha256": "07536abf398ce80e71ec0310a6353b8d3f8c1be6bed35ea0d033258b41c0d31c",
         "spans": [
           {
             "start": 13,
@@ -5171,31 +5325,45 @@
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 217,
-            "text": "CMakeLists.txt",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 391,
-            "end": 394,
+            "start": 242,
+            "end": 245,
             "text": "6 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 396,
-            "end": 399,
+            "start": 310,
+            "end": 311,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 428,
+            "end": 431,
             "text": "9 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 402,
-            "end": 405,
+            "start": 448,
+            "end": 449,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 453,
+            "end": 456,
             "text": "4 6",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 473,
+            "end": 474,
+            "text": "0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5221,19 +5389,26 @@
       {
         "block": "block_0008_0004",
         "path": "/text",
-        "sourceSha256": "43725e64336eef94cdf38b26d014dbd658ee15b49f893ba359e29a22ed103821",
+        "sourceSha256": "bcadc1452ef31ae27a8782c6940ff3708ea418b3763c037fa390b2f38e2a238b",
         "spans": [
           {
-            "start": 96,
-            "end": 102,
+            "start": 45,
+            "end": 51,
             "text": "puntos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 105,
-            "end": 111,
+            "start": 54,
+            "end": 60,
             "text": "minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 133,
+            "text": "admitir",
             "role": "cpp",
             "reading": "technical"
           }
@@ -5242,7 +5417,7 @@
       {
         "block": "block_0008_0005",
         "path": "/question",
-        "sourceSha256": "e86657ccefcdc51c803959b8fde42a9bcf48195317a0942aa399b0e8379636d1",
+        "sourceSha256": "4bb61110d73af9db787e2d262c889e766959f1a5c7dcf979c61238daaf31d7c4",
         "spans": []
       },
       {
@@ -5393,26 +5568,19 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "bba8203569bd01c921d2177652f6304342c20d362880769fa547066a6f4a4b5c",
+        "sourceSha256": "4e6eb5a2eca990358ea495fa771ad05c932724aecd37906516f83bbba43c4be0",
         "spans": [
           {
-            "start": 72,
-            "end": 73,
+            "start": 35,
+            "end": 36,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 86,
-            "end": 92,
-            "text": "minimo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 127,
-            "end": 134,
-            "text": "admitir",
+            "start": 69,
+            "end": 75,
+            "text": "puntos",
             "role": "cpp",
             "reading": "technical"
           }
@@ -5537,11 +5705,11 @@
       {
         "block": "block_0009_0003",
         "path": "/text",
-        "sourceSha256": "ca6ac19b546d31d7889e5577f56479ed438a91828b324fad56a99c150f0ea5d1",
+        "sourceSha256": "9b1bf861e90b55f2288c43069593339f5d7ad50ef97c5ac2fda4fc5ada797a89",
         "spans": [
           {
-            "start": 161,
-            "end": 163,
+            "start": 225,
+            "end": 227,
             "text": "ON",
             "role": "data",
             "reading": "technical"
@@ -5551,89 +5719,39 @@
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "eeb83e1d2bb5ade17945162d9e9389a633ea8aa64ce423fb9a8a9dbec4a2cb75",
-        "spans": [
-          {
-            "start": 31,
-            "end": 32,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 41,
-            "end": 42,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 76,
-            "end": 77,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 100,
-            "end": 101,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "ef6be9a07287cc48f2cf299aaed8028afc1a8b45e5e2df4623f26ae8a6afc165",
+        "spans": []
       },
       {
         "block": "block_0009_0005",
         "path": "/text",
-        "sourceSha256": "049622e9eaeb1d83f123c9b8d299dbc2250ea06810d1694741c91ec368807160",
+        "sourceSha256": "e0b9afc4fa80a7bd8269d2445a2d0fd07c6f398f356292b665b549bffd7a4376",
         "spans": [
           {
-            "start": 69,
-            "end": 71,
+            "start": 85,
+            "end": 87,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 94,
-            "text": "inclusiva.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 122,
-            "end": 125,
+            "start": 140,
+            "end": 143,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 135,
-            "end": 147,
-            "text": "estricta.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 161,
-            "end": 164,
+            "start": 181,
+            "end": 184,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 186,
-            "end": 188,
+            "start": 206,
+            "end": 208,
             "text": "ON",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 207,
-            "end": 220,
-            "text": "inclusiva.cpp",
             "role": "data",
             "reading": "technical"
           }
@@ -5648,53 +5766,53 @@
       {
         "block": "block_0009_0007",
         "path": "/text",
-        "sourceSha256": "ceccd591f121a65530bd54df43c75c4a26ac52c66f47af2c38931d8a5541bd78",
+        "sourceSha256": "8bde3c80d2849eafbf89797e0a0c5b4bf29700cb3d32c51ce441b81480b94503",
         "spans": [
           {
-            "start": 152,
-            "end": 159,
+            "start": 121,
+            "end": 128,
             "text": "revisar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 193,
+            "start": 144,
+            "end": 161,
             "text": "ACEPTAR_IGUAL=OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 230,
-            "end": 236,
+            "start": 326,
+            "end": 332,
             "text": "stdout",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 255,
-            "end": 261,
+            "start": 350,
+            "end": 356,
             "text": "stderr",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 276,
-            "end": 292,
+            "start": 367,
+            "end": 383,
             "text": "Entrada invalida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 344,
-            "end": 345,
+            "start": 432,
+            "end": 433,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 409,
-            "end": 416,
+            "start": 550,
+            "end": 557,
             "text": "admitir",
             "role": "cpp",
             "reading": "technical"
@@ -5718,28 +5836,35 @@
       {
         "block": "block_0009_0010",
         "path": "/text",
-        "sourceSha256": "8f2d5924b839381798b8bc9806ea4a5c36123b1dbb3667046bc55e80bf8abc46",
+        "sourceSha256": "179b676e33c14bfe32aba3b80761629240b41ea76588bd6e4172a236a3548d5d",
         "spans": [
           {
-            "start": 51,
-            "end": 54,
+            "start": 56,
+            "end": 59,
             "text": "6 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 114,
+            "start": 123,
+            "end": 124,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 209,
             "text": "4 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 259,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
+            "start": 242,
+            "end": 243,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -5772,8 +5897,16 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "1bb6bf6476ead6205b6327bb2618532854fb106db67b92f0c6f7e0f535562fe6",
-        "spans": []
+        "sourceSha256": "72b3d09ba55e64a5000d64509950c8be4a25c6d2dba0c9ba585d71fa208cb4ae",
+        "spans": [
+          {
+            "start": 271,
+            "end": 277,
+            "text": "option",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0010_0002",
@@ -5847,7 +5980,7 @@
       {
         "block": "block_0010_0003",
         "path": "/text",
-        "sourceSha256": "58a06a980e13386e032c9afca7f520fff40eef88df7892955326588e219f7386",
+        "sourceSha256": "db24b4efd7c7c8de02afea939c27ddf9a01ed5a0e59fdcaaa7005682957c52ac",
         "spans": []
       },
       {
@@ -5859,7 +5992,7 @@
       {
         "block": "block_0011_0001",
         "path": "/text",
-        "sourceSha256": "dcb42e1b2f34d4b31948ff66e3d03d6cc7fe02f79c18410880878f9b0af7eecc",
+        "sourceSha256": "9cd19d0c08efaf83cd79efebfed787a225e44c4d6746016be3f10fc01c4e866a",
         "spans": [
           {
             "start": 12,
@@ -5869,212 +6002,135 @@
             "reading": "technical"
           },
           {
-            "start": 32,
-            "end": 48,
+            "start": 44,
+            "end": 60,
             "text": "precio(unidades)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 62,
-            "text": "unidades",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 69,
-            "end": 70,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 73,
-            "end": 74,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 193,
-            "end": 201,
+            "start": 224,
+            "end": 232,
             "text": "precio.h",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 227,
-            "end": 237,
+            "start": 253,
+            "end": 263,
             "text": "normal.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 252,
+            "start": 266,
+            "end": 278,
             "text": "especial.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 296,
+            "start": 327,
+            "end": 338,
             "text": "muestra.cpp",
             "role": "data",
             "reading": "technical"
-          },
-          {
-            "start": 322,
-            "end": 323,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 325,
-            "end": 326,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 329,
-            "end": 330,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 359,
-            "end": 360,
-            "text": ":",
-            "role": "output",
-            "reading": "characters"
           }
         ]
       },
       {
         "block": "block_0011_0002",
         "path": "/text",
-        "sourceSha256": "e108d8644764139ff62b2050e98d02d890b57c242f406bd960fe0068078d2044",
+        "sourceSha256": "b5c8f604fb0d8c996c932b191889f7f52f242207968ee29425208bd3545a579e",
         "spans": [
           {
-            "start": 8,
-            "end": 22,
+            "start": 12,
+            "end": 26,
             "text": "CMakeLists.txt",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 77,
+            "start": 64,
+            "end": 76,
+            "text": "Cotizaciones",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 153,
             "text": "TARIFA_ESPECIAL",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 93,
-            "text": "OFF",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 95,
-            "end": 97,
+            "start": 181,
+            "end": 183,
             "text": "ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 109,
-            "end": 121,
+            "start": 197,
+            "end": 209,
             "text": "especial.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 127,
+            "start": 215,
+            "end": 218,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 139,
-            "end": 149,
-            "text": "normal.cpp",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 181,
-            "end": 188,
+            "start": 252,
+            "end": 259,
             "text": "tarifas",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 247,
-            "end": 254,
+            "start": 324,
+            "end": 331,
             "text": "cotizar",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 259,
-            "end": 270,
+            "start": 350,
+            "end": 361,
             "text": "muestra.cpp",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 283,
-            "end": 290,
-            "text": "tarifas",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 317,
-            "end": 321,
-            "text": "3.20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 323,
-            "end": 326,
-            "text": "CXX",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 364,
-            "end": 369,
-            "text": "C++20",
-            "role": "data",
-            "reading": "technical"
-          },
-          {
-            "start": 441,
-            "end": 459,
+            "start": 477,
+            "end": 495,
             "text": "TARIFA_ESPECIAL=ON",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 544,
-            "end": 547,
+            "start": 520,
+            "end": 527,
+            "text": "cotizar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 643,
+            "end": 646,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 570,
-            "end": 577,
-            "text": "cotizar",
+            "start": 758,
+            "end": 770,
+            "text": "especial.cpp",
             "role": "data",
             "reading": "technical"
           }
@@ -6125,7 +6181,7 @@
       {
         "block": "block_0011_0004",
         "path": "/text",
-        "sourceSha256": "362d3f619a20f411ba2bdc7df84eb5b2521e18af772a2299d91b9ec9f1d74e12",
+        "sourceSha256": "f827c14d87574c0c304eca426dec6f125c4abeb3f56236a34bdf030bebba1151",
         "spans": []
       },
       {
@@ -6137,26 +6193,40 @@
       {
         "block": "block_0012_0001",
         "path": "/text",
-        "sourceSha256": "bdabae6bdc4bbde380fa46af2884226af420bbca894a187baa702a062728daf9",
+        "sourceSha256": "cb2743880795c61d5796346b0748c8070b88d42a7be24f09d815c5e7156cea5e",
         "spans": [
           {
-            "start": 48,
-            "end": 60,
+            "start": 20,
+            "end": 32,
             "text": "Cotizaciones",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 99,
-            "end": 106,
-            "text": "tarifas",
+            "start": 34,
+            "end": 49,
+            "text": "TARIFA_ESPECIAL",
             "role": "data",
             "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 149,
+            "start": 150,
+            "end": 157,
             "text": "cotizar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 209,
+            "text": "ON",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 308,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           }
@@ -6326,12 +6396,19 @@
       {
         "block": "block_0012_0006",
         "path": "/text",
-        "sourceSha256": "a97ee6060e7484a76f6dc7c51f92a39b94dc7b173f30df030306c2f8cb1e68fa",
+        "sourceSha256": "60a258939c45a7a0f85f0e1560c79de8051777f281a7a9c856258a847fd8baba",
         "spans": [
           {
-            "start": 135,
-            "end": 142,
+            "start": 142,
+            "end": 149,
             "text": "cotizar",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 271,
+            "text": "OFF",
             "role": "data",
             "reading": "technical"
           }
@@ -6360,18 +6437,18 @@
       {
         "block": "block_0013_0001",
         "path": "/text",
-        "sourceSha256": "00785bb19a9fdd00938d956cd8f0b50645ef55f6951d970b9e8329042261de94",
+        "sourceSha256": "29978a379c6c251fdefbc83fe06cb4a4aaff10b0cf57ca2976d6cf857220ee9f",
         "spans": [
           {
-            "start": 9,
-            "end": 16,
+            "start": 11,
+            "end": 18,
             "text": "admitir",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 91,
-            "end": 94,
+            "start": 75,
+            "end": 78,
             "text": "OFF",
             "role": "data",
             "reading": "technical"
