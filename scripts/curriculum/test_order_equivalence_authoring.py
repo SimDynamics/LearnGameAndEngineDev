@@ -83,6 +83,36 @@ class IndependentOrderAuthoring(unittest.TestCase):
         with self.assertRaises(state.LayoutError):
             state.validate(changed)
 
+    def test_new_owner_uses_generic_root_contract(self):
+        # No production lesson or hardcoded source-hash exception is involved.
+        source = {"id": "orden_qa_original", "title": "Dos declaraciones independientes",
+                  "pages": [{"blocks": [{
+                      "type": "order_code",
+                      "question": "Ordena las declaraciones y devuelve el resultado.",
+                      "fragments": ["int primero{1};", "int segundo{2};",
+                                    "return primero + segundo;"],
+                      "correctOrder": [0, 1, 2],
+                      "explanation": "Las declaraciones no dependen entre sí."
+                  }]}]}
+        before = state.prepare_v2(source, "es", {"es": source})
+        state.validate(before)
+        after = deepcopy(before)
+        identity = after["stateLayout"]["current"][0]["blocks"][0]
+        self.assertNotIn((after["id"], identity), state.LEGACY_ORDER_EQUIVALENCES)
+        after["orderEquivalenceGroups"] = [{
+            "activity": identity,
+            "sourceSha256": state.state_fingerprint(after["pages"][0]["blocks"][0]),
+            "groups": [[0, 1]],
+        }]
+        state.validate(after)
+        state.validate_transition(before, after)
+        self.assertEqual(before["pages"], after["pages"])
+        self.assertEqual(before["stateLayout"], after["stateLayout"])
+        misplaced = deepcopy(after)
+        misplaced["orderEquivalenceGroups"][0]["groups"] = [[0, 2]]
+        with self.assertRaises(state.LayoutError):
+            state.validate(misplaced)
+
     def test_published_group_is_append_only_and_old_contracts_unchanged(self):
         _, current = authored()
         state.validate(current)
