@@ -192,7 +192,7 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
             if(words[left].end>words[right].start)return false;
             const auto intervening=std::string_view(source).substr(
                 words[left].end,words[right].start-words[left].end);
-            return intervening.find_first_of(".;\\n")==intervening.npos;
+            return intervening.find_first_of(".;\n")==intervening.npos;
         };
         const auto first=at>5?at-5:0;
         for(std::size_t i=first;i<at;++i) {
