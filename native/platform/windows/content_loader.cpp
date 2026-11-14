@@ -2691,7 +2691,19 @@ void read_order_equivalence_groups(const JsonObject& root,Lesson& lesson) {
         std::ranges::sort(canonical);
         for(std::size_t i=0;i<canonical.size();++i)
             require(canonical[i]==i,"Independent order groups require a complete canonical answer");
-        require(state_fingerprint(JsonObject::Parse(key(owner->raw_json)))==digest,
+        const auto current=JsonObject::Parse(key(owner->raw_json));
+        bool source_matches=state_fingerprint(current)==digest;
+        if(!source_matches)for(const auto& archive:lesson.state_layout.source_format_revisions) {
+            if(archive.id!=identity)continue;
+            // read_layout has already authenticated the source-format archive
+            // against the immutable historical owner and the actual current
+            // C++ tokens. Preserve an existing root rubric across that
+            // whitespace-only revision, never across an unreviewed edit.
+            const auto before=JsonObject::Parse(key(archive.raw_json));
+            source_matches=state_fingerprint(source_format_projection(current,before))==digest;
+            break;
+        }
+        require(source_matches,
             "Independent groups refer to a different evaluated source contract");
         const auto groups=array(record,"groups");
         require(groups.Size()>0&&groups.Size()<=16,
