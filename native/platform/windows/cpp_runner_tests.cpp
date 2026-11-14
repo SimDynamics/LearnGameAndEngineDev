@@ -8,6 +8,7 @@
 #include "native_build_config.hpp"
 
 #include <windows.h>
+#include <winrt/Windows.Data.Json.h>
 
 #include <chrono>
 #include <fstream>
@@ -69,7 +70,7 @@ int main(int argc, char** argv) {
     const bool diagnostic_only = argc == 2 && std::string_view(argv[1]) == "--diagnostic-utf8";
     const bool cpp23_only = argc == 2 && std::string_view(argv[1]) == "--cpp23";
     const bool wasi_only = argc == 2 && std::string_view(argv[1]) == "--wasi";
-    const bool battery_only = argc == 2 && std::string_view(argv[1]) == "--open-battery";
+    const bool battery_only = argc == 3 && std::string_view(argv[1]) == "--open-battery";
     if (argc > 1 && !diagnostic_only && !cpp23_only && !wasi_only && !battery_only) return 2;
     const lgaed::LaunchOptions options{lgaed::ProfileId::Codex,
         L"cpp-runner-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
@@ -1312,6 +1313,111 @@ int main(int count, char**) {
         result = run_cpp(value);
         require(result.compilation.status == CppPhaseStatus::launch_failed && result.run_directory.empty(),
             "Reject invalid timeout without starting work");
+    });
+
+    test("Open battery authentic real U3L10 loader and historical progress", [&] {
+        using namespace lgaed;
+        using namespace lgaed::curriculum;
+        using namespace winrt::Windows::Data::Json;
+        require(argc==3,"Original U3L10 asset path was not supplied");
+        const auto original_text=read(std::filesystem::path(argv[2]));
+        const auto original=windows::parse_lesson_json(original_text,"es");
+        constexpr auto declaration=R"json([{
+          "activity":"block_0006_0011",
+          "library":"src/ajuste.cpp",
+          "test":"pruebas/casos.cpp",
+          "function":"intentar_ajuste",
+          "comparison":"comprobar",
+          "target":"comprobar_ajustes",
+          "originalCases":[
+            {"value":2,"lower":3,"upper":7,"initial":77},
+            {"value":5,"lower":3,"upper":7,"initial":-8},
+            {"value":9,"lower":3,"upper":7,"initial":19},
+            {"value":4,"lower":4,"upper":4,"initial":-4},
+            {"value":-20,"lower":20,"upper":20,"initial":8},
+            {"value":20,"lower":-20,"upper":-20,"initial":17},
+            {"value":0,"lower":7,"upper":3,"initial":77},
+            {"value":21,"lower":3,"upper":7,"initial":-8},
+            {"value":-21,"lower":3,"upper":7,"initial":19},
+            {"value":0,"lower":-21,"upper":7,"initial":-4},
+            {"value":0,"lower":3,"upper":21,"initial":8}
+          ]
+        }])json";
+        auto document=JsonObject::Parse(winrt::to_hstring(original_text));
+        document.Insert(L"compilerOpenBatteryChecks",
+            JsonArray::Parse(winrt::to_hstring(declaration)));
+        const auto reviewed=winrt::to_string(document.Stringify());
+        const auto loaded=windows::parse_lesson_json(reviewed,"es");
+        const auto saved=windows::parse_lesson_progress_metadata(reviewed,"es");
+        require(original.pages.size()==7&&loaded.pages.size()==7&&
+                saved.pages.size()==7&&original.pages[6].blocks.size()>11&&
+                original.state_layout.signatures==loaded.state_layout.signatures&&
+                original.state_layout.signatures==saved.state_layout.signatures,
+                "Original U3L10 state map, family or lesson content was changed");
+        const auto& before=original.pages[6].blocks[11];
+        const auto& owner=loaded.pages[6].blocks[11];
+        const auto& progress=saved.pages[6].blocks[11];
+        require(!before.output_check&&owner.output_check&&progress.output_check&&
+                owner.output_check->open_battery_check&&
+                progress.output_check->open_battery_check&&
+                owner.open_battery_probe&&progress.open_battery_probe&&
+                owner.open_battery_probe==progress.open_battery_probe&&
+                owner.open_battery_probe->original_cases.size()==11&&
+                owner.open_battery_probe->comparison_name=="comprobar"&&
+                owner.stable_id==before.stable_id&&
+                owner.stable_id==progress.stable_id&&
+                owner.project_files==before.project_files&&
+                progress.project_files==before.project_files&&
+                owner.address.page==before.address.page&&
+                owner.address.block==before.address.block&&
+                progress.address.page==before.address.page&&
+                progress.address.block==before.address.block,
+                "Root-only goal changed a historical source, owner or progress contract");
+        auto valid=request(owner.initial_code,owner.standard_input.value_or(""));
+        valid.project_key="u3l10-loader-qa";
+        valid.cmake=owner.cmake;
+        valid.project_files=owner.project_files;
+        valid.open_battery_probe=owner.open_battery_probe;
+        require(windows::compiler_runtime_request_allowed(owner,valid),
+                "The authentic authored CMake project was not recognized");
+        auto lacking=valid;lacking.open_battery_probe.reset();
+        require(!windows::compiler_runtime_request_allowed(owner,lacking),
+                "The test driver was accepted without its independent objective");
+        auto changed=valid;
+        for(auto& [path,source]:changed.project_files)
+            if(path=="src/ajuste.cpp")source+="\n// invalid library change\n";
+        require(!windows::compiler_runtime_request_allowed(owner,changed),
+                "An unapproved shared-library change passed the objective");
+        FreshExecution observed;
+        observed.source_revision=valid.revision;
+        observed.compilation_succeeded=observed.execution_succeeded=true;
+        observed.execution_completed=true;observed.exit_code=0;
+        observed.standard_input=valid.stdin_utf8;
+        observed.standard_output="Fallos=0\n";
+        observed.executable="comprobar_ajustes";
+        require(evaluate_output_check(*owner.output_check,observed,valid.revision).verdict==
+                OutputVerdict::incorrect,
+                "The old Fallos=0 message forged a new battery achievement");
+        observed.open_battery_probe_correct=true;
+        require(evaluate_output_check(*owner.output_check,observed,valid.revision).verdict==
+                OutputVerdict::correct,
+                "A genuinely verified independent battery was not evaluated");
+        const auto rejects=[&](const JsonObject& candidate) {
+            bool rejected=false;
+            try {(void)windows::parse_lesson_json(
+                winrt::to_string(candidate.Stringify()),"es");}
+            catch(const std::exception&) {rejected=true;}
+            require(rejected,"Forged original CMake battery metadata was accepted");
+        };
+        auto altered=JsonObject::Parse(winrt::to_hstring(reviewed));
+        altered.GetNamedArray(L"compilerOpenBatteryChecks").GetObjectAt(0)
+            .GetNamedArray(L"originalCases").GetObjectAt(0)
+            .Insert(L"value",JsonValue::CreateNumberValue(3));
+        rejects(altered);
+        auto duplicate=JsonObject::Parse(winrt::to_hstring(reviewed));
+        auto entries=duplicate.GetNamedArray(L"compilerOpenBatteryChecks");
+        entries.Append(entries.GetObjectAt(0));
+        rejects(duplicate);
     });
 
     test("Open battery executes original CMake with authenticated private mutations", [&] {

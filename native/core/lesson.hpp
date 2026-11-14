@@ -4,6 +4,7 @@
 #include "core/report_observation_check.hpp"
 #include "core/assertion_runtime_check.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/open_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
