@@ -183,6 +183,40 @@ class SourceFormatTest(unittest.TestCase):
                     {"type": "code", "language": "cmake", "code": before},
                     {"type": "code", "language": "cmake", "code": after})
 
+    def test_cmake_command_header_and_invocation_separator_boundaries(self):
+        # Verified against cmake -P: line breaks after a command name
+        # or their removal between invocations change parse success.
+        allowed = [
+            ('message(STATUS "a")\nmessage(STATUS "b")',
+             'message (STATUS "a")\n\nmessage\t(STATUS "b")'),
+            ('message(STATUS "a")',
+             'message(\n  STATUS "a"\n)'),
+            ('if(TRUE AND (TRUE OR FALSE))\nmessage(STATUS "yes")\nendif()',
+             'if(\n  TRUE AND (\n    TRUE OR FALSE\n  )\n)\n\nmessage(STATUS "yes")\nendif()'),
+            ('message(STATUS "a") # note\nmessage(STATUS "b")',
+             'message(STATUS "a")\n# note\nmessage(STATUS "b")'),
+        ]
+        for before, after in allowed:
+            with self.subTest(safe=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after}))
+        blocked = [
+            ('message(STATUS "ok")', 'message\n(STATUS "ok")'),
+            ('message (STATUS "ok")', 'message\n(STATUS "ok")'),
+            ('message(STATUS "a")\nmessage(STATUS "b")',
+             'message(STATUS "a") message(STATUS "b")'),
+            ('message(STATUS "a")\nmessage(STATUS "b")',
+             'message(STATUS "a")\tmessage(STATUS "b")'),
+            ('message(STATUS "a") message(STATUS "b")',
+             'message(STATUS "a")\nmessage(STATUS "b")'),
+        ]
+        for before, after in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "language": "cmake", "code": before},
+                    {"type": "code", "language": "cmake", "code": after})
+
     def test_cmake_location_tokens_match_native_and_configure_expansion(self):
         allowed = [
             '#[=[ ${CMAKE_CURRENT_LIST_LINE} is inert ]=]\nmessage(ok)',

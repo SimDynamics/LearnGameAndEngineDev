@@ -183,6 +183,40 @@ def _cmake_tokens(src: str) -> tuple[str, ...]:
         tokens.append("word:" + src[i:end]); i = end
     return tuple(tokens)
 
+
+def _cmake_command_gaps(src: str, tokens: tuple[str, ...]) -> tuple[int, ...]:
+    """Keep CMake's physical command syntax separate from cosmetic whitespace.
+
+    A command name and '(' must share a line. Two consecutive invocations
+    must be separated by a newline, not merely spaces. Parenthesized
+    arguments within a command may still be freely formatted.
+    """
+    gaps: list[int] = []
+    offset = 0
+    depth = 0
+    previous = ""
+    for token in tokens:
+        literal = token.split(":", 1)[1]
+        start = src.find(literal, offset)
+        if start < 0:
+            raise SourceFormatError("CMake source token offset unavailable")
+        line_break = "\n" in src[offset:start]
+        if depth == 0 and token == "paren:(" and previous.startswith("word:"):
+            gaps.append(1 if line_break else 0)
+        if depth == 0 and token.startswith("word:") and previous == "paren:)":
+            gaps.append(3 if line_break else 2)
+        if token == "paren:(":
+            depth += 1
+        elif token == "paren:)":
+            depth -= 1
+            if depth < 0:
+                raise SourceFormatError("Unbalanced CMake command parentheses")
+        previous = token
+        offset = start + len(literal)
+    if depth:
+        raise SourceFormatError("Unbalanced CMake command parentheses")
+    return tuple(gaps)
+
 def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     """Only executable identifiers and directives can observe source position."""
     markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"}
@@ -339,6 +373,11 @@ def require_source_lexical(original: dict, current: dict) -> bool:
         old_tokens, new_tokens = lexer(source), lexer(newer)
         if old_tokens != new_tokens:
             raise SourceFormatError(f"Tokens, literals, comments or directives changed: {slot}")
+        if language == "cmake" and (
+            _cmake_command_gaps(source, old_tokens)
+            != _cmake_command_gaps(newer, new_tokens)
+        ):
+            raise SourceFormatError(f"CMake command line boundaries changed: {slot}")
         # Only live location-sensitive tokens are unsafe. Inert comments,
         # C++ quoted/raw literals and CMake bracket documentation may be
         # reformatted without changing observable line-number results.

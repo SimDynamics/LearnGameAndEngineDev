@@ -65,6 +65,28 @@ void lexical_safety(){
     check(!code_format::equivalent(
         "show(\"x\"\"y\")", "show(\"x\" \"y\")",Language::cmake),
         "Spacing hid a CMake adjacent-quote syntax diagnostic");
+    check(code_format::equivalent(
+        "message(STATUS \"a\")\nmessage(STATUS \"b\")",
+        "message (STATUS \"a\")\n\nmessage\t(STATUS \"b\")",Language::cmake),
+        "Safe CMake header spaces and blank command lines were rejected");
+    check(code_format::equivalent(
+        "message(STATUS \"a\")","message(\n  STATUS \"a\"\n)",Language::cmake),
+        "A safe line break inside a command was rejected");
+    check(code_format::equivalent(
+        "if(TRUE AND (TRUE OR FALSE))\nmessage(STATUS \"yes\")\nendif()",
+        "if(\n  TRUE AND (\n    TRUE OR FALSE\n  )\n)\n\nmessage(STATUS \"yes\")\nendif()",
+        Language::cmake), "Nested CMake parentheses rejected safe layout");
+    check(!code_format::equivalent(
+        "message(STATUS \"ok\")","message\n(STATUS \"ok\")",Language::cmake),
+        "A physical newline invalidated a CMake command header");
+    check(!code_format::equivalent(
+        "message(STATUS \"a\")\nmessage(STATUS \"b\")",
+        "message(STATUS \"a\") message(STATUS \"b\")",Language::cmake),
+        "Removing a command-separating newline was silently allowed");
+    check(!code_format::equivalent(
+        "message(STATUS \"a\") message(STATUS \"b\")",
+        "message(STATUS \"a\")\nmessage(STATUS \"b\")",Language::cmake),
+        "An invalid same-line command split was treated as cosmetic");
     check(!code_format::equivalent("int n=1;","int n=2;",Language::cpp),
         "An altered integer literal was accepted");
     check(!code_format::equivalent("int n=x+ +y;","int n=x++y;",Language::cpp),

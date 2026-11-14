@@ -178,6 +178,36 @@ inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view sou
     }
     return result;
 }
+// CMake has line-sensitive syntax independent of variables like
+// CMAKE_CURRENT_LIST_LINE. Command names cannot be separated from their
+// opening '(' by a newline, and consecutive commands need a newline.
+inline std::optional<std::vector<unsigned char>> cmake_command_gaps(
+        std::string_view source,const std::vector<std::string>& tokens) {
+    std::vector<unsigned char> gaps;
+    std::string_view previous;
+    std::size_t offset=0,depth=0;
+    for(const auto& token:tokens) {
+        const auto separator=token.find(':');
+        if(separator==token.npos)return {};
+        const std::string_view literal=std::string_view(token).substr(separator+1);
+        const auto start=source.find(literal,offset);
+        if(start==source.npos)return {};
+        const bool line_break=source.substr(offset,start-offset).find('\n')!=source.npos;
+        if(depth==0&&token=="paren:("&&previous.starts_with("word:"))
+            gaps.push_back(line_break?1:0);
+        if(depth==0&&token.starts_with("word:")&&previous=="paren:)")
+            gaps.push_back(line_break?3:2);
+        if(token=="paren:(")++depth;
+        else if(token=="paren:)") {
+            if(depth==0)return {};
+            --depth;
+        }
+        previous=token;
+        offset=start+literal.size();
+    }
+    if(depth!=0)return {};
+    return gaps;
+}
 // Position-dependent queries must be detected as actual source tokens, not
 // substrings of comments, ordinary string literals or raw strings. A macro
 // directive containing one of these names stays conservatively protected:
@@ -287,6 +317,11 @@ inline bool equivalent(std::string_view before,std::string_view after,Language l
     if(language==Language::cmake&&
        (cmake_position_sensitive_tokens(*a)||cmake_position_sensitive_tokens(*b)))
         return false;
+    if(language==Language::cmake) {
+        const auto first=cmake_command_gaps(before,*a);
+        const auto second=cmake_command_gaps(after,*b);
+        if(!first||!second||*first!=*second)return false;
+    }
     return *a==*b;
 }
 
