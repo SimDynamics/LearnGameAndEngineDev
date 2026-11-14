@@ -21,6 +21,20 @@ namespace {
 void check(bool value,const std::string& reason){if(!value)throw std::runtime_error(reason);}
 void built(const lgaed::windows::CppRunResult& result){check(result.error_utf8.empty()&&result.compilation.succeeded(),"Real build failed: "+result.error_utf8+result.configuration.stdout_bytes+result.configuration.stderr_bytes+result.compilation.stdout_bytes+result.compilation.stderr_bytes);}
 void ran(const lgaed::windows::CppRunResult& result){built(result);check(result.execution.succeeded(),"Real execution failed: "+result.error_utf8+result.execution.stderr_bytes);}
+// MSVC/UCRT converts source LF to console CRLF. Preserve captured raw bytes;
+// this test helper only recognizes the expected LF-to-CRLF transformation.
+bool matches_native_console_output(std::string_view captured,
+        std::string_view authored) {
+    if(captured==authored)return true;
+    std::string windows;
+    windows.reserve(authored.size()+std::ranges::count(authored,'\n'));
+    for(std::size_t i=0;i<authored.size();++i) {
+        if(authored[i]=='\n'&&(i==0||authored[i-1]!='\r'))
+            windows.push_back('\r');
+        windows.push_back(authored[i]);
+    }
+    return captured==windows;
+}
 bool visible_tool_console(){bool visible=false;EnumWindows([](HWND window,LPARAM context)->BOOL{
     wchar_t title[160]{};GetWindowTextW(window,title,160);
     if(std::wstring_view(title).starts_with(L"LearnGameAndEngineDev.CppTool.")&&IsWindowVisible(window))*reinterpret_cast<bool*>(context)=true;
@@ -1487,7 +1501,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             *mapped_block.cmake_graph_check);
         const auto authored_output=evaluate_cpp_output_check(
             *mapped_block.output_check,fresh,request.revision);
-        check(native_build.execution.stdout_bytes==expected&&
+        check(matches_native_console_output(native_build.execution.stdout_bytes,expected)&&
             native_build.execution.stderr_bytes.empty()&&
             fresh.cmake_graph_correct&&native_build.cmake_graph&&
             authored_output.verdict==curriculum::OutputVerdict::correct,
@@ -1543,7 +1557,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             const auto fake_fresh=capture_cpp_execution(forged,forged_result);
             const auto reason=evaluate_cmake_graph(forged,forged_result,
                 *mapped_block.cmake_graph_check);
-            check(forged_result.execution.stdout_bytes==expected&&
+            check(matches_native_console_output(forged_result.execution.stdout_bytes,expected)&&
                 !fake_fresh.cmake_graph_correct&&!reason.correct&&
                 reason.reason.find("STATUS")!=std::string::npos&&
                 evaluate_cpp_output_check(*mapped_block.output_check,fake_fresh,
@@ -1607,7 +1621,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         const auto flat_result=run_cpp(flat);
         ran(flat_result);
         const auto flat_capture=capture_cpp_execution(flat,flat_result);
-        check(flat_result.execution.stdout_bytes==expected&&
+        check(matches_native_console_output(flat_result.execution.stdout_bytes,expected)&&
             evaluate_cpp_output_check(*mapped_block.output_check,flat_capture,
                 flat.revision).verdict==curriculum::OutputVerdict::correct&&
             !flat_capture.cmake_graph_correct&&
@@ -1762,7 +1776,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         ran(result);
         const auto actual=capture_cpp_execution(request,result);
         const auto& expected_case=current.output_check->cases.front();
-        check(result.execution.stdout_bytes==expected_case.outputs.front()&&
+        check(matches_native_console_output(result.execution.stdout_bytes,expected_case.outputs.front())&&
             actual.cmake_graph_correct&&
             evaluate_cpp_output_check(*current.output_check,actual,
                 request.revision).verdict==curriculum::OutputVerdict::correct&&
@@ -1822,7 +1836,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         const auto false_result=run_cpp(forged);
         ran(false_result);
         const auto false_evidence=capture_cpp_execution(forged,false_result);
-        check(false_result.execution.stdout_bytes==expected_case.outputs.front()&&
+        check(matches_native_console_output(false_result.execution.stdout_bytes,expected_case.outputs.front())&&
             evaluate_cpp_output_check(*current.output_check,false_evidence,
                 forged.revision).verdict==curriculum::OutputVerdict::correct&&
             !false_evidence.cmake_graph_correct&&
