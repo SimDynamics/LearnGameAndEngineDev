@@ -185,7 +185,7 @@ void capacity() {
         int cajas_para(int piezas) {
             int constexpr cupo{4};
             int constexpr ajuste = cupo - 1;
-            int constexpr cajas = (piezas + ajuste) / cupo;
+            int const cajas = (piezas + ajuste) / cupo;
             return cajas;
         })cpp",rules,true,
         "Trailing constexpr intermediates preserve the actual result dependencies");
