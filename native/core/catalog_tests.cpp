@@ -388,6 +388,44 @@ int main() {
         check(empty_unit.total==lessons.entries.size() && empty_unit.completed==0 && empty_unit.percentage()==0 &&
             warm_unit.total==empty_unit.total && warm_unit.percentage()==empty_unit.percentage() && pristine==pristine_before,
             "A real unit's cached metadata changed its lesson weighting, counts or empty student state");
+        {
+            // U11L7: its compiler was legitimately expanded before a later
+            // physical source-format revision. The formatting predecessor
+            // is the expanded contract, not the first-published compiler.
+            const auto u11=catalog_child(catalog_parent(location),units.entries[10].id);
+            const auto indexed=windows::load_catalog(root,u11);
+            const auto found=std::ranges::find_if(indexed.entries,[](const auto& item){
+                return item.id=="cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada";
+            });
+            check(found!=indexed.entries.end()&&found->available,
+                "The U11L7 format/expansion regression lost its indexed owner");
+            const auto metadata=windows::load_lesson_progress_metadata(found->asset,found->asset_locale);
+            const auto opened=windows::load_lesson(found->asset,found->asset_locale);
+            check(metadata.id==found->id&&opened.id==metadata.id&&opened.pages.size()==metadata.pages.size()&&
+                metadata.pages[3].blocks[5].output_check&&
+                metadata.pages[3].blocks[5].output_check->cases.size()==21&&
+                metadata.pages[3].blocks[5].source_format_original_initial_code.has_value(),
+                "U11L7 lost its original source, expanded 21-case objective or progress metadata");
+            const auto card=windows::catalog_entry_progress(root,u11,*found,pristine);
+            check(card.total==opened.pages.size()&&card.completed==0&&pristine==pristine_before,
+                "U11L7 could not report its progress without altering the user's state");
+            // The earlier one-case compiler is not an acceptable source-format
+            // predecessor once the expansion has been authenticated.
+            auto forged=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(opened.raw_json));
+            const auto layout=forged.GetNamedObject(L"stateLayout");
+            const auto formats=layout.GetNamedArray(L"sourceFormatRevisions");
+            const auto prior=layout.GetNamedArray(L"compilerRevisions").GetObjectAt(0).GetNamedObject(L"block");
+            bool changed=false;
+            for(unsigned i=0;i<formats.Size();++i){
+                const auto entry=formats.GetObjectAt(i);
+                if(winrt::to_string(entry.GetNamedString(L"id"))!="block_0003_0005")continue;
+                entry.Insert(L"block",prior);changed=true;break;
+            }
+            check(changed,"U11L7's expanded compiler has no protected formatting archive");
+            rejects([&]{
+                (void)windows::parse_lesson_progress_metadata(winrt::to_string(forged.Stringify()),"es");
+            },"A pre-expansion compiler snapshot passed as the revised formatting predecessor");
+        }
         std::cout<<"Catalog empty-unit metadata cold/warm: "
             <<std::chrono::duration_cast<std::chrono::milliseconds>(cold_finished-cold_started).count()<<"/"
             <<std::chrono::duration_cast<std::chrono::milliseconds>(warm_finished-cold_finished).count()<<" ms\n";
