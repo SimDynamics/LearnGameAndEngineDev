@@ -116,6 +116,58 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     // In particular, "cobros=10 devoluciones=0 9" is NOT a statement
     // that the valid domain is 0..9. Require interval language and syntax.
     const auto source=fold_spanish(original);
+    // Do not award a valid domain merely because its two numbers appeared.
+    // "rango no permitido 0 a 9" denies the permitted interval. Likewise,
+    // "no se admiten enteros entre 0 y 9" cannot be graded as instructions
+    // giving the actual accepted range. Keep these checks attached to range
+    // nouns, not an unrelated "piezas=-1 no válida" observation.
+    const auto contradicts_allowed_domain=[&]() {
+        const auto is_range=[](std::string_view value) {
+            return one_of(value,{"rango","intervalo","dominio","limite",
+                "limites","enteros","valores"});
+        };
+        const auto invalid=[](std::string_view value) {
+            return one_of(value,{"prohibido","prohibida","prohibidos",
+                "prohibidas","invalido","invalida","invalidos","invalidas",
+                "incorrecto","incorrecta","incorrectos","incorrectas",
+                "excluido","excluida","excluidos","excluidas"});
+        };
+        const auto denied=[](std::string_view value) {
+            return one_of(value,{"permitido","permitida","permitidos",
+                "permitidas","valido","valida","validos","validas",
+                "admitido","admitida","admitidos","admitidas",
+                "admite","admiten","acepta","aceptan","permite","permiten"});
+        };
+        for(std::size_t i=0;i<words.size();++i) {
+            if(is_range(words[i].text)) {
+                for(auto j=i+1;j<words.size()&&j<=i+4;++j) {
+                    if(words[j].number)break;
+                    if(invalid(words[j].text))return true;
+                    if(!one_of(words[j].text,{"no","nunca","jamas"}))
+                        continue;
+                    for(auto k=j+1;k<words.size()&&k<=j+3;++k) {
+                        if(words[k].number)break;
+                        if(denied(words[k].text))return true;
+                    }
+                }
+            }
+            if(one_of(words[i].text,{"no","nunca","jamas"})&&
+                    i+2<words.size()&&
+                    one_of(words[i+1].text,{"se"})&&
+                    one_of(words[i+2].text,{"admite","admiten","acepta",
+                        "aceptan","permite","permiten"})) {
+                // A denied range noun must immediately belong to the
+                // negated verb, not to a later, separate valid statement.
+                const auto end=std::min(words.size(),i+7);
+                for(auto j=i+3;j<end;++j) {
+                    if(words[j].number)break;
+                    if(is_range(words[j].text))return true;
+                }
+            }
+        }
+        return false;
+    };
+    if(contradicts_allowed_domain())return false;
     // Range words may precede or follow the numeric interval. For example,
     // both "rango permitido de 0 a 20" and "0 a 20 es el rango permitido"
     // communicate the same bound. A standalone pair of numbers is not enough.
