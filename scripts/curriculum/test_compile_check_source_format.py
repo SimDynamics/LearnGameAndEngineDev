@@ -217,7 +217,9 @@ class CompileCheckFormatTest(unittest.TestCase):
                             if kind == "logic":
                                 candidate["initialCode"] += "\nint forged = 1;"
                             elif kind == "diagnostic":
-                                candidate["compileCheck"]["diagnostic"] = "explicit-assignment"
+                                candidate["compileCheck"]["diagnostic"] = (
+                                    "const-member-call" if diagnostic == "explicit-assignment"
+                                    else "explicit-assignment")
                             elif kind == "archive":
                                 forged["stateLayout"]["sourceFormatRevisions"][
                                     -len(entries) + position]["block"]["initialCode"] += "\n// forged"
