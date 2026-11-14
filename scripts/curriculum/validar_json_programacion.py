@@ -1439,7 +1439,7 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         _state_layout.validate_transition(previous_document, current_document)
         if _state_layout._blocks(current_document).get(identity) != current:
             return False
-        return _state_layout.code_format.require_source_format(old, current)
+        return _state_layout.require_source_format_with_editorial(old, current)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError):
         return False
 

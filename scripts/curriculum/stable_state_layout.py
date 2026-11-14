@@ -727,6 +727,20 @@ def state_fingerprint(block: dict) -> str:
     return fingerprint(state_payload(block))
 
 
+def require_source_format_with_editorial(original: dict, current: dict) -> bool:
+    """Authenticate physical source spacing alongside a separate prose correction.
+
+    Only code tokens may be reformatted. The restored source must retain the
+    entire earlier answer/evaluation contract; other changes need the normal
+    append-only editorial proof, checked by validate_transition().
+    """
+    changed = code_format.require_source_lexical(original, current)
+    projected = code_format.source_projection(current, original)
+    require(state_fingerprint(projected) == state_fingerprint(original),
+            "A combined source/prose revision changed a response or code contract")
+    return changed
+
+
 def order_line_expansion(block: dict) -> tuple[list[str], list[list[int]], list[int]]:
     """Derive independent source lines without changing any code token.
 
@@ -1476,7 +1490,7 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
                 if identity in recorded or code_format.code_slots(block) == code_format.code_slots(after[identity]):
                     continue
                 try:
-                    changed = code_format.require_source_format(block, after[identity])
+                    changed = require_source_format_with_editorial(block, after[identity])
                 except code_format.SourceFormatError as exc:
                     raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
                 if changed:
@@ -1519,7 +1533,7 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
     for identity, block in before.items():
         if code_format.code_slots(block) != code_format.code_slots(after[identity]):
             try:
-                changed = code_format.require_source_format(block, after[identity])
+                changed = require_source_format_with_editorial(block, after[identity])
             except code_format.SourceFormatError as exc:
                 raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
             if changed:

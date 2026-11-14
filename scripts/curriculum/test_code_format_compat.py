@@ -212,5 +212,87 @@ class SourceFormatTest(unittest.TestCase):
         layout.validate_transition(original, second)
         layout.validate_transition(first, second)
 
+    def test_combined_physical_format_and_explanations_preserve_response_contracts(self):
+        import validar_json_programacion as course_validator
+
+        before = fixture()
+        before["pages"][0]["blocks"][1]["explanation"] = "Guía anterior."
+        before["pages"][0]["blocks"][4]["outputCheck"]["cases"][0][
+            "explanation"] = "Guía de la primera comprobación."
+        published = layout.prepare_v2(before, "es", {"es": deepcopy(before)})
+        edited = deepcopy(published)
+        prediction = edited["pages"][0]["blocks"][1]
+        prediction["code"] = "int number = 2;\n\nstd::cout << number;"
+        prediction["explanation"] = "Guía aclarada con los mismos resultados."
+        compiler = edited["pages"][0]["blocks"][4]
+        compiler["initialCode"] = "int main() {\n    return 0;\n}"
+        compiler["outputCheck"]["cases"][0]["explanation"] = (
+            "Guía aclarada sin cambiar el resultado esperado.")
+        combined = layout.prepare_v2(edited, "es", {"es": published}, published)
+        self.assertEqual(len(combined["stateLayout"]["sourceFormatRevisions"]), 2)
+        self.assertEqual(layout.validate(published), layout.validate(combined))
+        layout.validate_transition(published, combined)
+        self.assertEqual(published["stateLayout"]["origin"],
+                         combined["stateLayout"]["origin"])
+        self.assertEqual(published["stateLayout"]["current"],
+                         combined["stateLayout"]["current"])
+        relative = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                    "source_format_qa/lesson_source_format_qa.json")
+        for index in (1, 4):
+            previous = published["pages"][0]["blocks"][index]
+            current = combined["pages"][0]["blocks"][index]
+            with self.subTest(owner=index):
+                self.assertTrue(course_validator.preserves_source_format_revision(
+                    relative, 0, index, previous, current,
+                    previous_document=published, current_document=combined))
+                self.assertTrue(course_validator.preserves_previous_exercise(
+                    relative, 0, index, previous, current,
+                    previous_document=published, current_document=combined))
+        self.assertEqual(prediction["answers"], published["pages"][0]["blocks"][1]["answers"])
+        self.assertEqual(compiler["outputCheck"]["cases"][0]["outputs"],
+                         published["pages"][0]["blocks"][4]["outputCheck"]["cases"][0]["outputs"])
+
+    def test_combined_format_cannot_hide_a_changed_answer_or_project_file(self):
+        before = fixture()
+        before["pages"][0]["blocks"][1]["explanation"] = "Explicación anterior."
+        published = layout.prepare_v2(before, "es", {"es": deepcopy(before)})
+        candidate = deepcopy(published)
+        candidate["pages"][0]["blocks"][1]["code"] = "int number = 2;\n\nstd::cout << number;"
+        candidate["pages"][0]["blocks"][1]["explanation"] = "Explicación aclarada."
+        wrong_answer = deepcopy(candidate)
+        wrong_answer["pages"][0]["blocks"][1]["answers"] = ["3"]
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(wrong_answer, "es", {"es": published}, published)
+        wrong_path = deepcopy(candidate)
+        wrong_path["pages"][0]["blocks"][4]["initialCode"] = (
+            "int main() {\n    return 0;\n}")
+        wrong_path["pages"][0]["blocks"][4]["projectFiles"][0]["path"] = "other.cmake"
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(wrong_path, "es", {"es": published}, published)
+        wrong_oracle = deepcopy(candidate)
+        wrong_oracle["pages"][0]["blocks"][4]["initialCode"] = (
+            "int main() {\n    return 0;\n}")
+        wrong_oracle["pages"][0]["blocks"][4]["outputCheck"]["cases"][0][
+            "outputs"] = ["falsified"]
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(wrong_oracle, "es", {"es": published}, published)
+
+    def test_prose_before_spacing_uses_one_authentic_format_archive(self):
+        before = fixture()
+        before["pages"][0]["blocks"][1]["explanation"] = "Descripción anterior."
+        published = layout.prepare_v2(before, "es", {"es": deepcopy(before)})
+        prose = deepcopy(published)
+        prose["pages"][0]["blocks"][1]["explanation"] = "Descripción revisada."
+        prose = layout.prepare_v2(prose, "es", {"es": published}, published)
+        later = deepcopy(prose)
+        later["pages"][0]["blocks"][1]["code"] = (
+            "int number = 2;\n\nstd::cout << number;")
+        formatted = layout.prepare_v2(later, "es", {"es": published}, prose)
+        layout.validate_transition(published, formatted)
+        self.assertEqual(len(formatted["stateLayout"]["sourceFormatRevisions"]), 1)
+        self.assertEqual(formatted["stateLayout"]["sourceFormatRevisions"][0]["block"],
+                         prose["pages"][0]["blocks"][1])
+
+
 if __name__ == "__main__":
     unittest.main()
