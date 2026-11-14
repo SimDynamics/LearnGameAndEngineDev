@@ -232,16 +232,20 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
         }
     }
 
-    for(std::size_t i=0;i<words.size();++i)if(words[i].number==0) {
-        // Example spellings: "0 a 9", "0 hasta 9", "0..9", "0-9".
+    bool found_allowed_interval=false;
+    for(std::size_t i=0;i<words.size();++i)if(words[i].number) {
+        // Inspect every explicitly described interval, not just the first
+        // correct 0..N. "rango 0..9; rango permitido 0..8" contradicts
+        // itself even though a valid pair appeared earlier.
         std::size_t end=i;
         bool interval=false;
+        int stated_upper=0;
         if(i+2<words.size()&&one_of(words[i+1].text,{"a","al","y","hasta"})
-                &&words[i+2].number==upper) {
-            end=i+2;interval=true;
+                &&words[i+2].number) {
+            end=i+2;interval=true;stated_upper=*words[i+2].number;
         }else if(i+1<words.size()) {
             const auto& next=words[i+1];
-            if(next.number==upper&&next.start>=words[i].end) {
+            if(next.number&&next.start>=words[i].end) {
                 const auto connector=std::string_view(source).substr(words[i].end,
                     next.start-words[i].end);
                 const auto trim=[](std::string_view value) {
@@ -270,12 +274,19 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                 }
                 interval=punctuation=="-"||bracketed||
                     connector.find("..")!=connector.npos;
-            }else if(next.number==-upper&&next.start==words[i].end&&
-                    next.start<source.size()&&source[next.start]=='-')
-                interval=true;
+                if(interval)stated_upper=*next.number;
+            }else if(next.number&&*next.number<0&&
+                    next.start==words[i].end&&
+                    next.start<source.size()&&source[next.start]=='-') {
+                // "0-9" lexes as the two tokens 0 and -9; the '-' here
+                // separates the bounds rather than negating the maximum.
+                interval=true;stated_upper=-*next.number;
+            }
             if(interval)end=i+1;
         }
         if(interval&&describes_range(i,end)) {
+            if(*words[i].number!=0||stated_upper!=upper)
+                return false;
             // The qualifier can follow the written bounds:
             // "rango 0..9 no válido" contradicts "permitido 0..9".
             // Do not confuse this with "0..9; no se permite 21":
@@ -300,10 +311,10 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                       one_of(words[end+2].text,{"es","esta","son","estan"})&&
                       qualified(words[end+3].text))))
                 return false;
-            return true;
+            found_allowed_interval=true;
         }
     }
-    return lower_found&&upper_found;
+    return found_allowed_interval||(lower_found&&upper_found);
 }
 inline bool actionable(const std::vector<Word>& words) {
     for(std::size_t i=0;i<words.size();++i){
