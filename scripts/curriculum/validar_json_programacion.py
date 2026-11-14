@@ -870,10 +870,10 @@ def is_source_file(path):
     return "." in path and path.rsplit(".", 1)[1].lower() in SOURCE_SUFFIXES
 
 
-def validate_cpp_compiler(block, where):
+def validate_cpp_compiler(block, where, *, document=None, position=None):
     require(isinstance(block.get("initialCode"), str), where, "initialCode debe ser texto")
     validate_cpp_output_check_contract(block, where)
-    validate_cpp_compile_check_contract(block, where)
+    validate_cpp_compile_check_contract(block, where, document=document, position=position)
     if "initialStandardInput" in block:
         require(isinstance(block["initialStandardInput"], str), where, "initialStandardInput debe ser texto")
 
@@ -938,11 +938,35 @@ def normalize_output_check_input(value, mode):
     return value
 
 
-def validate_cpp_compile_check_contract(block, where):
-    """A reviewed compile-time rejection is independent of an execution oracle."""
+def validate_cpp_compile_check_contract(block, where, *, document=None, position=None):
+    """Check the visible block; project source only with whole-lesson provenance.
+
+    Standalone callers retain the exact closed-source requirement. A format
+    snapshot is not permission by itself: validate the complete state map,
+    editorial chain, owner and lexical equivalence before projecting bytes
+    solely for this closed diagnostic check. Other structural checks still
+    inspect the unchanged visible block, not its historical projection.
+    """
     try:
-        _state_layout.validate_compile_check_contract(block)
-    except (ValueError, KeyError, TypeError) as error:
+        reviewed = block
+        if "compileCheck" in block and (document is not None or position is not None):
+            _state_layout.require(type(document) is dict and type(position) is tuple
+                                  and len(position) == 2
+                                  and all(type(index) is int and index >= 0 for index in position),
+                                  "A contextual diagnostic requires its document and current position")
+            _state_layout.validate(document)
+            page, index = position
+            _state_layout.require(document["pages"][page]["blocks"][index] == block,
+                                  "Diagnostic block is detached from its validated owner")
+            metadata = document["stateLayout"]
+            identity = metadata["current"][page]["blocks"][index]
+            archive = next((entry["block"] for entry in
+                            metadata.get("sourceFormatRevisions", [])
+                            if entry["id"] == identity), None)
+            if archive is not None:
+                reviewed = _state_layout.code_format.source_projection(block, archive)
+        _state_layout.validate_compile_check_contract(reviewed)
+    except (ValueError, KeyError, TypeError, IndexError) as error:
         require(False, where, f"objetivo de diagnóstico de compilación inválido: {error}")
 
 
@@ -1671,7 +1695,7 @@ def main(argv=None):
                 if kind == "math_puzzle":
                     validate_math_puzzle_contract(block, where)
                 if kind == "cpp_compiler":
-                    validate_cpp_compiler(block, where)
+                    validate_cpp_compiler(block, where, document=doc, position=(pn - 1, bn - 1))
                 if kind == "image":
                     validate_image_contract(block, where, ROOT / "app/src/main/assets/content")
                 if kind in {"heading", "paragraph", "note"}:

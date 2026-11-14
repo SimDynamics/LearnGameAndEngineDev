@@ -62,7 +62,13 @@ def validate(contract, root: Path, base_commit: str | None, *,
                 if kind == "math_puzzle":
                     contract.validate_math_puzzle_contract(block, where)
                 if kind == "cpp_compiler":
-                    contract.validate_cpp_compiler(block, where)
+                    if structure_only:
+                        # A bounded structural audit does not authenticate a
+                        # historical source-format exception.
+                        contract.validate_cpp_compiler(block, where)
+                    else:
+                        contract.validate_cpp_compiler(
+                            block, where, document=document, position=(pn - 1, bn - 1))
                 if kind == "image":
                     contract.validate_image_contract(block, where, root / "app/src/main/assets/content")
                 if kind in {"heading", "paragraph", "note"}:
