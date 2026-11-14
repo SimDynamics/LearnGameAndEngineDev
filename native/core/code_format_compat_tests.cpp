@@ -142,6 +142,21 @@ message("${value}")
 )qa",Language::cmake),
         "A bracket argument later expanded by string(CONFIGURE) hid a line change");
     check(!code_format::equivalent(
+            R"qa(cmake_minimum_required(VERSION 3.20)
+file(CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)
+)qa",
+            R"qa(cmake_minimum_required(VERSION 3.20)
+
+file(CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)
+)qa",Language::cmake),
+        "CMake file(CONFIGURE) expanded an inert-looking bracket template on a new line");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL file CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(
+cmake_language(CALL file CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language CALL file(CONFIGURE) bypassed bracket protection");
+    check(!code_format::equivalent(
             R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
 STRING(CONFIGURE "${template}" result @ONLY)
 )qa",

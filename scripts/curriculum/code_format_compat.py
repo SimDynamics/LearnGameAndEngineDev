@@ -179,8 +179,8 @@ def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     """Mirror the native guard for line-dependent CMake expansion.
 
     Bracket arguments and bracket comments do not themselves expand. A
-    bracket-stored template may nevertheless be expanded by string(CONFIGURE),
-    including the cmake_language(CALL ...) spelling.
+    bracket-stored template may nevertheless be expanded by string(CONFIGURE)
+    or file(CONFIGURE), including the cmake_language(CALL ...) spellings.
     """
     names = ("CMAKE_CURRENT_LIST_LINE", "CMAKE_CURRENT_FUNCTION_LIST_LINE")
 
@@ -190,12 +190,13 @@ def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
 
     configures_brackets = False
     for i in range(len(tokens)):
-        if (i + 2 < len(tokens) and command(i, "string")
+        if (i + 2 < len(tokens) and (command(i, "string") or command(i, "file"))
                 and tokens[i + 1] == "paren:(" and command(i + 2, "configure")):
             configures_brackets = True
         if (i + 4 < len(tokens) and command(i, "cmake_language")
                 and tokens[i + 1] == "paren:(" and command(i + 2, "call")
-                and command(i + 3, "string") and command(i + 4, "configure")):
+                and (command(i + 3, "string") or command(i + 3, "file"))
+                and command(i + 4, "configure")):
             configures_brackets = True
 
     for token in tokens:

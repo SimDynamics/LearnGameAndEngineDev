@@ -200,15 +200,17 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
         return true;
     };
     // Bracket arguments ordinarily have no variable expansion, but can be
-    // consumed later by string(CONFIGURE). Even a template first stored via
-    // set() can become position-dependent when it reaches that command.
+    // consumed later by string(CONFIGURE) or file(CONFIGURE). Even a template
+    // first stored via set() can become position-dependent at configuration.
     bool configures_bracket_arguments=false;
     for(std::size_t i=0;i+2<tokens.size();++i) {
-        if(command(tokens[i],"string")&&tokens[i+1]=="paren:("&&
-           command(tokens[i+2],"configure"))configures_bracket_arguments=true;
+        if((command(tokens[i],"string")||command(tokens[i],"file"))&&
+           tokens[i+1]=="paren:("&&command(tokens[i+2],"configure"))
+            configures_bracket_arguments=true;
         if(i+4<tokens.size()&&command(tokens[i],"cmake_language")&&
            tokens[i+1]=="paren:("&&command(tokens[i+2],"call")&&
-           command(tokens[i+3],"string")&&command(tokens[i+4],"configure"))
+           (command(tokens[i+3],"string")||command(tokens[i+3],"file"))&&
+           command(tokens[i+4],"configure"))
             configures_bracket_arguments=true;
     }
     for(const auto& token:tokens) {
