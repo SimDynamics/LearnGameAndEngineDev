@@ -2644,9 +2644,9 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     """Author one or two question/explanation fields under an existing v2 owner.
 
     Each field has the exact new "text" and explicitly authored UTF-16
-    "spans". This never infers a highlight or rewrites an old narration range;
-    the original full block remains in its immutable state and editorial chain.
-    Multiple field changes are one atomic, authenticated publication.
+    "spans". This never infers a highlight or rewrites an old narration range.
+    If the complete resulting block existed earlier, the optional "returnTo"
+    revision must explicitly name it. Multiple field changes are atomic.
     """
     validate(document)
     require(document.get("stateLayout", {}).get("version") == 2
@@ -2658,9 +2658,15 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
         "multiple_choice", "fill_code", "output_prediction",
         "order_code", "drag_fill_code", "inline_fill_code"},
         "Ordinary editorial revisions belong to existing graded prose owners")
-    require(type(edits) is dict and bool(edits) and set(edits) <= {"question", "explanation"},
-            "Author only one or two existing question/explanation fields")
-    for field, spec in edits.items():
+    require(type(edits) is dict and set(edits) <= {"question", "explanation", "returnTo"},
+            "Author only existing question/explanation fields and an optional explicit return")
+    return_to = edits.get("returnTo")
+    requested = {field: spec for field, spec in edits.items() if field != "returnTo"}
+    require(bool(requested) and len(requested) <= 2,
+            "Author one or two existing question/explanation fields")
+    require(return_to is None or (type(return_to) is int and return_to >= 0),
+            "An editorial return must name an explicit nonnegative revision")
+    for field, spec in requested.items():
         require(type(spec) is dict and set(spec) == {"text", "spans"},
                 "Every revised field needs exact text and authored semantic spans")
         old, updated = original.get(field), spec["text"]
@@ -2674,7 +2680,7 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
     revised = _blocks(result)[identity]
     overlay = result.setdefault(text_semantics.ROOT_FIELD, {"version": 1, "fields": []})
     existing = overlay["fields"]
-    for field, spec in edits.items():
+    for field, spec in requested.items():
         revised[field] = spec["text"]
         path = "/" + field
         matches = [i for i, item in enumerate(existing)
@@ -2690,10 +2696,27 @@ def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dic
         else:
             existing.append(marker)
     text_semantics.validate(result)
-    result["stateLayout"]["editorial"].append({
-        "id": identity,
-        "beforeSha256": fingerprint(original),
-        "afterSha256": fingerprint(revised)})
+    proof = {"id": identity,
+             "beforeSha256": fingerprint(original),
+             "afterSha256": fingerprint(revised)}
+    history = document["stateLayout"]["editorial"]
+    same_owner = [edge for edge in history if edge["id"] == identity]
+    previous_nodes = ([same_owner[0]["beforeSha256"]]
+                      + [edge["afterSha256"] for edge in same_owner]) if same_owner else []
+    eligible = [index for index, digest in enumerate(previous_nodes[:-1])
+                if digest == proof["afterSha256"]]
+    if eligible:
+        require(return_to in eligible,
+                "This wording restores a previously published block: declare its exact returnTo revision")
+        proof["returnTo"] = {
+            "revision": return_to,
+            "historySha256": fingerprint({"lessonId": result["id"], "locale": "es",
+                                          "editorial": history}),
+            "previousBlock": deepcopy(original)}
+    else:
+        require(return_to is None,
+                "An explicit editorial return must match an earlier full published block")
+    result["stateLayout"]["editorial"].append(proof)
     validate_transition(document, result)
     return result
 
@@ -3604,7 +3627,7 @@ def main() -> None:
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
     parser.add_argument("--replacement", help="Exact revised nonblank choice text; answers and other fields are preserved")
     parser.add_argument("--editorial-fields", type=Path,
-                        help='JSON {"question":{"text":"...","spans":[...]},"explanation":{...}}; exact public fields only')
+                        help='JSON {"question":{"text":"...","spans":[...]},"explanation":{...},"returnTo":3}; optional explicit return')
     parser.add_argument("--editorial-return", action="append", default=[], metavar="ID:REVISION",
                         help="Explicit earlier payload of the same identity; prepare with --locale and Git --base-ref only")
     args = parser.parse_args()

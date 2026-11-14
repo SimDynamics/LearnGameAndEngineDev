@@ -77,6 +77,10 @@ def authored_fields(document: dict, name: str) -> dict:
                                             reading="natural", occurrence=2),
             ])
         edits[field] = {"text": revised, "spans": sorted(markers, key=lambda s: s["start"])}
+    # The complete fully-qualified block already appeared as revision 3 of
+    # this same real U12L6 identity. It was later returned to revision 2.
+    # Restore it explicitly instead of forging a new editorial cycle.
+    edits["returnTo"] = 3
     return edits
 
 
@@ -101,8 +105,9 @@ class PublishedU12QuestionTest(unittest.TestCase):
                                  {k: v for k, v in revised.items()
                                   if k not in ("question", "explanation")})
                 edits = authored_fields(before, name)
-                self.assertEqual({field: revised[field] for field in edits},
-                                 {field: spec["text"] for field, spec in edits.items()})
+                self.assertEqual({field: revised[field] for field in edits if field != "returnTo"},
+                                 {field: spec["text"] for field, spec in edits.items()
+                                  if field != "returnTo"})
                 self.assertEqual(state.validate(before), state.validate(after))
                 state.validate_transition(before, after)
                 self.assertEqual(before["stateLayout"]["origin"], after["stateLayout"]["origin"])
@@ -110,10 +115,19 @@ class PublishedU12QuestionTest(unittest.TestCase):
                 self.assertEqual(before["stateLayout"]["family"], after["stateLayout"]["family"])
                 self.assertEqual(before["stateLayout"]["editorial"],
                                  after["stateLayout"]["editorial"][:-1])
-                self.assertEqual(after["stateLayout"]["editorial"][-1], {
-                    "id": identity, "beforeSha256": state.fingerprint(old),
-                    "afterSha256": state.fingerprint(revised)})
+                proof = {"id": identity, "beforeSha256": state.fingerprint(old),
+                         "afterSha256": state.fingerprint(revised)}
+                if "returnTo" in edits:
+                    proof["returnTo"] = {
+                        "revision": edits["returnTo"],
+                        "historySha256": state.fingerprint({
+                            "lessonId": before["id"], "locale": "es",
+                            "editorial": before["stateLayout"]["editorial"]}),
+                        "previousBlock": old}
+                self.assertEqual(after["stateLayout"]["editorial"][-1], proof)
                 for path, spec in edits.items():
+                    if path == "returnTo":
+                        continue
                     result = state.text_semantics.validate(after)[identity]["/" + path]
                     self.assertEqual(result["source"], spec["text"])
                     self.assertEqual(result["spans"], spec["spans"])
@@ -191,6 +205,14 @@ class PublishedU12QuestionTest(unittest.TestCase):
                 with self.subTest(name=name, altered=altered), self.assertRaises(state.LayoutError):
                     state.revise_ordinary_editorial(before, identity, altered)
             if name == "formatting":
+                missing_return = deepcopy(spec)
+                del missing_return["returnTo"]
+                with self.assertRaisesRegex(state.LayoutError, "declare its exact returnTo"):
+                    state.revise_ordinary_editorial(before, identity, missing_return)
+                incorrect_return = deepcopy(spec)
+                incorrect_return["returnTo"] = 0
+                with self.assertRaisesRegex(state.LayoutError, "declare its exact returnTo"):
+                    state.revise_ordinary_editorial(before, identity, incorrect_return)
                 unmarked = deepcopy(spec)
                 unmarked["question"]["spans"] = []
                 with self.assertRaises(state.LayoutError):
