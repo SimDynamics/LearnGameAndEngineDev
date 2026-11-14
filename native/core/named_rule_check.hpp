@@ -144,20 +144,85 @@ inline std::optional<Bounds> body(const Tokens& t,std::string_view name) {
     }
     return found;
 }
+// Match C++ integer literal bases and separators without treating octal 010
+// as decimal ten. Only standard bounded integral suffixes are accepted.
+// A source-side parse is not a substitute for the independent execution probe.
 inline std::optional<int> number(const Tokens& t,std::size_t start,std::size_t end) {
     bool negative=false;
     if(start<end&&(op(t[start],"+")||op(t[start],"-"))) {
         negative=op(t[start],"-");++start;
     }
     if(start+1!=end||!t[start].starts_with("number:"))return {};
-    const auto text=std::string_view(t[start]).substr(7);
-    // A leading zero introduces an octal literal in C++. Reject it rather
-    // than accidentally interpreting a different value as decimal.
-    if(text.size()>1&&text.front()=='0')return {};
-    int value=0;
-    const auto parsed=std::from_chars(text.data(),text.data()+text.size(),value);
-    if(parsed.ec!=std::errc{}||parsed.ptr!=text.data()+text.size())return {};
-    return negative?-value:value;
+    const auto source=std::string_view(t[start]).substr(7);
+    if(source.empty()||source.size()>96)return {};
+    int base=10;
+    std::size_t offset=0;
+    if(source.starts_with("0x")||source.starts_with("0X")) {
+        base=16;offset=2;
+    }else if(source.starts_with("0b")||source.starts_with("0B")) {
+        base=2;offset=2;
+    }else if(source.size()>1&&source.front()=='0') {
+        base=8;
+    }
+    const auto digit=[&](unsigned char c) {
+        if(c>='0'&&c<='9')return c-'0';
+        if(c>='a'&&c<='f')return c-'a'+10;
+        if(c>='A'&&c<='F')return c-'A'+10;
+        return -1;
+    };
+    std::string digits;
+    for(;offset<source.size();++offset) {
+        const auto c=static_cast<unsigned char>(source[offset]);
+        if(c=='\'' ) {
+            if(digits.empty()||offset+1>=source.size()||
+               digit(static_cast<unsigned char>(source[offset+1]))<0||
+               digit(static_cast<unsigned char>(source[offset+1]))>=base)
+                return {};
+            continue;
+        }
+        const auto value=digit(c);
+        if(value<0||value>=base)break;
+        digits+=static_cast<char>(c);
+    }
+    if(digits.empty()||source[offset?offset-1:0]=='\'')return {};
+    // A decimal point, exponent, identifier or UDL suffix is not an integer
+    // constant. The unsigned, long and C++23 size suffixes are independent.
+    const auto suffix=source.substr(offset);
+    bool unsigned_suffix=false,size_suffix=false,long_suffix=false;
+    std::size_t i=0;
+    while(i<suffix.size()) {
+        const auto c=suffix[i];
+        if(c=='u'||c=='U') {
+            if(unsigned_suffix)return {};
+            unsigned_suffix=true;++i;
+        }else if(c=='l'||c=='L') {
+            if(long_suffix||size_suffix)return {};
+            long_suffix=true;
+            if(i+1<suffix.size()&&suffix[i+1]==c)i+=2;
+            else ++i;
+        }else if(c=='z'||c=='Z') {
+            if(size_suffix||long_suffix)return {};
+            size_suffix=true;++i;
+        }else return {};
+    }
+    // Apostrophes are removed only after confirming each one separates
+    // digits in the selected base. This also rejects malformed 0b102, 09.
+    unsigned long long magnitude=0;
+    const auto parsed=std::from_chars(
+        digits.data(),digits.data()+digits.size(),magnitude,base);
+    if(parsed.ec!=std::errc{}||
+       parsed.ptr!=digits.data()+digits.size())return {};
+    constexpr auto maximum=static_cast<unsigned long long>(
+        std::numeric_limits<int>::max());
+    if(magnitude>maximum+(negative?1ULL:0ULL))return {};
+    // -2147483648 is representable as an int; nondecimal unsuffixed
+    // 0x80000000 is unsigned on 32-bit int and is not an equivalent spell.
+    if(negative&&magnitude>maximum&&(base!=10||unsigned_suffix))
+        return {};
+    const auto signed_value=negative?
+        -static_cast<long long>(magnitude):
+        static_cast<long long>(magnitude);
+    return static_cast<int>(signed_value);
 }
 // Accept bounded integer arithmetic as well as decimal literals. Requiring
 // just one spelling of a constant would reject equivalent student solutions.
@@ -207,6 +272,10 @@ inline std::optional<int> arithmetic_constant(
         if(depth)return {};
     }
     if(op(t[first],"+")||op(t[first],"-")) {
+        // Decimal INT_MIN has a positive literal of type long long. Parse
+        // the complete signed token before applying an int-range check.
+        if(first+2==last&&t[first+1].starts_with("number:"))
+            return number(t,first,last);
         const auto value=arithmetic_constant(t,first+1,last);
         if(!value)return {};
         const long long result=op(t[first],"-")?
