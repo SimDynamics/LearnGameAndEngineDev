@@ -2640,6 +2640,64 @@ def refine_order_lines(document: dict, identity: str) -> dict:
     return result
 
 
+def revise_ordinary_editorial(document: dict, identity: str, edits: dict) -> dict:
+    """Author one or two question/explanation fields under an existing v2 owner.
+
+    Each field has the exact new "text" and explicitly authored UTF-16
+    "spans". This never infers a highlight or rewrites an old narration range;
+    the original full block remains in its immutable state and editorial chain.
+    Multiple field changes are one atomic, authenticated publication.
+    """
+    validate(document)
+    require(document.get("stateLayout", {}).get("version") == 2
+            and document["stateLayout"].get("locale") == "es",
+            "Ordinary editorial revision requires a published Spanish v2 lesson")
+    _identity(identity)
+    original = _blocks(document).get(identity)
+    require(type(original) is dict and original.get("type") in {
+        "multiple_choice", "fill_code", "output_prediction",
+        "order_code", "drag_fill_code", "inline_fill_code"},
+        "Ordinary editorial revisions belong to existing graded prose owners")
+    require(type(edits) is dict and bool(edits) and set(edits) <= {"question", "explanation"},
+            "Author only one or two existing question/explanation fields")
+    for field, spec in edits.items():
+        require(type(spec) is dict and set(spec) == {"text", "spans"},
+                "Every revised field needs exact text and authored semantic spans")
+        old, updated = original.get(field), spec["text"]
+        require(type(old) is str and old.strip() and type(updated) is str
+                and updated.strip() and updated != old,
+                "An editorial revision needs different nonblank existing wording")
+        require(type(spec["spans"]) is list,
+                "Author an explicit semantic span list, including [] for unmarked prose")
+
+    result = deepcopy(document)
+    revised = _blocks(result)[identity]
+    overlay = result.setdefault(text_semantics.ROOT_FIELD, {"version": 1, "fields": []})
+    existing = overlay["fields"]
+    for field, spec in edits.items():
+        revised[field] = spec["text"]
+        path = "/" + field
+        matches = [i for i, item in enumerate(existing)
+                   if item.get("block") == identity and item.get("path") == path]
+        require(len(matches) <= 1, "An authored semantic path cannot be duplicated")
+        if matches:
+            original_spans = existing[matches[0]]["spans"]
+            require(not original_spans or bool(spec["spans"]),
+                    "A revised marked field cannot silently lose all its authored highlights")
+        marker = text_semantics.make_field(result, identity, path, spec["spans"])
+        if matches:
+            existing[matches[0]] = marker
+        else:
+            existing.append(marker)
+    text_semantics.validate(result)
+    result["stateLayout"]["editorial"].append({
+        "id": identity,
+        "beforeSha256": fingerprint(original),
+        "afterSha256": fingerprint(revised)})
+    validate_transition(document, result)
+    return result
+
+
 def revise_choice_editorial(document: dict, identity: str,
                             option_index: int, replacement: str) -> dict:
     """Author one authenticated text-only change without a lesson hash allowlist.
@@ -3533,7 +3591,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-compiler-cases", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -3545,6 +3603,8 @@ def main() -> None:
     parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
     parser.add_argument("--replacement", help="Exact revised nonblank choice text; answers and other fields are preserved")
+    parser.add_argument("--editorial-fields", type=Path,
+                        help='JSON {"question":{"text":"...","spans":[...]},"explanation":{...}}; exact public fields only')
     parser.add_argument("--editorial-return", action="append", default=[], metavar="ID:REVISION",
                         help="Explicit earlier payload of the same identity; prepare with --locale and Git --base-ref only")
     args = parser.parse_args()
@@ -3552,6 +3612,8 @@ def main() -> None:
         require(args.action == "revise-choice-editorial" or
                 (args.option_index is None and args.replacement is None),
                 "Choice editorial parameters are only valid for revise-choice-editorial")
+        require(args.action == "revise-ordinary-editorial" or args.editorial_fields is None,
+                "The authored public fields belong only to revise-ordinary-editorial")
         editorial_returns = {}
         for value in args.editorial_return:
             identity, separator, revision = value.rpartition(":")
@@ -3611,6 +3673,13 @@ def main() -> None:
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = revise_choice_editorial(baseline, args.identity,
                                              args.option_index, args.replacement)
+        elif args.action == "revise-ordinary-editorial":
+            require(args.identity is not None and args.editorial_fields is not None
+                    and args.plan is None and args.additions is None,
+                    "revise-ordinary-editorial requires --identity and --editorial-fields "
+                    "without move/addition plans")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_ordinary_editorial(baseline, args.identity, load(args.editorial_fields))
         elif args.action == "revise-compiler-cases":
             require(args.identity is not None and args.plan is None and args.additions is None,
                     "revise-compiler-cases requires --identity without a move/addition plan")

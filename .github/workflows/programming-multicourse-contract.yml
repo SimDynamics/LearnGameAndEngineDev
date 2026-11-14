@@ -13,6 +13,7 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_code_format_compat.py
+      - scripts/curriculum/test_published_u12_question_editorials.py
       - scripts/curriculum/test_real_code_format_pilot.py
       - app/src/main/assets/content/en/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
       - app/src/main/assets/content/fr/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
@@ -52,6 +53,9 @@ jobs:
       - name: Probar formato físico C++ y CMake sin alterar el progreso histórico
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_code_format_compat
+      - name: Acreditar dos revisiones ordinarias de preguntas U12 con marcado explícito
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_published_u12_question_editorials
       - name: Compilar dos ejemplos de una lección real y conservar su origen publicado
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_real_code_format_pilot
