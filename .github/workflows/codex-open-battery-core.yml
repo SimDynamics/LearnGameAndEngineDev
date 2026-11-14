@@ -6,6 +6,7 @@ on:
     paths:
       - native/core/open_battery_check.hpp
       - native/core/open_battery_check_tests.cpp
+      - scripts/curriculum/test_open_battery_trace_runtime.py
       - .github/workflows/codex-open-battery-core.yml
   workflow_dispatch:
 
@@ -32,6 +33,10 @@ jobs:
             native/core/open_battery_check_tests.cpp -o "${RUNNER_TEMP}/open_battery_core"
       - name: Run portable mutation and provenance tests
         run: '"${RUNNER_TEMP}/open_battery_core"'
+      - name: Compile generated traces and preserve real student stderr
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_open_battery_trace_runtime.py -v
 
   msvc:
     runs-on: windows-2022
@@ -48,3 +53,8 @@ jobs:
       - name: Run MSVC core mutation tests
         shell: cmd
         run: '"%RUNNER_TEMP%\open_battery_core.exe"'
+      - name: Compile generated traces and preserve real student stderr
+        shell: pwsh
+        env:
+          CXX: cl
+        run: python -B -m unittest discover -s scripts/curriculum -p test_open_battery_trace_runtime.py -v
