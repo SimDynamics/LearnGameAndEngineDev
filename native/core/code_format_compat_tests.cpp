@@ -119,6 +119,55 @@ where()
             "if(CMAKE_CURRENT_LIST_LINE)\nmessage(\"ok\")\nendif()",
             "\nif(CMAKE_CURRENT_LIST_LINE)\nmessage(\"ok\")\nendif()",Language::cmake),
         "A bare CMake line-position variable escaped format protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_minimum_required(VERSION 3.20)
+string(CONFIGURE "@CMAKE_CURRENT_LIST_LINE@" value @ONLY)
+message("${value}")
+)qa",
+            R"qa(cmake_minimum_required(VERSION 3.20)
+
+string(CONFIGURE "@CMAKE_CURRENT_LIST_LINE@" value @ONLY)
+message("${value}")
+)qa",Language::cmake),
+        "CMake string(CONFIGURE) @VAR@ substitution changed line without a token change");
+    check(!code_format::equivalent(
+            R"qa(cmake_minimum_required(VERSION 3.20)
+string(CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] value @ONLY)
+message("${value}")
+)qa",
+            R"qa(cmake_minimum_required(VERSION 3.20)
+
+string(CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] value @ONLY)
+message("${value}")
+)qa",Language::cmake),
+        "A bracket argument later expanded by string(CONFIGURE) hid a line change");
+    check(!code_format::equivalent(
+            R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
+STRING(CONFIGURE "${template}" result @ONLY)
+)qa",
+            R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
+
+STRING(CONFIGURE "${template}" result @ONLY)
+)qa",Language::cmake),
+        "An indirect template or case variant bypassed CMake configure protection");
+    check(!code_format::equivalent(
+            R"qa(cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
+            R"qa(\ncmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY))qa",
+            Language::cmake),
+        "CMake-language CALL of string(CONFIGURE) bypassed bracket protection");
+    check(code_format::equivalent(
+            R"qa(#[=[ @CMAKE_CURRENT_LIST_LINE@ is comment-only ]=]
+string(CONFIGURE "literal" result @ONLY)
+)qa",
+            R"qa(#[=[ @CMAKE_CURRENT_LIST_LINE@ is comment-only ]=]
+
+string(CONFIGURE "literal" result @ONLY)
+)qa",Language::cmake),
+        "A bracket comment was incorrectly treated as a configurable argument");
+    check(code_format::equivalent(
+            R"qa(message([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",
+            R"qa(\nmessage([=[@CMAKE_CURRENT_LIST_LINE@]=]))qa",Language::cmake),
+        "An inert CMake bracket literal was misclassified as a substitution");
     check(code_format::equivalent(
             R"qa(#[=[ ${CMAKE_CURRENT_LIST_LINE} in a comment ]=]
 message([=[${CMAKE_CURRENT_LIST_LINE}]=])
