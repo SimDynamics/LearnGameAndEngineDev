@@ -870,7 +870,10 @@ inline bool named_rule_comment_only_edit(std::string_view original,
     if(original==candidate)return true;
     if(code_format::physical_splice(original)||code_format::physical_splice(candidate))
         return false;
-    for(const auto sentinel:{"__LINE__","source_location"})
+    // A comment-only edit can move an invocation to another physical line
+    // or column, even when all non-comment C++ tokens remain identical.
+    for(const auto sentinel:{"__LINE__","source_location",
+            "__builtin_LINE","__builtin_COLUMN"})
         if(original.find(sentinel)!=original.npos||
            candidate.find(sentinel)!=candidate.npos)return false;
     const auto before=code_format::cpp_tokens(original);
