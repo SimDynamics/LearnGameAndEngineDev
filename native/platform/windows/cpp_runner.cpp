@@ -1182,6 +1182,13 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     }
     if(required.targets.empty())
         return fail("No hay objetivos de construcción declarados para comprobar.");
+    for(const auto& [path,digest]:required.source_integrity) {
+        const auto found=std::ranges::find_if(request.project_files,
+            [&](const auto& file){return file.first==path;});
+        if(found==request.project_files.end()||
+           state::sha256(found->second)!=digest)
+            return fail("Se modificó un archivo original fuera de la reparación autorizada: "+path);
+    }
     const auto cmake_source=cmake_workspace(request)/L"p";
     const auto include_has=[&](const std::vector<std::string>& included,
             const std::filesystem::path& expected) {

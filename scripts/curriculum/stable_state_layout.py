@@ -2186,7 +2186,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
                 {"activity", "project", "minimumCmakeVersion", "targets",
-                 "optionSelection"},
+                 "optionSelection", "sourceIntegrity"},
                 "CMake graph owner needs bounded optional requirements")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
@@ -2209,6 +2209,34 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) and
                     all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
                     "CMake minimum must be a numeric major.minor version")
+        if "sourceIntegrity" in entry:
+            integrity = entry["sourceIntegrity"]
+            require(type(integrity) is dict and
+                    {"preserveNonCmake"} <= set(integrity) <=
+                    {"preserveNonCmake", "removePrefix"} and
+                    integrity["preserveNonCmake"] is True and
+                    any(type(path) is str and
+                        not (path.endswith("/CMakeLists.txt") or
+                             path == "CMakeLists.txt" or
+                             path.endswith(".cmake"))
+                        for path in (f.get("path") for f in block["projectFiles"]
+                                     if type(f) is dict)),
+                    "CMake source integrity requires preserved non-CMake files")
+            if "removePrefix" in integrity:
+                removal = integrity["removePrefix"]
+                require(type(removal) is dict and
+                        set(removal) == {"path", "text"} and
+                        type(removal["path"]) is str and
+                        removal["path"].lower().endswith(
+                            (".cpp", ".cc", ".cxx", ".c++")) and
+                        type(removal["text"]) is str and
+                        0 < len(removal["text"]) <= 512 and
+                        any(type(f) is dict and
+                            f.get("path") == removal["path"] and
+                            type(f.get("initialCode")) is str and
+                            f["initialCode"].startswith(removal["text"])
+                            for f in block["projectFiles"]),
+                        "CMake repair can only remove an authentic source prefix")
         targets = entry["targets"]
         require(type(targets) is list and 0 < len(targets) <= 16,
                 "CMake graph needs 1..16 targets")

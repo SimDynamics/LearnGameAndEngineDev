@@ -412,6 +412,13 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 for(const auto& root:target.private_include_roots)token(root);
             }
         }
+        if(!graph.source_integrity.empty()) {
+            token("cmake-source-integrity-v1");
+            token(std::to_string(graph.source_integrity.size()));
+            for(const auto& [path,digest]:graph.source_integrity) {
+                token(path);token(digest);
+            }
+        }
         if(graph.option_selection) {
             token("cmake-option-default-off-v1");
             token(graph.option_selection->name);

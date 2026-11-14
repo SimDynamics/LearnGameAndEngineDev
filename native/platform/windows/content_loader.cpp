@@ -2663,7 +2663,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     for(const auto& record:records) {
         const auto item=record.GetObject();
         allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
-            "optionSelection"});
+            "optionSelection","sourceIntegrity"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2847,6 +2847,42 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 "Binary option must switch between distinct original library files");
             requirement.option_selection=CmakeOptionSelectionRequirement{
                 name,target,off_source,off_output};
+        }
+        if(item.HasKey(L"sourceIntegrity")) {
+            const auto integrity=item.GetNamedObject(L"sourceIntegrity");
+            allowed_keys(integrity,{"preserveNonCmake","removePrefix"});
+            require(integrity.HasKey(L"preserveNonCmake")&&
+                    integrity.GetNamedValue(L"preserveNonCmake").ValueType()==
+                        JsonValueType::Boolean&&
+                    integrity.GetNamedBoolean(L"preserveNonCmake"),
+                "CMake source integrity must explicitly preserve original files");
+            std::string removal_path,removal;
+            if(integrity.HasKey(L"removePrefix")) {
+                const auto edit=integrity.GetNamedObject(L"removePrefix");
+                allowed_keys(edit,{"path","text"},true);
+                removal_path=text(edit,"path");removal=text(edit,"text");
+                require(is_cpp_source_file(removal_path)&&
+                        !removal.empty()&&removal.size()<=512,
+                    "CMake source repair must remove a short original C++ prefix");
+                const auto found=std::ranges::find_if(owner->project_files,
+                    [&](const auto& file){return file.first==removal_path;});
+                require(found!=owner->project_files.end()&&
+                        found->second.starts_with(removal),
+                    "CMake allowed removal must match the published source prefix");
+            }
+            bool found_removal=removal_path.empty();
+            for(const auto& [path,source]:owner->project_files) {
+                const auto at=path.find_last_of('/');
+                const auto filename=path.substr(at==path.npos?0:at+1);
+                if(filename=="CMakeLists.txt"||path.ends_with(".cmake"))continue;
+                const bool edited=path==removal_path;
+                if(edited)found_removal=true;
+                requirement.source_integrity.emplace_back(path,
+                    sha256(edited?std::string_view(source).substr(removal.size()):
+                        std::string_view(source)));
+            }
+            require(found_removal&&!requirement.source_integrity.empty(),
+                "CMake source integrity needs original non-CMake files");
         }
         owner->cmake_graph_check=std::move(requirement);
     }

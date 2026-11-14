@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace lgaed::curriculum {
@@ -63,6 +64,9 @@ struct CmakeGraphRequirement {
     // generated codemodel root directory. Does not imply compiler features.
     std::string minimum_cmake_version;
     std::optional<CmakeOptionSelectionRequirement> option_selection;
+    // SHA-256 of every original non-CMake file after any specifically
+    // allowed source repair. Generated from the immutable original lesson.
+    std::vector<std::pair<std::string,std::string>> source_integrity;
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 
