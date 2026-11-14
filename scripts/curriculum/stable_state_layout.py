@@ -2515,6 +2515,23 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     off_source not in library["sources"],
                     "CMake binary option needs distinct original library sources")
 
+# Five pre-existing, source-pinned native reviews. This migration guard
+# only prevents new root metadata from contradicting their published behavior;
+# ordinary future code-order owners are validated by the same generic rules.
+LEGACY_ORDER_EQUIVALENCES = {
+    ("cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar",
+     "block_0002_0001"): [[2, 3]],
+    ("cpp_fundamentals__colecciones_y_recorridos__acumular_contar_y_seleccionar",
+     "block_0005_0004"): [[2, 3], [6, 7]],
+    ("cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz",
+     "orden_validar_antes_de_calcular"): [[2, 3]],
+    ("cpp_fundamentals__excepciones_y_recuperacion__recuperar_por_operacion",
+     "block_0002_0003"): [[3, 4], [6, 7], [17, 18]],
+    ("cpp_fundamentals__archivos_y_programa_completo__extraer_un_tipo_sin_cambiarlo_en_fallo",
+     "block_0004_0003"): [[2, 3, 4]],
+}
+
+
 def _validate_order_equivalence_groups(document: dict) -> None:
     """Bind reviewable independent code cards to their exact evaluated source.
 
@@ -2570,6 +2587,9 @@ def _validate_order_equivalence_groups(document: dict) -> None:
             positions = sorted(order.index(index) for index in group)
             require(positions == list(range(positions[0], positions[0] + len(positions))),
                     "Independent card groups must occupy one contiguous canonical span")
+        previous = LEGACY_ORDER_EQUIVALENCES.get((document.get("id"), identity))
+        require(previous is None or groups == previous,
+                "A root order declaration cannot contradict a reviewed historical group")
 
 
 def _validate_order_visual_separators(document: dict) -> None:
