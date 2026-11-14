@@ -321,8 +321,8 @@ class SourceFormatTest(unittest.TestCase):
         self.assertEqual(original["type"], "cpp_compiler")
         self.assertFalse(any(item["id"] == identity for item in
                              published["stateLayout"].get("sourceFormatRevisions", [])))
-        before_code = "    int cantidad=0;\\n    for(int dato:datos)"
-        after_code = "    int cantidad=0;\\n\\n    for(int dato:datos)"
+        before_code = "    int cantidad=0;\n    for(int dato:datos)"
+        after_code = "    int cantidad=0;\n\n    for(int dato:datos)"
         self.assertEqual(original["initialCode"].count(before_code), 1)
 
         updated = deepcopy(published)
@@ -331,7 +331,7 @@ class SourceFormatTest(unittest.TestCase):
             before_code, after_code, 1)
         case = editor["outputCheck"]["cases"][0]
         case["explanation"] += (
-            "\\nRevisa que la igualdad no se cuente con la condición estricta.")
+            "\nRevisa que la igualdad no se cuente con la condición estricta.")
         marker = next(field for field in updated["textSemantics"]["fields"]
                       if field["block"] == identity and
                       field["path"] == "/outputCheck/cases/0/explanation")
