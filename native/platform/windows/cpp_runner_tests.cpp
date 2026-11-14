@@ -1351,14 +1351,24 @@ int main(int count, char**) {
         const auto reviewed=winrt::to_string(document.Stringify());
         const auto loaded=windows::parse_lesson_json(reviewed,"es");
         const auto saved=windows::parse_lesson_progress_metadata(reviewed,"es");
-        require(original.pages.size()==7&&loaded.pages.size()==7&&
-                saved.pages.size()==7&&original.pages[6].blocks.size()>11&&
+        require(original.pages.size()==loaded.pages.size()&&
+                original.pages.size()==saved.pages.size()&&
                 original.state_layout.signatures==loaded.state_layout.signatures&&
                 original.state_layout.signatures==saved.state_layout.signatures,
                 "Original U3L10 state map, family or lesson content was changed");
-        const auto& before=original.pages[6].blocks[11];
-        const auto& owner=loaded.pages[6].blocks[11];
-        const auto& progress=saved.pages[6].blocks[11];
+        const auto mapped=[](const Lesson& lesson)->const Block& {
+            const Block* found=nullptr;
+            for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
+                if(block.stable_id=="block_0006_0011") {
+                    require(!found,"Duplicate stable open-battery owner");
+                    found=&block;
+                }
+            require(found!=nullptr,"Missing stable open-battery owner");
+            return *found;
+        };
+        const auto& before=mapped(original);
+        const auto& owner=mapped(loaded);
+        const auto& progress=mapped(saved);
         require(!before.output_check&&owner.output_check&&progress.output_check&&
                 owner.output_check->open_battery_check&&
                 progress.output_check->open_battery_check&&
@@ -1407,8 +1417,39 @@ int main(int count, char**) {
         // Saving and reopening preserves only a genuinely earned, sealed
         // receipt. A printed success alone must not unlock the reference.
         state::StateData recorded;
-        require(!windows::compiler_puzzle_completed(recorded,loaded,owner),
-                "An unattempted open battery inherited progress");
+        const auto pack=[](std::string_view value) {
+            return std::to_string(value.size())+":"+std::string(value);
+        };
+        const auto current_frame=reference_objective_frame(loaded,owner);
+        auto legacy_frame=current_frame;
+        const auto version=legacy_frame.find(open_battery_objective_version);
+        require(version!=std::string::npos,"Missing v2 objective identity");
+        constexpr std::string_view legacy_version=
+            "open-cmake-battery-independent-mutations-v1";
+        require(legacy_version.size()==open_battery_objective_version.size(),
+                "Historical length-prefixed objective fixture changed");
+        legacy_frame.replace(version,open_battery_objective_version.size(),legacy_version);
+        const auto prefix="compiler-puzzle/v1/"+loaded.locale+"/"+loaded.id+"/"+
+            exercise_key(loaded,owner)+"/";
+        const auto old_key=prefix+state::sha256(legacy_frame)+"/";
+        const auto new_key=prefix+state::sha256(current_frame)+"/";
+        const auto program=windows::compiler_program_frame(valid);
+        const auto& first=owner.output_check->cases.front();
+        const auto old_proof=state::sha256("compiler-case-v1/"+pack(old_key)+
+            pack(program)+pack("0")+pack(first.standard_input)+
+            pack(first.executable.value_or("")));
+        auto& old=recorded.preferences["native_windows"];
+        old[old_key+"program"]=program;
+        old[old_key+"cases"]=std::vector<std::string>{old_proof};
+        old[old_key+"completed"]=state::sha256("compiler-complete-v1/"+
+            pack(old_key)+pack(program)+pack(old_proof));
+        old[old_key+"feedback"]=std::string("Historical v1 result");
+        const auto historical=recorded;
+        require(old_key!=new_key&&
+                !windows::compiler_puzzle_completed(recorded,loaded,owner)&&
+                !windows::compiler_puzzle_completed(
+                    state::decode(state::encode(recorded)),saved,progress),
+                "An old acceptance-only receipt acquired destination credit");
         auto missing_proof=observed;
         missing_proof.open_battery_probe_correct=false;
         const auto untouched=recorded;
@@ -1420,6 +1461,11 @@ int main(int count, char**) {
                     recorded,loaded,owner,valid,observed,"Correcto")&&
                 windows::compiler_puzzle_completed(recorded,loaded,owner),
                 "A checked original/new battery did not earn its own receipt");
+        for(const auto& [key,value]:historical.preferences.at("native_windows")) {
+            const auto retained=state::find(recorded,"native_windows",key);
+            require(retained&&*retained==value,
+                    "A v2 achievement changed the historical receipt");
+        }
         const auto reopened_state=state::decode(state::encode(recorded));
         require(windows::compiler_puzzle_completed(
                     reopened_state,saved,progress),
@@ -1427,7 +1473,7 @@ int main(int count, char**) {
         windows::validate_compiler_puzzle_state(reopened_state,saved,progress);
         auto tampered=reopened_state;
         for(auto& [name,value]:tampered.preferences["native_windows"])
-            if(name.ends_with("/cases")) {
+            if(name==new_key+"cases") {
                 auto& cases=std::get<std::vector<std::string>>(value);
                 cases[0]="unverified battery";
                 break;
@@ -1492,6 +1538,7 @@ bool comprobar(int valor,int inferior,int superior,int inicial,
 int main() {
     int fallos=0;
     if(!comprobar(2,3,7,77,true,1))++fallos;
+    if(!comprobar(0,7,3,77,false,77))++fallos;
     if(!comprobar(3,3,7,59,true,0))++fallos;
     std::cout<<"Fallos="<<fallos<<'\n';
     return fallos?1:0;
@@ -1501,19 +1548,34 @@ int main() {
         value.open_battery_probe=OpenBatteryProbeSpec{
             "src/ajuste.cpp","pruebas/casos.cpp",
             "intentar_ajuste","comprobar","comprobar_ajustes",
-            {{2,3,7,77}}
+            {{2,3,7,77},{0,7,3,77}}
         };
         const auto submitted=value.project_files;
         const auto positive=run_cpp(value);
         successful(positive);
         require(positive.open_battery_evidence&&
-                positive.open_battery_evidence->runs.size()==4,
-                "Four actual CMake executions were not retained as private evidence");
+                positive.open_battery_evidence->runs.size()==7,
+                "Seven actual CMake executions were not retained as private evidence");
         const auto current=capture_cpp_execution(value,positive);
         require(current.open_battery_probe_correct,
                 "Correct original + added case did not pass independent mutations");
         require(value.project_files==submitted,
                 "The private CMake probe changed student or published project bytes");
+        for(const int ignored:{2,0}) {
+            auto defective=value;
+            for(auto& [name,source]:defective.project_files)
+                if(name=="pruebas/casos.cpp") {
+                    const std::string old="return actual==acepta&&resultado==ajuste;";
+                    const auto at=source.find(old);
+                    require(at!=std::string::npos,"Missing destination fixture");
+                    source.replace(at,old.size(),"return actual==acepta&&(valor=="+
+                        std::to_string(ignored)+"||resultado==ajuste);");
+                }
+            const auto rejected=run_cpp(defective);
+            successful(rejected);
+            require(!capture_cpp_execution(defective,rejected).open_battery_probe_correct,
+                    "A historical comparison ignoring its destination earned credit");
+        }
         auto missing=value;
         for(auto& [name,source]:missing.project_files)
             if(name=="pruebas/casos.cpp") {

@@ -386,7 +386,7 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         // A new, root-authenticated mutation objective must never inherit
         // an older successful stdout receipt from this stable CMake editor.
         const auto& spec=*activity.open_battery_probe;
-        token("open-cmake-battery-independent-mutations-v1");
+        token(open_battery_objective_version);
         token(spec.library_path);token(spec.test_path);
         token(spec.function_name);token(spec.comparison_name);
         token(spec.test_target);
