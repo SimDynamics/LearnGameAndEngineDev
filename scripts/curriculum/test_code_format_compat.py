@@ -299,5 +299,88 @@ class SourceFormatTest(unittest.TestCase):
                          prose["pages"][0]["blocks"][1])
 
 
+    def test_real_u10_l4_combined_format_and_authored_guide(self):
+        """Authenticate a real published compiler owner without editing its JSON."""
+        import hashlib
+        import json
+        import validar_json_programacion as contract
+
+        root = Path(__file__).resolve().parents[2]
+        relative = ("programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/"
+                    "lesson_combinar_ensayos_generados_y_casos_elegidos.json")
+        family = {
+            locale: json.loads((root / "app/src/main/assets/content" /
+                                locale / relative).read_text(encoding="utf-8"))
+            for locale in ("es", "en", "fr")
+        }
+        published = family["es"]
+        layout.validate(published)
+        identity = "block_0004_0007"
+        self.assertEqual(published["stateLayout"]["current"][4]["blocks"][7], identity)
+        original = published["pages"][4]["blocks"][7]
+        self.assertEqual(original["type"], "cpp_compiler")
+        self.assertFalse(any(item["id"] == identity for item in
+                             published["stateLayout"].get("sourceFormatRevisions", [])))
+        before_code = "    int cantidad=0;\\n    for(int dato:datos)"
+        after_code = "    int cantidad=0;\\n\\n    for(int dato:datos)"
+        self.assertEqual(original["initialCode"].count(before_code), 1)
+
+        updated = deepcopy(published)
+        editor = updated["pages"][4]["blocks"][7]
+        editor["initialCode"] = editor["initialCode"].replace(
+            before_code, after_code, 1)
+        case = editor["outputCheck"]["cases"][0]
+        case["explanation"] += (
+            "\\nRevisa que la igualdad no se cuente con la condición estricta.")
+        marker = next(field for field in updated["textSemantics"]["fields"]
+                      if field["block"] == identity and
+                      field["path"] == "/outputCheck/cases/0/explanation")
+        # Append after the existing 17 genuine semantic spans; no highlight
+        # is shifted or silently given a new meaning.
+        self.assertEqual(len(marker["spans"]), 17)
+        marker["sourceSha256"] = hashlib.sha256(
+            case["explanation"].encode("utf-8")).hexdigest()
+        self.assertNotEqual(original["initialCode"], editor["initialCode"])
+
+        reviewed = layout.prepare_v2(updated, "es", family, published)
+        layout.validate_transition(published, reviewed)
+        self.assertEqual(layout.validate(published), layout.validate(reviewed))
+        self.assertEqual(reviewed["stateLayout"]["origin"],
+                         published["stateLayout"]["origin"])
+        self.assertEqual(reviewed["stateLayout"]["family"],
+                         published["stateLayout"]["family"])
+        self.assertEqual(reviewed["stateLayout"]["current"],
+                         published["stateLayout"]["current"])
+        archives = [item for item in reviewed["stateLayout"]["sourceFormatRevisions"]
+                    if item["id"] == identity]
+        self.assertEqual(len(archives), 1)
+        self.assertEqual(archives[0]["block"], original)
+        self.assertEqual(reviewed["pages"][4]["blocks"][7]["outputCheck"]
+                         ["cases"][0]["outputs"], original["outputCheck"]["cases"][0]["outputs"])
+        full_path = "app/src/main/assets/content/es/" + relative
+        self.assertTrue(contract.preserves_source_format_revision(
+            full_path, 4, 7, original, reviewed["pages"][4]["blocks"][7],
+            previous_document=published, current_document=reviewed))
+        self.assertTrue(contract.preserves_previous_exercise(
+            full_path, 4, 7, original, reviewed["pages"][4]["blocks"][7],
+            previous_document=published, current_document=reviewed))
+
+        incorrect = deepcopy(reviewed)
+        incorrect["pages"][4]["blocks"][7]["initialCode"] = (
+            editor["initialCode"].replace("dato>minimo", "dato>=minimo", 1))
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(published, incorrect)
+        incorrect = deepcopy(reviewed)
+        descriptor = next(field for field in incorrect["textSemantics"]["fields"]
+                          if field["block"] == identity and
+                          field["path"] == "/outputCheck/cases/0/explanation")
+        descriptor["sourceSha256"] = next(
+            field["sourceSha256"] for field in published["textSemantics"]["fields"]
+            if field["block"] == identity and
+            field["path"] == "/outputCheck/cases/0/explanation")
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(published, incorrect)
+
+
 if __name__ == "__main__":
     unittest.main()
