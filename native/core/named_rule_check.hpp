@@ -77,9 +77,9 @@ inline bool probe_environment_neutral(
         "__LINE__","__FILE__","__FILEW__","__BASE_FILE__",
         "__COUNTER__","__INCLUDE_LEVEL__","__DATE__","__TIME__",
         "__TIMESTAMP__","__PRETTY_FUNCTION__","__FUNCSIG__",
-        "__FUNCDNAME__","__builtin_LINE","__builtin_FILE",
-        "__builtin_FUNCTION","__builtin_source_location",
-        "source_location"
+        "__FUNCDNAME__","__builtin_LINE","__builtin_COLUMN",
+        "__builtin_FILE","__builtin_FUNCTION",
+        "__builtin_source_location","source_location"
     };
     return std::ranges::none_of(tokens,[&](std::string_view token) {
         if(!token.starts_with("id:"))return false;
