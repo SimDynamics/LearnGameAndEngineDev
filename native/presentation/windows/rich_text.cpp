@@ -537,12 +537,24 @@ std::optional<std::size_t> cpp_ordinary_literal_end(
         if(!text.substr(at).starts_with(prefix))continue;
         const auto quote=prefix.back();
         auto end=at+prefix.size();
+        bool closed=false;
         while(end<text.size()) {
             const auto c=text[end++];
-            if(c==L'\\'&&end<text.size())++end;
-            else if(c==quote)break;
+            if(c==L'\\'&&end<text.size()) {
+                // Backslash-newline is physically spliced by C++; include
+                // the optional CR of CRLF in the same continuation.
+                if(text[end]==L'\r'&&end+1<text.size()&&text[end+1]==L'\n')
+                    end+=2;
+                else ++end;
+            }else if(c==quote) {
+                closed=true;break;
+            }else if(c==L'\r'||c==L'\n') {
+                // Ordinary C++ literals cannot swallow a subsequent physical
+                // line while the student is still typing the closing quote.
+                --end;break;
+            }
         }
-        return cpp_literal_suffix_end(text,end);
+        return closed?cpp_literal_suffix_end(text,end):end;
     }
     return {};
 }

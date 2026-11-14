@@ -139,6 +139,42 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
                 "Syntax coloring changed the existing dark editor background");
             check(presentation::edit_text(syntax)==code,
                 "Syntax coloring rewrote the example's source");
+            // An unfinished ordinary literal is normal while typing. A
+            // physical newline must recover keyword/comment ink on the next
+            // line rather than coloring the remainder of the editor green.
+            const auto unfinished=R"source(auto nota = "texto incompleto
+for (int siguiente{1}; siguiente<3; ++siguiente) { // otra linea
+    auto letra = 'n
+    if (siguiente) { }
+}
+)source";
+            presentation::set_edit_text(syntax,unfinished);
+            presentation::style_cpp(syntax);
+            const auto recovered=presentation::wide(presentation::edit_text(syntax));
+            const auto recovered_ink=[&](std::wstring_view needle,COLORREF reference,
+                    const char* message) {
+                const auto at=recovered.find(needle);
+                check(at!=recovered.npos,message);
+                if(at==recovered.npos)return;
+                CHARRANGE range{static_cast<LONG>(at),static_cast<LONG>(at+1)};
+                SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+                CHARFORMAT2W current{};current.cbSize=sizeof(current);
+                SendMessageW(syntax,EM_GETCHARFORMAT,SCF_SELECTION,
+                    reinterpret_cast<LPARAM>(&current));
+                check(current.crTextColor==expected(reference),message);
+            };
+            recovered_ink(L"for (",RGB(248,166,200),
+                "Unclosed string absorbed the following C++ for keyword");
+            recovered_ink(L"siguiente",RGB(184,151,244),
+                "Unclosed string absorbed the next C++ identifier");
+            recovered_ink(L"// otra linea",RGB(172,172,172),
+                "Unclosed string absorbed the following comment");
+            recovered_ink(L"if (",RGB(248,166,200),
+                "Unclosed character literal absorbed the following if keyword");
+            check(presentation::reader_theme::background(syntax)==background,
+                "Incomplete source recoloring modified the existing editor background");
+            check(presentation::edit_text(syntax)==unfinished,
+                "Incomplete source recoloring rewrote the student's draft");
             DestroyWindow(syntax);
         }
     }
