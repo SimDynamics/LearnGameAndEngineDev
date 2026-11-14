@@ -572,5 +572,88 @@ class SourceFormatTest(unittest.TestCase):
                     layout.validate(altered_archive)
 
 
+
+    def test_real_u12_identical_references_preserve_distinct_owners_after_formatting(self):
+        """Signed physical formatting is not a transfer to a matching code owner."""
+        import json
+        import validar_json_programacion as validator
+
+        root = Path(__file__).resolve().parents[2]
+        relative = ("programming/cpp_fundamentals/archivos_y_programa_completo/"
+                    "lesson_cerrar_reemplazar_y_anadir_datos.json")
+        family = {
+            language: json.loads((root / "app/src/main/assets/content" /
+                                  language / relative).read_text(encoding="utf-8"))
+            for language in ("es", "en", "fr")
+        }
+        published = family["es"]
+        layout.validate(published)
+        original = published["stateLayout"]
+        same_source_owner = "block_0004_0001"
+        repeated = ("block_0006_0001", "block_0008_0001")
+        self.assertEqual(original["current"][4]["blocks"][1], same_source_owner)
+        self.assertEqual(original["current"][6]["blocks"][1], repeated[0])
+        self.assertEqual(original["current"][8]["blocks"][1], repeated[1])
+        source = published["pages"][4]["blocks"][1]["code"]
+        self.assertTrue(any(item["id"] == same_source_owner
+                            for item in original.get("sourceFormatRevisions", [])))
+        self.assertFalse(any(item["id"] in repeated
+                             for item in original.get("sourceFormatRevisions", [])))
+        updated = deepcopy(published)
+        for page, owner in ((6, repeated[0]), (8, repeated[1])):
+            previous = published["pages"][page]["blocks"][1]
+            changed = updated["pages"][page]["blocks"][1]
+            self.assertEqual(previous["type"], "code")
+            self.assertEqual(changed["code"].count("    return 0;\n}\n"), 1)
+            self.assertNotEqual(previous["code"], source)
+            changed["code"] = source
+            self.assertTrue(fmt.require_source_format(previous, changed))
+            self.assertEqual(previous, fmt.source_projection(changed, previous))
+        revised = layout.prepare_v2(updated, "es", family, published)
+        layout.validate_transition(published, revised)
+        self.assertEqual(layout.validate(revised), layout.validate(published))
+        for key in ("origin", "current", "family", "compilerRevisions", "additions"):
+            self.assertEqual(original.get(key), revised["stateLayout"].get(key), key)
+        self.assertEqual(original["editorial"],
+                         revised["stateLayout"]["editorial"][:len(original["editorial"])])
+        for page, owner in ((6, repeated[0]), (8, repeated[1])):
+            before_block = published["pages"][page]["blocks"][1]
+            after_block = revised["pages"][page]["blocks"][1]
+            self.assertEqual(after_block["code"], source)
+            snapshot = next(entry for entry in
+                            revised["stateLayout"]["sourceFormatRevisions"]
+                            if entry["id"] == owner)
+            self.assertEqual(snapshot["block"], before_block)
+            self.assertTrue(validator.preserves_source_format_revision(
+                "app/src/main/assets/content/es/" + relative, page, 1,
+                before_block, after_block, previous_document=published,
+                current_document=revised))
+            self.assertTrue(validator.preserves_previous_exercise(
+                "app/src/main/assets/content/es/" + relative, page, 1,
+                before_block, after_block, previous_document=published,
+                current_document=revised))
+        forged_source = deepcopy(revised)
+        block = forged_source["pages"][6]["blocks"][1]
+        block["code"] = block["code"].replace("    return 0;\n}\n",
+                                              "    return 1;\n}\n", 1)
+        latest = next(edge for edge in reversed(forged_source["stateLayout"]["editorial"])
+                      if edge["id"] == repeated[0])
+        latest["afterSha256"] = layout.fingerprint(block)
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(forged_source)
+        forged_archive = deepcopy(revised)
+        next(entry for entry in forged_archive["stateLayout"]["sourceFormatRevisions"]
+             if entry["id"] == repeated[0])["block"]["code"] += "\n// forged"
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(forged_archive)
+        borrowed = deepcopy(revised)
+        borrowed["stateLayout"]["sourceFormatRevisions"] = [
+            entry for entry in borrowed["stateLayout"]["sourceFormatRevisions"]
+            if entry["id"] != repeated[0]]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(borrowed)
+
+
+
 if __name__ == "__main__":
     unittest.main()

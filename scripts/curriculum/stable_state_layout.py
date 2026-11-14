@@ -2998,8 +2998,14 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     "A simultaneous editorial revision needs its explicit published before/after proof")
             require(old_hash != new_hash or any("returnTo" in proof for proof in proofs),
                     "An unchanged block cannot acquire an invented editorial history")
-        require(new_hash not in owners or identity in owners[new_hash],
-                "Published content was assigned to another identity without a verified move")
+        if new_hash in owners and identity not in owners[new_hash]:
+            # A signed, lexical-only reformat can make two distinct reference
+            # blocks byte-identical. Their stable owners have not moved: the
+            # original full block, source tokens and editorial edges are pinned.
+            # An unarchived replacement still fails closed as a foreign owner.
+            require(identity in archived
+                    and require_source_format_with_editorial(block, actual),
+                    "Published content was assigned to another identity without a verified move")
 
 
 # These two AssetCheck lessons were first published with ten incorrect SHA
