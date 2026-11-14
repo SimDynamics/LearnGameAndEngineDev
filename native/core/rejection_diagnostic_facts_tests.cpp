@@ -71,6 +71,23 @@ void accepted_semantics() {
                 "A complete balances min/max domain was rejected");
         }
     }
+    // A prose connector containing the letter 'n' is not an LF. The
+    // range noun remains in the same sentence as the actual limits.
+    for(const auto interval:{"rango con números de 0 a 20",
+                             "dominio con valores 0..20",
+                             "intervalo con extremos 0 - 20"}) {
+        require(evaluate_rejection_diagnostics(
+            boxes(interval,"Revise"),RejectionOperation::boxes,box_facts).correct,
+            "An ordinary Spanish connector was mistaken for a sentence boundary");
+    }
+    for(const auto interval:{"rango con números de 0 a 9",
+                             "dominio con valores 0..9",
+                             "intervalo con extremos 0 - 9"}) {
+        require(evaluate_rejection_diagnostics(
+            balances(interval,"Verifique"),RejectionOperation::balance,
+            balance_facts).correct,
+            "The letter n inside a connector hid valid balance interval facts");
+    }
     // Distinct output streams are mandatory even with a different interval
     // spelling; no generic acknowledgement is accepted as two diagnoses.
     const auto separated=boxes("[0,20]","Revise");
@@ -207,6 +224,16 @@ void rejected_semantics() {
         require(evaluate_rejection_diagnostics(
             valid,RejectionOperation::balance,balance_facts).correct,
             "Rejecting a specific outside value was misread as banning the allowed domain");
+    }
+    // An actual sentence or statement boundary is still not a valid
+    // link between a range label and otherwise unrelated numeric data.
+    for(const auto interval:{"rango con números; 0 a 9",
+                             "dominio con valores. 0 a 9",
+                             "intervalo con extremos; 0 - 9"}) {
+        require(!evaluate_rejection_diagnostics(
+            balances(interval,"Revise"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A separated numeric example was credited as the stated permitted domain");
     }
     const auto unlabelled=std::string(
         "Cajas, petición 1, piezas=-1: 0 - 20, revise.\n"
