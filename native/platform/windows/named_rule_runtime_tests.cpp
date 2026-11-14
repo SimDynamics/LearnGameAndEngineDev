@@ -191,6 +191,30 @@ int cajas_para(int piezas) {
 )cpp");
     require(compiler_runtime_request_allowed(owner,const_intermediates),
         "Windows rejected east-const intermediate values with the same contract");
+    // C++ accepts both positions of constexpr and requires only actual
+    // dependencies in the result. The Windows request gate must agree with
+    // the portable source checker for this equivalent authored solution.
+    auto constexpr_intermediates=submitted;
+    change_project(constexpr_intermediates,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int constexpr capacidad{4};
+    auto constexpr ajuste = capacidad - 1;
+    int const cajas = (piezas + ajuste) / capacidad;
+    return cajas;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,constexpr_intermediates),
+        "Windows rejected valid trailing constexpr declarations and derived result");
+    auto unused_constexpr=constexpr_intermediates;
+    change_project(unused_constexpr,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int constexpr capacidad{4};
+    auto constexpr observacion = capacidad + capacidad;
+    return (piezas + capacidad - 1) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,unused_constexpr),
+        "An unused constexpr observation forged a second meaningful capacity use");
     auto ignored_intermediate=const_intermediates;
     change_project(ignored_intermediate,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
