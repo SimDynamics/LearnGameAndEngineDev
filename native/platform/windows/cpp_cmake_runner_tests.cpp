@@ -2327,6 +2327,38 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         first_adjustments.project_files==original_blank_files,
         "U3L10 initial CMake could not build both targets and preserve the "
         "intentionally unfinished C++ exercise: "+valid_build_graph.reason);
+    // The CMake-only stage must not inherit warning credit from MSVC's
+    // toolchain profile when the student omitted a client's own declaration.
+    // The unfinished executable still emits the same intentional diagnostic.
+    auto initial_missing_warning=initial_build;
+    initial_missing_warning.project_key+="/client-without-authored-warnings";
+    initial_missing_warning.request_id=3403;
+    ++initial_missing_warning.revision;
+    for(auto& file:initial_missing_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            adjustments_replace(file.second,
+                "target_compile_options(consultar_ajustes PRIVATE /W4 /permissive-)",
+                "# No client-owned MSVC options in this negative control");
+    const auto initial_missing_run=run_cpp(initial_missing_warning);
+    ran(initial_missing_run);
+    const auto initial_missing_graph=evaluate_cmake_graph(
+        initial_missing_warning,initial_missing_run,built_structure);
+    const auto initial_missing_capture=capture_cpp_execution(
+        initial_missing_warning,initial_missing_run);
+    check(initial_missing_run.error_utf8.empty()&&
+        initial_missing_run.configuration.succeeded()&&
+        initial_missing_run.compilation.succeeded()&&
+        initial_missing_run.execution.status==CppPhaseStatus::completed&&
+        initial_missing_run.execution.exit_code==1&&
+        initial_missing_run.execution.stderr_bytes==
+            initial_build_result.execution.stderr_bytes&&
+        !initial_missing_graph.correct&&!initial_missing_capture.cmake_graph_correct&&
+        initial_missing_graph.reason.find("target_compile_options")!=
+            std::string::npos&&
+        initial_missing_graph.reason.find("consultar_ajustes")!=
+            std::string::npos,
+        "U3L10 initial CMake stage incorrectly accepted inherited warning flags: "+
+        initial_missing_graph.reason);
     state::StateData initial_build_state;
     state::prepare_lesson_state(initial_build_state,adjustments_lesson);
     const auto original_initial_state=state::encode(initial_build_state);
