@@ -1983,8 +1983,8 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     // Record the *emitted* MSVC warning code, never an assumed GCC warning
     // or a fixed diagnostic inferred from the lesson's faulty expression.
     const auto warning_at=warning_output.find("warning C");
-    const auto warning_first=warning_at==std::string::npos?0:
-        warning_output.rfind('\n',warning_at);
+    const auto warning_first=warning_at==std::string::npos?
+        std::string::npos:warning_output.rfind('\n',warning_at);
     const auto warning_line_start=warning_first==std::string::npos?0:
         warning_first+1;
     const std::string_view warning_line(warning_output.data()+warning_line_start,
