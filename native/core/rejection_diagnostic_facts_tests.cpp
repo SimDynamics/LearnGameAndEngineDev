@@ -95,6 +95,18 @@ void rejected_semantics() {
             boxes(invalid,"Revise"),RejectionOperation::boxes,box_facts).correct,
             "Wrong boxes bounds or an ambiguous comma were falsely accepted");
     }
+    // An unrelated test example after a sentence boundary is not another
+    // claim about the admitted interval.
+    for(const auto message:{
+        "rango permitido de 0 a 9; ejemplo independiente: 2 a 2",
+        "intervalo 0..9. Otra observación: 2 a 2",
+        "intervalo de 0 a 9; también se observa 10 y 0"
+    }) {
+        require(evaluate_rejection_diagnostics(
+            balances(message,"Compruebe"),RejectionOperation::balance,
+            balance_facts).correct,
+            "An independent example was misread as a contradictory domain");
+    }
     // The true data fields cannot substitute for both explicit bounds.
     // Repetition with a contradictory bound also must never grant credit.
     for(const auto interval:{"mínimo 0",
@@ -121,6 +133,18 @@ void rejected_semantics() {
             balances(contradictory,"Revise"),
             RejectionOperation::balance,balance_facts).correct,
             "An authentic interval masked contradictory explicit lower or upper bounds");
+    }
+    for(const auto contradiction:{
+        "rango permitido de 0 a 9; rango permitido de 0 a 8",
+        "rango de 1 a 9; intervalo admitido de 0 a 9",
+        "dominio válido [0, 9]; intervalo permitido [0, 10]",
+        "rango 0-9; dominio 0-8",
+        "intervalo 0 - 9. Rango admitido de 0 a 10"
+    }) {
+        require(!evaluate_rejection_diagnostics(
+            balances(contradiction,"Revise"),RejectionOperation::balance,
+            balance_facts).correct,
+            "A second contradictory permitted range borrowed credit from the first");
     }
     // A mathematically correct pair of bounds is not a statement of what
     // is ALLOWED if the message explicitly calls that range forbidden.
