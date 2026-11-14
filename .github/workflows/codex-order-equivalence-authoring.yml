@@ -1,0 +1,35 @@
+name: Codex reviewed order equivalence authoring
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/codex-order-equivalence-authoring.yml
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_order_equivalence_authoring.py
+      - native/platform/windows/content_loader.cpp
+      - native/presentation/windows/order_code_view_tests.cpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Source-bound root order contracts / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    steps:
+      - name: Read published course without rewriting it
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check unchanged U12 order identity and review metadata
+        shell: bash
+        run: |
+          python -B -m unittest discover -s scripts/curriculum -p test_order_equivalence_authoring.py -v
+          python -B -m unittest discover -s scripts/curriculum -p test_order_line_refinement.py -v
