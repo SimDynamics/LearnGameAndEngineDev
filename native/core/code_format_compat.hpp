@@ -160,23 +160,41 @@ inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view sou
     }
     return result;
 }
+// Position-dependent queries must be detected as actual source tokens, not
+// substrings of comments, ordinary string literals or raw strings. A macro
+// directive containing one of these names stays conservatively protected:
+// preprocessing can move the point where its replacement is expanded.
+inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens) {
+    constexpr std::string_view names[]{
+        "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"
+    };
+    for(const auto& token:tokens) {
+        if(token.starts_with("id:")) {
+            const auto name=std::string_view(token).substr(3);
+            if(std::ranges::any_of(names,[&](std::string_view item){return name==item;}))
+                return true;
+        }else if(token.starts_with("directive:")) {
+            if(std::ranges::any_of(names,[&](std::string_view item){
+                    return token.find(item)!=std::string::npos;}))
+                return true;
+        }
+    }
+    return false;
+}
 inline bool equivalent(std::string_view before,std::string_view after,Language language) {
     if(before==after)return true;
     if(language==Language::immutable||physical_splice(before)||physical_splice(after))return false;
-    // Physical line and column positions may change runtime values, not merely
-    // diagnostics. Preserve them until a compiler-aware source-map proof exists.
-    if(language==Language::cpp) {
-        constexpr std::string_view position_queries[]{
-            "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"
-        };
-        for(const auto marker:position_queries)
-            if(before.find(marker)!=before.npos||after.find(marker)!=after.npos)return false;
-    }
     if(language==Language::cmake&&(before.find("CMAKE_CURRENT_LIST_LINE")!=before.npos||
         after.find("CMAKE_CURRENT_LIST_LINE")!=after.npos))return false;
     const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
     const auto b=language==Language::cmake?cmake_tokens(after):cpp_tokens(after);
-    return a&&b&&*a==*b;
+    if(!a||!b)return false;
+    // A physical spacing review must not change observable line/column values.
+    // Only executable/source directive tokens count, not quoted explanations.
+    if(language==Language::cpp&&
+       (cpp_position_sensitive_tokens(*a)||cpp_position_sensitive_tokens(*b)))
+        return false;
+    return *a==*b;
 }
 
 // A curricular exercise may allow edits within one function or main, but
