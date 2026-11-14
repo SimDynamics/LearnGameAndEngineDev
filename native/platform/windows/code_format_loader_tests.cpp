@@ -397,6 +397,78 @@ void must_reject(const std::filesystem::path& file) {
         check(rejected,"A forged contract or original archive was admitted by Windows");
     }
 }
+
+void verify_additional_real_compile_diagnostics(const std::filesystem::path& fixtures) {
+    struct Sample {std::string_view label,lesson,diagnostic;std::size_t page,index;bool project;};
+    const std::array<Sample,2> samples{{
+        {"u6more",
+         "cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos",
+         "u6-envelopes-missing-header",16,2,true},
+        {"u9",
+         "cpp_fundamentals__datos_propios_y_estado_valido__consultas_const_y_objetos_constantes",
+         "const-member-call",6,6,false}
+    }};
+    for(const auto& sample:samples) {
+        const auto before_file=fixtures/(std::string(sample.label)+".before.json");
+        const auto after_file=fixtures/(std::string(sample.label)+".after.json");
+        const auto before=windows::load_lesson(before_file,"es");
+        const auto after=windows::load_lesson(after_file,"es");
+        check(before.id==sample.lesson&&after.id==before.id&&
+            before.state_layout.signatures==after.state_layout.signatures&&
+            before.state_layout.lineage==after.state_layout.lineage&&
+            before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
+            after.state_layout.source_format_revisions.size()==
+                before.state_layout.source_format_revisions.size()+1,
+            "A U6/U9 compiler format changed historical state or the original lesson");
+        const auto& original=before.pages.at(sample.page).blocks.at(sample.index);
+        const auto& formatted=after.pages.at(sample.page).blocks.at(sample.index);
+        check(original.type==curriculum::BlockType::cpp_compiler&&
+            formatted.type==original.type&&original.compile_check&&formatted.compile_check&&
+            original.compile_check->diagnostic==sample.diagnostic&&
+            formatted.compile_check->diagnostic==original.compile_check->diagnostic&&
+            original.stable_id==formatted.stable_id&&
+            original.address.page==formatted.address.page&&
+            original.address.block==formatted.address.block&&
+            original.source_files==formatted.source_files&&
+            original.initial_code!=formatted.initial_code&&
+            formatted.source_format_original_initial_code==original.initial_code&&
+            (sample.project?
+                (original.project_files!=formatted.project_files&&
+                 formatted.source_format_original_project_files==original.project_files):
+                (original.project_files.empty()&&formatted.project_files.empty()))&&
+            curriculum::exercise_key(before,original)==curriculum::exercise_key(after,formatted)&&
+            curriculum::draft_key("programming",before,original)==
+                curriculum::draft_key("programming",after,formatted)&&
+            curriculum::reference_objective_frame(before,original)==
+                curriculum::reference_objective_frame(after,formatted),
+            "The reviewed compiler changed source selection, diagnosis, result or draft key");
+        state::StateData saved;
+        state::prepare_lesson_state(saved,before);
+        state::Draft draft;
+        draft.source="int main() {\n    // student source\n    return 0;\n}\n";
+        draft.input="unchanged input\n";draft.selection_start=5;draft.selection_end=18;
+        draft.has_saved=true;
+        state::put_draft(saved,curriculum::draft_key("programming",before,original),draft);
+        const auto reopened=state::decode(state::encode(saved));
+        check(reopened==saved,"A diagnostic format changed the persisted state");
+        state::validate_lesson_state(reopened,after);
+        const auto restored=state::get_draft(reopened,
+            curriculum::draft_key("programming",after,formatted),
+            formatted.initial_code,formatted.standard_input.value_or(""));
+        check(restored.has_saved&&restored.source==draft.source&&
+            restored.input==draft.input&&
+            restored.selection_start==draft.selection_start&&
+            restored.selection_end==draft.selection_end,
+            "A formatted diagnostic lost its saved C++ code, input or cursor");
+        const auto catalog=windows::load_lesson_progress_metadata(after_file,"es");
+        check(catalog.state_layout.lineage==after.state_layout.lineage&&
+            catalog.pages.size()==after.pages.size()&&
+            catalog.pages.at(sample.page).blocks.size()==after.pages.at(sample.page).blocks.size(),
+            "The progress-only loader rejected an authentic compiled diagnostic");
+        for(const auto variant:{"forged-source","forged-goal","forged-archive"})
+            must_reject(fixtures/(std::string(sample.label)+"."+variant+".json"));
+    }
+}
 }
 
 int main(int argc,char** argv) {
@@ -408,12 +480,13 @@ int main(int argc,char** argv) {
         verify_real_curricular_pilot(std::filesystem::path(argv[2]));
         verify_real_curricular_pilot(std::filesystem::path(argv[2])/"after-editorial");
         verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));
+        verify_additional_real_compile_diagnostics(std::filesystem::path(argv[3]));
         for(const auto name:{"u6.forged-goal.json","u6.forged-archive.json",
                              "u6.forged-source.json"})
             must_reject(std::filesystem::path(argv[3])/name);
         must_reject(dir/"es.changed-answer.json");
         must_reject(dir/"es.forged-archive.json");
-        std::cout<<"PASS native format loader: es/en/fr, real U4 and three U6L2 compileCheck diagnoses, protected archives, drafts, saved keys and forged-source rejection\n";
+        std::cout<<"PASS native format loader: es/en/fr, real U4 and U6/U9 compileCheck, protected archives, drafts and forged-source rejection\n";
         return 0;
     }catch(const std::exception& error){
         std::cerr<<"FAIL native physical-format loader: "<<error.what()<<'\n';

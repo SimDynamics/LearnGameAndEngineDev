@@ -117,7 +117,10 @@ add_custom_target(lgaed_code_format_fixtures DEPENDS ${LGAED_CODE_FORMAT_FIXTURE
 # authenticated compileCheck objectives. Assets remain strictly read-only.
 set(LGAED_U6_COMPILE_CHECK_FORMAT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-compile-check-format")
 set(LGAED_U6_COMPILE_CHECK_FORMAT_FILES)
-foreach(name IN ITEMS u6.before u6.after u6.forged-goal u6.forged-archive u6.forged-source)
+foreach(name IN ITEMS
+    u6.before u6.after u6.forged-goal u6.forged-archive u6.forged-source
+    u6more.before u6more.after u6more.forged-source u6more.forged-goal u6more.forged-archive
+    u9.before u9.after u9.forged-source u9.forged-goal u9.forged-archive)
     list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
         "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/${name}.json")
 endforeach()
@@ -131,8 +134,14 @@ add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_declaraciones_y_firmas.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Verify authentic U6L2 compiler diagnostic format archives without changing lessons"
+    COMMENT "Verify authentic U6/U9 compiler diagnostic archives without changing lessons"
     VERBATIM)
 add_custom_target(lgaed_u6_compile_check_format_fixtures DEPENDS ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES})
 
