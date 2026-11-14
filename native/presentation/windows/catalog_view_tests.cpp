@@ -474,11 +474,15 @@ int main() {
         // orphaned "Abrir" detail or a raw local JSON path in the subtitle.
         navigate_catalog(view,{"es","programming","cpp_fundamentals",{}});list=GetDlgItem(view,4105);
         check(SendMessageW(list,LB_GETCOUNT,0,0)==12,"The course lost indexed units");
-        check(row_caption(list,10).find(L" — Abrir")==std::wstring::npos&&
-            row_caption(list,11).find(L" — Abrir")==std::wstring::npos,
-            "U11/U12 showed an activation label instead of progress status");
-        check(caption(GetDlgItem(view,4109)).find(L".json")==std::wstring::npos,
-            "The catalog exposed an internal JSON path in its heading");
+        for(const auto index:{10,11}) {
+            const auto displayed=row_caption(list,index);
+            check(displayed.find(L" — Abrir")==std::wstring::npos&&
+                displayed.find(L"progreso parcial")==std::wstring::npos&&
+                displayed.find(L"0 de ")!=std::wstring::npos,
+                "U11/U12 did not calculate authentic progress after the historic-format repair");
+        }
+        check(caption(GetDlgItem(view,4109))==L"Unidades",
+            "The restored unit menu still displayed an error instead of its ordinary subtitle");
         navigate_catalog(view,{"es","programming","cpp_fundamentals","cpp_fundamentals__programas_y_ejecucion"}); list = GetDlgItem(view,4105);
         check(SendMessageW(list,LB_GETCOUNT,0,0) == 5,"Indexed lesson list missing");
         check(caption(GetDlgItem(view,4114))==L"Unidad 1"&&caption(GetDlgItem(view,4109))==L"Lecciones"
