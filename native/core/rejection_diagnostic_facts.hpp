@@ -179,7 +179,36 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
         }
         if(interval&&describes_range(i,end))return true;
     }
-    return false;
+    // Also recognize a genuinely bounded domain stated by its two named
+    // endpoints: "mínimo 0; máximo 9" or "límite inferior 0, límite
+    // superior 9". Both bounds are necessary; a pair of unlabeled observed
+    // values or a single lower limit is not a complete allowed interval.
+    bool lower_found=false,upper_found=false;
+    for(std::size_t i=0;i<words.size();++i) {
+        const auto& word=words[i].text;
+        const bool lower=one_of(word,{"minimo","minima"})||
+            (word=="inferior"&&i>0&&
+                one_of(words[i-1].text,{"limite","limites"}));
+        const bool higher=one_of(word,{"maximo","maxima"})||
+            (word=="superior"&&i>0&&
+                one_of(words[i-1].text,{"limite","limites"}));
+        if(!lower&&!higher)continue;
+        std::size_t j=i+1;
+        // Permit ordinary filler between an endpoint and its integer,
+        // but never skip another number or an unrelated field label.
+        while(j<words.size()&&j<=i+3&&one_of(words[j].text,
+                {"es","de","del","permitido","permitida","admitido","admitida"}))
+            ++j;
+        if(j>=words.size()||j>i+3||!words[j].number)return false;
+        if(lower) {
+            if(*words[j].number!=0)return false;
+            lower_found=true;
+        }else{
+            if(*words[j].number!=upper)return false;
+            upper_found=true;
+        }
+    }
+    return lower_found&&upper_found;
 }
 inline bool actionable(const std::vector<Word>& words) {
     for(std::size_t i=0;i<words.size();++i){
