@@ -566,5 +566,110 @@ class OriginalCmakeSubdirectoryTest(unittest.TestCase):
             state.validate(changed)
 
 
+# U3L4 teaches real CMake variable/list propagation. Compiler defaults
+# already set extensions OFF, so stdout and property values are insufficient.
+TARGET_LIST_LESSON = ROOT / (
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "comprobaciones_repetibles/lesson_datos_y_listas_de_objetivos.json"
+)
+
+
+class OriginalCmakeTargetListTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = json.loads(TARGET_LIST_LESSON.read_text(encoding="utf-8"))
+        self.after = deepcopy(self.before)
+        owners = [
+            ("block_0003_0004", False, False),
+            ("block_0004_0007", False, False),
+            ("block_0006_0004", True, False),
+            ("block_0008_0004", False, True),
+        ]
+        checks = []
+        for owner, append, lots in owners:
+            consumer = "consultar_lotes" if lots else "consultar_cajas"
+            checker = "verificar_lotes" if lots else "comprobar_cajas"
+            library = "lotes" if lots else "envios"
+            checks.append({
+                "activity": owner,
+                "project": "LotesLocales" if lots else "EnviosComprobables",
+                "minimumCmakeVersion": "3.20",
+                "sourceIntegrity": {"preserveNonCmake": True},
+                "targets": [
+                    {"name": checker, "type": "EXECUTABLE",
+                     "sources": ["pruebas/lotes_casos.cpp" if lots else
+                                 "pruebas/cajas_casos.cpp"],
+                     "linksTo": [library], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": consumer, "type": "EXECUTABLE",
+                     "sources": ["programa/consulta.cpp" if lots else
+                                 "app/consulta.cpp"],
+                     "linksTo": [library], "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                    {"name": library, "type": "STATIC_LIBRARY",
+                     "sources": ["codigo/lotes/motor/cantidad.cpp" if lots else
+                                 "componente/src/cajas.cpp"],
+                     "sourceDirectory": "codigo/lotes" if lots else "componente",
+                     "publicIncludeRoots": [
+                         "codigo/lotes/publico" if lots else "componente/publico"],
+                     "exactSources": True,
+                     "explicitCxx20": True,
+                     "explicitCxxExtensionsOff": True},
+                ],
+                "targetList": {
+                    "targets": [consumer, checker], "requireAppend": append,
+                },
+            })
+        self.after["compilerCmakeGraphChecks"] = checks
+
+    def test_append_only_rubrics_preserve_all_four_original_editors(self):
+        state.validate(self.before)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_list_contract_rejects_invalid_targets_and_flags(self):
+        errors = [
+            lambda c: c.update(targetList={"targets": [], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": ["consultar_cajas"],
+                                          "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "consultar_cajas"], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "envios"], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "externo"], "requireAppend": False}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "comprobar_cajas"], "requireAppend": "yes"}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "comprobar_cajas"], "requireAppend": False,
+                                          "unknown": True}),
+            lambda c: c.update(targetList={"targets": [
+                "consultar_cajas", "comprobar_cajas"], "requireAppend": None}),
+            lambda c: c["targets"][1].update(explicitCxxExtensionsOff=False),
+        ]
+        for change in errors:
+            candidate = deepcopy(self.after)
+            change(candidate["compilerCmakeGraphChecks"][0])
+            with self.subTest(change=change):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(candidate)
+
+    def test_append_requirement_cannot_be_silently_removed(self):
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][2]["targetList"][
+            "requireAppend"] = False
+        state.validate(candidate)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, candidate)
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][2].pop("targetList")
+        state.validate(candidate)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, candidate)
+
+
 if __name__ == "__main__":
     unittest.main()

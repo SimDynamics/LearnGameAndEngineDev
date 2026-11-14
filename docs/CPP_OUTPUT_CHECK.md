@@ -1087,6 +1087,38 @@ se rechaza, incluso si su biblioteca y los resultados son correctos.
 Se permiten otros mensajes intermedios, pero no omitir ni reordenar los
 hitos declarados.
 
+### Lista de objetivos aplicada a las propiedades CMake
+
+Los ejercicios U3L4 pueden incorporar un contrato en la raíz de la lección:
+
+```json
+"targetList": {
+  "targets": ["consultar_cajas", "comprobar_cajas"],
+  "requireAppend": false
+}
+```
+
+El contrato exige que una **variable real de CMake**, creada durante la
+configuración, contenga exactamente los ejecutables declarados y se use
+sin comillas como lista de argumentos en una aplicación ejecutada de
+`CXX_EXTENSIONS OFF`. No se exige un nombre particular para la variable.
+La evidencia combina el evento de la traza JSON (con argumentos expandidos)
+con el primer argumento original de ese mismo comando y la variable creada
+mediante `set`. La ubicación y la revisión de la fuente quedan vinculadas
+a la configuración compilada. No basta declarar la variable, imprimir su
+contenido, asignar `OFF` con nombres literales ni heredar el valor del
+perfil Windows.
+
+Con `"requireAppend": true`, la lista debe haberse ampliado mediante
+`list(APPEND)` **antes** de utilizarla para establecer la propiedad a los
+dos consumidores. Se admite aplicar la propiedad después de ampliar la lista
+o volver a aplicarla posteriormente con la lista completa. Una ampliación
+tardía sin reaplicación no acredita esa consigna, aunque los programas
+conserven las mismas salidas. También se admite `set_property(TARGET ...)`
+cuando la lista se utiliza y la propiedad se observa en los objetivos
+correspondientes. Las otras condiciones de estructura, compilación y salida
+continúan vigentes; basta un primer caso correcto con todas ellas satisfechas.
+
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas

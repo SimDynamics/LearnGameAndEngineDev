@@ -1602,6 +1602,221 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             "Root-only U3L2 CMake build earned credit with matching stdout");
     }
     std::cout<<"PASS original U3L2 child CMake owners: File API directories, real source/link, correct first case and historic receipts; flat root rejected\n";
+    // U3L4: the four original editors must apply explicit OFF via a
+    // real CMake list, not merely inherit the profile's OFF default.
+    constexpr auto list_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "comprobaciones_repetibles/lesson_datos_y_listas_de_objetivos.json";
+    const auto list_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/list_relative);
+    std::string list_projected=list_original.raw_json;
+    const auto list_pos=list_projected.find(anchor);
+    check(list_pos!=list_projected.npos&&
+        list_projected.find(anchor,list_pos+1)==list_projected.npos,
+        "Original U3L4 stateLayout anchor changed");
+    list_projected.insert(list_pos,R"json(  "compilerCmakeGraphChecks":[
+      {"activity":"block_0003_0004","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20","sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],"sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true}],
+       "targetList":{"targets":["consultar_cajas","comprobar_cajas"],
+                     "requireAppend":false}},
+      {"activity":"block_0004_0007","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20","sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],"sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true}],
+       "targetList":{"targets":["consultar_cajas","comprobar_cajas"],
+                     "requireAppend":false}},
+      {"activity":"block_0006_0004","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20","sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],"sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true}],
+       "targetList":{"targets":["consultar_cajas","comprobar_cajas"],
+                     "requireAppend":true}},
+      {"activity":"block_0008_0004","project":"LotesLocales",
+       "minimumCmakeVersion":"3.20","sourceIntegrity":{"preserveNonCmake":true},
+       "targets":[
+         {"name":"verificar_lotes","type":"EXECUTABLE",
+          "sources":["pruebas/lotes_casos.cpp"],"linksTo":["lotes"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"consultar_lotes","type":"EXECUTABLE",
+          "sources":["programa/consulta.cpp"],"linksTo":["lotes"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true},
+         {"name":"lotes","type":"STATIC_LIBRARY",
+          "sources":["codigo/lotes/motor/cantidad.cpp"],
+          "sourceDirectory":"codigo/lotes","publicIncludeRoots":["codigo/lotes/publico"],
+          "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true}],
+       "targetList":{"targets":["consultar_lotes","verificar_lotes"],
+                     "requireAppend":false}}
+    ],
+)json");
+    const auto list_mapped=lgaed::windows::parse_lesson_json(
+        list_projected,"es");
+    const auto list_meta=lgaed::windows::parse_lesson_progress_metadata(
+        list_projected,"es");
+    check(list_mapped.state_layout.lineage==list_original.state_layout.lineage&&
+        list_mapped.state_layout.signatures==list_original.state_layout.signatures&&
+        list_meta.state_layout.lineage==list_original.state_layout.lineage,
+        "U3L4 list rubrics modified the historical learner state");
+    const auto replace_exact=[](std::string& source,std::string_view from,
+                               std::string_view to) {
+        const auto index=source.find(from);
+        check(index!=source.npos&&source.find(from,index+from.size())==source.npos,
+            "Original U3L4 CMake list command changed");
+        source.replace(index,from.size(),to);
+    };
+    std::uint64_t next_list_id=2101;
+    for(const auto [page,block]:{
+            std::pair{3U,4U},std::pair{4U,7U},
+            std::pair{6U,4U},std::pair{8U,4U}}) {
+        const bool lots=page==8,appended=page==6;
+        const auto& old_block=list_original.pages.at(page).blocks.at(block);
+        const auto& current=list_mapped.pages.at(page).blocks.at(block);
+        const auto& projected_meta=list_meta.pages.at(page).blocks.at(block);
+        check(current.cmake_graph_check&&
+            current.cmake_graph_check==projected_meta.cmake_graph_check&&
+            current.project_files==old_block.project_files&&
+            curriculum::exercise_key(list_original,old_block)==
+                curriculum::exercise_key(list_mapped,current)&&
+            curriculum::draft_key("programming",list_original,old_block)==
+                curriculum::draft_key("programming",list_mapped,current)&&
+            curriculum::reference_objective_frame(list_original,old_block)!=
+                curriculum::reference_objective_frame(list_mapped,current),
+            "U3L4 appended list objective altered original editor or draft");
+        CppRunRequest request;
+        request.request_id=next_list_id;
+        request.revision=next_list_id++;
+        request.project_key="qa/p2-u3-authored-target-lists/"+current.stable_id;
+        request.projects_directory=environment.paths.projects;
+        request.project_files=current.project_files;
+        request.cmake=current.cmake;
+        request.cmake_graph_check=current.cmake_graph_check;
+        request.capture_cmake_graph=true;
+        request.action=CppRunRequest::Action::compile_run;
+        for(auto& file:request.project_files)
+            if(file.first=="CMakeLists.txt") {
+                if(page==3)
+                    replace_exact(file.second,
+                        "set_target_properties(clientes PROPERTIES CXX_EXTENSIONS OFF)",
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)");
+                else if(page==4)
+                    replace_exact(file.second,
+                        "set_target_properties(\"${clientes}\" PROPERTIES CXX_EXTENSIONS OFF)",
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)");
+                else if(page==6)
+                    replace_exact(file.second,
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\n"
+                        "list(APPEND clientes comprobar_cajas)",
+                        "list(APPEND clientes comprobar_cajas)\n"
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)");
+                else
+                    replace_exact(file.second,
+                        "# Reune aqui los consumidores en una variable y aplica la propiedad.",
+                        "set(programas_del_lote consultar_lotes verificar_lotes)\n"
+                        "set_target_properties(${programas_del_lote} PROPERTIES CXX_EXTENSIONS OFF)");
+            }
+        check(compiler_runtime_request_allowed(current,request),
+            "U3L4 correct target list refused by original runtime");
+        const auto result=run_cpp(request);
+        ran(result);
+        const auto actual=capture_cpp_execution(request,result);
+        const auto& expected_case=current.output_check->cases.front();
+        check(result.execution.stdout_bytes==expected_case.outputs.front()&&
+            actual.cmake_graph_correct&&
+            evaluate_cpp_output_check(*current.output_check,actual,
+                request.revision).verdict==curriculum::OutputVerdict::correct&&
+            result.cmake_graph&&
+            std::ranges::any_of(result.cmake_graph->authored_target_lists,
+                [&](const auto& proof) {
+                    return proof.targets.size()==2&&
+                        (!appended||proof.used_append);
+                }),
+            "Real U3L4 CMake list did not earn generated first-case proof");
+        auto old_request=request;
+        old_request.capture_cmake_graph=false;
+        old_request.cmake_graph_check.reset();
+        const auto old_evidence=capture_cpp_execution(old_request,result);
+        state::StateData saved;
+        state::prepare_lesson_state(saved,list_original);
+        check(record_compiler_puzzle_case(saved,list_original,old_block,
+                old_request,old_evidence,"Salida histórica")&&
+            compiler_puzzle_completed(saved,list_original,old_block)&&
+            !compiler_puzzle_completed(saved,list_mapped,current),
+            "U3L4 stdout history silently unlocked new list criteria");
+        state::prepare_lesson_state(saved,list_mapped);
+        check(record_compiler_puzzle_case(saved,list_mapped,current,
+                request,actual,"Lista real aplicada")&&
+            compiler_puzzle_completed(saved,list_mapped,current)&&
+            compiler_puzzle_case_count(saved,list_mapped,current)==1,
+            "U3L4 first real CMake list case did not unlock objective");
+        const auto reopened=state::decode(state::encode(saved));
+        check(compiler_puzzle_completed(reopened,list_original,old_block)&&
+            compiler_puzzle_completed(reopened,list_mapped,current),
+            "U3L4 reloading lost original or newly credited list receipt");
+        // An unused variable or a premature APPEND cannot demonstrate the
+        // actual taught operation, even with identical generated outputs.
+        auto forged=request;
+        forged.request_id=next_list_id;
+        forged.revision=next_list_id++;
+        forged.project_key+="/unapplied-list";
+        for(auto& file:forged.project_files)
+            if(file.first=="CMakeLists.txt") {
+                if(appended) {
+                    replace_exact(file.second,
+                        "list(APPEND clientes comprobar_cajas)\n"
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)\n"
+                        "list(APPEND clientes comprobar_cajas)\n"
+                        "set_target_properties(comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)");
+                }else if(lots) {
+                    replace_exact(file.second,
+                        "set_target_properties(${programas_del_lote} PROPERTIES CXX_EXTENSIONS OFF)",
+                        "set_target_properties(consultar_lotes verificar_lotes PROPERTIES CXX_EXTENSIONS OFF)");
+                }else {
+                    replace_exact(file.second,
+                        "set_target_properties(${clientes} PROPERTIES CXX_EXTENSIONS OFF)",
+                        "set_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)");
+                }
+            }
+        const auto false_result=run_cpp(forged);
+        ran(false_result);
+        const auto false_evidence=capture_cpp_execution(forged,false_result);
+        check(false_result.execution.stdout_bytes==expected_case.outputs.front()&&
+            evaluate_cpp_output_check(*current.output_check,false_evidence,
+                forged.revision).verdict==curriculum::OutputVerdict::correct&&
+            !false_evidence.cmake_graph_correct&&
+            !record_compiler_puzzle_case(saved,list_mapped,current,
+                forged,false_evidence,"Lista sin uso real"),
+            "U3L4 credited inherited OFF or an unused/incomplete list");
+    }
+    std::cout<<"PASS U3L4 four original CMake target-list editors: actual MSVC, APPEND order, historical receipts, spoofed applications rejected\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
