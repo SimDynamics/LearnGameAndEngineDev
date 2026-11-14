@@ -462,5 +462,115 @@ class SourceFormatTest(unittest.TestCase):
             layout.validate_transition(published, stale)
 
 
+
+    def test_real_u11_compiler_references_allow_later_physical_spacing(self):
+        """Nine real expanded references, without replacing their paired compiler."""
+        import json
+        import validar_json_programacion as contract
+
+        names = {
+            "tokens_con_categoria_y_valor": ("block_0007_0001",),
+            "numeros_de_varios_digitos_y_limites": ("block_0008_0001",),
+            "una_gramatica_para_sumar_y_restar": ("block_0008_0001",),
+            "terminos_prioridad_y_division_segura": ("block_0008_0001",),
+            "signos_unarios_parentesis_y_progreso_recursivo": ("block_0009_0001",),
+            "diagnosticar_y_recuperar_hasta_fin_de_operacion": ("block_0008_0001",),
+            "construir_un_interprete_con_historial_y_pruebas":
+                ("block_0009_0001", "block_0010_0001"),
+            "resto_y_asociacion_en_el_interprete": ("block_0006_0001",),
+        }
+        root = Path(__file__).resolve().parents[2] / "app/src/main/assets/content"
+        before_code = "    return 0;\n}\n"
+        after_code = "\n    return 0;\n}\n"
+        for name, identities in names.items():
+            with self.subTest(lesson=name):
+                relative = ("programming/cpp_fundamentals/texto_interpretacion_y_flujos/"
+                            f"lesson_{name}.json")
+                paths = {lang: root / lang / relative for lang in ("es", "en", "fr")}
+                original_bytes = paths["es"].read_bytes()
+                family = {lang: json.loads(path.read_text(encoding="utf-8"))
+                          for lang, path in paths.items()}
+                published = family["es"]
+                layout.validate(published)
+                old_meta = published["stateLayout"]
+                historical_refs = {
+                    reference["id"] for owner in old_meta.get("compilerRevisions", [])
+                    for reference in owner.get("references", [])
+                }
+                updated = deepcopy(published)
+                positions = {}
+                for p, record in enumerate(old_meta["current"]):
+                    for b, identity in enumerate(record["blocks"]):
+                        if identity in identities:
+                            positions[identity] = (p, b)
+                self.assertEqual(set(positions), set(identities))
+                self.assertTrue(set(identities) <= historical_refs)
+                prior_archives = {item["id"] for item in
+                                  old_meta.get("sourceFormatRevisions", [])}
+                self.assertTrue(set(identities).isdisjoint(prior_archives))
+                for identity in identities:
+                    p, b = positions[identity]
+                    original = published["pages"][p]["blocks"][b]
+                    candidate = updated["pages"][p]["blocks"][b]
+                    self.assertEqual(original["type"], "code")
+                    self.assertEqual(original["code"].count(before_code), 1)
+                    candidate["code"] = candidate["code"].replace(
+                        before_code, after_code, 1)
+                    self.assertTrue(fmt.require_source_format(original, candidate))
+                    self.assertEqual(original, fmt.source_projection(candidate, original))
+
+                revised = layout.prepare_v2(updated, "es", family, published)
+                self.assertEqual(layout.validate(published), layout.validate(revised))
+                layout.validate_transition(published, revised)
+                for key in ("origin", "current", "family", "additions", "compilerRevisions",
+                            "choiceRevisions", "retired", "retirementHistory"):
+                    self.assertEqual(old_meta.get(key), revised["stateLayout"].get(key), key)
+                self.assertEqual(old_meta["editorial"],
+                                 revised["stateLayout"]["editorial"][:len(old_meta["editorial"])])
+                self.assertEqual(paths["es"].read_bytes(), original_bytes)
+                self.assertEqual(
+                    [archive["id"] for archive in
+                     revised["stateLayout"]["sourceFormatRevisions"][-len(identities):]],
+                    list(identities))
+                for identity in identities:
+                    p, b = positions[identity]
+                    original = published["pages"][p]["blocks"][b]
+                    changed = revised["pages"][p]["blocks"][b]
+                    archived = next(
+                        item for item in revised["stateLayout"]["sourceFormatRevisions"]
+                        if item["id"] == identity)
+                    self.assertEqual(archived["block"], original)
+                    self.assertEqual(changed["code"], updated["pages"][p]["blocks"][b]["code"])
+                    self.assertTrue(contract.preserves_source_format_revision(
+                        "app/src/main/assets/content/es/" + relative, p, b,
+                        original, changed, previous_document=published,
+                        current_document=revised))
+                    self.assertTrue(contract.preserves_previous_exercise(
+                        "app/src/main/assets/content/es/" + relative, p, b,
+                        original, changed, previous_document=published,
+                        current_document=revised))
+
+                # Rehashing a different program is not a whitespace revision,
+                # and rewriting the archived complete predecessor is forbidden.
+                identity = identities[0]
+                p, b = positions[identity]
+                forged = deepcopy(revised)
+                forged_block = forged["pages"][p]["blocks"][b]
+                forged_block["code"] = forged_block["code"].replace(
+                    "    return 0;\n}\n", "    return 1;\n}\n", 1)
+                proof = next(item for item in reversed(forged["stateLayout"]["editorial"])
+                             if item["id"] == identity)
+                proof["afterSha256"] = layout.fingerprint(forged_block)
+                with self.assertRaises(layout.LayoutError):
+                    layout.validate(forged)
+                altered_archive = deepcopy(revised)
+                snapshot = next(item for item in
+                                altered_archive["stateLayout"]["sourceFormatRevisions"]
+                                if item["id"] == identity)
+                snapshot["block"]["code"] += "\n// forged"
+                with self.assertRaises(layout.LayoutError):
+                    layout.validate(altered_archive)
+
+
 if __name__ == "__main__":
     unittest.main()

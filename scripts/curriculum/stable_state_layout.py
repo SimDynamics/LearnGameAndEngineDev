@@ -1319,7 +1319,10 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(meta["locale"] == "es" and identity in compilers
                         and COMPILER_CASE_REVISIONS.get((document.get("id"), identity)) == compiler_reviewed,
                         "A revised compiler requires its exact lesson, identity and original archive")
-            reference_reviewed = _reviewed_compiler_reference(block)
+            # A reviewed reference has its own C++ extension and may later
+            # acquire an authenticated, token-equivalent physical reformat.
+            # Check the restored published source, just as compiler owners do.
+            reference_reviewed = _reviewed_compiler_reference(source)
             if reference_reviewed is not None or identity in compiler_references:
                 require(meta["locale"] == "es" and identity in compiler_references
                         and compiler_references[identity] == reference_reviewed,
