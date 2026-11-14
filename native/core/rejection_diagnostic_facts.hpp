@@ -146,7 +146,32 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
             if(next.number==upper&&next.start>=words[i].end) {
                 const auto connector=std::string_view(source).substr(words[i].end,
                     next.start-words[i].end);
-                interval=connector.find("..")!=connector.npos;
+                const auto trim=[](std::string_view value) {
+                    while(!value.empty()&&std::isspace(
+                            static_cast<unsigned char>(value.front())))
+                        value.remove_prefix(1);
+                    while(!value.empty()&&std::isspace(
+                            static_cast<unsigned char>(value.back())))
+                        value.remove_suffix(1);
+                    return value;
+                };
+                const auto punctuation=trim(connector);
+                // "0 - 9" is an ordinary inclusive range when presented
+                // with interval wording, just as "0-9" and "0..9" are.
+                // A bare comma is not enough: accept "[0, 9]" only if
+                // both enclosing brackets are really present, so two data
+                // fields in prose cannot impersonate a range.
+                bool bracketed=false;
+                if(punctuation==",") {
+                    const auto before=trim(std::string_view(source).substr(
+                        0,words[i].start));
+                    const auto after=trim(std::string_view(source).substr(
+                        next.end));
+                    bracketed=!before.empty()&&before.back()=='['&&
+                        !after.empty()&&after.front()==']';
+                }
+                interval=punctuation=="-"||bracketed||
+                    connector.find("..")!=connector.npos;
             }else if(next.number==-upper&&next.start==words[i].end&&
                     next.start<source.size()&&source[next.start]=='-')
                 interval=true;
