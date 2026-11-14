@@ -768,6 +768,18 @@ def require_source_format_with_editorial(original: dict, current: dict) -> bool:
                     "A combined review cannot add or remove guidance fields")
             after[key] = restore_feedback(before[key], after[key])
 
+    # The question is public prose, not a token of the source or an answer.
+    # A combined question change is accepted only with its exact authored
+    # semantic descriptor and an append-only editorial proof, checked by the
+    # whole-lesson validation below. Nested compiler questions remain strict.
+    def restore_public_question(before: dict, after: dict) -> None:
+        if "question" not in before and "question" not in after:
+            return
+        require("question" in before and "question" in after,
+                "A combined review cannot add or remove a question")
+        after["question"] = restore_feedback(before["question"], after["question"])
+
+    restore_public_question(original, projected)
     restore_guides(original, projected)
     for field in ("compileCheck", "outputCheck"):
         older, newer = original.get(field), projected.get(field)
@@ -879,6 +891,41 @@ def _choice_semantic_entry(document: dict, identity: str, option_index: int) -> 
                and field.get("path") == path]
     require(len(matches) <= 1, "Duplicate semantic source for revised option")
     return matches[0] if matches else None
+
+
+def _require_formatted_question_authorship(previous: dict, current: dict,
+                                           identity: str, before: dict, after: dict) -> None:
+    """Bind a new question to its exact text owner, not a source-format waiver.
+
+    This guard only runs for a previously published, source-formatted owner.
+    An authored question may accompany a lexical edit, but unrelated option,
+    feedback and explanation marks must retain their published provenance.
+    The independent text_semantics validator checks updated UTF-16 spans.
+    """
+    if before.get("question") == after.get("question"):
+        return
+    require(type(before.get("question")) is str and bool(before["question"].strip())
+            and type(after.get("question")) is str and bool(after["question"].strip()),
+            "A formatted question revision requires two complete nonblank questions")
+
+    def markers(document: dict) -> dict:
+        return {entry["path"]: entry for entry in
+                document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+                if type(entry) is dict and entry.get("block") == identity}
+
+    old, revised = markers(previous), markers(current)
+    require("/question" in revised,
+            "A combined source/question revision requires explicit authored question semantics")
+    allowed = {"/question"}
+    if before.get("explanation") != after.get("explanation"):
+        allowed.add("/explanation")
+    feedback = before.get("reviewFeedback") != after.get("reviewFeedback")
+    require(all(old.get(path) == revised.get(path)
+                for path in (old.keys() | revised.keys())
+                if path not in allowed
+                and not (feedback and (path == "/reviewFeedback"
+                                       or path.startswith("/reviewFeedback/")))),
+            "A combined source/question revision repainted an unchanged public field")
 
 
 def _general_choice_semantic_projection(document: dict) -> dict | None:
@@ -1181,6 +1228,15 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                          if identity in refined else original)
         require(state_fingerprint(source_before) == digests[identity],
                 "Source formatting archive changed the historical answer contract")
+        # A formatted block cannot silently replace the question without
+        # declaring exactly which phrase the reader should display and narrate.
+        if original.get("question") != active_blocks[identity].get("question"):
+            question_fields = [entry for entry in
+                               document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+                               if type(entry) is dict and entry.get("block") == identity
+                               and entry.get("path") == "/question"]
+            require(len(question_fields) == 1,
+                    "Formatted question has no explicit authored source descriptor")
         try:
             code_format.require_source_lexical(original, active_blocks[identity])
         except code_format.SourceFormatError as exc:
@@ -2981,6 +3037,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if format_original is not None:
             previous_source = code_format.source_projection(block, format_original)
             protected = code_format.source_projection(actual, format_original)
+        if identity in archived:
+            _require_formatted_question_authorship(
+                baseline, current, identity, block, actual)
         previous_review = _historical_choice_contract(baseline, identity, previous_source)
         current_review = _historical_choice_contract(current, identity, protected)
         require(state_fingerprint(_historical_order_contract(baseline, identity, previous_review))

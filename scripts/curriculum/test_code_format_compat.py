@@ -299,6 +299,117 @@ class SourceFormatTest(unittest.TestCase):
                          prose["pages"][0]["blocks"][1])
 
 
+    def test_real_u7_l3_question_and_source_spacing_share_published_owner(self):
+        """The authored question, explanation and source each keep their own proof."""
+        import hashlib
+        import json
+        import validar_json_programacion as contract
+
+        root = Path(__file__).resolve().parents[2]
+        relative = ("programming/cpp_fundamentals/errores_y_construccion_gradual/"
+                    "lesson_validar_antes_y_elegir_reporte.json")
+        family = {
+            locale: json.loads((root / "app/src/main/assets/content" /
+                                locale / relative).read_text(encoding="utf-8"))
+            for locale in ("es", "en", "fr")
+        }
+        published = family["es"]
+        layout.validate(published)
+        identity, p, b = "block_0000_0003", 0, 3
+        original = published["pages"][p]["blocks"][b]
+        self.assertEqual(published["stateLayout"]["current"][p]["blocks"][b], identity)
+        self.assertEqual(original["type"], "output_prediction")
+        self.assertNotIn(identity, [entry["id"] for entry in
+                                   published["stateLayout"].get("sourceFormatRevisions", [])])
+
+        draft = deepcopy(published)
+        block = draft["pages"][p]["blocks"][b]
+        old_code = "    int piezas{10};\n    if (piezas < 0 || piezas > 10)"
+        new_code = "    int piezas{10};\n\n    if (piezas < 0 || piezas > 10)"
+        self.assertEqual(block["code"].count(old_code), 1)
+        block["code"] = block["code"].replace(old_code, new_code, 1)
+        block["question"] += " Examina si el extremo superior está incluido."
+        block["explanation"] += " El límite superior también forma parte del intervalo."
+        for field in ("/question", "/explanation"):
+            marker = next(item for item in draft["textSemantics"]["fields"]
+                          if item["block"] == identity and item["path"] == field)
+            marker["sourceSha256"] = hashlib.sha256(
+                block[field[1:]].encode("utf-8")).hexdigest()
+        reviewed = layout.prepare_v2(draft, "es", family, published)
+        layout.validate_transition(published, reviewed)
+        self.assertEqual(layout.validate(published), layout.validate(reviewed))
+        self.assertEqual(published["stateLayout"]["origin"], reviewed["stateLayout"]["origin"])
+        self.assertEqual(published["stateLayout"]["current"], reviewed["stateLayout"]["current"])
+        self.assertEqual(published["stateLayout"]["family"], reviewed["stateLayout"]["family"])
+        self.assertEqual(len(reviewed["stateLayout"]["sourceFormatRevisions"]),
+                         len(published["stateLayout"].get("sourceFormatRevisions", [])) + 1)
+        archive = next(item for item in reviewed["stateLayout"]["sourceFormatRevisions"]
+                       if item["id"] == identity)
+        self.assertEqual(archive["block"], original)
+        self.assertEqual(original["answers"], block["answers"])
+        self.assertEqual(fmt.source_projection(block, original)["code"], original["code"])
+        full_path = "app/src/main/assets/content/es/" + relative
+        self.assertTrue(contract.preserves_previous_exercise(
+            full_path, p, b, original, reviewed["pages"][p]["blocks"][b],
+            previous_document=published, current_document=reviewed))
+        self.assertTrue(contract.preserves_source_format_revision(
+            full_path, p, b, original, reviewed["pages"][p]["blocks"][b],
+            previous_document=published, current_document=reviewed))
+
+        stale = deepcopy(draft)
+        old_question_marker = next(item for item in published["textSemantics"]["fields"]
+                                   if item["block"] == identity and item["path"] == "/question")
+        next(item for item in stale["textSemantics"]["fields"]
+             if item["block"] == identity and item["path"] == "/question")[
+                "sourceSha256"] = old_question_marker["sourceSha256"]
+        with self.assertRaises(layout.LayoutError):
+            layout.prepare_v2(stale, "es", family, published)
+
+        forged = deepcopy(reviewed)
+        forged["pages"][p]["blocks"][b]["answers"] = ["Falso"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(published, forged)
+
+        changed_code = deepcopy(reviewed)
+        changed_code["pages"][p]["blocks"][b]["code"] = block["code"].replace(
+            "piezas > 10", "piezas >= 10")
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(published, changed_code)
+
+    def test_combined_question_cannot_repaint_unchanged_explanation(self):
+        import hashlib
+        import json
+
+        root = Path(__file__).resolve().parents[2]
+        relative = ("programming/cpp_fundamentals/errores_y_construccion_gradual/"
+                    "lesson_validar_antes_y_elegir_reporte.json")
+        family = {
+            locale: json.loads((root / "app/src/main/assets/content" /
+                                locale / relative).read_text(encoding="utf-8"))
+            for locale in ("es", "en", "fr")
+        }
+        published = family["es"]
+        identity, p, b = "block_0000_0003", 0, 3
+        draft = deepcopy(published)
+        block = draft["pages"][p]["blocks"][b]
+        block["code"] = block["code"].replace(
+            "    int piezas{10};\n    if (", "    int piezas{10};\n\n    if (", 1)
+        block["question"] += " Contrasta el extremo superior."
+        marker = next(item for item in draft["textSemantics"]["fields"]
+                      if item["block"] == identity and item["path"] == "/question")
+        marker["sourceSha256"] = hashlib.sha256(block["question"].encode()).hexdigest()
+        accepted = layout.prepare_v2(draft, "es", family, published)
+        layout.validate_transition(published, accepted)
+
+        forged = deepcopy(draft)
+        explanation = next(item for item in forged["textSemantics"]["fields"]
+                           if item["block"] == identity and item["path"] == "/explanation")
+        self.assertTrue(explanation["spans"])
+        explanation["spans"][0]["role"] = "prose"
+        layout.validate(forged)
+        with self.assertRaisesRegex(layout.LayoutError, "repainted an unchanged public field"):
+            layout.prepare_v2(forged, "es", family, published)
+
     def test_real_u10_l4_combined_format_and_authored_guide(self):
         """Authenticate a real published compiler owner without editing its JSON."""
         import hashlib
