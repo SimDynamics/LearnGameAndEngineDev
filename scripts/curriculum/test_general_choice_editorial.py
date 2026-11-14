@@ -165,6 +165,158 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
                 layout.revise_choice_editorial(self.original, OWNER, 0, value)
 
 
+
+class GeneralQuestionEditorialTests(unittest.TestCase):
+    """The author may clarify a question without changing its expected answer."""
+
+    @staticmethod
+    def lesson(relative: str):
+        root = Path(__file__).resolve().parents[2] / "app/src/main/assets/content"
+        family = {
+            locale: json.loads((root / locale / relative).read_text(encoding="utf-8"))
+            for locale in ("es", "en", "fr")
+        }
+        return family, "app/src/main/assets/content/es/" + relative
+
+    @staticmethod
+    def owner_block(doc, identity):
+        for p, record in enumerate(doc["stateLayout"]["current"]):
+            for b, block_id in enumerate(record["blocks"]):
+                if block_id == identity:
+                    return (p, b), doc["pages"][p]["blocks"][b]
+        raise AssertionError("Missing published stable activity owner " + identity)
+
+    def test_u12l22_question_only_keeps_output_and_semantic_provenance(self):
+        import validar_json_programacion as contract
+
+        relative = ("programming/cpp_fundamentals/archivos_y_programa_completo/"
+                    "lesson_leer_un_grupo_con_cierre_propio.json")
+        family, path = self.lesson(relative)
+        before = family["es"]
+        layout.validate(before)
+        identity = "block_0001_0002"
+        (p, b), original = self.owner_block(before, identity)
+        self.assertEqual((p, b), (1, 2))
+        self.assertEqual(original["answers"], ["1:}:fin"])
+        changed = deepcopy(before)
+        updated = changed["pages"][p]["blocks"][b]
+        updated["question"] = ("Predice la salida. La cadena mostrada contiene una "
+                               "llave de cierre después de dos espacios.")
+        marker = next(field for field in changed["textSemantics"]["fields"]
+                      if field["block"] == identity and field["path"] == "/question")
+        self.assertEqual(marker["spans"], [])
+        marker.update(layout.text_semantics.make_field(changed, identity, "/question", []))
+        after = layout.prepare_v2(changed, "es", family, before)
+        layout.validate_transition(before, after)
+        self.assertEqual(layout.validate(before), layout.validate(after))
+        self.assertEqual(before["stateLayout"]["origin"], after["stateLayout"]["origin"])
+        self.assertEqual(before["stateLayout"]["current"], after["stateLayout"]["current"])
+        self.assertEqual(before["stateLayout"]["family"], after["stateLayout"]["family"])
+        self.assertEqual(original["code"], after["pages"][p]["blocks"][b]["code"])
+        self.assertEqual(original["answers"], after["pages"][p]["blocks"][b]["answers"])
+        self.assertEqual(original["explanation"], after["pages"][p]["blocks"][b]["explanation"])
+        self.assertTrue(contract.preserves_ordinary_explanation_revision(
+            path, 1, 2, original, after["pages"][p]["blocks"][b], before, after))
+        self.assertTrue(contract.preserves_previous_exercise(
+            path, 1, 2, original, after["pages"][p]["blocks"][b],
+            previous_document=before, current_document=after))
+        forged = deepcopy(after)
+        forged["pages"][p]["blocks"][b]["answers"] = ["otro resultado"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(forged)
+        stale = deepcopy(after)
+        next(field for field in stale["textSemantics"]["fields"]
+             if field["block"] == identity and field["path"] == "/question")[
+                 "sourceSha256"] = next(field for field in before["textSemantics"]["fields"]
+                                       if field["block"] == identity and
+                                       field["path"] == "/question")["sourceSha256"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(stale)
+
+    def test_u12_question_and_explanation_return_to_authentic_previous_text(self):
+        import validar_json_programacion as contract
+
+        relative = ("programming/cpp_fundamentals/archivos_y_programa_completo/"
+                    "lesson_estado_del_formato_y_flujos_independientes.json")
+        family, path = self.lesson(relative)
+        before = family["es"]
+        layout.validate(before)
+        identity = "block_0002_0002"
+        (p, b), original = self.owner_block(before, identity)
+        self.assertEqual((p, b), (2, 3))
+        self.assertEqual(original["correctIndex"], 2)
+        original_history = [
+            proof for proof in before["stateLayout"]["editorial"]
+            if proof["id"] == identity
+        ]
+        previous_block = original_history[-1]["returnTo"]["previousBlock"]
+        self.assertIn("texto << std::hex << 31", previous_block["question"])
+        self.assertIn("texto << std::dec", previous_block["explanation"])
+        self.assertEqual(previous_block["options"], original["options"])
+        self.assertEqual(previous_block["correctIndex"], original["correctIndex"])
+        self.assertEqual(previous_block["reviewFeedback"], original["reviewFeedback"])
+        revised = deepcopy(before)
+        revised["pages"][p]["blocks"][b] = deepcopy(previous_block)
+
+        question = previous_block["question"]
+        explanation = previous_block["explanation"]
+        selections = {
+            "/question": [
+                layout.text_semantics.select(question, "texto << std::hex << 31",
+                                             "cpp", reading="technical"),
+                layout.text_semantics.select(question, "texto << std::dec",
+                                             "cpp", reading="technical"),
+            ],
+            "/explanation": [
+                layout.text_semantics.select(explanation, "texto << std::hex << 31",
+                                             "cpp", reading="technical"),
+                layout.text_semantics.select(explanation, "1f", "output",
+                                             occurrence=1, reading="natural"),
+                layout.text_semantics.select(explanation, "texto << std::dec",
+                                             "cpp", reading="technical"),
+                layout.text_semantics.select(explanation, "1f", "output",
+                                             occurrence=2, reading="natural"),
+            ],
+        }
+        for path_name, spans in selections.items():
+            marker = next(field for field in revised["textSemantics"]["fields"]
+                          if field["block"] == identity and field["path"] == path_name)
+            marker.update(layout.text_semantics.make_field(
+                revised, identity, path_name, spans))
+        chain = [original_history[0]["beforeSha256"]] + [
+            item["afterSha256"] for item in original_history]
+        revision = chain.index(layout.fingerprint(previous_block))
+        self.assertLess(revision, len(chain) - 1)
+        after = layout.prepare_v2(revised, "es", family, before,
+                                  editorial_returns={identity: revision})
+        layout.validate_transition(before, after)
+        self.assertEqual(layout.validate(before), layout.validate(after))
+        self.assertIn("returnTo", after["stateLayout"]["editorial"][-1])
+        self.assertEqual(before["stateLayout"]["origin"], after["stateLayout"]["origin"])
+        self.assertEqual(before["stateLayout"]["current"], after["stateLayout"]["current"])
+        self.assertEqual(before["stateLayout"]["family"], after["stateLayout"]["family"])
+        self.assertEqual(original["options"], after["pages"][p]["blocks"][b]["options"])
+        self.assertEqual(original["correctIndex"],
+                         after["pages"][p]["blocks"][b]["correctIndex"])
+        self.assertTrue(contract.preserves_ordinary_explanation_revision(
+            path, 2, 2, original, after["pages"][p]["blocks"][b], before, after))
+        self.assertTrue(contract.preserves_previous_exercise(
+            path, 2, 2, original, after["pages"][p]["blocks"][b],
+            previous_document=before, current_document=after))
+        # The evaluation never becomes an invented third answer, even if the
+        # adversary copies the new question and its accepted semantic spans.
+        forged = deepcopy(after)
+        forged["pages"][p]["blocks"][b]["correctIndex"] = 1
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(forged)
+        forged = deepcopy(after)
+        forged["stateLayout"]["editorial"][-1]["returnTo"]["previousBlock"][
+            "options"][0] = "forged"
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(forged)
+
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) == 3 and sys.argv[1] in {

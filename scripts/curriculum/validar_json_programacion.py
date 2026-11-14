@@ -1352,20 +1352,28 @@ def previous_exercise_difference(old, current):
 def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
                                            previous_document, current_document,
                                            course_id="cpp_fundamentals"):
-    """Authorize one owner's explanation from complete, verified v2 sources.
+    """Authenticate question and/or explanation wording without changing answers.
 
-    A detached block pair or its state fingerprint is insufficient: that
-    fingerprint deliberately excludes questions and feedback. Compare every
-    other raw field before the older projections, then authenticate the owner,
-    complete editorial chain and authored /explanation descriptor. The caller
-    reads previous_document from the pinned Git publication, never the draft.
+    Work may revise these existing authored prose fields independently or
+    together, but only under the same stable v2 owner and complete ordered
+    editorial transition. The historical program, options, solution, evaluation,
+    other guidance and identity must remain byte-exact. Every changed field
+    needs its own valid, explicitly authored text-semantics descriptor.
     """
-    if (old.get("type") not in REVIEW_FEEDBACK_TYPES or current.get("type") != old.get("type")
-            or not isinstance(old.get("explanation"), str) or not old["explanation"].strip()
-            or not isinstance(current.get("explanation"), str) or not current["explanation"].strip()
-            or old["explanation"] == current["explanation"]
-            or current != dict(old, explanation=current["explanation"])
-            or not isinstance(previous_document, dict) or not isinstance(current_document, dict)):
+    if (old.get("type") not in REVIEW_FEEDBACK_TYPES or
+            current.get("type") != old.get("type") or
+            not isinstance(previous_document, dict) or
+            not isinstance(current_document, dict)):
+        return False
+    revised_fields = tuple(
+        field for field in ("question", "explanation")
+        if old.get(field) != current.get(field))
+    if not revised_fields or any(
+            not isinstance(old.get(field), str) or not old[field].strip()
+            or not isinstance(current.get(field), str) or not current[field].strip()
+            for field in revised_fields):
+        return False
+    if current != dict(old, **{field: current[field] for field in revised_fields}):
         return False
     try:
         if course_id not in STRUCTURAL_COURSES:
@@ -1394,7 +1402,9 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
             return False
         semantics = _state_layout.text_semantics.validate(current_document)
         # An empty span list explicitly declares prose; absence is not authoring.
-        return "/explanation" in semantics.get(identity, {})
+        # Updating one descriptor cannot authorize a different public text field.
+        return all("/" + field in semantics.get(identity, {})
+                   for field in revised_fields)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError):
         return False
 
