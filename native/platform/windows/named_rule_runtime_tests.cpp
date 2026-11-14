@@ -234,6 +234,37 @@ int cajas_para(int piezas) {
 )cpp");
     require(!compiler_runtime_request_allowed(owner,zero_group),
         "Two zeroed references in a parenthesized expression earned credit");
+
+    auto binary_hex_zero=submitted;
+    change_project(binary_hex_zero,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4 + capacidad * 0x0 + capacidad * 0b0;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,binary_hex_zero),
+        "Windows credited decorative uses multiplied by hexadecimal and binary zero");
+    auto short_circuit_zero=submitted;
+    change_project(short_circuit_zero,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4 +
+           (capacidad > 0 && capacidad < 8 && 0x0);
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,short_circuit_zero),
+        "Windows credited boolean uses absorbed by the hexadecimal false suffix");
+    auto hexadecimal_false_branch=submitted;
+    change_project(hexadecimal_false_branch,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (0x0) return (piezas + capacidad - 1) / capacidad;
+    return (piezas + 3) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,hexadecimal_false_branch),
+        "An unreachable hexadecimal-false branch supplied a named-rule proof");
+
     auto equal_ternaries=submitted;
     change_project(equal_ternaries,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
