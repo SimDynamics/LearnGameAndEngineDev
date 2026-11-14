@@ -256,6 +256,68 @@ inline bool role(std::string_view name,const std::vector<std::string>& words) {
     }
     return false;
 }
+// Return expressions need the same source protection even without extra
+// parentheses. Respect C++'s && precedence over ||: a false operand kills
+// only its own AND clause, while a standalone true operand settles the
+// entire OR expression. A ternary/comma is conservatively left undecided.
+inline bool absorbed_by_boolean_literal(const Tokens& t,std::size_t at,
+        std::size_t first,std::size_t last) {
+    if(at<first||at>=last||last-first>256)return false;
+    const auto literal=[&](std::size_t start,std::size_t end,bool expected) {
+        while(start<end&&op(t[start],"(")) {
+            const auto close=closing(t,start,"(",")");
+            if(!close||*close!=end-1)break;
+            ++start;--end;
+        }
+        if(end!=start+1)return false;
+        return expected?(id(t[start],"true")||t[start]=="number:1"):
+            (id(t[start],"false")||t[start]=="number:0");
+    };
+    std::vector<std::size_t> ors;
+    std::size_t depth=0;
+    for(auto i=first;i<last;++i) {
+        if(op(t[i],"(")){++depth;continue;}
+        if(op(t[i],")")) {
+            if(depth)--depth;
+            else return false;
+            continue;
+        }
+        if(depth)continue;
+        if(op(t[i],"?")||op(t[i],":")||op(t[i],","))return false;
+        if(op(t[i],"||"))ors.push_back(i);
+    }
+    if(depth)return false;
+    std::size_t begin=first;
+    std::optional<std::pair<std::size_t,std::size_t>> containing;
+    for(std::size_t part=0;part<=ors.size();++part) {
+        const auto end=part<ors.size()?ors[part]:last;
+        if(!ors.empty()&&literal(begin,end,true))return true;
+        if(at>=begin&&at<end)containing={{begin,end}};
+        begin=end+1;
+    }
+    if(!containing)return false;
+    const auto [start,end]=*containing;
+    std::vector<std::size_t> ands;
+    depth=0;
+    for(auto i=start;i<end;++i) {
+        if(op(t[i],"(")){++depth;continue;}
+        if(op(t[i],")")) {
+            if(depth)--depth;
+            else return false;
+            continue;
+        }
+        if(!depth&&op(t[i],"&&"))ands.push_back(i);
+    }
+    if(depth||ands.empty())return false;
+    begin=start;
+    for(std::size_t part=0;part<=ands.size();++part) {
+        const auto finish=part<ands.size()?ands[part]:end;
+        if(literal(begin,finish,false))return true;
+        begin=finish+1;
+    }
+    return false;
+}
+
 inline bool productive(const Tokens& t,std::size_t i,
         std::size_t scope_start=0) {
     // Direct algebraic identities cannot establish that a constant is
@@ -453,7 +515,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     const auto uses=[&](std::size_t first,std::size_t last) {
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
-            if(!productive(t,i,bounds.open+1))continue;
+            if(absorbed_by_boolean_literal(t,i,first,last)||
+               !productive(t,i,bounds.open+1))continue;
             std::size_t contribution=id(t[i],name)?1:0;
             for(const auto& alias:aliases)
                 if(id(t[i],alias.first)) {
