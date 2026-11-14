@@ -87,6 +87,33 @@ def additional_pairs() -> dict[str, dict]:
     return generated
 
 
+def all_reviewed_pairs() -> dict[str, dict]:
+    """All 17 closed goals, using authenticated in-memory source reviews.
+
+    Preserve the existing fixture names used by the loader tests; the
+    native runner uses a separate manifest and stable owner identities.
+    """
+    from test_reviewed_diagnostic_structural_format import formatted_documents
+    generated = {}
+    lessons = []
+    count = 0
+    for index, (_, before, after, owners) in enumerate(formatted_documents()):
+        prefix = f"all-{index}"
+        generated[prefix + ".before"] = before
+        generated[prefix + ".after"] = after
+        lessons.append({
+            "before": prefix + ".before.json",
+            "after": prefix + ".after.json",
+            "owners": [{"id": identity, "diagnostic": diagnostic}
+                       for identity, diagnostic in owners],
+        })
+        count += len(owners)
+    if count != 17 or len(lessons) != 6:
+        raise ValueError("The complete published closed-diagnostic coverage changed")
+    generated["all-diagnostics.manifest"] = {"version": 1, "lessons": lessons}
+    return generated
+
+
 def make() -> dict[str, dict]:
     original, formatted = formatted_pair()
     tampered_goal = deepcopy(formatted)
@@ -111,6 +138,7 @@ def make() -> dict[str, dict]:
         "u6.forged-source": tampered_source,
     }
     generated.update(additional_pairs())
+    generated.update(all_reviewed_pairs())
     return generated
 
 
@@ -122,7 +150,7 @@ def main() -> None:
     for name, document in make().items():
         (args.output_dir / (name + ".json")).write_text(
             json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print("PASS original U6/U9 diagnostic format pairs, historical identity and forged-project rejection")
+    print("PASS 17 original/formatted U6/U9 goals, stable owners and legacy forged fixtures")
 
 
 if __name__ == "__main__":

@@ -147,6 +147,29 @@ foreach(name IN ITEMS
     list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
         "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/${name}.json")
 endforeach()
+# Every closed source diagnostic is compiled before and after formatting.
+# The manifest identifies owners independently of presentation positions.
+list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
+    "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/all-diagnostics.manifest.json")
+foreach(reviewed_index RANGE 0 5)
+    foreach(reviewed_side IN ITEMS before after)
+        list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
+            "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/all-${reviewed_index}.${reviewed_side}.json")
+    endforeach()
+endforeach()
+set(LGAED_REVIEWED_DIAGNOSTIC_INPUTS)
+foreach(reviewed_lesson IN ITEMS
+    funciones_y_contratos/lesson_declaraciones_y_firmas.json
+    funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json
+    funciones_y_contratos/lesson_construir_un_proyecto_desde_su_interfaz.json
+    datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json
+    datos_propios_y_estado_valido/lesson_valores_por_defecto_con_significado.json
+    datos_propios_y_estado_valido/lesson_argumentos_con_tipos_que_expresan_su_funcion.json)
+    foreach(reviewed_locale IN ITEMS es en fr)
+        list(APPEND LGAED_REVIEWED_DIAGNOSTIC_INPUTS
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/${reviewed_locale}/programming/cpp_fundamentals/${reviewed_lesson}")
+    endforeach()
+endforeach()
 add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
     COMMAND ${_lgaed_state_fixture_python}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
@@ -154,6 +177,9 @@ add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
     DEPENDS
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_compile_check_source_format.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_reviewed_diagnostic_structural_format.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        ${LGAED_REVIEWED_DIAGNOSTIC_INPUTS}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_declaraciones_y_firmas.json"
