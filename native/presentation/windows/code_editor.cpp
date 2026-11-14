@@ -358,6 +358,11 @@ struct CodeEditor::Impl {
             if(font.yHeight<=0)return;
             // The one-line path still respects native font scaling.
             story_height=MulDiv(font.yHeight,static_cast<int>(GetDpiForWindow(window)),1440);
+            int numerator=0,denominator=0;
+            SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+                reinterpret_cast<LPARAM>(&denominator));
+            if(numerator>0&&denominator>0)
+                story_height=MulDiv(static_cast<int>(story_height),numerator,denominator);
         }else{
             const auto first=SendMessageW(window,EM_LINEINDEX,0,0);
             const auto second=SendMessageW(window,EM_LINEINDEX,1,0);
@@ -371,15 +376,21 @@ struct CodeEditor::Impl {
             if(row<=0||bottom.y<top.y)return;
             story_height=static_cast<std::int64_t>(bottom.y)-top.y+row;
         }
-        // The scrollbar can retain a formerly valid bottom offset after a
-        // fullscreen edit removes rows. Reset only when the entire current
-        // native visual story fits; preserve scrolling and Undo for long code.
-        if(story_height<=0||story_height+2>room)return;
-        POINT origin{old_scroll.x,0};
-        SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
-        const auto remaining=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
-        if(remaining>0)
-            SendMessageW(window,EM_LINESCROLL,0,-remaining);
+        if(story_height<=0)return;
+        // Removing rows can invalidate an old fullscreen bottom offset even
+        // when the shortened document still slightly overflows. Clamp against
+        // the current measured story, not yesterday's native scrollbar range.
+        const auto maximum=std::max<std::int64_t>(0,story_height-room);
+        if(maximum>0&&old_scroll.y<=maximum)return;
+        const auto new_y=static_cast<LONG>(std::clamp<std::int64_t>(
+            maximum,0,std::numeric_limits<LONG>::max()));
+        POINT corrected{old_scroll.x,new_y};
+        SendMessageW(window,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&corrected));
+        if(maximum==0) {
+            const auto remaining=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
+            if(remaining>0)
+                SendMessageW(window,EM_LINESCROLL,0,-remaining);
+        }
     }
 
     void commit(Snapshot next) {
