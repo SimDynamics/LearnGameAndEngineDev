@@ -1402,9 +1402,21 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
             return False
         semantics = _state_layout.text_semantics.validate(current_document)
         # An empty span list explicitly declares prose; absence is not authoring.
-        # Updating one descriptor cannot authorize a different public text field.
-        return all("/" + field in semantics.get(identity, {})
-                   for field in revised_fields)
+        changed_paths = {"/" + field for field in revised_fields}
+        if not changed_paths <= set(semantics.get(identity, {})):
+            return False
+        # The *unchanged* options, feedback, and explanations must retain
+        # their exact authored color, narration, UTF-16 span and provenance.
+        # A wording correction cannot silently repaint another field.
+        name = _state_layout.text_semantics.ROOT_FIELD
+        previous_markers = {entry["path"]: entry
+                            for entry in baseline.get(name, {}).get("fields", [])
+                            if entry.get("block") == identity}
+        current_markers = {entry["path"]: entry
+                           for entry in current_document.get(name, {}).get("fields", [])
+                           if entry.get("block") == identity}
+        return all(previous_markers.get(path) == current_markers.get(path)
+                   for path in (previous_markers.keys() | current_markers.keys()) - changed_paths)
     except (ValueError, KeyError, TypeError, IndexError, AttributeError):
         return False
 

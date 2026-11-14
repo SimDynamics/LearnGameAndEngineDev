@@ -233,6 +233,19 @@ class GeneralQuestionEditorialTests(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate(stale)
 
+        # A question-only correction may not repaint the unchanged explanation.
+        repainted = deepcopy(after)
+        descriptor = next(field for field in repainted["textSemantics"]["fields"]
+                          if field["block"] == identity and field["path"] == "/explanation")
+        self.assertTrue(descriptor["spans"])
+        descriptor["spans"][0]["role"] = "prose"
+        layout.validate(repainted)
+        self.assertFalse(contract.preserves_ordinary_explanation_revision(
+            path, p, b, original, repainted["pages"][p]["blocks"][b], before, repainted))
+        self.assertFalse(contract.preserves_previous_exercise(
+            path, p, b, original, repainted["pages"][p]["blocks"][b],
+            previous_document=before, current_document=repainted))
+
     def test_u12_question_and_explanation_return_to_authentic_previous_text(self):
         import validar_json_programacion as contract
 
@@ -315,7 +328,19 @@ class GeneralQuestionEditorialTests(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate(forged)
 
-
+        # A two-field clarification may not change an unrelated option's
+        # technical reading, even if that altered descriptor is well-formed.
+        repainted = deepcopy(after)
+        descriptor = next(field for field in repainted["textSemantics"]["fields"]
+                          if field["block"] == identity and field["path"] == "/options/1")
+        self.assertTrue(descriptor["spans"])
+        descriptor["spans"][0]["role"] = "prose"
+        layout.validate(repainted)
+        self.assertFalse(contract.preserves_ordinary_explanation_revision(
+            path, p, b, original, repainted["pages"][p]["blocks"][b], before, repainted))
+        self.assertFalse(contract.preserves_previous_exercise(
+            path, p, b, original, repainted["pages"][p]["blocks"][b],
+            previous_document=before, current_document=repainted))
 
 if __name__ == "__main__":
     import sys
