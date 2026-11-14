@@ -69,16 +69,36 @@ def instrument(source: str, cases: tuple[tuple[int, int], ...],
         f"(disponibles == {a} && minimo == {b} && mutant == {i})"
         for i, (a, b) in enumerate(cases)
     )
+    # The QA wrapper reads only runner-owned environment variables. MSVC's
+    # safe CRT uses _dupenv_s; do not disable C4996 (or weaken /WX) globally.
+    env_reader = r"""
+#include <cstdlib>
+#include <string>
+static std::string lgaed_u1_env(const char* name) {
+#if defined(_MSC_VER)
+    char* value = nullptr;
+    std::size_t length = 0;
+    if (_dupenv_s(&value, &length, name) != 0) return {};
+    const std::string result = value ? value : "";
+    std::free(value);
+    return result;
+#else
+    const char* value = std::getenv(name);
+    return value ? value : "";
+#endif
+}
+"""
     body = (
-        "\n    const bool resultado = std::getenv(\"LGAED_U1_BROKEN\") "
+        "\n    const bool original_defect = !lgaed_u1_env(\"LGAED_U1_BROKEN\").empty();\n"
+        "    const bool resultado = original_defect "
         "? disponibles < minimo : disponibles <= minimo;\n"
-        "    const char* cambio = std::getenv(\"LGAED_U1_MUTANT\");\n"
-        "    const int mutant = cambio ? std::atoi(cambio) : -1;\n"
+        "    const std::string cambio = lgaed_u1_env(\"LGAED_U1_MUTANT\");\n"
+        "    const int mutant = cambio.empty() ? -1 : std::stoi(cambio);\n"
         f"    const bool invertir = {mutated};\n"
         f'    std::cerr << "{TRACE}" << disponibles << "," << minimo << std::endl;\n'
         "    return invertir ? !resultado : resultado;\n"
     )
-    return "#include <cstdlib>\n" + source[:start] + body + source[end:]
+    return env_reader + source[:start] + body + source[end:]
 
 
 def compile_candidate(source: str, directory: Path, cxx: str) -> Path:
