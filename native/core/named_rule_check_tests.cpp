@@ -33,6 +33,24 @@ void capacity() {
         })cpp",rules,true,"Equivalent east-const spelling");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            int constexpr capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Trailing constexpr names the same local integer agreement");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            constexpr int capacidad = 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Leading constexpr remains a valid local rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            int constexpr capacidad{4};
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An unused trailing constexpr declaration must not earn source credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int capacidad{0x4};
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,"Hexadecimal capacity represents four");
@@ -163,6 +181,29 @@ void capacity() {
             auto const cajas = (piezas + ajuste) / cupo;
             return cajas;
         })cpp",rules,true,"Const-qualified auto intermediates are not discarded");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            int constexpr cupo{4};
+            int constexpr ajuste = cupo - 1;
+            int constexpr cajas = (piezas + ajuste) / cupo;
+            return cajas;
+        })cpp",rules,true,
+        "Trailing constexpr intermediates preserve the actual result dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            constexpr int cupo{4};
+            auto constexpr ajuste = cupo - 1;
+            auto const cajas = (piezas + ajuste) / cupo;
+            return cajas;
+        })cpp",rules,true,
+        "Auto constexpr intermediates can carry an authenticated local rule");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            int constexpr cupo{4};
+            auto constexpr observacion = cupo + cupo;
+            return (piezas + cupo - 1) / 4;
+        })cpp",rules,false,
+        "An unused auto constexpr calculation cannot manufacture a second use");
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int cupo{4};
