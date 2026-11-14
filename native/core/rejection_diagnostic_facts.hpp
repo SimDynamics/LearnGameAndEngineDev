@@ -185,14 +185,25 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     // both "rango permitido de 0 a 20" and "0 a 20 es el rango permitido"
     // communicate the same bound. A standalone pair of numbers is not enough.
     const auto describes_range=[&](std::size_t at,std::size_t end) {
+        // Nearby numbers in a *different sentence* do not belong to
+        // this range, even when an earlier sentence said "rango 0..9".
+        // Honor sentence/statement boundaries when looking for a noun.
+        const auto same_clause=[&](std::size_t left,std::size_t right) {
+            if(words[left].end>words[right].start)return false;
+            const auto intervening=std::string_view(source).substr(
+                words[left].end,words[right].start-words[left].end);
+            return intervening.find_first_of(".;\\n")==intervening.npos;
+        };
         const auto first=at>5?at-5:0;
         for(std::size_t i=first;i<at;++i) {
+            if(!same_clause(i,at))continue;
             if(one_of(words[i].text,{"rango","intervalo","dominio","limite","limites",
                     "entero","enteros","entre","desde","permitido","permitidos",
                     "permitida","permitidas","admite","admiten","acepta","aceptan",
                     "valido","validos","valida","validas","debe","deben"}))return true;
         }
         for(std::size_t i=end+1;i<words.size()&&i<=end+5;++i) {
+            if(!same_clause(end,i))continue;
             if(one_of(words[i].text,{"rango","intervalo","dominio","limite","limites",
                     "entero","enteros","permitido","permitidos","permitida",
                     "permitidas","valido","validos","valida","validas"}))return true;
