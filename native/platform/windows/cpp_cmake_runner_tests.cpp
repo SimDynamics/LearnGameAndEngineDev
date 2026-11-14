@@ -1349,7 +1349,7 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
             "Matching output was credited without the requested include scope");
     }
     std::cout<<"PASS four U2L4 MSVC editors: public/private propagation, source repairs, first case and history, fake scopes rejected\n";
-    // U3L2: two existing projects must really create their static library
+    // U3L2: three existing projects must really create their static library
     // inside a child CMakeLists. A flat root build with the same stdout
     // remains an incorrect solution even if the files and targets match.
     constexpr auto subproject_relative=
@@ -1357,12 +1357,15 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
         "comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json";
     const auto subproject_original=lgaed::windows::load_lesson(
         std::filesystem::path(build::source_root)/subproject_relative);
+    const auto& flat_before=subproject_original.pages.at(3).blocks.at(4);
     const auto& boxes_before=subproject_original.pages.at(6).blocks.at(3);
     const auto& batches_before=subproject_original.pages.at(8).blocks.at(3);
-    check(boxes_before.stable_id=="block_0006_0003"&&
+    check(flat_before.stable_id=="block_0003_0004"&&
+        boxes_before.stable_id=="block_0006_0003"&&
         batches_before.stable_id=="block_0008_0003"&&
-        boxes_before.cmake&&batches_before.cmake&&
-        boxes_before.output_check&&batches_before.output_check&&
+        flat_before.cmake&&boxes_before.cmake&&batches_before.cmake&&
+        flat_before.output_check&&boxes_before.output_check&&batches_before.output_check&&
+        !flat_before.cmake_graph_check&&
         !boxes_before.cmake_graph_check&&!batches_before.cmake_graph_check,
         "The original U3L2 CMake project owners changed");
     std::string subproject_json=subproject_original.raw_json;
@@ -1371,6 +1374,30 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
         subproject_json.find(anchor,subproject_at+1)==subproject_json.npos,
         "U3L2 state map moved");
     subproject_json.insert(subproject_at,R"json(  "compilerCmakeGraphChecks":[
+      {"activity":"block_0003_0004","project":"EnviosComprobables",
+       "minimumCmakeVersion":"3.20",
+       "sourceIntegrity":{"preserveNonCmake":true},
+       "configureMessageOrder":[
+         {"path":"CMakeLists.txt","text":"raiz_antes"},
+         {"path":"componente/CMakeLists.txt","text":"componente"},
+         {"path":"CMakeLists.txt","text":"raiz_despues"}
+       ],
+       "targets":[
+         {"name":"comprobar_cajas","type":"EXECUTABLE",
+          "sources":["pruebas/cajas_casos.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"consultar_cajas","type":"EXECUTABLE",
+          "sources":["app/consulta.cpp"],"linksTo":["envios"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true},
+         {"name":"envios","type":"STATIC_LIBRARY",
+          "sources":["componente/src/cajas.cpp"],
+          "sourceDirectory":"componente",
+          "publicIncludeRoots":["componente/publico"],
+          "exactSources":true,"explicitCxx20":true,
+          "explicitCxxExtensionsOff":true}
+       ]},
       {"activity":"block_0006_0003","project":"EnviosComprobables",
        "minimumCmakeVersion":"3.20",
        "sourceIntegrity":{"preserveNonCmake":true},
@@ -1429,8 +1456,9 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
         "U3L2 root declaration changed original state signatures");
     std::uint64_t subproject_id=1901;
     for(const auto [page,block]:{
-            std::pair{6U,3U},std::pair{8U,3U}}) {
-        const bool boxes=page==6;
+            std::pair{3U,4U},std::pair{6U,3U},std::pair{8U,3U}}) {
+        const bool repartition=page==3;
+        const bool boxes=page!=8;
         const auto& original_block=subproject_original.pages.at(page).blocks.at(block);
         const auto& mapped_block=subproject_mapped.pages.at(page).blocks.at(block);
         const auto& meta_block=subproject_metadata.pages.at(page).blocks.at(block);
@@ -1451,12 +1479,60 @@ target_link_libraries(consultar_aforo PRIVATE aforo)
         request.projects_directory=environment.paths.projects;
         request.project_files=mapped_block.project_files;
         request.cmake=mapped_block.cmake;
+        if(repartition)request.cmake->target="comprobar_cajas";
         request.cmake_graph_check=mapped_block.cmake_graph_check;
         request.capture_cmake_graph=true;
         request.action=CppRunRequest::Action::compile_run;
+        if(repartition) {
+            auto other=request;
+            other.cmake->target="consultar_cajas";
+            check(compiler_runtime_request_allowed(mapped_block,other),
+                "U3L2 published optional client must remain available");
+            auto unauthorized=request;
+            unauthorized.cmake->target="no_declarado";
+            check(!compiler_runtime_request_allowed(mapped_block,unauthorized),
+                "U3L2 credited an unlisted CMake executable");
+            unauthorized=request;
+            unauthorized.cmake->options["CAMBIO_NO_PERMITIDO"]="ON";
+            check(!compiler_runtime_request_allowed(mapped_block,unauthorized),
+                "U3L2 credited changed CMake options");
+            unauthorized=request;
+            unauthorized.cmake->build_type="Release";
+            check(!compiler_runtime_request_allowed(mapped_block,unauthorized),
+                "U3L2 credited changed CMake build type");
+        }
         bool repaired=false;
         for(auto& file:request.project_files) {
-            if(boxes&&file.first=="componente/CMakeLists.txt") {
+            if(repartition&&file.first=="CMakeLists.txt") {
+                check(file.second.find(
+                    "add_library(envios STATIC componente/src/cajas.cpp)")!=
+                    std::string::npos&&
+                    file.second.find("add_subdirectory")==std::string::npos,
+                    "Original flat CMake project changed before reorganization");
+                file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(EnviosComprobables LANGUAGES CXX)
+message(STATUS "raiz_antes")
+add_subdirectory(componente)
+message(STATUS "raiz_despues")
+add_executable(consultar_cajas app/consulta.cpp)
+add_executable(comprobar_cajas pruebas/cajas_casos.cpp)
+target_link_libraries(consultar_cajas PRIVATE envios)
+target_link_libraries(comprobar_cajas PRIVATE envios)
+target_compile_features(consultar_cajas PRIVATE cxx_std_20)
+target_compile_features(comprobar_cajas PRIVATE cxx_std_20)
+set_target_properties(consultar_cajas comprobar_cajas PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+                repaired=true;
+            }else if(repartition&&file.first=="componente/CMakeLists.txt") {
+                check(file.second.empty(),
+                    "U3L2 published child initially contains unexpected source");
+                file.second=R"cmake(message(STATUS "componente")
+add_library(envios STATIC src/cajas.cpp)
+target_include_directories(envios PUBLIC publico)
+target_compile_features(envios PRIVATE cxx_std_20)
+set_target_properties(envios PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+            }else if(boxes&&file.first=="componente/CMakeLists.txt") {
                 const auto fix=[](std::string& code,
                         std::string_view from,std::string_view to) {
                     const auto at=code.find(from);
@@ -1629,7 +1705,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 flat,flat_capture,"Biblioteca solo en la raíz"),
             "Root-only U3L2 CMake build earned credit with matching stdout");
     }
-    std::cout<<"PASS original U3L2 child CMake owners: File API directories, real source/link, correct first case and historic receipts; flat root rejected\n";
+    std::cout<<"PASS three original U3L2 CMake owners: reorganization, checker selection, real source/link, first case, historical receipts and flat-root rejection\n";
     // U3L4: the four original editors must apply explicit OFF via a
     // real CMake list, not merely inherit the profile's OFF default.
     constexpr auto list_relative=
