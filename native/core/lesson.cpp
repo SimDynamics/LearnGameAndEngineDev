@@ -404,6 +404,13 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(target.require_explicit_extensions_off)
                 token("authored-extensions-off-v1");
         }
+        if(graph.option_selection) {
+            token("cmake-option-default-off-v1");
+            token(graph.option_selection->name);
+            token(graph.option_selection->library_target);
+            token(graph.option_selection->disabled_source);
+            token(graph.option_selection->disabled_stdout);
+        }
     }
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {

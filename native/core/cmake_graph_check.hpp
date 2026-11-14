@@ -47,12 +47,19 @@ struct CmakeRequiredTarget {
     bool require_explicit_extensions_off = false;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
+// A binary option exercise verifies ON and an independent default-OFF build
+// of the same student sources without altering original lesson blocks.
+struct CmakeOptionSelectionRequirement {
+    std::string name, library_target, disabled_source, disabled_stdout;
+    bool operator==(const CmakeOptionSelectionRequirement&) const = default;
+};
 struct CmakeGraphRequirement {
     std::string project_name;
     std::vector<CmakeRequiredTarget> targets;
     // Optional, exact numeric cmake_minimum_required(VERSION <min>) from the
     // generated codemodel root directory. Does not imply compiler features.
     std::string minimum_cmake_version;
+    std::optional<CmakeOptionSelectionRequirement> option_selection;
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 

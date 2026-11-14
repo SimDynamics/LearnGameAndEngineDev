@@ -562,11 +562,12 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
 // No ordinary compilation, free laboratory, or independent probe collects it.
 bool requires_authored_cmake_trace(const CppRunRequest& request) {
     return request.capture_cmake_graph&&request.cmake_graph_check&&
-        std::ranges::any_of(request.cmake_graph_check->targets,
+        (request.cmake_graph_check->option_selection||
+         std::ranges::any_of(request.cmake_graph_check->targets,
             [](const auto& target) {
                 return target.require_explicit_cxx20||
                     target.require_explicit_extensions_off;
-            });
+            }));
 }
 bool authored_cmake_path(std::string_view value) {
     const auto path=project_path(value);
@@ -604,6 +605,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
     // Parse into a temporary graph: malformed/partial traces never
     // certify an early prefix of the student's CMake commands.
     auto observed=graph.targets;
+    auto observed_options=graph.authored_option_defaults;
     const auto target_for=[&](std::string_view name)->CppCmakeTargetEvidence* {
         const auto it=std::ranges::find_if(observed,
             [&](const auto& item){return item.name==name;});
@@ -652,7 +654,10 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                 }
             }
             if(args.empty())continue;
-            if(equals(command,"target_compile_features")&&args.size()>2) {
+            if(equals(command,"option")&&args.size()>=2) {
+                observed_options.emplace_back(args[0],
+                    args.size()==2||off(args[2])?"OFF":"ON");
+            }else if(equals(command,"target_compile_features")&&args.size()>2) {
                 auto* target=target_for(args.front());
                 if(!target)continue;
                 bool applies_to_target=false;
@@ -700,6 +705,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
         graph.targets[i].explicit_extensions_off=
             observed[i].explicit_extensions_off;
     }
+    graph.authored_option_defaults=std::move(observed_options);
 }
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
@@ -1113,6 +1119,17 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
         if(!expected||!actual||*expected!=*actual)
             return fail("La versión mínima de CMake declarada en el proyecto no coincide.");
     }
+    if(required.option_selection) {
+        const auto& opt=*required.option_selection;
+        const auto found=request.cmake->options.find(opt.name);
+        if(found==request.cmake->options.end()||found->second!="ON")
+            return fail("La configuración de esta práctica no selecciona ON.");
+        if(!std::ranges::any_of(graph.authored_option_defaults,
+                [&](const auto& entry) {
+                    return entry.first==opt.name&&entry.second=="OFF";
+                }))
+            return fail("La opción no declara OFF por defecto en el proyecto.");
+    }
     if(required.targets.empty())
         return fail("No hay objetivos de construcción declarados para comprobar.");
     std::vector<std::string> seen;
@@ -1259,6 +1276,54 @@ bool accepted_compile_diagnostic(const CppRunRequest& request,const CppRunResult
         result.compilation==diagnostic_aggregate(evidence.candidate_units,evidence.candidate_link,request.output_limit_bytes);
 }catch(const std::exception&){return false;}catch(const winrt::hresult_error&){return false;}
 
+// Reconstruct the independently configured default-OFF project to validate
+// the second result; a single correct ON output cannot grant this objective.
+CppRunRequest default_option_request(const CppRunRequest& request,
+        const curriculum::CmakeOptionSelectionRequirement& option,
+        const curriculum::CmakeGraphRequirement& authored) {
+    auto off=request;
+    off.request_id=~request.request_id;
+    off.project_key+="/cmake-option-off-v1/"+option.name;
+    off.cmake->options.erase(option.name);
+    off.named_rule_probe.reset();
+    off.rejection_probe.reset();
+    off.observation_probe.reset();
+    off.assertion_mode.reset();
+    off.capture_cmake_graph=true;
+    auto off_required=authored;
+    off_required.option_selection.reset();
+    for(auto& target:off_required.targets)
+        if(target.name==option.library_target) {
+            target.sources={option.disabled_source};
+            target.exact_sources=true;
+        }
+    off.cmake_graph_check=std::move(off_required);
+    return off;
+}
+bool verified_default_option_probe(const CppRunRequest& request,
+        const CppRunResult& result,
+        const curriculum::CmakeGraphRequirement& required) {
+    if(!required.option_selection||!result.cmake_option_probe)return false;
+    const auto& option=*required.option_selection;
+    const auto off=default_option_request(request,option,required);
+    const auto& proof=*result.cmake_option_probe;
+    CppRunResult replay;
+    replay.request_id=proof.request_id;
+    replay.revision=proof.revision;
+    replay.compilation=proof.compilation;
+    replay.configuration=proof.configuration;
+    replay.execution=proof.execution;
+    replay.project_fingerprint=proof.project_fingerprint;
+    replay.configuration_fingerprint=proof.configuration_fingerprint;
+    replay.target_type=proof.target_type;
+    replay.executable=proof.executable;
+    replay.error_utf8=proof.error_utf8;
+    replay.cmake_graph=proof.graph;
+    return replay.execution.succeeded()&&
+        replay.execution.stdout_bytes==option.disabled_stdout&&
+        replay.execution.stderr_bytes.empty()&&
+        evaluate_cmake_graph(off,replay,*off.cmake_graph_check).correct;
+}
 curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,const CppRunResult& result) {
     curriculum::FreshExecution fresh;
     if(request.request_id!=result.request_id||request.revision!=result.revision||request.diagnostic
@@ -1274,9 +1339,14 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
-    if(request.cmake_graph_check)
+    if(request.cmake_graph_check) {
+        const auto& required=*request.cmake_graph_check;
         fresh.cmake_graph_correct=evaluate_cmake_graph(
-            request,result,*request.cmake_graph_check).correct;
+            request,result,required).correct;
+        if(fresh.cmake_graph_correct&&required.option_selection)
+            fresh.cmake_graph_correct=verified_default_option_probe(
+                request,result,required);
+    }
     if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
         result.compilation.succeeded()&&
         result.target_type=="WASI_COMMAND"&&
@@ -1397,6 +1467,25 @@ CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
 // workspace against the student's unchanged library sources. Its executable
 // never reuses the student-editable test driver or changes the submitted
 // project. The worker owns this work; the window thread never runs it.
+// Build the exact submitted source under a private OFF configuration.
+// This request has no option-selection recursion and cannot reuse the ON cache.
+void complete_cmake_option_probe(const CppRunRequest& request,
+        CppRunResult& result,std::stop_token stop) {
+    if(!request.cmake_graph_check||
+       !request.cmake_graph_check->option_selection||
+       request.action!=CppRunRequest::Action::compile_run||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto& authored=*request.cmake_graph_check;
+    const auto off=default_option_request(request,*authored.option_selection,
+        authored);
+    const auto observed=run_cpp(off,stop);
+    result.cmake_option_probe=CppCmakeOptionProbe{
+        observed.request_id,observed.revision,observed.project_fingerprint,
+        observed.configuration_fingerprint,observed.target_type,
+        observed.error_utf8,observed.executable,observed.compilation,
+        observed.execution,observed.configuration,observed.cmake_graph};
+}
 void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result,
         std::stop_token stop) {
     if(!request.named_rule_probe||
@@ -1574,6 +1663,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         }
         if(request.cmake){
             run_cmake(request,result,input,compiler_input,stop);
+            complete_cmake_option_probe(request,result,stop);
             complete_named_rule_probe(request,result,stop);
             return result;
         }

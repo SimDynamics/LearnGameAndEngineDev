@@ -2662,7 +2662,8 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> owners;
     for(const auto& record:records) {
         const auto item=record.GetObject();
-        allowed_keys(item,{"activity","project","minimumCmakeVersion","targets"});
+        allowed_keys(item,{"activity","project","minimumCmakeVersion","targets",
+            "optionSelection"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2761,6 +2762,37 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                         target.type=="EXECUTABLE",
                     "CMake links must reference a declared static library from an executable");
             }
+        if(item.HasKey(L"optionSelection")) {
+            const auto option=item.GetNamedObject(L"optionSelection");
+            allowed_keys(option,{"name","default","target","offSource","offStdout"},true);
+            require(option.HasKey(L"name")&&option.HasKey(L"default")&&
+                    option.HasKey(L"target")&&option.HasKey(L"offSource")&&
+                    option.HasKey(L"offStdout"),
+                "Binary option requires name, default, target, source and output");
+            const auto name=text(option,"name");
+            const auto target=text(option,"target");
+            const auto off_source=text(option,"offSource");
+            const auto off_output=text(option,"offStdout");
+            require(target_name(name)&&name.size()<=128&&
+                    text(option,"default")=="OFF"&&
+                    off_output.size()<=1024*1024&&
+                    owner->standard_input.value_or("").empty()&&
+                    owner->cmake->options.contains(name)&&
+                    owner->cmake->options.at(name)=="ON",
+                "Binary option requires an ON editor with authored OFF default");
+            const auto library=std::ranges::find_if(requirement.targets,
+                [&](const auto& item){return item.name==target;});
+            require(library!=requirement.targets.end()&&
+                    library->type=="STATIC_LIBRARY"&&
+                    library->exact_sources&&!library->sources.empty()&&
+                    std::ranges::find(library->sources,off_source)==
+                        library->sources.end()&&is_cpp_source_file(off_source)&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& file){return file.first==off_source;}),
+                "Binary option must switch between distinct original library files");
+            requirement.option_selection=CmakeOptionSelectionRequirement{
+                name,target,off_source,off_output};
+        }
         owner->cmake_graph_check=std::move(requirement);
     }
 }

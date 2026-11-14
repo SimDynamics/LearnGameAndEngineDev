@@ -2185,8 +2185,9 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
     for entry in records:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
-                {"activity", "project", "minimumCmakeVersion", "targets"},
-                "CMake graph owner needs activity, optional project, minimum and targets")
+                {"activity", "project", "minimumCmakeVersion", "targets",
+                 "optionSelection"},
+                "CMake graph owner needs bounded optional requirements")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
         seen.add(identity)
@@ -2257,6 +2258,31 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                         targets_by_name[name]["type"] == "STATIC_LIBRARY" and
                         target["type"] == "EXECUTABLE",
                         "CMake links require a declared static library and executable")
+        if "optionSelection" in entry:
+            option = entry["optionSelection"]
+            require(type(option) is dict and set(option) ==
+                    {"name", "default", "target", "offSource", "offStdout"},
+                    "CMake binary option requires its complete bounded contract")
+            name, target, off_source = (
+                option["name"], option["target"], option["offSource"])
+            require(type(name) is str and len(name) <= 128 and
+                    re.fullmatch(r"[A-Za-z0-9_.+-]+", name) and
+                    option["default"] == "OFF" and
+                    block["cmake"].get("options", {}).get(name) == "ON" and
+                    not block.get("standardInput") and
+                    type(option["offStdout"]) is str and
+                    len(option["offStdout"]) <= 1024 * 1024,
+                    "CMake binary option needs ON editor and OFF default")
+            library = targets_by_name.get(target)
+            require(type(target) is str and library is not None and
+                    library["type"] == "STATIC_LIBRARY" and
+                    library.get("exactSources") is True and
+                    bool(library.get("sources")) and
+                    type(off_source) is str and
+                    off_source.lower().endswith((".cpp", ".cc", ".cxx", ".c++")) and
+                    off_source in original_paths and
+                    off_source not in library["sources"],
+                    "CMake binary option needs distinct original library sources")
 
 def _validate_order_visual_separators(document: dict) -> None:
     """A visual-only root extension, never an order fragment or progress slot."""
