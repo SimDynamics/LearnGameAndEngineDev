@@ -376,7 +376,7 @@ void generic_order_groups_accept_new_owner() {
           spaced.order_equivalence_groups==after.order_equivalence_groups&&
           indexed.order_equivalence_groups==after.order_equivalence_groups&&
           curriculum::evaluate_order(spaced,swapped).correct&&
-          curriculum::order_representation_frame(spaced)!=
+          curriculum::order_representation_frame(spaced)==
               curriculum::order_representation_frame(after)&&
           curriculum::exercise_key(formatted,spaced)==
               curriculum::exercise_key(active,after)&&
