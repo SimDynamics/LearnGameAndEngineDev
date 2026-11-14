@@ -663,18 +663,26 @@ de propósito; `minUses` exige un mínimo de referencias de la constante.
 El lector exige una definición de la función, una constante local `int` de
 valor correspondiente, un identificador de propósito y referencias reales al
 resultado, incluso cuando se devuelve mediante variables intermedias.
-Admite las grafías equivalentes `const int` e `int const`; no exige un
-orden exclusivo de los especificadores de tipo. Los resultados parciales
-pueden conservarse en variables intermedias `const int`, `int const`,
-`const auto` o `auto const`, siempre que esas referencias lleguen al
-resultado de la función. Los comentarios, las cadenas y las constantes
+Admite las grafías equivalentes `const int`, `int const`,
+`constexpr int` e `int constexpr`; no exige un orden exclusivo de esos
+especificadores de tipo. Los resultados parciales pueden conservarse en
+variables intermedias `const int`, `int const`, `const auto`, `auto const`,
+`constexpr int`, `int constexpr`, `constexpr auto` o `auto constexpr`,
+siempre que dichas variables sean declaraciones C++ válidas y sus
+referencias lleguen al resultado de la función. Un cálculo que depende
+de la entrada en tiempo de ejecución no puede inicializar una variable
+`constexpr`; en ese caso se puede usar, por ejemplo, `int const`. Los comentarios, las cadenas y las constantes
 declaradas pero no utilizadas no
 acreditan el objetivo. La constante puede inicializarse también con
 aritmética entera acotada sobre literales decimales, incluidos paréntesis,
 signos y los operadores `+`, `-`, `*`, `/` y `%`. Se respetan
-precedencia y división entera; se rechazan desbordamiento, divisor cero
-y literales de base ambigua para el comprobador, sin interpretar macros
-ni evaluar expresiones C++ arbitrarias. El analizador sólo admite
+precedencia y división entera. Los literales enteros C++ en base
+decimal, binaria, octal y hexadecimal se interpretan según su base real:
+`4`, `0b100`, `04` y `0x4` representan el mismo entero, pero `010`
+representa ocho y no diez. Se reconocen separadores entre dígitos y
+sufijos enteros válidos; se rechazan bases mal formadas, desbordamientos,
+divisores cero y sufijos ajenos, sin interpretar macros ni evaluar
+expresiones C++ arbitrarias. El analizador sólo admite
 directivas `#include` en el archivo evaluado: una función excluida con
 `#if 0`, una macro o una declaración generada no constituyen evidencia
 fuente acreditable. Los comentarios que mencionan esas directivas siguen
