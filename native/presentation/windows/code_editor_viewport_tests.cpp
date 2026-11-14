@@ -113,6 +113,36 @@ int main(){
         std::string expanded;
         for(int row=0;row<110;++row)
             expanded+="int row_"+std::to_string(row)+" = "+std::to_string(row)+";\n";
+        {
+            // The abbreviated source may still overflow a compact editor.
+            // Its old bottom offset must be clamped, not blindly restored.
+            MoveWindow(edit,0,0,650,460,TRUE);
+            editor->reset(windows::predefined_code_document(expanded));
+            const auto partial_cut=SendMessageW(edit,EM_LINEINDEX,40,0);
+            check(partial_cut>0,"Partially trimmed source lost its native line boundary");
+            CHARRANGE partial_tail{static_cast<LONG>(partial_cut),-1};
+            SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&partial_tail));
+            POINT old_bottom{0,900};
+            SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&old_bottom));
+            POINT original_scroll{};
+            SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&original_scroll));
+            check(original_scroll.y>0,"Compact editor cannot reproduce a scrolled source");
+            SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(L""));
+            pump();
+            POINT partial_scroll{};
+            SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&partial_scroll));
+            check(partial_scroll.y>=0&&partial_scroll.y<original_scroll.y,
+                "A shortened but overflowing source retained an obsolete bottom offset");
+            check(editor->document().text.find("row_40")==std::string::npos,
+                "Partial-scroll correction modified the retained source boundary");
+            SendMessageW(edit,WM_VSCROLL,MAKEWPARAM(SB_TOP,0),0);
+            check(SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
+                "The shortened source could not scroll to its first line");
+            editor->undo();
+            check(editor->document().text==expanded,
+                "The partial-scroll repair broke Undo of the original long source");
+        }
+        MoveWindow(edit,0,0,650,950,TRUE);
         editor->reset(windows::predefined_code_document(expanded));
         const auto cut=SendMessageW(edit,EM_LINEINDEX,18,0);
         check(cut>0,"Fullscreen regression has no eighteenth native line");
