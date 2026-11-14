@@ -104,11 +104,20 @@ foreach(u7_name IN ITEMS before after changed-answer stale-question unmarked-que
     list(APPEND LGAED_CODE_FORMAT_FIXTURES
         "${LGAED_CODE_FORMAT_FIXTURE_DIR}/u7-question.${u7_name}.json")
 endforeach()
+# Exact U12 public wording, restored historical U12L6 return, and U12L22.
+# These ten JSON files are created under the CI output directory only.
+foreach(u12_kind IN ITEMS formatting group)
+    foreach(u12_side IN ITEMS before after changed-answer stale-semantic forged-proof)
+        list(APPEND LGAED_CODE_FORMAT_FIXTURES
+            "\${LGAED_CODE_FORMAT_FIXTURE_DIR}/u12-\${u12_kind}.\${u12_side}.json")
+    endforeach()
+endforeach()
 add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
     COMMAND ${_lgaed_state_fixture_python} "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
         --output-dir "${LGAED_CODE_FORMAT_FIXTURE_DIR}"
     DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_published_u12_question_editorials.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
@@ -116,6 +125,12 @@ add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json"
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json"
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Verify source-only and combined question/spacing histories in es/en/fr"
     VERBATIM)

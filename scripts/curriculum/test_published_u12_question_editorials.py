@@ -222,6 +222,22 @@ class PublishedU12QuestionTest(unittest.TestCase):
                 with self.assertRaises((state.LayoutError, ValueError)):
                     state.revise_ordinary_editorial(before, identity, misaligned)
 
+
+    def test_windows_u12_fixture_exports_are_authentic_and_reject_corruption(self):
+        from code_format_fixture_source import real_u12_editorial_fixtures
+
+        exported = real_u12_editorial_fixtures()
+        self.assertEqual(len(exported), 10)
+        for name in CASES:
+            before = exported[f"u12-{name}.before"]
+            after = exported[f"u12-{name}.after"]
+            self.assertEqual(before["stateLayout"]["origin"], after["stateLayout"]["origin"])
+            self.assertEqual(state.validate(before), state.validate(after))
+            state.validate_transition(before, after)
+            for mode in ("changed-answer", "stale-semantic", "forged-proof"):
+                with self.subTest(lesson=name, mutation=mode), self.assertRaises(state.LayoutError):
+                    state.validate(exported[f"u12-{name}.{mode}"])
+
     def test_public_cli_outputs_new_file_and_rejects_overwrite(self):
         before = family("group")["es"]
         edits = authored_fields(before, "group")

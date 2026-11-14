@@ -527,6 +527,97 @@ void verify_real_u7_question_and_spacing(const std::filesystem::path& fixtures) 
         must_reject(fixtures/(std::string("u7-question.")+forged+".json"));
 }
 
+void verify_real_u12_editorials(const std::filesystem::path& fixtures) {
+    struct Sample {std::string_view tag,lesson,id;std::size_t p,b;bool choice;};
+    constexpr std::array<Sample,2> samples{{
+        {"formatting","cpp_fundamentals__archivos_y_programa_completo__estado_del_formato_y_flujos_independientes",
+         "block_0002_0002",2,3,true},
+        {"group","cpp_fundamentals__archivos_y_programa_completo__leer_un_grupo_con_cierre_propio",
+         "block_0001_0002",1,2,false}
+    }};
+    for(const auto& sample:samples) {
+        const auto prefix="u12-"+std::string(sample.tag);
+        const auto before_file=fixtures/(prefix+".before.json");
+        const auto after_file=fixtures/(prefix+".after.json");
+        const auto before=windows::load_lesson(before_file,"es");
+        const auto after=windows::load_lesson(after_file,"es");
+        check(before.id==sample.lesson&&before.id==after.id&&
+              before.state_layout.signatures==after.state_layout.signatures&&
+              before.state_layout.lineage==after.state_layout.lineage&&
+              before.state_layout.legacy_lineage==after.state_layout.legacy_lineage,
+              "U12 editorial authoring changed the historical family, origin or response signature");
+        const auto& old=before.pages.at(sample.p).blocks.at(sample.b);
+        const auto& now=after.pages.at(sample.p).blocks.at(sample.b);
+        check(old.stable_id==sample.id&&old.stable_id==now.stable_id&&
+              old.address.page==now.address.page&&old.address.block==now.address.block&&
+              old.type==now.type&&old.question!=now.question&&
+              old.options==now.options&&old.correct_index==now.correct_index&&
+              old.answers==now.answers&&old.code==now.code&&
+              old.review_feedback==now.review_feedback&&
+              old.review_feedback_options==now.review_feedback_options&&
+              curriculum::exercise_key(before,old)==curriculum::exercise_key(after,now)&&
+              curriculum::draft_key("programming",before,old)==
+                  curriculum::draft_key("programming",after,now),
+              "A U12 editorial correction changed the saved answer, source or historical owner");
+        const auto q=now.text_semantics.find("/question");
+        check(q!=now.text_semantics.end()&&q->second.source==now.question,
+              "The edited U12 question lost its exact authored reading descriptor");
+        if(sample.choice) {
+            check(old.type==curriculum::BlockType::multiple_choice&&
+                  now.correct_index&&*now.correct_index==2&&
+                  old.explanation!=now.explanation&&q->second.spans.size()==2&&
+                  now.text_semantics.contains("/explanation")&&
+                  now.text_semantics.at("/explanation").spans.size()==4,
+                  "U12L6 lost question/guide semantic spans or the original solution");
+            for(const auto& span:q->second.spans)
+                check(span.role==curriculum::SemanticRole::cpp&&
+                      span.reading==curriculum::SemanticReading::technical&&
+                      (span.text=="texto << std::hex << 31"||
+                       span.text=="texto << std::dec"),
+                      "U12L6 introduced inferred or incorrect technical narration");
+            const auto& old_returns=before.state_layout.editorial_returns;
+            const auto& current_returns=after.state_layout.editorial_returns;
+            check(current_returns.size()==old_returns.size()+1,
+                  "U12L6 must explicitly return to its earlier full editorial payload");
+            const auto entry=std::find_if(current_returns.begin(),current_returns.end(),
+                [&](const auto& value){return value.id==sample.id;});
+            check(entry!=current_returns.end()&&
+                  entry->previous_raw_json.find("texto << hex << 31")!=std::string::npos,
+                  "The native loader lost the original abbreviated U12L6 reading");
+        }else {
+            check(old.type==curriculum::BlockType::output_prediction&&
+                  old.answers.size()==1&&old.answers.front()=="1:}:fin"&&
+                  old.explanation==now.explanation&&q->second.spans.empty()&&
+                  before.state_layout.editorial_returns.size()==
+                      after.state_layout.editorial_returns.size(),
+                  "U12L22 gained a new result or silently changed its older guidance");
+        }
+        state::StateData saved;state::prepare_lesson_state(saved,before);
+        state::Response response;response.correct=true;
+        if(sample.choice) {
+            response.selected=static_cast<std::int64_t>(*old.correct_index);
+            response.answer=old.options.at(*old.correct_index);
+        }else response.answer=old.answers.front();
+        state::put_response(saved,before,old,response);
+        state::save_current_page(saved,before,sample.p);
+        const auto archived=state::decode(state::encode(saved));
+        check(archived==saved,"A historic U12 response changed during serialization");
+        state::validate_lesson_state(archived,after);
+        const auto restored=state::get_response(archived,after,now);
+        check(restored&&restored->correct&&restored->answer==response.answer&&
+              restored->selected==response.selected&&
+              state::current_page(archived,after)==sample.p,
+              "A saved original U12 answer disappeared when reopening the revised lesson");
+        const auto catalog=windows::load_lesson_progress_metadata(after_file,"es");
+        check(catalog.state_layout.signatures==after.state_layout.signatures&&
+              catalog.state_layout.lineage==after.state_layout.lineage&&
+              catalog.pages.at(sample.p).blocks.at(sample.b).stable_id==sample.id,
+              "The progress-only native reader lost the exact U12 historic identity");
+        for(const auto variant:{"changed-answer","stale-semantic","forged-proof"})
+            must_reject(fixtures/(prefix+"."+variant+".json"));
+    }
+}
+
 }
 
 int main(int argc,char** argv) {
@@ -536,6 +627,7 @@ int main(int argc,char** argv) {
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
         verify_visual_separators_keep_order_and_history(dir);
         verify_real_u7_question_and_spacing(dir);
+        verify_real_u12_editorials(dir);
         verify_real_curricular_pilot(std::filesystem::path(argv[2]));
         verify_real_curricular_pilot(std::filesystem::path(argv[2])/"after-editorial");
         verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));

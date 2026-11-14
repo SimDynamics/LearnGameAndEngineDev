@@ -116,12 +116,57 @@ def real_question_spacing_fixtures() -> dict[str, dict]:
     }
 
 
+
+def real_u12_editorial_fixtures() -> dict[str, dict]:
+    """Generate CI-only U12L6 return and U12L22 question copies."""
+    from test_published_u12_question_editorials import CASES, proposal
+
+    exports = {}
+    for kind in ("formatting", "group"):
+        before, after, family = proposal(kind)
+        identity = CASES[kind]["identity"]
+        assert family["es"] == before
+        assert layout.validate(before) == layout.validate(after)
+        layout.validate_transition(before, after)
+        prefix = "u12-" + kind
+        exports[prefix + ".before"] = before
+        exports[prefix + ".after"] = after
+
+        altered = deepcopy(after)
+        owner = layout._blocks(altered)[identity]
+        if kind == "formatting":
+            assert owner["correctIndex"] == 2
+            owner["correctIndex"] = 0
+        else:
+            assert owner["answers"] == ["1:}:fin"]
+            owner["answers"] = ["FALSO"]
+        exports[prefix + ".changed-answer"] = altered
+
+        altered = deepcopy(after)
+        marker = next(entry for entry in altered["textSemantics"]["fields"]
+                      if entry["block"] == identity and entry["path"] == "/question")
+        marker["sourceSha256"] = "0" * 64
+        exports[prefix + ".stale-semantic"] = altered
+
+        altered = deepcopy(after)
+        edge = altered["stateLayout"]["editorial"][-1]
+        assert edge["id"] == identity
+        if kind == "formatting":
+            assert edge["returnTo"]["revision"] == 3
+            edge["returnTo"]["revision"] = 0
+        else:
+            edge["afterSha256"] = "0" * 64
+        exports[prefix + ".forged-proof"] = altered
+    return exports
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
     options = parser.parse_args()
     files = fixtures()
     files.update(real_question_spacing_fixtures())
+    files.update(real_u12_editorial_fixtures())
     options.output_dir.mkdir(parents=True, exist_ok=True)
     for name, document in files.items():
         destination = options.output_dir / f"{name}.json"
