@@ -2153,6 +2153,136 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             adjustments_before)&&
         adjustments_before.project_files==adjustments_files,
         "U3L10 reopened completion or original project sources were changed");
+    // The preceding stdout is a historical achievement, not proof that the
+    // student's checker still links to ajustes. Project an authenticated
+    // structure rubric into the original stable owner without changing its
+    // JSON, stateLayout, source, options or old completion receipt.
+    std::string adjustments_projected=adjustments_lesson.raw_json;
+    const auto adjustments_anchor=adjustments_projected.find(anchor);
+    check(adjustments_anchor!=adjustments_projected.npos&&
+        adjustments_projected.find(anchor,adjustments_anchor+1)==
+            adjustments_projected.npos,
+        "U3L10 source state map moved before graph projection");
+    adjustments_projected.insert(adjustments_anchor,R"json(
+  "compilerCmakeGraphChecks":[
+    {"activity":"block_0006_0008",
+     "project":"AjustesConEvidencia",
+     "minimumCmakeVersion":"3.20",
+     "targets":[
+       {"name":"comprobar_ajustes","type":"EXECUTABLE",
+        "sources":["pruebas/casos.cpp"],"linksTo":["ajustes"],
+        "exactSources":true,"explicitCxx20":true,
+        "explicitCxxExtensionsOff":true},
+       {"name":"consultar_ajustes","type":"EXECUTABLE",
+        "sources":["app/consulta.cpp"],"linksTo":["ajustes"],
+        "exactSources":true,"explicitCxx20":true,
+        "explicitCxxExtensionsOff":true},
+       {"name":"ajustes","type":"STATIC_LIBRARY",
+        "sources":["src/ajuste.cpp"],"publicIncludeRoots":["publico"],
+        "exactSources":true,"explicitCxx20":true,
+        "explicitCxxExtensionsOff":true}
+     ]}
+  ],
+)json");
+    const auto adjustments_mapped=lgaed::windows::parse_lesson_json(
+        adjustments_projected,"es");
+    const auto adjustments_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        adjustments_projected,"es");
+    const auto& adjustments_reviewed=adjustments_mapped.pages.at(6).blocks.at(6);
+    const auto& adjustments_meta=adjustments_metadata.pages.at(6).blocks.at(6);
+    check(!adjustments_before.cmake_graph_check&&
+        adjustments_reviewed.cmake_graph_check&&
+        adjustments_reviewed.cmake_graph_check==
+            adjustments_meta.cmake_graph_check&&
+        adjustments_reviewed.project_files==adjustments_files&&
+        adjustments_mapped.state_layout.lineage==
+            adjustments_lesson.state_layout.lineage&&
+        adjustments_mapped.state_layout.signatures==
+            adjustments_lesson.state_layout.signatures&&
+        adjustments_metadata.state_layout.signatures==
+            adjustments_lesson.state_layout.signatures&&
+        curriculum::exercise_key(adjustments_lesson,adjustments_before)==
+            curriculum::exercise_key(adjustments_mapped,adjustments_reviewed)&&
+        curriculum::draft_key("programming",adjustments_lesson,adjustments_before)==
+            curriculum::draft_key("programming",adjustments_mapped,adjustments_reviewed)&&
+        curriculum::reference_objective_frame(
+            adjustments_lesson,adjustments_before)!=
+            curriculum::reference_objective_frame(
+                adjustments_mapped,adjustments_reviewed),
+        "U3L10 graph requirements did not preserve original exercise and draft");
+    auto adjustments_checked=adjustments;
+    adjustments_checked.request_id=3511;
+    ++adjustments_checked.revision;
+    adjustments_checked.project_key+="/graph-verified";
+    adjustments_checked.cmake_graph_check=adjustments_reviewed.cmake_graph_check;
+    check(compiler_runtime_request_allowed(adjustments_reviewed,adjustments_checked),
+        "U3L10 original checker cannot run its published graph rubric");
+    const auto checked_adjustments=run_cpp(adjustments_checked);
+    ran(checked_adjustments);
+    const auto checked_capture=capture_cpp_execution(
+        adjustments_checked,checked_adjustments);
+    const auto checked_structure=evaluate_cmake_graph(
+        adjustments_checked,checked_adjustments,
+        *adjustments_reviewed.cmake_graph_check);
+    check(checked_capture.cmake_graph_correct&&checked_structure.correct&&
+        evaluate_cpp_output_check(*adjustments_reviewed.output_check,
+            checked_capture,adjustments_checked.revision).verdict==
+                curriculum::OutputVerdict::correct,
+        "Corrected original eleven-case checker lost its actual MSVC CMake "
+        "library, consumers, include propagation or authored C++ requirements: "+
+        checked_structure.reason);
+    state::prepare_lesson_state(adjustments_saved,adjustments_mapped);
+    check(compiler_puzzle_completed(adjustments_saved,adjustments_lesson,
+            adjustments_before)&&
+        !compiler_puzzle_completed(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed),
+        "U3L10 historical stdout proof incorrectly granted structural credit");
+    check(record_compiler_puzzle_case(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed,adjustments_checked,checked_capture,
+            "Enlace CMake comprobado")&&
+        compiler_puzzle_completed(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed)&&
+        compiler_puzzle_case_count(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed)==1,
+        "U3L10 real linked graph failed to unlock only its first case");
+    const auto mapped_reopened=state::decode(state::encode(adjustments_saved));
+    check(compiler_puzzle_completed(mapped_reopened,adjustments_lesson,
+            adjustments_before)&&
+        compiler_puzzle_completed(mapped_reopened,adjustments_mapped,
+            adjustments_reviewed),
+        "U3L10 old and structural CMake achievements were not both preserved");
+    // A counterfeit checker compiling the same library implementation
+    // directly emits the expected eleven OK lines, but does not link ajustes.
+    auto unlinked_adjustments=adjustments_checked;
+    unlinked_adjustments.request_id=3512;
+    ++unlinked_adjustments.revision;
+    unlinked_adjustments.project_key+="/checker-direct-source";
+    for(auto& file:unlinked_adjustments.project_files)
+        if(file.first=="CMakeLists.txt") {
+            adjustments_replace(file.second,
+                "add_executable(comprobar_ajustes pruebas/casos.cpp)",
+                "add_executable(comprobar_ajustes pruebas/casos.cpp src/ajuste.cpp)");
+            adjustments_replace(file.second,
+                "target_link_libraries(comprobar_ajustes PRIVATE ajustes)",
+                "target_include_directories(comprobar_ajustes PRIVATE publico)");
+        }
+    const auto unlinked_result=run_cpp(unlinked_adjustments);
+    ran(unlinked_result);
+    const auto unlinked_capture=capture_cpp_execution(
+        unlinked_adjustments,unlinked_result);
+    const auto unlinked_structure=evaluate_cmake_graph(
+        unlinked_adjustments,unlinked_result,
+        *adjustments_reviewed.cmake_graph_check);
+    check(matches_native_console_output(
+            unlinked_result.execution.stdout_bytes,adjustments_expected)&&
+        evaluate_cpp_output_check(*adjustments_reviewed.output_check,
+            unlinked_capture,unlinked_adjustments.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !unlinked_structure.correct&&!unlinked_capture.cmake_graph_correct&&
+        !record_compiler_puzzle_case(adjustments_saved,adjustments_mapped,
+            adjustments_reviewed,unlinked_adjustments,unlinked_capture,
+            "Fuente directa sin enlace"),
+        "U3L10 gave credit for the right output from a checker bypassing its library");
     // After the fix the client is still a different executable. Its
     // six requests include two rejections that must keep stderr separate.
     auto adjustments_client_request=adjustments;
