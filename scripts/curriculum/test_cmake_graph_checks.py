@@ -103,7 +103,12 @@ class CmakeGraphChecksTest(unittest.TestCase):
         reviewed["compilerCmakeGraphChecks"][0]["targets"][1][
             "authoredCompileOptions"] = ["/W4", "/permissive-"]
         state.validate(reviewed)
-        state.validate_transition(self.after, reviewed)
+        # New requirements may be published with the initial root rubric.
+        state.validate_transition(self.before, reviewed)
+        # They cannot be injected later into an already published rubric:
+        # that would redefine the student's historical completion contract.
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, reviewed)
         self.assertEqual(reviewed["pages"], self.before["pages"])
         self.assertEqual(reviewed["stateLayout"], self.before["stateLayout"])
         for bad in ([], ["/W4", "/W4"], [""], ["W4"], [" /W4"],
