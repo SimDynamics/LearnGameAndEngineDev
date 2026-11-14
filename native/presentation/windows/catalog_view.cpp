@@ -49,6 +49,8 @@ struct CatalogView {
     bool updating = false, owned_by_window = false, rendered = false;
     std::vector<CatalogAction> home_actions;
     std::vector<CatalogProgress> completion;
+    // One failed lesson must not leave later unit cards with fake "Abrir" progress.
+    std::vector<bool> progress_unavailable;
     std::vector<CatalogScope> scopes;
     std::string ui_locale = "es";
     struct HeaderPlacement{HWND item;int x,y,width,height;};
@@ -141,12 +143,16 @@ struct CatalogView {
         if (index < completion.size()) {
             const auto snapshot = completion[index];
             const bool lesson=catalog_level(page.location)==CatalogLevel::lessons;
+            const bool unavailable=index<progress_unavailable.size()&&progress_unavailable[index];
+            if(unavailable&&lesson)return ui("Progreso de esta lección no disponible",
+                "Lesson progress unavailable","Progression de cette leçon indisponible");
             if(catalog_level(page.location)==CatalogLevel::courses&&snapshot.total==0)return development_notice();
             const bool singular=snapshot.total==1||(ui_locale=="fr"&&snapshot.total==0);
             return std::to_string(snapshot.completed) + ui(" de "," of "," sur ") + std::to_string(snapshot.total) +
                 (lesson?(singular?ui(" página completada"," page completed"," page terminée"):ui(" páginas completadas"," pages completed"," pages terminées")):
                     (singular?ui(" lección completada"," lesson completed"," leçon terminée"):ui(" lecciones completadas"," lessons completed"," leçons terminées"))) +
-                (snapshot.pending_validation?ui(" · verificando…"," · checking…"," · vérification…"):"");
+                (unavailable?ui(" · progreso parcial", " · partial progress", " · progression partielle"):
+                    snapshot.pending_validation?ui(" · verificando…"," · checking…"," · vérification…"):"");
         }
         return ui("Abrir","Open","Ouvrir");
     }
@@ -167,7 +173,7 @@ struct CatalogView {
         updating = true; page = std::move(loaded); progress = load_state();
         reader_theme::set_accent(window,reader_theme::appearance_accent(progress,page.location.route));
         struct Restore { bool& updating; ~Restore() { updating = false; } } restore{updating};
-        home_actions.clear(); completion.clear(); scopes.clear();
+        home_actions.clear(); completion.clear(); progress_unavailable.clear(); scopes.clear();
         ui_locale = interface_language(progress);
         for (const auto& entry : page.entries) {
             CatalogScope scope;
@@ -175,16 +181,27 @@ struct CatalogView {
                 if (catalog_level(location) == CatalogLevel::lessons) scope.lessons.push_back(entry.id);
                 else scope = windows::catalog_scope(root,catalog_child(location,entry.id));
             }
-            completion.push_back(windows::catalog_entry_progress(root,location,entry,progress,
-                [&](const Block& block,const state::Response& response,std::string_view locale)->std::optional<bool> {
-                    if(!validate_math)return std::nullopt;
-                    const auto frame=[](std::string_view value){return std::to_string(value.size())+':'+std::string(value);};
-                    const auto identity=state::sha256("catalog-math-v1/"+frame(locale)+frame(block.raw_json)+frame(response.raw_json));
-                    if(const auto found=math_validation.find(identity);found!=math_validation.end())return found->second;
-                    const auto verified=validate_math(block,response,locale);
-                    if(verified){if(math_validation.size()>=2048)math_validation.erase(math_validation.begin());math_validation.emplace(identity,*verified);}
-                    return verified;
-                })); scopes.push_back(std::move(scope));
+            try {
+                completion.push_back(windows::catalog_entry_progress(root,location,entry,progress,
+                    [&](const Block& block,const state::Response& response,std::string_view locale)->std::optional<bool> {
+                        if(!validate_math)return std::nullopt;
+                        const auto frame=[](std::string_view value){return std::to_string(value.size())+':'+std::string(value);};
+                        const auto identity=state::sha256("catalog-math-v1/"+frame(locale)+frame(block.raw_json)+frame(response.raw_json));
+                        if(const auto found=math_validation.find(identity);found!=math_validation.end())return found->second;
+                        const auto verified=validate_math(block,response,locale);
+                        if(verified){if(math_validation.size()>=2048)math_validation.erase(math_validation.begin());math_validation.emplace(identity,*verified);}
+                        return verified;
+                    }));
+                progress_unavailable.push_back(false);
+            } catch(const std::exception& failure) {
+                // This is a read-only degradation: no progress, proof, draft or
+                // JSON is edited. Keep the full cause in the debugger, not the UI.
+                OutputDebugStringW(wide(std::string("Catalog progress for ")+entry.id+": "+failure.what()+"\n").c_str());
+                completion.push_back(catalog_level(location)==CatalogLevel::lessons
+                    ? CatalogProgress{} : catalog_progress(progress,scope));
+                progress_unavailable.push_back(true);
+            }
+            scopes.push_back(std::move(scope));
         }
         if (catalog_level(location) == CatalogLevel::routes) for (const auto action :
             {CatalogAction::settings,CatalogAction::calculator,CatalogAction::graphics,CatalogAction::compiler,CatalogAction::smo})
@@ -200,9 +217,15 @@ struct CatalogView {
             ui("Ruta de programación, sistemas, gráficos y motores.","A learning path covering programming, systems, graphics, and engines.","Un parcours consacré à la programmation, aux systèmes, à l’informatique graphique et aux moteurs.") :
             ui("Ruta progresiva de matemáticas y física.","A progressive learning path in mathematics and physics.","Un parcours progressif en mathématiques et en physique.") :
             level==CatalogLevel::units ? ui("Unidades","Units","Unités") : ui("Lecciones","Lessons","Leçons");
-        SetWindowTextW(status,wide(catalog_level(location) == CatalogLevel::routes ? ui("Aprende programación, gráficos, motores, matemáticas y física desde sus fundamentos.",
-            "Learn programming, graphics, engines, mathematics, and physics from the ground up.",
-            "Apprenez la programmation, l’informatique graphique, les moteurs, les mathématiques et la physique depuis leurs fondements.") : status_text).c_str());
+        const bool incomplete_progress=std::ranges::any_of(progress_unavailable,[](bool value){return value;});
+        const auto displayed_status=incomplete_progress?
+            ui("No se pudo calcular todo el progreso. Las demás unidades siguen disponibles.",
+                "Some progress could not be calculated. Other units remain available.",
+                "Une partie de la progression est indisponible. Les autres unités restent accessibles.") :
+            catalog_level(location) == CatalogLevel::routes ? ui("Aprende programación, gráficos, motores, matemáticas y física desde sus fundamentos.",
+                "Learn programming, graphics, engines, mathematics, and physics from the ground up.",
+                "Apprenez la programmation, l’informatique graphique, les moteurs, les mathématiques et la physique depuis leurs fondements.") : status_text;
+        SetWindowTextW(status,wide(displayed_status).c_str());
         SetWindowTextW(routes_heading,wide(ui("Rutas de aprendizaje","Learning Paths","Parcours d’apprentissage")).c_str());
         if(level==CatalogLevel::units||level==CatalogLevel::lessons){
             const auto parent_page=windows::load_catalog(root,catalog_parent(location));
@@ -399,7 +422,8 @@ struct CatalogView {
         FillRect(item.hDC,&item.rcItem,reader_theme::brush(reader_theme::Surface::screen));
         auto card = item.rcItem;card.bottom-=px(14);
         const auto snapshot = completion[item.itemID];
-        const bool finished=snapshot.total>0&&snapshot.completed==snapshot.total&&!snapshot.pending_validation;
+        const bool unavailable=item.itemID<progress_unavailable.size()&&progress_unavailable[item.itemID];
+        const bool finished=!unavailable&&snapshot.total>0&&snapshot.completed==snapshot.total&&!snapshot.pending_validation;
         if(finished&&!palette.high_contrast){const auto fill=CreateSolidBrush(reader_theme::completion_background(RGB(32,33,38)));FillRect(item.hDC,&card,fill);DeleteObject(fill);}
         else FillRect(item.hDC,&card,reader_theme::brush(reader_theme::Surface::catalog_card));
         const auto old_font = SelectObject(item.hDC,ordinal_font?ordinal_font:font); SetBkMode(item.hDC,TRANSPARENT); SetTextColor(item.hDC,palette.text);
@@ -426,13 +450,13 @@ struct CatalogView {
         SetTextColor(item.hDC,palette.high_contrast?palette.muted:lesson?RGB(174,180,190):RGB(208,208,213));
         DrawTextW(item.hDC,description.c_str(),static_cast<int>(description.size()),&bounds,DT_WORDBREAK | DT_NOPREFIX);
         const auto percentage = snapshot.percentage();
-        bounds.left=bounds.right+px(12);bounds.right=card.right-px(20);const auto percent = snapshot.pending_validation?std::wstring(L"…"):std::to_wstring(percentage) + L"%";
+        bounds.left=bounds.right+px(12);bounds.right=card.right-px(20);const auto percent = (unavailable||snapshot.pending_validation)?std::wstring(L"…"):std::to_wstring(percentage) + L"%";
         SetTextColor(item.hDC,palette.high_contrast?palette.text:RGB(255,255,255));
         if(entry.available&&!(catalog_level(page.location)==CatalogLevel::courses&&snapshot.total==0))
             DrawTextW(item.hDC,percent.c_str(),static_cast<int>(percent.size()),&bounds,DT_SINGLELINE | DT_RIGHT | DT_NOPREFIX);
         auto meter = card; meter.left += px(20); meter.right -= px(20);meter.bottom-=px(20);meter.top=meter.bottom-px(lesson?6:8);
         const auto track = CreateSolidBrush(palette.high_contrast?palette.outline:RGB(48,50,58)); FillRect(item.hDC,&meter,track); DeleteObject(track);
-        meter.right = meter.left + MulDiv(meter.right - meter.left,static_cast<int>(percentage),100);
+        meter.right = meter.left + (unavailable?0:MulDiv(meter.right - meter.left,static_cast<int>(percentage),100));
         const auto fill = CreateSolidBrush(accent()); FillRect(item.hDC,&meter,fill); DeleteObject(fill);
         if(item.itemState&ODS_FOCUS)reader_theme::paint_keyboard_focus(list,item.hDC,card,palette.muted);
         SelectObject(item.hDC,old_font);
