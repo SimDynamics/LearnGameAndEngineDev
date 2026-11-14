@@ -42,7 +42,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -2291,6 +2291,105 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
 
 
 
+def _validate_compiler_open_battery_checks(document: dict) -> None:
+    """Authenticate a new CMake battery without changing published exercise bytes.
+
+    This explicit root-only objective uses one private baseline and mutations
+    of every original comparison and the new comparison. Its original calls
+    and independent expectations must match the actual authored test source.
+    """
+    if "compilerOpenBatteryChecks" not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and
+            meta.get("locale") == "es",
+            "Open CMake battery objectives require a Spanish v2 lesson")
+    checks = document["compilerOpenBatteryChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Open CMake battery declarations require 1..32 owners")
+    owners, identities = _blocks(document), set()
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]*\Z")
+    path_pattern = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./-]*\Z")
+    signed_min, signed_max = -(2 ** 31), 2 ** 31 - 1
+    for record in checks:
+        require(type(record) is dict and set(record) == {
+            "activity", "library", "test", "function", "comparison", "target",
+            "originalCases"}, "Unknown or missing CMake battery declaration field")
+        identity = _identity(record["activity"])
+        require(identity not in identities, "Duplicate open CMake battery owner")
+        identities.add(identity)
+        block = owners.get(identity)
+        require(type(block) is dict and block.get("type") == "cpp_compiler"
+                and "outputCheck" not in block and "compileCheck" not in block
+                and type(block.get("cmake")) is dict
+                and type(block.get("projectFiles")) is list
+                and not block.get("sourceFiles"),
+                "A new open battery must own an existing unevaluated CMake editor")
+        names = (record["library"], record["test"])
+        require(all(type(name) is str and name.endswith(".cpp") and
+                    len(name) <= 256 and path_pattern.fullmatch(name)
+                    and ".." not in name and "\\" not in name
+                    for name in names) and names[0] != names[1],
+                "Open battery needs two different safe existing C++ files")
+        for field in ("function", "comparison", "target"):
+            value = record[field]
+            require(type(value) is str and len(value) <= 128 and
+                    identifier.fullmatch(value),
+                    "Open battery names must be valid C++ identifiers")
+        require(record["target"] == block["cmake"].get("target"),
+                "CMake battery target differs from the executable being checked")
+        files = block["projectFiles"]
+        by_name = {entry.get("path"): entry.get("initialCode") for entry in files
+                   if type(entry) is dict and type(entry.get("path")) is str}
+        require(len(by_name) == len(files) and
+                names[0] in by_name and names[1] in by_name and
+                "CMakeLists.txt" in by_name and
+                all(type(by_name[name]) is str for name in (*names, "CMakeLists.txt")),
+                "CMake battery source, test or build description is missing")
+        cmake = by_name["CMakeLists.txt"]
+        require(re.search(r"\badd_executable\s*\(\s*" +
+                          re.escape(record["target"]) + r"\s+" +
+                          re.escape(record["test"]) + r"\s*\)", cmake) is not None,
+                "Open CMake battery must execute the authored shared-library test")
+        require(re.search(r"\badd_library\s*\(", cmake) is not None and
+                record["function"] in by_name[names[0]],
+                "CMake battery lacks the original shared function")
+        original = record["originalCases"]
+        require(type(original) is list and 1 <= len(original) <= 32,
+                "Open battery must describe 1..32 real original test calls")
+        pattern = (r"\b" + re.escape(record["comparison"]) +
+                   r"\s*\(\s*(\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)" +
+                   r"\s*,\s*(-?\d+)\s*,\s*(-?\d+)" +
+                   r"\s*,\s*(true|false)\s*,\s*(-?\d+)\s*\)")
+        matches = list(re.finditer(pattern, by_name[names[1]]))
+        require(len(matches) == len(original),
+                "Original CMake case count does not match its real test source")
+        seen_calls, seen_labels = set(), set()
+        for item, match in zip(original, matches):
+            require(type(item) is dict and set(item) == {
+                "value", "lower", "upper", "initial"} and
+                all(type(item[name]) is int and signed_min <= item[name] <= signed_max
+                    for name in ("value", "lower", "upper", "initial")),
+                    "Original call fields must be representable signed C++ integers")
+            call = (item["value"], item["lower"], item["upper"], item["initial"])
+            require(call not in seen_calls, "Duplicate original CMake battery input")
+            seen_calls.add(call)
+            label, value, lower, upper, initial, accepted, adjusted = match.groups()
+            require(int(label) not in seen_labels and
+                    all(signed_min <= int(x) <= signed_max
+                        for x in (label, value, lower, upper, initial, adjusted)),
+                    "Invalid original CMake battery case number or signed integer")
+            seen_labels.add(int(label))
+            require(call == tuple(map(int, (value, lower, upper, initial))),
+                    "Original case was changed or mapped to another input")
+            valid = all(-20 <= x <= 20 for x in (call[0], call[1], call[2]))
+            valid = valid and call[1] <= call[2]
+            expected = (call[1] - call[0] if call[0] < call[1]
+                        else call[2] - call[0] if call[0] > call[2] else 0) if valid else call[3]
+            require((accepted == "true") == valid and int(adjusted) == expected,
+                    "Original CMake battery result contradicts its independent contract")
+
+
 def _validate_compiler_cmake_graph_checks(document: dict) -> None:
     """Bounded, append-only CMake structural objectives, without block edits."""
     if "compilerCmakeGraphChecks" not in document:
@@ -2647,6 +2746,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
+    _validate_compiler_open_battery_checks(document)
     _validate_compiler_cmake_graph_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
@@ -3043,6 +3143,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerOpenBatteryChecks") or
+            baseline.get("compilerOpenBatteryChecks") ==
+            current.get("compilerOpenBatteryChecks"),
+            "Published open CMake battery checks cannot be removed or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
             (type(current.get("compilerCmakeGraphChecks")) is list and
              current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
@@ -3330,6 +3434,10 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerNamedRuleChecks") or
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
+    require(not baseline.get("compilerOpenBatteryChecks") or
+            baseline.get("compilerOpenBatteryChecks") ==
+            current.get("compilerOpenBatteryChecks"),
+            "Published open CMake battery checks cannot be removed or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
             (type(current.get("compilerCmakeGraphChecks")) is list and
              current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
