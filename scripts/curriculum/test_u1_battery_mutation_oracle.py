@@ -105,6 +105,24 @@ class U1OpenBatteryMutationTest(unittest.TestCase):
             probe.instrument(source, probe.SIX, broken_original=False,
                              mode="original-defect")
 
+    def test_no_vacuous_or_duplicated_mutation_evidence(self):
+        source = probe.six_case_candidate()
+        for invalid in (
+            (),
+            ((4, 5), (4, 5)),
+            ((True, 5),),
+            ((2147483648, 5),),
+            ((4,),),
+            (("4", 5),),
+            tuple((x, 8) for x in range(33)),
+        ):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(ValueError, "distinct, representable"):
+                    probe.instrument(source, invalid, broken_original=False)
+                verdict = probe.audit(source, invalid, compiler(), broken_original=False)
+                self.assertFalse(verdict.accepted)
+                self.assertIn("distinct", verdict.reason)
+
     def test_attempt_to_guess_mutant_via_environment_fails(self):
         # A dishonest candidate might call every required input but return
         # failure only when the OLD oracle exposed LGAED_U1_MUTANT in getenv.

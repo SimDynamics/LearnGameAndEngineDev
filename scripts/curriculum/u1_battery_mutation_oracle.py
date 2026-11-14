@@ -27,6 +27,17 @@ THREE = ((4, 5), (5, 5), (6, 5))
 SIX = (*THREE, (7, 8), (8, 8), (9, 8))
 
 
+def validate_cases(cases: tuple[tuple[int, int], ...]) -> None:
+    """A bounded, non-vacuous set of separately observable C++ int inputs."""
+    if (type(cases) is not tuple or not 1 <= len(cases) <= 32 or
+            any(type(pair) is not tuple or len(pair) != 2 or
+                any(type(value) is not int or
+                    not -(2 ** 31) <= value < 2 ** 31 for value in pair)
+                for pair in cases) or len(set(cases)) != len(cases)):
+        raise ValueError("Expected 1 to 32 distinct, representable integer input pairs")
+
+
+
 @dataclass(frozen=True)
 class Audit:
     accepted: bool
@@ -58,6 +69,7 @@ def instrument(source: str, cases: tuple[tuple[int, int], ...],
     may be substituted; other code is preserved byte for byte. This limited
     instrumenter is not a general-purpose C++ source rewriter.
     """
+    validate_cases(cases)
     if source.count(FUNCTION) != 1:
         raise ValueError("Missing or ambiguous original debe_reponer")
     start = source.index(FUNCTION) + len(FUNCTION)
