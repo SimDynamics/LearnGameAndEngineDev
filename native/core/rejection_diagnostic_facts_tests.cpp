@@ -168,6 +168,16 @@ void rejected_semantics() {
         valid_after_range,RejectionOperation::balance,
         balance_facts).correct,
         "An unrelated forbidden value after a valid domain blocked a genuine review");
+    for(const auto phrase:{
+        "valores no permitidos: 21; rango permitido de 0 a 9",
+        "límite no permitido 21; rango permitido de 0 a 9",
+        "no se admiten valores -1; rango permitido de 0 a 9"
+    }) {
+        const auto valid=balances(phrase,"Revise");
+        require(evaluate_rejection_diagnostics(
+            valid,RejectionOperation::balance,balance_facts).correct,
+            "Rejecting a specific outside value was misread as banning the allowed domain");
+    }
     const auto unlabelled=std::string(
         "Cajas, petición 1, piezas=-1: 0 - 20, revise.\n"
         "Cajas, petición 3, piezas=21: 0 - 20, revise.\n");
