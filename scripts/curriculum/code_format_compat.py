@@ -53,7 +53,7 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
         # Physical preprocessor lines, including backslash continuations, are
         # immutable inside the directive; blank lines around them may change.
         line = src.rfind("\n", 0, i) + 1
-        if src[i] == "#" and not src[line:i].strip():
+        if (src[i] == "#" or src.startswith("%:", i)) and not src[line:i].strip():
             end = i
             while True:
                 newline = src.find("\n", end)
@@ -168,6 +168,10 @@ def _cpp_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
     """Only executable identifiers and directives can observe source position."""
     markers = {"__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"}
     for token in tokens:
+        # A # or %: following leading block comments can still introduce
+        # preprocessing. Refuse unclassified markers in format-only edits.
+        if token in {"op:#", "op:##", "op:%:", "op:%:%:"}:
+            return True
         if token.startswith("id:") and token[3:] in markers:
             return True
         if token.startswith("directive:") and any(name in token for name in markers):

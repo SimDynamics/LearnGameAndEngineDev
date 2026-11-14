@@ -52,7 +52,8 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
     for(std::size_t i=0;i<source.size();) {
         if(space(source[i])){++i;continue;}
         const auto line=source.rfind('\n',i)==source.npos?0:source.rfind('\n',i)+1;
-        if(source[i]=='#'&&std::all_of(source.begin()+static_cast<std::ptrdiff_t>(line),
+        if((source[i]=='#'||source.substr(i).starts_with("%:"))&&
+           std::all_of(source.begin()+static_cast<std::ptrdiff_t>(line),
                 source.begin()+static_cast<std::ptrdiff_t>(i),[](char c){return space(c);})) {
             auto end=i;
             while(true) {
@@ -169,6 +170,10 @@ inline bool cpp_position_sensitive_tokens(const std::vector<std::string>& tokens
         "__LINE__", "source_location", "__builtin_LINE", "__builtin_COLUMN"
     };
     for(const auto& token:tokens) {
+        // An unrecognized # or %: may still introduce a directive after
+        // leading block comments. Never approve formatting it as an operator.
+        if(token=="op:#"||token=="op:##"||token=="op:%:"||token=="op:%:%:")
+            return true;
         if(token.starts_with("id:")) {
             const auto name=std::string_view(token).substr(3);
             if(std::ranges::any_of(names,[&](std::string_view item){return name==item;}))

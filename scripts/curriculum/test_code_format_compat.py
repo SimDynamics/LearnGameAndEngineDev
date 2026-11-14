@@ -106,6 +106,32 @@ class SourceFormatTest(unittest.TestCase):
             fmt.require_source_format({"type": "code", "language": "cmake", "code": cmake_before},
                                       {"type": "code", "language": "cmake", "code": cmake_after})
 
+    def test_cpp_preprocessor_digraph_and_comment_preamble_safety(self):
+        # %: is the standard alternative token for # in preprocessing directives.
+        allowed = [
+            ("%:include <iostream>\nint main(){return 0;}\n",
+             "%:include <iostream>\n\nint main() {\n    return 0;\n}\n"),
+            ('const char* note="%:define X";\nint main(){}',
+             'const char* note="%:define X";\n\nint main() {}'),
+        ]
+        for before, after in allowed:
+            with self.subTest(safe=before):
+                self.assertTrue(fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": after}))
+        blocked = [
+            ("%:define X 3\nint n=X;", "%:\ndefine X 3\nint n=X;"),
+            ("/* note */ %:define X 3\nint n=X;",
+             "/* note */ %:\ndefine X 3\nint n=X;"),
+            ("/* note */ #define X 3\nint n=X;",
+             "/* note */ #\ndefine X 3\nint n=X;"),
+        ]
+        for before, after in blocked:
+            with self.subTest(blocked=before), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format(
+                    {"type": "code", "code": before},
+                    {"type": "code", "code": after})
+
     def test_cpp_location_tokens_match_native_and_ignore_inert_mentions(self):
         allowed = [
             '// __LINE__ is documentation\nint main() {}',

@@ -25,6 +25,25 @@ void lexical_safety(){
         "#include <iostream>\n\nint main() {\n    return 0;\n}\n",Language::cpp),
         "Safe blank rows beside a preprocessor directive were rejected");
     check(code_format::equivalent(
+        "%:include <iostream>\nint main(){return 0;}\n",
+        "%:include <iostream>\n\nint main() {\n    return 0;\n}\n",Language::cpp),
+        "C++ alternative directive spelling rejected safe formatting");
+    check(!code_format::equivalent(
+        "%:define X 3\nint n=X;","%:\ndefine X 3\nint n=X;",Language::cpp),
+        "A digraph directive was broken by an unauthenticated newline");
+    check(!code_format::equivalent(
+        "/* note */ %:define X 3\nint n=X;",
+        "/* note */ %:\ndefine X 3\nint n=X;",Language::cpp),
+        "A digraph directive after a block comment escaped safety checks");
+    check(!code_format::equivalent(
+        "/* note */ #define X 3\nint n=X;",
+        "/* note */ #\ndefine X 3\nint n=X;",Language::cpp),
+        "A # directive after a block comment escaped safety checks");
+    check(code_format::equivalent(
+        "const char* note=\"%:define X\";\nint main(){}",
+        "const char* note=\"%:define X\";\n\nint main() {}",Language::cpp),
+        "Inert %: in a quoted literal blocked safe code formatting");
+    check(code_format::equivalent(
         "add_library(envios STATIC lib.cpp)\ntarget_include_directories(envios PUBLIC include)\n",
         "add_library(\n  envios\n  STATIC lib.cpp\n)\n\ntarget_include_directories(\n  envios PUBLIC include\n)\n",Language::cmake),
         "Safe CMake command formatting was rejected");
