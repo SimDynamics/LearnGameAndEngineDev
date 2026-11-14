@@ -480,6 +480,32 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 ? 0 : 0) +
+                   (capacidad < 10 ? 0 : 0);
+        })cpp",rules,false,"Equal ternary arms cannot credit two decorative capacity checks");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (capacidad > 0 ? (2 - 2) : 0) +
+                   (capacidad == 4 ? 0 : (4 / 4 - 1));
+        })cpp",rules,false,"Equivalent arithmetic constant arms cannot establish uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (capacidad > 0 ? 0 : 0);
+        })cpp",rules,true,"A decorative constant-result conditional must preserve real calculations");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (piezas > 10 ? capacidad - 4 : 0) * 0;
+        })cpp",rules,true,"A real rule is still valid with an unrelated conditional");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             return (piezas + 3) / 4 + (capacidad + capacidad) * (2 - 2);
         })cpp",rules,false,"A computed zero factor on the right cancels a whole sum");
     verify(R"cpp(

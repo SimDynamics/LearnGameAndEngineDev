@@ -335,6 +335,34 @@ inline bool productive(const Tokens& t,std::size_t i,
                 }
             }
         }
+        // Equal, integral constant results cannot convey a named rule,
+        // whatever the condition does. In "capacidad > 0 ? 0 : 0" the
+        // constant appears in a condition but neither outcome depends on it.
+        // Examine only a top-level, non-nested ternary with independently
+        // evaluable integral arms; any ambiguous expression stays uncredited
+        // only by the ordinary, conservative source and execution checks.
+        std::size_t question=*close,colon=*close,paren_depth=0;
+        bool nested_ternary=false;
+        for(auto at=open+1;at<*close;++at) {
+            if(op(t[at],"(")){++paren_depth;continue;}
+            if(op(t[at],")")) {
+                if(paren_depth)--paren_depth;
+                continue;
+            }
+            if(paren_depth)continue;
+            if(op(t[at],"?")) {
+                if(question!=*close){nested_ternary=true;break;}
+                question=at;
+            }else if(op(t[at],":")) {
+                if(colon!=*close){nested_ternary=true;break;}
+                colon=at;
+            }
+        }
+        if(!nested_ternary&&question<colon&&colon<*close&&i<question) {
+            const auto first=arithmetic_constant(t,question+1,colon);
+            const auto second=arithmetic_constant(t,colon+1,*close);
+            if(first&&second&&*first==*second)return false;
+        }
         // A literal conditional expression cannot contribute source evidence
         // from its impossible branch. For example, both "capacidad" mentions
         // in (false ? capacidad + capacidad : 0) are dead, even though the

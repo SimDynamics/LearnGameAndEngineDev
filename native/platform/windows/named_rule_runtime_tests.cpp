@@ -210,6 +210,27 @@ int cajas_para(int piezas) {
 )cpp");
     require(!compiler_runtime_request_allowed(owner,zero_group),
         "Two zeroed references in a parenthesized expression earned credit");
+    auto equal_ternaries=submitted;
+    change_project(equal_ternaries,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + 3) / 4 +
+           (capacidad > 0 ? 0 : 0) +
+           (capacidad < 10 ? 0 : 0);
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,equal_ternaries),
+        "Windows credited constants used only to select identical results");
+    auto valid_with_equal_ternary=submitted;
+    change_project(valid_with_equal_ternary,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    return (piezas + capacidad - 1) / capacidad +
+           (capacidad > 0 ? 0 : 0);
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,valid_with_equal_ternary),
+        "Windows rejected a real capacity computation with harmless conditional prose");
     auto valid_with_zero_group=submitted;
     change_project(valid_with_zero_group,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
