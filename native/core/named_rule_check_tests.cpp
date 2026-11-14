@@ -709,6 +709,56 @@ void price_and_minimum() {
         }
         bool alcanza_minimo(int articulos) {return articulos >= 5;}
         )cpp",rules,false,"Hardcoded minimum");
+    verify(R"cpp(
+        int precio_total(int articulos) {
+            const int precio_unitario{7};
+            return articulos * precio_unitario;
+        }
+        bool alcanza_minimo(int articulos) {
+            const int minimo_articulos{5};
+            return articulos >= 5 || minimo_articulos < 10 && false;
+        })cpp",rules,false,
+        "A trailing false cannot make an unrelated local threshold productive");
+    verify(R"cpp(
+        int precio_total(int articulos) {
+            const int precio_unitario{7};
+            return articulos * precio_unitario;
+        }
+        bool alcanza_minimo(int articulos) {
+            const int minimo_articulos{5};
+            return minimo_articulos >= 1 && false || articulos >= 5;
+        })cpp",rules,false,
+        "A false left conjunction cannot satisfy an unrelated right disjunction");
+    verify(R"cpp(
+        int precio_total(int articulos) {
+            const int precio_unitario{7};
+            return articulos * precio_unitario;
+        }
+        bool alcanza_minimo(int articulos) {
+            const int minimo_articulos{5};
+            return articulos >= minimo_articulos || articulos < 0 && false;
+        })cpp",rules,true,
+        "A valid named result remains valid alongside an irrelevant false clause");
+    verify(R"cpp(
+        int precio_total(int articulos) {
+            const int precio_unitario{7};
+            return articulos * precio_unitario;
+        }
+        bool alcanza_minimo(int articulos) {
+            const int minimo_articulos{5};
+            return articulos >= minimo_articulos || articulos > 5 && true;
+        })cpp",rules,true,
+        "A nonconstant second branch must not invalidate the actual named threshold");
+    verify(R"cpp(
+        int precio_total(int articulos) {
+            const int precio_unitario{7};
+            return articulos * precio_unitario;
+        }
+        bool alcanza_minimo(int articulos) {
+            const int minimo_articulos{5};
+            return minimo_articulos > 0 || true;
+        })cpp",rules,false,
+        "A stand-alone true disjunction renders the threshold irrelevant");
 }
 }
 void comment_only_header_changes() {
