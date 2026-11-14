@@ -499,6 +499,14 @@ COLORREF cpp_color(HWND edit, CppInk category, bool semantic_background=false) {
 // A raw C++ literal is one lexical string token, including its R/u8R prefix
 // and delimiter. Quotes, // and /* inside the body are literal data, never
 // separate comments or keywords. The syntax coloring must not rewrite it.
+std::size_t cpp_literal_suffix_end(std::wstring_view text,std::size_t end) {
+    // User-defined literal suffixes are part of the same adjacent C++ token.
+    if(end<text.size()&&text[end]==L'_') {
+        ++end;
+        while(end<text.size()&&identifier_part(text[end]))++end;
+    }
+    return end;
+}
 std::optional<std::size_t> cpp_raw_literal_end(std::wstring_view text,std::size_t at) {
     constexpr std::wstring_view prefixes[]{L"u8R\"",L"uR\"",L"UR\"",L"LR\"",L"R\""};
     for(const auto prefix:prefixes) {
@@ -512,7 +520,29 @@ std::optional<std::size_t> cpp_raw_literal_end(std::wstring_view text,std::size_
                 ch==L'\\'||ch==L'('||ch==L')';}))return {};
         const auto closing=L")"+std::wstring(marker)+L"\"";
         const auto found=text.find(closing,opening+1);
-        return found==text.npos?text.size():found+closing.size();
+        return found==text.npos?text.size():
+            cpp_literal_suffix_end(text,found+closing.size());
+    }
+    return {};
+}
+// Ordinary UTF-8, wide and Unicode string/character prefixes share the same
+// green ink as their contents. Previously u8/L was painted as an identifier.
+std::optional<std::size_t> cpp_ordinary_literal_end(
+        std::wstring_view text,std::size_t at) {
+    constexpr std::wstring_view prefixes[]{
+        L"u8\"",L"u\"",L"U\"",L"L\"",L"\"",
+        L"u8'",L"u'",L"U'",L"L'",L"'"
+    };
+    for(const auto prefix:prefixes) {
+        if(!text.substr(at).starts_with(prefix))continue;
+        const auto quote=prefix.back();
+        auto end=at+prefix.size();
+        while(end<text.size()) {
+            const auto c=text[end++];
+            if(c==L'\\'&&end<text.size())++end;
+            else if(c==quote)break;
+        }
+        return cpp_literal_suffix_end(text,end);
     }
     return {};
 }
@@ -542,10 +572,9 @@ std::vector<Ink> cpp_ink(HWND edit, std::wstring_view text,bool semantic_backgro
             index=*raw;
             result.push_back({start,index,string_color});
             include_header=false;
-        } else if (text[index] == L'"' || text[index] == L'\'') {
-            const auto quote = text[index++];
-            while (index < text.size()) { const auto c = text[index++]; if (c == L'\\' && index < text.size()) ++index; else if (c == quote) break; }
-            result.push_back({start,index,string_color}); include_header = false;
+        } else if(const auto literal=cpp_ordinary_literal_end(text,index);literal) {
+            index=*literal;
+            result.push_back({start,index,string_color}); include_header=false;
         } else if (text[index] == L'#') {
             ++index; while (index < text.size() && (text[index] == L' ' || text[index] == L'\t')) ++index;
             const auto directive = index; while (index < text.size() && identifier_part(text[index])) ++index;

@@ -73,6 +73,9 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
     std::cout << "Revision=" << equipo << '\n'; // comentario
     const auto original = R"tag(/* no comentar */ "Revision=raw" // literal)tag";
     const auto unicode = u8R"raw(// sin procesar "texto")raw";
+    const auto utf8 = u8"Texto";
+    const auto wide_character = L'\n';
+    const auto custom_suffix = "dato"_custom;
 }
 )cpp";
             presentation::set_edit_text(syntax,code);
@@ -110,6 +113,12 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
                 RGB(131,209,151),"C++ raw string contained fake comments or quotes with wrong ink");
             token(LR"verify(u8R"raw(// sin procesar "texto")raw")verify",
                 RGB(131,209,151),"C++ u8 raw string prefix or contents lost string ink");
+            token(LR"verify(u8"Texto")verify",
+                RGB(131,209,151),"C++ UTF-8 string prefix differs from its contents");
+            token(LR"verify(L'\n')verify",
+                RGB(131,209,151),"C++ wide character prefix or escape differs from its contents");
+            token(LR"verify("dato"_custom)verify",
+                RGB(131,209,151),"An adjacent user-defined literal suffix lost string ink");
             token(L"// comentario",RGB(172,172,172),"Reference comment ink changed");
             token(L"{",RGB(255,255,255),"Reference punctuation ink changed");
             check(presentation::reader_theme::background(syntax)==background,
