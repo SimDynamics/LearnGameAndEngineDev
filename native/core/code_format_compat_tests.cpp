@@ -169,6 +169,28 @@ cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=
             Language::cmake),
         "CMake-language quoted string and CONFIGURE names escaped bracket protection");
     check(!code_format::equivalent(
+            R"qa(cmake_language(CALL [=[file]=] [=[CONFIGURE]=] OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(
+cmake_language(CALL [=[file]=] [=[CONFIGURE]=] OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language bracket literal command names escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(set(command_name file)
+cmake_language(CALL "${command_name}" CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            R"qa(set(command_name file)
+
+cmake_language(CALL "${command_name}" CONFIGURE OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language dynamically expanded command name escaped bracket protection");
+    check(!code_format::equivalent(
+            R"qa(set(subcommand CONFIGURE)
+cmake_language(CALL file "${subcommand}" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] @ONLY))qa",
+            R"qa(set(subcommand CONFIGURE)
+
+cmake_language(CALL file "${subcommand}" OUTPUT "result.txt" CONTENT [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] @ONLY))qa",
+            Language::cmake),
+        "CMake-language dynamically expanded CONFIGURE subcommand escaped protection");
+    check(!code_format::equivalent(
             R"qa(set(template [=[@CMAKE_CURRENT_LIST_LINE@]=])
 STRING(CONFIGURE "${template}" result @ONLY)
 )qa",

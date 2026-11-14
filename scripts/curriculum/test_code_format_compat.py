@@ -154,6 +154,9 @@ class SourceFormatTest(unittest.TestCase):
             'cmake_language(CALL file CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
             'cmake_language(CALL "file" "CONFIGURE" OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
             'cmake_language(CALL "string" "CONFIGURE" [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] result @ONLY)',
+            'cmake_language(CALL [=[file]=] [=[CONFIGURE]=] OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'set(command_name file)\ncmake_language(CALL "${command_name}" CONFIGURE OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_LIST_LINE@]=] @ONLY)',
+            'set(subcommand CONFIGURE)\ncmake_language(CALL file "${subcommand}" OUTPUT "out.txt" CONTENT [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=] @ONLY)',
             'set(template [=[@CMAKE_CURRENT_FUNCTION_LIST_LINE@]=])\nSTRING(CONFIGURE "${template}" result @ONLY)',
             'cmake_language(CALL string CONFIGURE [=[@CMAKE_CURRENT_LIST_LINE@]=] result @ONLY)',
         ]

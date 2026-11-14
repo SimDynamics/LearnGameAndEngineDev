@@ -191,9 +191,25 @@ def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
         elif token.startswith('quoted:"') and token.endswith('"'):
             # cmake_language(CALL "file" "CONFIGURE" ...) is executable.
             actual = token[8:-1]
+        elif token.startswith("bracket:["):
+            raw = token[8:]
+            at = 1
+            while at < len(raw) and raw[at] == "=":
+                at += 1
+            if at == len(raw) or raw[at] != "[":
+                return False
+            suffix = "]" + raw[1:at] + "]"
+            if not raw.endswith(suffix) or len(raw) < at + 1 + len(suffix):
+                return False
+            actual = raw[at+1:-len(suffix)]
         else:
             return False
         return actual.lower() == spelling
+
+    def dynamic_name(index: int) -> bool:
+        token = tokens[index]
+        return token.startswith(("word:", "quoted:")) and any(
+            marker in token for marker in ("${", "$ENV{", "$CACHE{"))
 
     configures_brackets = False
     for i in range(len(tokens)):
@@ -202,8 +218,9 @@ def _cmake_position_sensitive_tokens(tokens: tuple[str, ...]) -> bool:
             configures_brackets = True
         if (i + 4 < len(tokens) and command(i, "cmake_language")
                 and tokens[i + 1] == "paren:(" and command(i + 2, "call")
-                and (command(i + 3, "string") or command(i + 3, "file"))
-                and command(i + 4, "configure")):
+                and (command(i + 3, "string") or command(i + 3, "file")
+                     or dynamic_name(i + 3))
+                and (command(i + 4, "configure") or dynamic_name(i + 4))):
             configures_brackets = True
 
     for token in tokens:

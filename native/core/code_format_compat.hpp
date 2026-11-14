@@ -192,9 +192,18 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
     const auto command=[](std::string_view token,std::string_view name) {
         if(token.starts_with("word:"))token.remove_prefix(5);
         else if(token.starts_with("quoted:\"")&&token.ends_with('"')) {
-            // cmake_language(CALL "file" "CONFIGURE" ...) accepts quoted
-            // names; they still invoke the real configuration operation.
+            // cmake_language(CALL "file" "CONFIGURE" ...) accepts quoted names.
             token.remove_prefix(8);token.remove_suffix(1);
+        }else if(token.starts_with("bracket:[")) {
+            // cmake_language(CALL [=[file]=] [=[CONFIGURE]=] ...) also runs.
+            token.remove_prefix(8);
+            std::size_t opening=1;
+            while(opening<token.size()&&token[opening]=='=')++opening;
+            if(opening==token.size()||token[opening]!='[')return false;
+            const auto terminator="]"+std::string(token.substr(1,opening-1))+"]";
+            if(token.size()<opening+1+terminator.size()||
+               !token.ends_with(terminator))return false;
+            token=token.substr(opening+1,token.size()-(opening+1)-terminator.size());
         }else return false;
         if(token.size()!=name.size())return false;
         for(std::size_t i=0;i<name.size();++i) {
@@ -202,6 +211,13 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
             if((ch>='A'&&ch<='Z'?ch-'A'+'a':ch)!=name[i])return false;
         }
         return true;
+    };
+    const auto dynamic_name=[](std::string_view token) {
+        // CMake expands unquoted/quoted CALL arguments, including variables
+        // containing the actual command name or CONFIGURE subcommand.
+        return (token.starts_with("word:")||token.starts_with("quoted:"))&&
+            (token.find("${")!=token.npos||token.find("$ENV{")!=token.npos||
+             token.find("$CACHE{")!=token.npos);
     };
     // Bracket arguments ordinarily have no variable expansion, but can be
     // consumed later by string(CONFIGURE) or file(CONFIGURE). Even a template
@@ -213,8 +229,9 @@ inline bool cmake_position_sensitive_tokens(const std::vector<std::string>& toke
             configures_bracket_arguments=true;
         if(i+4<tokens.size()&&command(tokens[i],"cmake_language")&&
            tokens[i+1]=="paren:("&&command(tokens[i+2],"call")&&
-           (command(tokens[i+3],"string")||command(tokens[i+3],"file"))&&
-           command(tokens[i+4],"configure"))
+           (command(tokens[i+3],"string")||command(tokens[i+3],"file")||
+            dynamic_name(tokens[i+3]))&&
+           (command(tokens[i+4],"configure")||dynamic_name(tokens[i+4])))
             configures_bracket_arguments=true;
     }
     for(const auto& token:tokens) {
