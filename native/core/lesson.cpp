@@ -403,6 +403,10 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             if(target.require_explicit_cxx20)token("authored-cxx20-v1");
             if(target.require_explicit_extensions_off)
                 token("authored-extensions-off-v1");
+            if(!target.source_directory.empty()) {
+                token("cmake-generated-source-directory-v1");
+                token(target.source_directory);
+            }
             if(!target.public_include_roots.empty()||
                !target.private_include_roots.empty()) {
                 token("cmake-public-private-includes-v1");

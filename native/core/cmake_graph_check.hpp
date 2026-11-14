@@ -49,6 +49,9 @@ struct CmakeRequiredTarget {
     // PUBLIC paths must be received by actual linked consumers. PRIVATE
     // paths must be restricted to the owning library's compilation.
     std::vector<std::string> public_include_roots,private_include_roots;
+    // Optional authored subproject location, confirmed by CMake's actual
+    // codemodel directoryIndex, not by printed messages or source filenames.
+    std::string source_directory;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
 // A binary option exercise verifies ON and an independent default-OFF build

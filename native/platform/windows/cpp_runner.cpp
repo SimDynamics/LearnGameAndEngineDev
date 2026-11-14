@@ -1212,6 +1212,11 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
             [&](const auto& candidate){return candidate.name==item.name;});
         if(found==graph.targets.end()||found->type!=item.type)
             return fail("Falta el objetivo o tipo solicitado: "+item.name);
+        if(!item.source_directory.empty()&&
+           std::filesystem::path(found->source_directory).lexically_normal()!=
+               project_path(item.source_directory).lexically_normal())
+            return fail("El objetivo debe declararse en el subdirectorio CMake: "+
+                item.source_directory);
         if(item.require_explicit_cxx20&&!found->explicit_cxx20)
             return fail("Falta declarar el mínimo C++20 en el objetivo: "+item.name);
         if(item.require_explicit_extensions_off&&

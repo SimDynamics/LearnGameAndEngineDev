@@ -2248,7 +2248,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                     {"name", "type"} <= set(target) <=
                     {"name", "type", "sources", "linksTo", "exactSources",
                      "explicitCxx20", "explicitCxxExtensionsOff",
-                     "publicIncludeRoots", "privateIncludeRoots"},
+                     "publicIncludeRoots", "privateIncludeRoots",
+                     "sourceDirectory"},
                     "CMake target requires a name, type and bounded optional rules")
             name, kind = target["name"], target["type"]
             require(type(name) is str and len(name) <= 128 and
@@ -2277,6 +2278,18 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                 if key in target:
                     require(type(target[key]) is bool,
                             "CMake explicit requirements must be Boolean")
+            if "sourceDirectory" in target:
+                source_dir = target["sourceDirectory"]
+                require(kind == "STATIC_LIBRARY" and
+                        type(source_dir) is str and
+                        0 < len(source_dir) <= 256 and
+                        re.fullmatch(
+                            r"[A-Za-z0-9_.+-]+(?:/[A-Za-z0-9_.+-]+)*",
+                            source_dir) and
+                        all(part not in (".", "..") for part in
+                            source_dir.split("/")) and
+                        source_dir + "/CMakeLists.txt" in original_paths,
+                        "CMake sourceDirectory must identify an original child")
             for key in ("publicIncludeRoots", "privateIncludeRoots"):
                 if key not in target:
                     continue

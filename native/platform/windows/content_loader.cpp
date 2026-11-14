@@ -2700,7 +2700,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             const auto source=t.GetObject();
             allowed_keys(source,{"name","type","sources","linksTo","exactSources",
                 "explicitCxx20","explicitCxxExtensionsOff",
-                "publicIncludeRoots","privateIncludeRoots"});
+                "publicIncludeRoots","privateIncludeRoots","sourceDirectory"});
             require(source.HasKey(L"name")&&source.HasKey(L"type"),
                 "Each CMake graph target requires a name and type");
             CmakeRequiredTarget wanted;
@@ -2793,6 +2793,28 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 require(std::ranges::find(wanted.private_include_roots,root)==
                     wanted.private_include_roots.end(),
                     "CMake root cannot be simultaneously PUBLIC and PRIVATE");
+            if(source.HasKey(L"sourceDirectory")) {
+                wanted.source_directory=text(source,"sourceDirectory");
+                const auto path=wanted.source_directory;
+                require(wanted.type=="STATIC_LIBRARY"&&!path.empty()&&
+                        path.size()<=256&&path.front()!='/'&&path.back()!='/'&&
+                        std::ranges::all_of(path,[](unsigned char ch) {
+                            return (ch>='a'&&ch<='z')||
+                                (ch>='A'&&ch<='Z')||
+                                (ch>='0'&&ch<='9')||
+                                ch=='_'||ch=='-'||ch=='.'||ch=='+'||
+                                ch=='.'||ch=='/';
+                        })&&
+                        std::ranges::none_of(std::filesystem::path(path),
+                            [](const auto& part) {
+                                return part=="."||part=="..";
+                            })&&
+                        std::ranges::any_of(owner->project_files,
+                            [&](const auto& file) {
+                                return file.first==path+"/CMakeLists.txt";
+                            }),
+                    "CMake target sourceDirectory must be an original subproject");
+            }
             requirement.targets.push_back(std::move(wanted));
         }
         for(const auto& library:requirement.targets)if(
