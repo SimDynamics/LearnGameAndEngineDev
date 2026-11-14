@@ -369,7 +369,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería mediante `probar(const std::string& entrada)`. Cada llamada conserva una copia previa de la entrada, valida todo el texto y sólo después llama a las funciones de resumen y copia. Desde `main` se invoca con estos siete casos, en orden:\n`\"NoDo 7!\"`\n`\"\"`\n`\"aZ09_\"`\n`std::string(40, 'a')`\n`std::string(41, 'a')`\n`\" \\t\\n\\r\\f\\v\"`\n`std::string(1, static_cast<char>(-1))`\n\nAntes de cada prueba muestra `Caso N`, numerando desde uno. Para una entrada admitida, presenta `Original:<texto>`, `Minusculas:<copia>`, `Mayusculas:<copia>`, `Letras:L;Digitos:D;Blancos:B;Otros:O`, `Entrada conservada:V` y `Unidades:N`. Los marcadores se sustituyen por los textos o valores correspondientes; V es el resultado booleano de comparar la entrada con su copia previa y la última N es su longitud.\n\nCada informe termina con un salto y no se añaden separadores entre los casos. Las secuencias de escape representan los caracteres de control reales: se conservan también dentro de las copias mostradas, aunque alteren la distribución visible. Un rechazo sólo muestra `Texto rechazado` con su salto después de la cabecera del caso.\n\nEl último caso contiene una unidad que supera el dominio ASCII al convertirla a `unsigned char`; se rechaza antes de llamar a `<cctype>`. Pulsa Compilar, ejecutar y comprobar con la batería completa.",
+          "text": "Construye una sola batería mediante `probar(const std::string& entrada)`. Cada llamada conserva una copia previa de la entrada, valida todo el texto y sólo después llama a las funciones de resumen y copia. Desde `main` se invoca con estos siete casos, en orden:\n`\"NoDo 7!\"`\n`\"\"`\n`\"aZ09_\"`\n`std::string(40, 'a')`\n`std::string(41, 'a')`\n`\" \\t\\n\\r\\f\\v\"`\n`std::string(1, static_cast<char>(-1))`\n\nLa expresión `std::string(40, 'a')` construye una cadena con cuarenta copias del carácter `a`; con `std::string(41, 'a')` se obtienen cuarenta y una. En `std::string(1, static_cast<char>(-1))`, el primer valor pide una sola unidad y el segundo proporciona el valor que se guarda en ella. Estas construcciones permiten preparar las longitudes y el valor fuera del dominio sin escribir a mano todos sus elementos (Köppe et al., 2023).\n\nAntes de cada prueba muestra `Caso N`, numerando desde uno. Para una entrada admitida, presenta `Original:<texto>`, `Minusculas:<copia>`, `Mayusculas:<copia>`, `Letras:L;Digitos:D;Blancos:B;Otros:O`, `Entrada conservada:V` y `Unidades:N`. Los marcadores se sustituyen por los textos o valores correspondientes; V es el resultado booleano de comparar la entrada con su copia previa y la última N es su longitud.\n\nCada informe termina con un salto y no se añaden separadores entre los casos. Las secuencias de escape representan los caracteres de control reales: se conservan también dentro de las copias mostradas, aunque alteren la distribución visible. Un rechazo sólo muestra `Texto rechazado` con su salto después de la cabecera del caso.\n\nEl último caso contiene una unidad que supera el dominio ASCII al convertirla a `unsigned char`; se rechaza antes de llamar a `<cctype>`. Pulsa Compilar, ejecutar y comprobar con la batería completa.\n\nSalidas de las siete pruebas. Los rótulos Entrada y Salida esperada de esta lista no se imprimen; las cabeceras Caso sí forman parte del programa. Para que el sexto informe pueda leerse sin mover el cursor, sus controles se describen con secuencias de escape dentro de los corchetes angulares. En la ejecución se envían los caracteres de control reales, como exige el contrato anterior. Todas las salidas terminan con un salto.\n\nEntrada de la prueba 1:\n\"NoDo 7!\"\nSalida esperada:\nCaso 1\nOriginal:<NoDo 7!>\nMinusculas:<nodo 7!>\nMayusculas:<NODO 7!>\nLetras:4;Digitos:1;Blancos:1;Otros:1\nEntrada conservada:1\nUnidades:7\n\nEntrada de la prueba 2:\n\"\"\nSalida esperada:\nCaso 2\nOriginal:<>\nMinusculas:<>\nMayusculas:<>\nLetras:0;Digitos:0;Blancos:0;Otros:0\nEntrada conservada:1\nUnidades:0\n\nEntrada de la prueba 3:\n\"aZ09_\"\nSalida esperada:\nCaso 3\nOriginal:<aZ09_>\nMinusculas:<az09_>\nMayusculas:<AZ09_>\nLetras:2;Digitos:2;Blancos:0;Otros:1\nEntrada conservada:1\nUnidades:5\n\nEntrada de la prueba 4:\nstd::string(40, 'a')\nSalida esperada:\nCaso 4\nOriginal:<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\nMinusculas:<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\nMayusculas:<AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>\nLetras:40;Digitos:0;Blancos:0;Otros:0\nEntrada conservada:1\nUnidades:40\n\nEntrada de la prueba 5:\nstd::string(41, 'a')\nSalida esperada:\nCaso 5\nTexto rechazado\n\nEntrada de la prueba 6:\n\" \\t\\n\\r\\f\\v\"\nSalida esperada (controles descritos con escapes):\nCaso 6\nOriginal:< \\t\\n\\r\\f\\v>\nMinusculas:< \\t\\n\\r\\f\\v>\nMayusculas:< \\t\\n\\r\\f\\v>\nLetras:0;Digitos:0;Blancos:6;Otros:0\nEntrada conservada:1\nUnidades:6\n\nEntrada de la prueba 7:\nstd::string(1, static_cast<char>(-1))\nSalida esperada:\nCaso 7\nTexto rechazado\n",
           "emphasis": [
             {
               "text": "Las secuencias de escape representan los caracteres de control reales",
@@ -540,7 +540,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye `std::string copiar_en_minusculas(const std::string& texto)` en este editor independiente. El llamador garantiza texto ASCII de hasta cuarenta unidades y la configuración regional de C inicial. Devuelve una copia que conserve longitud, orden, dígitos y signos; no imprimas desde la función.\n\nConstruye una sola batería con `\"ABC9_\"`, `\"abc9_\"` y `\"--7\"`. Presenta las tres copias, una por línea, y después el primer argumento original en una cuarta línea. Todas terminan con salto. Pulsa Compilar, ejecutar y comprobar con esta construcción, sin volver al editor anterior.",
+          "text": "Reconstruye `std::string copiar_en_minusculas(const std::string& texto)` en este editor independiente. El llamador garantiza texto ASCII de hasta cuarenta unidades y la configuración regional de C inicial. Devuelve una copia que conserve longitud, orden, dígitos y signos; no imprimas desde la función.\n\nConstruye una sola batería con `\"ABC9_\"`, `\"abc9_\"` y `\"--7\"`. Presenta las tres copias, una por línea, y después el primer argumento original en una cuarta línea. Todas terminan con salto. Pulsa Compilar, ejecutar y comprobar con esta construcción, sin volver al editor anterior.\n\nEn esta batería cada llamada consulta su argumento y devuelve una copia; los resultados de las llamadas anteriores no modifican el texto de las siguientes. Las tres parejas son:\n\nEntrada:\n\"ABC9_\"\nCopia esperada:\nabc9_\n\nEntrada:\n\"abc9_\"\nCopia esperada:\nabc9_\n\nEntrada:\n\"--7\"\nCopia esperada:\n--7\n\nDespués se muestra el primer argumento original, que conserva su contenido. La salida completa de la batería, con un salto al final de cada línea, es:\nabc9_\nabc9_\n--7\nABC9_",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -606,23 +606,23 @@
         },
         {
           "type": "paragraph",
-          "text": "En Entrada escribe sólo uno de los selectores: 1, 2, 3, 4. Puedes rodearlo con espacios, tabuladores o saltos de línea ASCII. Las muestras ya están preparadas en el cliente. Prueba cada selector con el mismo programa y pulsa «Compilar, ejecutar y comprobar». A continuación se muestra la salida completa requerida para cada entrada; conserva los separadores y el salto final de todas las líneas."
+          "text": "En Entrada escribe sólo uno de los selectores: 1, 2, 3, 4. Puedes rodearlo con espacios, tabuladores o saltos de línea ASCII. Las muestras ya están preparadas en el cliente. La Entrada inicial contiene el selector 1. Completa el programa y pulsa «Compilar, ejecutar y comprobar»: su primera comprobación correcta es obligatoria para avanzar. Los selectores 2, 3 y 4 son ensayos opcionales; no necesitas completarlos para avanzar ni para consultar la referencia. Puedes ensayarlos después con la misma implementación. A continuación se muestra la salida completa requerida para cada entrada; conserva los separadores y el salto final de todas las líneas."
         },
         {
           "type": "paragraph",
-          "text": "Entrada: 1. Salida:\nAdmitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1"
+          "text": "Entrada obligatoria:\n1\nSalida esperada:\nAdmitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1"
         },
         {
           "type": "paragraph",
-          "text": "Entrada: 2. Salida:\nAdmitido=0|Unidades=4\nEntrada conservada=1"
+          "text": "Entrada opcional:\n2\nSalida esperada:\nAdmitido=0|Unidades=4\nEntrada conservada=1"
         },
         {
           "type": "paragraph",
-          "text": "Entrada: 3. Salida:\nAdmitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1"
+          "text": "Entrada opcional:\n3\nSalida esperada:\nAdmitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1"
         },
         {
           "type": "paragraph",
-          "text": "Entrada: 4. Salida:\nAdmitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1"
+          "text": "Entrada opcional:\n4\nSalida esperada:\nAdmitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1"
         },
         {
           "type": "cpp_compiler",
@@ -2366,6 +2366,41 @@
         "id": "block_0007_0004",
         "beforeSha256": "36703721a0b7461154d1d07fc3e2602a8f3f2da1f2e4e8ee0670d29f68562785",
         "afterSha256": "773c184df709049d9e8ba83d762b6390c514bad8bf82676e7c3e06adb2e99ab5"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "1efbff11e856f5642ddb10fdb8e1f10875fa8d95cb78eecd725a31046bd4ac28",
+        "afterSha256": "699685d3debce58ab04eb25cdf2c33011862035c3fc7a1039ab990dce26ff11e"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "ed0944d06659fc22abe78b94078166f4c52cf4c3b517796bb7e3e37cd63a7baf",
+        "afterSha256": "0dfd636c3c01cd937e0684f1822801cd7a0dffe0e231d2920ba54f5a9629daf4"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_ejecucion",
+        "beforeSha256": "4b94b047f4e2c66bfb7542d1c79272e83cd50342c0194d4b206bee2ac4f58146",
+        "afterSha256": "932de8f18231225b95eac9ed10262d23c1ebaa061ea8910a9c46941dd66b0d73"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_0",
+        "beforeSha256": "1aebe0bdd2165285529ce9b6e501d49699768afa91359276075a6e9a59a85b34",
+        "afterSha256": "1d342ef7353f25059d2dcf72fd15fc819d8f08bb21c401f8ae4f3fa4c78b2653"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_1",
+        "beforeSha256": "f929313f3d6a987136b8aca92a67017cdd647bc7f874a1a2ade5f638131aed90",
+        "afterSha256": "ec6d86cdecd10c50becad35c7057f3127166ac4d8809332b0d60937ddda4052f"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_2",
+        "beforeSha256": "c1c092257508315ed2a83f768dd2a0011ae43465da49c10b0be73bd70f5ea672",
+        "afterSha256": "2972a8a051605beb82df700527d303fb6566d92519ba7b3bfdcef8f212d822cc"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_3",
+        "beforeSha256": "b8f52ff3eb87a47836dd2cf86639082655921481134d57cc7f73b69a964f6034",
+        "afterSha256": "f0ca129af2e769b7fee320b87a067b57cf2964218da00a8ddd2c5e1b555c2a5e"
       }
     ]
   },
@@ -3079,7 +3114,7 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "8f04aaea3f0fea3842cf6c5b05cca00df041433f42ed8daa86b0325e74db8f06",
+        "sourceSha256": "5d8dd14f96b082bb010c0d9ae17f724ac962a8b9df77b6b90c44d57207381d3f",
         "spans": [
           {
             "start": 13,
@@ -3149,6 +3184,55 @@
             "end": 460,
             "text": "cuarta",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 774,
+            "end": 781,
+            "text": "\"ABC9_\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 798,
+            "end": 803,
+            "text": "abc9_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 814,
+            "end": 821,
+            "text": "\"abc9_\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 838,
+            "end": 843,
+            "text": "abc9_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 854,
+            "end": 859,
+            "text": "\"--7\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 876,
+            "end": 879,
+            "text": "--7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1032,
+            "end": 1053,
+            "text": "abc9_\nabc9_\n--7\nABC9_",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5475,7 +5559,7 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "38160046a1d21cb56d05e9965a4d7c55be69801509d87e8d8a466ea976a48f5c",
+        "sourceSha256": "83c2e135e7df4f16e8bc6b1763990fec9bac0fdfc650d80d56acf415eb45cfc5",
         "spans": [
           {
             "start": 10,
@@ -5555,94 +5639,227 @@
             "reading": "technical"
           },
           {
-            "start": 422,
-            "end": 428,
+            "start": 406,
+            "end": 426,
+            "text": "std::string(40, 'a')",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 483,
+            "end": 484,
+            "text": "a",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 492,
+            "end": 512,
+            "text": "std::string(41, 'a')",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 546,
+            "end": 583,
+            "text": "std::string(1, static_cast<char>(-1))",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 803,
+            "end": 823,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 856,
+            "end": 862,
             "text": "Caso N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 447,
-            "end": 450,
+            "start": 881,
+            "end": 884,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 489,
-            "end": 505,
+            "start": 923,
+            "end": 939,
             "text": "Original:<texto>",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 509,
-            "end": 527,
+            "start": 943,
+            "end": 961,
             "text": "Minusculas:<copia>",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 531,
-            "end": 549,
+            "start": 965,
+            "end": 983,
             "text": "Mayusculas:<copia>",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 553,
-            "end": 589,
+            "start": 987,
+            "end": 1023,
             "text": "Letras:L;Digitos:D;Blancos:B;Otros:O",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 593,
-            "end": 613,
+            "start": 1027,
+            "end": 1047,
             "text": "Entrada conservada:V",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 618,
-            "end": 628,
+            "start": 1052,
+            "end": 1062,
             "text": "Unidades:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 703,
-            "end": 704,
+            "start": 1137,
+            "end": 1138,
             "text": "V",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 785,
-            "end": 786,
+            "start": 1219,
+            "end": 1220,
             "text": "N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1071,
-            "end": 1086,
+            "start": 1505,
+            "end": 1520,
             "text": "Texto rechazado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1216,
-            "end": 1229,
+            "start": 1650,
+            "end": 1663,
             "text": "unsigned char",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1262,
-            "end": 1270,
+            "start": 1696,
+            "end": 1704,
             "text": "<cctype>",
             "role": "string",
+            "reading": "natural"
+          },
+          {
+            "start": 2223,
+            "end": 2232,
+            "text": "\"NoDo 7!\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2250,
+            "end": 2386,
+            "text": "Caso 1\nOriginal:<NoDo 7!>\nMinusculas:<nodo 7!>\nMayusculas:<NODO 7!>\nLetras:4;Digitos:1;Blancos:1;Otros:1\nEntrada conservada:1\nUnidades:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2412,
+            "end": 2414,
+            "text": "\"\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2432,
+            "end": 2547,
+            "text": "Caso 2\nOriginal:<>\nMinusculas:<>\nMayusculas:<>\nLetras:0;Digitos:0;Blancos:0;Otros:0\nEntrada conservada:1\nUnidades:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2573,
+            "end": 2580,
+            "text": "\"aZ09_\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2598,
+            "end": 2728,
+            "text": "Caso 3\nOriginal:<aZ09_>\nMinusculas:<az09_>\nMayusculas:<AZ09_>\nLetras:2;Digitos:2;Blancos:0;Otros:1\nEntrada conservada:1\nUnidades:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2754,
+            "end": 2774,
+            "text": "std::string(40, 'a')",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2792,
+            "end": 3029,
+            "text": "Caso 4\nOriginal:<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\nMinusculas:<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\nMayusculas:<AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA>\nLetras:40;Digitos:0;Blancos:0;Otros:0\nEntrada conservada:1\nUnidades:40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 3055,
+            "end": 3075,
+            "text": "std::string(41, 'a')",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 3093,
+            "end": 3115,
+            "text": "Caso 5\nTexto rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 3141,
+            "end": 3154,
+            "text": "\" \\t\\n\\r\\f\\v\"",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 3206,
+            "end": 3354,
+            "text": "Caso 6\nOriginal:< \\t\\n\\r\\f\\v>\nMinusculas:< \\t\\n\\r\\f\\v>\nMayusculas:< \\t\\n\\r\\f\\v>\nLetras:0;Digitos:0;Blancos:6;Otros:0\nEntrada conservada:1\nUnidades:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 3380,
+            "end": 3417,
+            "text": "std::string(1, static_cast<char>(-1))",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 3435,
+            "end": 3457,
+            "text": "Caso 7\nTexto rechazado",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -6111,7 +6328,7 @@
       {
         "block": "u12_caracteres_nul_interior_ejecucion",
         "path": "/text",
-        "sourceSha256": "49afa9fa3c84c6fe8375e2c2a0bc1423bcc06ad7d923223f5aedde3c1a86c970",
+        "sourceSha256": "8facab8b8bfa4dcdf46d126be53d406010f01d5a055959cacdb185ce4d3f48a5",
         "spans": [
           {
             "start": 47,
@@ -6125,18 +6342,18 @@
       {
         "block": "u12_caracteres_nul_interior_entrada_salida_0",
         "path": "/text",
-        "sourceSha256": "c03446e3dce54fe525ae0b0cc61ab88c7d30456f2270b475230d850138b520f0",
+        "sourceSha256": "f0d357f887f750f5407e6cee1fdbd3c4b651963b9a4f9c236273cf7d96a9aefa",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 21,
+            "end": 22,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 20,
-            "end": 155,
+            "start": 40,
+            "end": 175,
             "text": "Admitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1",
             "role": "output",
             "reading": "natural"
@@ -6146,18 +6363,18 @@
       {
         "block": "u12_caracteres_nul_interior_entrada_salida_1",
         "path": "/text",
-        "sourceSha256": "5742a1cb7cbc481e08cae06209124a7b6d8bb125d3edb87223529e758165d8ea",
+        "sourceSha256": "9f08ad7b18bc3fd63858eb62240b5f899104109e764cb428aca967c181d242d9",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 18,
+            "end": 19,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 20,
-            "end": 62,
+            "start": 37,
+            "end": 79,
             "text": "Admitido=0|Unidades=4\nEntrada conservada=1",
             "role": "output",
             "reading": "natural"
@@ -6167,18 +6384,18 @@
       {
         "block": "u12_caracteres_nul_interior_entrada_salida_2",
         "path": "/text",
-        "sourceSha256": "e3ea4e505095cdc8cee522d9f144bc17d9a982c095f7b1dec5bbc3bfc987423a",
+        "sourceSha256": "b86a75ac0d7ed9444747d5d3a71a6c2e198f4cea5918bacdfce4173e4915666d",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 18,
+            "end": 19,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 20,
-            "end": 115,
+            "start": 37,
+            "end": 132,
             "text": "Admitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1",
             "role": "output",
             "reading": "natural"
@@ -6188,18 +6405,18 @@
       {
         "block": "u12_caracteres_nul_interior_entrada_salida_3",
         "path": "/text",
-        "sourceSha256": "943285ae6277762e34e814de0959dd8b4cb2ed899751eab5508efcde8635b415",
+        "sourceSha256": "677f34190ac38b303d0767c50a9a7cc725f9c7818f175ed9d9e6a68e1791063c",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 18,
+            "end": 19,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 20,
-            "end": 136,
+            "start": 37,
+            "end": 153,
             "text": "Admitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1",
             "role": "output",
             "reading": "natural"

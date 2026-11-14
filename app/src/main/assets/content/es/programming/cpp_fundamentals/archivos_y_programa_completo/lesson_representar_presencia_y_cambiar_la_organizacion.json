@@ -151,7 +151,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una sola batería. Empieza con una tabla de diez celdas ausentes e inserta, en orden, `{7, {0, 0}}`, `{7, {1, 1}}` y `{10, {1, 1}}`. Muestra sus tres resultados booleanos separados por dos puntos. Consulta después los identificadores siete y tres, reiniciando el destino en `{9, 9}` antes de cada consulta; cada informe muestra `bool:aceptados:rechazados`.\n\nEn otra tabla de diez celdas ausentes, intenta insertar en este orden: `{0, {1, 2}}`, `{9, {10, 10}}`, `{-1, {1, 1}}`, `{10, {1, 1}}`, `{4, {-1, 0}}` y `{4, {0, 11}}`. Muestra el literal `\"Fronteras:\"` seguido de esos seis resultados, separados por dos puntos. Consulta después los identificadores menos uno y diez, con destino `{9, 9}` reiniciado antes de cada llamada; muestra un informe por consulta.\n\nPor último crea una tabla de nueve celdas ausentes. Intenta insertar `{0, {1, 1}}` y consultar el identificador cero con destino `{9, 9}`. Muestra `Tamano:insertado:consultado:aceptados:rechazados`, sustituyendo los marcadores por los valores obtenidos. Cada línea de la batería termina con salto. Resuelve el puzzle previo y pulsa Compilar, ejecutar y comprobar con todo el programa.",
+          "text": "Construye el programa con las tres preparaciones siguientes. Cada preparación crea una tabla nueva; dentro de ella, realiza las llamadas en el orden indicado. Muestra todos los informes, con un salto después de cada línea.\n\nPrimera preparación: crea una tabla de diez celdas ausentes. Inserta estos registros en este orden:\n`{7, {0, 0}}`\n`{7, {1, 1}}`\n`{10, {1, 1}}`\n\nMuestra los tres resultados booleanos en una línea, separados por dos puntos. Después consulta los identificadores siete y tres, en ese orden. Antes de cada consulta, reinicia su objeto destino con `Recuento{9, 9}`. Cada consulta muestra su resultado booleano y las dos cantidades que quedaron en ese objeto. Las tres líneas requeridas son:\n1:0:0\n1:0:0\n0:9:9\n\nSegunda preparación: crea otra tabla de diez celdas ausentes. Intenta insertar, en este orden:\n`{0, {1, 2}}`\n`{9, {10, 10}}`\n`{-1, {1, 1}}`\n`{10, {1, 1}}`\n`{4, {-1, 0}}`\n`{4, {0, 11}}`\n\nMuestra el rótulo `Fronteras:` seguido de los seis resultados booleanos, separados por dos puntos. Consulta después los identificadores menos uno y diez. Reinicia el destino con `Recuento{9, 9}` antes de cada consulta y muestra un informe por llamada. Las líneas requeridas son:\nFronteras:1:1:0:0:0:0\n0:9:9\n0:9:9\n\nTercera preparación: crea una tabla de nueve celdas ausentes. Intenta insertar `{0, {1, 1}}` y consulta después el identificador cero, con destino `Recuento{9, 9}`. Muestra el rótulo `Tamano:` seguido de los resultados de insertar y consultar y de las dos cantidades que quedaron en el destino, separados por dos puntos:\nTamano:0:0:9:9\n\nResuelve el puzzle previo y pulsa Compilar, ejecutar y comprobar con el programa completo. También la última línea termina con un salto.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar",
@@ -389,7 +389,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una batería independiente para `convertir`. Empieza con un destino vacío y convierte `{{7, {0, 0}}, {2, {3, 1}}}`. Muestra `Conversion:` seguido del resultado booleano y un salto; después recorre los identificadores de cero a nueve y presenta sólo los registros presentes como `ID:aceptados:rechazados`, cada uno con salto. Utiliza un Recuento independiente como destino de las consultas.\n\nSin reiniciar la tabla, intenta convertir `{{4, {1, 1}}, {4, {2, 2}}}` y después `{{1, {11, 0}}}`. Ambos rechazos deben conservar la tabla de la primera llamada. Por último convierte una colección vacía: se acepta y deja diez celdas ausentes.\n\nUsa la misma presentación después de las cuatro llamadas, incluida la línea `Conversion:1` de la última, que no tiene registros presentes que mostrar. Las consultas de estas pruebas conservan la tabla. Pulsa Compilar, ejecutar y comprobar con toda la batería.",
+          "text": "En otro programa, construye la secuencia de pruebas de `convertir` sobre una sola tabla. Empieza con un destino vacío. La primera llamada recibe esta colección, en el orden mostrado:\n`{{7, {0, 0}}, {2, {3, 1}}}`\n\nDespués de cada llamada muestra `Conversion:` seguido del resultado booleano y un salto. Recorre los identificadores de cero a nueve y presenta sólo los registros presentes como `ID:aceptados:rechazados`, uno por línea. Usa un objeto `Recuento` independiente como destino de las consultas.\n\nSin reiniciar la tabla, intenta la segunda conversión con:\n`{{4, {1, 1}}, {4, {2, 2}}}`\n\nLa tercera llamada recibe:\n`{{1, {11, 0}}}`\n\nEsos dos rechazos deben conservar la tabla que dejó la primera llamada. Por último, convierte una colección vacía. Esa conversión se acepta y deja diez celdas ausentes.\n\nLas cuatro llamadas comparten el destino y utilizan la misma presentación. La salida completa requerida es:\nConversion:1\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:1\n\nCada línea, incluida la última, termina con un salto. Después de la última cabecera no aparecen registros porque todas las celdas quedaron ausentes. Las consultas no modifican la tabla. Pulsa Compilar, ejecutar y comprobar con esta secuencia completa.",
           "emphasis": [
             {
               "text": "Sin reiniciar la tabla",
@@ -506,19 +506,19 @@
         },
         {
           "type": "paragraph",
-          "text": "El destino previo puede tener otra organización; no se le aplican las precondiciones de insertar. Para el selector 1, empieza con tres celdas: {true, {4, 2}}, {false, {6, 5}} y {true, {1, 9}}. La primera colección, {{8, {1, 2}}, {8, {4, 5}}}, repite el identificador ocho y debe conservar esas tres celdas. La segunda, {{7, {0, 0}}, {2, {3, 1}}}, reemplaza el destino completo. La tercera, {{0, {2, 2}}, {10, {1, 1}}}, contiene un ID fuera del dominio y conserva el último destino aceptado. La cuarta colección está vacía.\n\nPara el selector 2, el destino empieza vacío. La colección {{3, {2, 1}}, {9, {11, 0}}} tiene una cantidad inválida y debe conservar el vector vacío. Después se admite {{9, {10, 10}}, {0, {1, 2}}} y, por último, una colección vacía. En cada ejecución se mantiene una sola tabla entre las llamadas."
+          "text": "El destino previo puede tener otro tamaño; la condición de diez celdas de `insertar` se aplica a los candidatos de la conversión.\n\nCon Entrada `1`, la tabla empieza con estas tres celdas:\nPosición cero: `{true, {4, 2}}`\nPosición uno: `{false, {6, 5}}`\nPosición dos: `{true, {1, 9}}`\n\nEl cliente intenta estas cuatro conversiones, sin reiniciar la tabla entre ellas:\nPrimera colección: `{{8, {1, 2}}, {8, {4, 5}}}`. El identificador repetido provoca rechazo; deben conservarse las tres celdas anteriores.\nSegunda colección: `{{7, {0, 0}}, {2, {3, 1}}}`. Se acepta y reemplaza todo el destino.\nTercera colección: `{{0, {2, 2}}, {10, {1, 1}}}`. El identificador fuera del dominio provoca rechazo y conserva el último destino aceptado.\nCuarta colección: vacía. Se acepta y deja diez celdas ausentes.\n\nCon Entrada `2`, el destino empieza vacío. El cliente realiza estas tres llamadas sobre la misma tabla:\nPrimera colección: `{{3, {2, 1}}, {9, {11, 0}}}`. La cantidad inválida provoca rechazo y debe conservar el vector vacío.\nSegunda colección: `{{9, {10, 10}}, {0, {1, 2}}}`. Se acepta y reemplaza el destino por la tabla correspondiente.\nTercera colección: vacía. Se acepta y deja diez celdas ausentes."
         },
         {
           "type": "paragraph",
-          "text": "En Entrada escribe sólo uno de los selectores: 1, 2. Puedes rodearlo con espacios, tabuladores o saltos de línea ASCII. Las muestras ya están preparadas en el cliente. Prueba cada selector con el mismo programa y pulsa «Compilar, ejecutar y comprobar». A continuación se muestra la salida completa requerida para cada entrada; conserva los separadores y el salto final de todas las líneas."
+          "text": "Comienza con Entrada `1`, completa la función y pulsa «Compilar, ejecutar y comprobar». La primera comprobación correcta de ese caso es la necesaria para avanzar. Entrada `2` es un ensayo opcional con una tabla inicial diferente.\n\nEscribe sólo el selector del caso. Puedes rodearlo con espacios, tabuladores o saltos de línea como los de los ejemplos; las colecciones ya están preparadas en el cliente. Mantén juntas las conversiones de cada ejecución: una aceptación cambia la tabla que debe conservar un rechazo posterior.\n\nDebajo se muestra la salida completa de cada caso. Conserva los separadores y el salto final de todas las líneas."
         },
         {
           "type": "paragraph",
-          "text": "Entrada: 1. Salida:\nConversion=0|Tamano=3|Conservada=1\n0:1:4:2\n1:0\n2:1:1:9\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0"
+          "text": "Entrada obligatoria:\n1\n\nSalida esperada:\nConversion=0|Tamano=3|Conservada=1\n0:1:4:2\n1:0\n2:1:1:9\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0"
         },
         {
           "type": "paragraph",
-          "text": "Entrada: 2. Salida:\nConversion=0|Tamano=0|Conservada=1\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0"
+          "text": "Entrada opcional:\n2\n\nSalida esperada:\nConversion=0|Tamano=0|Conservada=1\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0"
         },
         {
           "type": "cpp_compiler",
@@ -1597,6 +1597,36 @@
         "id": "block_0005_0004",
         "beforeSha256": "51333826492b0362815af6252bc351a0217f4157d70aba604b1a49160a262d31",
         "afterSha256": "6128c7a0541a726582acd128f99388b261440f65f934ed47b4080746dfb30a5d"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "5b2962d4c1856f41c0ddf81043eed4ec3bd673f58257794cbd68717b3f9a7277",
+        "afterSha256": "85eef4b152bc33bd4aea8264dca2ad7345eff87c5157a6afebb2f7d7b6c926be"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "1ea1340b36e1f870684eb229acbb3dc28f99707141ae5baca2526826e7038cfa",
+        "afterSha256": "330d0074bfe1ad13e3a33f5c10afbc419470ff0d19f9d0fecf7c1fe0f6749aaf"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_contrato_2",
+        "beforeSha256": "485823a8502431722cd19b24b603891e4ab9818e665f7030a08280b6682becbd",
+        "afterSha256": "47457afb93dd840c13dfebea3b515a47badb2bb1334a32323584b0863413199e"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_ejecucion",
+        "beforeSha256": "32b42d3e50c220b086abcd855c99e7a0553c7121576aa0238ce374de06578d4a",
+        "afterSha256": "0563504e560936e7532e881b0dd6f5fc223accab9b5002786ff967aaa28e3693"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_entrada_salida_0",
+        "beforeSha256": "fb73f76b52b2cc043b33c7f76f2bdd9da3becb9f8d0ce8e30b178e5bede028d3",
+        "afterSha256": "884bfdfe691cd0eb66806d94083ee522ead3ac4c4c7518945665c6df274a7510"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_entrada_salida_1",
+        "beforeSha256": "e3fd387ff95b55aede5b0aab140237ce9989daf767e249281824e8d2d6b245eb",
+        "afterSha256": "a756cc48c226ec99f90c1cddc2542102f7affeadce532fcfe828c7b18389193a"
       }
     ]
   },
@@ -2279,103 +2309,116 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "aa7d4a4544a2826437bc9a43f6ce1101057e0104e2e8ec136ce6723ff98cac40",
+        "sourceSha256": "ce73052d1b4218482654eaa1f781684e531838a75873b2fe28bcd37ad32825a9",
         "spans": [
           {
-            "start": 96,
-            "end": 107,
+            "start": 325,
+            "end": 336,
             "text": "{7, {0, 0}}",
             "role": "cpp"
           },
           {
-            "start": 111,
-            "end": 122,
+            "start": 339,
+            "end": 350,
             "text": "{7, {1, 1}}",
             "role": "cpp"
           },
           {
-            "start": 127,
-            "end": 139,
+            "start": 353,
+            "end": 365,
             "text": "{10, {1, 1}}",
             "role": "cpp"
           },
           {
-            "start": 284,
-            "end": 290,
-            "text": "{9, 9}",
+            "start": 567,
+            "end": 581,
+            "text": "Recuento{9, 9}",
             "role": "cpp"
           },
           {
-            "start": 338,
-            "end": 363,
-            "text": "bool:aceptados:rechazados",
+            "start": 709,
+            "end": 726,
+            "text": "1:0:0\n1:0:0\n0:9:9",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 439,
-            "end": 450,
+            "start": 824,
+            "end": 835,
             "text": "{0, {1, 2}}",
             "role": "cpp"
           },
           {
-            "start": 454,
-            "end": 467,
+            "start": 838,
+            "end": 851,
             "text": "{9, {10, 10}}",
             "role": "cpp"
           },
           {
-            "start": 471,
-            "end": 483,
+            "start": 854,
+            "end": 866,
             "text": "{-1, {1, 1}}",
             "role": "cpp"
           },
           {
-            "start": 487,
-            "end": 499,
+            "start": 869,
+            "end": 881,
             "text": "{10, {1, 1}}",
             "role": "cpp"
           },
           {
-            "start": 503,
-            "end": 515,
+            "start": 884,
+            "end": 896,
             "text": "{4, {-1, 0}}",
             "role": "cpp"
           },
           {
-            "start": 520,
-            "end": 532,
+            "start": 899,
+            "end": 911,
             "text": "{4, {0, 11}}",
             "role": "cpp"
           },
           {
-            "start": 555,
-            "end": 567,
-            "text": "\"Fronteras:\"",
-            "role": "string"
+            "start": 933,
+            "end": 943,
+            "text": "Fronteras:",
+            "role": "output"
           },
           {
-            "start": 696,
-            "end": 702,
-            "text": "{9, 9}",
+            "start": 1093,
+            "end": 1107,
+            "text": "Recuento{9, 9}",
             "role": "cpp"
           },
           {
-            "start": 842,
-            "end": 853,
+            "start": 1193,
+            "end": 1226,
+            "text": "Fronteras:1:1:0:0:0:0\n0:9:9\n0:9:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1308,
+            "end": 1319,
             "text": "{0, {1, 1}}",
             "role": "cpp"
           },
           {
-            "start": 902,
-            "end": 908,
-            "text": "{9, 9}",
+            "start": 1376,
+            "end": 1390,
+            "text": "Recuento{9, 9}",
             "role": "cpp"
           },
           {
-            "start": 920,
-            "end": 968,
-            "text": "Tamano:insertado:consultado:aceptados:rechazados",
+            "start": 1412,
+            "end": 1419,
+            "text": "Tamano:",
+            "role": "output"
+          },
+          {
+            "start": 1549,
+            "end": 1563,
+            "text": "Tamano:0:0:9:9",
             "role": "output",
             "reading": "natural"
           }
@@ -2726,56 +2769,54 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "2b51625203a5889e59bc67201031a891752718c88ce33bf779703d9c64f48a3a",
+        "sourceSha256": "fac9f5e2590f99b623af7e5867f4d38a686c5685c5547c4c50965544f37caaff",
         "spans": [
           {
-            "start": 42,
-            "end": 51,
+            "start": 56,
+            "end": 65,
             "text": "convertir",
             "role": "cpp"
           },
           {
-            "start": 96,
-            "end": 122,
+            "start": 184,
+            "end": 210,
             "text": "{{7, {0, 0}}, {2, {3, 1}}}",
             "role": "cpp"
           },
           {
-            "start": 134,
-            "end": 145,
+            "start": 246,
+            "end": 257,
             "text": "Conversion:",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 288,
-            "end": 311,
+            "start": 392,
+            "end": 415,
             "text": "ID:aceptados:rechazados",
-            "role": "output",
-            "reading": "natural"
+            "role": "output"
           },
           {
-            "start": 345,
-            "end": 353,
+            "start": 448,
+            "end": 456,
             "text": "Recuento",
             "role": "cpp"
           },
           {
-            "start": 443,
-            "end": 469,
+            "start": 564,
+            "end": 590,
             "text": "{{4, {1, 1}}, {4, {2, 2}}}",
             "role": "cpp"
           },
           {
-            "start": 482,
-            "end": 496,
+            "start": 621,
+            "end": 635,
             "text": "{{1, {11, 0}}}",
             "role": "cpp"
           },
           {
-            "start": 721,
-            "end": 733,
-            "text": "Conversion:1",
+            "start": 916,
+            "end": 1003,
+            "text": "Conversion:1\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:1",
             "role": "output",
             "reading": "natural"
           }
@@ -3094,116 +3135,110 @@
       {
         "block": "u12_tabla_conservar_tamano_contrato_2",
         "path": "/text",
-        "sourceSha256": "f95a1a1cac1847cffb4b849802832a8febe177ec0a14ca60b32421bd309ab5a1",
+        "sourceSha256": "07c9fdaa07498c342502cdf7dc81f91a3c4d937e172f4ae268155e1dbb43165a",
         "spans": [
           {
-            "start": 88,
-            "end": 96,
+            "start": 75,
+            "end": 83,
             "text": "insertar",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 115,
-            "end": 116,
+            "start": 144,
+            "end": 145,
             "text": "1",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 143,
-            "end": 157,
+            "start": 204,
+            "end": 218,
             "text": "{true, {4, 2}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 159,
-            "end": 174,
+            "start": 235,
+            "end": 250,
             "text": "{false, {6, 5}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 177,
-            "end": 191,
+            "start": 267,
+            "end": 281,
             "text": "{true, {1, 9}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 215,
-            "end": 241,
+            "start": 386,
+            "end": 412,
             "text": "{{8, {1, 2}}, {8, {4, 5}}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 319,
-            "end": 345,
+            "start": 524,
+            "end": 550,
             "text": "{{7, {0, 0}}, {2, {3, 1}}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 390,
-            "end": 417,
+            "start": 612,
+            "end": 639,
             "text": "{{0, {2, 2}}, {10, {1, 1}}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 541,
-            "end": 542,
+            "start": 810,
+            "end": 811,
             "text": "2",
-            "role": "data",
-            "reading": "natural"
+            "role": "data"
           },
           {
-            "start": 583,
-            "end": 610,
+            "start": 921,
+            "end": 948,
             "text": "{{3, {2, 1}}, {9, {11, 0}}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           },
           {
-            "start": 691,
-            "end": 719,
+            "start": 1042,
+            "end": 1070,
             "text": "{{9, {10, 10}}, {0, {1, 2}}}",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "cpp"
           }
         ]
       },
       {
         "block": "u12_tabla_conservar_tamano_ejecucion",
         "path": "/text",
-        "sourceSha256": "3c1809bd773aa93beaed94aab552911b799da6a731c2fdd475ad864f272a2f99",
+        "sourceSha256": "5abe1eb1d8b20e5539cf107371c7a07471a526a29bfca2b7af0cccbd90b04b05",
         "spans": [
           {
-            "start": 47,
-            "end": 51,
-            "text": "1, 2",
-            "role": "data",
-            "reading": "natural"
+            "start": 22,
+            "end": 23,
+            "text": "1",
+            "role": "data"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "2",
+            "role": "data"
           }
         ]
       },
       {
         "block": "u12_tabla_conservar_tamano_entrada_salida_0",
         "path": "/text",
-        "sourceSha256": "af3e21606fbc43b79ce84f137987760f769ac9be7a8313462111cb591351525e",
+        "sourceSha256": "3c5cce010b2d90e5df57e588853249ce12ca8ce57ef44af382e1e8764b24a52e",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 21,
+            "end": 22,
             "text": "1",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 20,
-            "end": 292,
+            "start": 41,
+            "end": 313,
             "text": "Conversion=0|Tamano=3|Conservada=1\n0:1:4:2\n1:0\n2:1:1:9\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0",
             "role": "output",
             "reading": "natural"
@@ -3213,18 +3248,18 @@
       {
         "block": "u12_tabla_conservar_tamano_entrada_salida_1",
         "path": "/text",
-        "sourceSha256": "91099aca808fd35cf45c3ec616bcffa382fa3dd7bd4be147ebf0c6917d0a1f3d",
+        "sourceSha256": "a378d5351c6d492d13c4d9bbb0eb97dee5d0587f2976ee9243f23222c55e2efe",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
+            "start": 18,
+            "end": 19,
             "text": "2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 20,
-            "end": 190,
+            "start": 38,
+            "end": 208,
             "text": "Conversion=0|Tamano=0|Conservada=1\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0",
             "role": "output",
             "reading": "natural"

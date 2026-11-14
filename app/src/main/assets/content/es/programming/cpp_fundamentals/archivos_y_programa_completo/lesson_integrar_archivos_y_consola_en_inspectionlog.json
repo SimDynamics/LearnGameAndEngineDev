@@ -42,7 +42,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Abre y guarda los nuevos archivos con el mismo procedimiento de la lección anterior. aplicacion.h incluirá inspection_log.h y <ostream>. Usa una protección INSPECTION_LOG_APLICACION_H. Declara bool mostrar_informe(const Conjunto& conjunto, std::ostream& salida), y int procesar_archivos(const std::string& ruta_entrada, const std::string& ruta_salida, Conjunto& actual, std::ostream& mensajes)."
+          "text": "Continúa en la consola de herramientas nativas x64, con cmd y desde la raíz que creaste en la lección anterior:\n%USERPROFILE%\\LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog\n\nConserva inspection_log.h, modelo.cpp y prueba_modelo.cpp. Las cuatro órdenes siguientes abren los nuevos archivos en esa misma carpeta. Escríbelas una por vez; si Bloc de notas pregunta si debe crear el archivo, acepta. Escribe cada contenido cuando se solicite y guárdalo con su nombre completo, sin añadir .txt. Recupera el guardado UTF-8 y la comprobación del archivo que practicaste con el programa de entorno.\n\nEn aplicacion.h incluye inspection_log.h y <ostream>. Protege la cabecera con #ifndef, #define y #endif, usando el mismo nombre INSPECTION_LOG_APLICACION_H en la apertura y la definición. Esta cabecera contiene las declaraciones que comparten los tres fuentes nuevos; no lleva las instrucciones de las funciones.\n\nDeclara estas dos funciones, con los parámetros en este orden:\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida)\nint procesar_archivos(const std::string& ruta_entrada, const std::string& ruta_salida, Conjunto& actual, std::ostream& mensajes)\n\nTermina cada declaración con punto y coma. En la primera, conjunto permite consultar los datos y salida identifica el flujo donde se presentará el informe. En la segunda, las dos cadenas identifican los archivos; actual es el estado que la carga puede sustituir, y mensajes es el destino de los diagnósticos y del informe. Las rutas se consultan por referencia constante; actual y los flujos pueden cambiar a través de sus referencias. El resultado entero comunica la terminación acordada, no una cantidad de grupos."
         },
         {
           "type": "paragraph",
@@ -62,11 +62,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En informe.cpp, mostrar_informe comprobará primero la validez del conjunto. Si es inválido, devolverá falso sin presentar un informe. Si es válido, sumará aceptados y rechazados, imprimirá el número de grupos y llamará a seleccionar_mayor. El destino es un std::ostream&: podrá ser la consola o un flujo de cadena del comprobador. Esta elección permite comprobar el texto sin modificar el cálculo."
+          "text": "En informe.cpp incluye aplicacion.h y define mostrar_informe a partir de su contrato. La función recibe el conjunto por referencia constante: el informe debe consultar sus datos, sin reordenarlos ni cambiar sus cantidades.\n\nPrimero llama a conjunto_valido. Si el objeto es inválido, devuelve false antes de escribir el informe. Si es válido, prepara dos totales en cero. Recorre cada grupo y, dentro de él, todos sus registros: añade aceptados a su total y rechazados al otro. Cada cantidad conserva así su función; no se suman ambas para producir un único número.\n\nPresenta la cantidad de grupos y los dos totales. Después llama a seleccionar_mayor para obtener el grupo con mayor suma de aceptados. Si el resultado indica que hay un grupo, convierte su ID a nombre mediante nombre_grupo y presenta ese nombre y su suma. Si no hay grupos, presenta la ausencia acordada.\n\nEl parámetro std::ostream& permite utilizar el mismo informe con std::cout o con un flujo de cadena del comprobador. La función escribe en el flujo que recibe, no en una consola elegida por dentro. Al terminar devolverá si la escritura conserva un estado correcto; un conjunto válido no garantiza por sí solo que su destino acepte los caracteres."
         },
         {
           "type": "paragraph",
-          "text": "Para la muestra base, escribe exactamente estas cuatro líneas, cada una con salto final. El máximo se obtiene de la suma por grupo; no del registro individual de mayor cantidad."
+          "text": "La muestra base contiene rojo con los registros 7[0;0] y 2[3;1], seguido de azul vacío. Hay dos grupos. Al recorrer los registros se obtienen tres aceptados y un rechazado. Rojo suma tres aceptados y azul suma cero, por lo que el mayor es rojo.\n\nTu función debe producir exactamente las cuatro líneas siguientes, cada una con salto final. No escribas esos resultados directamente para esta muestra: deben proceder de sus datos. El mayor se obtiene sumando por grupo; elegir el registro individual más grande respondería otra pregunta."
         },
         {
           "type": "paragraph",
@@ -74,7 +74,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Sin ningún grupo, la última línea será Mayor: ninguno. Con un grupo vacío azul, será Mayor: azul 0. Si hay empate, debe aparecer el primero en el orden guardado. Al terminar, comprueba el estado del flujo de salida y devuelve si continúa correcto. Escribe la función y la cabecera en sus archivos antes de contrastarlas con la referencia."
+          "text": "La presencia también forma parte del informe. Para un conjunto sin grupos se requieren estas cuatro líneas:\nGrupos: 0\nAceptados: 0\nRechazados: 0\nMayor: ninguno\n\nSi el único grupo es azul y no tiene registros, se requieren:\nGrupos: 1\nAceptados: 0\nRechazados: 0\nMayor: azul 0\n\nTodas terminan con salto. Un grupo vacío participa con suma cero; si varios grupos empatan, se conserva el primero en el orden del vector. Esa política ya pertenece a seleccionar_mayor: no ordenes los datos para presentar el informe.\n\nDespués de escribir, comprueba el flujo de salida y devuelve el resultado lógico de esa comprobación. Escribe la cabecera y la función en sus archivos antes de contrastarlas con la referencia."
         },
         {
           "type": "multiple_choice",
@@ -98,19 +98,19 @@
         },
         {
           "type": "paragraph",
-          "text": "En archivos.cpp incluye aplicacion.h y <fstream>. Implementa procesar_archivos por etapas. Primero rechaza rutas vacías o dos rutas escritas exactamente iguales con terminación 1. Usa para las pruebas dos archivos distintos de la carpeta del proyecto; esta comprobación textual no identifica todas las maneras posibles de nombrar el mismo archivo."
+          "text": "En archivos.cpp incluye aplicacion.h y <fstream>. Define procesar_archivos siguiendo el orden de las etapas: comprobar rutas, cargar, aceptar el nuevo estado, componer, guardar, recuperar y comparar.\n\nAntes de abrir un archivo, comprueba las dos cadenas recibidas. Si alguna está vacía o ambas contienen exactamente los mismos caracteres, escribe Rutas vacias o iguales, termina el mensaje con salto y devuelve uno.\n\nLas pruebas de esta lección usan dos archivos distintos de la carpeta del proyecto. Comparar las cadenas no permite reconocer todas las formas de nombrar un mismo archivo: por ejemplo, ejemplos\\base.txt y .\\ejemplos\\base.txt pueden señalar la misma ubicación desde esta raíz aunque sus textos difieran. El contrato exige archivos diferentes; no utilices dos nombres de la misma ubicación como entrada y salida."
         },
         {
           "type": "paragraph",
-          "text": "Abre la entrada como std::ifstream dentro de un bloque local. Si no se abre, informa Error al abrir entrada y devuelve 1. Lee sobre un Conjunto candidato{}, no directamente sobre actual. Si aparece bad(), informa Averia de lectura y devuelve 1. Si no se acepta el texto completo, informa Entrada rechazada. Estado conservado. y devuelve 2. En ambos casos no se crea un flujo de salida para el archivo de destino."
+          "text": "Prepara un Conjunto candidato{} distinto de actual. Abre ruta_entrada mediante un std::ifstream dentro de un bloque local. Comprueba la apertura antes de llamar al lector: si falla, presenta Error al abrir entrada y devuelve uno.\n\nLlama a leer_muestra_completa con ese flujo y el candidato. Guarda su resultado lógico y comprueba después bad(). Si hay avería de lectura, presenta Averia de lectura y devuelve uno. Si no hubo avería, pero el lector rechazó la muestra completa, presenta Entrada rechazada. Estado conservado. y devuelve dos.\n\nCada diagnóstico termina con salto. En estas rutas no asignes el candidato a actual ni abras la salida para escribir. actual conserva todos sus datos previos porque la lectura sólo ha trabajado sobre el candidato.\n\nLlegar al fin del archivo no identifica por sí solo una avería. El resultado del lector decide si encontró la muestra completa y sólo blancos después de su cierre; bad() permite distinguir una avería de lectura. Una llave que falta produce un rechazo del contenido aunque ya no queden caracteres para leer."
         },
         {
           "type": "paragraph",
-          "text": "Cuando la lectura termina correctamente, el flujo de entrada puede cerrarse al salir de su bloque. Asigna el candidato a actual y compón su texto en una cadena. Si la composición falla, informa Error al componer datos y devuelve 1. Sólo después abre la salida con std::ofstream. Comprueba por separado apertura, inserción del texto y close(). Sus mensajes serán Error al abrir salida, Error al escribir salida y Error al cerrar salida, siempre con terminación 1."
+          "text": "Al aceptar toda la muestra, sal del bloque de entrada; su std::ifstream local cierra la conexión al terminar ese bloque. Asigna entonces el candidato a actual. Esta asignación sustituye el conjunto completo: una muestra válida sin grupos debe dejar actual vacío, sin conservar grupos de la carga anterior.\n\nCompón los datos de actual en una cadena mediante componer_conjunto y comprueba su resultado. Si falla, presenta Error al componer datos y devuelve uno. La aceptación ya cambió la memoria; este fallo posterior no deshace esa asignación.\n\nSólo tras componer correctamente, abre ruta_salida con std::ofstream y realiza estas comprobaciones por separado:\nSi falla la apertura, presenta Error al abrir salida.\nInserta la cadena y, si falla esa escritura, presenta Error al escribir salida.\nLlama a close() y, si falla el cierre, presenta Error al cerrar salida.\n\nLos tres diagnósticos terminan con salto y cada fallo devuelve uno. No utilices una sola comprobación al final para atribuir la causa: observar el flujo después de cada operación permite distinguir la apertura, la escritura y el cierre. Abrir una salida puede sustituir el archivo anterior; estas comprobaciones detectan fallos, sin prometer restaurarlo."
         },
         {
           "type": "paragraph",
-          "text": "Reabre la salida con std::ifstream, interpreta otra muestra completa y compárala con actual mediante mismos_datos. Usa los mensajes Error al reabrir salida, Error al releer salida y Error al comparar recuperacion para distinguir esas etapas. Después presenta Entrada aceptada, el informe y Guardado verificado. Cada mensaje termina con salto de línea. Devuelve 0 únicamente tras completar la comparación y escribir el informe sin fallo."
+          "text": "Después de escribir y cerrar correctamente, prepara otro Conjunto recuperado{} y reabre la salida mediante std::ifstream. El contenido que consultas ahora procede del archivo, no de la cadena que intentaste guardar.\n\nComprueba estas etapas en orden:\nLa reapertura debe funcionar; si falla, presenta Error al reabrir salida y devuelve uno.\nleer_muestra_completa debe aceptar todo el archivo y no debe haber avería de lectura; si falla cualquiera de esas condiciones, presenta Error al releer salida y devuelve uno.\nmismos_datos debe aceptar la coincidencia entre actual y recuperado; si no coincide, presenta Error al comparar recuperacion y devuelve uno.\n\nLa comparación revisa grupos presentes, identificadores, registros, ambas cantidades y posiciones. No la sustituyas por comparar el número de grupos o los totales del informe.\n\nSólo después presenta Entrada aceptada, llama a mostrar_informe con actual y el flujo mensajes, y presenta Guardado verificado. Cada mensaje y cada línea del informe terminan con salto. Comprueba los resultados de escritura como se indica a continuación: devuelve cero sólo al completar la recuperación y la presentación sin fallo."
         },
         {
           "type": "paragraph",
@@ -138,7 +138,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En main.cpp incluye aplicacion.h e <iostream>. Presenta InspectionLog, después Ruta de entrada: y lee una línea con std::getline. Repite para Ruta de salida:. Escribe cada rótulo en su propia línea. Si falta una de las líneas, presenta Falta la ruta de entrada o Falta la ruta de salida y termina con 1."
+          "text": "En main.cpp incluye aplicacion.h e <iostream>. El punto de entrada recoge las dos rutas y entrega el trabajo a procesar_archivos; no vuelve a implementar el modelo ni el guardado.\n\nPrimero presenta estas dos líneas:\nInspectionLog\nRuta de entrada:\n\nLee la respuesta en una cadena con std::getline. Después presenta Ruta de salida: en otra línea y lee la segunda cadena del mismo modo. getline consume el salto que termina la línea sin guardarlo en la cadena; conserva los demás caracteres de la ruta (Köppe et al., 2023).\n\nComprueba el resultado de cada lectura antes de continuar. Si la primera no proporciona una línea, presenta Falta la ruta de entrada y devuelve uno. Si falta la segunda, presenta Falta la ruta de salida y devuelve uno. Todos esos rótulos y diagnósticos terminan con salto.\n\nUna línea vacía sí puede leerse: pulsar Enter sin escribir caracteres entrega una cadena vacía, no la ausencia de una línea. Si ambas lecturas tienen éxito, esa cadena vacía llega a procesar_archivos, que la rechaza con el mensaje de rutas vacías. Distingue el fallo al leer una línea del contenido de una línea que se pudo leer."
         },
         {
           "type": "paragraph",
@@ -182,7 +182,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En informe.cpp, ambos totales se calculan recorriendo todos los registros. Después se presenta el resultado de la selección que ya comprobamos. Un conjunto vacío produce un informe válido con cero grupos y sin mayor."
+          "text": "En informe.cpp, los dos totales empiezan en cero y reciben los valores de todos los registros durante los recorridos. La cantidad de grupos procede del vector, incluso cuando alguno no contiene registros. Después se presenta el resultado de seleccionar_mayor, la función de selección del modelo.\n\nSin grupos, los recorridos no añaden cantidades: se muestran cero grupos, cero aceptados, cero rechazados y Mayor: ninguno. Con un grupo vacío, cambia la presencia aunque las sumas sigan siendo cero. El informe comunica esos resultados; no modifica la colección para obtenerlos."
         },
         {
           "type": "code",
@@ -229,7 +229,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye desde la raíz del proyecto, en la consola de desarrollo:"
+          "text": "Guarda aplicacion.h, informe.cpp, archivos.cpp y main.cpp con sus nombres completos. Conserva también inspection_log.h y modelo.cpp de la lección anterior. Desde la raíz de InspectionLog, en la misma consola de herramientas nativas x64, ejecuta la orden completa siguiente.\n\ncl traducirá los cuatro fuentes enumerados y el enlazador reunirá sus definiciones y las bibliotecas necesarias para obtener inspectionlog.exe. Las cabeceras se incorporan mediante sus #include; no se añaden como si fueran fuentes independientes. Todavía estás construyendo el programa: esta orden no lo ejecuta."
         },
         {
           "type": "paragraph",
@@ -237,7 +237,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La orden incorpora una sola definición de cada función y un solo main. prueba_modelo.cpp tiene su propio punto de entrada: se construye con su orden anterior y no se añade a este ejecutable. /Fe:inspectionlog.exe evita que el nombre dependa del primer fuente (Microsoft, 2025b, 2025c)."
+          "text": "La orden contiene una sola implementación de cada función y un solo main. prueba_modelo.cpp tiene su propio punto de entrada: conserva su comprobación independiente, pero no lo añadas a este ejecutable. Incluir los dos main en una misma construcción no une los programas; produciría definiciones incompatibles para el mismo punto de entrada.\n\n/W4 solicita el nivel de advertencias que utilizaste en la prueba de entorno. /EHsc conserva el soporte de manejo de excepciones de C++ de esa receta. /Fe:inspectionlog.exe elige el nombre del ejecutable en la carpeta actual; evita que dependa del primer fuente (Microsoft, 2025b, 2025c).\n\nUna construcción correcta deja modelo.obj, informe.obj, archivos.obj y main.obj como productos intermedios, además de inspectionlog.exe. Justo después de construir, consulta echo %ERRORLEVEL% en una línea independiente: se espera cero. Si falla, lee los diagnósticos, corrige los archivos pertinentes, guarda y repite la construcción antes de ejecutar. Un ejecutable de una revisión anterior no demuestra que la fuente nueva se haya construido."
         }
       ]
     },
@@ -249,7 +249,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la raíz del proyecto crea dos carpetas: ejemplos guardará entradas de práctica y resultados recibirá las salidas. Ejecuta cada orden y abre la muestra con el editor."
+          "text": "La primera ejecución necesita una entrada y una carpeta donde guardar su salida. Desde la raíz del proyecto y en la consola preparada, ejecuta las órdenes siguientes, una por vez.\n\nmkdir ejemplos crea la carpeta de las entradas de práctica. mkdir resultados crea la carpeta que recibirá las salidas. Estas órdenes no crean todavía el contenido de base.txt. Si una carpeta ya existe, revisa su contenido y conserva el trabajo que haya en ella.\n\nLa orden notepad ejemplos\\base.txt abre el editor con ese archivo dentro de ejemplos. Si pregunta si debe crear el archivo, acepta. Mantén la consola en la raíz: así las rutas relativas de edición y de ejecución señalarán las mismas ubicaciones."
         },
         {
           "type": "paragraph",
@@ -265,7 +265,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda exactamente el texto siguiente en ejemplos\\base.txt. Puedes añadir un salto al final. Conserva la extensión .txt y el texto sin caracteres añadidos antes de la primera llave."
+          "text": "Escribe el texto siguiente en ejemplos\\base.txt. Utiliza el mismo procedimiento de Bloc de notas: guarda con Ctrl+S; si necesitas revisar el destino, utiliza Archivo → Guardar como, elige ejemplos dentro de la raíz del proyecto y conserva base.txt como nombre completo. Guarda en UTF-8, como en la prueba de entorno.\n\nPara esta muestra, copia exactamente la línea del formato, sin añadir comillas alrededor ni otros textos. Puedes incluir un salto de línea al final. Conserva la extensión .txt y comprueba que no se haya creado otra carpeta o un archivo con un nombre distinto. El programa leerá el archivo guardado, no los cambios que todavía no hayas guardado en el editor."
         },
         {
           "type": "paragraph",
@@ -273,7 +273,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta el programa. Cuando aparezca Ruta de entrada:, escribe ejemplos\\base.txt y pulsa Enter. Cuando aparezca Ruta de salida:, escribe resultados\\base_guardada.txt y pulsa Enter. Son rutas relativas a la raíz actual del proyecto; son archivos distintos."
+          "text": "Ejecuta la orden siguiente desde la raíz. El prefijo .\\ identifica inspectionlog.exe en la carpeta actual; no vuelve a compilar sus fuentes.\n\nAl aparecer Ruta de entrada:, escribe esta primera línea y pulsa Enter:\nejemplos\\base.txt\n\nAl aparecer Ruta de salida:, escribe esta segunda línea y pulsa Enter:\nresultados\\base_guardada.txt\n\nSon datos que recibe el programa después de iniciarse, no argumentos que debas añadir a la orden de cmd. Introduce las rutas sin comillas. La primera identifica el archivo que preparaste; la segunda identifica un archivo distinto dentro de resultados. Ambas se interpretan desde la raíz donde ejecutaste el programa, aunque sus nombres estén en subcarpetas."
         },
         {
           "type": "paragraph",
@@ -281,7 +281,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de introducir las dos rutas, debe aparecer:"
+          "text": "Después de proporcionar las dos rutas, la muestra completa debe aceptarse, guardarse y recuperarse. La operación presenta entonces estas seis líneas, cada una con salto final. Son posteriores a los rótulos que pidieron las rutas; no confundas esos rótulos con líneas adicionales del informe."
         },
         {
           "type": "paragraph",
@@ -300,7 +300,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El resultado inmediato debe ser 0. Examina también el archivo guardado:"
+          "text": "Introduce echo %ERRORLEVEL% inmediatamente después de terminar inspectionlog.exe y antes de consultar otro archivo. El resultado esperado es cero: esta ejecución aceptó, guardó, recuperó los mismos datos y presentó el informe. Es el código del programa, distinto del que consultaste después de construirlo.\n\nEscribe la consulta con los signos de porcentaje; echo 0 mostraría un valor fijo. La captura automatizada muestra esa sustitución ya hecha y conserva el alcance de la ejecución del autor.\n\nSi el resultado es dos, la muestra se rechazó: revisa su archivo y el mensaje. Si es uno, utiliza el diagnóstico para localizar la etapa técnica. No tomes la presencia de una salida anterior como prueba de que el intento actual se guardó. Tras el resultado esperado, examina también el texto de la copia con la orden siguiente."
         },
         {
           "type": "paragraph",
@@ -308,7 +308,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Debe conservar los dos grupos, el registro de cantidades cero y el orden. Vuelve a ejecutar el programa usando resultados\\base_guardada.txt como entrada y resultados\\base_recuperada.txt como salida. Debe repetir el mismo informe y verificar de nuevo la copia. La salida anterior pasa a ser una entrada real en esta segunda ejecución."
+          "text": "La consulta type debe mostrar este texto:\n{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\n\nComprueba los dos grupos en ese orden, los dos registros de rojo y sus cantidades, incluido 7[0;0], y la presencia de azul vacío. El compositor no añade un salto final a la cadena: esa diferencia respecto de un archivo escrito con Enter no elimina datos del modelo.\n\nAhora utiliza la copia como una entrada real. Vuelve a ejecutar .\\inspectionlog.exe desde la misma raíz. Proporciona estas dos líneas, cada una cuando se pida su ruta:\nEntrada: resultados\\base_guardada.txt\nSalida: resultados\\base_recuperada.txt\n\nEscribe sólo la ruta después de cada petición, sin los rótulos Entrada: y Salida: de esta explicación. El primer archivo procede de la ejecución anterior; el segundo es un destino nuevo y distinto. Deben repetirse las seis líneas del informe mostrado, con Guardado verificado al final. Consulta inmediatamente echo %ERRORLEVEL%: debe volver a mostrar cero.\n\nLa segunda ejecución comprueba que la salida de la primera puede leerse como muestra completa. Conserva ese encadenamiento entre archivos; no sustituyas la segunda entrada por la muestra original para dar por comprobada la recuperación de la copia."
         }
       ]
     }
@@ -1010,6 +1010,106 @@
         "id": "block_0006_0005",
         "beforeSha256": "9ca0ac31c8b6ea4254cd33fd3f871b1f92debecc5bea4d603186c9cb9c78b220",
         "afterSha256": "8381c4dd251afd5f403c2c63ca7a33db132964401622303986508950de912cb7"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "986264e5b9f2572a0493e38365a6ed95349ea59a6bc468766dddf1f665344a12",
+        "afterSha256": "1409552f3dd7e49644bfa8140d126ba6e4ff8d8eefb2347d78becfeba06800cb"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "2ce2b4cdef4807c902ed12872602fce120ead3b6dcb1cf0ea1addd658fb4be5e",
+        "afterSha256": "b23266f1041fd7db3b3048bd9f1375eab4d7a5c47461c5517a7e2eab9680e625"
+      },
+      {
+        "id": "block_0001_0007",
+        "beforeSha256": "cb0f12118098747621bf0302d8d2b4a7a2f59962c9e0887e84f35a4928a0d8ac",
+        "afterSha256": "e8c612f83ce354ee460ddd5e9c13a671b22ef7f2db795ee0691cf1cc900ba9b0"
+      },
+      {
+        "id": "block_0001_0009",
+        "beforeSha256": "d7843cf9313ea54fe379b5613271d361de4ae840084c9f0e60c6b79c1acd048f",
+        "afterSha256": "cd5e9a770e33578855323d0d31c6cce47dfc432b07bbf092bb8440c870e03553"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b0c0c7cf8cdaa5e2c97d446669e61e1999879ff56e27cb1ea42442a6461bb2cf",
+        "afterSha256": "a8e1fd3a80b0ad95702d72ac4b84038314c1c0f98fd743518b7a3ff1236f81a8"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "648ed3fff37a1743ae2ef42bc8eff525b4169868ea5de9e17e06cf87f48c9c37",
+        "afterSha256": "8b1f5462b23061d0b3183e384e18d25e4406d7119201e2d9419bd8a129b9601d"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d1e67b8893d61e5717e436a6f8988c97f5efb28e30f195251d76eaf35c64d775",
+        "afterSha256": "8db944fbc9034a1ddc2502e764d6dd73f84ade122aaefa2627d78d94c29cb5ca"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b4c84e211753ee148cae984c0ea2e824e2cf056df6147abe81f7275bff6eab78",
+        "afterSha256": "ea283b446ff3fd63603bd700d6bd94f9da8bba05e8b45331253d20e3b07f4b38"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "ef25ae8594583fd65877a6ce6fc2c12a7b1bbdad5232dc7b5b8a217b0572c427",
+        "afterSha256": "72856f6909c66f4a432c227959fe2b39b9ee6845e2f401b42e5fdda65be5f9b9"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "8daf597e39faa698aef8dd38a542d58380febd0862abf584d061cf95945ff115",
+        "afterSha256": "f1b9472f7b7a69caabe5e2412281813060d1b23d25ef4a654e8de58c639afe75"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "0ded54aa417212a22d62629a9377dd069e4dde190b49ae0258274b038e8384a5",
+        "afterSha256": "10aab40b70675f3fa4299365ca0c76d4b6760d17beb371e75d40a5fba7d4c4de"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "8381c4dd251afd5f403c2c63ca7a33db132964401622303986508950de912cb7",
+        "afterSha256": "df99cfbb808dec3c439c7178e47dc226a4591570900fdd969a96bf9ae3008e0b"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "636f9cd2143075116dcb29646190011f115cbe0fcd198e47776e46a879c3d7e9",
+        "afterSha256": "05f95472b3d2fa064134926c20aeada3e9974b2bf5699f5b36d1dbbab3ef54bc"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "9d64a985a1d748049f97a9a6a9ccce94e5f0c6de74294aee074430097c25467d",
+        "afterSha256": "eb218f538f5dc56375878194597f2170de9a53edea0235f79c4fd7ecb4f8c735"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "3e09d0c41b869380d6953cee038493ebdd26b955f442993ba62c9c4558843c8f",
+        "afterSha256": "2b7d450c9be786b3576ae1ef663eb5b8ea08afc9f030c7a7d3bb1a4aba0a8b87"
+      },
+      {
+        "id": "block_0007_0009",
+        "beforeSha256": "4e87deb7d4af8e4a65a8cba132a50e1f5b3c5934c34941ad13130540bccdf96c",
+        "afterSha256": "2862cb59f150fe873386f72eea2343977f7a163793a995bbcce09ae80b9eac8d"
+      },
+      {
+        "id": "block_0007_0012",
+        "beforeSha256": "ff0dcc7eb2c09a2b0a4011f1feb5c00eecd756e562ea3300127fb5378c0b9089",
+        "afterSha256": "1bea011be6a0be821bfaff2a3e6c30f60bb17d6a7442521f4596156c35234fca"
+      },
+      {
+        "id": "block_0007_0014",
+        "beforeSha256": "c4cf66549f17030793fb2641437a855771eaa81b95acd3e86a4d49f357890a61",
+        "afterSha256": "9c13e54d02444072a9e66270f86cab8067741a104dbc72e6af331fdb9e27dc4c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "72856f6909c66f4a432c227959fe2b39b9ee6845e2f401b42e5fdda65be5f9b9",
+        "afterSha256": "82b4f765d862fd294a57cd88e63b43a73655a8e35c32185321ea08f4b5424709"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "82b4f765d862fd294a57cd88e63b43a73655a8e35c32185321ea08f4b5424709",
+        "afterSha256": "69a33aee152332752b31e16ec1a02796d88d3f64f89e9ac3eb6446d7f8c9c55c"
       }
     ]
   },
@@ -1168,49 +1268,161 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "c4b2149e72e9b5702527b17961c40b36ef5c2e4b36dba79242cd1d3b62a39a79",
+        "sourceSha256": "c0ff8d0fbd506f90bf163236df50232940597552c119882a41f6125bd554ddf4",
         "spans": [
           {
-            "start": 85,
-            "end": 97,
-            "text": "aplicacion.h",
+            "start": 47,
+            "end": 50,
+            "text": "x64",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 123,
+            "start": 56,
+            "end": 59,
+            "text": "cmd",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 185,
+            "text": "%USERPROFILE%\\LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 212,
             "text": "inspection_log.h",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 135,
+            "start": 214,
+            "end": 224,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 244,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 496,
+            "end": 500,
+            "text": ".txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 523,
+            "end": 528,
+            "text": "UTF-8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 607,
+            "end": 619,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 628,
+            "end": 644,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 647,
+            "end": 656,
             "text": "<ostream>",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 156,
-            "end": 183,
+            "start": 682,
+            "end": 689,
+            "text": "#ifndef",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 691,
+            "end": 698,
+            "text": "#define",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 701,
+            "end": 707,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 732,
+            "end": 759,
             "text": "INSPECTION_LOG_APLICACION_H",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 193,
-            "end": 261,
+            "start": 981,
+            "end": 1049,
             "text": "bool mostrar_informe(const Conjunto& conjunto, std::ostream& salida)",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 265,
-            "end": 393,
+            "start": 1050,
+            "end": 1178,
             "text": "int procesar_archivos(const std::string& ruta_entrada, const std::string& ruta_salida, Conjunto& actual, std::ostream& mensajes)",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 1238,
+            "end": 1246,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1277,
+            "end": 1283,
+            "text": "salida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1393,
+            "end": 1399,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1445,
+            "end": 1453,
+            "text": "mensajes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1552,
+            "end": 1558,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1273,7 +1485,7 @@
       {
         "block": "block_0001_0006",
         "path": "/text",
-        "sourceSha256": "db96ac58bb31b59c34fc9394b67ea839c38c8329c604fcb9a9e3d2e35d357906",
+        "sourceSha256": "ac562d03ace7dec324a963fb3235a3022b4c8aae8a2e074c42c1f893e3e29055",
         "spans": [
           {
             "start": 3,
@@ -1283,33 +1495,104 @@
             "reading": "natural"
           },
           {
-            "start": 16,
-            "end": 31,
+            "start": 23,
+            "end": 35,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 60,
             "text": "mostrar_informe",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 221,
-            "end": 238,
+            "start": 240,
+            "end": 255,
+            "text": "conjunto_valido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 297,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 434,
+            "end": 443,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 457,
+            "end": 467,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 632,
+            "end": 649,
             "text": "seleccionar_mayor",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 257,
-            "end": 270,
+            "start": 690,
+            "end": 699,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 776,
+            "end": 788,
+            "text": "nombre_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 885,
+            "end": 898,
             "text": "std::ostream&",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 937,
+            "end": 946,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0001_0007",
         "path": "/text",
-        "sourceSha256": "ff979a93321292e90032a67987934dca026a6bb3f2940790da75da6d9d16c344",
-        "spans": []
+        "sourceSha256": "9e0ab51430ae0ddbcd8fed4ad374e0cb564646a4f312351970ae699ca35ac104",
+        "spans": [
+          {
+            "start": 48,
+            "end": 54,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 63,
+            "text": "2[3;1]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0008",
@@ -1328,28 +1611,28 @@
       {
         "block": "block_0001_0009",
         "path": "/text",
-        "sourceSha256": "fc9a6b9f708d95e47db342417d5fbaa8497b52a61988e3cc99291ae2bf43e626",
+        "sourceSha256": "c69f2a0f664feb12397a01284406b7e4dfadb056935ec72bc324ef5ab298f9c8",
         "spans": [
           {
-            "start": 39,
-            "end": 53,
-            "text": "Mayor: ninguno",
+            "start": 108,
+            "end": 159,
+            "text": "Grupos: 0\nAceptados: 0\nRechazados: 0\nMayor: ninguno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 74,
-            "end": 78,
-            "text": "azul",
-            "role": "data",
+            "start": 223,
+            "end": 273,
+            "text": "Grupos: 1\nAceptados: 0\nRechazados: 0\nMayor: azul 0",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 85,
-            "end": 98,
-            "text": "Mayor: azul 0",
-            "role": "output",
-            "reading": "natural"
+            "start": 442,
+            "end": 459,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1438,7 +1721,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "24f3996f9937939aee57b2afd1637711af1d08f0ab4edcca52daab756c626f1a",
+        "sourceSha256": "5ca37d5222a6ccb24edb0df51938ac6852d4ee616cee89d57c7d725b14743bef",
         "spans": [
           {
             "start": 3,
@@ -1459,20 +1742,34 @@
             "end": 48,
             "text": "<fstream>",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 61,
-            "end": 78,
+            "start": 57,
+            "end": 74,
             "text": "procesar_archivos",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 177,
-            "end": 178,
-            "text": "1",
+            "start": 347,
+            "end": 369,
+            "text": "Rutas vacias o iguales",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 602,
+            "end": 619,
+            "text": "ejemplos\\base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 622,
+            "end": 641,
+            "text": ".\\ejemplos\\base.txt",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1480,145 +1777,180 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "82f696501586ecd56fdc1a47e1f5fbc1823e4a6c1f670f381116345572cc3779",
+        "sourceSha256": "14bf4991d582bd383b44a63e02e3a9a32c6f41be11edd8c210af0858bbf1373d",
         "spans": [
           {
-            "start": 21,
-            "end": 34,
-            "text": "std::ifstream",
+            "start": 11,
+            "end": 31,
+            "text": "Conjunto candidato{}",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 107,
+            "start": 44,
+            "end": 50,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 69,
+            "text": "ruta_entrada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 95,
+            "text": "std::ifstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 213,
             "text": "Error al abrir entrada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 119,
-            "end": 120,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 135,
-            "end": 155,
-            "text": "Conjunto candidato{}",
+            "start": 239,
+            "end": 260,
+            "text": "leer_muestra_completa",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 179,
-            "end": 185,
-            "text": "actual",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 198,
-            "end": 203,
+            "start": 338,
+            "end": 343,
             "text": "bad()",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 213,
-            "end": 230,
+            "start": 380,
+            "end": 397,
             "text": "Averia de lectura",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 242,
-            "end": 243,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 288,
-            "end": 325,
+            "start": 486,
+            "end": 523,
             "text": "Entrada rechazada. Estado conservado.",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 337,
-            "end": 338,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
+            "start": 618,
+            "end": 624,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 659,
+            "end": 665,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 920,
+            "end": 925,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "74939754a56ee41cd3cfd8c7678e1991cd43d50c239c7f677e6c4229c9348d5f",
+        "sourceSha256": "2b2cd6165abefcde53da8da806c4cee3db4e60fb66092b2e4c18c29e5f7fa7dd",
         "spans": [
           {
-            "start": 121,
-            "end": 127,
-            "text": "actual",
+            "start": 58,
+            "end": 71,
+            "text": "std::ifstream",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 194,
-            "end": 217,
+            "start": 152,
+            "end": 158,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 255,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 333,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 357,
+            "end": 374,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 420,
+            "end": 443,
             "text": "Error al componer datos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 230,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "start": 584,
+            "end": 595,
+            "text": "ruta_salida",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 264,
-            "end": 277,
+            "start": 600,
+            "end": 613,
             "text": "std::ofstream",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 334,
-            "end": 341,
-            "text": "close()",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 362,
-            "end": 383,
+            "start": 690,
+            "end": 711,
             "text": "Error al abrir salida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 385,
-            "end": 409,
+            "start": 767,
+            "end": 791,
             "text": "Error al escribir salida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 412,
-            "end": 434,
-            "text": "Error al cerrar salida",
-            "role": "output",
-            "reading": "natural"
+            "start": 801,
+            "end": 808,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 460,
-            "end": 461,
-            "text": "1",
+            "start": 841,
+            "end": 863,
+            "text": "Error al cerrar salida",
             "role": "output",
             "reading": "natural"
           }
@@ -1627,68 +1959,103 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "0fef364ae49388899d015d64a158deea56998f11ec0f40f74adde23278e9e4bc",
+        "sourceSha256": "262d5cc2d20c2cef4788a1ace4a49a3ea70fc916ab3f36294132369df67a7a9c",
         "spans": [
           {
-            "start": 21,
-            "end": 34,
+            "start": 57,
+            "end": 78,
+            "text": "Conjunto recuperado{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 120,
             "text": "std::ifstream",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 91,
-            "text": "actual",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 101,
-            "end": 113,
-            "text": "mismos_datos",
-            "role": "cpp",
-            "reading": "auto"
-          },
-          {
-            "start": 132,
-            "end": 155,
+            "start": 299,
+            "end": 322,
             "text": "Error al reabrir salida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 179,
+            "start": 339,
+            "end": 360,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 475,
+            "end": 497,
             "text": "Error al releer salida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 212,
+            "start": 514,
+            "end": 526,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 562,
+            "end": 568,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 571,
+            "end": 581,
+            "text": "recuperado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 608,
+            "end": 638,
             "text": "Error al comparar recuperacion",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 259,
-            "end": 275,
+            "start": 855,
+            "end": 871,
             "text": "Entrada aceptada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 290,
-            "end": 309,
-            "text": "Guardado verificado",
-            "role": "output",
-            "reading": "natural"
+            "start": 881,
+            "end": 896,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 361,
-            "end": 362,
-            "text": "0",
+            "start": 901,
+            "end": 907,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 919,
+            "end": 927,
+            "text": "mensajes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 940,
+            "end": 959,
+            "text": "Guardado verificado",
             "role": "output",
             "reading": "natural"
           }
@@ -1814,7 +2181,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "e3a8ecee2ee8492221b031162204331df4838356548510e1a4221bad48596069",
+        "sourceSha256": "b72cc3c7e3d8c9b933ba2164b0e4a76f819ff0eb40ade79a907894c1656fac17",
         "spans": [
           {
             "start": 3,
@@ -1835,56 +2202,70 @@
             "end": 45,
             "text": "<iostream>",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 69,
-            "text": "InspectionLog",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 79,
-            "end": 95,
-            "text": "Ruta de entrada:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 116,
+            "start": 111,
             "end": 128,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 246,
+            "text": "InspectionLog\nRuta de entrada:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 295,
             "text": "std::getline",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 157,
+            "start": 314,
+            "end": 329,
             "text": "Ruta de salida:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 236,
-            "end": 260,
+            "start": 384,
+            "end": 391,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 499,
+            "end": 519,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 630,
+            "end": 654,
             "text": "Falta la ruta de entrada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 286,
+            "start": 701,
+            "end": 724,
             "text": "Falta la ruta de salida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 301,
-            "end": 302,
-            "text": "1",
-            "role": "output",
-            "reading": "natural"
+            "start": 978,
+            "end": 995,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2044,13 +2425,27 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "960992406596cae23a0d3421dd9ea6dcbe4723cf2c39d7c3b6edf29af108e55c",
+        "sourceSha256": "915d9db2b7e440cb100c581e9640c014f5dca689ead3869bc29d129199cea7a2",
         "spans": [
           {
             "start": 3,
             "end": 14,
             "text": "informe.cpp",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 258,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 405,
+            "end": 419,
+            "text": "Mayor: ninguno",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2112,8 +2507,86 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "d32295be747e95d7e71719a3551d1f9b12ee9ea9e388c4cd5eb0fda913fdc198",
-        "spans": []
+        "sourceSha256": "abf60e5e86efaf854d3fa748eb638caa883b3b8e67880a4d02b5f608d0ad8400",
+        "spans": [
+          {
+            "start": 7,
+            "end": 19,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 32,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 46,
+            "text": "archivos.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 57,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 118,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 131,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 186,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 235,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 277,
+            "text": "cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 400,
+            "end": 417,
+            "text": "inspectionlog.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 468,
+            "text": "#include",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0004",
@@ -2132,34 +2605,104 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "ba5bbbca5e6a52eb5970ec1a241ea1a7a67f0a3dbbfbc53cf5941fc4bf033251",
+        "sourceSha256": "3263c79bc3736a35b52174672b17a00c3f8903a9dd07b7589101a2ccce6c06c1",
         "spans": [
           {
-            "start": 65,
-            "end": 69,
+            "start": 68,
+            "end": 72,
             "text": "main",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 71,
-            "end": 88,
+            "start": 74,
+            "end": 91,
             "text": "prueba_modelo.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 191,
-            "end": 212,
-            "text": "/Fe:inspectionlog.exe",
-            "role": "data",
+            "start": 219,
+            "end": 223,
+            "text": "main",
+            "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 259,
-            "end": 284,
+            "start": 343,
+            "end": 346,
+            "text": "/W4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 421,
+            "end": 426,
+            "text": "/EHsc",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 494,
+            "end": 515,
+            "text": "/Fe:inspectionlog.exe",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 605,
+            "end": 630,
             "text": "(Microsoft, 2025b, 2025c)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 664,
+            "end": 674,
+            "text": "modelo.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 676,
+            "end": 687,
+            "text": "informe.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 689,
+            "end": 701,
+            "text": "archivos.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 704,
+            "end": 712,
+            "text": "main.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 751,
+            "end": 768,
+            "text": "inspectionlog.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 807,
+            "end": 824,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 863,
+            "end": 867,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2173,19 +2716,40 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "e06fff59ad3f51cbb9850200df4f01d9c605744a8deed04a30c8518573e15c9d",
+        "sourceSha256": "3cc8ddc5172a5f8d7585308ba76d7b46e434df0800875eef0c322529ee3f820c",
         "spans": [
           {
-            "start": 46,
-            "end": 54,
-            "text": "ejemplos",
+            "start": 181,
+            "end": 195,
+            "text": "mkdir ejemplos",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 241,
+            "end": 257,
+            "text": "mkdir resultados",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 347,
+            "end": 355,
+            "text": "base.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 97,
-            "text": "resultados",
+            "start": 453,
+            "end": 478,
+            "text": "notepad ejemplos\\base.txt",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 520,
+            "end": 528,
+            "text": "ejemplos",
             "role": "data",
             "reading": "natural"
           }
@@ -2236,18 +2800,53 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "f2aac9c4e352e477fdc96a9d37ae7687f474c99df038cbc0032d46dc70059caf",
+        "sourceSha256": "543a821856d0a2d29914c005847b7d02cc1a61c49d6646103fd5b3d7deb724c0",
         "spans": [
           {
-            "start": 41,
-            "end": 58,
+            "start": 30,
+            "end": 47,
             "text": "ejemplos\\base.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 119,
+            "start": 109,
+            "end": 115,
+            "text": "Ctrl+S",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 180,
+            "text": "Archivo → Guardar como",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 196,
+            "text": "ejemplos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 247,
+            "text": "base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 285,
+            "text": "UTF-8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 489,
+            "end": 493,
             "text": ".txt",
             "role": "data",
             "reading": "natural"
@@ -2271,33 +2870,61 @@
       {
         "block": "block_0007_0007",
         "path": "/text",
-        "sourceSha256": "79e651eb7398dcb71a1f39215c64c75403ab42f22ceecf23e895f5aa7a1c7e2e",
+        "sourceSha256": "cd239fff8fd72e56e5674c4144f255a48b9a39b0dea6ac08791c2c6434fee788",
         "spans": [
           {
-            "start": 37,
-            "end": 53,
+            "start": 53,
+            "end": 55,
+            "text": ".\\",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 67,
+            "end": 84,
+            "text": "inspectionlog.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 170,
             "text": "Ruta de entrada:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 63,
-            "end": 80,
+            "start": 214,
+            "end": 231,
             "text": "ejemplos\\base.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 127,
+            "start": 245,
+            "end": 260,
             "text": "Ruta de salida:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 165,
+            "start": 304,
+            "end": 332,
             "text": "resultados\\base_guardada.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 437,
+            "text": "cmd",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 574,
+            "end": 584,
+            "text": "resultados",
             "role": "data",
             "reading": "natural"
           }
@@ -2320,7 +2947,7 @@
       {
         "block": "block_0007_0009",
         "path": "/text",
-        "sourceSha256": "763b5600a4a5a3ff4374d3253a0c725d5f5abc417033b2b2532dab7b625440cd",
+        "sourceSha256": "30705715c05182b505d58340486ade9fe264e2ebb8f526cb710120da4619617a",
         "spans": []
       },
       {
@@ -2354,12 +2981,47 @@
       {
         "block": "block_0007_0012",
         "path": "/text",
-        "sourceSha256": "5135c10b82c7603008d8f2422c078b9a080d86f2bb432aa5d5b0a83313e09608",
+        "sourceSha256": "610ac0f0e6484c25f10360b6cde96a85d073cb3db31266734e8f77346d3ea37f",
         "spans": [
           {
-            "start": 32,
-            "end": 33,
-            "text": "0",
+            "start": 10,
+            "end": 27,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 63,
+            "end": 80,
+            "text": "inspectionlog.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 145,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 364,
+            "text": "echo 0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 516,
+            "end": 519,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 582,
+            "end": 585,
+            "text": "uno",
             "role": "output",
             "reading": "natural"
           }
@@ -2382,20 +3044,97 @@
       {
         "block": "block_0007_0014",
         "path": "/text",
-        "sourceSha256": "c26bc22cb150fcdeb06f2d7d1928fc971122a84c10412a055d850b42ac40646e",
+        "sourceSha256": "152586ad7b40856d74728d700d2fd923a00b4342ed8556617c617dc0011b2852",
         "spans": [
           {
-            "start": 111,
-            "end": 139,
+            "start": 12,
+            "end": 16,
+            "text": "type",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 42,
+            "end": 98,
+            "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 198,
+            "text": "7[0;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 450,
+            "text": ".\\inspectionlog.exe",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 535,
+            "end": 543,
+            "text": "Entrada:",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 572,
             "text": "resultados\\base_guardada.txt",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 155,
-            "end": 185,
+            "start": 573,
+            "end": 580,
+            "text": "Salida:",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 581,
+            "end": 611,
             "text": "resultados\\base_recuperada.txt",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 676,
+            "end": 684,
+            "text": "Entrada:",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 687,
+            "end": 694,
+            "text": "Salida:",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 869,
+            "end": 888,
+            "text": "Guardado verificado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 923,
+            "end": 940,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 964,
+            "end": 968,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
