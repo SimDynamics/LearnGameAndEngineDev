@@ -678,19 +678,52 @@ las pruebas JVM o de Android anteriores conservan su alcance propio.
 
 ### Órdenes equivalentes revisados
 
-Windows acepta también los intercambios independientes revisados en los cinco
-puzzles españoles de copiar antes de modificar, acumular y contar, validar antes
-de calcular, recuperar por operación y extraer un tipo sin cambiarlo en fallo.
-La autorización exige la lección, identidad estable y firma exacta del contrato
-de código y respuesta. No se añade un campo JSON ni se infiere equivalencia de
-otros programas. Cada pieza física debe aparecer una vez; sólo se intercambian
-los textos de los grupos revisados en sus posiciones canónicas. Las dependencias
-y el resto de las posiciones siguen siendo obligatorios.
+Los cinco intercambios ya verificados en Programación 1 permanecen reconocidos
+por el motor Windows sin modificar los JSON históricos. Están vinculados a su
+lección, identidad y firma del código original, y sus seis/otras permutaciones
+autorizadas permanecen disponibles.
 
-Esta ampliación conserva las claves, representación, borradores, intentos y
-veredictos guardados. Un intento antes incorrecto no se convierte en acierto al
-abrirlo: el estudiante debe volver a comprobarlo. Las traducciones y las copias
-históricas de los grupos anteriores conservan su evaluación propia.
+Para **nuevas** órdenes independientes, Work puede declarar en la **raíz de la
+lección española v2** un contrato explícito. Este ejemplo reproduce el mismo
+grupo de tres declaraciones de U12L15 sólo como prueba de compatibilidad del
+nuevo mecanismo, sin añadirlo al archivo publicado:
+
+```json
+"orderEquivalenceGroups": [
+  {
+    "activity": "block_0004_0003",
+    "sourceSha256": "4380d9b5e34bdda15027e6d92939d391ad4b22864f3ded1dac00d22717111af6",
+    "groups": [[2, 3, 4]]
+  }
+]
+```
+
+`activity` debe identificar un `order_code` existente y `sourceSha256` es el
+resultado real de `state_fingerprint(block)` para su **contrato evaluable actual**,
+no el hash de la prosa o del archivo completo. Work lo obtiene con el script
+`scripts/curriculum/stable_state_layout.py`, después de revisar los fragmentos
+reales; no debe copiar la huella del ejemplo a otro ejercicio. El cargador
+Windows y el validador Python comprueban ambos este vínculo.
+
+`groups` contiene listas de **índices físicos de tarjetas**, no números de
+posición visual. Cada grupo contiene entre dos y ocho índices distintos y
+ocupa un tramo contiguo del orden canónico. Las tarjetas de código de ese
+editor deben contener exactamente una línea física no vacía cada una. Ninguna
+tarjeta puede pertenecer a dos grupos. Work debe demostrar por los
+razonamientos y casos del ejercicio que cada permutación interna conserva el
+comportamiento, las dependencias y el objetivo; la mera continuidad de índices
+no acredita independencia semántica.
+
+El motor conserva `fragments`, `correctOrder`, `stateLayout`, identidades,
+respuestas almacenadas, intentos, borradores y traducciones. El cambio sólo
+amplía los órdenes que pueden comprobarse correctamente **en un nuevo
+intento**, sin convertir automáticamente un error histórico en acierto. Una
+declaración publicada no puede eliminarse, reordenarse o debilitarse durante
+transiciones posteriores; sólo se admiten nuevos propietarios mediante la
+validación de origen y contrato. El mismo propietario no puede contradecir
+un grupo de los cinco revisados históricamente. La presentación opcional de
+separadores vacíos, explicada después, es un mecanismo distinto: nunca altera
+la evaluación.
 
 ### Separadores visuales optativos en puzles de orden
 
