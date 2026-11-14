@@ -228,6 +228,79 @@ void optional_root_metadata_preserves_published_history(){
     }
 }
 
+void source_bound_order_groups_preserve_history() {
+    using namespace lgaed;
+    constexpr auto relative="app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        "archivos_y_programa_completo/lesson_extraer_un_tipo_sin_cambiarlo_en_fallo.json";
+    const auto original=windows::load_lesson(std::filesystem::path(build::source_root)/relative,"es");
+    const auto before=curriculum::stable_block_position(original,"block_0004_0003");
+    check(before.has_value(),"U12 independent declaration owner was moved");
+    const auto& old=original.pages[before->page].blocks[before->block];
+    check(old.type==curriculum::BlockType::order_code&&
+          old.order_equivalence_groups==std::vector<std::vector<std::size_t>>{{2,3,4}},
+        "The existing U12 source-reviewed three-card permutation is missing");
+    auto bytes=original.raw_json;
+    const auto anchor=bytes.find("\"stateLayout\":");
+    check(anchor!=bytes.npos&&bytes.find("\"orderEquivalenceGroups\"")==bytes.npos,
+        "The published U12 lesson has an unexpected root declaration");
+    constexpr std::string_view entry=
+        "\"orderEquivalenceGroups\": [{\"activity\":\"block_0004_0003\","
+        "\"sourceSha256\":\"4380d9b5e34bdda15027e6d92939d391ad4b22864f3ded1dac00d22717111af6\","
+        "\"groups\":[[2,3,4]]}],\n  ";
+    bytes.insert(anchor,entry);
+    const auto graded=windows::parse_lesson_json(bytes,"es");
+    const auto metadata=windows::parse_lesson_progress_metadata(bytes,"es");
+    const auto after=curriculum::stable_block_position(graded,"block_0004_0003");
+    const auto read=curriculum::stable_block_position(metadata,"block_0004_0003");
+    check(after&&read,"Authored root changed the historical code-order address");
+    const auto& current=graded.pages[after->page].blocks[after->block];
+    const auto& summary=metadata.pages[read->page].blocks[read->block];
+    check(current.order_equivalence_groups==old.order_equivalence_groups&&
+          summary.order_equivalence_groups==old.order_equivalence_groups&&
+          old.fragments==current.fragments&&old.correct_order==current.correct_order&&
+          current.raw_json==old.raw_json&&current.address.page==old.address.page&&
+          current.address.block==old.address.block&&
+          curriculum::order_representation_frame(old)==curriculum::order_representation_frame(current)&&
+          curriculum::exercise_key(original,old)==curriculum::exercise_key(graded,current)&&
+          curriculum::draft_key("programming",original,old)==
+              curriculum::draft_key("programming",graded,current),
+        "Root order declaration changed the stored response, source or draft identity");
+    auto order=old.correct_order;
+    auto group=std::vector<std::size_t>{2,3,4};
+    std::vector<std::size_t> slots;
+    for(std::size_t i=0;i<order.size();++i)
+        if(std::ranges::find(group,order[i])!=group.end())slots.push_back(i);
+    check(slots.size()==3,"U12 order no longer has three contiguous independent declarations");
+    std::size_t combinations=0;
+    do {
+        for(std::size_t i=0;i<slots.size();++i)order[slots[i]]=group[i];
+        check(curriculum::evaluate_order(current,order).correct&&
+              curriculum::evaluate_order(summary,order).correct,
+            "A source-authenticated equivalent order was rejected");
+        ++combinations;
+    }while(std::next_permutation(group.begin(),group.end()));
+    check(combinations==6,"U12 did not preserve all six valid declaration orders");
+    auto rejects=[](const std::string& source) {
+        bool active=false,metadata=false;
+        try{(void)lgaed::windows::parse_lesson_json(source,"es");}
+        catch(const std::exception&){active=true;}
+        try{(void)lgaed::windows::parse_lesson_progress_metadata(source,"es");}
+        catch(const std::exception&){metadata=true;}
+        check(active&&metadata,"A forged root order revision passed native load or catalog projection");
+    };
+    auto bad=bytes;
+    auto position=bad.find("4380d9b5e34b");
+    check(position!=bad.npos,"Missing source-hash negative fixture");
+    bad.replace(position,1,"0");rejects(bad);
+    bad=bytes;position=bad.find("[[2,3,4]]");
+    check(position!=bad.npos,"Missing canonical-group negative fixture");
+    bad.replace(position,std::string_view("[[2,3,4]]").size(),"[[2,3]]");rejects(bad);
+    bad=bytes;position=bad.find("[[2,3,4]]");
+    bad.replace(position,std::string_view("[[2,3,4]]").size(),"[[2,3],[3,4]]");rejects(bad);
+    std::cout<<"PASS root-independent U12 code groups: 6 valid orders, original stored answer, "
+        "archive, reader projection, invalid source and overlapping group rejection\n";
+}
+
 void optional_visual_chips_do_not_publish_answers(HWND host){
     using namespace lgaed::presentation;
     const auto dpi=static_cast<int>(GetDpiForWindow(host));
@@ -436,6 +509,7 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
     try{
         if(whitespace_only){
             optional_root_metadata_preserves_published_history();
+            source_bound_order_groups_preserve_history();
             optional_visual_chips_do_not_publish_answers(host);
             preserve_code_spacing_in_rows_and_editor(host);
             DestroyWindow(host);
