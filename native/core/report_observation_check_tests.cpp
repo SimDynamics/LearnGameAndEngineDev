@@ -133,6 +133,62 @@ void boundaries_and_malformed_rows() {
         "Embedded NUL was accepted as an observation");
 }
 
+void twelve_line_preservation_and_same_label_after_error() {
+    // Twelve actual physical lines, including the last row without LF:
+    // repeated labels are independent observations; no malformed record
+    // suppresses later data or changes the numbering of its successors.
+    constexpr std::string_view input=
+        "X 0 0\n"                          // 1 match
+        "X 1 2\n"                          // 2 different
+        "\n"                               // 3 malformed
+        "X 1 2\n"                          // 4 different
+        "Q 0 0 9\n"                        // 5 fourth field
+        "Q 0 1\n"                          // 6 different
+        "Z 2147483647 2147483647\n"        // 7 match
+        "Y -2147483648 -2147483648\n"      // 8 match
+        "H +2 2\n"                         // 9 match
+        "X 3 3\n"                          // 10 match
+        " \t\n"                            // 11 blanks
+        "X 1 1";                           // 12 match, no final LF
+    constexpr std::string_view errors=
+        "Linea=3:FORMATO\nLinea=5:FORMATO\nLinea=11:FORMATO\n";
+    constexpr std::string_view summary=
+        "Resumen: validos=9;coinciden=6;difieren=3;formato=3\n";
+    const auto all=std::string(
+        "Linea=1 Caso=X Esperado=0 Obtenido=0 COINCIDE\n"
+        "Linea=2 Caso=X Esperado=1 Obtenido=2 DIFIERE\n"
+        "Linea=4 Caso=X Esperado=1 Obtenido=2 DIFIERE\n"
+        "Linea=6 Caso=Q Esperado=0 Obtenido=1 DIFIERE\n"
+        "Linea=7 Caso=Z Esperado=2147483647 Obtenido=2147483647 COINCIDE\n"
+        "Linea=8 Caso=Y Esperado=-2147483648 Obtenido=-2147483648 COINCIDE\n"
+        "Linea=9 Caso=H Esperado=2 Obtenido=2 COINCIDE\n"
+        "Linea=10 Caso=X Esperado=3 Obtenido=3 COINCIDE\n"
+        "Linea=12 Caso=X Esperado=1 Obtenido=1 COINCIDE\n")+std::string(summary);
+    const auto filtered=std::string(
+        "Linea=2 Caso=X Esperado=1 Obtenido=2 DIFIERE\n"
+        "Linea=4 Caso=X Esperado=1 Obtenido=2 DIFIERE\n"
+        "Linea=6 Caso=Q Esperado=0 Obtenido=1 DIFIERE\n")+std::string(summary);
+    matches(ReportMode::complete,input,all,errors,1);
+    matches(ReportMode::differences,input,filtered,errors,1);
+    require(matches_observation_report(
+        ReportMode::differences,input,as_crlf(filtered),as_crlf(errors),1),
+        "CRT line endings changed a complete 12-line input report");
+    // A superficial solution that counts just the displayed differences
+    // would fabricate validos=3 instead of preserving all nine valid rows.
+    const auto wrong=std::string(
+        "Linea=2 Caso=X Esperado=1 Obtenido=2 DIFIERE\n"
+        "Linea=4 Caso=X Esperado=1 Obtenido=2 DIFIERE\n"
+        "Linea=6 Caso=Q Esperado=0 Obtenido=1 DIFIERE\n"
+        "Resumen: validos=3;coinciden=0;difieren=3;formato=3\n");
+    require(!matches_observation_report(
+        ReportMode::differences,input,wrong,errors,1),
+        "A display-filtered count replaced the original number of observations");
+    require(!matches_observation_report(
+        ReportMode::differences,input,filtered,
+        "Linea=3:FORMATO\nLinea=5:FORMATO\nLinea=12:FORMATO\n",1),
+        "The final unclosed row was misreported as a malformed record");
+}
+
 void receipt_requires_same_output_error_and_exit() {
     constexpr std::string_view source="R 0 -1\n";
     const auto report=expected_observation_report(ReportMode::differences,source);
@@ -171,6 +227,7 @@ int main() {
     try {
         exact_original_reports();
         boundaries_and_malformed_rows();
+        twelve_line_preservation_and_same_label_after_error();
         receipt_requires_same_output_error_and_exit();
         std::cout<<"PASS U3L8 independent reports: original two editors, "
             "six observable cases, malformed lines, signed limits and receipts\n";
