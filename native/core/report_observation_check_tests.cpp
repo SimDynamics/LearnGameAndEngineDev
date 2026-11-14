@@ -189,6 +189,59 @@ void twelve_line_preservation_and_same_label_after_error() {
         "The final unclosed row was misreported as a malformed record");
 }
 
+void source_edits_stay_inside_original_main() {
+    using lgaed::curriculum::report_main_only_edit;
+    const std::string original=
+        "#include <iostream>\n"
+        "int main() {\n"
+        "    std::cout << \"initial\";\n"
+        "}\n";
+    const auto modify=[&](std::string_view body) {
+        constexpr std::string_view marker="int main() {";
+        constexpr std::string_view suffix="\n}\n";
+        const auto begin=original.find(marker)+marker.size();
+        const auto end=original.rfind(suffix);
+        require(begin>=marker.size()&&end!=std::string::npos,
+            "Original U3L8 source-isolation fixture is malformed");
+        return original.substr(0,begin)+std::string(body)+
+            original.substr(end);
+    };
+    require(report_main_only_edit(original,original),
+        "An unchanged original main was rejected");
+    require(report_main_only_edit(original,modify(
+        "\n    if (true) { std::cout << \"accepted\"; }\n")),
+        "Legitimate nested statements inside main were rejected");
+    require(report_main_only_edit(original,modify(
+        "\n    auto text=R\"guard(} { /* #if 0 */)guard\";\n"
+        "    std::cout << text; // } ordinary comment\n")),
+        "Braces inside quoted/raw strings or comments escaped their literal scope");
+    require(report_main_only_edit(original,modify(
+        "\n    if (true) <% std::cout << \"digraph\"; %>\n")),
+        "A balanced C++ brace-digraph pair was rejected");
+
+    // Previously the matching textual tail allowed closing the original
+    // main early and adding namespace-scope declarations and another brace.
+    require(!report_main_only_edit(original,modify(
+        "\n    return 0;\n}\n"
+        "namespace forged {\n"
+        "    int hidden() { return 8; }\n")),
+        "Closing main early and opening a namespace passed a body-only check");
+    require(!report_main_only_edit(original,modify(
+        "\n    return 0;\n%>\n"
+        "namespace forged <% int hidden() <% return 8; %>\n")),
+        "A C++ closing brace digraph bypassed main scope isolation");
+    require(!report_main_only_edit(original,modify(
+        "\n    if(true) {\n"
+        "        return 0;\n")),
+        "An unmatched nested brace escaped the original main");
+    require(!report_main_only_edit(original,modify(
+        "\n    #define NEW_MAIN 1\n    return NEW_MAIN;\n")),
+        "A fresh preprocessor directive was accepted inside the reviewed source");
+    require(!report_main_only_edit(original,modify(
+        "\n    int x=0; /* unclosed comment\n")),
+        "An unterminated source token bypassed the C++ lexical checker");
+}
+
 void receipt_requires_same_output_error_and_exit() {
     constexpr std::string_view source="R 0 -1\n";
     const auto report=expected_observation_report(ReportMode::differences,source);
@@ -229,6 +282,7 @@ int main() {
         boundaries_and_malformed_rows();
         twelve_line_preservation_and_same_label_after_error();
         receipt_requires_same_output_error_and_exit();
+        source_edits_stay_inside_original_main();
         std::cout<<"PASS U3L8 independent reports: original two editors, "
             "six observable cases, malformed lines, signed limits and receipts\n";
         return 0;
