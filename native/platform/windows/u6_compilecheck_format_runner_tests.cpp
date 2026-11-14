@@ -86,8 +86,10 @@ state::StateData exercise(const Lesson& lesson,const Block& block,
                 "Source-only goal lost its exact candidate, control or diagnostic line");
         auto missing=request;
         missing.source_utf8=block.initial_code;
-        require(!prepare_cpp_diagnostic_request(block,missing),
-                "The original source without the intended error earned a diagnostic request");
+        const auto denied=prepare_cpp_diagnostic_request(block,missing);
+        require(!denied.project&&denied.expected_error_code.empty()&&
+                denied.first_line==0&&denied.last_line==0,
+                "The original source without the intended error retained accreditation fields");
     }else{
         request.diagnostic=prepare_cpp_diagnostic_request(block,request);
         require(request.diagnostic&&request.diagnostic->project&&
@@ -96,8 +98,11 @@ state::StateData exercise(const Lesson& lesson,const Block& block,
                 "Project goal lost its selected sources or compile/link phase");
         auto changed=request;
         changed.project_files.back().second+="\nint unrelated_change{99};\n";
-        require(!prepare_cpp_diagnostic_request(block,changed),
-                "An unrelated source change entered a closed project diagnostic");
+        const auto denied=prepare_cpp_diagnostic_request(block,changed);
+        require(denied.project&&denied.project->expected_file.empty()&&
+                denied.project->first_line==0&&denied.project->last_line==0&&
+                denied.project->error_codes.empty()&&denied.project->symbols.empty(),
+                "An unrelated project source change retained accreditation fields");
     }
     const auto submitted_source=request.source_utf8;
     const auto submitted_files=request.project_files;
