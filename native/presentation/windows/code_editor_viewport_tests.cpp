@@ -271,20 +271,29 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
         POINT expanded_view{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&expanded_view));
         check(expanded_view.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
             "Returning to fullscreen retained a stale compact-viewport scroll");
-        // Lesson reflow may change only EM_SETRECTNP, without WM_SIZE. Verify
-        // the new parent-facing normalization after such a formatting change.
-        RECT narrow{};GetClientRect(edit,&narrow);narrow.bottom=160;
-        SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&narrow));
-        POINT pushed{0,180};
+        // RichEdit can ignore a narrowed EM_SETRECTNP while the containing
+        // HWND remains tall. Establish genuine overflow with a compact native
+        // viewport first, then let the parent change its formatting rectangle.
+        // Normalization must retain valid scroll there and clear it once all
+        // current source lines fit after expanding the viewport again.
+        MoveWindow(edit,0,0,650,170,TRUE);
+        POINT pushed{0,160};
         SendMessageW(edit,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&pushed));
         POINT offset_before{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset_before));
-        check(offset_before.y>0,"A narrowed formatting viewport failed to establish a scroll");
+        check(offset_before.y>0,"The compact editor did not establish genuine native scroll");
+        RECT narrow{};GetClientRect(edit,&narrow);
+        SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&narrow));
+        editor->normalize_viewport();pump();
+        POINT valid_offset{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&valid_offset));
+        check(valid_offset.y>0,
+            "Parent formatting mistakenly removed a valid compact-editor scroll");
+        MoveWindow(edit,0,0,650,950,TRUE);
         RECT wide{};GetClientRect(edit,&wide);
         SendMessageW(edit,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&wide));
         editor->normalize_viewport();pump();
         POINT offset_after{};SendMessageW(edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&offset_after));
         check(offset_after.y==0&&SendMessageW(edit,EM_GETFIRSTVISIBLELINE,0,0)==0,
-            "Parent layout reintroduced the fullscreen scroll without resizing RichEdit");
+            "Parent layout kept an obsolete scroll after fullscreen source became short");
         check(editor->document().text==shortened,
             "Normalizing the parent formatting rectangle changed the student source");
     }
