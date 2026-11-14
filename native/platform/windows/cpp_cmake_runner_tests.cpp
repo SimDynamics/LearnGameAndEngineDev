@@ -2041,6 +2041,55 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             capture_cpp_execution(warning_request,corrected_warning_run),
             warning_request.revision).verdict==curriculum::OutputVerdict::correct,
         "U3L7 repaired inclusive condition did not pass all original cases");
+    // PUBLIC is a valid target-owned declaration: the library receives the
+    // options itself and may also propagate them to its consumers.
+    auto public_warning=warning_request;
+    public_warning.project_key+="/public-library-warning";
+    public_warning.request_id=3307;
+    ++public_warning.revision;
+    for(auto& file:public_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(cantidades PUBLIC /W4 /permissive-)");
+    const auto public_run=run_cpp(public_warning);
+    ran(public_run);
+    const auto public_capture=capture_cpp_execution(public_warning,public_run);
+    const auto public_graph=evaluate_cmake_graph(
+        public_warning,public_run,warning_options);
+    check(public_graph.correct&&public_capture.cmake_graph_correct&&
+        matches_native_console_output(
+            public_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            public_capture,public_warning.revision).verdict==
+                curriculum::OutputVerdict::correct,
+        "U3L7 failed to accept effective PUBLIC compiler options on the library: "+
+        public_graph.reason);
+    // The same warning flags applied to the checker instead of cantidades
+    // cannot satisfy a library-scoped compiler contract.
+    auto misplaced_warning=warning_request;
+    misplaced_warning.project_key+="/checker-options-instead-of-library";
+    misplaced_warning.request_id=3308;
+    ++misplaced_warning.revision;
+    for(auto& file:misplaced_warning.project_files)
+        if(file.first=="CMakeLists.txt")
+            warning_replace(file.second,
+                "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
+                "target_compile_options(comprobar_cantidad PRIVATE /W4 /permissive-)");
+    const auto misplaced_run=run_cpp(misplaced_warning);
+    ran(misplaced_run);
+    const auto misplaced_capture=capture_cpp_execution(
+        misplaced_warning,misplaced_run);
+    const auto misplaced_graph=evaluate_cmake_graph(
+        misplaced_warning,misplaced_run,warning_options);
+    check(matches_native_console_output(
+            misplaced_run.execution.stdout_bytes,expected_warning_output)&&
+        evaluate_cpp_output_check(*warning_block.output_check,
+            misplaced_capture,misplaced_warning.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !misplaced_graph.correct&&!misplaced_capture.cmake_graph_correct&&
+        misplaced_graph.reason.find("target_compile_options")!=std::string::npos,
+        "U3L7 wrongly credited executable-only options to the static library");
     // A global /W4 default must not replace an authored library setting.
     auto inherited=warning_request;
     inherited.project_key+="/inherited-warning-only";
