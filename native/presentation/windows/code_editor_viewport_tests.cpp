@@ -152,10 +152,10 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
         // surface remain stable while writing, scrolling and using Undo.
         const auto source=presentation::wide(presentation::edit_text(edit));
         CHARRANGE previous{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&previous));
-        const auto colored=[&](std::wstring_view part,COLORREF reference) {
+        const auto colored=[&](std::wstring_view part,COLORREF reference,std::size_t offset=0) {
             const auto at=source.find(part);
-            if(at==source.npos)return false;
-            CHARRANGE position{static_cast<LONG>(at),static_cast<LONG>(at+1)};
+            if(at==source.npos||offset>=part.size())return false;
+            CHARRANGE position{static_cast<LONG>(at+offset),static_cast<LONG>(at+offset+1)};
             SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&position));
             CHARFORMAT2W current{};current.cbSize=sizeof(current);
             SendMessageW(edit,EM_GETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&current));
@@ -164,7 +164,8 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
             return current.crTextColor==expected;
         };
         const auto colors_ok=colored(L"row_0",RGB(184,151,244))&&
-            colored(L"= 0;",RGB(255,255,255))&&
+            colored(L"= 0;",RGB(248,166,200))&&
+            colored(L"= 0;",RGB(241,162,117),2)&&
             colored(L"// Hg gjpqy",RGB(172,172,172));
         SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
         check(colors_ok,"Live syntax formatting lost a reference ink after a native character edit");
