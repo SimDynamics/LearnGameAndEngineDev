@@ -84,12 +84,19 @@ for (int equipo{1}; equipo<=equipos; ++equipo) {
                 const auto at=displayed.find(word);
                 check(at!=displayed.npos,message);
                 if(at==displayed.npos)return;
-                CHARRANGE range{static_cast<LONG>(at),static_cast<LONG>(at+1)};
-                SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
-                CHARFORMAT2W format{};format.cbSize=sizeof(format);
-                SendMessageW(syntax,EM_GETCHARFORMAT,SCF_SELECTION,
-                    reinterpret_cast<LPARAM>(&format));
-                check(format.crTextColor==expected(color),message);
+                // Every code unit of the actual native span must keep the
+                // reference tint. Checking only the first quote or digit can
+                // conceal a partially recolored string or escaped character.
+                bool all_match=true;
+                for(std::size_t offset=0;offset<word.size();++offset) {
+                    CHARRANGE range{static_cast<LONG>(at+offset),static_cast<LONG>(at+offset+1)};
+                    SendMessageW(syntax,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));
+                    CHARFORMAT2W format{};format.cbSize=sizeof(format);
+                    SendMessageW(syntax,EM_GETCHARFORMAT,SCF_SELECTION,
+                        reinterpret_cast<LPARAM>(&format));
+                    all_match=all_match&&format.crTextColor==expected(color);
+                }
+                check(all_match,message);
             };
             token(L"#include",RGB(92,156,231),"Reference preprocessor ink changed");
             token(L"equipos",RGB(184,151,244),"Reference identifier ink changed");
