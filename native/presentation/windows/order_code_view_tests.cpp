@@ -7,6 +7,7 @@
 #include <commctrl.h>
 #include <richedit.h>
 #include <windowsx.h>
+#include <winrt/Windows.Data.Json.h>
 #include <ole2.h>
 #include <algorithm>
 #include <iostream>
@@ -339,6 +340,60 @@ void generic_order_groups_accept_new_owner() {
           curriculum::draft_key("programming",original,before)==
               curriculum::draft_key("programming",active,after),
         "A new order equivalence rewrote physical code or existing learner state");
+    // An authored group must survive a subsequent authenticated, token-
+    // equivalent source-format revision. The source digest remains bound to
+    // its original physical cards, not replaced by the newly spaced bytes.
+    using namespace winrt::Windows::Data::Json;
+    const auto formatted_json=JsonObject::Parse(winrt::to_hstring(reviewed));
+    const auto current_block=formatted_json.GetNamedArray(L"pages")
+        .GetObjectAt(0).GetNamedArray(L"blocks").GetObjectAt(0);
+    const auto previous_block=JsonObject::Parse(current_block.Stringify());
+    current_block.GetNamedArray(L"fragments").SetAt(0,
+        JsonValue::CreateStringValue(L"int a {1};"));
+    const auto current_layout=formatted_json.GetNamedObject(L"stateLayout");
+    JsonObject saved_archive;
+    saved_archive.Insert(L"id",JsonValue::CreateStringValue(L"qa_new_independent_order"));
+    saved_archive.Insert(L"block",previous_block);
+    JsonArray archives;
+    archives.Append(saved_archive);
+    current_layout.Insert(L"sourceFormatRevisions",archives);
+    JsonObject transition;
+    transition.Insert(L"id",JsonValue::CreateStringValue(L"qa_new_independent_order"));
+    transition.Insert(L"beforeSha256",JsonValue::CreateStringValue(
+        L"ed142eb744cac81c8dcb146d29bbd2f200c837af3d06dda62fe2272b66a54201"));
+    transition.Insert(L"afterSha256",JsonValue::CreateStringValue(
+        L"0df9290ad0b4251aa67ea3327f1596055cf1c5d731afdaf224b27bd377281add"));
+    current_layout.GetNamedArray(L"editorial").Append(transition);
+    const auto formatted_source=winrt::to_string(formatted_json.Stringify());
+    const auto formatted=windows::parse_lesson_json(formatted_source,"es");
+    const auto formatted_catalog=windows::parse_lesson_progress_metadata(
+        formatted_source,"es");
+    const auto& spaced=formatted.pages.at(0).blocks.at(0);
+    const auto& indexed=formatted_catalog.pages.at(0).blocks.at(0);
+    check(spaced.fragments.at(0)=="int a {1};"&&
+          spaced.source_format_original_fragments.has_value()&&
+          *spaced.source_format_original_fragments==after.fragments&&
+          spaced.order_equivalence_groups==after.order_equivalence_groups&&
+          indexed.order_equivalence_groups==after.order_equivalence_groups&&
+          curriculum::evaluate_order(spaced,swapped).correct&&
+          curriculum::order_representation_frame(spaced)!=
+              curriculum::order_representation_frame(after)&&
+          curriculum::exercise_key(formatted,spaced)==
+              curriculum::exercise_key(active,after)&&
+          curriculum::draft_key("programming",formatted,spaced)==
+              curriculum::draft_key("programming",active,after),
+        "Authenticated physical spacing lost an already authored independent order group");
+    // An invalid token change cannot borrow a legitimate formatting archive.
+    const auto forged_formatted=JsonObject::Parse(formatted_json.Stringify());
+    forged_formatted.GetNamedArray(L"pages").GetObjectAt(0)
+        .GetNamedArray(L"blocks").GetObjectAt(0)
+        .GetNamedArray(L"fragments").SetAt(0,JsonValue::CreateStringValue(L"int a {2};"));
+    bool rejected=false;
+    try {
+        (void)windows::parse_lesson_json(
+            winrt::to_string(forged_formatted.Stringify()),"es");
+    } catch(const std::exception&) {rejected=true;}
+    check(rejected,"A token-changing source borrowed an old independent order digest");
     // Widening the set of accepted orders must NOT silently rewrite an
     // incorrect historical answer. Only the next explicit student check may
     // turn that stored attempt into a correct one.
@@ -352,7 +407,11 @@ void generic_order_groups_accept_new_owner() {
         curriculum::exercise_key(original,before));
     const auto saved_before=previous_attempt;
     const auto restored=state::get_response(previous_attempt,active,after);
-    check(restored.has_value()&&restored->order==prior_answer.order&&
+    const auto spaced_restored=state::get_response(
+        previous_attempt,formatted,spaced);
+    check(spaced_restored&&spaced_restored->order==prior_answer.order&&
+          !spaced_restored->correct&&
+          restored.has_value()&&restored->order==prior_answer.order&&
           !restored->correct&&
           curriculum::evaluate_order(after,std::vector<std::size_t>{1,0,2}).correct&&
           state::response_storage_key(original,before)==
