@@ -450,6 +450,36 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (false && capacidad && capacidad);
+        })cpp",rules,false,"A constant false && prefix cannot establish two uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (true || capacidad || capacidad) - 1;
+        })cpp",rules,false,"A true || prefix cannot establish two uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (0 && (capacidad + capacidad));
+        })cpp",rules,false,"Nested references behind 0 && are still dead");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (false && capacidad && capacidad);
+        })cpp",rules,true,"A dead short-circuit branch must not erase real uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                   (false && capacidad || piezas > 5) * 0;
+        })cpp",rules,true,"An independent live || branch does not erase real uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             return (piezas + 3) / 4 + (capacidad + capacidad) * (2 - 2);
         })cpp",rules,false,"A computed zero factor on the right cancels a whole sum");
     verify(R"cpp(

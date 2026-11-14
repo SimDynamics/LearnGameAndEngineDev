@@ -310,6 +310,31 @@ inline bool productive(const Tokens& t,std::size_t i,
            (*close+2<t.size()&&op(t[*close+1],"*")&&
             zero_after(*close+2)))
             return false;
+        // Short-circuiting constants are not meaningful input to a rule:
+        // false && (capacidad + capacidad) and true || (capacidad > 0)
+        // do not evaluate their right-hand branches. Limit this proof to
+        // literal first operands and top-level operators in the enclosing
+        // parentheses. An || after false && starts a potentially live branch;
+        // a comma or conditional expression starts a separate result.
+        if(open+2<*close) {
+            const bool dead_and=(id(t[open+1],"false")||
+                t[open+1]=="number:0")&&op(t[open+2],"&&");
+            const bool dead_or=(id(t[open+1],"true")||
+                t[open+1]=="number:1")&&op(t[open+2],"||");
+            if(dead_and||dead_or) {
+                std::size_t nested=0;
+                for(auto at=open+3;at<*close;++at) {
+                    if(op(t[at],"(")){++nested;continue;}
+                    if(op(t[at],")")) {
+                        if(nested)--nested;
+                        continue;
+                    }
+                    if(!nested&&(op(t[at],"?")||op(t[at],",")||
+                                 (dead_and&&op(t[at],"||"))))break;
+                    if(at==i)return false;
+                }
+            }
+        }
         // A literal conditional expression cannot contribute source evidence
         // from its impossible branch. For example, both "capacidad" mentions
         // in (false ? capacidad + capacidad : 0) are dead, even though the
