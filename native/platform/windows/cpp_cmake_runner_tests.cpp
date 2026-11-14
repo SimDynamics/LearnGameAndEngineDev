@@ -2327,6 +2327,30 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         first_adjustments.project_files==original_blank_files,
         "U3L10 initial CMake could not build both targets and preserve the "
         "intentionally unfinished C++ exercise: "+valid_build_graph.reason);
+    // The learner's initial CMake stage declares *two* executables. File API
+    // describes both, but selecting the client alone does not compile the
+    // checker. Build and execute that independent target with real MSVC.
+    // Its deliberately unfinished main must remain incomplete, not credited.
+    auto initial_checker_build=initial_build;
+    initial_checker_build.cmake->target="comprobar_ajustes";
+    initial_checker_build.request_id=3404;
+    ++initial_checker_build.revision;
+    const auto initial_checker_run=run_cpp(initial_checker_build);
+    const auto initial_checker_graph=evaluate_cmake_graph(
+        initial_checker_build,initial_checker_run,built_structure);
+    check(initial_checker_run.error_utf8.empty()&&
+        initial_checker_run.configuration.succeeded()&&
+        initial_checker_run.compilation.succeeded()&&
+        initial_checker_run.execution.status==CppPhaseStatus::completed&&
+        initial_checker_run.execution.exit_code==1&&
+        initial_checker_run.executable=="comprobar_ajustes"&&
+        initial_checker_run.execution.stderr_bytes.find(
+            "PENDIENTE: comprobador sin implementar")!=std::string::npos&&
+        initial_checker_graph.correct&&
+        first_adjustments.project_files==original_blank_files,
+        "U3L10 initial CMake did not really compile its separate checker "
+        "without falsely completing the original exercise: "+
+        initial_checker_graph.reason);
     // The CMake-only stage must not inherit warning credit from MSVC's
     // toolchain profile when the student omitted a client's own declaration.
     // The unfinished executable still emits the same intentional diagnostic.
