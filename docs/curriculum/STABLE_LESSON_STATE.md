@@ -1132,6 +1132,14 @@ El helper captura además `textSemantics`: el objeto completo anterior, incluido
 `rootFields` y los descriptores con `spans: []`, o `null` si no existía.
 Los archivos antiguos de seis claves conservan su forma original.
 
+Las nuevas capturas incluyen también `editorialPrefix: {count, sha256}`.
+`count` es el número entero de aristas editoriales de la publicación capturada;
+`sha256` autentica el objeto canónico
+`{lessonId, locale, editorial: editorial[:count]}`. El generador toma ambos
+valores del predecesor exacto, antes de retirar bloques. La puerta de transición
+exige esos mismos valores en cada captura nueva; las capturas ya publicadas,
+incluido su prefijo cuando existe, permanecen inmutables.
+
 El generador captura estos valores antes de retirar bloques o cambiar relaciones.
 La puerta de transición contrasta esa captura con la versión publicada; no permite
 inventar texto anterior, marcas, orden, dependencias ni reglas de avance. Una
@@ -1179,6 +1187,22 @@ el mecanismo técnico no modifica automáticamente ningún JSON del curso.
 
 Este contrato y sus verificadores son de Windows. No acreditan soporte ni
 ejecución de esta extensión en Android.
+
+### Época de una captura después de un retorno
+
+Un contrato puede cambiar de A a B y volver después a A conservando exactamente los bytes
+originales. El hash del bloque no distingue la primera publicación de A de su
+retorno posterior. Cuando una retirada de otro bloque captura esa lección,
+Windows utiliza el prefijo editorial autenticado para reconstruir únicamente
+las revisiones de casos y de orden que ya existían en ese momento.
+
+La captura anterior a B no recibe sus logros ni guías históricas. La captura
+posterior al retorno conserva el acceso a las ejecuciones auténticas de B,
+aunque su editor visible vuelva a ser A. Esto no concede una ejecución nueva
+ni cambia el primer caso obligatorio: cada recibo sigue perteneciendo a su
+programa y contrato exactos. Las capturas antiguas sin prefijo conservan su
+interpretación previa; no se les atribuye una época posterior por coincidencia
+de hashes.
 
 ### Lecturas archivadas después de formatear código
 

@@ -294,7 +294,10 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
     case("semantic-null-before-marking", marked, layout.retire(marked, [NOTE_B]), [plain, marked])
     legacy = deepcopy(unmarked)
     del legacy["stateLayout"]["retirementHistory"][0]["textSemantics"]
-    layout.validate_transition(plain, legacy)
+    del legacy["stateLayout"]["retirementHistory"][0]["editorialPrefix"]
+    # This standalone legacy publication predates both capture sidecars;
+    # a new transition must not claim to create that older six-field shape.
+    layout.validate(legacy)
     marked_legacy = annotate(legacy)
     case("semantic-legacy-before-marking", marked_legacy,
          layout.retire(marked_legacy, [NOTE_B]), [plain, marked_legacy])

@@ -16,8 +16,9 @@ using namespace winrt::Windows::Data::Json;
 
 struct Fixture {
     std::string name, id, before_file, after_file, reference_file, reference_source;
-    bool real = false;
+    bool real = false, snapshot_epoch_only = false;
     Lesson before, after;
+    std::optional<Lesson> snapshot_source, receipt_source;
     std::vector<Lesson> history;
 };
 struct RealSource {
@@ -895,6 +896,62 @@ std::size_t actual_reference_runs(const Fixture& fixture, const std::filesystem:
     return executions;
 }
 
+void retirement_epoch(const Fixture& fixture, const std::filesystem::path& directory) {
+    require(fixture.snapshot_source && fixture.receipt_source
+        && fixture.after.state_layout.retirement_history.size() == 1,
+        "Retirement epoch QA needs one exact snapshot source and one intermediate receipt source");
+    const auto& expected_source = *fixture.snapshot_source;
+    const auto& expected = editor(expected_source, fixture.id);
+    const auto& receipt_source = *fixture.receipt_source;
+    const auto& receipt_editor = editor(receipt_source, fixture.id);
+    const auto& active = editor(fixture.after, fixture.id);
+    const auto& snapshot = fixture.after.state_layout.retirement_history.front();
+    const Block* archived = nullptr;
+    for (const auto& page : snapshot.pages) for (const auto& block : page.blocks)
+        if (block.stable_id == fixture.id) archived = &block;
+    require(archived, "The complete retirement snapshot omitted its unchanged compiler owner");
+    same_version(expected_source, expected, fixture.after, *archived);
+    const auto records = [](const auto& revisions) {
+        std::vector<std::string> result;
+        for (const auto& revision : revisions) result.push_back(revision.record_sha256);
+        return result;
+    };
+    require(records(archived->compiler_case_revisions) == records(expected.compiler_case_revisions)
+        && records(archived->compiler_case_order_revisions) == records(expected.compiler_case_order_revisions),
+        "Equal block bytes selected the wrong retirement epoch and lost or borrowed an intermediate case history");
+    const bool history_existed = !expected.compiler_case_revisions.empty();
+    require(expected.compiler_case_revisions.size() == (history_existed ? 2U : 0U)
+        && active.compiler_case_revisions.size() == 2,
+        "Retirement epoch QA must distinguish original A from returned A after two reviews");
+    auto data = seeded_state(receipt_source, fixture.id);
+    seed_case(data, receipt_source, receipt_editor, personal_program(receipt_editor, "retirement-B"), 0);
+    require(compiler_puzzle_completed(data, receipt_source, receipt_editor),
+        "The intermediate B model receipt must authenticate its own first case");
+    prepare_lesson_state(data, fixture.after);
+    require(!compiler_puzzle_completed(data, fixture.after, active)
+        && compiler_puzzle_historical_completed(data, fixture.after, active),
+        "The B receipt must remain historical without proving A's different first case");
+    const auto exact = data;
+    const auto verify = [&](const StateData& stored) {
+        require(compiler_puzzle_historical_case_count(stored, fixture.after, *archived) == (history_existed ? 1U : 0U)
+            && compiler_puzzle_historical_completed(stored, fixture.after, *archived) == history_existed
+            && compiler_puzzle_historical_feedback(stored, fixture.after, *archived)
+                == (history_existed ? compiler_puzzle_feedback(stored, receipt_source, receipt_editor) : std::string{}),
+            "Archived reader history lost B after a return or retroactively exposed B before it existed");
+    };
+    verify(data);
+    require(data == exact, "Reading archived compiler progress mutated its execution evidence");
+    const auto profile = directory / (fixture.name + "-snapshot-epoch");
+    StateStore store(profile);
+    require(store.load().preferences.empty(), "The retirement epoch profile is not isolated");
+    store.save(data); StateStore reopened(profile);
+    const auto restored = reopened.load();
+    require(restored == data, "Retirement epoch state changed on physical reopening");
+    verify(restored);
+    std::cout << "PASS case-revision retirement epoch " << fixture.name
+        << ": exact journals/meanings and reader history of B " << (history_existed ? "retained" : "absent") << '\n';
+}
+
 Fixture read_fixture(const JsonObject& entry, const std::filesystem::path& directory,
         std::map<std::filesystem::path, std::string>& originals) {
     Fixture result;
@@ -903,6 +960,7 @@ Fixture read_fixture(const JsonObject& entry, const std::filesystem::path& direc
     result.before_file = winrt::to_string(entry.GetNamedString(L"before"));
     result.after_file = winrt::to_string(entry.GetNamedString(L"after"));
     result.real = entry.GetNamedBoolean(L"real", false);
+    result.snapshot_epoch_only = entry.GetNamedBoolean(L"snapshotEpochOnly", false);
     const auto load = [&](std::string_view file) {
         const auto path = directory / std::string(file);
         const auto raw = bytes(path); originals.emplace(path, raw);
@@ -914,6 +972,10 @@ Fixture read_fixture(const JsonObject& entry, const std::filesystem::path& direc
     };
     result.before = load(result.before_file);
     result.after = load(result.after_file);
+    if (result.snapshot_epoch_only) {
+        result.snapshot_source = load(winrt::to_string(entry.GetNamedString(L"snapshotSource")));
+        result.receipt_source = load(winrt::to_string(entry.GetNamedString(L"receiptSource")));
+    }
     for (const auto& item : entry.GetNamedArray(L"history"))
         result.history.push_back(load(winrt::to_string(item.GetObject().GetNamedString(L"source"))));
     require(!result.history.empty() && result.history.back().raw_json == result.after.raw_json,
@@ -965,7 +1027,7 @@ int main(int argc, char** argv) try {
     require(manifest.GetNamedNumber(L"version", 1) == 1, "Unsupported case-revision QA manifest version");
     std::map<std::filesystem::path, std::string> originals;
     std::vector<Fixture> cases;
-    std::size_t failures = 0, scenarios = 0, invalid = 0, actual_runs = 0, returns = 0, version_programs = 0, gaps = 0;
+    std::size_t failures = 0, scenarios = 0, invalid = 0, actual_runs = 0, returns = 0, version_programs = 0, gaps = 0, retirement_epochs = 0;
     const auto run = [&](std::string_view label, const auto& action) {
         try { action(); return true; }
         catch (const winrt::hresult_error& error) {
@@ -983,6 +1045,10 @@ int main(int argc, char** argv) try {
     run("fixture inventory", [&] { require(!cases.empty(), "No authenticated case-review fixtures were generated"); });
     for (const auto& fixture : cases) {
         if (!run(fixture.name + " publication", [&] { verify_publication(fixture); })) continue;
+        if (fixture.snapshot_epoch_only) {
+            run(fixture.name + " retirement epoch", [&] { retirement_epoch(fixture, qa); ++retirement_epochs; });
+            continue;
+        }
         run(fixture.name + " conservation/import", [&] { scenarios += native_matrix(fixture, qa); });
         run(fixture.name + " chronological adoption", [&] { chronological_adoption(fixture); });
         run(fixture.name + " return", [&] { if (explicit_return(fixture)) ++returns; });
@@ -1005,7 +1071,7 @@ int main(int argc, char** argv) try {
     }
     run("invalid documents", [&] { invalid = invalid_documents(manifest.GetNamedArray(L"invalid"), fixtures); });
     run("coverage", [&] {
-        require(actual_runs == 6 && returns > 0 && version_programs > 0 && gaps > 0,
+        require(actual_runs == 6 && returns > 0 && version_programs > 0 && gaps > 0 && retirement_epochs == 2,
             "QA omitted an actual MSVC run, authenticated return, cross-version program isolation or removed-case recovery");
         require(std::ranges::any_of(cases, [](const auto& fixture) {
             return fixture.name == "real-u11-closed-expansion";

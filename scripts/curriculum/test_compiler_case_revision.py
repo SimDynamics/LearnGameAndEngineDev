@@ -1061,6 +1061,83 @@ class GeneralCompilerCaseRevisionTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), saved)
 
 
+class RetirementEditorialPrefixTests(unittest.TestCase):
+    def chain(self, retire_first=False):
+        fixture = general_fixtures
+        original = fixture.order_fixtures.synthetic_publication()
+        first = layout.retire(original, [fixture.NOTE]) if retire_first else original
+        changed = fixture.revised(first, fixture.OWNER, fixture.synthetic_cases(first))
+        returned = layout.revise_compiler_cases(changed, fixture.OWNER,
+            layout._blocks(original)[fixture.OWNER]['outputCheck']['cases'],
+            case_semantics=layout._compiler_case_order_fields(original, fixture.OWNER), return_to=0)
+        final = returned if retire_first else layout.retire(returned, [fixture.NOTE])
+        return original, changed, returned, final
+
+    def test_identical_returned_payloads_keep_their_actual_retirement_epoch(self):
+        old = self.chain(True)[-1]
+        new = self.chain(False)[-1]
+        old_snapshot = old['stateLayout']['retirementHistory'][0]
+        new_snapshot = new['stateLayout']['retirementHistory'][0]
+        self.assertEqual(old_snapshot['pages'], new_snapshot['pages'])
+        self.assertEqual(old_snapshot['editorialPrefix']['count'], 0)
+        self.assertEqual(new_snapshot['editorialPrefix']['count'], 2)
+        for document, count in ((old, 0), (new, 2)):
+            snapshot = document['stateLayout']['retirementHistory'][0]
+            self.assertEqual(snapshot['editorialPrefix'], layout._retirement_editorial_prefix(document, count))
+            owner = general_fixtures.OWNER
+            block = layout._blocks({'pages': snapshot['pages'], 'stateLayout': {'current': snapshot['current']}})[owner]
+            self.assertEqual(layout._compiler_case_epoch(document, owner, block,
+                layout._compiler_case_events(document, owner), editorial_prefix=count), count)
+            layout.validate(document)
+
+    def test_prefix_count_and_hash_require_the_exact_typed_shape(self):
+        document = self.chain(False)[-1]
+        variants = [{'count': value, 'sha256': '0' * 64} for value in (False, 0.0, -1, 3)]
+        variants += [{'count': 2, 'sha256': '0' * 64}, {'count': 2},
+                     dict(document['stateLayout']['retirementHistory'][0]['editorialPrefix'], extra=True)]
+        for prefix in variants:
+            with self.subTest(prefix=prefix), self.assertRaises(layout.LayoutError):
+                bad = deepcopy(document)
+                bad['stateLayout']['retirementHistory'][0]['editorialPrefix'] = prefix
+                layout.validate(bad)
+
+    def test_valid_prefix_cannot_borrow_a_payload_from_another_position(self):
+        document = self.chain(False)[-1]
+        bad = deepcopy(document)
+        # The middle prefix is genuine, but its owner is B, not the returned A.
+        bad['stateLayout']['retirementHistory'][0]['editorialPrefix'] = layout._retirement_editorial_prefix(bad, 1)
+        with self.assertRaisesRegex(layout.LayoutError, 'exact editorial prefix'):
+            layout.validate(bad)
+
+    def test_new_retirement_requires_its_actual_predecessor_prefix(self):
+        _, _, previous, document = self.chain(False)
+        for prefix in (None, layout._retirement_editorial_prefix(document, 0)):
+            bad = deepcopy(document)
+            if prefix is None:
+                del bad['stateLayout']['retirementHistory'][0]['editorialPrefix']
+            else:
+                bad['stateLayout']['retirementHistory'][0]['editorialPrefix'] = prefix
+            layout.validate(bad)  # Legacy/earlier A can only be disproved with the real predecessor.
+            with self.assertRaisesRegex(layout.LayoutError, 'complete previous published presentation'):
+                layout.validate_transition(previous, bad)
+
+    def test_published_prefix_is_append_only_and_legacy_remains_unchanged(self):
+        document = self.chain(False)[-1]
+        legacy = deepcopy(document)
+        del legacy['stateLayout']['retirementHistory'][0]['editorialPrefix']
+        layout.validate(legacy)
+        layout.validate_transition(legacy, deepcopy(legacy))
+        self.assertNotIn('editorialPrefix', legacy['stateLayout']['retirementHistory'][0])
+        with self.assertRaisesRegex(layout.LayoutError, 'snapshots are append-only'):
+            layout.validate_transition(document, legacy)
+        changed = deepcopy(document)
+        changed['stateLayout']['retirementHistory'][0]['editorialPrefix'] = layout._retirement_editorial_prefix(changed, 0)
+        with self.assertRaisesRegex(layout.LayoutError, 'snapshots are append-only'):
+            layout.validate_transition(document, changed)
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
 

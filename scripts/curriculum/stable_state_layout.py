@@ -1262,7 +1262,9 @@ def _compiler_case_event_after(kind: str, item: dict) -> dict:
 
 
 def _compiler_case_epoch(document: dict, identity: str, block: dict,
-                         events: list[tuple[str, dict]]) -> int:
+                         events: list[tuple[str, dict]], *, editorial_prefix: int | None = None) -> int:
+    if editorial_prefix is not None:
+        return sum(item["editorialIndex"] < editorial_prefix for _, item in events)
     signature = fingerprint(block)
     epochs = []
     for index, proof in enumerate(document["stateLayout"]["editorial"]):
@@ -1276,12 +1278,13 @@ def _compiler_case_epoch(document: dict, identity: str, block: dict,
     return max(epochs)
 
 
-def _compiler_case_order_projection(document: dict, identity: str, block: dict) -> dict:
+def _compiler_case_order_projection(document: dict, identity: str, block: dict, *,
+                                    editorial_prefix: int | None = None) -> dict:
     """Undo only the case events preceding this exact published source node."""
     events = _compiler_case_events(document, identity)
     if not events:
         return block
-    epoch = _compiler_case_epoch(document, identity, block, events)
+    epoch = _compiler_case_epoch(document, identity, block, events, editorial_prefix=editorial_prefix)
     expected = (events[0][1]["block"] if epoch == 0
                 else _compiler_case_event_after(*events[epoch - 1]))
     if without_compiler_guidance(block).get("outputCheck") != without_compiler_guidance(expected).get("outputCheck"):
@@ -2399,7 +2402,8 @@ def _validate_presentation_relationships(document: dict) -> None:
                             "An activity prerequisite must precede its activity in visual order")
 
 
-def _historical_source_format_contract(document: dict, identity: str, block: dict) -> dict:
+def _historical_source_format_contract(document: dict, identity: str, block: dict, *,
+                                       editorial_prefix: int | None = None) -> dict:
     """Authenticate a historical source before restoring only its code bytes.
 
     Retirement snapshots keep the complete published presentation. A formatted
@@ -2411,7 +2415,7 @@ def _historical_source_format_contract(document: dict, identity: str, block: dic
     meta = document.get("stateLayout", {})
     original = next((entry["block"] for entry in meta.get("sourceFormatRevisions", [])
                      if entry["id"] == identity), None)
-    ordered = _compiler_case_order_projection(document, identity, block)
+    ordered = _compiler_case_order_projection(document, identity, block, editorial_prefix=editorial_prefix)
     if original is None:
         return ordered
     nodes = {proof[field] for proof in meta["editorial"] if proof["id"] == identity
@@ -2431,6 +2435,39 @@ def _historical_source_format_contract(document: dict, identity: str, block: dic
         return code_format.source_projection(ordered, original)
     except code_format.SourceFormatError as exc:
         raise LayoutError(f"Unsafe historical source formatting for {identity}: {exc}") from exc
+
+
+def _retirement_editorial_prefix(document: dict, count: int) -> dict:
+    return {"count": count, "sha256": fingerprint({
+        "lessonId": document["id"], "locale": document["stateLayout"]["locale"],
+        "editorial": document["stateLayout"]["editorial"][:count]})}
+
+
+def _validate_retirement_editorial_prefix(document: dict, snapshot: dict) -> int | None:
+    if "editorialPrefix" not in snapshot:
+        return None
+    prefix = snapshot["editorialPrefix"]
+    require(type(prefix) is dict and set(prefix) == {"count", "sha256"},
+            "A retirement editorial prefix needs its exact count and hash")
+    count = prefix["count"]
+    require(type(count) is int and 0 <= count <= len(document["stateLayout"]["editorial"]),
+            "A retirement editorial prefix needs a valid integer count")
+    require(prefix == _retirement_editorial_prefix(document, count),
+            "A retirement editorial prefix differs from its complete published history")
+    return count
+
+
+def _validate_retirement_editorial_head(document: dict, identity: str, block: dict, count: int) -> None:
+    expected = None
+    for index, proof in enumerate(document["stateLayout"]["editorial"]):
+        if proof["id"] != identity:
+            continue
+        if expected is None:
+            expected = proof["beforeSha256"]
+        if index < count:
+            expected = proof["afterSha256"]
+    require(expected is None or fingerprint(block) == expected,
+            "A retirement source differs from its owner's exact editorial prefix")
 
 
 def _validate_retirement_history(document: dict) -> None:
@@ -2456,10 +2493,15 @@ def _validate_retirement_history(document: dict) -> None:
     page_shells = {record["id"]: {key: value for key, value in page.items() if key != "blocks"}
                    for page, record in zip(document["pages"], meta["current"])}
     covered, batches = [], []
+    previous_prefix = 0
     for snapshot in history:
         fields = {"retired", "current", "pages", "compilerPuzzlesRequired", "referenceAfter", "activityAfter"}
-        require(type(snapshot) is dict and fields <= set(snapshot) <= fields | {text_semantics.ROOT_FIELD},
+        require(type(snapshot) is dict and fields <= set(snapshot) <= fields | {text_semantics.ROOT_FIELD, "editorialPrefix"},
             "A retirement reading snapshot needs the complete previous pages, layout, flow and relationships")
+        editorial_prefix = _validate_retirement_editorial_prefix(document, snapshot)
+        if editorial_prefix is not None:
+            require(editorial_prefix >= previous_prefix, "Retirement editorial prefixes cannot move backwards")
+            previous_prefix = editorial_prefix
         require(type(snapshot["compilerPuzzlesRequired"]) is bool, "Historical compiler flow must be boolean")
         ids = snapshot["retired"]
         require(type(ids) is list and ids, "An archival reading snapshot needs its retirement batch")
@@ -2488,7 +2530,10 @@ def _validate_retirement_history(document: dict) -> None:
                     # Exact text alone cannot authenticate its complete source.
                     require(fingerprint(block) == fingerprint(available[block_id]),
                             "A semantic retirement batch must preserve its exact archived block")
-                source = _historical_source_format_contract(document, block_id, block)
+                if editorial_prefix is not None:
+                    _validate_retirement_editorial_head(document, block_id, block, editorial_prefix)
+                source = _historical_source_format_contract(document, block_id, block,
+                                                            editorial_prefix=editorial_prefix)
                 historical_blocks[block_id] = source
                 reviewed = _reviewed_choice(source)
                 _validate_choice_pair(source, CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)))
@@ -3877,7 +3922,8 @@ def retire(document: dict, identities: list[str], *, activity_after: list[dict] 
                 "compilerPuzzlesRequired": document.get("compilerPuzzlesRequired", False),
                 "referenceAfter": deepcopy(document.get("referenceAfter", [])),
                 "activityAfter": deepcopy(document.get("activityAfter", [])),
-                text_semantics.ROOT_FIELD: deepcopy(document.get(text_semantics.ROOT_FIELD))}
+                text_semantics.ROOT_FIELD: deepcopy(document.get(text_semantics.ROOT_FIELD)),
+                "editorialPrefix": _retirement_editorial_prefix(document, len(document["stateLayout"]["editorial"]))}
     if text_semantics.ROOT_FIELD in result:
         overlay = result[text_semantics.ROOT_FIELD]
         overlay["fields"] = [field for field in overlay["fields"] if field["block"] not in retiring]
@@ -4093,7 +4139,8 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     "current": old_meta["current"], "pages": baseline["pages"],
                     "compilerPuzzlesRequired": baseline.get("compilerPuzzlesRequired", False),
                     "referenceAfter": baseline.get("referenceAfter", []),
-                    "activityAfter": baseline.get("activityAfter", [])}
+                    "activityAfter": baseline.get("activityAfter", []),
+                    "editorialPrefix": _retirement_editorial_prefix(baseline, len(old_meta["editorial"]))}
         # Existing six-field snapshots retain their bytes and pins. A newly
         # authored overlay, including an explicitly empty one, must be captured;
         # a new helper snapshot records null when the predecessor had none.

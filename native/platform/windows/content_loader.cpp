@@ -1681,6 +1681,7 @@ struct CompilerCaseVersion {
     std::vector<std::size_t> order;
     std::size_t journal_index=0;
     bool case_revision=false;
+    std::size_t editorial_index=0;
 };
 struct CompilerCaseHistory {
     std::vector<CompilerCaseVersion> versions;
@@ -1726,7 +1727,7 @@ CompilerCaseHistories compiler_case_histories(
         const auto after=record.order?permuted_compiler_cases(before,*record.order):
             JsonObject::Parse(key(record.after_raw_json));
         history.versions.push_back({before,after,record.order?*record.order:std::vector<std::size_t>{},
-            record.journal_index,!record.order});
+            record.journal_index,!record.order,index});
     }
     JsonArray prefix;std::map<std::string,std::size_t> epochs;
     for(unsigned index=0;index<editorial.Size();++index) {
@@ -1757,7 +1758,8 @@ CompilerCaseHistories compiler_case_histories(
     return result;
 }
 std::size_t compiler_case_epoch(const JsonObject& source,
-        const CompilerCaseHistory& history,bool historical) {
+        const CompilerCaseHistory& history,bool historical,
+        std::optional<std::size_t> editorial_prefix={}) {
     const auto contract=compiler_case_contract(source);
     const auto matches=[&](std::size_t epoch) {
         return contract==compiler_case_contract(epoch?history.versions.at(epoch-1).after:
@@ -1771,12 +1773,23 @@ std::size_t compiler_case_epoch(const JsonObject& source,
     const auto node=history.published_epochs.find(fingerprint(source));
     require(node!=history.published_epochs.end(),
         "A historical case order needs an exact occurrence in its owner's editorial chain");
+    if(editorial_prefix) {
+        const auto epoch=static_cast<std::size_t>(std::ranges::count_if(history.versions,
+            [&](const auto& version){return version.editorial_index<*editorial_prefix;}));
+        require(node->second.contains(epoch)&&matches(epoch),
+            "Historical compiler cases differ from their authenticated editorial prefix");
+        return epoch;
+    }
+    // Legacy snapshots do not identify which occurrence of a returned payload
+    // they captured. Keep their existing interpretation instead of borrowing
+    // a later journal merely because its block bytes happen to match.
     for(const auto epoch:node->second)if(matches(epoch))return epoch;
     invalid("Historical case order changed a case, channel or comparison mode");
 }
 JsonObject compiler_case_projection(const JsonObject& source,
-        const CompilerCaseHistory& history,bool historical=false) {
-    const auto epoch=compiler_case_epoch(source,history,historical);
+        const CompilerCaseHistory& history,bool historical=false,
+        std::optional<std::size_t> editorial_prefix={}) {
+    const auto epoch=compiler_case_epoch(source,history,historical,editorial_prefix);
     if(!epoch)return source;
     auto result=JsonObject::Parse(source.Stringify());
     // Each epoch is authenticated before projection. Undo in reverse time:
@@ -2013,19 +2026,22 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     const auto case_order_histories=compiler_case_histories(result,
         result.version==2?array(metadata,"editorial"):JsonArray{},lesson_id);
-    const auto case_order_source=[&](const std::string& id,const JsonObject& source,bool historical=false) {
+    const auto case_order_source=[&](const std::string& id,const JsonObject& source,bool historical=false,
+            std::optional<std::size_t> editorial_prefix={}) {
         const auto found=case_order_histories.find(id);if(found==case_order_histories.end())return source;
         // A reading snapshot may precede the separately authenticated closed
         // expansion. Its shorter original objective is not a permutation.
         if(historical&&revised_compilers.contains(id)&&
-                state_fingerprint(source)==result.signatures.at(id)) {
+                state_fingerprint(source)==result.signatures.at(id)&&
+                (!editorial_prefix||std::ranges::none_of(found->second.versions,
+                    [&](const auto& version){return version.editorial_index<*editorial_prefix;}))) {
             const auto original=std::ranges::find(result.compiler_revisions,id,&CompilerRevision::id);
             require(original!=result.compiler_revisions.end()&&
                 compiler_case_contract(source)==compiler_case_contract(JsonObject::Parse(key(original->raw_json))),
                 "An original historical compiler changed a case, channel or comparison mode");
             return source;
         }
-        return compiler_case_projection(source,found->second,historical);
+        return compiler_case_projection(source,found->second,historical,editorial_prefix);
     };
     // Full pre-format snapshots are authored once, under existing active
     // identities. They are not extra answers, storage slots or drafts.
@@ -2326,6 +2342,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         const auto original_history=original_document.elements(original_document.member(
             original_document.member(original_document.root(),"stateLayout"),"retirementHistory"));
         std::size_t history_index=0;
+        std::optional<std::size_t> previous_editorial_prefix;
         std::vector<std::string> covered;
         std::map<std::string,std::string> retired_fingerprints;
         for(const auto& retired:result.retired)retired_fingerprints.emplace(retired.id,retired.sha256);
@@ -2336,10 +2353,37 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         }
         for (const auto& value : history) {
             const auto item=value.GetObject();
-            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter","textSemantics"});
+            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter","textSemantics","editorialPrefix"});
             for(const auto field:{L"retired",L"current",L"pages",L"compilerPuzzlesRequired",L"referenceAfter",L"activityAfter"})
                 require(item.HasKey(field),"Incomplete retirement reading snapshot");
             StateRetirementHistory snapshot;
+            std::map<std::string,std::string> snapshot_editorial_heads;
+            if(item.HasKey(L"editorialPrefix")) {
+                const auto declared=item.GetNamedObject(L"editorialPrefix");
+                allowed_keys(declared,{"count","sha256"},true);
+                const auto revisions=array(metadata,"editorial");
+                snapshot.editorial_prefix=integer(declared.GetNamedValue(L"count"),revisions.Size());
+                require(!previous_editorial_prefix||*previous_editorial_prefix<=*snapshot.editorial_prefix,
+                    "Retirement editorial prefixes must preserve snapshot chronology");
+                previous_editorial_prefix=snapshot.editorial_prefix;
+                const auto digest=text(declared,"sha256");
+                require(valid_hash(digest),"Invalid retirement editorial prefix fingerprint");
+                JsonArray prefix;
+                for(unsigned index=0;index<revisions.Size();++index) {
+                    const auto proof=revisions.GetObjectAt(index);const auto id=text(proof,"id");
+                    snapshot_editorial_heads.try_emplace(id,text(proof,"beforeSha256"));
+                    if(index<*snapshot.editorial_prefix) {
+                        prefix.Append(proof);
+                        snapshot_editorial_heads[id]=text(proof,"afterSha256");
+                    }
+                }
+                JsonObject provenance;
+                provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                provenance.Insert(L"locale",JsonValue::CreateStringValue(key(locale)));
+                provenance.Insert(L"editorial",prefix);
+                require(digest==fingerprint(provenance),
+                    "Retirement editorial prefix differs from its complete published history");
+            }
             snapshot.has_text_semantics=item.HasKey(L"textSemantics");
             if(snapshot.has_text_semantics) {
                 const auto semantics=item.GetNamedValue(L"textSemantics");
@@ -2379,12 +2423,16 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
+                    if(snapshot.editorial_prefix)if(const auto expected=snapshot_editorial_heads.find(id);
+                            expected!=snapshot_editorial_heads.end())
+                        require(fingerprint(source)==expected->second,
+                            "Historical reading source differs from its exact editorial prefix");
                     if(snapshot.has_text_semantics&&unique.contains(id))
                         require(fingerprint(source)==retired_fingerprints.at(id),
                             "A semantic retirement batch must preserve its exact archived block");
                     const auto general=general_choice_revisions.find(id);
                     const auto prompt=math_text_originals.find(id);
-                    auto projected=case_order_source(id,source,true);
+                    auto projected=case_order_source(id,source,true,snapshot.editorial_prefix);
                     if(const auto format=source_format_originals.find(id);format!=source_format_originals.end()) {
                         // A reading archive keeps an actual published presentation,
                         // not a newly invented spelling of equivalent source code.
@@ -3136,9 +3184,11 @@ void resolve_addresses(Lesson& lesson) {
                 auto ordered_source=source;
                 if(const auto history=case_order_histories.find(identity);history!=case_order_histories.end()) {
                     const auto earlier_closed=compilers.contains(identity)&&
-                        state_fingerprint(source)==layout.signatures.at(identity);
+                        state_fingerprint(source)==layout.signatures.at(identity)&&
+                        (!snapshot.editorial_prefix||std::ranges::none_of(history->second.versions,
+                            [&](const auto& version){return version.editorial_index<*snapshot.editorial_prefix;}));
                     if(!earlier_closed) {
-                        const auto epoch=compiler_case_epoch(source,history->second,true);
+                        const auto epoch=compiler_case_epoch(source,history->second,true,snapshot.editorial_prefix);
                         for(std::size_t index=0;index<epoch;++index) {
                             const auto& version=history->second.versions[index];
                             if(version.case_revision)
@@ -3146,7 +3196,7 @@ void resolve_addresses(Lesson& lesson) {
                             else
                                 block.compiler_case_order_revisions.push_back(layout.compiler_case_order_revisions.at(version.journal_index));
                         }
-                        ordered_source=compiler_case_projection(source,history->second,true);
+                        ordered_source=compiler_case_projection(source,history->second,true,snapshot.editorial_prefix);
                     }
                 }
                 const auto protected_source=format_source?source_format_projection(ordered_source,*format_source):ordered_source;

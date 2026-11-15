@@ -239,6 +239,21 @@ def build_fixtures() -> tuple[dict, dict[str, str]]:
     restored = layout.revise_compiler_cases(after, OWNER, original_cases,
         case_semantics=layout._compiler_case_order_fields(before, OWNER), return_to=0)
     add("synthetic-return", OWNER, before, [after, restored])
+    # Equal block bytes before and after a return are different history epochs.
+    # Retirement must capture its actual prefix instead of guessing by hash.
+    snapshot_before = layout.retire(before, [NOTE])
+    revised_after_snapshot = revised(snapshot_before, OWNER, cases)
+    returned_after_snapshot = layout.revise_compiler_cases(revised_after_snapshot, OWNER, original_cases,
+        case_semantics=layout._compiler_case_order_fields(before, OWNER), return_to=0)
+    name = "synthetic-snapshot-before-return"
+    add(name, OWNER, before, [snapshot_before, revised_after_snapshot, returned_after_snapshot])
+    manifest["cases"][-1].update(snapshotEpochOnly=True, snapshotSource=name + ".before.json",
+                                  receiptSource=name + ".stage2.json")
+    name = "synthetic-snapshot-after-return"
+    snapshot_after = layout.retire(restored, [NOTE])
+    add(name, OWNER, before, [after, restored, snapshot_after])
+    manifest["cases"][-1].update(snapshotEpochOnly=True, snapshotSource=name + ".stage2.json",
+                                  receiptSource=name + ".stage1.json")
     formatted = order_fixtures.formatted(before, OWNER)
     add("synthetic-format-before", OWNER, formatted, [revised(formatted, OWNER, synthetic_cases(formatted))])
     add("synthetic-format-after", OWNER, before, [after, order_fixtures.formatted(after, OWNER)])
@@ -302,6 +317,22 @@ def build_fixtures() -> tuple[dict, dict[str, str]]:
             document["stateLayout"]["editorial"].append({"id": OWNER, "beforeSha256": old_hash,
                                                         "afterSha256": layout.fingerprint(block(document))})
         invalid("later-unarchived-" + field, after, later)
+    snapshot = lambda document: document["stateLayout"]["retirementHistory"][0]
+    prefix = lambda document: snapshot(document)["editorialPrefix"]
+    invalid("retirement-prefix-boolean-count", snapshot_after, lambda d: prefix(d).update(count=True))
+    invalid("retirement-prefix-floating-count", snapshot_after, lambda d: prefix(d).update(count=2.0))
+    invalid("retirement-prefix-out-of-range", snapshot_after,
+            lambda d: prefix(d).update(count=len(d["stateLayout"]["editorial"]) + 1))
+    invalid("retirement-prefix-wrong-hash", snapshot_after, lambda d: prefix(d).update(sha256="0" * 64))
+    invalid("retirement-prefix-extra-field", snapshot_after, lambda d: prefix(d).update(extra=True))
+    invalid("retirement-prefix-wrong-type", snapshot_after, lambda d: snapshot(d).update(editorialPrefix=[]))
+    def wrong_head(document):
+        # Prefix 1 is real and correctly hashed, but its compiler head is B.
+        # The snapshot contains returned A, so hash validity alone cannot pass.
+        prefix(document).update(count=1, sha256=layout.fingerprint({
+            "lessonId": document["id"], "locale": document["stateLayout"]["locale"],
+            "editorial": document["stateLayout"]["editorial"][:1]}))
+    invalid("retirement-prefix-wrong-published-head", snapshot_after, wrong_head)
     return manifest, payloads
 
 

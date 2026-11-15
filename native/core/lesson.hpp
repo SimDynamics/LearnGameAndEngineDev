@@ -278,6 +278,9 @@ struct StateRetirementHistory {
     // Neither form may borrow authoring from the current lesson.
     bool has_text_semantics = false;
     std::map<std::string,TextSemantics> text_semantics;
+    // New snapshots bind their exact publication to an authenticated global
+    // editorial prefix. Absence retains the legacy interpretation unchanged.
+    std::optional<std::size_t> editorial_prefix;
 };
 // Authenticated presentation before one explicit editorial return. It is
 // archival reading provenance, never another active activity or state slot.
