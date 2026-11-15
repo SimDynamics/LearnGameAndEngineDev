@@ -323,6 +323,7 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
     case("semantic-choice-before-retirement", revised_choice,
          layout.retire(revised_choice, [NOTE_A]), [revised_choice])
     manifest["cases"][-1]["stateSource"] = put("semantic-choice-original-state", base)
+    manifest["cases"][-1]["compilerCases"] = [{"id": COMPILER, "case": 0}]
 
     # The general option contract deliberately protects every other field.
     # A subsequent explanation rewrite is a rejection, not an expanded waiver.

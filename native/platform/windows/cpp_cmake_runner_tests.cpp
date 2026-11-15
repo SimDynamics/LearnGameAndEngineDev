@@ -44,7 +44,7 @@ std::string read(const std::filesystem::path& path){std::ifstream file(path,std:
 struct OwnedQa {
     std::filesystem::path root,owned;bool removed=false;
     explicit OwnedQa(const std::filesystem::path& value):root(value){
-        check(root.is_absolute()&&root.parent_path().filename()==L"qa"&&root.filename().wstring().starts_with(L"cmake-runner-"+std::to_wstring(GetCurrentProcessId())+L"-")&&!std::filesystem::exists(root),
+        check(root.is_absolute()&&root.parent_path().filename()==L"qa"&&root.filename().wstring().starts_with(L"cm-"+std::to_wstring(GetCurrentProcessId())+L"-")&&!std::filesystem::exists(root),
             "CMake QA cleanup must own a new isolated profile");
         lgaed::state::require_safe_path(root);
         std::filesystem::create_directories(lgaed::state::native_io_path(root.parent_path()));
@@ -178,7 +178,9 @@ int main(int argc,char** argv){using namespace lgaed;using namespace windows;try
     const bool cpp23_only=argc==2&&std::string_view(argv[1])=="--cpp23";
     const bool graph_only=argc==2&&std::string_view(argv[1])=="--graph";
     check(argc==1||cpp23_only||graph_only,"Unknown CMake runner test selector");
-    const auto environment=resolve_windows_environment({ProfileId::Codex,L"cmake-runner-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});OwnedQa qa(environment.paths.root);initialize_profile_directories(environment.paths);
+    // Keep this new QA namespace compact: CMake's ABI try-compile adds its
+    // own deep path below the deliberately Unicode/spaced project directory.
+    const auto environment=resolve_windows_environment({ProfileId::Codex,L"cm-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});OwnedQa qa(environment.paths.root);initialize_profile_directories(environment.paths);
     if(!graph_only)cpp23_cmake_migration(environment);
     if(cpp23_only){qa.finish();return 0;}
     CppRunRequest request;request.projects_directory=environment.paths.projects/L"Códigos & nombres";request.project_key="original/exercise/draft";request.request_id=1;request.revision=7;

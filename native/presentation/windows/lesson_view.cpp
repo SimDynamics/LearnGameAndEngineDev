@@ -1188,18 +1188,13 @@ struct LessonView {
             auto order=saved.current[page].id;for(const auto& id:saved.current[page].blocks)order+=','+id;
             LessonReadingArchive archived;archived.page_identity=route+'/'+lesson.id+"/state-layout-v1/"+lesson.state_layout.lineage+'/'+state::sha256(order);
             auto& result=archived.regions;const auto proofs=completion_snapshot(historical);
-            const auto available=[&](std::size_t index,const curriculum::Block& current){
-                if(historical.compiler_puzzles_required)for(std::size_t prior=0;prior<index;++prior){const auto& candidate=historical.pages[page].blocks[prior];
-                    if(curriculum::has_compiler_objective(candidate)&&!windows::compiler_puzzle_completed(data,historical,candidate))return false;}
-                if(const auto dependency=curriculum::reference_activity(historical,current)){
-                    const auto& owner=historical.pages[dependency->page].blocks[dependency->block];
-                    const auto found=proofs.find(owner.stable_id);if(found==proofs.end()||!found->second)return false;
-                }
-                for(const auto& prerequisite:curriculum::activity_prerequisites(historical,current)){
-                    const auto& owner=historical.pages[prerequisite.page].blocks[prerequisite.block];
-                    const auto found=proofs.find(owner.stable_id);if(found==proofs.end()||!found->second)return false;
-                }
-                return true;
+            const auto available=[&](const curriculum::Block& current){
+                // Reconstruct the same visible script as the real view. Every
+                // preceding curricular compiler is a barrier, independently of
+                // the legacy root flag, and only its own sealed receipt opens it.
+                return curriculum::compiler_reference_available(historical,page,current,proofs,
+                    [&](const auto& prior){return windows::compiler_puzzle_completed(data,historical,prior);})
+                    &&curriculum::compiler_activity_available(historical,current,proofs);
             };
             const auto emit=[&](std::size_t index,const curriculum::Block& current,int part,std::string text,
                                 bool passive=false,std::string_view field_path={}){
@@ -1222,7 +1217,7 @@ struct LessonView {
                     result.back().text_semantics=field->second;
             }
             for(std::size_t index=0;index<historical.pages[page].blocks.size();++index){const auto& current=historical.pages[page].blocks[index];
-                if(!available(index,current))continue;
+                if(!available(current))continue;
                 const auto response=state::get_response(data,historical,current);
                 if(current.type==BlockType::image){
                     emit(index,current,0,current.image->alt,false,"/alt");
