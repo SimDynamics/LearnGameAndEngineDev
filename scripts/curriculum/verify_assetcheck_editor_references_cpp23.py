@@ -17,6 +17,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import stable_state_layout as state
+
 from assetcheck_differential_cases import (
     SEED,
     differential_cases,
@@ -54,17 +56,40 @@ def run_command(args: list[str], *, cwd: Path | None = None) -> str:
     return result.stdout
 
 
-def id_for_block(page: int, index: int) -> str:
-    return f"block_{page:04d}_{index:04d}"
+def blocks_by_identity(lesson: dict, *, filename: str) -> dict[str, dict]:
+    """Resolve current owners only after validating their published contracts."""
+    if type(lesson) is not dict:
+        raise ValueError(f"{filename}: the lesson must be an object")
+    pages = lesson.get("pages")
+    layout = lesson.get("stateLayout")
+    current = layout.get("current") if type(layout) is dict else None
+    if type(pages) is not list or type(current) is not list or len(pages) != len(current):
+        raise ValueError(f"{filename}: stateLayout.current must align with every page")
+    for page_number, (page, record) in enumerate(zip(pages, current, strict=True), start=1):
+        if (type(page) is not dict or type(page.get("blocks", [])) is not list or
+                type(record) is not dict or type(record.get("blocks")) is not list):
+            raise ValueError(f"{filename}: stateLayout.current has a malformed page {page_number}")
+        if len(record["blocks"]) != len(page.get("blocks", [])):
+            raise ValueError(
+                f"{filename}: stateLayout.current must align with every block of page {page_number}")
+
+    # Syntax and uniqueness alone cannot prove that an owner still names its
+    # original activity. Reuse the shared state/relationship validation before
+    # constructing a dictionary, including its immutable payload fingerprints.
+    try:
+        state.validate(lesson)
+    except (ValueError, KeyError, TypeError) as error:
+        raise ValueError(f"{filename}: invalid stable lesson contract: {error}") from error
+    return {
+        ident: block
+        for page, record in zip(pages, current, strict=True)
+        for ident, block in zip(record["blocks"], page.get("blocks", []), strict=True)
+    }
 
 
 def lesson_reference(filename: str, function: str, end_marker: str):
     lesson = json.loads((CONTENT / filename).read_text(encoding="utf-8"))
-    blocks = {
-        id_for_block(p, i): block
-        for p, page in enumerate(lesson["pages"])
-        for i, block in enumerate(page["blocks"])
-    }
+    blocks = blocks_by_identity(lesson, filename=filename)
     editors = [
         (ident, block)
         for ident, block in blocks.items()
