@@ -13,7 +13,7 @@ option(LGAED_STATE_IMPORT_QA_ONLY
 option(LGAED_NARRATION_PLAYER_QA_ONLY
     "Build only the three real Windows narration-player probes with the official Windows toolchain" OFF)
 option(LGAED_READER_BUILD_QA_ONLY
-    "Compile and link the three original curricular reader/diagnostic test executables without running them" OFF)
+    "Build the original curricular readers and run focused catalog, compiler and Win32 regressions without audio playback" OFF)
 option(LGAED_MATH_EDITORIAL_QA_ONLY
     "Within ReaderBuild, run only the real math-worker prompt revision and native/imported reader preservation test" OFF)
 if(LGAED_MATH_EDITORIAL_QA_ONLY AND NOT LGAED_READER_BUILD_QA_ONLY)
@@ -274,6 +274,43 @@ if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
     return()
 endif()
 
+# The focused reader profile executes the same catalog test as the full build.
+# Its historical inputs retain the existing exporters, paths and immutable pins.
+function(lgaed_add_catalog_history_fixtures)
+    set(LGAED_RETIREMENT_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u1-d1933ed")
+    set(LGAED_RETIREMENT_FIXTURES
+        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_primer_programa_y_salida.json"
+        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_texto_secuencia_y_formato.json"
+        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_fuente_compilacion_y_diagnostico.json")
+    add_custom_command(OUTPUT ${LGAED_RETIREMENT_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/retirement_fixture_source.py"
+            --output-dir "${LGAED_RETIREMENT_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/retirement_fixture_source.py"
+        COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
+        VERBATIM)
+    add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
+    set(LGAED_DIAGNOSTIC_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/diagnostics-7862f10")
+    set(LGAED_DIAGNOSTIC_FIXTURES
+        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_consultas_const_y_objetos_constantes.json"
+        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_valores_por_defecto_con_significado.json"
+        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_argumentos_con_tipos_que_expresan_su_funcion.json")
+    add_custom_command(OUTPUT ${LGAED_DIAGNOSTIC_FIXTURES}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
+            --output-dir "${LGAED_DIAGNOSTIC_FIXTURE_DIR}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
+        COMMENT "Verifying immutable pre-diagnostic fixtures from local 7862f10"
+        VERBATIM)
+    add_custom_target(lgaed_diagnostic_fixtures DEPENDS ${LGAED_DIAGNOSTIC_FIXTURES})
+endfunction()
+
+function(lgaed_add_catalog_test)
+    add_executable(lgaed_catalog_tests native/core/catalog_tests.cpp)
+    target_link_libraries(lgaed_catalog_tests PRIVATE lgaed_platform_windows)
+    add_dependencies(lgaed_catalog_tests lgaed_retirement_fixtures lgaed_diagnostic_fixtures)
+    add_test(NAME native.catalog COMMAND lgaed_catalog_tests)
+    set_tests_properties(native.catalog PROPERTIES TIMEOUT 30)
+endfunction()
+
 if(LGAED_READER_BUILD_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -295,6 +332,8 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_curricular_reader_test_targets()
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     include(cmake/StateImportTests.cmake)
+    lgaed_add_catalog_history_fixtures()
+    lgaed_add_catalog_test()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
     # Run the real Win32 compiler view against thirteen authored inputs.
@@ -463,7 +502,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
         COMMAND lgaed_cpp_project_view_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history" --other-cases)
     set_tests_properties(native.cpp_project_other_cpp_multicase PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
-    message(STATUS "Focused reader build plus one real Win32 history dialog regression; no reader/audio test, fixture, synthesis runtime or application build.")
+    message(STATUS "Focused reader, catalog, compiler and Win32 regressions with authenticated historical fixtures; no audio playback, synthesis runtime or application build.")
     return()
 endif()
 
@@ -1054,33 +1093,10 @@ if(BUILD_TESTING)
         set_tests_properties(native.curricular_order_view.${order_case}
             PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
     endforeach()
-    set(LGAED_RETIREMENT_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u1-d1933ed")
-    set(LGAED_RETIREMENT_FIXTURES
-        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_primer_programa_y_salida.json"
-        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_texto_secuencia_y_formato.json"
-        "${LGAED_RETIREMENT_FIXTURE_DIR}/lesson_fuente_compilacion_y_diagnostico.json")
-    add_custom_command(OUTPUT ${LGAED_RETIREMENT_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/curriculum/retirement_fixture_source.py"
-            --output-dir "${LGAED_RETIREMENT_FIXTURE_DIR}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/retirement_fixture_source.py"
-        COMMENT "Verifying immutable pre-retirement U1 test fixtures from local d1933ed"
-        VERBATIM)
-    add_custom_target(lgaed_retirement_fixtures DEPENDS ${LGAED_RETIREMENT_FIXTURES})
+    lgaed_add_catalog_history_fixtures()
     add_test(NAME native.diagnostic_fixture_source COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
         -s "${CMAKE_SOURCE_DIR}/scripts/curriculum" -p test_diagnostic_fixture_source.py)
     set_tests_properties(native.diagnostic_fixture_source PROPERTIES TIMEOUT 30)
-    set(LGAED_DIAGNOSTIC_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/diagnostics-7862f10")
-    set(LGAED_DIAGNOSTIC_FIXTURES
-        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_consultas_const_y_objetos_constantes.json"
-        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_valores_por_defecto_con_significado.json"
-        "${LGAED_DIAGNOSTIC_FIXTURE_DIR}/lesson_argumentos_con_tipos_que_expresan_su_funcion.json")
-    add_custom_command(OUTPUT ${LGAED_DIAGNOSTIC_FIXTURES}
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
-            --output-dir "${LGAED_DIAGNOSTIC_FIXTURE_DIR}"
-        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/diagnostic_fixture_source.py"
-        COMMENT "Verifying immutable pre-diagnostic fixtures from local 7862f10"
-        VERBATIM)
-    add_custom_target(lgaed_diagnostic_fixtures DEPENDS ${LGAED_DIAGNOSTIC_FIXTURES})
     set(LGAED_EDITORIAL_RETURN_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/editorial-return-1fe0975")
     set(LGAED_EDITORIAL_RETURN_FIXTURE "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}/lesson_estado_asignacion_y_copia.json")
     set(LGAED_EDITORIAL_RETURN_INTERMEDIATE_FIXTURE "${LGAED_EDITORIAL_RETURN_FIXTURE_DIR}/lesson_estado_asignacion_y_copia-df2f9fa.json")
@@ -1698,10 +1714,7 @@ if(BUILD_TESTING)
     add_test(NAME native.calculator_internal_window COMMAND lgaed_tools_view_tests --calculator-window)
     set_tests_properties(native.calculator_internal_window PROPERTIES TIMEOUT 120)
     set_tests_properties(native.tools_view PROPERTIES TIMEOUT 90)
-    add_executable(lgaed_catalog_tests native/core/catalog_tests.cpp)
-    target_link_libraries(lgaed_catalog_tests PRIVATE lgaed_platform_windows)
-    add_test(NAME native.catalog COMMAND lgaed_catalog_tests)
-    set_tests_properties(native.catalog PROPERTIES TIMEOUT 30)
+    lgaed_add_catalog_test()
     add_executable(lgaed_catalog_view_tests native/presentation/windows/catalog_view_tests.cpp)
     target_link_libraries(lgaed_catalog_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.catalog_view COMMAND lgaed_catalog_view_tests)
@@ -1903,11 +1916,11 @@ if(BUILD_TESTING)
     target_link_libraries(lgaed_import_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.import_view COMMAND lgaed_import_view_tests)
     set_tests_properties(native.import_view PROPERTIES TIMEOUT 180)
-    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
+    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests
             lgaed_lesson_reader_tests lgaed_lesson_view_tests lgaed_import_view_tests)
         add_dependencies(${fixture_consumer} lgaed_retirement_fixtures)
     endforeach()
-    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests lgaed_catalog_tests
+    foreach(fixture_consumer IN ITEMS lgaed_lesson_tests lgaed_state_tests
             lgaed_compile_diagnostic_view_tests)
         add_dependencies(${fixture_consumer} lgaed_diagnostic_fixtures)
     endforeach()

@@ -15,6 +15,8 @@
 #include <fstream>
 #include <chrono>
 #include <stdexcept>
+#include <set>
+#include <string_view>
 
 namespace {
 void check(bool condition,const char* message) { if (!condition) throw std::runtime_error(message); }
@@ -89,22 +91,36 @@ void compiler_puzzles_keep_captured_success_until_explicit_reset() {
     const auto progress=[&]{return catalog_lesson_page_progress(data,lesson,[&](const Block& item){return windows::compiler_puzzle_completed(data,lesson,item);});};
     check(!windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==0,
         "An old correct flag or completed page manufactured a compiler execution proof");
-    windows::CppRunRequest captured;captured.revision=7;captured.source_utf8="same captured program";captured.stdin_utf8="1";
-    FreshExecution execution{7,true,true,0,"1","2"};
+    // This core test supplies captured execution results to the receipt API;
+    // native compiler execution is covered by the separate runner suites.
+    windows::CppRunRequest captured;captured.revision=7;captured.source_utf8="same captured program";captured.stdin_utf8="2";
+    FreshExecution execution{7,true,true,0,"2","4"};
     auto stale=execution;stale.source_revision=6;
     check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,stale,"Correcto"),"A stale result accredited a compiler objective");
-    check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto")&&windows::compiler_puzzle_case_count(data,lesson,block)==1,
-        "One input completed a two-case compiler puzzle");
+    check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto")&&
+        windows::compiler_puzzle_case_count(data,lesson,block)==1&&!windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==0,
+        "An optional second case replaced the required first-case achievement");
     auto edited=captured;edited.source_utf8+=" changed";
     windows::invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
     windows::invalidate_compiler_puzzle_attempt(data,lesson,block,captured);
     check(windows::compiler_puzzle_case_count(data,lesson,block)==0,"Undo resurrected an invalidated partial execution proof");
-    check(!windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto"),"The first case completed both inputs");
+    captured.stdin_utf8="1";execution.standard_input="1";execution.standard_output="2";
+    check(windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto\nExplicación comprobada.")&&
+        windows::compiler_puzzle_case_count(data,lesson,block)==1&&windows::compiler_puzzle_completed(data,lesson,block)&&progress().completed==1,
+        "The first declared case did not complete the required compiler activity independently");
+    const auto first_achievement=data;
     captured.stdin_utf8="2";windows::invalidate_compiler_puzzle_attempt(data,lesson,block,captured);
-    check(windows::compiler_puzzle_case_count(data,lesson,block)==1,"Changing only input discarded an unchanged program's independent case");
+    check(data==first_achievement,"Changing only input discarded the earned first-case achievement");
     execution.standard_input="2";execution.standard_output="4";
-    check(windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto\nExplicación comprobada.")&&progress().completed==1,
-        "Both actual matching cases did not complete the opted-in compiler page");
+    check(windows::record_compiler_puzzle_case(data,lesson,block,captured,execution,"Correcto\nEnsayo opcional.")&&
+        windows::compiler_puzzle_case_count(data,lesson,block)==2&&progress().completed==1,
+        "An optional second case failed to record its own result or changed page completion");
+    auto expected=first_achievement;std::size_t extended=0;
+    for(auto& [key,value]:expected.preferences["native_windows"])if(key.ends_with("/cases")){
+        const auto current=state::find(data,"native_windows",key);
+        check(current!=nullptr,"The optional case discarded its existing proof vector");value=*current;++extended;
+    }
+    check(extended==1&&data==expected,"An optional case rewrote the first-case seal, feedback or unrelated state");
     const auto sealed=data;
     windows::invalidate_compiler_puzzle_attempt(data,lesson,block,edited);
     auto failed=execution;failed.standard_input=edited.stdin_utf8;failed.standard_output="wrong";failed.compilation_succeeded=false;
@@ -345,6 +361,237 @@ void reached_page_reset_removes_only_selected_legacy_frontiers(){
         "Repeating a legacy frontier reset changed preserved data");
     std::cout<<"PASS reached-page catalog reset: selected es/en/fr frontiers removed, unrelated lessons/locales/domains and provenance retained\n";
 }
+void programming_catalog_preserves_published_ids(const std::filesystem::path& root,
+        const lgaed::curriculum::CatalogPage& courses) {
+    using namespace lgaed; using namespace curriculum;
+    // Published baseline 18ffc77724e68f1ef3240f146022b3bd3206153a,
+    // courses.json blob f936375562f72372d191ce56f40753ee3eb0684a.
+    // New courses may be inserted; old identities and relative order remain.
+    static constexpr std::string_view original_ids[]{
+        "cpp_fundamentals",
+        "programming_practice_tools",
+        "systems_architecture_toolchain",
+        "course_04",
+        "course_05",
+        "course_06",
+        "course_07",
+        "course_08",
+        "course_09",
+        "course_10",
+        "course_11",
+        "course_12",
+        "course_13",
+        "course_14",
+        "course_15",
+        "course_16",
+        "course_17",
+        "course_18",
+        "course_19",
+        "course_20",
+        "course_21",
+        "course_22",
+        "course_23",
+        "course_24",
+        "course_25",
+        "course_26",
+        "course_27",
+        "course_28",
+        "course_29",
+        "course_30",
+        "course_31",
+        "course_32",
+        "course_33",
+        "course_34",
+        "course_35",
+        "course_36",
+        "course_37",
+        "course_38",
+        "course_39",
+        "course_40",
+        "course_41",
+        "course_42",
+        "course_43",
+        "course_44"
+    };
+    auto next = courses.entries.begin();
+    for (const auto id : original_ids) {
+        next = std::find_if(next,courses.entries.end(),[&](const auto& entry){ return entry.id == id; });
+        check(next != courses.entries.end(),"An original course ID was removed, renamed or reordered");
+        ++next;
+    }
+    const auto bytes = state::read_bytes(root / "es/programming/courses.json");
+    const std::string source(bytes.begin(),bytes.end());
+    std::string_view json = source;
+    if (json.starts_with("\xEF\xBB\xBF")) json.remove_prefix(3);
+    const auto published = winrt::Windows::Data::Json::JsonArray::Parse(winrt::to_hstring(json));
+    check(courses.entries.size() == published.Size(),"The loader hid an entry from the current course index");
+    std::set<std::string> identities;
+    for (std::size_t index = 0; index < courses.entries.size(); ++index) {
+        const auto& entry = courses.entries[index];
+        const auto declared = published.GetObjectAt(static_cast<unsigned>(index));
+        check(identities.insert(entry.id).second && entry.number == index + 1,
+            "The course index repeated an identity or lost its declared sequential order");
+        check(entry.id == winrt::to_string(declared.GetNamedString(L"id")) &&
+            entry.title == winrt::to_string(declared.GetNamedString(L"title")) &&
+            static_cast<double>(entry.number) == declared.GetNamedNumber(L"number"),
+            "The native catalog changed an ID, title or ordinal from the published index");
+        const auto expected = root / "es" / catalog_index_path(catalog_child(courses.location,entry.id));
+        const auto installed = std::filesystem::is_regular_file(state::native_io_path(expected));
+        check(entry.available == installed && (installed
+            ? entry.asset == expected && entry.asset_locale == "es"
+            : entry.asset.empty() && entry.asset_locale.empty()),
+            "A course was redirected, hidden or announced as installed without its real index");
+    }
+}
+
+void catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability() {
+    using namespace lgaed; using namespace curriculum;
+    using namespace winrt::Windows::Data::Json;
+    struct TemporaryCatalog {
+        std::filesystem::path root;
+        TemporaryCatalog() {
+            root = std::filesystem::temp_directory_path() / ("lgaed-catalog-" +
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+            check(std::filesystem::create_directory(root),"Cannot create an isolated catalog QA directory");
+        }
+        ~TemporaryCatalog() { std::error_code ignored; std::filesystem::remove_all(root,ignored); }
+    } fixture;
+    const auto folder = fixture.root / "es/programming";
+    std::filesystem::create_directories(folder);
+    const auto write = [&](const JsonArray& rows) {
+        std::ofstream output(folder / "courses.json",std::ios::binary | std::ios::trunc);
+        output << winrt::to_string(rows.Stringify());
+        output.flush();
+        check(output.good(),"Cannot write the isolated catalog index");
+    };
+    const auto row = [](std::string_view id, int number) {
+        JsonObject result;
+        result.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(id)));
+        result.Insert(L"title",JsonValue::CreateStringValue(L"An announced course"));
+        result.Insert(L"number",JsonValue::CreateNumberValue(number));
+        return result;
+    };
+    const CatalogLocation route{"es","programming",{},{}};
+    JsonArray duplicate; duplicate.Append(row("qa_planned",1)); duplicate.Append(row("qa_planned",2));
+    write(duplicate);
+    rejects([&]{ (void)windows::load_catalog(fixture.root,route); },
+        "A duplicate course ID passed the native index loader");
+    for (const auto id : {"../outside","a/b","a\\b","C:bad","x y",""}) {
+        JsonArray unsafe; unsafe.Append(row(id,1)); write(unsafe);
+        rejects([&]{ (void)windows::load_catalog(fixture.root,route); },
+            "An unsafe course ID escaped the native index loader");
+    }
+    JsonArray planned; planned.Append(row("qa_planned",1)); planned.Append(row("qa_later",2));
+    write(planned);
+    const auto page = windows::load_catalog(fixture.root,route);
+    check(page.entries.size() == planned.Size(),"Unavailable indexed courses were hidden");
+    state::StateData data; const auto before = data;
+    for (const auto& entry : page.entries) {
+        const auto progress = windows::catalog_entry_progress(fixture.root,route,entry,data);
+        check(!entry.available && entry.asset.empty() && entry.asset_locale.empty() &&
+            progress.completed == 0 && progress.total == 0,
+            "An announced course without files acquired availability or progress");
+    }
+    check(windows::catalog_scope(fixture.root,route).lessons.empty() && data == before,
+        "Planned courses invented lesson membership or changed student data");
+    rejects([&]{ (void)windows::load_catalog(fixture.root,catalog_child(route,"qa_planned")); },
+        "An announced course opened without its real course index");
+}
+
+void inserted_course_resolves_real_content_and_keeps_id_owned_state(
+        const std::filesystem::path& root, const lgaed::curriculum::CatalogPage& courses) {
+    using namespace lgaed; using namespace curriculum;
+    const auto find = [&](std::string_view id) {
+        const auto entry = std::ranges::find(courses.entries,id,&CatalogEntry::id);
+        check(entry != courses.entries.end(),"The expanded catalog lost a required course identity");
+        return entry;
+    };
+    const auto previous = find("programming_practice_tools");
+    const auto inserted = find("cpp_language_memory_oop");
+    const auto shifted = find("systems_architecture_toolchain");
+    check(previous < inserted && inserted < shifted && inserted->available && shifted->available,
+        "The new course lost its published position or installed source");
+    const auto course = catalog_child(courses.location,inserted->id);
+    const auto units = windows::load_catalog(root,course);
+    check(!units.entries.empty(),"The new course has no indexed units");
+    state::StateData empty; const auto before = empty;
+    std::set<std::string> installed_lessons;
+    std::vector<std::string> indexed_lessons;
+    std::optional<CatalogLocation> first;
+    std::size_t opened = 0;
+    for (const auto& unit : units.entries) {
+        if (!unit.available) continue;
+        const auto location = catalog_child(course,unit.id);
+        const auto lessons = windows::load_catalog(root,location);
+        for (const auto& entry : lessons.entries) {
+            indexed_lessons.push_back(entry.id);
+            if (!entry.available) continue;
+            const auto lesson = windows::load_lesson(entry.asset,entry.asset_locale);
+            const auto metadata = windows::load_lesson_progress_metadata(entry.asset,entry.asset_locale);
+            const auto active = windows::active_catalog_lesson(root,location,entry.id);
+            check(lesson.id == entry.id && metadata.id == entry.id &&
+                lesson.pages.size() == metadata.pages.size() && !lesson.pages.empty() &&
+                active && active->id == entry.id && active->asset == entry.asset &&
+                active->asset_locale == entry.asset_locale,
+                "The new course resolved another lesson, source language or progress owner");
+            const auto progress = windows::catalog_entry_progress(root,location,entry,empty);
+            check(progress.completed == 0 && progress.total == lesson.pages.size(),
+                "Opening a new course lesson manufactured page completion");
+            check(installed_lessons.insert(entry.id).second,"The new course indexed a lesson twice");
+            if (!first) { first = location; first->lesson = entry.id; }
+            ++opened;
+        }
+    }
+    // These published lessons stay reachable while later lessons may be added.
+    for (const auto id : {
+            "cpp_language_memory_oop__objetos_tamanos_y_limites__separar_valor_y_tamano",
+            "cpp_language_memory_oop__objetos_tamanos_y_limites__consultar_limites_y_evitar_desbordamientos",
+            "cpp_language_memory_oop__objetos_tamanos_y_limites__elegir_tipo_y_seguir_conversiones",
+            "cpp_language_memory_oop__referencias__fuentes_utilizadas"})
+        check(installed_lessons.contains(id),"A published new-course lesson disappeared or became unavailable");
+    const auto scope = windows::catalog_scope(root,course);
+    check(scope.courses == std::vector<std::string>{inserted->id} && scope.lessons == indexed_lessons &&
+        first && empty == before,"The new course lost its indexed scope or changed student state");
+
+    const auto previous_course = catalog_child(courses.location,previous->id);
+    const auto previous_units = windows::load_catalog(root,previous_course);
+    std::optional<CatalogLocation> last;
+    for (auto unit = previous_units.entries.rbegin(); unit != previous_units.entries.rend() && !last; ++unit) {
+        if (!unit->available) continue;
+        const auto location = catalog_child(previous_course,unit->id);
+        const auto lessons = windows::load_catalog(root,location);
+        for (auto entry = lessons.entries.rbegin(); entry != lessons.entries.rend(); ++entry)
+            if (entry->available) { last = location; last->lesson = entry->id; break; }
+    }
+    check(last.has_value(),"The preceding course lost its final installed lesson");
+    check(!windows::next_catalog_lesson(root,*last,true,false) &&
+        windows::next_catalog_lesson(root,*last,true,true) == first,
+        "Course continuation ignored its setting or skipped the newly inserted course");
+
+    // The old third course moved to a later ordinal. Its IDs, paths, stored
+    // completion and navigation keys remain the owners of the same data.
+    const auto shifted_location = catalog_child(courses.location,shifted->id);
+    const auto shifted_scope = windows::catalog_scope(root,shifted_location);
+    check(!shifted_scope.lessons.empty(),"The historical shifted course lost its lessons");
+    state::StateData saved;
+    const auto& lesson_id = shifted_scope.lessons.front();
+    saved.preferences["learning_progress"]["lesson_" + lesson_id + "_completed"] = true;
+    saved.preferences["cpp_lesson_drafts"]["programming/" + lesson_id + "/0/0/source"] = std::string("unchanged draft");
+    saved.preferences["narration_settings"]["voice"] = std::string("unchanged voice");
+    const auto snapshot = saved;
+    auto old_ordinal = *shifted; old_ordinal.number = 3;
+    check(old_ordinal.number != shifted->number,"The insertion fixture no longer shifts the historical course ordinal");
+    const auto old_progress = windows::catalog_entry_progress(root,courses.location,old_ordinal,saved);
+    const auto new_progress = windows::catalog_entry_progress(root,courses.location,*shifted,saved);
+    check(old_progress.completed == 1 && old_progress.total == shifted_scope.lessons.size() &&
+        new_progress.completed == old_progress.completed && new_progress.total == old_progress.total &&
+        catalog_position_key(catalog_child(courses.location,old_ordinal.id)) == catalog_position_key(shifted_location) &&
+        state::decode(state::encode(saved)) == snapshot && saved == snapshot,
+        "Changing only a course ordinal reassigned progress, navigation ownership or unrelated preferences");
+    std::cout << "PASS catalog growth: published IDs retained, " << opened
+        << " new-course lessons resolved, planned availability, ID-owned state and course continuation\n";
+}
+
 }
 int main() {
     using namespace lgaed;
@@ -365,8 +612,9 @@ int main() {
         const auto routes = windows::load_catalog(root,location);
         check(routes.entries.size() == 2 && routes.entries[0].id == "programming" && routes.entries[1].id == "math_physics","Real route order changed");
         location = catalog_child(location,"programming"); const auto courses = windows::load_catalog(root,location);
-        check(courses.entries.size() == 44 && courses.entries[0].id == "cpp_fundamentals" && courses.entries.back().number == 44,"Future indexed courses were hidden or reordered");
-        check(!courses.entries.back().available,"A future course was invented as available");
+        programming_catalog_preserves_published_ids(root,courses);
+        catalog_rejects_duplicate_and_unsafe_ids_without_inventing_availability();
+        inserted_course_resolves_real_content_and_keeps_id_owned_state(root,courses);
         location = catalog_child(location,"cpp_fundamentals"); const auto units = windows::load_catalog(root,location);
         check(units.entries.size() == 12 && units.entries[0].id == "cpp_fundamentals__programas_y_ejecucion","Native course lost its indexed units");
         location = catalog_child(location,units.entries[0].id); const auto lessons = windows::load_catalog(root,location);

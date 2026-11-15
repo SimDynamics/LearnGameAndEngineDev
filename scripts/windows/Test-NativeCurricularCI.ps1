@@ -87,7 +87,8 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_premium_windows_tests',
                 'lgaed_compiler_first_case_view_tests',
                 'lgaed_semantic_retirement_view_tests',
-                'lgaed_compiler_case_order_view_tests'
+                'lgaed_compiler_case_order_view_tests',
+                'lgaed_catalog_tests'
             )
             Results = 'reader-build'
         }
@@ -358,9 +359,9 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite target did not configure or compile." }
 
 if ($Suite -eq 'ReaderBuild') {
-    # The original reader/U6 executables are only compiled. The separate
-    # project-view executable exercises the real Win32 history dialog in
-    # an isolated QA directory; it does NOT grade any lesson or play audio.
+    # The original reader/U6 executables are only compiled. The focused
+    # catalog, compiler and Win32 regressions use isolated QA state and the
+    # exact authored/historical inputs; no reader/audio playback runs here.
     $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
         $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
         if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
@@ -377,19 +378,19 @@ if ($Suite -eq 'ReaderBuild') {
     $qaBuiltTargets | ConvertTo-Json |
         Set-Content -LiteralPath (Join-Path $qaBuild 'reader-build-results.json') -Encoding utf8
     $qaBuiltTargets | Format-Table -AutoSize | Out-String | Write-Host
-    # A focused registration cannot silently omit the UI regression.
+    # The exact focused registration must preserve all 25 existing tests and native.catalog.
     $qaUiListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused reader and catalog test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view')
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
-        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history and semantic retirement regressions.'
+        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement and catalog regressions.'
     }
     & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
-    if ($LASTEXITCODE -ne 0) { throw 'The native Win32 History, fullscreen editor viewport or focused U3 lesson regression failed.' }
-    Write-Host 'PASS original reader/U6 executables compiled and linked; actual Win32 History dialogs and focused published U3 lesson execution/reopen/reset tested. No reader/audio playback executed.'
+    if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
+    Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return
 }
 

@@ -12,12 +12,20 @@ on:
       - native/core/**
       - native/platform/windows/**
       - native/presentation/windows/**
+      # Catalog discovery and progress read indexed lessons in every course.
+      # Cover future course IDs without triggering on images or audio files.
+      - app/src/main/assets/content/**/courses.json
+      - app/src/main/assets/content/**/course_*.json
+      - app/src/main/assets/content/**/unit_*.json
+      - app/src/main/assets/content/**/lesson_*.json
       # These exact Python sources are executed by this workflow. Changes to
       # contract validation/tests must not skip Windows CI.
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_code_format_compat.py
       - scripts/curriculum/test_cmake_graph_checks.py
+      - scripts/curriculum/retirement_fixture_source.py
+      - scripts/curriculum/diagnostic_fixture_source.py
   workflow_dispatch:
 
 permissions:
@@ -29,7 +37,7 @@ concurrency:
 
 jobs:
   build:
-    name: Compile original readers and verify project history dialogs
+    name: Compile original readers and verify catalog and project history
     runs-on: windows-2025-vs2026
     timeout-minutes: 30
     defaults:
@@ -51,7 +59,7 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
       - name: Verify source-format revisions and matching Python-native line guards
         run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
-      - name: Compile readers and execute actual Win32 history dialog test
+      - name: Compile readers and execute catalog and actual Win32 regressions
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
       - name: Preserve configure and compilation results
         if: always()
