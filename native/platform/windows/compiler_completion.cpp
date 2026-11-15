@@ -488,7 +488,9 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
         if(!block.cmake||request.cmake!=block.cmake||
            !curriculum::open_battery_probe_spec_valid(authored)||
            request.cmake->target!=authored.test_target||
-           request.action!=CppRunRequest::Action::compile_run||
+           (request.action!=CppRunRequest::Action::compile_run&&
+            request.action!=CppRunRequest::Action::execute)||
+           !request.stdin_utf8.empty()||
            request.backend!=CppRunRequest::Backend::native_msvc||
            request.diagnostic||request.source_files!=block.source_files||
            request.project_files.size()!=block.project_files.size())

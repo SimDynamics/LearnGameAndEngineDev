@@ -1985,7 +1985,8 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(!valid){fresh.report_probe_correct=false;break;}
         }
     }
-    if(request.open_battery_probe&&result.open_battery_evidence) {
+    if(request.open_battery_probe&&request.stdin_utf8.empty()&&
+       result.open_battery_evidence) {
         const auto& evidence=*result.open_battery_evidence;
         const auto frame=fingerprint(request);
         fresh.open_battery_probe_correct=
@@ -2136,7 +2137,9 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
         std::stop_token stop) {
     if(!request.open_battery_probe||!request.cmake||
        request.backend!=CppRunRequest::Backend::native_msvc||
-       request.action!=CppRunRequest::Action::compile_run||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
+       !request.stdin_utf8.empty()||
        !result.compilation.succeeded()||!result.execution.succeeded()||
        !result.error_utf8.empty()||stop.stop_requested())return;
     const auto& spec=*request.open_battery_probe;
@@ -2157,6 +2160,8 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
             lib->second,spec.function_name,mutation,target);
         if(!source)return false;
         auto private_request=request;
+        // Even a public execute needs a fresh build of each private mutation.
+        private_request.action=CppRunRequest::Action::compile_run;
         private_request.open_battery_probe.reset(); // no nested probes
         private_request.named_rule_probe.reset();
         private_request.rejection_probe.reset();

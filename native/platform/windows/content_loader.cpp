@@ -4244,7 +4244,9 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
         runtime.open_battery_check=true;
         runtime.input_comparison=TextComparison::exact;
         OutputCase first;
-        first.standard_input=owner->standard_input.value_or("");
+        // This checker supplies its own cases and runs with empty input.
+        // Preserve the historical client input on the original editor.
+        first.standard_input.clear();
         first.executable=check.test_target;
         first.outputs={""}; // Independent mutation evidence, never stdout comparison.
         first.explanation="La batería comprobó sus casos anteriores y el nuevo "
