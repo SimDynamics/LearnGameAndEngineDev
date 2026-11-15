@@ -562,7 +562,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// include/assetcheck/estadisticas.hpp\n#pragma once\n#include \"assetcheck/lote.hpp\"\n\n#include <cstddef>\n#include <string>\n\nnamespace assetcheck {\n\nstruct Estadisticas {\n    std::size_t texturas = 0,\n                mallas = 0,\n                sonidos = 0;\n    int bytes_total = 0;\n};\n\nEstadisticas contar_tipos(const Lote& lote);\nstd::string salida_tipos(const Estadisticas& datos, const Lote& lote);\n\n}"
+          "code": "// include/assetcheck/estadisticas.hpp\n#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <cstddef>\n#include <string>\n\nnamespace assetcheck {\nstruct Estadisticas {\n    std::size_t texturas=0, mallas=0, sonidos=0;\n    int bytes_total=0;\n};\n\nEstadisticas contar_tipos(const Lote& lote);\nstd::string salida_tipos(const Estadisticas& datos, const Lote& lote);\n}"
         },
         {
           "type": "heading",
@@ -712,7 +712,7 @@
         {
           "type": "cpp_compiler",
           "language": "cpp",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\nstruct Registro {\n    std::string tipo;\n    int bytes;\n};\nstruct Totales {\n    int texturas = 0;\n    int mallas = 0;\n    int sonidos = 0;\n    int bytes = 0;\n};\n\n// Cada elemento del vector ya fue admitido. Completa sólo esta función.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    // Cuenta cada tipo exacto y suma bytes declarados.\n    return total;\n}\nint main() {\n    int grupos = 0;\n    if (!(std::cin >> grupos)) return 0;\n    for (int g=0; g<grupos; ++g) {\n        int cantidad = 0;\n        if (!(std::cin >> cantidad)) return 1;\n        std::vector<Registro> admitidos;\n        for (int i=0; i<cantidad; ++i) {\n            Registro r;\n            if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n            admitidos.push_back(r);\n        }\n        const Totales t = contar_tipos(admitidos);\n        std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n                  << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n    }\n}",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\n\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Cada elemento del vector ya fue admitido. Completa sólo esta función.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    // Cuenta cada tipo exacto y suma bytes declarados.\n    return total;\n}\n\nint main() {\n    int grupos=0;\n\n    if (!(std::cin >> grupos)) return 0;\n\n    for (int g=0; g<grupos; ++g) {\n        int cantidad=0;\n        if (!(std::cin >> cantidad)) return 1;\n        std::vector<Registro> admitidos;\n\n        for (int i=0; i<cantidad; ++i) {\n            Registro r;\n            if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n            admitidos.push_back(r);\n        }\n\n        const Totales t=contar_tipos(admitidos);\n\n        std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n                  << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n    }\n}",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -845,7 +845,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n\n    return total;\n}"
         },
         {
           "type": "heading",
@@ -1485,7 +1485,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// src/cliente_tipos.cpp (referencia del autor)\n#include \"assetcheck/estadisticas.hpp\"\n#include \"assetcheck/manifiesto.hpp\"\n#include <iostream>\n\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n\n    assetcheck::Lote lote;\n    assetcheck::ErrorGlobal error = assetcheck::ErrorGlobal::ninguno;\n\n    if (!assetcheck::revisar_archivo(argv[1], lote, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n\n    std::cout << assetcheck::salida_tipos(\n        assetcheck::contar_tipos(lote), lote);\n    std::cerr << assetcheck::salida_rechazos(lote);\n    return assetcheck::codigo_terminacion(error, lote);\n}"
+          "code": "// src/cliente_tipos.cpp (referencia del autor)\n#include \"assetcheck/estadisticas.hpp\"\n#include \"assetcheck/manifiesto.hpp\"\n#include <iostream>\n\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n\n    assetcheck::Lote lote;\n    assetcheck::ErrorGlobal error=assetcheck::ErrorGlobal::ninguno;\n\n    if (!assetcheck::revisar_archivo(argv[1], lote, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n\n    std::cout << assetcheck::salida_tipos(\n        assetcheck::contar_tipos(lote), lote);\n    std::cerr << assetcheck::salida_rechazos(lote);\n\n    return assetcheck::codigo_terminacion(error, lote);\n}"
         },
         {
           "type": "paragraph",
@@ -1900,7 +1900,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\nconst Estadisticas e=contar_tipos(lote);\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
+          "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\n\nconst Estadisticas e=contar_tipos(lote);\n\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
         },
         {
           "type": "paragraph",
@@ -1908,7 +1908,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia de U4L7 fue compilada con C++23 en Linux usando GCC 14.2 y Clang 17. En ambos se superaron seis suites CTest, incluidas las cuatro previas y las dos nuevas, y 22 comparaciones del módulo de estadísticas. No atribuyas estas pruebas a MSVC ni a un dispositivo Windows."
+          "text": "La referencia de U4L7 se comprobó con C++23 en Linux mediante GCC 14.2 y Clang 17, y después en GitHub Actions sobre Windows Server 2022 con MSVC 19.44. La validación Windows construyó ambos clientes y sus comprobadores y superó las seis suites CTest, incluidas 22 comparaciones de estadísticas y nueve escenarios del segundo cliente. Puedes consultar el resultado publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional/actions/runs/43654194345. Estas son pruebas de la referencia del autor: no acreditan una instalación desde cero ni las acciones manuales realizadas en el equipo del estudiante."
         },
         {
           "type": "multiple_choice",
@@ -1938,7 +1938,7 @@
         {
           "type": "code",
           "language": "cmake",
-          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\n\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\n\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\n\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
         }
       ]
     },
@@ -2033,7 +2033,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto educativo está previsto en E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck. En Visual Studio Developer PowerShell x64, verifica primero la presencia de MSVC, CMake y Ninja. Suponemos que los archivos del proyecto ya fueron creados mediante las lecciones; si la carpeta no existe, no se debe ejecutar la secuencia como si ya se hubiera integrado."
+          "text": "El proyecto educativo ya está publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional. Su carpeta de trabajo en Windows es E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional y AssetCheck es una subcarpeta. En Visual Studio Developer PowerShell x64 comprueba primero las rutas y versiones de MSVC, CMake y Ninja. Las órdenes siguientes suponen que has creado o incorporado los archivos mediante las lecciones anteriores; no ejecutes la construcción sobre una carpeta inexistente o una caché ajena."
         },
         {
           "type": "code",
@@ -2051,7 +2051,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para esta muestra, ambos códigos esperados son 1 por cuatro rechazos locales, no por un fallo de compilación. Las redirecciones guardan cada canal por separado dentro de build, que no se publica. Todavía faltan ejecución, capturas y comparación reales en Windows."
+          "text": "Para esta muestra, ambos códigos esperados son 1 porque hay cuatro rechazos locales, no por un fallo de compilación. Las redirecciones guardan stdout y stderr por separado dentro de build, una carpeta que no se publica. La referencia del autor ya pasó seis suites CTest en Windows Server 2022 con MSVC 19.44. Todavía se deben ejecutar y documentar las acciones correspondientes en el Windows local del estudiante, con capturas reales de las herramientas y resultados; el registro de GitHub Actions no reemplaza esas capturas."
         },
         {
           "type": "multiple_choice",
@@ -2118,7 +2118,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La carpeta de AssetCheck es un repositorio educativo independiente del principal. Un archivo .gitignore excluye build/, build-*/, out/, .vs/, binarios .exe/.obj/.pdb y archivos .env. Versiona CMakeLists.txt, include/, src/, pruebas/, muestras/ con datos ficticios, README.md y docs/. Nunca publiques credenciales, modelos, cachés o datos personales."
+          "text": "El repositorio educativo de Programación 2 ya existe y se llama SimDynamics/02_construccion_depuracion_y_practica_profesional. AssetCheck es una subcarpeta dentro de ese repositorio, no otro repositorio independiente. El archivo .gitignore de la raíz excluye carpetas build/, build-*/, out/, .vs/, binarios generados .exe/.obj/.pdb y archivos .env. Versiona CMakeLists.txt, include/, src/, pruebas/, muestras/ con datos ficticios, README.md y docs/. Nunca publiques credenciales, modelos, cachés o información personal."
         },
         {
           "type": "code",
@@ -2127,7 +2127,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba si el proyecto ya es repositorio Git. Si existe .git y un historial, consérvalo; no inicialices ni fuerces otra rama. Sólo si el directorio aún no es repositorio, git init -b main establece una rama inicial. La documentación oficial de Git explica esta opción en https://git-scm.com/docs/git-init."
+          "text": "Antes de preparar una publicación, comprueba con Git la raíz del proyecto, la rama, el historial y la dirección de origin. En este proyecto, .git ya existe en E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional; Git también lo reconoce al ejecutar órdenes desde AssetCheck. No ejecutes git init, no crees un .git dentro de AssetCheck y no sustituyas origin a ciegas. La documentación oficial de Git permite consultar estas operaciones en https://git-scm.com/docs/git-status y https://git-scm.com/docs/git-remote."
         },
         {
           "type": "code",
@@ -2157,11 +2157,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Crear y comprobar el repositorio educativo en GitHub"
+          "text": "Verificar y actualizar el repositorio educativo existente"
         },
         {
           "type": "paragraph",
-          "text": "En GitHub, usa New repository para crear un repositorio vacío en tu cuenta con un nombre propio de AssetCheck. Si el proyecto local ya tiene README y .gitignore, no es necesario que el formulario cree otros archivos iniciales. Copia la URL HTTPS real del botón Code; no inventes una dirección ni escribas contraseñas en los comandos."
+          "text": "El repositorio de Programación 2 ya está creado y publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional. Comprueba que origin apunte a esa dirección y que la rama local sea la prevista antes de publicar cambios. No uses «New repository» ni crees otro repositorio para AssetCheck, sus pruebas, su variante o las etapas futuras. El bloque siguiente muestra operaciones generales de Git: la orden que agrega origin sólo procede cuando falta ese remoto, por lo que NO debes ejecutarla si origin ya existe. No escribas contraseñas ni tokens en los comandos."
         },
         {
           "type": "code",
@@ -2170,7 +2170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si la rama actual no es main, inspecciona su relación con el remoto antes de publicar; no fuerces una sustitución. Después del push, abre el repositorio y contrasta que contenga fuentes, muestras ficticias, pruebas y documentación, sin build/ ni secretos. El proyecto es independiente de los botones de Git de LearnGameAndEngineDev."
+          "text": "En este proyecto, conserva la rama main y el remoto origin que ya apunta al repositorio educativo existente. Publica sólo cambios propios, verificados y preparados para el commit; no ejecutes el commit de ejemplo sin comprobar antes los archivos realmente seleccionados. Después de publicar, contrasta en GitHub que estén los fuentes, las muestras ficticias, las pruebas y los documentos, sin build/, binarios ni secretos. La integración del proyecto es independiente de los botones de Git del repositorio principal LearnGameAndEngineDev."
         },
         {
           "type": "paragraph",
@@ -2303,7 +2303,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La presentación final debe explicar problema, usuario, decisiones, funcionamiento del lector, variante personal, tecnologías, pruebas y resultados reales, límites y enlaces al repositorio. Un resumen de CV podrá mencionar C++23, CMake y CTest cuando estén verificados; no debe atribuir al estudiante el trabajo del autor ni declarar ejecutado un entorno Windows que aún no se comprobó."
+          "text": "La presentación final debe explicar problema, usuario, decisiones, funcionamiento del lector, variante personal, tecnologías, pruebas y resultados reales, límites y enlaces al repositorio. La referencia del autor ya acredita C++23, CMake y CTest mediante seis suites aprobadas con MSVC en Windows Server 2022; esos resultados no acreditan una ejecución en el equipo del estudiante ni su autoría. Un resumen de CV sólo podrá atribuirle las capacidades y la variante que él realmente construya y compruebe."
         },
         {
           "type": "code",
@@ -2312,11 +2312,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia U4L7 fue comprobada en Linux mediante GCC 14.2 y Clang 17 con seis suites CTest correctas en cada entorno. Sigue pendiente integrar y verificar el proyecto educativo en Windows, documentar sus capturas y publicar el repositorio propio con la aportación del estudiante. El curso no se considera concluido por disponer de esta lección."
+          "text": "La referencia U4L7 ya fue compilada y comprobada con GCC 14.2 y Clang 17 en Linux y con MSVC 19.44 en Windows Server 2022. Las seis suites CTest superaron la validación automatizada del commit publicado 6e4dae1f en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional. Permanecen pendientes la reproducción y las capturas en el Windows local del estudiante, su variante autónoma y sus pruebas, y la presentación del portafolio con la autoría real. El curso no se considera concluido por disponer de esta referencia."
         },
         {
           "type": "note",
-          "text": "Mantener abiertos U4L3 (reconstrucción y capturas), U4L4–U4L7 (integración y evidencia de Windows), la comprobación del proyecto personal y su repositorio GitHub. El usuario realizará la revisión visual y de audio durante el estudio. No borrar estos pendientes por los resultados de Linux."
+          "text": "Mantener abiertos U4L3 (recorrido de herramientas y capturas), las comprobaciones y capturas manuales de U4L4–U4L7 en Windows local, la construcción y evaluación de una variante propia y su presentación en el repositorio existente. Las seis suites CTest de la referencia ya se verificaron en Windows Server 2022, pero no acreditan esas tareas ni la autoría del estudiante. La revisión visual y de audio cotidiana continúa durante el estudio. No cerrar los pendientes restantes por disponer de la referencia compilada."
         },
         {
           "type": "multiple_choice",
@@ -2995,30 +2995,6 @@
         "spans": []
       },
       {
-        "block": "block_0006_0003",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "c26beb418db45674099f9d689f3bb1251a5bf4f3fbac43fcb067f310ca7ecc6a",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0003",
-        "path": "/outputCheck/cases/1/explanation",
-        "sourceSha256": "98fc6872a66bda700a2d20d863d7409314c72dc68466d9fbf0594ce1ecae9294",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0003",
-        "path": "/outputCheck/cases/2/explanation",
-        "sourceSha256": "febb45d8562a874ce4851f5dcba7d50c35bf68a4d39a8b40f56b433c4d186af5",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0003",
-        "path": "/outputCheck/cases/3/explanation",
-        "sourceSha256": "25beb9cd9974be097b2ad62d1b985e663c4241046bd0890637f7aef5948a7933",
-        "spans": []
-      },
-      {
         "block": "block_0006_0004",
         "path": "/text",
         "sourceSha256": "ef7721f1206fbeff0a10e5f27efa812324051469212f5b9a6388f057b1d43c3f",
@@ -3392,12 +3368,6 @@
         ]
       },
       {
-        "block": "block_0010_0004",
-        "path": "/text",
-        "sourceSha256": "2e57e62c1be30cdc2eaff4c68b39f56d4d637e383f3d64d009a1cec17ee2c939",
-        "spans": []
-      },
-      {
         "block": "block_0010_0005",
         "path": "/question",
         "sourceSha256": "4a4378eba0f9f230502db1d1783e6bad351e8ff370e208ed5277ad72e8466b4e",
@@ -3542,21 +3512,9 @@
         "spans": []
       },
       {
-        "block": "block_0012_0001",
-        "path": "/text",
-        "sourceSha256": "443981e4870d6ddc6b8a75277b01fc0b59c9f7980b4a018edd78aab1ba1deb81",
-        "spans": []
-      },
-      {
         "block": "block_0012_0003",
         "path": "/text",
         "sourceSha256": "14d348bd600e6cd5e3d8318187e42fbf8a349e021d419c7a2be1bc4690e9c5d9",
-        "spans": []
-      },
-      {
-        "block": "block_0012_0005",
-        "path": "/text",
-        "sourceSha256": "329c0e5d31c0de0647ad69729b2ef9c891c57c9fdf99b94b530e4c20b40af52e",
         "spans": []
       },
       {
@@ -3716,18 +3674,6 @@
         "spans": []
       },
       {
-        "block": "block_0014_0001",
-        "path": "/text",
-        "sourceSha256": "6d3e0d99898a90e998d9fd07cc649a68577ab4dbf713f7f87908a346325eaf8f",
-        "spans": []
-      },
-      {
-        "block": "block_0014_0003",
-        "path": "/text",
-        "sourceSha256": "25844c2209207f4a38ded0805e6e3ffaa864414f6f840abe66ad920a2987345f",
-        "spans": []
-      },
-      {
         "block": "block_0014_0005",
         "path": "/question",
         "sourceSha256": "ea16cda8f072c6f9eb1f1a8ead39e32a25b66b18a98171652471138ed8d8fe6a",
@@ -3773,24 +3719,6 @@
         "block": "block_0014_0005",
         "path": "/reviewFeedback/2",
         "sourceSha256": "cb93a852cc239108964706d2bdcaf4c6179850f04b02b5fba0047c3dedb52749",
-        "spans": []
-      },
-      {
-        "block": "block_0015_0000",
-        "path": "/text",
-        "sourceSha256": "0cf984ccd34c940a4f15d95dbf14999cd9e80eb43e6b056d8a96d18ead8e086a",
-        "spans": []
-      },
-      {
-        "block": "block_0015_0001",
-        "path": "/text",
-        "sourceSha256": "0fa8f8bdefeffcb282328f61c5a06714bd6ced575e038b48d825c2c0b9d157ac",
-        "spans": []
-      },
-      {
-        "block": "block_0015_0003",
-        "path": "/text",
-        "sourceSha256": "548bac1c37981833de059db0a332e367b196b7e94980840097cb7207bd6d08ae",
         "spans": []
       },
       {
@@ -4018,24 +3946,6 @@
         "block": "block_0017_0000",
         "path": "/text",
         "sourceSha256": "1b534c23d8a49c53cb916f270c7e1e4bf32b66dfd4dff8abcfe32d87004a8629",
-        "spans": []
-      },
-      {
-        "block": "block_0017_0001",
-        "path": "/text",
-        "sourceSha256": "2e2bedc9f8ac99649e019d2cb21cec87efe901076b307ea0eb437d5532beb6ec",
-        "spans": []
-      },
-      {
-        "block": "block_0017_0003",
-        "path": "/text",
-        "sourceSha256": "27f31f482d7cf1e9743fb6c9ffc5987fed578b89651d761c0fd13286f5e370ea",
-        "spans": []
-      },
-      {
-        "block": "block_0017_0004",
-        "path": "/text",
-        "sourceSha256": "699b359201bb1cc2a0f4ea0ddcae6bc628853ad1272965e11c719afb0a385391",
         "spans": []
       },
       {
@@ -5151,6 +5061,96 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "c26beb418db45674099f9d689f3bb1251a5bf4f3fbac43fcb067f310ca7ecc6a",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "98fc6872a66bda700a2d20d863d7409314c72dc68466d9fbf0594ce1ecae9294",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "febb45d8562a874ce4851f5dcba7d50c35bf68a4d39a8b40f56b433c4d186af5",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "25beb9cd9974be097b2ad62d1b985e663c4241046bd0890637f7aef5948a7933",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/text",
+        "sourceSha256": "1ce77186b69ccff7607a4a2b87975a02341176e49fda830fb261284a9ecb38ce",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0001",
+        "path": "/text",
+        "sourceSha256": "1161bc15257c633144e35c38fe9ff1f023f3a84292a711687c5bc4da68dcfc6b",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0005",
+        "path": "/text",
+        "sourceSha256": "7445a747d48d84c3afd14b5b187f09f2e5d398b492a9065b9f2a593158d4c6b6",
+        "spans": []
+      },
+      {
+        "block": "block_0014_0001",
+        "path": "/text",
+        "sourceSha256": "59eb39f47a95c9e3e0c0fb8d14714ff7b8df425ea78e6186e510dfa887bd205f",
+        "spans": []
+      },
+      {
+        "block": "block_0014_0003",
+        "path": "/text",
+        "sourceSha256": "ac63136c4d7b3850bf9a59a05913614789c59b57bf9e5dc41d91cefb83149dca",
+        "spans": []
+      },
+      {
+        "block": "block_0015_0000",
+        "path": "/text",
+        "sourceSha256": "66565a00d0adb933030794e437bab6970e2ea1db36dd39b2ab81c45cda29f715",
+        "spans": []
+      },
+      {
+        "block": "block_0015_0001",
+        "path": "/text",
+        "sourceSha256": "55e631f9dca9ddd37f6e1f4f5b9a198ea48618889abe2048996647e03b9c173e",
+        "spans": []
+      },
+      {
+        "block": "block_0015_0003",
+        "path": "/text",
+        "sourceSha256": "532e79c0071f8bfdd4f23482657fc2f506223d5f55d38f3888692726c321ff1d",
+        "spans": []
+      },
+      {
+        "block": "block_0017_0001",
+        "path": "/text",
+        "sourceSha256": "2757d17393fd6ebdfd112f976d9eda45db2cbd8cc939e790faf09199e20d8123",
+        "spans": []
+      },
+      {
+        "block": "block_0017_0003",
+        "path": "/text",
+        "sourceSha256": "2694fb01ca64c877b1986b475e2f3cff138a2c51eba4e80db4e2a549aec6cf23",
+        "spans": []
+      },
+      {
+        "block": "block_0017_0004",
+        "path": "/text",
+        "sourceSha256": "651de9a10d423188c8f882166bd8f3753153b1d0f05508999f367af24d963935",
+        "spans": []
       }
     ],
     "rootFields": [
@@ -8926,6 +8926,96 @@
         "afterSha256": "64962eb5b3ccbd3ac02462810ba412909290d70e24b31b2f3fd54917daa7de70"
       },
       {
+        "id": "block_0006_0004",
+        "beforeSha256": "37f305db0f3fbf33c92bab59b57685e20643f0dfa8639f22305c92b744200b3a",
+        "afterSha256": "b4be2b2130cc4e859943671a79002326f7fa93eabc218b73a06e0fe1532690ec"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "aacad5d34890e73b0617866e5d5321f8d5a59c01636b8f5664116d7f92ce1314",
+        "afterSha256": "9f916c1fb67892158db24caa4b201cad2dd41d4c7a73161950bc3c57b600e1ff"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "854bb47d3466dc7e4d5d809fadd905f274b80283f33a03a2b39bb73d1858ad63",
+        "afterSha256": "d959b602fbc7b0294243baf39240074de44f623dfe42a5795c6a3539160f5336"
+      },
+      {
+        "id": "block_0012_0005",
+        "beforeSha256": "7edd6b095d579e429c7facecc2e1f16237c5bf405ea68a97f367c057c0d72aca",
+        "afterSha256": "99bfe4f74df09dbf63e075c2fc56868d381339596b9be617581acbb24a6a93a7"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "eef8b81be85e45ec8055b6c62fff405e54eaa41be4c8bb37d22a14d8111fac1b",
+        "afterSha256": "71949112822b1f10e98e60acd9680ffffd85b7d951b75095034d97c66700563c"
+      },
+      {
+        "id": "block_0014_0003",
+        "beforeSha256": "ccb0ea8d91e1c0ec9ddde7bc9eb32e40adde3d9ed37083bf4e929048a0ac143c",
+        "afterSha256": "e5db851202195f2be3a718f199d483b83cd2a24bc186d8ee7a1f53552b282bcb"
+      },
+      {
+        "id": "block_0015_0000",
+        "beforeSha256": "787059c9663e221acefff06f68086141343ab50124f1647d8cbba6fde5c76fc2",
+        "afterSha256": "44a905318bc134ef79f9f0d88c587fb9b49c6e46a52ae898165af6323eeb05be"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "e2dfea7ed920673b73a85bebef4a17de597e4623b6a7aa0e8b701c7159663bd5",
+        "afterSha256": "ec1a4290bffe4c2b4da8b9156661ca15084a7d3ffa980ae0484a614f4881872d"
+      },
+      {
+        "id": "block_0015_0003",
+        "beforeSha256": "3871d937080172e34dd068c2d79739387600588c5b21845d5475cdf87294fda2",
+        "afterSha256": "8dd922a59983dd37944e3dc2c40cb36fdf5a4afc65386bb8a1ca76f1fa4f7357"
+      },
+      {
+        "id": "block_0017_0001",
+        "beforeSha256": "79561535aaa34d6934b46e252c817ecdb8606a505d66bd005f2fd40d2477b1af",
+        "afterSha256": "9d5458a90aa64fcd5cb113e577366a0ccc46e95638fdf83686819259d24d95ab"
+      },
+      {
+        "id": "block_0017_0003",
+        "beforeSha256": "a7e9741baa865fe546599fd74029252a40db385191fcf50270b28929f4bcd959",
+        "afterSha256": "5609ab2ed5131b874b2d46980ba4adeebe1bf4d519be156b8a39fb526fe85d6f"
+      },
+      {
+        "id": "block_0017_0004",
+        "beforeSha256": "df5974b70554d5dec31d43fd174b86da652e1d90687b7b4a1a4b524c62fe79a5",
+        "afterSha256": "51f3959c52c1ed38789e01cc447909cc489975833a21c34477af178538421895"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "c82fd37c3ded99ed44aafb2b757fd07c590def117e3ca8bc04d807fc722213ec",
+        "afterSha256": "cef75263a06b32755459f68748ed1234e9cd9ff7dd2462b90f9ffef04b971d0b"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "2e17e5769a4c3cc899376dde108d56475755f12cb4767b268e88e360cdbe7b58",
+        "afterSha256": "448df8971d5b75e9974163bd4dd173bce04abb1f226f3019aa90df50efa4b63a"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "0740906acc170c36380e1b006fdae4b646fbff120a58d27083baa76d94f772b8",
+        "afterSha256": "e5fe04d9b81d182aa46308d5ac4c689a0081a60d7534a5d396c6545796ba9533"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "fa0460ffd2c3b2296de310bd6ad697e6d79ae4471a2102f8f4bae7cdaa683174",
+        "afterSha256": "f0597637ed510714994da5b1ba71f54a865f8bb488655cb63376536fc6dfa7c3"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "1a91999ea659f1ee06489796cee2eb4581e17045d9487e01302359b8db38bf11",
+        "afterSha256": "c1fc187f5850134bbddf9a3de9c9d5140e4ab765d95913d0609727c3d0733982"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "9a0ba6ae204ee476ac45421227e48b5d58f2f7ee8c9f458138c33cd09462223f",
+        "afterSha256": "6143bbf7932975c92c9144d6e21ea7b46212b2b425942933672e14d83c594e7c"
+      },
+      {
         "id": "block_0000_0001",
         "beforeSha256": "d752eb4d307bd6e3b917f0329d09bff573af5a21f857e9d1cfd182b0860f762c",
         "afterSha256": "93e690e36c263de5143905b3ad091a196256945a9d8f6ed5f9dfac02d62e450a"
@@ -8986,11 +9076,6 @@
         "afterSha256": "75b09cc3aaab1bc13d5afdf1f0adf313806fb71942f1ee79ab7a6cc3cce79f1f"
       },
       {
-        "id": "block_0005_0002",
-        "beforeSha256": "c82fd37c3ded99ed44aafb2b757fd07c590def117e3ca8bc04d807fc722213ec",
-        "afterSha256": "c6a64ad63af0052b7388e4019106e952fc0b71fd3f9fa063b5625ed208a16f85"
-      },
-      {
         "id": "block_0005_0003",
         "beforeSha256": "3eb525f042d1eeefe95b39377d6877e75b6f8fe5030288a3311504447a9ed716",
         "afterSha256": "c4b75bd85bf7430506775bc55cf0f7100e597a58c395bc6ad97646dcd028aa68"
@@ -9006,14 +9091,9 @@
         "afterSha256": "4d0487e4f56e5dbf33f509871005e9ae559baba545f5e503b94a802a6a39b8c8"
       },
       {
-        "id": "block_0006_0003",
-        "beforeSha256": "2e17e5769a4c3cc899376dde108d56475755f12cb4767b268e88e360cdbe7b58",
-        "afterSha256": "895db067ed37dc07186f3680d616a4400348a53680322f20953a5c71c8e2cb65"
-      },
-      {
         "id": "block_0006_0004",
-        "beforeSha256": "37f305db0f3fbf33c92bab59b57685e20643f0dfa8639f22305c92b744200b3a",
-        "afterSha256": "0c1c654c05cdddffb567d9b3a8c829e6c212cb6c01614b8c61d5a281d742be20"
+        "beforeSha256": "b4be2b2130cc4e859943671a79002326f7fa93eabc218b73a06e0fe1532690ec",
+        "afterSha256": "bc89c48d24969c5fdeb26d9d41549a7405c44460ccefe5b79b10b28e22d0688a"
       },
       {
         "id": "block_0007_0001",
@@ -9024,11 +9104,6 @@
         "id": "block_0007_0003",
         "beforeSha256": "3efe345094972947ad398e729f02d81630efa23c07a84e2c5f5fb871add60000",
         "afterSha256": "9406580564abc99ca40a0e363694b606ae0f0536e8e42a1ce3bbd60e9dd363bc"
-      },
-      {
-        "id": "block_0006_0004",
-        "beforeSha256": "0c1c654c05cdddffb567d9b3a8c829e6c212cb6c01614b8c61d5a281d742be20",
-        "afterSha256": "bc89c48d24969c5fdeb26d9d41549a7405c44460ccefe5b79b10b28e22d0688a"
       },
       {
         "id": "block_0008_0001",
@@ -9051,19 +9126,14 @@
         "afterSha256": "966899cdc9c61cda75d43091dfc2dafaf4199eaeebe53128a2ebd7973e35206d"
       },
       {
-        "id": "block_0009_0002",
-        "beforeSha256": "1a91999ea659f1ee06489796cee2eb4581e17045d9487e01302359b8db38bf11",
-        "afterSha256": "d49cef00d2e60463101695d357fcf0b88a6f71266d04bbc45367faee1553e157"
+        "id": "block_0009_0001",
+        "beforeSha256": "966899cdc9c61cda75d43091dfc2dafaf4199eaeebe53128a2ebd7973e35206d",
+        "afterSha256": "5cc0140690dbe6418113191fc54315c6fd73911b84423e17abf574cc4859b96e"
       },
       {
         "id": "block_0009_0003",
         "beforeSha256": "68e3a2488737c9e3df23b6794ac31ffadad35cc9fd08901296f424b6d38bc027",
         "afterSha256": "200cce5d02037eab3e3a5d1d1d904405da8669d7279b23bf39f41b50bab29df5"
-      },
-      {
-        "id": "block_0009_0001",
-        "beforeSha256": "966899cdc9c61cda75d43091dfc2dafaf4199eaeebe53128a2ebd7973e35206d",
-        "afterSha256": "5cc0140690dbe6418113191fc54315c6fd73911b84423e17abf574cc4859b96e"
       }
     ],
     "sourceFormatRevisions": [
@@ -9117,11 +9187,35 @@
         }
       },
       {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
+        }
+      },
+      {
         "id": "block_0009_0002",
         "block": {
           "type": "code",
           "language": "cpp",
           "code": "// src/cliente_tipos.cpp (referencia del autor)\n#include \"assetcheck/estadisticas.hpp\"\n#include \"assetcheck/manifiesto.hpp\"\n#include <iostream>\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote lote;\n    assetcheck::ErrorGlobal error=assetcheck::ErrorGlobal::ninguno;\n    if (!assetcheck::revisar_archivo(argv[1], lote, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_tipos(\n        assetcheck::contar_tipos(lote), lote);\n    std::cerr << assetcheck::salida_rechazos(lote);\n    return assetcheck::codigo_terminacion(error, lote);\n}"
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lote lote;\nprocesar_linea(\"A malla 2\", 1, lote);\nprocesar_linea(\"B sonido 7\", 2, lote);\nprocesar_linea(\"A sonido 9\", 3, lote); // Duplicado.\nconst Estadisticas e=contar_tipos(lote);\n// Expectativas fijadas antes de ejecutar:\ncomprobar(e.mallas == 1, \"Malla admitida\");\ncomprobar(e.sonidos == 1, \"Sonido admitido\");\ncomprobar(e.bytes_total == 9, \"2+7, sin duplicado\");"
         }
       }
     ]
