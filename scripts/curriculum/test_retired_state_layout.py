@@ -121,10 +121,36 @@ class RetiredStateLayoutTest(unittest.TestCase):
             before, after = source(filename), integrated_source(filename)
             intermediate = first_retired_source(filename)
             original = deepcopy(after)
-            # Two separately published archives must be checked through their
-            # actual intermediate reading layout, never merged into one step.
-            layout.validate_transition(before, intermediate)
-            layout.validate_transition(intermediate, after)
+            # Published legacy snapshots remain untouched. Rehearse each
+            # complete transition separately with today's authenticated capture,
+            # and compare its entire presentation with the historical snapshot.
+            def check_published_stage(previous, published):
+                layout.validate(previous)
+                layout.validate(published)
+                old_history = previous["stateLayout"].get("retirementHistory", [])
+                history = published["stateLayout"].get("retirementHistory", [])
+                if len(history) == len(old_history):
+                    layout.validate_transition(previous, published)
+                    return
+                self.assertEqual(len(old_history) + 1, len(history))
+                old_count = len(previous["stateLayout"].get("retired", []))
+                removing = [item["id"] for item in published["stateLayout"]["retired"][old_count:]]
+                rehearsal = layout.retire(previous, removing,
+                    activity_after=published.get("activityAfter", []),
+                    reference_after=published.get("referenceAfter", []),
+                    compiler_puzzles_required=published.get("compilerPuzzlesRequired", False))
+                captured = rehearsal["stateLayout"]["retirementHistory"][-1]
+                historical = history[-1]
+                self.assertLessEqual(set(historical), set(captured))
+                self.assertLessEqual(set(captured) - set(historical), {"editorialPrefix", "textSemantics"})
+                if "textSemantics" not in historical:
+                    self.assertIsNone(captured.get("textSemantics"))
+                self.assertEqual(historical, {key: captured[key] for key in historical})
+                proposal = deepcopy(published)
+                proposal["stateLayout"]["retirementHistory"][-1] = captured
+                layout.validate_transition(previous, proposal)
+            check_published_stage(before, intermediate)
+            check_published_stage(intermediate, after)
             self.assertEqual(original, after)
             self.assertTrue(after["compilerPuzzlesRequired"])
             for field in ("origin", "family", "additions"):
