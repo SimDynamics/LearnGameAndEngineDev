@@ -738,10 +738,11 @@ struct LessonView {
             GC_PAN_WITH_GUTTER | GC_PAN_WITH_INERTIA};
         SetGestureConfig(item,0,1,&pan,sizeof(pan));
     }
-    bool double_click_zoom(HWND item) {
+    bool double_click_zoom(HWND item,POINT point) {
         if(choice_labels.contains(item))return true;
         const bool display=std::ranges::any_of(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
         if(!display||!fullscreen_block)return false;
+        if(hits_text(item,point))return false;
         end_drag();
         if(const auto found=zoomed.find(item);found!=zoomed.end()){
             SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
@@ -4639,7 +4640,7 @@ LRESULT CALLBACK gesture_proc(HWND item,UINT message,WPARAM wparam,LPARAM lparam
         // current client before its first native caret is created.
         RECT client{};GetClientRect(item,&client);SendMessageW(item,WM_SIZE,SIZE_RESTORED,MAKELPARAM(client.right,client.bottom));
     }
-    if(message==WM_LBUTTONDBLCLK&&view->double_click_zoom(item))return 0;
+    if(message==WM_LBUTTONDBLCLK&&view->double_click_zoom(item,{GET_X_LPARAM(lparam),GET_Y_LPARAM(lparam)}))return 0;
     if(message==WM_KEYDOWN&&wparam==VK_ESCAPE&&navigate_lesson_back(view->window))return 0;
     if (message == WM_CONTEXTMENU) for (std::size_t index = 0; index < view->controls.size(); ++index) {
         if(view->controls[index].simulated_code==item){view->simulated_menu(index);return 0;}
