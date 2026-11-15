@@ -1,0 +1,1132 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__elegir_tipo_y_seguir_conversiones",
+  "title": "Elegir el tipo y seguir las conversiones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir un tipo a partir de los datos necesarios"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior consultaste los extremos de los tipos y evitaste operar fuera de rango. Ahora seguirás qué tipo utiliza una operación cuando lee valores de otros tipos. Primero identifica los datos que debe admitir el problema; después comprueba que el tipo elegido los representa. También debes estudiar los resultados intermedios, no sólo el valor que esperas guardar al final (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, una medición puede estar entre −30 y 30. Si tus dos candidatos son int y unsigned int, int permite representar todo ese intervalo. unsigned int no representa los negativos como valores negativos. Si otra aplicación sólo admite de 0 a 30, ambos tipos pueden representar esos datos; la elección también deberá tener en cuenta las operaciones que se harán con ellos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l3_elegir_por_dominio",
+          "question": "Debes conservar las mediciones de −30 a 30. Entre int y unsigned int, ¿qué elección mantiene todos esos valores?",
+          "options": [
+            "Cualquiera de los dos, porque ocupan el mismo espacio.",
+            "unsigned int, porque su máximo mayor también permite conservar los negativos.",
+            "int, porque representa los negativos necesarios y los demás valores del intervalo."
+          ],
+          "correctIndex": 2,
+          "explanation": "El intervalo solicitado incluye valores negativos. int los conserva. La igualdad de tamaños y un máximo mayor no hacen que unsigned int represente esos negativos."
+        },
+        {
+          "type": "paragraph",
+          "text": "No necesitas escoger siempre el tipo que ocupe menos bytes ni suponer que será más rápido por ese motivo. Empieza por representar correctamente los datos y las operaciones. Si más adelante necesitas reducir memoria o tiempo, habrá que medir el programa y comprobar que el cambio conserva su comportamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo del objeto y el tipo usado por la suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "En cajas + piezas, las expresiones situadas a cada lado de + son sus operandos. La suma lee los valores de cajas y piezas. Antes de sumarlos, C++ puede convertir esos valores a otro tipo para realizar la operación. Esa conversión no vuelve a declarar los objetos ni cambia lo que guardan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando ambos objetos tienen tipo short, sus valores se utilizan como int para esta suma. Esa conversión recibe el nombre de promoción entera. int puede representar todos los valores de short, por lo que la promoción conserva cada valor. La suma produce un int; los objetos originales siguen siendo short. auto deduce el tipo del resultado, que en este caso es int (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l3_suma_promovida",
+          "question": "Predice la salida exacta. Sigue la suma y después las dos variables originales.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    short cajas = 12;\n    short piezas = 7;\n    const auto suma = cajas + piezas;\n\n    std::cout << suma << \":\" << cajas << \":\" << piezas;\n    return 0;\n}\n",
+          "answers": [
+            "19:12:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los valores 12 y 7 se suman como int y producen 19. suma conserva ese resultado. cajas y piezas no se modifican: siguen guardando 12 y 7."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla de promoción identifica el tipo de la suma. Comprobar que sizeof(suma) coincide con sizeof(int) sólo compara tamaños; por sí solo no demostraría que dos tipos fueran el mismo. Ya viste que tipos distintos pueden ocupar igual número de bytes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Promover y guardar después son dos pasos distintos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    short cajas = 12;\n    short piezas = 7;\n    long total = cajas + piezas;\n\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sigue la inicialización de total en este orden:\nPrimero se leen 12 y 7 de los dos objetos short.\nEsos valores se utilizan como int para la suma.\nLa suma produce el int 19.\nEse resultado se convierte a long para inicializar total.\n\nEl tipo long del destino interviene después de calcular cajas + piezas. No cambia el tipo con el que se hizo esa suma (Prata, 2012)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u1l3_etapas_de_tipos",
+          "prompt": "Relaciona cada elemento del programa con su tipo y valor en la etapa indicada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "etapas",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "objetos",
+                  "label": "cajas y piezas: objetos originales"
+                },
+                {
+                  "id": "lectura",
+                  "label": "Valores que se usan en cajas + piezas"
+                },
+                {
+                  "id": "suma",
+                  "label": "Resultado de cajas + piezas antes de inicializar total"
+                },
+                {
+                  "id": "destino",
+                  "label": "total después de la inicialización"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "long19",
+                  "label": "long con valor 19"
+                },
+                {
+                  "id": "int19",
+                  "label": "int con valor 19"
+                },
+                {
+                  "id": "shorts",
+                  "label": "short con valores 12 y 7; no cambian"
+                },
+                {
+                  "id": "ints",
+                  "label": "int con valores 12 y 7"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "objetos": "shorts",
+                  "lectura": "ints",
+                  "suma": "int19",
+                  "destino": "long19"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma utiliza int y después su resultado se convierte a long para inicializar total. Los dos objetos short conservan sus tipos y valores.",
+            "incorrect": "Separa los objetos de los valores utilizados por la suma. Después distingue el resultado int y la conversión que inicializa el destino long."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "El mismo orden importa si un cálculo puede quedar fuera de rango: elegir un destino con un rango suficiente no evita por sí solo que una operación anterior se haya realizado con otro tipo. Hay que decidir el tipo de los valores antes de esa operación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar el rango al ampliar el ejemplo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con unsigned short, la promoción depende de si int representa todos sus valores. Si los representa, se utiliza int. Si no, se utiliza unsigned int. El criterio es el rango completo del tipo de origen; no sólo el pequeño valor que tenga la variable en esa ejecución (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera dos implementaciones posibles:\nEn A, unsigned short llega hasta 65535 e int hasta 2147483647. Todos los valores de unsigned short caben en int.\nEn B, unsigned short llega hasta 65535, pero int sólo llega hasta 32767. Parte del rango de unsigned short queda fuera de int.\n\nPara la promoción, A utiliza int y B utiliza unsigned int, aunque el objeto unsigned short contenga el valor 3 en ambas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l3_promocion_depende_del_tipo",
+          "question": "En la implementación B, un unsigned short contiene 3 y participa en una suma con otro unsigned short. ¿Por qué se usa unsigned int después de promover?",
+          "options": [
+            "Porque int no representa todo el rango de unsigned short, aunque el valor actual 3 sí quepa.",
+            "Porque el valor actual 3 es demasiado grande para int en esa implementación.",
+            "Porque toda suma de tipos sin signo debe utilizar siempre unsigned int, sin consultar sus rangos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La promoción se decide para el tipo. B permite valores de unsigned short mayores que el máximo int. Por eso se utiliza unsigned int incluso si el valor concreto es pequeño."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir un operando antes de multiplicar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa debe multiplicar 30000 filas por 30000 columnas. Cada cantidad cabe en cualquier int conforme, pero su producto es 900000000. Un int cuyo máximo sea 32767 no representa ese producto. long garantiza un rango que incluye los positivos hasta 2147483647, así que puede representar este resultado. No hace falta suponer que long ocupe más bytes que int en todos los entornos (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera static_cast, que ya utilizaste para convertir antes de dividir. static_cast<long>(filas) obtiene el valor de filas convertido a long; filas sigue siendo un objeto int. En el producto, un operando será long y el otro int. Para esta pareja de tipos con signo, C++ utiliza long como tipo común: convierte también el valor leído de columnas y realiza la multiplicación como long (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l3_producto_con_tipo_elegido",
+          "question": "Predice la salida exacta. La comparación final comprueba si los dos objetos int conservan sus valores.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas = 30000;\n    int columnas = 30000;\n    const long total = static_cast<long>(filas) * columnas;\n\n    std::cout << total << \":\"\n              << (filas == 30000 && columnas == 30000);\n    return 0;\n}\n",
+          "answers": [
+            "900000000:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los operandos utilizados por la multiplicación son long. El producto 900000000 cabe en ese tipo. filas y columnas siguen guardando 30000, por lo que la comparación conjunta produce 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la pareja long e int, se utiliza long como tipo común aunque ambos ocupen el mismo número de bytes. Si int sólo llega hasta 32767, el producto 900000000 queda fuera de int. La conversión previa permite calcular el producto como long, en cuyo rango sí cabe."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l3_momento_del_cast",
+          "question": "Quieres que la multiplicación anterior se realice como long también en el entorno con int hasta 32767. ¿Qué instrucción lo consigue?",
+          "options": [
+            "long total = filas * columnas;",
+            "long total = static_cast<long>(filas * columnas);",
+            "long total = static_cast<long>(filas) * columnas;"
+          ],
+          "correctIndex": 2,
+          "explanation": "Convertir filas antes de multiplicar hace que el tipo común sea long. En las otras dos formas, filas * columnas se calcula primero como int; la conversión del resultado ocurre después y no evita una operación previa fuera de rango."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una comparación también puede convertir sus operandos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora estudia esta pareja concreta: un dato int y un límite unsigned int. Para compararlos con <, las reglas del lenguaje utilizan unsigned int como tipo común. Si dato contiene −1, el valor utilizado para comparar se convierte a unsigned int. Esa conversión produce el mayor unsigned int de la implementación. El objeto dato no cambia: sigue siendo int y guardando −1 (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int dato = -1;\nunsigned int limite = 2;\nbool resultado = dato < limite;\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de obtener el bool, se compara el valor convertido de dato con 2. Ese valor convertido es el máximo unsigned int y no es menor que 2. Por eso resultado queda en false, aunque el número matemático −1 sea menor que 2. dato conserva −1, pero la comparación utiliza el valor que se obtuvo al convertirlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla anterior corresponde a int con su tipo correspondiente unsigned int. Con otras parejas de tipos hay que estudiar las reglas que les correspondan; no basta con aplicar la frase «sin signo siempre tiene prioridad». En la siguiente práctica mantendremos exactamente esa pareja para seguir cada paso sin añadir otros casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El compilador puede advertir de una comparación entre tipos con signo y sin signo. Esa advertencia ayuda a localizar el riesgo de interpretar otros valores, pero no realiza por ti la validación ni cambia las reglas de la comparación. En el programa siguiente haremos visible la misma conversión mediante static_cast."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar el valor convertido y conservar el original"
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l3_negativo_convertido",
+          "question": "Predice la salida exacta. Primero se compara el valor convertido con su máximo, después con el límite 2, y al final se muestra el int original.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    int dato = -1;\n    unsigned int limite = 2;\n    const unsigned int convertido = static_cast<unsigned int>(dato);\n\n    std::cout << (convertido == std::numeric_limits<unsigned int>::max()) << \":\"\n              << (convertido < limite) << \":\"\n              << dato;\n    return 0;\n}\n",
+          "answers": [
+            "1:0:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Convertir −1 a unsigned int produce su máximo: la primera comparación da 1. Ese máximo no es menor que 2: la segunda da 0. dato no se asignó ni cambió de tipo y todavía muestra −1."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa no necesita fijar cuántos bytes ocupa unsigned int ni escribir su máximo a mano. numeric_limits consulta el máximo de la implementación. static_cast hace explícita la conversión; no incorpora una comprobación que rechace negativos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l3_cast_y_validacion",
+          "question": "Necesitas aceptar sólo cantidades no negativas y conservar su valor matemático al pasarlas de int a unsigned int. ¿Qué paso debe realizarse antes del cast?",
+          "options": [
+            "Convertir primero y comprobar después que el unsigned int resultante es mayor o igual que cero.",
+            "Comprobar el signo del int original y rechazar los negativos antes de convertir.",
+            "Comprobar únicamente si ambos tipos ocupan el mismo número de bytes."
+          ],
+          "correctIndex": 1,
+          "explanation": "El signo debe comprobarse mientras se conserva el valor int original. Después del cast, el resultado unsigned int ya es no negativo aunque proceda de un negativo. La igualdad de tamaños tampoco valida la conservación del valor matemático."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción: comparar los valores matemáticos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara sólo menor_valor en el editor de esta página. Recibe dato como int y limite como unsigned int. Debe indicar si el valor matemático de dato es estrictamente menor que el de limite. Por ejemplo, −1 es menor que 1, 4 es menor que 9 y 0 no es menor que 0. La función devuelve un bool y no debe cambiar los valores del llamador."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir, separa los dos casos:\nSi dato es negativo, es menor que cualquier valor posible de unsigned int, incluido cero.\nSi dato no es negativo, su valor cabe en el tipo correspondiente unsigned int. Puedes convertirlo sin cambiar ese valor matemático y comparar los dos valores sin signo.\n\nEstas dos decisiones permiten comparar lo solicitado conservando el significado de los números."
+        },
+        {
+          "type": "paragraph",
+          "text": "El main ya está escrito. Lee dos enteros y comprueba el dominio del editor:\ndato debe estar entre −30000 y 30000.\nEl límite leído debe estar entre 0 y 30000.\n\nTras validar ese segundo entero, lo convierte a unsigned int y llama a menor_valor. Conserva main y sus comprobaciones. La salida contiene Menor= seguido del bool y un salto de línea. El inicial convierte dato sin comprobar su signo; debes reparar esa decisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: -1 1\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Menor=1\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool menor_valor(int dato, unsigned int limite) {\n    return static_cast<unsigned int>(dato) < limite;\n}\n\nint main() {\n    int dato = 0;\n    int limite_leido = 0;\n    if (!(std::cin >> dato >> limite_leido)\n        || dato < -30000 || dato > 30000\n        || limite_leido < 0 || limite_leido > 30000) {\n        return 1;\n    }\n\n    const unsigned int limite = static_cast<unsigned int>(limite_leido);\n    std::cout << \"Menor=\" << menor_valor(dato, limite) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "-1 1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "-1 1\n",
+                "outputs": [
+                  "Menor=1\n"
+                ],
+                "explanation": "El int −1 representa un número menor que el límite 1. La función debe resolver ese caso antes de convertir el negativo."
+              },
+              {
+                "standardInput": "0 0\n",
+                "outputs": [
+                  "Menor=0\n"
+                ],
+                "explanation": "Ensayo opcional: hay igualdad y la comparación solicitada es estricta."
+              },
+              {
+                "standardInput": "4 9\n",
+                "outputs": [
+                  "Menor=1\n"
+                ],
+                "explanation": "Ensayo opcional: ambos datos son no negativos y 4 es menor que 9."
+              },
+              {
+                "standardInput": "9 4\n",
+                "outputs": [
+                  "Menor=0\n"
+                ],
+                "explanation": "Ensayo opcional: ambos datos son no negativos y 9 no es menor que 4."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 0 0\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Menor=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otro ensayo opcional:\nEntrada: 4 9\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Menor=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otro ensayo opcional:\nEntrada: 9 4\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Menor=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer acierto permite avanzar. Cada ensayo adicional es una ejecución independiente y opcional; recupera la igualdad o uno de los dos órdenes posibles entre datos no negativos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia que separa el signo y la comparación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool menor_valor(int dato, unsigned int limite) {\n    if (dato < 0) {\n        return true;\n    }\n\n    return static_cast<unsigned int>(dato) < limite;\n}\n\nint main() {\n    int dato = 0;\n    int limite_leido = 0;\n    if (!(std::cin >> dato >> limite_leido)\n        || dato < -30000 || dato > 30000\n        || limite_leido < 0 || limite_leido > 30000) {\n        return 1;\n    }\n\n    const unsigned int limite = static_cast<unsigned int>(limite_leido);\n    std::cout << \"Menor=\" << menor_valor(dato, limite) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función empieza consultando el signo del int. Si es negativo, retorna true porque cualquier unsigned int representa cero o un positivo. No necesita convertir ese negativo. Si no es negativo, el cast conserva su valor matemático y permite realizar la comparación entre dos unsigned int. Para 0 y 0 obtiene false; para 4 y 9, true; para 9 y 4, false."
+        },
+        {
+          "type": "paragraph",
+          "text": "El objetivo de esta función es comparar números. Por eso una entrada negativa puede producir true. Una operación que utilizara dato como posición de un elemento necesitaría además comprobar que esa posición está permitida. Esa validación del problema tiene un objetivo distinto de decidir cuál de dos números es menor."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l3_caso_que_descubre_defecto",
+          "question": "¿Por qué el primer caso −1 y 1 descubre el defecto del inicial, mientras que el caso 4 y 9 puede dar la salida correcta con ambas versiones?",
+          "options": [
+            "Convertir −1 cambia el valor usado en la comparación; convertir 4 a unsigned int conserva 4.",
+            "Toda conversión a unsigned int cambia cualquier número, incluido 4.",
+            "El caso 4 y 9 impide al compilador aplicar las conversiones de tipos."
+          ],
+          "correctIndex": 0,
+          "explanation": "El inicial convierte −1 a un máximo positivo y responde false al compararlo con 1. En cambio, el int no negativo 4 se convierte conservando 4 y sigue siendo menor que 9. Ese segundo caso no distingue las dos decisiones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la operación completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para revisar una expresión, sigue este orden:\nIdentifica el tipo y el valor de cada objeto que interviene.\nComprueba qué valores se leen y si deben convertirse para operar.\nDetermina el tipo con el que se realiza el cálculo o la comparación.\nComprueba que el resultado matemático cabe antes de ejecutar la operación.\nDistingue ese resultado de una conversión posterior para guardarlo.\n\nEn short + short, la suma utiliza int. En el producto preparado, convertir un operando a long decide el tipo común antes de multiplicar. En la comparación int con unsigned int, un negativo puede convertirse a otro valor antes de aplicar <."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conocer la conversión permite decidir si sirve para tu objetivo. Hacerla explícita documenta qué valor convertido se utiliza, pero no garantiza por sí solo conservar el valor matemático ni cumplir los requisitos. Para el proyecto de series de mediciones, habrá que representar también los valores negativos que admita cada dato y elegir el tipo de sus cálculos antes de realizarlos."
+        },
+        {
+          "type": "paragraph",
+          "text": "A continuación ampliaremos las operaciones enteras comprobadas: cómo decidir si una suma o un producto caben antes de ejecutarlos y cómo conservar el resultado anterior cuando se rechaza la operación."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "a9192b0dafec3fa856d8930176c83e8ac11555441d9a35fa6b5a86a71b533d2b"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "bfd03afdf82fd6f39ec0c2e25849d900cd7273e4455337488225de425bf14a67"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "0d304432e174d4094efc03915094a3eb5e587b458a244a3e1b9fbcb47be27c79"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "6ec4e1fdacf69c3bdcfa4e20ce6691c74e1d8ed9112a72d7a4f68291452b6b9c"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "9aa9f62b287dde899947ca033c3c4c3e64ca8bc406c8e574da673af9d9afe506"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "518b4cd980329256a077f40d7693d1aefaf7cb5b52e97978391826bbb594955b"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "ef390f7bd91e77e7ea564dbd39c226da948d343c3f338097725da884c617d35c"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "8980e9b4a6ef87297380c6b3c1f69549c5a0d503dc872f7397f4f5de5937b7a7"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "6d74aacd340e5d3861c8e812959280fde9f6f3ac11881d2e8705455fdfd03b21"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "a44bb8ca0ed3776001ba2ff53b3189bcd127aec98170d6f07070c328011987cc"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "e34eac39e8f3c3affdc4d318569a4becd177cd35634a2791dfe5b46fb25cdc48"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "9d338119560551fb409e88a33cced8289a20a3a78355063915b85bbbd263eead"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "a295c8a414020868af9bc1d85ba38a177e8eaed2ee9a1b53c638bb1b5859fdc8"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0010",
+            "sha256": "e34eac39e8f3c3affdc4d318569a4becd177cd35634a2791dfe5b46fb25cdc48"
+          },
+          {
+            "id": "block_0007_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0012",
+            "sha256": "a295c8a414020868af9bc1d85ba38a177e8eaed2ee9a1b53c638bb1b5859fdc8"
+          },
+          {
+            "id": "block_0007_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "e0ca619d46c57fed4f27670dca94a13dd8e615d1e83a7adaa73bc4750eac4c41"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "596e2eed2ecfc3a5fc85060e58c4e842acef3a774740e99a128f1167ef373cb6"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009",
+          "block_0007_0010",
+          "block_0007_0011",
+          "block_0007_0012",
+          "block_0007_0013"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "bc44ee1ca72ec52ab5f8462334308970f0e7d01572e8026aa9d40bb49df012f0",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "a9192b0dafec3fa856d8930176c83e8ac11555441d9a35fa6b5a86a71b533d2b"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "bfd03afdf82fd6f39ec0c2e25849d900cd7273e4455337488225de425bf14a67"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "0d304432e174d4094efc03915094a3eb5e587b458a244a3e1b9fbcb47be27c79"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "6ec4e1fdacf69c3bdcfa4e20ce6691c74e1d8ed9112a72d7a4f68291452b6b9c"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "9aa9f62b287dde899947ca033c3c4c3e64ca8bc406c8e574da673af9d9afe506"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "518b4cd980329256a077f40d7693d1aefaf7cb5b52e97978391826bbb594955b"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "ef390f7bd91e77e7ea564dbd39c226da948d343c3f338097725da884c617d35c"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "8980e9b4a6ef87297380c6b3c1f69549c5a0d503dc872f7397f4f5de5937b7a7"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "6d74aacd340e5d3861c8e812959280fde9f6f3ac11881d2e8705455fdfd03b21"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "a44bb8ca0ed3776001ba2ff53b3189bcd127aec98170d6f07070c328011987cc"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "e34eac39e8f3c3affdc4d318569a4becd177cd35634a2791dfe5b46fb25cdc48"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "9d338119560551fb409e88a33cced8289a20a3a78355063915b85bbbd263eead"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "a295c8a414020868af9bc1d85ba38a177e8eaed2ee9a1b53c638bb1b5859fdc8"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0010",
+                "sha256": "e34eac39e8f3c3affdc4d318569a4becd177cd35634a2791dfe5b46fb25cdc48"
+              },
+              {
+                "id": "block_0007_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0012",
+                "sha256": "a295c8a414020868af9bc1d85ba38a177e8eaed2ee9a1b53c638bb1b5859fdc8"
+              },
+              {
+                "id": "block_0007_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "e0ca619d46c57fed4f27670dca94a13dd8e615d1e83a7adaa73bc4750eac4c41"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "596e2eed2ecfc3a5fc85060e58c4e842acef3a774740e99a128f1167ef373cb6"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

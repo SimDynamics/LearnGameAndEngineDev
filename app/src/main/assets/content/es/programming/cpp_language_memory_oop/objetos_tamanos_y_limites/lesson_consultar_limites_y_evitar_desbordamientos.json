@@ -1,0 +1,957 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__consultar_limites_y_evitar_desbordamientos",
+  "title": "Consultar límites y comprobar antes de operar",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tamaño no responde qué valores caben"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior mediste objetos mediante sizeof. Ahora necesitamos resolver otra pregunta: ¿cuál es el menor y el mayor entero que puede guardar un tipo? Llamaremos rango del tipo al conjunto de valores que puede representar. Sus extremos inferior y superior están incluidos. int admite valores negativos, cero y valores positivos, pero no todos los enteros que podemos escribir en matemáticas (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El rango del tipo tampoco es el requisito de tu programa. Un formulario puede aceptar cantidades entre 0 y 120 aunque int permita representar muchas más. El dato 121 puede caber perfectamente en int y, aun así, incumplir el límite del formulario. Tienes que distinguir la capacidad del tipo y la condición del problema."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l2_tipo_y_regla",
+          "question": "Un formulario admite de 0 a 120. La implementación puede representar 121 como int. ¿Qué se puede concluir al recibir 121?",
+          "options": [
+            "Puede representarse como int, pero el formulario debe rechazarlo por su regla.",
+            "Desborda int porque cualquier valor rechazado por el formulario queda fuera del tipo.",
+            "Debe aceptarse: si cabe en int, cumple también las condiciones del formulario."
+          ],
+          "correctIndex": 0,
+          "explanation": "La representación y la aceptación son comprobaciones diferentes. 121 cabe en el tipo dado, pero supera 120, que es el máximo permitido por este formulario."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pedir los límites a la biblioteca"
+        },
+        {
+          "type": "paragraph",
+          "text": "Incluimos <limits> para disponer de consultas sobre las propiedades de los tipos numéricos. std::numeric_limits<int>::lowest() obtiene el menor int representable y std::numeric_limits<int>::max() obtiene el mayor. Ambas consultas devuelven valores de tipo int; podemos guardarlos en variables int y compararlos sin escribir a mano las cifras del entorno (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee la primera escritura por partes:\nstd:: indica que el nombre pertenece a la biblioteca estándar.\nnumeric_limits es el nombre de la descripción de propiedades numéricas.\n<int> elige la descripción correspondiente al tipo int; aquí los signos < y > no comparan cantidades.\n::lowest identifica la consulta dentro de esa descripción.\n() llama a la función sin proporcionarle argumentos.\n\nPara obtener el extremo superior, se conserva esa estructura y se utiliza max en lugar de lowest. No hace falta crear un objeto de esa descripción para llamar a estas funciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "La biblioteca ofrece esa descripción para varios tipos. Por ejemplo, std::numeric_limits<long>::max() pregunta por el mayor long. La parte escrita entre < y > selecciona el tipo que estás consultando. Ya has utilizado una selección de tipo parecida al escribir std::vector<int>; ahora eliges qué propiedades numéricas necesitas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para los tipos enteros, min() y lowest() devuelven el mismo extremo inferior. Usaremos lowest() para expresar claramente que buscamos el valor más bajo. La equivalencia anterior corresponde a enteros; no debe aplicarse automáticamente a las consultas sobre otros tipos numéricos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u1l2_consultas",
+          "language": "cpp",
+          "question": "Completa los nombres de las consultas para obtener el menor int y el mayor int, en ese orden. Escribe sólo los nombres, sin paréntesis.",
+          "template": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::[]();\n    const int superior = std::numeric_limits<int>::[]();\n    std::cout << (inferior <= 0 && 0 <= superior);\n    return 0;\n}\n",
+          "answers": [
+            "lowest",
+            "max"
+          ],
+          "answerAlternatives": [
+            [
+              "lowest",
+              "min"
+            ],
+            [
+              "max"
+            ]
+          ],
+          "explanation": "lowest() y, para int, también min() obtienen el extremo inferior. max() obtiene el superior. Las variables conservan los valores que informa la implementación; no son tamaños en bytes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar cifras concretas sin convertirlas en una regla universal"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nint main() {\n    const int inferior = std::numeric_limits<int>::lowest();\n    const int superior = std::numeric_limits<int>::max();\n\n    std::cout << \"MinimoInt=\" << inferior << '\\n';\n    std::cout << \"MaximoInt=\" << superior << '\\n';\n    std::cout << \"MaximoLong=\" << std::numeric_limits<long>::max() << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los compiladores Microsoft C++ habituales para Windows, int y long tienen el intervalo comprendido entre −2147483648 y 2147483647. Esa igualdad está documentada tanto para el compilador de 32 bits como para el de 64 bits. Elegir long en ese entorno no aumenta automáticamente el máximo respecto de int (Microsoft, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En ese entorno, el programa muestra:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "MinimoInt=-2147483648\nMaximoInt=2147483647\nMaximoLong=2147483647\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada rótulo identifica una consulta diferente. MinimoInt es el extremo inferior de int; MaximoInt, su extremo superior; MaximoLong, el extremo superior de long. Otro entorno puede proporcionar límites diferentes. Consultarlos permite que el código use los correspondientes al compilador y destino actuales, en vez de depender de las cifras de este ejemplo (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera <climits>, presentada al consultar CHAR_BIT, proporciona también INT_MIN e INT_MAX. Son macros para esos mismos extremos de int. Las siguientes igualdades relacionan las dos formas de consultar, sin fijar un número de bytes ni unas cifras concretas (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l2_acuerdo_de_consultas",
+          "question": "Predice la salida exacta. Las tres comparaciones deben seguir siendo válidas aunque int tenga otro rango permitido.",
+          "language": "cpp",
+          "code": "#include <climits>\n#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << (std::numeric_limits<int>::lowest() == INT_MIN) << \":\"\n              << (std::numeric_limits<int>::max() == INT_MAX) << \":\"\n              << (std::numeric_limits<unsigned int>::lowest() == 0);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "lowest() para int coincide con INT_MIN y max() coincide con INT_MAX. unsigned int no representa valores negativos y su extremo inferior es 0. Cada comparación es verdadera y cout la muestra como 1."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Con signo y sin signo no significan el mismo conjunto de valores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la diferencia que utilizaste con cantidades y tamaños: un tipo con signo, como int, permite representar valores negativos. Su correspondiente tipo sin signo, unsigned int, comienza en cero y permite llegar a un máximo mayor. Ambos ocupan el mismo espacio, pero distribuyen de forma diferente los valores que pueden representar. Por eso el tamaño no basta para identificar el rango (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para obtener el menor unsigned int se escribe std::numeric_limits<unsigned int>::lowest(). Para el mayor, std::numeric_limits<unsigned int>::max(). El nombre del tipo completo queda entre < y >. Si tu problema admite diferencias negativas, no puedes cambiar int por unsigned int sólo porque permita un máximo mayor: cambiarías qué valores se pueden representar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l2_dato_negativo",
+          "question": "Una medición puede valer −3, 0 o 7. ¿Qué criterio debes conservar al elegir el tipo que guarda esa medición?",
+          "options": [
+            "Elegir siempre el tipo sin signo porque sus valores ocupan menos bytes.",
+            "Comprobar sólo que el máximo del tipo alcance 7, sin revisar el extremo inferior.",
+            "Elegir un tipo que represente también los negativos necesarios y comprobar su rango."
+          ],
+          "correctIndex": 2,
+          "explanation": "El dato −3 forma parte del problema. unsigned int no lo representa como valor negativo. Un máximo mayor no compensa perder un valor necesario; el tamaño de unsigned int coincide con el de int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar antes de sumar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que valor ya contiene el mayor int representable. El resultado matemático de valor + 1 existe, pero no cabe en int. Una suma int cuyo resultado queda fuera de su rango tiene comportamiento indefinido: el lenguaje no garantiza una salida ni una forma de continuar. No puedes confiar en que vuelva al mínimo ni en que el programa se detenga con un mensaje (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comprobación debe ocurrir antes de la suma. El siguiente código compara valor == limite. Si coincide con el máximo, rechaza el incremento y conserva el valor. Si no coincide, valor es menor que el máximo: un int válido no puede estar por encima de ese extremo. En ese caso, el siguiente entero todavía cabe. La comparación no calcula valor + 1; sólo compara dos int que ya son representables."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool subir_uno(int& valor) {\n    const int limite = std::numeric_limits<int>::max();\n    if (valor == limite) {\n        return false;\n    }\n\n    ++valor;\n    return true;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "subir_uno recibe una referencia al int del llamador. Si éste ya está en el máximo, retorna false antes de ejecutar ++valor. En los demás casos incrementa una vez y retorna true. El bool informa de si realizó el cambio; la referencia permite comprobar qué valor conserva el mismo objeto después de la llamada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l2_momento_de_control",
+          "question": "Quieres impedir una suma int fuera de rango. ¿Qué procedimiento verifica el límite en el momento correcto?",
+          "options": [
+            "Calcular valor + 1 y después comprobar si el resultado supera el máximo.",
+            "Comparar valor con el máximo y sumar únicamente cuando el incremento cabe.",
+            "Sumar primero y confiar en que el compilador muestre siempre un aviso durante la ejecución."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comparación previa evita evaluar la suma prohibida. Comprobar después no deshace una operación cuyo resultado no puede representarse. Compilar correctamente tampoco garantiza un aviso de ejecución."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir rechazo y cambio del objeto"
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l2_incremento_en_frontera",
+          "question": "Predice las dos líneas exactas. La primera llamada empieza en el máximo; la segunda, en el entero inmediatamente anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool subir_uno(int& valor) {\n    const int limite = std::numeric_limits<int>::max();\n    if (valor == limite) {\n        return false;\n    }\n\n    ++valor;\n    return true;\n}\n\nint main() {\n    const int limite = std::numeric_limits<int>::max();\n    int valor = limite;\n    const bool primero = subir_uno(valor);\n    std::cout << primero << \":\" << (valor == limite) << '\\n';\n\n    valor = limite - 1;\n    const bool segundo = subir_uno(valor);\n    std::cout << segundo << \":\" << (valor == limite);\n    return 0;\n}\n",
+          "answers": [
+            "0:1\n1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "En la primera llamada, valor ya coincide con limite: se rechaza y se conserva, por lo que aparece 0:1. Después se asigna limite−1. La segunda llamada incrementa hasta limite y aparece 1:1. No se calcula limite+1."
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer 0 es el bool que indica rechazo. El 1 que lo acompaña confirma que valor continúa en el máximo. En la segunda línea, el primer 1 indica que hubo cambio y el segundo confirma que el resultado llegó al máximo. No necesitas conocer las cifras concretas de limite para seguir esas relaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "No descubras los límites provocando una operación fuera de rango. Para los int, expresiones como maximo + 1, minimo - 1 o -minimo pueden quedar fuera del tipo. Tampoco calcules maximo - minimo en int para contar valores: esa diferencia puede no caber aunque sus dos extremos sí quepan. Consulta los extremos y diseña primero la condición que evita el cálculo no representable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparación propia: descontar una unidad con conservación al rechazar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora aplicarás el razonamiento al extremo inferior. Repara sólo bajar_uno en el editor. Su parámetro valor es una referencia a un int ya válido. Debe cumplir estas dos reglas:\nSi valor está en el mínimo de int, retornar false y conservarlo.\nSi valor es mayor que ese mínimo, restarle exactamente una unidad y retornar true.\n\nConsulta el mínimo mediante la biblioteca. No escribas un mínimo particular de Windows ni evalúes la resta antes de decidir si cabe."
+        },
+        {
+          "type": "paragraph",
+          "text": "El resto del programa prepara una prueba y debe conservarse. Entrada contiene un entero distancia entre 0 y 2. El programa empieza en minimo + distancia; esa suma es representable para esos tres datos. original conserva el valor anterior a la llamada. Después se muestran tres líneas:\nAceptado= seguido del bool retornado.\nEnMinimo= seguido de si el valor final coincide con el mínimo.\nConservado= seguido de si el valor final coincide con original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEnMinimo=1\nConservado=0\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    // Esta version comprueba una condicion, pero todavia no cambia valor.\n    return valor > minimo;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nEnMinimo=1\nConservado=0\n"
+                ],
+                "explanation": "Comienza en minimo+1. El decremento se acepta, llega al mínimo y cambia el valor original."
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "Aceptado=0\nEnMinimo=1\nConservado=1\n"
+                ],
+                "explanation": "Ensayo opcional: comienza en el mínimo, rechaza sin restar y conserva el valor."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nEnMinimo=0\nConservado=0\n"
+                ],
+                "explanation": "Ensayo opcional: comienza en minimo+2 y termina en minimo+1; cambia sin llegar todavía al mínimo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 0\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEnMinimo=1\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otro ensayo opcional:\nEntrada: 2\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEnMinimo=0\nConservado=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer acierto es obligatorio para avanzar. Los datos opcionales comprueban la conservación al rechazar y un cambio que todavía no alcanza el mínimo. Cada entrada corresponde a una ejecución independiente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: no evaluar la resta cuando el objeto está en el mínimo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool bajar_uno(int& valor) {\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (valor == minimo) {\n        return false;\n    }\n\n    --valor;\n    return true;\n}\n\nint main() {\n    int distancia = 0;\n    if (!(std::cin >> distancia) || distancia < 0 || distancia > 2) {\n        return 1;\n    }\n\n    const int minimo = std::numeric_limits<int>::lowest();\n    int valor = minimo + distancia;\n    const int original = valor;\n    const bool aceptado = bajar_uno(valor);\n\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EnMinimo=\" << (valor == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (valor == original) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función consulta el mínimo y compara antes de descontar. Cuando valor es igual a minimo, el return false termina la función; no se ejecuta --valor. Cuando valor es mayor, el siguiente entero hacia abajo sigue siendo representable y se descuenta una unidad. El parámetro por referencia permite modificar el objeto del llamador; al rechazar, su valor queda igual y no se sustituye por cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l2_conservacion_al_rechazar",
+          "question": "Con la entrada opcional 0, el objeto empieza en el mínimo. ¿Qué representa Conservado=1 en la salida correcta?",
+          "options": [
+            "Confirma que el valor final sigue siendo igual al original porque la función rechazó sin restar.",
+            "Confirma que se restó una unidad y luego se sustituyó el resultado por cero.",
+            "Confirma que el programa consiguió guardar un entero menor que el mínimo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La función debe mantener el dato cuando rechaza la operación. EnMinimo=1 y Conservado=1 describen esa conservación; Aceptado=0 indica que no hubo decremento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar, elegir y validar son decisiones diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes separar tres preguntas:\nsizeof pregunta por el tamaño en bytes.\nnumeric_limits pregunta por propiedades del tipo, como sus extremos representables.\nLa condición del problema decide qué datos u operaciones se permiten.\n\nEn el formulario de 0 a 120, consultar el máximo de int no reemplaza la comparación con 120. En bajar_uno, conocer el mínimo no reemplaza la decisión que evita restar cuando el objeto ya está en él."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las pruebas verifican resultados concretos y relaciones entre datos. No hacen seguro un cálculo fuera de rango ni demuestran por sí solas que cualquier entrada futura será correcta. La condición previa es parte del programa: debe seguir protegiendo la operación cuando cambies los datos o uses otra implementación con otros extremos."
+        },
+        {
+          "type": "paragraph",
+          "text": "A continuación estudiaremos cómo elegir entre tipos enteros y qué ocurre cuando una expresión combina tipos diferentes. Recuperaremos estos límites antes de hacer conversiones o comparaciones, para comprobar el valor real que utiliza cada operación."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "aa689464fd5e758166ceaa08a2c5a09fb67c7ff4c98f959b49bacdf97f0b44a4"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "0d821900721a0a9e9c44d61b53f94131a5c0d6fd1c45597fd6545da40d5606ba"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "02df9d759f6875d85094195faa76ac3b5483be88b7f688880df61e33b9b37da6"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "64eb4528defd0cd09c311f25285ed1dfa45a971e13308d180db5b832a2998885"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "05e6aa3d730fad2129716d7693a384f5a98ff87e63948735a93b400ae6970ca6"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "b853d959b91f7425488b8b3167eba55b8e9639fa49e920f1400b8631f3308fd2"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "502d4e00621b320e6016687980283efb39590d1bbcd3b720da4421ad9986e2ac"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "227f2c0e2056ae551e9848e7d58c95552574cef6d08186df1229b224ba93acb9"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "be4eb2b52f847c5a5cacb0930bbf1e9b9e3e4c891d24f7278e04a6ef3eafd01b"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "92dceb2f35866bffcb43ecb226488bf07737d0f0f9a85ebc085f0e5b77a2d790"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "cbac216facf4a593108bc5ce4992dc56d60caa6461576419785047c3cef852dd"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "a97b25928cb280202d5dbe8e24ae31598f524c89c13d4839a617a128669b5b9f"
+          },
+          {
+            "id": "block_0006_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0009",
+            "sha256": "f6c2f0597201c50de0877c3ac9033049c6d096c135a333be2ba3278d86eddf64"
+          },
+          {
+            "id": "block_0006_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "608c011456893ce84580acf566827364e1f90d25a450cc27e3d16fb0a56b6ee4"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "7815f028b1bb9a19c07f003973fd71090429f904898a48b3aabae15002232e16"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007",
+          "block_0006_0008",
+          "block_0006_0009",
+          "block_0006_0010"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "1d60e4d0ba1bd07ad2bce74209e1280ac82c0de8807a3b390a4aacd1d065a260",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "aa689464fd5e758166ceaa08a2c5a09fb67c7ff4c98f959b49bacdf97f0b44a4"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "0d821900721a0a9e9c44d61b53f94131a5c0d6fd1c45597fd6545da40d5606ba"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "02df9d759f6875d85094195faa76ac3b5483be88b7f688880df61e33b9b37da6"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "64eb4528defd0cd09c311f25285ed1dfa45a971e13308d180db5b832a2998885"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "05e6aa3d730fad2129716d7693a384f5a98ff87e63948735a93b400ae6970ca6"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "b853d959b91f7425488b8b3167eba55b8e9639fa49e920f1400b8631f3308fd2"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "502d4e00621b320e6016687980283efb39590d1bbcd3b720da4421ad9986e2ac"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "227f2c0e2056ae551e9848e7d58c95552574cef6d08186df1229b224ba93acb9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "be4eb2b52f847c5a5cacb0930bbf1e9b9e3e4c891d24f7278e04a6ef3eafd01b"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "92dceb2f35866bffcb43ecb226488bf07737d0f0f9a85ebc085f0e5b77a2d790"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "cbac216facf4a593108bc5ce4992dc56d60caa6461576419785047c3cef852dd"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "a97b25928cb280202d5dbe8e24ae31598f524c89c13d4839a617a128669b5b9f"
+              },
+              {
+                "id": "block_0006_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0009",
+                "sha256": "f6c2f0597201c50de0877c3ac9033049c6d096c135a333be2ba3278d86eddf64"
+              },
+              {
+                "id": "block_0006_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "608c011456893ce84580acf566827364e1f90d25a450cc27e3d16fb0a56b6ee4"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "7815f028b1bb9a19c07f003973fd71090429f904898a48b3aabae15002232e16"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
