@@ -429,6 +429,128 @@ inline bool actionable(const std::vector<Word>& words) {
     }
     return false;
 }
+// Qualify each explicit validity claim by its own subject and clause.
+// Mentioning both fields in a later domain instruction does not say that
+// both observed values failed. Diagnostics need not make such a claim at all.
+inline bool validity_claims_match(std::string_view line,const std::vector<Word>& words,
+        const RejectionFacts& fact) {
+    const auto source=fold_spanish(line);
+    const auto field=[](std::string_view value)->unsigned {
+        if(one_of(value,{"cobro","cobros"}))return 1;
+        if(one_of(value,{"devolucion","devoluciones"}))return 2;
+        return 0;
+    };
+    const auto boundary=[&](std::size_t left,std::size_t right) {
+        for(auto at=words[left].end;at<words[right].start;++at) {
+            const auto c=source[at];
+            if(c==';'||c=='!'||c=='?'||c=='\n')return true;
+            // A field label may introduce its verdict ("cobros: invalidos").
+            // The colon after the numeric preamble still starts a new clause.
+            if(c==':'&&!field(words[left].text)&&
+                    !one_of(words[left].text,{"ambos","ambas"}))return true;
+            if(c=='.'&&(at==0||source[at-1]!='.')&&
+                    (at+1==source.size()||source[at+1]!='.'))return true;
+        }
+        return false;
+    };
+    const auto validity=[](std::string_view value)->std::optional<bool> {
+        if(one_of(value,{"invalido","invalida","invalidos","invalidas",
+                "incorrecto","incorrecta","incorrectos","incorrectas"}))return true;
+        if(one_of(value,{"valido","valida","validos","validas",
+                "correcto","correcta","correctos","correctas"}))return false;
+        return {};
+    };
+    const auto starts_own_claim=[&](std::size_t subject) {
+        for(auto at=subject+1;at<words.size();++at) {
+            if(boundary(at-1,at))break;
+            const auto& word=words[at];
+            if(validity(word.text))return true;
+            if(word.number||one_of(word.text,{"es","son","esta","estan",
+                    "ser","estar","se","encuentra","encuentran","resulta","resultan",
+                    "no","nunca","jamas","debe","deben","deberia","deberian",
+                    "puede","pueden","podria","podrian","recibido","recibida",
+                    "recibidos","recibidas"}))continue;
+            break;
+        }
+        return false;
+    };
+    std::vector<bool> bound_subject(words.size(),false);
+    for(std::size_t predicate=0;predicate<words.size();++predicate) {
+        const auto asserted_invalid=validity(words[predicate].text);
+        if(!asserted_invalid)continue;
+        unsigned subjects=0;
+        bool coordinated=false,modal=false,exclusive=false;
+        std::optional<std::size_t> negation,collective;
+        const auto scan=[&](bool backwards) {
+            auto cursor=predicate;
+            while(backwards?cursor>0:cursor+1<words.size()) {
+                const auto next=backwards?cursor-1:cursor+1;
+                if(boundary(std::min(cursor,next),std::max(cursor,next)))break;
+                cursor=next;
+                const auto& word=words[cursor];
+                if(validity(word.text)||bound_subject[cursor])break;
+                // In "son invalidos los cobros y son validas las devoluciones",
+                // the first subject cannot belong to the second predicate.
+                // Its following verb/negation likewise belongs to that next claim.
+                if(!backwards&&subjects&&one_of(word.text,{"es","son","esta","estan",
+                        "ser","estar","se","encuentra","encuentran","resulta","resultan",
+                        "no","nunca","jamas","debe","deben","deberia","deberian",
+                        "puede","pueden","podria","podrian"}))break;
+                const auto named_field=field(word.text);
+                if(named_field) {
+                    // "invalidos los cobros y las devoluciones son validas"
+                    // starts a new claim at the second field, not a joint subject.
+                    if(!backwards&&subjects&&starts_own_claim(cursor))break;
+                    if(subjects&&!(subjects&named_field)&&!coordinated)break;
+                    subjects|=named_field;coordinated=false;
+                    bound_subject[cursor]=true;continue;
+                }
+                if(one_of(word.text,{"ambos","ambas"})) {
+                    subjects=3;collective=cursor;
+                    bound_subject[cursor]=true;continue;
+                }
+                if(one_of(word.text,{"y","e"})){coordinated=true;continue;}
+                if(one_of(word.text,{"no","nunca","jamas"})) {
+                    if(!negation||cursor<*negation)negation=cursor;
+                    continue;
+                }
+                if(one_of(word.text,{"solo","solamente","unicamente"})) {
+                    exclusive=true;continue;
+                }
+                // A requirement or possibility is not a verdict on these
+                // actual inputs: "ambos datos deben ser validos".
+                if(one_of(word.text,{"debe","deben","deberia","deberian",
+                        "puede","pueden","podria","podrian"})) {
+                    modal=true;continue;
+                }
+                if(word.number||one_of(word.text,{"el","la","los","las","un","una",
+                        "es","son","esta","estan","ser","estar","se","encuentra",
+                        "encuentran","resulta","resultan","valor","valores",
+                        "dato","datos","recibido","recibida","recibidos","recibidas",
+                        "de","del"}))continue;
+                break;
+            }
+        };
+        scan(true);
+        if(!subjects)scan(false); // "son invalidas las devoluciones"
+        if(!subjects||modal)continue;
+        const bool first_invalid=fact.first<0||fact.first>9;
+        const bool second_invalid=fact.second<0||fact.second>9;
+        // "No ambos son invalidos" denies the joint claim; it does not
+        // assert that each operand is valid. Negation after the subject
+        // ("ambos no son invalidos") qualifies each named operand.
+        const bool denies_collective=negation&&collective&&*negation<*collective;
+        const bool invalid=*asserted_invalid!=(negation.has_value()&&!denies_collective);
+        bool matches=(!(subjects&1)||first_invalid==invalid)&&
+                     (!(subjects&2)||second_invalid==invalid);
+        if(denies_collective)matches=!matches;
+        if(!matches)return false;
+        if(exclusive&&!denies_collective&&
+                ((subjects==1&&second_invalid==invalid)||
+                 (subjects==2&&first_invalid==invalid)))return false;
+    }
+    return true;
+}
 inline RejectionReview examine(std::string_view line,RejectionOperation kind,const RejectionFacts& fact) {
     const auto tokens=words(line);
     if(mentions(tokens,{"stock","existencias","agotado","agotadas","inventario","disponibilidad"}))
@@ -446,11 +568,8 @@ inline RejectionReview examine(std::string_view line,RejectionOperation kind,con
         if(!labelled(tokens,{"cobros","cobro"},fact.first)||
            !labelled(tokens,{"devoluciones","devolucion"},fact.second))
             return {false,"Cobros y devoluciones no conservan sus propios valores."};
-        const bool first_invalid=fact.first<0||fact.first>9;
-        const bool second_invalid=fact.second<0||fact.second>9;
-        if(first_invalid!=second_invalid&&mentions(tokens,{"ambos","ambas"})&&
-           mentions(tokens,{"invalidos","invalidas","incorrectos","incorrectas"}))
-            return {false,"El diagnóstico dice que ambos operandos fallaron."};
+        if(!validity_claims_match(line,tokens,fact))
+            return {false,"La validez atribuida a cobros o devoluciones contradice sus valores."};
     }
     if(!range(line,tokens,kind==RejectionOperation::boxes?20:9))
         return {false,"No se comunica el intervalo entero permitido."};

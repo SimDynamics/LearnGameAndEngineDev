@@ -98,6 +98,109 @@ void accepted_semantics() {
         "Alternative ostream evidence rejected a valid closed interval");
 }
 
+void validity_claims_keep_their_field_and_clause() {
+    const auto message=[](const RejectionFacts& fact,std::string_view claim) {
+        return "Saldo, petición "+std::to_string(fact.request)+
+            ", cobros="+std::to_string(fact.first)+
+            ", devoluciones="+std::to_string(fact.second)+": "+
+            std::string(claim)+". Rango permitido de 0 a 9. Revise los datos.\n";
+    };
+    constexpr RejectionFacts charges{2,10,0},refunds{3,0,-1},both{4,10,-1};
+    const auto check_claim=[&](const RejectionFacts& fact,std::string_view claim,bool accepted) {
+        const auto review=evaluate_rejection_diagnostics(
+            message(fact,claim),RejectionOperation::balance,std::span(&fact,1));
+        require(review.correct==accepted,"A validity claim was assigned to the wrong field or clause: "+
+            std::string(claim));
+    };
+    for(const auto claim:{
+        "los cobros son inválidos. Ambos valores deben ser enteros de 0 a 9",
+        "Ambos valores deben ser enteros de 0 a 9; los cobros son inválidos",
+        "los cobros son inválidos, las devoluciones son válidas",
+        "solo los cobros son incorrectos",
+        "las devoluciones no son inválidas",
+        "los cobros no son válidos",
+        "son inválidos los cobros",
+        "son inválidos los cobros y son válidas las devoluciones",
+        "son inválidos los cobros y las devoluciones son válidas",
+        "son inválidos los cobros y las devoluciones no son inválidas",
+        "son inválidos los cobros, son válidas las devoluciones",
+        "son inválidos los cobros y no son inválidas las devoluciones",
+        "cobros: inválidos; devoluciones: válidas",
+        "no ambos valores son inválidos",
+        "ambos valores deben ser válidos"
+    })check_claim(charges,claim,true);
+    for(const auto claim:{
+        "las devoluciones son inválidas. Ambos valores deben ser enteros de 0 a 9",
+        "Ambos valores deben ser enteros de 0 a 9; las devoluciones son inválidas",
+        "las devoluciones son inválidas, los cobros son válidos",
+        "solo las devoluciones son incorrectas",
+        "los cobros no son inválidos",
+        "las devoluciones no son válidas",
+        "son inválidas las devoluciones",
+        "son inválidas las devoluciones y son válidos los cobros",
+        "son inválidas las devoluciones y los cobros son válidos",
+        "son inválidas las devoluciones y los cobros no son inválidos",
+        "son inválidas las devoluciones, son válidos los cobros",
+        "son inválidas las devoluciones y no son inválidos los cobros",
+        "devoluciones: inválidas; cobros: válidos"
+    })check_claim(refunds,claim,true);
+    for(const auto claim:{
+        "solo las devoluciones son inválidas",
+        "las devoluciones son incorrectas",
+        "los cobros son válidos",
+        "los cobros no son inválidos",
+        "son inválidas las devoluciones",
+        "son inválidos los cobros y son inválidas las devoluciones",
+        "son inválidos los cobros y las devoluciones son inválidas",
+        "son inválidos los cobros y las devoluciones",
+        "son inválidos los cobros, no son válidas las devoluciones",
+        "devoluciones: inválidas",
+        "cobros: válidos",
+        "ambos valores son inválidos",
+        "cobros y devoluciones son incorrectos",
+        "ambos valores son válidos",
+        "ambos valores no son inválidos"
+    })check_claim(charges,claim,false);
+    for(const auto claim:{
+        "solo los cobros son inválidos",
+        "los cobros son incorrectos",
+        "las devoluciones son válidas",
+        "las devoluciones no son inválidas",
+        "son inválidos los cobros",
+        "son inválidas las devoluciones y son inválidos los cobros",
+        "son inválidas las devoluciones y los cobros son inválidos",
+        "son inválidas las devoluciones y los cobros",
+        "son inválidas las devoluciones, no son válidos los cobros",
+        "cobros: inválidos",
+        "devoluciones: válidas",
+        "ambos valores son inválidos",
+        "cobros y devoluciones son incorrectos"
+    })check_claim(refunds,claim,false);
+    check_claim(both,"ambos valores son inválidos",true);
+    check_claim(both,"cobros y devoluciones son incorrectos",true);
+    check_claim(both,"son inválidos los cobros y las devoluciones",true);
+    check_claim(both,"ambos valores no son válidos",true);
+    check_claim(both,"no ambos valores son inválidos",false);
+    check_claim(both,"solo los cobros son inválidos",false);
+    check_claim(both,"solo las devoluciones son inválidas",false);
+
+    const auto first=message(charges,
+        "los cobros son inválidos. Ambos valores deben ser enteros de 0 a 9");
+    const auto second=message(refunds,
+        "las devoluciones son inválidas. Ambos valores deben ser enteros de 0 a 9");
+    const auto stream=first+'\x1e'+second;
+    require(lgaed::curriculum::evaluate_rejection_stream_probe(
+        stream,"",RejectionOperation::balance).correct,
+        "Correct field-specific diagnoses failed the real alternative-stream verifier");
+    require(!lgaed::curriculum::evaluate_rejection_stream_probe(
+        stream,"salida fuera del flujo",RejectionOperation::balance).correct,
+        "Field-specific diagnoses bypassed the supplied ostream requirement");
+    require(!lgaed::curriculum::evaluate_rejection_stream_probe(
+        message(charges,"solo las devoluciones son inválidas")+'\x1e'+second,
+        "",RejectionOperation::balance).correct,
+        "The alternative stream accepted a false accusation of the valid operand");
+}
+
 void source_edits_stay_inside_assigned_diagnostic() {
     using lgaed::curriculum::rejection_function_only_edit;
     const std::string original=
@@ -316,10 +419,11 @@ void rejected_semantics() {
 int main() {
     try {
         accepted_semantics();
+        validity_claims_keep_their_field_and_clause();
         source_edits_stay_inside_assigned_diagnostic();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "
-            "three valid review actions, field identities and negative cases\n";
+            "three valid review actions, field identities, scoped validity claims and negative cases\n";
         return 0;
     }catch(const std::exception& error){
         std::cerr<<"FAIL U3L6 diagnostic semantics: "<<error.what()<<'\n';
