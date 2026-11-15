@@ -1552,6 +1552,16 @@ permanecen intactos; un acierto anterior de salida no satisface automáticamente
 la nueva comprobación. Para avanzar sigue bastando el primer caso correcto
 que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
 
+La API de ejecución Windows admite tanto `compile_run` como la secuencia
+`configure` → `build` → `execute` para esta comprobación estructural. Configurar
+o construir por separado no concede el logro. Al ejecutar el objetivo ya
+construido, el motor comprueba que sus fuentes, configuración, objetivo y
+artefacto siguen vigentes y evalúa el grafo de esa misma revisión junto con el
+resultado nuevo. Una consola restaurada no crea otra evidencia y un cambio de
+fuentes u opciones exige reconstruir. El lector utiliza su acción combinada
+«Compilar, ejecutar y comprobar»; esta compatibilidad del ejecutor no añade ni
+cambia controles de la interfaz.
+
 `project` es opcional. Cada objetivo requiere `name` y `type`
 (`EXECUTABLE` o `STATIC_LIBRARY`); `sources`, `linksTo` y
 `exactSources` son opcionales. Las fuentes declaradas son rutas originales
@@ -1686,8 +1696,10 @@ fijada siempre a la implementación especial no acreditan la construcción.
 
 La ejecución adicional utiliza un espacio de configuración y huella propia,
 conserva los proyectos y borradores del estudiante y nunca modifica la
-opción seleccionada en el editor. Si la compilación o ejecución de la
-configuración `OFF` falla, falta evidencia y no se concede el logro. El
+opción seleccionada en el editor. También se construye y ejecuta cuando la acción
+pública es `execute`: el artefacto `ON` ya construido no sustituye la
+construcción privada `OFF`. Si la compilación o ejecución de la configuración
+`OFF` falla, falta evidencia y no se concede el logro. El
 primer caso correcto del editor sigue siendo el único obligatorio; esta
 segunda ejecución es la comprobación interna del mismo objetivo, no un
 segundo caso que el estudiante deba activar manualmente.

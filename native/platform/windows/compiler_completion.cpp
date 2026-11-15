@@ -512,7 +512,8 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
            request.cmake->build_type!=block.cmake->build_type||
            request.cmake->options!=block.cmake->options||
            request.backend!=CppRunRequest::Backend::native_msvc||
-           request.action!=CppRunRequest::Action::compile_run||
+           (request.action!=CppRunRequest::Action::compile_run&&
+            request.action!=CppRunRequest::Action::execute)||
            !request.capture_cmake_graph||request.diagnostic)
             return false;
         // A published editor may start on the client while its mandatory

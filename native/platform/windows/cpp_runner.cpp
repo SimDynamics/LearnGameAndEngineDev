@@ -1390,7 +1390,8 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     };
     if(!request.cmake||!request.capture_cmake_graph||
        request.backend!=CppRunRequest::Backend::native_msvc||
-       request.action!=CppRunRequest::Action::compile_run||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
        request.request_id!=result.request_id||
        request.revision!=result.revision||!result.error_utf8.empty()||
        !result.compilation.succeeded()||
@@ -1667,6 +1668,9 @@ CppRunRequest default_option_request(const CppRunRequest& request,
         const curriculum::CmakeOptionSelectionRequirement& option,
         const curriculum::CmakeGraphRequirement& authored) {
     auto off=request;
+    // A public execute reuses only its verified ON artifact. The independent
+    // OFF configuration must still build its own target before it can run.
+    off.action=CppRunRequest::Action::compile_run;
     off.request_id=~request.request_id;
     off.project_key+="/cmake-option-off-v1/"+option.name;
     off.cmake->options.erase(option.name);
@@ -2071,7 +2075,8 @@ void complete_cmake_option_probe(const CppRunRequest& request,
         CppRunResult& result,std::stop_token stop) {
     if(!request.cmake_graph_check||
        !request.cmake_graph_check->option_selection||
-       request.action!=CppRunRequest::Action::compile_run||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
        !result.compilation.succeeded()||!result.execution.succeeded()||
        !result.error_utf8.empty()||stop.stop_requested())return;
     const auto& authored=*request.cmake_graph_check;
