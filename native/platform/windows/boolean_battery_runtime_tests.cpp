@@ -347,6 +347,40 @@ int main(int argc,char** argv) {
             "A later unverified attempt erased the earned achievement");
         std::cout << "PASS both sealed receipts, progress reopening and tamper rejection\n";
 
+        // The published starters remain executable learning material. A main
+        // with no comparisons and the later three-case starter must both fail
+        // this independent objective without changing either earned receipt.
+        for(const Block* initial_owner:{&first,&second}) {
+            const auto initial_request=request(*initial_owner,initial_owner->initial_code);
+            require(compiler_runtime_request_allowed(*initial_owner,initial_request),
+                "An authentic unchanged U1 starter was refused before execution");
+            const auto initial_result=run_cpp(initial_request);
+            require(initial_result.error_utf8.empty()&&initial_result.compilation.succeeded()&&
+                    initial_result.execution.status==CppPhaseStatus::completed&&
+                    initial_result.execution.exit_code&&initial_result.boolean_battery_evidence,
+                    "An unchanged U1 starter did not compile and execute with private evidence: "+
+                    initial_result.error_utf8+initial_result.compilation.stdout_bytes+
+                    initial_result.compilation.stderr_bytes);
+            const auto initial_plan=boolean_battery_mutation_plan(*initial_request.boolean_battery_probe);
+            require(initial_plan&&initial_result.boolean_battery_evidence->runs.size()==initial_plan->size(),
+                "An unchanged U1 starter skipped a required private phase");
+            for(const auto& run:initial_result.boolean_battery_evidence->runs)
+                require(run.compiled&&run.executed&&run.completed_normally,
+                    "An unchanged U1 starter failed technically instead of receiving an objective verdict");
+            const auto initial_capture=capture_cpp_execution(initial_request,initial_result);
+            const auto initial_evaluation=evaluate_cpp_output_check(
+                *initial_owner->output_check,initial_capture,initial_request.revision);
+            require(initial_capture.execution_completed&&!initial_capture.boolean_battery_probe_correct&&
+                    initial_capture.boolean_battery_exit_code==initial_result.execution.exit_code&&
+                    initial_evaluation.verdict==OutputVerdict::incorrect&&
+                    !initial_evaluation.feedback.empty(),
+                    "An unchanged U1 starter acquired credit or lost its actual rejection feedback");
+            require(!record_compiler_puzzle_case(recorded,lesson,*initial_owner,initial_request,
+                        initial_capture,initial_evaluation.feedback)&&recorded==earned,
+                    "An unchanged U1 starter changed an earned achievement");
+        }
+        std::cout << "PASS both authentic unchanged U1 starters rejected without changing progress\n";
+
         auto abort_source=first_solution(first);
         const auto return_position=abort_source.find("return failures ? 257 : 0;");
         require(return_position!=std::string::npos,"Missing normal-return fixture");
