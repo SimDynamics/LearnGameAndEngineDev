@@ -144,6 +144,10 @@ std::string review_target(const CppRunRequest& request) {
 }
 bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::FreshExecution& execution) {
     return !captured.diagnostic
+        &&(!captured.boolean_battery_probe||
+            (!execution.boolean_battery_request_fingerprint.empty()&&
+             execution.boolean_battery_request_fingerprint==
+                cpp_boolean_battery_request_fingerprint(captured)))
         &&(captured.action==CppRunRequest::Action::compile_run||captured.action==CppRunRequest::Action::execute)
         &&captured.stdin_utf8==execution.standard_input
         &&(!captured.cmake||execution.executable==std::optional<std::string>{captured.cmake->target});
@@ -155,6 +159,19 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
     const auto& check=*block.output_check;std::string frame=legacy?"compiler-review-rules-v1/":"compiler-review-rules-v2/";
     frame+=token(check.input_comparison==curriculum::TextComparison::tokens?"tokens":"exact")
         +token(std::to_string(check.cases.size()));
+    if(check.boolean_battery_result) {
+        frame+=token(curriculum::boolean_battery_objective_version)+
+            token(*check.boolean_battery_result==curriculum::BooleanBatteryPublishedResult::success
+                ?"success":"failure");
+        if(block.boolean_battery_probe) {
+            const auto& spec=*block.boolean_battery_probe;
+            frame+=token(spec.function_name)+token(spec.protected_definition)+
+                token(std::to_string(spec.cases.size()));
+            for(const auto& item:spec.cases)
+                frame+=token(std::to_string(item.first))+token(std::to_string(item.second))+
+                    token(item.expected?"true":"false");
+        }
+    }
     if(check.rejection_operation)
         frame+=token(*check.rejection_operation==curriculum::RejectionOperation::boxes
             ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
@@ -353,6 +370,20 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(request.boolean_battery_probe!=block.boolean_battery_probe)return false;
+    if(block.boolean_battery_probe) {
+        if(block.cmake||request.cmake||!block.project_files.empty()||
+           !request.project_files.empty()||!block.source_files.empty()||
+           !request.source_files.empty()||request.diagnostic||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||
+           request.stdin_utf8!=block.standard_input.value_or("")||
+           request.open_battery_probe||request.named_rule_probe||
+           request.rejection_probe||request.observation_probe||
+           request.assertion_mode||request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::boolean_battery_preserves_function(
+               request.source_utf8,*block.boolean_battery_probe))return false;
+    }
     if(request.open_battery_probe!=block.open_battery_probe)return false;
     if(block.open_battery_probe) {
         const auto& authored=*block.open_battery_probe;
@@ -533,6 +564,7 @@ std::string compiler_puzzle_feedback(const state::StateData& data,const curricul
 std::string compiler_puzzle_review(const state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& current) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!curriculum::has_compiler_objective(block))return {};
+    if(block.boolean_battery_probe!=current.boolean_battery_probe)return {};
     const auto key=base(lesson,block)+"review/";
     const auto text=[&](std::string_view suffix)->const std::string*{
         const auto value=state::find(data,"native_windows",key+std::string(suffix));
@@ -585,6 +617,7 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
         const curriculum::Block& block,const CppRunRequest& captured,const curriculum::FreshExecution& execution,
         std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()||!matches_runtime_capture(captured,execution))return false;
+    if(block.boolean_battery_probe!=captured.boolean_battery_probe)return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::incorrect)return false;
     const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
@@ -765,6 +798,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            block.named_rule_source_check->execution_probe&&
            !execution.named_rule_probe_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
+        (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
        (block.cmake_graph_check&&!execution.cmake_graph_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
@@ -863,3 +897,4 @@ void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum:
     }
 }
 } // namespace lgaed::windows
+

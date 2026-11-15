@@ -3010,28 +3010,163 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
 
 
 
-def _validate_compiler_open_battery_checks(document: dict) -> None:
-    """Authenticate a new CMake battery without changing published exercise bytes.
+def _boolean_battery_definition(source: str, function: str) -> tuple[str, ...]:
+    """Recognize the bounded global bool(int, int) definition used by the worker.
 
-    This explicit root-only objective uses one private baseline and mutations
-    of every original comparison and the new comparison. Its original calls
-    and independent expectations must match the actual authored test source.
+    This is an admission grammar, not a C++ compiler. The submitted program
+    must later retain this definition's tokens and prove its own comparisons
+    through separately compiled mutations. Comments and spacing are free.
+    """
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]{0,127}\Z")
+    try:
+        source_size = len(source.encode("utf-8")) if type(source) is str else 0
+    except UnicodeError as exc:
+        raise LayoutError("Boolean battery source must be valid UTF-8") from exc
+    require(0 < source_size <= 4 * 1024 * 1024 and
+            "\x00" not in source and "\\\n" not in source and "\\\r\n" not in source,
+            "Boolean battery source is empty, excessive or contains a physical splice")
+    require(type(function) is str and identifier.fullmatch(function) and
+            not function.startswith("lgaed_boolean_battery_"),
+            "Boolean battery function must be a safe C++ identifier")
+    try:
+        tokens = tuple(token for token in code_format._cpp_tokens(source)
+                       if not token.startswith("comment:"))
+    except code_format.SourceFormatError as exc:
+        raise LayoutError("Boolean battery source cannot be tokenized: " + str(exc)) from exc
+
+    def closing(start: int, opening: str, ending: str) -> int:
+        nesting = 0
+        for index in range(start, len(tokens)):
+            if tokens[index] == opening or (opening == "op:{" and tokens[index] == "op:<%"):
+                nesting += 1
+                require(nesting <= 4096, "Boolean battery source nesting is excessive")
+            elif tokens[index] == ending or (ending == "op:}" and tokens[index] == "op:%>"):
+                nesting -= 1
+                if nesting == 0:
+                    return index
+        raise LayoutError("Boolean battery definition has an unclosed delimiter")
+
+    definitions, prototypes = [], []
+    depth = 0
+    for index, token in enumerate(tokens):
+        require(token not in {"op:#", "op:##", "op:%:", "op:%:%:"} and
+                not token.startswith("id:lgaed_boolean_battery_"),
+                "Boolean battery source uses unsupported preprocessing or private names")
+        if token.startswith("directive:"):
+            require(depth == 0 and re.match(r'(?:#|%:)[ \t\r\v\f]*include[ \t\r\v\f]*[<"]', token[10:]),
+                    "Boolean battery source permits only global #include directives")
+        if token == "id:" + function and tokens[index + 1:index + 2] == ("op:(",):
+            previous = tokens[index - 1] if index else ""
+            call_end = closing(index + 1, "op:(", "op:)")
+            following = tokens[call_end + 1] if call_end + 1 < len(tokens) else ""
+            # Ordinary calls are not declarations. Other definitions and
+            # global overload declarations cannot masquerade as this function.
+            declaration = ((previous.startswith("id:") and
+                            previous not in {"id:return", "id:co_return", "id:throw"}) or
+                           following in {"op:{", "op:<%"} or
+                           (depth == 0 and previous in {"op:&", "op:*", "op:&&"} and
+                            index > 1 and tokens[index - 2] == "id:bool"))
+            if declaration:
+                require(depth == 0 and previous == "id:bool" and
+                        index + 8 < len(tokens) and
+                        (index == 1 or tokens[index - 2] in {"op:;", "op:}"} or
+                         tokens[index - 2].startswith("directive:")),
+                        "Boolean battery needs an unqualified global bool definition")
+                end = index + 7
+                signature = tokens[index - 1:end + 1]
+                require(len(signature) == 9 and
+                        signature[2:4] == ("op:(", "id:int") and
+                        signature[5:7] == ("op:,", "id:int") and
+                        signature[8] == "op:)" and
+                        all(value.startswith("id:") and identifier.fullmatch(value[3:])
+                            for value in (signature[4], signature[7])) and
+                        signature[4] != signature[7],
+                        "Boolean battery function needs two distinct named int parameters")
+                following = tokens[end + 1]
+                if following == "op:{":
+                    body_end = closing(end + 1, "op:{", "op:}")
+                    definitions.append(tokens[index - 1:body_end + 1])
+                else:
+                    require(following == "op:;",
+                            "Boolean battery function has an unsupported qualifier or declaration")
+                    prototypes.append(signature)
+        if token in {"op:{", "op:<%"}:
+            depth += 1
+            require(depth <= 4096, "Boolean battery source nesting is excessive")
+        elif token in {"op:}", "op:%>"}:
+            depth -= 1
+            require(depth >= 0, "Boolean battery source has an unmatched closing brace")
+    require(depth == 0 and len(definitions) == 1,
+            "Boolean battery needs exactly one balanced original function definition")
+    require(all(signature == definitions[0][:9] for signature in prototypes),
+            "Boolean battery prototype differs from its original function signature")
+    return definitions[0]
+
+
+def _validate_boolean_battery_record(document: dict, record: dict, block: dict) -> None:
+    require(set(record) == {"activity", "kind", "function", "publishedResult", "cases"}
+            and record["kind"] == "boolean-pair-v1",
+            "Unknown or missing boolean battery declaration field")
+    require(type(block) is dict and block.get("type") == "cpp_compiler" and
+            block.get("language", "cpp") == "cpp" and
+            not any(field in block for field in
+                    ("outputCheck", "compileCheck", "cmake", "projectFiles", "sourceFiles")),
+            "A boolean battery must own an unevaluated single-file C++ editor")
+    for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
+                  "compilerNamedRuleChecks", "compilerCmakeGraphChecks"):
+        declarations = document.get(field)
+        require(type(declarations) is not list or
+                not any(type(item) is dict and item.get("activity") == record["activity"]
+                        for item in declarations),
+                "Boolean battery owner conflicts with another compiler objective")
+    require(type(record["publishedResult"]) is str and
+            record["publishedResult"] in {"success", "failure"},
+            "Boolean battery published result must be success or failure")
+    _boolean_battery_definition(block.get("initialCode"), record["function"])
+    cases = record["cases"]
+    require(type(cases) is list and 1 <= len(cases) <= 32,
+            "Boolean battery requires 1..32 independently declared cases")
+    seen = set()
+    for case in cases:
+        require(type(case) is dict and set(case) == {"first", "second", "expected"} and
+                all(type(case[name]) is int and -(2 ** 31) <= case[name] < 2 ** 31
+                    for name in ("first", "second")) and type(case["expected"]) is bool,
+                "Boolean battery cases need two signed C++ integers and a boolean expectation")
+        pair = case["first"], case["second"]
+        require(pair not in seen, "Duplicate boolean battery input pair")
+        seen.add(pair)
+
+
+def _validate_compiler_open_battery_checks(document: dict) -> None:
+    """Authenticate open battery goals without changing published exercise bytes.
+
+    Typed single-file goals declare independent boolean expectations. Legacy
+    CMake goals keep their original fields and authenticated test calls.
     """
     if "compilerOpenBatteryChecks" not in document:
         return
     meta = document.get("stateLayout")
     require(type(meta) is dict and meta.get("version") == 2 and
             meta.get("locale") == "es",
-            "Open CMake battery objectives require a Spanish v2 lesson")
+            "Open battery objectives require a Spanish v2 lesson")
     checks = document["compilerOpenBatteryChecks"]
     require(type(checks) is list and 1 <= len(checks) <= 32,
-            "Open CMake battery declarations require 1..32 owners")
+            "Open battery declarations require 1..32 owners")
     owners, identities = _blocks(document), set()
     identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]*\Z")
     path_pattern = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./-]*\Z")
     signed_min, signed_max = -(2 ** 31), 2 ** 31 - 1
     for record in checks:
-        require(type(record) is dict and set(record) == {
+        require(type(record) is dict, "Open battery declaration must be an object")
+        if "kind" in record:
+            require(record.get("kind") == "boolean-pair-v1" and "activity" in record,
+                    "Unknown or missing open battery kind or owner")
+            identity = _identity(record["activity"])
+            require(identity not in identities, "Duplicate open battery owner")
+            identities.add(identity)
+            _validate_boolean_battery_record(document, record, owners.get(identity))
+            continue
+        require(set(record) == {
             "activity", "library", "test", "function", "comparison", "target",
             "originalCases"}, "Unknown or missing CMake battery declaration field")
         identity = _identity(record["activity"])
@@ -3978,9 +4113,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
-            baseline.get("compilerOpenBatteryChecks") ==
-            current.get("compilerOpenBatteryChecks"),
-            "Published open CMake battery checks cannot be removed or rewritten")
+            (type(current.get("compilerOpenBatteryChecks")) is list and
+             current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
+             baseline["compilerOpenBatteryChecks"]),
+            "Published open battery checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
             (type(current.get("compilerCmakeGraphChecks")) is list and
              current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
@@ -4310,9 +4446,10 @@ def validate_transition(previous: dict, current: dict) -> None:
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
     require(not baseline.get("compilerOpenBatteryChecks") or
-            baseline.get("compilerOpenBatteryChecks") ==
-            current.get("compilerOpenBatteryChecks"),
-            "Published open CMake battery checks cannot be removed or rewritten")
+            (type(current.get("compilerOpenBatteryChecks")) is list and
+             current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
+             baseline["compilerOpenBatteryChecks"]),
+            "Published open battery checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
             (type(current.get("compilerCmakeGraphChecks")) is list and
              current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
@@ -4869,3 +5006,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

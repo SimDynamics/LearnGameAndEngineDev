@@ -444,6 +444,22 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             token(std::to_string(item.upper));token(std::to_string(item.initial));
         }
     }
+    if(activity.boolean_battery_probe) {
+        const auto& spec=*activity.boolean_battery_probe;
+        token(boolean_battery_objective_version);
+        token(spec.function_name);
+        const auto definition=code_format::cpp_tokens(spec.protected_definition);
+        if(!definition)throw std::invalid_argument("Invalid protected battery function");
+        for(const auto& part:*definition)
+            if(!part.starts_with("comment:"))token(part);
+        token(spec.published_result==BooleanBatteryPublishedResult::success
+            ? "success" : "failure");
+        token(std::to_string(spec.cases.size()));
+        for(const auto& item:spec.cases) {
+            token(std::to_string(item.first));token(std::to_string(item.second));
+            token(item.expected ? "true" : "false");
+        }
+    }
     if(activity.cmake_graph_check) {
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
@@ -730,6 +746,30 @@ bool uses_single_line_answer(const Block& block) {
     return !block.answers.empty() && std::ranges::all_of(block.answers, [](const auto& text) { return text.find_first_of("\r\n") == text.npos; });
 }
 OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExecution& execution, std::uint64_t current_revision) {
+    if(check.boolean_battery_result) {
+        // Only the authenticated mutation evidence can certify this open
+        // objective. A normal Win32 return is a DWORD, not an 8-bit status.
+        // Keep the historical output/diagnostic contracts below unchanged.
+        if(execution.source_revision!=current_revision||
+           !execution.compilation_succeeded||!execution.boolean_battery_exit_code||
+           check.cases.size()!=1||check.input_comparison!=TextComparison::exact)
+            return {};
+        const auto& selected=check.cases.front();
+        if(selected.standard_input!=execution.standard_input||
+           (selected.executable&&selected.executable!=execution.executable))
+            return {};
+        const bool expected_success=
+            *check.boolean_battery_result==BooleanBatteryPublishedResult::success;
+        const bool exit_correct=(*execution.boolean_battery_exit_code==0)==expected_success;
+        const bool proved=execution.boolean_battery_probe_correct;
+        const bool correct=proved&&exit_correct;
+        const auto feedback=correct ? selected.explanation
+            : !execution.boolean_battery_probe_feedback.empty()
+                ? execution.boolean_battery_probe_feedback
+                : "La batería todavía no acredita todas las comparaciones solicitadas.";
+        return {correct?OutputVerdict::correct:OutputVerdict::incorrect,
+            feedback,proved,proved,exit_correct};
+    }
     if (execution.source_revision != current_revision || !execution.compilation_succeeded ||
         (!execution.execution_succeeded && !execution.execution_completed) ||
         execution.exit_code < 0 || execution.exit_code > 255 ||

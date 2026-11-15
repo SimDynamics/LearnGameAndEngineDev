@@ -5,6 +5,7 @@
 #include "core/assertion_runtime_check.hpp"
 #include "core/named_rule_check.hpp"
 #include "core/open_battery_check.hpp"
+#include "core/boolean_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
@@ -112,6 +113,9 @@ struct OutputCheck {
     std::optional<ReportMode> observation_report;
     std::optional<AssertionMode> assertion_check;
     bool open_battery_check = false; // Independent project mutations decide the result.
+    // A separately authenticated bool(int,int) battery may intentionally
+    // find a defect in its preserved published function.
+    std::optional<BooleanBatteryPublishedResult> boolean_battery_result;
 };
 // A closed compile-time rejection is a different objective from runtime stdout.
 // The loader binds each diagnostic to its reviewed Spanish editor and source.
@@ -232,6 +236,7 @@ struct Block {
     // The root declares this open CMake battery without changing its
     // previously published block or saved student draft identity.
     std::optional<OpenBatteryProbeSpec> open_battery_probe;
+    std::optional<BooleanBatterySpec> boolean_battery_probe;
     // Authored at the lesson root; a new structural proof does not inherit
     // earlier stdout-only receipts or change the existing editor identity.
     std::optional<CmakeGraphRequirement> cmake_graph_check;
@@ -432,6 +437,12 @@ struct FreshExecution {
     bool cmake_graph_correct = false;
     bool assertion_abort_verified = false;
     bool assertion_repair_probes_correct = false;
+    bool boolean_battery_probe_correct = false;
+    std::string boolean_battery_probe_feedback;
+    // A private normal-termination witness authenticates the complete Win32
+    // exit value for this objective, including legitimate nonzero values.
+    std::optional<std::uint32_t> boolean_battery_exit_code;
+    std::string boolean_battery_request_fingerprint;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {

@@ -53,6 +53,88 @@ Los requisitos semánticos del primer caso, incluidas sondas internas, se siguen
 comprobando antes de conceder el logro. La incorporación de declaraciones
 curriculares U3L6/U3L8 requiere las verificaciones específicas de Work.
 
+
+## Baterías abiertas de una función booleana con dos enteros
+
+Windows admite la variante `boolean-pair-v1` dentro de la lista raíz
+`compilerOpenBatteryChecks`. Se aplica a un propietario histórico
+`cpp_compiler` español con `stateLayout` v2, un único fuente y sin otro objetivo.
+La declaración no se añade al bloque ni modifica su `initialCode`, su posición,
+su dirección histórica o sus borradores.
+
+La función proporcionada tiene la forma global
+`bool nombre(int primero, int segundo)`. El motor obtiene su definición del
+inicial autenticado y exige conservar los tokens de la firma y el cuerpo.
+Admite cambios de espacios y comentarios. El estudiante puede organizar el resto
+del programa con nombres propios, condicionales, funciones auxiliares o
+colecciones; no se exige copiar la referencia ni llamar `comprobar` a un helper.
+Esta variante conserva una definición única, sin sobrecargas o redefiniciones
+por macros; admite directivas `#include` en el fuente.
+
+Cada caso declara dos enteros de 32 bits y una expectativa booleana independiente.
+Los pares deben ser distintos y su cantidad debe estar entre uno y treinta y dos.
+El autor obtiene las expectativas del acuerdo enseñado: el motor no presupone
+que todas las funciones deban implementar una comparación concreta.
+
+Ejemplo de una batería que debe encontrar un defecto en su función publicada:
+
+```json
+"compilerOpenBatteryChecks": [
+  {
+    "activity": "block_0004_0004",
+    "kind": "boolean-pair-v1",
+    "function": "debe_reponer",
+    "publishedResult": "failure",
+    "cases": [
+      {"first": 4, "second": 5, "expected": true},
+      {"first": 5, "second": 5, "expected": true},
+      {"first": 6, "second": 5, "expected": false}
+    ]
+  }
+]
+```
+
+`publishedResult: "failure"` exige una terminación normal no cero del programa
+que conserva la función publicada. `"success"` exige cero. El retorno no cero
+no se restringe a uno: la evidencia privada de terminación normal permite
+conservar el valor completo devuelto por Windows. Esto no amplía el contrato
+ordinario de `outputCheck.exitCode`, que mantiene su intervalo de 0 a 255.
+
+Una sola pulsación compila y ejecuta el programa del estudiante y comprueba:
+
+1. Un control que devuelve las expectativas declaradas debe terminar con cero.
+2. Una ejecución independiente por cada par invierte únicamente ese resultado.
+   La batería debe detectar la discrepancia, comunicar un resultado que permita
+   distinguir el caso y terminar normalmente con un código no cero.
+3. Una ejecución instrumentada de la función publicada debe conservar el
+   retorno y los canales visibles de la ejecución original y cumplir
+   `publishedResult`.
+
+Todas esas ejecuciones deben llamar exactamente una vez a cada par declarado;
+un fallo no puede omitir llamadas posteriores. Las expectativas no se obtienen
+de otra llamada a la función evaluada. Las salidas de los casos alterados deben
+diferir del control y entre sí: un mensaje fijo que no identifica qué comparación
+cambió tampoco basta. El texto literal, la numeración y el canal de los
+diagnósticos quedan a elección del estudiante.
+
+Los registros privados se separan de la consola. Sus datos numéricos no dependen
+de los formatos ni de la configuración regional de los flujos C++. Un testigo
+privado acredita el final normal; un aborto, una excepción no atendida, una
+cancelación o un límite de ejecución no cuentan como discrepancia detectada.
+Las fases conservan la misma ruta de fuente, ejecutable, directorio y entorno.
+La ejecución nativa mantiene el alcance y los límites de aislamiento del runner.
+
+La acreditación se vincula al fuente exacto, la configuración de ejecución y el
+objetivo `open-bool-pair-battery-independent-mutations-v1`. Una captura anterior,
+otra revisión o un antiguo acierto por salida no conceden el nuevo logro.
+Los casos anteriores son comprobaciones internas de la batería que construye
+el estudiante; no constituyen varios intentos manuales obligatorios del editor.
+
+Las entradas CMake anteriores de `compilerOpenBatteryChecks`, sin `kind`,
+conservan su contrato. La lista admite añadir propietarios al final, manteniendo
+literalmente el prefijo publicado. No permite retirar, reordenar o reescribir
+una declaración anterior para reutilizar su evidencia.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.

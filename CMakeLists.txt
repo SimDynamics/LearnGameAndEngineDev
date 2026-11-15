@@ -373,6 +373,25 @@ function(lgaed_add_general_choice_editorial_tests)
         PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
 endfunction()
 
+# The same typed battery checks run in the focused Windows gate and the full
+# application build. Fixtures extend the original lesson only in isolated QA.
+function(lgaed_add_boolean_battery_tests)
+    add_executable(lgaed_boolean_battery_check_tests
+        native/core/boolean_battery_check_tests.cpp)
+    target_link_libraries(lgaed_boolean_battery_check_tests
+        PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.boolean_battery COMMAND lgaed_boolean_battery_check_tests)
+    set_tests_properties(native.boolean_battery PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_boolean_battery_runtime_tests
+        native/platform/windows/boolean_battery_runtime_tests.cpp)
+    target_link_libraries(lgaed_boolean_battery_runtime_tests
+        PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.boolean_battery_runtime COMMAND lgaed_boolean_battery_runtime_tests
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json")
+    set_tests_properties(native.boolean_battery_runtime
+        PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+endfunction()
+
 if(LGAED_READER_BUILD_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -397,6 +416,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_catalog_history_fixtures()
     lgaed_add_catalog_test()
     lgaed_add_general_choice_editorial_tests()
+    lgaed_add_boolean_battery_tests()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
     # Run the real Win32 compiler view against thirteen authored inputs.
@@ -1338,6 +1358,7 @@ if(BUILD_TESTING)
     add_test(NAME native.u11_consult_choice_revision_view COMMAND lgaed_choice_revision_view_tests --u11-consult)
     set_tests_properties(native.u11_consult_choice_revision_view PROPERTIES TIMEOUT 90 RUN_SERIAL TRUE)
     lgaed_add_general_choice_editorial_tests()
+    lgaed_add_boolean_battery_tests()
     add_executable(lgaed_compile_diagnostic_view_tests native/presentation/windows/compile_diagnostic_view_tests.cpp)
     target_link_libraries(lgaed_compile_diagnostic_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.compile_diagnostic_view COMMAND lgaed_compile_diagnostic_view_tests)

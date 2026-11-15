@@ -3944,15 +3944,15 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     }
 }
 
-// Root-authored CMake batteries are attached only after the original mapped
-// blocks are loaded. Every historical case must match a real source call,
-// its independent expected value and its original order.
+// Root-authored batteries are attached only after the original mapped blocks
+// are loaded. Boolean single-file contracts preserve their published function;
+// historical CMake contracts retain their exact original call verification.
 void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerOpenBatteryChecks"))return;
     const auto entries=array(root,"compilerOpenBatteryChecks");
     require(lesson.locale=="es"&&lesson.state_layout.version==2&&
             entries.Size()>0&&entries.Size()<=32,
-            "Open CMake batteries require existing Spanish v2 owners");
+            "Open batteries require existing Spanish v2 owners");
     const auto authored_int=[](const IJsonValue& value) {
         require(value.ValueType()==JsonValueType::Number,
             "Open CMake battery needs integer input facts");
@@ -3974,6 +3974,71 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> used;
     for(const auto& entry:entries) {
         const auto item=entry.GetObject();
+        if(item.HasKey(L"kind")) {
+            allowed_keys(item,{"activity","kind","function","publishedResult","cases"},true);
+            require(text(item,"kind")=="boolean-pair-v1",
+                "Unsupported open battery kind");
+            const auto identity=text(item,"activity");
+            require(valid_id(identity)&&used.insert(identity).second,
+                "Duplicate or invalid boolean battery identity");
+            Block* owner=nullptr;
+            for(auto& page:lesson.pages)for(auto& block:page.blocks)
+                if(block.stable_id==identity) {
+                    require(!owner,"Boolean battery has duplicated mapped identity");
+                    owner=&block;
+                }
+            require(owner&&owner->type==BlockType::cpp_compiler&&
+                    !owner->cmake&&owner->project_files.empty()&&owner->source_files.empty()&&
+                    !owner->initial_code.empty()&&!owner->output_check&&!owner->compile_check&&
+                    !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                    !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                    !owner->cmake_graph_check,
+                "Boolean battery requires an original unevaluated single-file C++ editor");
+            const auto owner_json=JsonObject::Parse(winrt::to_hstring(owner->raw_json));
+            require(!owner_json.HasKey(L"language")||text(owner_json,"language")=="cpp",
+                "Boolean battery source language must be C++");
+            BooleanBatterySpec check;
+            check.function_name=text(item,"function");
+            const auto definition=boolean_battery_extract_definition(
+                owner->initial_code,check.function_name);
+            require(definition.has_value(),
+                "Boolean battery needs one original bool(int,int) function");
+            check.protected_definition=*definition;
+            const auto published=text(item,"publishedResult");
+            require(published=="success"||published=="failure",
+                "Boolean battery needs an explicit published result");
+            check.published_result=published=="success"
+                ?BooleanBatteryPublishedResult::success:BooleanBatteryPublishedResult::failure;
+            const auto cases=array(item,"cases");
+            require(cases.Size()>0&&cases.Size()<=32,
+                "Boolean battery needs between 1 and 32 distinct input pairs");
+            for(const auto& element:cases) {
+                const auto declared=element.GetObject();
+                allowed_keys(declared,{"first","second","expected"},true);
+                const auto expected=declared.GetNamedValue(L"expected");
+                require(expected.ValueType()==JsonValueType::Boolean,
+                    "Boolean battery expected result must be a boolean");
+                check.cases.push_back({
+                    authored_int(declared.GetNamedValue(L"first")),
+                    authored_int(declared.GetNamedValue(L"second")),
+                    expected.GetBoolean()
+                });
+            }
+            require(boolean_battery_spec_valid(check),
+                "Boolean battery has an invalid function or repeated input pairs");
+            OutputCheck runtime;
+            runtime.boolean_battery_result=check.published_result;
+            runtime.input_comparison=TextComparison::exact;
+            OutputCase first;
+            first.standard_input=owner->standard_input.value_or("");
+            first.outputs={""}; // Actual sensitivity evidence decides this objective.
+            first.explanation="La batería ejecutó todas las comparaciones, detectó "
+                "los resultados alterados y conservó la función solicitada.";
+            runtime.cases.push_back(std::move(first));
+            owner->boolean_battery_probe=std::move(check);
+            owner->output_check=std::move(runtime);
+            continue;
+        }
         allowed_keys(item,{"activity","library","test","function",
             "comparison","target","originalCases"},true);
         const auto identity=text(item,"activity");
@@ -4405,6 +4470,10 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                     // its new, separately sealed execution objective.
                     bool declared_battery=false;
                     if(root.HasKey(L"compilerOpenBatteryChecks")) {
+                        require(lesson.state_layout.version==2&&
+                                p<lesson.state_layout.current.size()&&
+                                b<lesson.state_layout.current[p].blocks.size(),
+                            "Open battery progress requires an existing v2 mapped owner");
                         const auto identity=lesson.state_layout.current[p].blocks[b];
                         for(const auto& candidate:array(root,"compilerOpenBatteryChecks"))
                             if(text(candidate.GetObject(),"activity")==identity) {

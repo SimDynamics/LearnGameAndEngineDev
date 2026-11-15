@@ -2238,6 +2238,7 @@ struct LessonView {
         if(block(index).named_rule_source_check)
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
         request.open_battery_probe=block(index).open_battery_probe;
+        request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.cmake_graph_check=block(index).cmake_graph_check;
         request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
@@ -4074,11 +4075,12 @@ struct LessonView {
         // A completed process can return a nonzero application status without
         // crashing. Presentation must not depend on whether this source earned
         // the authored objective (for example, a deliberately edited client).
-        // Windows abnormal termination codes lie outside the normal 0..255
-        // application-return domain, as do timed out and cancelled phases.
+        // Existing objectives keep their application-return domain. The
+        // boolean battery additionally witnesses a normal full DWORD return.
         const bool normal_execution=result->error_utf8.empty()&&
             result->execution.status==windows::CppPhaseStatus::completed&&
-            result->execution.exit_code&&*result->execution.exit_code<=255;
+            result->execution.exit_code&&(block(index).boolean_battery_probe
+                ?fresh.execution_completed:*result->execution.exit_code<=255);
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
             output=diagnostic_text(phase.stdout_bytes+phase.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;
@@ -4163,7 +4165,9 @@ struct LessonView {
                     !block(index).named_rule_source_check->execution_probe||
                     fresh.named_rule_probe_correct)&&
                     (!block(index).open_battery_probe||
-                     fresh.open_battery_probe_correct);
+                     fresh.open_battery_probe_correct)&&
+                    (!block(index).boolean_battery_probe||
+                     fresh.boolean_battery_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4183,13 +4187,19 @@ struct LessonView {
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
-                if(!independent&&preserved_source&&!block(index).open_battery_probe)
+                if(!independent&&preserved_source&&!block(index).open_battery_probe&&
+                   !block(index).boolean_battery_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
                         "La sortie du test modifié correspond, mais la vérification indépendante des fonctions a échoué. Vérifiez le calcul réel.");
                 if(!preserved_source) {
-                    if(block(index).named_rule_source_check)
+                    if(block(index).boolean_battery_probe)
+                        text+='\n'+ui(
+                            "Conserva la función proporcionada y modifica la batería que la comprueba. La entrada y el criterio deben corresponder a este mismo editor.",
+                            "Preserve the provided function and edit its test battery. The input and objective must belong to this editor.",
+                            "Conservez la fonction fournie et modifiez sa batterie de tests. L’entrée et le critère doivent correspondre à cet éditeur.");
+                    else if(block(index).named_rule_source_check)
                         text+='\n'+ui(
                             "La salida coincide, pero este objetivo también exige declarar constantes locales con nombres de propósito, valores correctos y uso real en el cálculo. Comprueba las dos condiciones antes de continuar.",
                             "The output matches, but this goal also requires purpose-named local constants with correct values and real use in the calculation.",

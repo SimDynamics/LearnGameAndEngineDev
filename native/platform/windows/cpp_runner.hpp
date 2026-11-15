@@ -2,6 +2,7 @@
 #include "core/cpp_project.hpp"
 #include "core/named_rule_check.hpp"
 #include "core/open_battery_check.hpp"
+#include "core/boolean_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 
 #include <chrono>
@@ -111,6 +112,7 @@ struct CppRunRequest {
     // The lesson loader supplies this immutable root-authored contract.
     // It travels with the specific request and cannot be graded from text.
     std::optional<curriculum::CmakeGraphRequirement> cmake_graph_check;
+    std::optional<curriculum::BooleanBatterySpec> boolean_battery_probe;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -133,6 +135,10 @@ struct CppNamedRuleProbe {
 struct CppOpenBatteryEvidence {
     std::string original_project_fingerprint;
     std::vector<curriculum::OpenBatteryRun> runs;
+};
+struct CppBooleanBatteryEvidence {
+    std::string original_program_fingerprint;
+    std::vector<curriculum::BooleanBatteryRun> runs;
 };
 
 // Read-only CMake File API evidence, pinned to the submitted project/configuration.
@@ -200,6 +206,8 @@ struct CppRunResult {
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
     std::vector<CppObservationProbe> observation_probes;
     std::vector<CppAssertionProbe> assertion_probes;
+    std::optional<CppBooleanBatteryEvidence> boolean_battery_evidence;
+    std::string boolean_battery_request_fingerprint;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
@@ -243,5 +251,9 @@ struct CppProjectAvailability {
 // failure, output overflow or an abnormal Windows termination. No UI is used.
 [[nodiscard]] curriculum::FreshExecution capture_cpp_execution(
     const CppRunRequest&, const CppRunResult&);
+// Ephemeral proof binding used again when a captured execution is consumed.
+// It does not change any existing persisted program or CMake receipt frame.
+[[nodiscard]] std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest&);
 
 } // namespace lgaed::windows
+
