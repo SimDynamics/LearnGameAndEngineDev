@@ -641,6 +641,11 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                     current = layout.retire(revised(lesson, identity), ["block_0000_0001"])
                     target = history_block(current, old_identity)
                     target.clear(); target.update(deepcopy(block(published(lesson), old_identity)))
+                    with self.assertRaisesRegex(layout.LayoutError, "exact editorial prefix"):
+                        layout.validate(current)
+                    # Legacy captures still reject the mismatched compiler/reference
+                    # pair through their original guard when no exact epoch exists.
+                    current["stateLayout"]["retirementHistory"][0].pop("editorialPrefix")
                     with self.assertRaisesRegex(layout.LayoutError, "same published version"):
                         layout.validate(current)
 
@@ -1015,8 +1020,8 @@ class GeneralCompilerCaseRevisionTests(unittest.TestCase):
                 self.reject(lambda: layout.validate(json.loads(self.payloads[item['file']])))
 
     def test_fixture_histories_are_complete_and_each_stage_validates_against_its_actual_source(self):
-        self.assertEqual(len(self.manifest['cases']), 16)
-        self.assertEqual(len(self.manifest['invalid']), 30)
+        self.assertEqual(len(self.manifest['cases']), 18)
+        self.assertEqual(len(self.manifest['invalid']), 37)
         for entry in self.manifest['cases']:
             self.assertEqual(entry['history'][-1]['source'], entry['after'])
             previous = json.loads(self.payloads[entry['before']])

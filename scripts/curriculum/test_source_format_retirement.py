@@ -30,6 +30,25 @@ class SourceFormatRetirementTest(unittest.TestCase):
     def invalid_document(self, name):
         return deepcopy(self.documents[self.invalid[name]["file"]])
 
+    def legacy_snapshot_copy(self, document):
+        legacy = deepcopy(document)
+        for snapshot in legacy["stateLayout"].get("retirementHistory", []):
+            snapshot.pop("editorialPrefix", None)
+        return legacy
+
+    def assert_prefix_then_legacy_rejection(self, document, legacy_message, *,
+            prefix_message="A retirement source differs from its owner's exact editorial prefix"):
+        snapshots = document["stateLayout"]["retirementHistory"]
+        self.assertTrue(snapshots)
+        self.assertTrue(all("editorialPrefix" in snapshot for snapshot in snapshots))
+        with self.assertRaisesRegex(layout.LayoutError, prefix_message):
+            layout.validate(document)
+        # Legacy standalone documents still exercise the original independent
+        # guard. Removing provenance is never proposed as a new transition.
+        legacy = self.legacy_snapshot_copy(document)
+        with self.assertRaisesRegex(layout.LayoutError, legacy_message):
+            layout.validate(legacy)
+
     def test_pinned_real_publication_keeps_every_original_owner_and_mark(self):
         published = fixtures.published()
         before, after = self.pair("source-format-retirement")
@@ -178,21 +197,18 @@ class SourceFormatRetirementTest(unittest.TestCase):
                 block = fixtures.history_block(bad, identity)
                 block.clear()
                 block.update(deepcopy(layout._blocks(original)[identity]))
-                with self.assertRaisesRegex(layout.LayoutError, "same published version"):
-                    layout.validate(bad)
+                self.assert_prefix_then_legacy_rejection(bad, "same published version")
 
     def test_unpublished_whitespace_is_not_a_historical_publication(self):
         bad = self.invalid_document("unpublished-whitespace")
         original = bad["stateLayout"]["sourceFormatRevisions"][0]["block"]
         historical = fixtures.history_block(bad, "block_0000_0000")
         self.assertTrue(layout.code_format.require_source_lexical(original, historical))
-        with self.assertRaisesRegex(layout.LayoutError, "authenticated editorial source"):
-            layout.validate(bad)
+        self.assert_prefix_then_legacy_rejection(bad, "authenticated editorial source")
 
     def test_unpublished_guidance_cannot_hide_behind_compatible_source(self):
         bad = self.invalid_document("unpublished-guidance")
-        with self.assertRaisesRegex(layout.LayoutError, "authenticated editorial source"):
-            layout.validate(bad)
+        self.assert_prefix_then_legacy_rejection(bad, "authenticated editorial source")
 
     def test_changed_token_is_rejected_after_its_full_digest_is_recomputed(self):
         bad = self.invalid_document("changed-token")
@@ -201,14 +217,14 @@ class SourceFormatRetirementTest(unittest.TestCase):
         nodes = {proof[field] for proof in bad["stateLayout"]["editorial"]
                  if proof["id"] == identity for field in ("beforeSha256", "afterSha256")}
         self.assertIn(layout.fingerprint(snapshot), nodes)
-        with self.assertRaisesRegex(layout.LayoutError, "Unsafe historical source formatting"):
-            layout.validate(bad)
+        self.assert_prefix_then_legacy_rejection(bad, "Unsafe historical source formatting",
+            prefix_message="A retirement editorial prefix differs from its complete published history")
 
     def test_answers_oracles_order_and_project_paths_remain_protected(self):
         for name in ("changed-answer", "changed-oracle", "changed-order", "changed-project-path"):
             with self.subTest(mutation=name):
-                with self.assertRaisesRegex(layout.LayoutError, "response/code contract"):
-                    layout.validate(self.invalid_document(name))
+                self.assert_prefix_then_legacy_rejection(self.invalid_document(name), "response/code contract",
+                    prefix_message="A retirement editorial prefix differs from its complete published history")
 
     def test_owner_archive_and_editorial_chain_cannot_be_substituted(self):
         for name in ("borrowed-owner", "changed-original-archive",
@@ -227,9 +243,15 @@ class SourceFormatRetirementTest(unittest.TestCase):
         historical.update(deepcopy(original))
         # Both full blocks are real editorial nodes. Only the already published
         # retirement snapshot determines which one belongs to this reading.
-        layout.validate(bad)
+        with self.assertRaisesRegex(layout.LayoutError,
+                "A retirement source differs from its owner's exact editorial prefix"):
+            layout.validate(bad)
+        legacy_before = self.legacy_snapshot_copy(after)
+        legacy_bad = self.legacy_snapshot_copy(bad)
+        layout.validate(legacy_before)
+        layout.validate(legacy_bad)
         with self.assertRaisesRegex(layout.LayoutError, "append-only"):
-            layout.validate_transition(after, bad)
+            layout.validate_transition(legacy_before, legacy_bad)
 
     def test_retiring_the_formatted_owner_itself_remains_outside_this_transition(self):
         before, _ = self.pair("synthetic-format-first")
