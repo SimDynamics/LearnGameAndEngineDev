@@ -1192,9 +1192,10 @@ def _compiler_case_order_projection(document: dict, identity: str, block: dict) 
 
 def _compiler_case_order_contract(document: dict, identity: str, block: dict) -> dict:
     result = _compiler_case_order_projection(document, identity, block)
-    require(all(type(case) is dict and ("exitCode" not in case or type(case["exitCode"]) is int)
-                for case in result["outputCheck"]["cases"]),
-            "Compiler case exit codes must preserve their integer type")
+    if _compiler_case_order_records(document, identity):
+        require(all(type(case) is dict and ("exitCode" not in case or type(case["exitCode"]) is int)
+                    for case in result["outputCheck"]["cases"]),
+                "Compiler case exit codes must preserve their integer type")
     archive = next((entry["block"] for entry in document.get("stateLayout", {}).get(
         "sourceFormatRevisions", []) if entry["id"] == identity), None)
     if archive is not None:

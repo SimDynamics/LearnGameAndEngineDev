@@ -247,6 +247,26 @@ class CompilerCaseOrderTest(unittest.TestCase):
         self.assertEqual(new['outputCheck']['cases'][0]['target'],'beta')
         self.assertEqual(new['outputCheck']['cases'],[old['outputCheck']['cases'][i] for i in (1,2,0)])
 
+    def test_bibliography_without_output_check_keeps_its_own_contract(self):
+        published = fixtures.synthetic_publication(marked=False)
+        cited = deepcopy(published)
+        identity = 'block_0000_0000'
+        layout._blocks(cited)[identity]['explanation'] = 'Es la primera opción (Autor, 2024, p. 7).'
+        cited = layout.prepare_v2(cited, 'es', {'es': published}, published)
+        reordered = layout.reorder_compiler_cases(cited, fixtures.SYNTHETIC_OWNER, [2, 0, 1])
+        for previous in (cited, reordered):
+            with self.subTest(other_compiler_reordered=bool(previous['stateLayout'].get('compilerCaseOrderRevisions'))):
+                revised = deepcopy(previous)
+                layout._blocks(revised)[identity]['explanation'] = 'Es la primera opción (Autor, 2024).'
+                revised = layout.prepare_v2(revised, 'es', {'es': previous}, previous)
+                proof = revised['stateLayout']['editorial'][-1]
+                self.assertEqual(proof['id'], identity)
+                self.assertIn('bibliography', proof)
+                self.assertNotIn('outputCheck', proof['bibliography']['previousBlock'])
+                self.assertEqual(previous['stateLayout'].get('compilerCaseOrderRevisions'),
+                                 revised['stateLayout'].get('compilerCaseOrderRevisions'))
+                layout.validate_transition(previous, revised)
+
     def test_all_shared_negatives_fail_standalone_and_later_edges_keep_first_proof(self):
         for entry in self.manifest['invalid']:
             with self.subTest(name=entry['name']):
