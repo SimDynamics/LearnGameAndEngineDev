@@ -1,8 +1,11 @@
 """U4L7 source formatting follows authenticated owners across later publications.
 
-Both historical lessons are complete Git publications with independent byte
-pins. All proposed edits below are isolated copies passed through the real
-authoring APIs; no predecessor is reconstructed from the current curriculum.
+The format and retirement pairs are complete Git publications with independent
+byte pins. Each transition uses its actual published parent. The current lesson
+is checked for the six format owners and preserved provenance, not treated as
+a single operation from an old publication. All proposed edits below are isolated
+copies passed through the real authoring APIs; no predecessor is reconstructed
+from the current curriculum.
 """
 from __future__ import annotations
 
@@ -36,6 +39,14 @@ PUBLICATIONS = {
         "2e814bd22dd3cc88a5b79ef93534ea75c64437cb",
         "dc8c263a0d8f3ad5810e9b3447406f4b07a02d143bd31bc40e2d0a2e34205d79",
     ),
+    "retirement_parent": (
+        "80e4f711e5ee30fc45093d79725b37e40fe60d34",
+        "c2f47d0b21244feaa54c335849369dd0029ef4f152448798d9ff4698616cf671",
+    ),
+    "retirement": (
+        "e5b20912931cd67eac06619abeaa7a9cdc421704",
+        "21cbf34c7a14ae158711a368f19261de2c119be41fdfdc9fa1521c6d9376721e",
+    ),
 }
 OWNERS = (
     "block_0005_0002", "block_0006_0003", "block_0007_0002",
@@ -67,6 +78,8 @@ class SourceFormatU4L7(unittest.TestCase):
     def setUpClass(cls):
         cls.before = json.loads(historical_bytes("before"))
         cls.formatted = json.loads(historical_bytes("formatted"))
+        cls.retirement_parent = json.loads(historical_bytes("retirement_parent"))
+        cls.retirement = json.loads(historical_bytes("retirement"))
         cls.doc = json.loads(PATH.read_bytes())
 
     def owners(self, document):
@@ -87,7 +100,6 @@ class SourceFormatU4L7(unittest.TestCase):
 
     def assert_sources_and_history(self, document):
         state.validate(document)
-        state.validate_transition(self.formatted, document)
         before, _ = self.owners(self.before)
         published, _ = self.owners(self.formatted)
         current, _ = self.owners(document)
@@ -105,21 +117,39 @@ class SourceFormatU4L7(unittest.TestCase):
                 edge = {"id": owner,
                         "beforeSha256": state.fingerprint(before[owner]),
                         "afterSha256": state.fingerprint(published[owner])}
-                self.assertIn(edge, [proof for proof in self.formatted["stateLayout"]["editorial"]
-                                     if proof["id"] == owner])
-                self.assertIn(edge, [proof for proof in document["stateLayout"]["editorial"]
-                                     if proof["id"] == owner])
+                published_edges = [proof for proof in self.formatted["stateLayout"]["editorial"]
+                                   if proof["id"] == owner]
+                current_edges = [proof for proof in document["stateLayout"]["editorial"]
+                                 if proof["id"] == owner]
+                self.assertIn(edge, published_edges)
+                self.assertEqual(current_edges[:len(published_edges)], published_edges)
 
     def publish(self, previous, proposal):
         return state.prepare_v2(proposal, "es", {"es": previous}, previous)
 
     def test_complete_pinned_publications_and_real_transitions(self):
-        for document in (self.before, self.formatted, self.doc):
+        for document in (self.before, self.formatted, self.retirement_parent,
+                         self.retirement, self.doc):
             self.assertEqual(document["id"], LESSON)
             state.validate(document)
+        # These are actual Git parent/publication pairs. Retirement captured
+        # the complete later presentation, after hundreds of authored additions.
         state.validate_transition(self.before, self.formatted)
-        state.validate_transition(self.formatted, self.doc)
-        self.assert_sources_and_history(self.doc)
+        state.validate_transition(self.retirement_parent, self.retirement)
+        with self.assertRaisesRegex(state.LayoutError,
+                "Retirement reading snapshot does not match the complete previous published presentation"):
+            state.validate_transition(self.formatted, self.retirement)
+        snapshots = self.retirement["stateLayout"]["retirementHistory"]
+        self.assertEqual(len(snapshots), 1)
+        snapshot = snapshots[0]
+        self.assertEqual(snapshot["pages"], self.retirement_parent["pages"])
+        self.assertEqual(snapshot["current"], self.retirement_parent["stateLayout"]["current"])
+        self.assertEqual(snapshot["textSemantics"], self.retirement_parent["textSemantics"])
+        self.assertEqual(snapshot["editorialPrefix"]["count"],
+                         len(self.retirement_parent["stateLayout"]["editorial"]))
+        self.assertEqual(self.doc["stateLayout"].get("retirementHistory", [])[:len(snapshots)], snapshots)
+        for document in (self.retirement_parent, self.retirement, self.doc):
+            self.assert_sources_and_history(document)
 
     def test_independent_byte_pins_reject_modified_or_substituted_sources(self):
         for publication in PUBLICATIONS:
@@ -174,6 +204,7 @@ class SourceFormatU4L7(unittest.TestCase):
         self.assertLess(updated.count("\n\n"), old.count("\n\n"))
         blocks[COMPILER]["initialCode"] = updated
         revised = self.publish(self.formatted, proposal)
+        state.validate_transition(self.formatted, revised)
         self.assert_sources_and_history(revised)
         self.assertEqual(revised["stateLayout"]["sourceFormatRevisions"],
                          self.formatted["stateLayout"]["sourceFormatRevisions"])
@@ -189,6 +220,7 @@ class SourceFormatU4L7(unittest.TestCase):
         blocks[CMAKE]["code"] = updated.replace("\n\n", "\n")
         self.assertNotEqual(blocks[CMAKE]["code"], old)
         revised = self.publish(self.formatted, proposal)
+        state.validate_transition(self.formatted, revised)
         self.assert_sources_and_history(revised)
 
     def test_logic_change_is_rejected_with_generated_editorial_proof(self):
