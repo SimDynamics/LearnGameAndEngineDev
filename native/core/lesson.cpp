@@ -314,6 +314,26 @@ bool compiler_is_puzzle_prerequisite(const Lesson& lesson, const Block& compiler
     }
     return false;
 }
+Block compiler_case_order_previous_block(
+        const Block& owner,const CompilerCaseOrderRevision& revision) {
+    if(owner.type!=BlockType::cpp_compiler||!owner.output_check||
+            owner.stable_id!=revision.id)
+        throw std::invalid_argument("A compiler case predecessor belongs to its output-check owner");
+    auto previous=owner;
+    previous.raw_json=revision.raw_json;
+    previous.initial_code=revision.previous_initial_code;
+    previous.project_files=revision.previous_project_files;
+    // Keep independently derived root probes; only the authored case contract
+    // is reconstructed here. A stronger current prerequisite cannot inherit an
+    // old receipt that never proved it.
+    previous.output_check->input_comparison=revision.previous_output_check.input_comparison;
+    previous.output_check->cases=revision.previous_output_check.cases;
+    previous.source_format_original_initial_code=revision.previous_source_format_initial_code;
+    previous.source_format_original_project_files=revision.previous_source_format_project_files;
+    previous.text_semantics=revision.previous_case_text_semantics;
+    previous.compiler_case_order_revisions.clear();
+    return previous;
+}
 std::string reference_objective_frame(const Lesson& lesson, const Block& activity) {
     if (!has_compiler_objective(activity))
         throw std::invalid_argument("Only an authored compiler objective can unlock a reference");

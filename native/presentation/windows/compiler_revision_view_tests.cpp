@@ -2,6 +2,7 @@
 #include "core/attempts.hpp"
 #include "core/narration_state.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
 #include "presentation/windows/lesson_view.hpp"
@@ -340,11 +341,103 @@ void compiler_revisions_keep_prior_progress(bool late){
     std::cout<<"PASS "<<scenarios<<" hidden real compiler views: "<<(late?"U11L15/U11L16 exact proposals":"seven earlier exact expansions")
         <<", prior empty/draft/partial/complete states, same-program projection, current gate, original drafts/preferences, stored reader history, completion, Reset and reopen (synthetic QA receipts, no compilation or listening claimed)\n";
 }
+void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& before_file,
+        const std::filesystem::path& after_file) {
+    const auto before_hash=state::sha256(state::read_bytes(before_file));
+    const auto after_hash=state::sha256(state::read_bytes(after_file));
+    const auto before=windows::load_lesson(before_file),after=windows::load_lesson(after_file);
+    constexpr auto id="u11_movimientos_compensados_en_los_extremos_comprobacion";
+    const auto position=curriculum::stable_block_position(before,id);
+    const auto revised_position=curriculum::stable_block_position(after,id);
+    check(position&&revised_position&&position->page==revised_position->page&&position->block==revised_position->block,
+        "The permutation moved its published editor");
+    const auto& old=before.pages[position->page].blocks[position->block];
+    const auto& current=after.pages[position->page].blocks[position->block];
+    check(old.output_check&&current.output_check&&old.output_check->cases.size()==22&&
+        current.output_check->cases.front().standard_input==old.output_check->cases.back().standard_input&&
+        !current.compiler_case_order_revisions.empty()&&!current.compiler_revision,
+        "The real U11L7 permutation fixture lost its independent contract");
+    const auto seed_one=[](state::StateData& data,const curriculum::Lesson& lesson,
+            const curriculum::Block& owner,std::string source,std::size_t index,std::string_view feedback) {
+        const auto& item=owner.output_check->cases.at(index);
+        auto request=program(owner,std::move(source));request.stdin_utf8=item.standard_input;
+        if(request.cmake&&item.executable)request.cmake->target=*item.executable;
+        curriculum::FreshExecution execution{request.revision,true,true,item.exit_code,item.standard_input,item.outputs.front()};
+        execution.executable=item.executable;
+        execution.standard_error=item.standard_error_exact.value_or(
+            item.standard_error==curriculum::StandardErrorExpectation::non_blank?"QA diagnostic":"");
+        check(windows::evaluate_cpp_output_check(*owner.output_check,execution,request.revision).verdict==
+            curriculum::OutputVerdict::correct,"The modeled case-order capture is not a valid case");
+        // Optional success records its case but returns false until first-case completion.
+        (void)windows::record_compiler_puzzle_case(data,lesson,owner,request,execution,feedback);
+        check(windows::compiler_puzzle_case_count(data,lesson,owner)>0,
+            "Cannot seed a modeled execution for the isolated case-order view");
+    };
+    for(const std::string mode:{"none","old-first","new-first"}) {
+        state::StateData data;state::prepare_lesson_state(data,before);
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
+        for(const auto& page:before.pages)for(const auto& owner:page.blocks)
+            if(owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&owner.stable_id!=id)
+                seed_one(data,before,owner,owner.initial_code,0,"Correcto\nPrerrequisito QA.");
+        const auto source=old.initial_code+"\n// Borrador personal QA conservado.\n";
+        if(mode!="none")seed_one(data,before,old,source,mode=="old-first"?0:21,
+            "Correcto\nGuía del primer caso anterior.");
+        state::Draft draft;draft.source=source;draft.input=" entrada personal\n";
+        draft.selection_start=3;draft.selection_end=7;
+        const auto key=curriculum::draft_key("programming",before,old);state::put_draft(data,key,draft);
+        state::save_current_page(data,before,position->page);
+        View fixture(after,data);
+        const auto verify=[&] {
+            const auto saved=fixture.saved();const bool complete=mode=="new-first";
+            check(windows::compiler_puzzle_completed(saved,after,current)==complete,
+                "The native view confused an earlier first case with the current one");
+            check(windows::compiler_puzzle_completed(saved,before,old)==(mode=="old-first"),
+                "The native view replaced the historical achievement");
+            check(windows::compiler_puzzle_case_count(saved,after,current)==(mode=="none"?0:1),
+                "The native view lost or invented projected case receipts");
+            const auto summary=fixture.text(position->block,40);
+            check(summary.empty()==(mode!="old-first"),"The native case-order history label is incorrect");
+            if(mode=="old-first") {
+                check(summary.find("primer caso de esta versión")!=summary.npos&&
+                    summary.find("Guía del primer caso anterior.")!=summary.npos,
+                    "History omitted its own feedback or the pending first case");
+                check(fixture.text(position->block,4).empty(),"The old result became a current success message");
+                bool found=false;for(const auto& region:lesson_reading_regions(fixture.view))if(region.source_text==summary) {
+                    found=true;check(!region.solved&&region.required_compiler,"Historical reading unlocked the current case");
+                }
+                check(found,"The retained achievement is absent from the native reading regions");
+            }
+            check(!descendant(fixture.view,control_id(position->block,43)),
+                "A case permutation invented an additional-source copy control");
+            check(fixture.text(position->block,10)==source&&state::get_draft(saved,key,"").source==source,
+                "The permutation replaced the actual editor or saved program");
+        };
+        verify();fixture.reopen();verify();
+        if(mode!="new-first") {
+            auto next=fixture.saved();seed_one(next,after,current,source,0,"Correcto\nPrimer caso actual QA.");
+            fixture.restore(next);
+            check(windows::compiler_puzzle_completed(fixture.saved(),after,current)&&fixture.text(position->block,40).empty(),
+                "Checking the current first case left the native editor pending");
+        }
+        fixture.reset(position->block);fixture.reopen();
+        const auto reset=fixture.saved();
+        check(!windows::compiler_puzzle_completed(reset,after,current)&&
+            windows::compiler_puzzle_case_count(reset,before,old)==0&&fixture.text(position->block,40).empty(),
+            "Reset and reopen resurrected a case-order achievement");
+    }
+    check(state::sha256(state::read_bytes(before_file))==before_hash&&state::sha256(state::read_bytes(after_file))==after_hash,
+        "The native view changed its read-only curricular fixtures");
+    std::cout<<"PASS 3 real hidden U11L7 Win32 views: no proof, old first only, new first previously optional; "
+        "own historical feedback, current first gate, unchanged editor, reopen and Reset. Modeled receipts; no compilation or listening claimed.\n";
+}
+
 }
 int main(int argc,char** argv){const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
-    try{check(argc==1||(argc==2&&(std::string_view(argv[1])=="--u11-late"||std::string_view(argv[1])=="--u11-starter")),"Unknown compiler revision view selector");
-        if(argc==2&&std::string_view(argv[1])=="--u11-starter")starter_revision_keeps_existing_program();
+    try{check(argc==1||(argc==2&&(std::string_view(argv[1])=="--u11-late"||std::string_view(argv[1])=="--u11-starter"))||
+            (argc==4&&std::string_view(argv[1])=="--case-order"),"Unknown compiler revision view selector");
+        if(argc==4)compiler_case_order_keeps_first_case_gate(std::filesystem::u8path(argv[2]),std::filesystem::u8path(argv[3]));
+        else if(argc==2&&std::string_view(argv[1])=="--u11-starter")starter_revision_keeps_existing_program();
         else compiler_revisions_keep_prior_progress(argc==2);}catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }

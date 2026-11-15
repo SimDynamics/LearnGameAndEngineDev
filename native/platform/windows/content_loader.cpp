@@ -1643,6 +1643,125 @@ std::optional<StateReadingRevision> composed_feedback_reading_revision(const Jso
     result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }
+// Case-order provenance is independent of the closed compiler expansions.
+// Canonical full cases, including runtime channels and comparison modes, are
+// compared separately: state_fingerprint intentionally omits some channels.
+std::string compiler_case_contract(const JsonObject& block) {
+    require(text(block,"type")=="cpp_compiler"&&block.HasKey(L"outputCheck")&&
+        !block.HasKey(L"compileCheck"),"Case ordering requires an output-check compiler");
+    return fingerprint(without_compiler_guidance(block).GetNamedObject(L"outputCheck"));
+}
+JsonObject permuted_compiler_cases(const JsonObject& before,
+        const std::vector<std::size_t>& order) {
+    const auto cases=array(before.GetNamedObject(L"outputCheck"),"cases");
+    require(cases.Size()>=2&&order.size()==cases.Size(),
+        "Case ordering needs every existing case exactly once");
+    std::set<std::size_t> used;bool moved=false;JsonArray reordered;
+    for(std::size_t i=0;i<order.size();++i) {
+        require(order[i]<order.size()&&used.insert(order[i]).second,
+            "Case ordering needs every existing case exactly once");
+        moved=moved||order[i]!=i;reordered.Append(cases.GetAt(static_cast<unsigned>(order[i])));
+    }
+    require(moved,"Case ordering must change the declared order");
+    auto result=JsonObject::Parse(before.Stringify());
+    result.GetNamedObject(L"outputCheck").Insert(L"cases",reordered);
+    require(fingerprint(result)!=fingerprint(before),"Case ordering must change the declared order");
+    return result;
+}
+struct CompilerCaseOrderVersion {
+    JsonObject before,after;
+    std::vector<std::size_t> original_positions;
+};
+struct CompilerCaseOrderHistory {
+    std::vector<CompilerCaseOrderVersion> versions;
+    std::map<std::string,std::set<std::size_t>> published_epochs;
+};
+using CompilerCaseOrderHistories=std::map<std::string,CompilerCaseOrderHistory>;
+CompilerCaseOrderHistories compiler_case_order_histories(
+        const StateLayout& layout,const JsonArray& editorial,std::string_view lesson_id) {
+    CompilerCaseOrderHistories result;
+    if(layout.compiler_case_order_revisions.empty())return result;
+    std::map<std::size_t,const CompilerCaseOrderRevision*> indexed;
+    std::optional<std::size_t> last_index;
+    for(const auto& record:layout.compiler_case_order_revisions) {
+        require(record.editorial_index<editorial.Size()&&
+            (!last_index||*last_index<record.editorial_index)&&
+            indexed.emplace(record.editorial_index,&record).second,
+            "Case-order archives must follow their exact editorial order");
+        last_index=record.editorial_index;
+        auto& history=result[record.id];
+        const auto before=JsonObject::Parse(key(record.raw_json));
+        if(!history.versions.empty())
+            require(compiler_case_contract(before)==compiler_case_contract(history.versions.back().after),
+                "Case ordering changed an existing case, channel or comparison mode");
+        const auto after=permuted_compiler_cases(before,record.order);
+        std::vector<std::size_t> positions;
+        for(const auto index:record.order)positions.push_back(history.versions.empty()?index:
+            history.versions.back().original_positions.at(index));
+        history.versions.push_back({before,after,std::move(positions)});
+    }
+    JsonArray prefix;std::map<std::string,std::size_t> epochs;
+    for(unsigned index=0;index<editorial.Size();++index) {
+        const auto proof=editorial.GetObjectAt(index);const auto id=text(proof,"id");
+        if(const auto found=result.find(id);found!=result.end()) {
+            auto& history=found->second;auto& epoch=epochs[id];
+            history.published_epochs[text(proof,"beforeSha256")].insert(epoch);
+            if(const auto entry=indexed.find(index);entry!=indexed.end()) {
+                const auto& record=*entry->second;
+                require(record.id==id&&epoch<history.versions.size(),
+                    "Case-order editorial edge belongs to a different owner");
+                const auto& version=history.versions[epoch];
+                require(text(proof,"beforeSha256")==record.sha256&&
+                    text(proof,"afterSha256")==fingerprint(version.after),
+                    "Case ordering needs its exact complete editorial pair");
+                JsonObject provenance;provenance.Insert(L"lessonId",JsonValue::CreateStringValue(key(lesson_id)));
+                provenance.Insert(L"locale",JsonValue::CreateStringValue(key(layout.locale)));
+                provenance.Insert(L"editorial",prefix);
+                require(record.history_sha256==fingerprint(provenance),
+                    "Case-order history differs from its complete ordered prefix");
+                ++epoch;
+            }
+            history.published_epochs[text(proof,"afterSha256")].insert(epoch);
+        } else require(!indexed.contains(index),
+            "Case-order editorial edge belongs to a different owner");
+        prefix.Append(proof);
+    }
+    return result;
+}
+std::size_t compiler_case_order_epoch(const JsonObject& source,
+        const CompilerCaseOrderHistory& history,bool historical) {
+    const auto contract=compiler_case_contract(source);
+    const auto matches=[&](std::size_t epoch) {
+        return contract==compiler_case_contract(epoch?history.versions.at(epoch-1).after:
+            history.versions.front().before);
+    };
+    if(!historical) {
+        require(matches(history.versions.size()),
+            "Case ordering changed an existing case, channel or comparison mode");
+        return history.versions.size();
+    }
+    const auto node=history.published_epochs.find(fingerprint(source));
+    require(node!=history.published_epochs.end(),
+        "A historical case order needs an exact occurrence in its owner's editorial chain");
+    for(const auto epoch:node->second)if(matches(epoch))return epoch;
+    invalid("Historical case order changed a case, channel or comparison mode");
+}
+JsonObject compiler_case_order_projection(const JsonObject& source,
+        const CompilerCaseOrderHistory& history,bool historical=false) {
+    const auto epoch=compiler_case_order_epoch(source,history,historical);
+    if(!epoch)return source;
+    const auto cases=array(source.GetNamedObject(L"outputCheck"),"cases");
+    const auto& positions=history.versions.at(epoch-1).original_positions;
+    std::vector<std::size_t> inverse(positions.size());
+    for(std::size_t i=0;i<positions.size();++i)inverse.at(positions[i])=i;
+    JsonArray original;
+    for(const auto index:inverse)original.Append(cases.GetAt(static_cast<unsigned>(index)));
+    auto result=JsonObject::Parse(source.Stringify());
+    result.GetNamedObject(L"outputCheck").Insert(L"cases",original);return result;
+}
+std::map<std::string,TextSemantics> read_case_order_semantics(
+    const JsonObject&,const JsonArray&,const std::string&);
+
 StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id,const JsonObject& root,std::string_view document_source) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
@@ -1650,7 +1769,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "compilerCaseOrderRevisions", "sourceFormatRevisions", "mathTextRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -1797,6 +1916,48 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             result.order_refinements.push_back(std::move(expanded.record));
         }
     }
+    if(metadata.HasKey(L"compilerCaseOrderRevisions")) {
+        const auto records=array(metadata,"compilerCaseOrderRevisions");
+        require(result.version==2&&records.Size()<=100000&&(!records.Size()||locale=="es"),
+            "Compiler case ordering requires Spanish stateLayout v2");
+        for(const auto& value:records) {
+            const auto item=value.GetObject();allowed_keys(item,
+                {"id","block","order","editorialIndex","historySha256","semanticBefore"},true);
+            CompilerCaseOrderRevision record;record.id=text(item,"id");
+            require(valid_id(record.id)&&current_blocks.contains(record.id),
+                "Unknown or inactive compiler case-order owner");
+            const auto previous=item.GetNamedObject(L"block");
+            (void)compiler_case_contract(previous);
+            record.raw_json=utf8(previous.Stringify());record.sha256=fingerprint(previous);
+            record.record_sha256=fingerprint(item);record.history_sha256=text(item,"historySha256");
+            require(valid_hash(record.history_sha256),"Invalid case-order history fingerprint");
+            record.editorial_index=integer(item.GetNamedValue(L"editorialIndex"),100000);
+            for(const auto& index:array(item,"order"))record.order.push_back(integer(index,100000));
+            record.after_raw_json=utf8(permuted_compiler_cases(previous,record.order).Stringify());
+            const auto parsed=read_block(previous,record.raw_json);
+            require(parsed.output_check.has_value(),"Case ordering needs its original output contract");
+            record.previous_initial_code=parsed.initial_code;record.previous_project_files=parsed.project_files;
+            record.previous_output_check=*parsed.output_check;
+            record.previous_case_text_semantics=read_case_order_semantics(previous,array(item,"semanticBefore"),record.id);
+            result.compiler_case_order_revisions.push_back(std::move(record));
+        }
+    }
+    const auto case_order_histories=compiler_case_order_histories(result,
+        result.version==2?array(metadata,"editorial"):JsonArray{},lesson_id);
+    const auto case_order_source=[&](const std::string& id,const JsonObject& source,bool historical=false) {
+        const auto found=case_order_histories.find(id);if(found==case_order_histories.end())return source;
+        // A reading snapshot may precede the separately authenticated closed
+        // expansion. Its shorter original objective is not a permutation.
+        if(historical&&revised_compilers.contains(id)&&
+                state_fingerprint(source)==result.signatures.at(id)) {
+            const auto original=std::ranges::find(result.compiler_revisions,id,&CompilerRevision::id);
+            require(original!=result.compiler_revisions.end()&&
+                compiler_case_contract(source)==compiler_case_contract(JsonObject::Parse(key(original->raw_json))),
+                "An original historical compiler changed a case, channel or comparison mode");
+            return source;
+        }
+        return compiler_case_order_projection(source,found->second,historical);
+    };
     // Full pre-format snapshots are authored once, under existing active
     // identities. They are not extra answers, storage slots or drafts.
     std::map<std::string,JsonObject> source_format_originals;
@@ -1810,7 +1971,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             require(valid_id(id)&&current_blocks.contains(id)&&!source_format_originals.contains(id),
                 "Unknown, inactive or duplicated source-format owner");
             const auto previous=item.GetNamedObject(L"block");
-            const auto before=state_fingerprint(previous);
+            const auto before=state_fingerprint(case_order_source(id,previous,true));
             // A formatting archive can begin after an authenticated compiler,
             // reference, choice or order revision. Compare with that revised
             // contract, not the original pre-revision signature. The active
@@ -1904,13 +2065,20 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // Historical reading / bibliography checks compare against the immutable
     // pre-format source, never an unreviewed hash of freshly spaced code.
     const auto protected_source=[&](const std::string& owner,const JsonObject& current,bool historical=false) {
-        auto projected=current;
+        auto projected=case_order_source(owner,current,historical);
         if(const auto it=source_format_originals.find(owner);it!=source_format_originals.end())
             projected=source_format_projection(projected,it->second);
         if(const auto it=math_text_originals.find(owner);it!=math_text_originals.end())
             projected=math_prompt_projection(projected,it->second,historical);
         return projected;
     };
+    for(const auto& record:result.compiler_case_order_revisions) {
+        const auto previous=JsonObject::Parse(key(record.raw_json));
+        const auto expected=revised_compilers.contains(record.id)?
+            std::string(revised_compilers.at(record.id)->after):result.signatures.at(record.id);
+        require(state_fingerprint(protected_source(record.id,previous,true))==expected,
+            "Case-order predecessor changed its original protected owner contract");
+    }
     std::map<std::string, std::string> editorial;
     std::map<std::string,std::set<std::pair<std::string,std::string>>> editorial_edges;
     std::map<std::string, std::set<std::string>> seen;
@@ -2140,7 +2308,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                             "A semantic retirement batch must preserve its exact archived block");
                     const auto general=general_choice_revisions.find(id);
                     const auto prompt=math_text_originals.find(id);
-                    auto projected=source;
+                    auto projected=case_order_source(id,source,true);
                     if(const auto format=source_format_originals.find(id);format!=source_format_originals.end()) {
                         // A reading archive keeps an actual published presentation,
                         // not a newly invented spelling of equivalent source code.
@@ -2153,7 +2321,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                         const auto previous_version=revised_compilers.contains(id)||
                             revised_compiler_references.contains(id)||refined_order_signatures.contains(id);
                         if(!previous_version||state_fingerprint(source)!=result.signatures.at(id))
-                            projected=source_format_projection(source,format->second);
+                            projected=source_format_projection(projected,format->second);
                     }
                     if(prompt!=math_text_originals.end())projected=math_prompt_projection(projected,prompt->second,true);
                     if(prompt!=math_text_originals.end()){
@@ -2614,6 +2782,21 @@ void read_text_semantics(const JsonObject& root,Lesson& lesson) {
         require(lesson.text_semantics.emplace(path,descriptor_for(field,source)).second,"Duplicate root text semantic field");
     }
 }
+std::map<std::string,TextSemantics> read_case_order_semantics(
+        const JsonObject& before,const JsonArray& fields,const std::string& owner) {
+    require(fields.Size()<=100000,"Too many archived case semantic fields");
+    for(const auto& value:fields) {
+        const auto field=value.GetObject();
+        require(text(field,"block")==owner&&text(field,"path").starts_with("/outputCheck/cases/"),
+            "Case-order semantics must belong to the archived owner's case fields");
+    }
+    JsonObject overlay;overlay.Insert(L"version",JsonValue::CreateNumberValue(1));overlay.Insert(L"fields",fields);
+    JsonObject root;root.Insert(L"textSemantics",overlay);
+    Lesson lesson;lesson.state_layout.version=2;lesson.raw_json=utf8(root.Stringify());
+    auto block=read_block(before,utf8(before.Stringify()));block.stable_id=owner;
+    Page page;page.blocks.push_back(std::move(block));lesson.pages.push_back(std::move(page));
+    read_text_semantics(root,lesson);return std::move(lesson.pages.front().blocks.front().text_semantics);
+}
 void read_relationships(const JsonObject& root, Lesson& lesson) {
     if (root.HasKey(L"referenceAfter")) {
         const auto relationships = array(root,"referenceAfter");
@@ -2741,6 +2924,31 @@ void resolve_addresses(Lesson& lesson) {
                 block.text_semantics.emplace("/prompt",*revision.semantic_before);
         }
     };
+    const auto case_order_editorial=!layout.compiler_case_order_revisions.empty()?
+        array(JsonObject::Parse(key(layout.raw_json)),"editorial"):JsonArray{};
+    const auto case_order_histories=compiler_case_order_histories(layout,case_order_editorial,lesson.id);
+    const auto format_precedes=[&](const std::string& owner,std::size_t editorial_index) {
+        const auto format=source_formats.find(owner);if(format==source_formats.end())return false;
+        for(std::size_t index=0;index<editorial_index;++index) {
+            const auto proof=case_order_editorial.GetObjectAt(static_cast<unsigned>(index));
+            if(text(proof,"id")==owner&&text(proof,"beforeSha256")==format->second->sha256)return true;
+        }
+        return false;
+    };
+    std::map<std::string,std::vector<CompilerCaseOrderRevision>> case_orders;
+    for(auto& revision:layout.compiler_case_order_revisions) {
+        const auto source=JsonObject::Parse(key(revision.raw_json));
+        const auto format=format_precedes(revision.id,revision.editorial_index)?
+            historical_format_source(revision.id,source):std::optional<JsonObject>{};
+        auto previous=read_block(source,revision.raw_json,format?&*format:nullptr);
+        if(format)apply_source_format(previous,*format);
+        revision.previous_initial_code=previous.initial_code;
+        revision.previous_project_files=previous.project_files;
+        revision.previous_output_check=*previous.output_check;
+        revision.previous_source_format_initial_code=previous.source_format_original_initial_code;
+        revision.previous_source_format_project_files=previous.source_format_original_project_files;
+        case_orders[revision.id].push_back(revision);
+    }
     std::map<std::string,ChoiceRevision*> choices;
     std::map<std::string,CompilerRevision*> compilers;
     for(auto& revision:layout.compiler_revisions) {
@@ -2794,6 +3002,8 @@ void resolve_addresses(Lesson& lesson) {
                 block.choice_revision=*choice->second;
             }
             if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end())block.compiler_revision=*compiler->second;
+            if(const auto history=case_orders.find(block.stable_id);history!=case_orders.end())
+                block.compiler_case_order_revisions=history->second;
             if(block.compile_check) {
                 const auto spec=reviewed_compile_check(block.compile_check->diagnostic);
                 require(spec&&lesson.locale=="es"&&layout.version==2&&lesson.id==spec->lesson&&block.stable_id==spec->identity,
@@ -2831,7 +3041,18 @@ void resolve_addresses(Lesson& lesson) {
                 auto block=read_block(source,utf8(source.Stringify()),format_source?&*format_source:nullptr);
                 block.stable_id=identity;
                 if(format_source)apply_source_format(block,*format_source);
-                const auto protected_source=format_source?source_format_projection(source,*format_source):source;
+                auto ordered_source=source;
+                if(const auto history=case_order_histories.find(identity);history!=case_order_histories.end()) {
+                    const auto earlier_closed=compilers.contains(identity)&&
+                        state_fingerprint(source)==layout.signatures.at(identity);
+                    if(!earlier_closed) {
+                        const auto epoch=compiler_case_order_epoch(source,history->second,true);
+                        const auto& records=case_orders.at(identity);
+                        block.compiler_case_order_revisions.assign(records.begin(),records.begin()+epoch);
+                        ordered_source=compiler_case_order_projection(source,history->second,true);
+                    }
+                }
+                const auto protected_source=format_source?source_format_projection(ordered_source,*format_source):ordered_source;
                 apply_math_text(block,true);
                 intentional_exit_owner(block);
                 crt_output_owner(block);

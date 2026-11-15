@@ -158,6 +158,19 @@ struct CompilerRevision {
     OutputCheck previous_output_check;
     std::vector<CompilerReferenceRevision> references;
 };
+// A pure permutation keeps every complete case and its original owner. Each
+// record authenticates one exact editorial predecessor, never a new activity.
+struct CompilerCaseOrderRevision {
+    std::string id, raw_json, after_raw_json, sha256, record_sha256, history_sha256;
+    std::size_t editorial_index = 0;
+    std::vector<std::size_t> order; // New position -> preceding position.
+    std::string previous_initial_code;
+    CppProjectFiles previous_project_files;
+    OutputCheck previous_output_check;
+    std::optional<std::string> previous_source_format_initial_code;
+    std::optional<CppProjectFiles> previous_source_format_project_files;
+    std::map<std::string,TextSemantics> previous_case_text_semantics;
+};
 // Derived only from a complete, closed mathematical label review. This is
 // reading provenance, never another authored field or response identity.
 struct MathLabelRevision {
@@ -198,6 +211,7 @@ struct Block {
     std::optional<OrderRefinement> order_refinement;
     std::optional<ChoiceRevision> choice_revision;
     std::optional<CompilerRevision> compiler_revision;
+    std::vector<CompilerCaseOrderRevision> compiler_case_order_revisions;
     std::optional<CompilerWorkflowCheck> compiler_workflow_check;
     // Lesson-root source prerequisite. It is checked before any case receipt
     // and keeps the original editor payload, answers and stable identity.
@@ -300,6 +314,7 @@ struct StateLayout {
     std::vector<MathTextRevision> math_text_revisions;
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
+    std::vector<CompilerCaseOrderRevision> compiler_case_order_revisions;
     std::vector<StateEditorialReturn> editorial_returns;
     std::vector<StateReadingRevision> reading_revisions;
     std::vector<StatePositionalReadingPage> positional_reading_pages;
@@ -344,6 +359,11 @@ void validate_activity_relationships(const Lesson&);
 // Deterministic framing of the authored objective, independent of prose or an
 // imported exercise response. The platform hashes this with the executed draft.
 [[nodiscard]] std::string reference_objective_frame(const Lesson&, const Block& activity);
+// Execution view of an authenticated predecessor. Root prerequisites remain
+// current; historical case guidance owns only its archived semantic fields.
+// Complete reading versions use their own retirementHistory overlay instead.
+[[nodiscard]] Block compiler_case_order_previous_block(
+    const Block&, const CompilerCaseOrderRevision&);
 // Fragments and their canonical permutation only; prose and view placement do
 // not change an ordering draft's representation. The platform hashes this frame.
 [[nodiscard]] std::string order_representation_frame(const Block&);

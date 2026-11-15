@@ -722,6 +722,65 @@ casos y referencias correspondientes después de preparar esta transición y
 comprueba su aceptación curricular. La capacidad descrita es Windows; no acredita
 soporte de `compilerRevisions` en Android ni escucha o aceptación visual completa.
 
+## Permutaciones de casos publicados en Windows
+
+`reorder_compiler_cases(documento_v2, identidad, orden, return_to=None)`
+prepara una copia con el mismo editor y los mismos casos completos en otro
+orden. Cada entero indica el índice anterior del caso que ocupará esa posición:
+`[21, 0, 1, ..., 20]` sitúa el último de 22 casos primero y conserva el orden
+relativo de los otros 21. La lista debe ser una biyección exacta; no admite
+duplicaciones, omisiones, índices booleanos, índices fuera de rango ni un orden
+idéntico. Esta operación no divide una batería ni añade o retira casos.
+
+El helper añade una entrada a `stateLayout.compilerCaseOrderRevisions`:
+
+| Campo | Contenido autenticado |
+| --- | --- |
+| `id` | Identidad estable del editor activo. |
+| `block` | Bloque anterior completo, con todos sus canales, esperados y guías. |
+| `order` | Índice anterior de cada caso en el nuevo orden. |
+| `editorialIndex` | Posición exacta de su arista editorial anterior→permutada. |
+| `historySha256` | Fingerprint tipado de `{lessonId, locale, editorial}` con el prefijo anterior a esa arista. |
+| `semanticBefore` | Lista ordenada de descriptores previos de ese editor bajo `/outputCheck/cases/`; `[]` significa que no había ninguno. |
+
+El bloque posterior se obtiene moviendo objetos de caso íntegros. Permanecen
+iguales `initialCode`, archivos, entrada inicial, comparación, salidas, stderr,
+código de salida, ejecutable, guías y todas las relaciones de actividad y
+referencia. La transición remapea exclusivamente el índice del caso en los
+descriptores semánticos afectados: conserva el texto, el hash, los rangos, la
+función declarada y su orden. Las posteriores revisiones editoriales y marcas
+válidas siguen usando sus mecanismos de autoría propios.
+
+La historia es acumulativa. Cada nueva entrada parte del propietario publicado
+anterior y mantiene íntegro el prefijo existente. Un retorno a un payload ya
+publicado necesita el `return_to` explícito de la revisión editorial; conserva
+ambas permutaciones y sus pruebas. No se regenera `origin`, `family`, las altas
+ni las direcciones de progreso. La proyección distingue el bloque activo, su
+archivo de formato y las presentaciones de otros retiros en su prefijo exacto.
+La ampliación cerrada `compilerRevisions` puede preceder a esta permutación y
+conserva su contrato independiente. Esta extensión mantiene el límite vigente
+que impide retirar el propio editor revisado.
+
+Windows fija los fingerprints completos de las entradas del diario en el estado
+de la lección y rechaza una historia truncada o alterada antes de guardar cambios.
+Los recibos anteriores conservan su objetivo y programa. Una permutación puede
+proyectar un recibo a su índice nuevo sólo para el mismo programa capturado;
+haber completado el antiguo primer caso no acredita otro caso que ahora sea el
+primero. Sí puede acreditarlo una comprobación opcional anterior de ese mismo
+caso y programa. No se combinan pruebas de programas distintos ni se prestan
+guías de otra entrada. Los retornos pueden completar posiciones antes vacías
+del mismo programa, sin sustituir pruebas ya existentes ni logros guardados.
+Reiniciar elimina los recibos del editor en todas sus versiones; reabrir no los
+resucita. Los borradores, selecciones, respuestas y pausas permanecen aparte.
+
+`test_compiler_case_order.py` y
+`compiler_case_order_fixture_source.py --output-dir DIR` preparan propuestas
+aisladas y casos negativos. Las regresiones nativas comprueban almacenamiento,
+importación Android real, reapertura, navegación y controles Win32. Los recibos
+modelados para probar estados se distinguen de las dos ejecuciones MSVC de la
+referencia publicada de U11L7. Ninguna prueba reescribe los assets; Work publica
+la aplicación curricular de la capacidad.
+
 ## Piezas independientes de una línea en Windows
 
 `refine_order_lines(documento_v2, identidad_estable)` prepara la presentación

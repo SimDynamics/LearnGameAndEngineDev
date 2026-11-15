@@ -658,6 +658,27 @@ La ampliación no crea otro editor, no copia borradores ni altera las traduccion
 Work sigue siendo responsable de integrar las consignas y referencias revisadas;
 las pruebas del contrato no equivalen a su aceptación visual o escucha.
 
+## Cambio compatible del primer caso
+
+Una permutación explícita puede cambiar cuál de los casos ya publicados ocupa
+la primera posición. `reorder_compiler_cases` conserva cada caso completo y deja
+su procedencia en `stateLayout.compilerCaseOrderRevisions`; el esquema y las
+guardas están descritos en `docs/curriculum/STABLE_LESSON_STATE.md`.
+
+El primer caso actual sigue siendo el único obligatorio para avanzar. El logro
+obtenido con el antiguo primero permanece en su historia, pero no sustituye la
+ejecución de una entrada distinta. Si el estudiante ya había comprobado el nuevo
+primero como ensayo opcional con el mismo programa, su recibo auténtico puede
+acreditarlo. Las pruebas de programas diferentes no se mezclan. Los otros casos
+se conservan como ensayos opcionales, con sus salidas, canales y guías originales.
+
+El lector muestra el logro anterior conservado cuando el primer caso actual
+está pendiente. No copia código al borrador ni ofrece un fragmento adicional por
+una mera permutación. Reiniciar limpia los recibos de todas las versiones de ese
+editor y la reapertura no recupera los eliminados. Esta capacidad general no
+autoriza cambiar esperados, agrupar casos independientes ni atribuir una
+ejecución nueva a una comprobación histórica.
+
 ## Actividad integrada
 
 En `programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`,

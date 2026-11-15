@@ -2934,11 +2934,20 @@ struct LessonView {
         return message;
     }
     std::string compiler_history_text(const curriculum::Lesson& model,const curriculum::Block& current) const {
-        if(current.type!=BlockType::cpp_compiler||!current.compiler_revision||
+        if(current.type!=BlockType::cpp_compiler||(!current.compiler_revision&&current.compiler_case_order_revisions.empty())||
             windows::compiler_puzzle_completed(data,model,current))return {};
         const auto count=windows::compiler_puzzle_historical_case_count(data,model,current);
         if(!count)return {};
-        auto text=windows::compiler_puzzle_historical_completed(data,model,current)
+        const bool completed=windows::compiler_puzzle_historical_completed(data,model,current);
+        auto text=!current.compiler_case_order_revisions.empty()
+            ?(completed
+                ?ui("Logro anterior conservado. Falta comprobar el primer caso de esta versión.",
+                    "Previous achievement retained. Check the first case of this version.",
+                    "Réussite précédente conservée. Vérifiez le premier cas de cette version.")
+                :ui("Comprobaciones anteriores conservadas. Falta comprobar el primer caso de esta versión.",
+                    "Previous checks retained. Check the first case of this version.",
+                    "Vérifications précédentes conservées. Vérifiez le premier cas de cette version."))
+            :completed
             ?ui("Logro anterior conservado. La ampliación de esta actividad sigue pendiente.",
                 "Previous achievement retained. The expanded activity is still pending.",
                 "Réussite précédente conservée. L’activité élargie reste à vérifier.")
@@ -2951,7 +2960,7 @@ struct LessonView {
     }
     std::string compiler_history_text(std::size_t index) const {return compiler_history_text(lesson,block(index));}
     void refresh_compiler_history(std::size_t index) {
-        if(block(index).type!=BlockType::cpp_compiler||!block(index).compiler_revision)return;
+        if(block(index).type!=BlockType::cpp_compiler||(!block(index).compiler_revision&&block(index).compiler_case_order_revisions.empty()))return;
         if(const auto target=find_item(control_id(index,40))){const auto text=compiler_history_text(index);
             if(edit_text(target)!=text)set_rich_text(target,text,{},false,RichTextRole::body,lesson.locale);}
     }
@@ -3209,7 +3218,7 @@ struct LessonView {
             reader_theme::set_text_color(vm.console,RGB(121,226,157));
             create_feedback(index);refresh_project_actions(index);
             if(!laboratory()&&!curriculum::has_compiler_objective(current)&&vm.status)set_rich_text(vm.status,unavailable_compiler_status());
-            if(current.compiler_revision){
+            if(current.compiler_revision||!current.compiler_case_order_revisions.empty()){
                 const auto history=rich(compiler_history_text(index),control_id(index,40));
                 rows.push_back({{history},{0},0,true});
             }

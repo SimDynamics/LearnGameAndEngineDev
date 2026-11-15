@@ -177,8 +177,8 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         include(cmake/StateImportTests.cmake)
         lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
-        # Keep the historical import suite focused on its seven self-contained
-        # tests. Compiler guidance is exercised by the full native configuration;
+        # Keep the import suite focused on historical state and compiler
+        # contracts. General guidance is exercised by the full native configuration;
         # this isolated profile lacks all resources those fixtures reference.
         message(STATUS "Focused native import QA: historical suites and exact runtime stderr; no application, reader or audio verification.")
     else()
@@ -296,6 +296,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     include(cmake/StateImportTests.cmake)
     lgaed_add_semantic_retirement_view_test()
+    lgaed_add_compiler_case_order_view_test()
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
@@ -578,6 +579,7 @@ if(BUILD_TESTING)
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
     lgaed_add_semantic_retirement_view_test()
+    lgaed_add_compiler_case_order_view_test()
     add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)
     target_link_libraries(lgaed_text_semantics_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.text_semantics COMMAND lgaed_text_semantics_tests)

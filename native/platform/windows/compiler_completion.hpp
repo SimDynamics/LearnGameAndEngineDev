@@ -52,8 +52,10 @@ void clear_compiler_puzzle_review(state::StateData&, const curriculum::Lesson&, 
                                                       const curriculum::Block&);
 [[nodiscard]] std::string compiler_puzzle_historical_feedback(const state::StateData&, const curriculum::Lesson&,
                                                            const curriculum::Block&);
-// Used only inside the state-store's staged adoption. Does not alter original
-// receipts, code/drafts, answers or any other objective/language.
+// Used only inside the state-store's staged adoption. Preserves historical
+// achievements, code/drafts, answers and other objectives/languages. Published
+// permutations map individual receipts only for the same captured program;
+// a current first-case seal requires that case's own authenticated execution.
 void prepare_compiler_puzzle_revisions(state::StateData&, const curriculum::Lesson&);
 void validate_compiler_puzzle_state(const state::StateData&, const curriculum::Lesson&, const curriculum::Block&);
 // Evaluates every real execution again, including after an earned achievement.
