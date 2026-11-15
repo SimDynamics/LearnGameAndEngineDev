@@ -1840,6 +1840,66 @@ int main(int argc,char** argv) {
             "Revealing the new line overwrote the viewport saved for Undo: before="+std::to_string(before.y)+
                 " revealed="+std::to_string(revealed.y)+" restored="+std::to_string(restored.y)+
                 " source-equal="+std::to_string(field.adapter->document().text==source));
+        field.adapter->normalize_viewport();
+        POINT normalized{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&normalized));
+        require(normalized.x==before.x&&normalized.y==before.y,
+            "The owner's deferred viewport normalization changed the exact scroll restored by Undo");
+        field.adapter->redo();
+        field.adapter->normalize_viewport();
+        POINT redone{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&redone));
+        const auto repeated=field.adapter->document();
+        require(redone.x==revealed.x&&redone.y==revealed.y&&repeated.text==inserted.text&&
+            repeated.indentation_starts==inserted.indentation_starts&&
+            repeated.selection_start==inserted.selection_start&&repeated.selection_end==inserted.selection_end,
+            "Redo and deferred normalization must restore the same native view and complete edited snapshot");
+    });
+
+    test("Undo and Redo adapt saved scrolling after the viewport grows", [] {
+        for (const int height : {400, 950}) {
+            std::string source;
+            for (unsigned index = 0; index < 35; ++index) source += "    value;\n";
+            source += "    if (ready) {}";
+            auto original = predefined_code_document(source);
+            original.selection_start = original.selection_end = static_cast<std::int64_t>(source.size() - 1);
+            Fixture field(original);
+            ShowWindow(field.host, SW_SHOWNOACTIVATE);
+            SetFocus(field.edit);
+            require(GetFocus() == field.edit, "Viewport history requires the actual editor caret");
+            UpdateWindow(field.host);
+            SendMessageW(field.edit, EM_SCROLLCARET, 0, 0);
+            POINT before{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&before));
+            require(before.y > 0, "The small viewport must scroll before recording its history");
+            field.key(VK_RETURN, L'\r');
+            const auto edited = field.adapter->document();
+            require(MoveWindow(field.host, 0, 0, 640, height + 100, TRUE) != FALSE &&
+                MoveWindow(field.edit, 0, 0, 600, height, TRUE) != FALSE,
+                "Grow the actual native viewport between editing and Undo");
+            UpdateWindow(field.host);
+            POINT resized{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&resized));
+            field.adapter->undo();
+            field.adapter->normalize_viewport();
+            const auto undone = field.adapter->document();
+            POINT restored{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&restored));
+            require(undone.text == source && undone.indentation_starts == original.indentation_starts &&
+                undone.selection_start == original.selection_start && undone.selection_end == original.selection_end,
+                "Undo after resizing must retain exact source, caret and indentation origin");
+            require(restored.y >= 0 && restored.y < before.y,
+                "Undo must adapt the small viewport's old bottom offset to its larger current viewport");
+            if (height == 950) require(restored.y == 0 && SendMessageW(field.edit, EM_GETFIRSTVISIBLELINE, 0, 0) == 0,
+                "A restored source that now fits completely must not leave an empty scrolled viewport");
+            field.adapter->redo();
+            field.adapter->normalize_viewport();
+            const auto redone = field.adapter->document();
+            POINT repeated{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&repeated));
+            require(redone.text == edited.text && redone.indentation_starts == edited.indentation_starts &&
+                redone.selection_start == edited.selection_start && redone.selection_end == edited.selection_end &&
+                repeated.x == resized.x && repeated.y == resized.y,
+                "Redo in the unchanged larger viewport must restore its actual saved scroll and complete edited snapshot");
+        }
     });
 
     test("A snapshot load exception restores notification masking and edit capture", [] {
