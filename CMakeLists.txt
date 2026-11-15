@@ -526,6 +526,10 @@ if(LGAED_READER_BUILD_QA_ONLY)
     target_link_libraries(lgaed_code_editor_viewport_tests PRIVATE lgaed_curricular_windows)
     add_test(NAME native.code_editor_viewport COMMAND lgaed_code_editor_viewport_tests)
     set_tests_properties(native.code_editor_viewport PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_executable(lgaed_code_editor_tests native/presentation/windows/code_editor_tests.cpp)
+    target_link_libraries(lgaed_code_editor_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.code_editor COMMAND lgaed_code_editor_tests)
+    set_tests_properties(native.code_editor PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
     # The original reader tests are still only compiled. The history UI test
     # exercises the actual Win32 record/compare/restore dialogs, without
     # creating an app profile or evaluating learner completion.
@@ -1913,6 +1917,7 @@ if(BUILD_TESTING)
     add_executable(lgaed_code_editor_tests native/presentation/windows/code_editor_tests.cpp)
     target_link_libraries(lgaed_code_editor_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.code_editor COMMAND lgaed_code_editor_tests)
+    set_tests_properties(native.code_editor PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
     add_executable(lgaed_editing_bar_tests native/presentation/windows/editing_bar_tests.cpp)
     target_link_libraries(lgaed_editing_bar_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.editing_bar COMMAND lgaed_editing_bar_tests)

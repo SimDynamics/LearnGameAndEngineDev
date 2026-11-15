@@ -233,6 +233,29 @@ Lexical context_at(std::wstring_view text, std::size_t cursor) {
     return code_context(text, cursor).lexical;
 }
 
+void retain_prefix_units(const std::wstring& text, std::vector<std::int64_t>& starts) {
+    validate(text, starts);
+    if (starts.empty()) return;
+    std::vector<std::pair<std::size_t,std::size_t>> literals;
+    (void)code_context(text, text.size(), &literals);
+    std::size_t cursor = 0, literal_index = 0, retained = 0;
+    bool prefix = true;
+    for (const auto unit : starts) {
+        const auto start = static_cast<std::size_t>(unit);
+        while (cursor < start) {
+            const auto character = text[cursor++];
+            if (character == L'\r' || character == L'\n') prefix = true;
+            else if (character != L' ' && character != L'\t') prefix = false;
+        }
+        while (literal_index < literals.size() && literals[literal_index].second <= start) ++literal_index;
+        const bool literal = literal_index < literals.size() && literals[literal_index].first <= start;
+        // Proven origin is not permission to remove spaces after they become
+        // interior whitespace or literal data. Never infer a replacement mark.
+        if (prefix && !literal) starts[retained++] = unit;
+    }
+    starts.resize(retained);
+}
+
 std::size_t line_start_at(std::wstring_view text, std::size_t cursor) {
     if (!cursor) return 0;
     const auto previous = text.rfind(L'\n', cursor - 1);
@@ -403,6 +426,10 @@ struct CodeEditor::Impl {
     }
 
     void commit(Snapshot next) {
+        // Both native edits and assistance reach this point before a parent
+        // captures the draft. Preserve the predecessor's complete origin for
+        // Undo, but keep only still-valid indentation in the edited snapshot.
+        retain_prefix_units(next.text, next.units);
         history.resize(current + 1);
         history.push_back(std::move(next));
         ++current;
