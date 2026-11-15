@@ -663,11 +663,13 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                     self.assertNotEqual(current, expected)
                 # Retain every subsequent editorial/choice revision from the
                 # current source. Integrated revisions are no-ops; pending
-                # proposals must actually expand their pinned original.
+                # proposals must actually expand their pinned original. The
+                # operation uses the current Git publication as its baseline;
+                # the separate historical-source test covers old adoption.
                 with tempfile.TemporaryDirectory() as directory:
                     output = Path(directory) / "proposal.json"
                     command = [sys.executable, "-B", str(Path(layout.__file__)), "revise-compiler-cases", str(source),
-                               "--locale", "es", "--base-ref", baseline(lesson), "--identity", identity, "--output", str(output)]
+                               "--locale", "es", "--base-ref", "HEAD", "--identity", identity, "--output", str(output)]
                     result = subprocess.run(command, cwd=contract.ROOT, capture_output=True, text=True, encoding="utf-8")
                     self.assertEqual(0, result.returncode, result.stdout + result.stderr)
                     proposal = output.read_bytes(); self.assertEqual(expected, json.loads(proposal))
