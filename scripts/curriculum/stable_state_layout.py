@@ -1971,6 +1971,39 @@ def _validate_presentation_relationships(document: dict) -> None:
                             "An activity prerequisite must precede its activity in visual order")
 
 
+def _historical_source_format_contract(document: dict, identity: str, block: dict) -> dict:
+    """Authenticate a historical source before restoring only its code bytes.
+
+    Retirement snapshots keep the complete published presentation. A formatted
+    source can belong to an earlier publication than the current one, but it
+    must occur in this owner's editorial chain. Closed compiler/reference and
+    ordering revisions also preserve an exact earlier source; never overwrite
+    that version with code introduced by a later revision.
+    """
+    meta = document.get("stateLayout", {})
+    original = next((entry["block"] for entry in meta.get("sourceFormatRevisions", [])
+                     if entry["id"] == identity), None)
+    if original is None:
+        return block
+    nodes = {proof[field] for proof in meta["editorial"] if proof["id"] == identity
+             for field in ("beforeSha256", "afterSha256")}
+    require(fingerprint(block) in nodes,
+            "A historical formatted source must be an authenticated editorial source")
+    try:
+        earlier = (_compiler_revisions(document).get(identity)
+                   or _compiler_references(document).get(identity)
+                   or _order_refinements(document).get(identity))
+        if (earlier is not None
+                and code_format.code_slots(block) == code_format.code_slots(earlier)):
+            # The ordinary historical contract and paired-revision checks below
+            # still verify answers, correctOrder, paths, objectives and owner.
+            return block
+        code_format.require_source_lexical(original, block)
+        return code_format.source_projection(block, original)
+    except code_format.SourceFormatError as exc:
+        raise LayoutError(f"Unsafe historical source formatting for {identity}: {exc}") from exc
+
+
 def _validate_retirement_history(document: dict) -> None:
     meta = document.get("stateLayout", {})
     if "retirementHistory" not in meta:
@@ -2006,6 +2039,7 @@ def _validate_retirement_history(document: dict) -> None:
         current = snapshot["current"]
         require(type(current) is list and len(current) == len(pages) == len(page_ids), "Historical reading page count changed")
         seen_pages, seen_blocks = set(), set()
+        historical_blocks = {}
         for page, record in zip(pages, current):
             require(type(record) is dict and set(record) == {"id", "blocks"}, "Malformed historical reading page")
             identity = _identity(record["id"])
@@ -2018,8 +2052,10 @@ def _validate_retirement_history(document: dict) -> None:
             for block_id, block in zip(record["blocks"], page.get("blocks", [])):
                 _identity(block_id)
                 require(block_id in available and block_id not in seen_blocks, "Unknown or repeated historical reading block")
-                reviewed = _reviewed_choice(block)
-                _validate_choice_pair(block, CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)))
+                source = _historical_source_format_contract(document, block_id, block)
+                historical_blocks[block_id] = source
+                reviewed = _reviewed_choice(source)
+                _validate_choice_pair(source, CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)))
                 if reviewed is not None:
                     # The global payload alias is not evidence that this
                     # presentation ever owned the new wording. Older, original
@@ -2028,13 +2064,13 @@ def _validate_retirement_history(document: dict) -> None:
                             and CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)) == reviewed
                             and _reviewed_choice(protected_available[block_id]) == reviewed,
                             "A historical revised choice requires its matching active revision archive")
-                compiler_reviewed = _reviewed_compiler(block)
+                compiler_reviewed = _reviewed_compiler(source)
                 if compiler_reviewed is not None:
                     require(meta["locale"] == "es" and block_id in compilers
                             and COMPILER_CASE_REVISIONS.get((document.get("id"), block_id)) == compiler_reviewed
                             and _reviewed_compiler(protected_available[block_id]) == compiler_reviewed,
                             "A historical revised compiler requires its matching active revision archive")
-                reference_reviewed = _reviewed_compiler_reference(block)
+                reference_reviewed = _reviewed_compiler_reference(source)
                 if reference_reviewed is not None:
                     expected_reference = next((reference for (lesson, compiler), reference in COMPILER_REFERENCE_REVISIONS.items()
                                                if lesson == document.get("id") and reference["id"] == block_id), None)
@@ -2042,7 +2078,7 @@ def _validate_retirement_history(document: dict) -> None:
                             and expected_reference == reference_reviewed
                             and _reviewed_compiler_reference(protected_available[block_id]) == reference_reviewed,
                             "A historical revised compiler reference requires its matching active revision archive")
-                old_reading = _historical_choice_contract(document, block_id, block)
+                old_reading = _historical_choice_contract(document, block_id, source)
                 active_reading = _historical_choice_contract(document, block_id, protected_available[block_id])
                 old_reading = _historical_math_text_contract(
                     document, block_id, old_reading, reading_snapshot=True)
@@ -2051,8 +2087,6 @@ def _validate_retirement_history(document: dict) -> None:
                         == state_fingerprint(_historical_order_contract(document, block_id, active_reading)),
                         "Historical reading snapshot changed a response/code contract")
                 seen_blocks.add(block_id)
-        historical_blocks = {identity: block for page, record in zip(pages, current)
-                             for identity, block in zip(record["blocks"], page.get("blocks", []))}
         for (lesson, compiler), reference in COMPILER_REFERENCE_REVISIONS.items():
             if lesson == document.get("id") and compiler in compilers:
                 reference_id = reference["id"]
@@ -2097,8 +2131,9 @@ def _validate_compile_checks(document: dict) -> None:
     format_sources = {entry["id"]: entry["block"]
                       for entry in meta.get("sourceFormatRevisions", [])}
     def owner(identity: str, block: dict, *, historical: bool = False) -> None:
-        original = (code_format.source_projection(block, format_sources[identity])
-                    if not historical and identity in format_sources else block)
+        original = (_historical_source_format_contract(document, identity, block) if historical
+                    else code_format.source_projection(block, format_sources[identity])
+                    if identity in format_sources else block)
         spec = validate_compile_check_contract(original)
         if spec is not None:
             require(COMPILE_DIAGNOSTICS.get((document.get("id"), identity)) == spec,

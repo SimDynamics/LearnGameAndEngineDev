@@ -1034,6 +1034,33 @@ el mecanismo técnico no modifica automáticamente ningún JSON del curso.
 Este contrato y sus verificadores son de Windows. No acreditan soporte ni
 ejecución de esta extensión en Android.
 
+### Lecturas archivadas después de formatear código
+
+Una retirada posterior de otro bloque puede capturar una lección que ya contiene
+fuentes revisadas mediante `sourceFormatRevisions`. La captura conserva los
+bloques completos, incluidos los espacios y saltos físicos que estaban publicados
+en ese momento. Para comparar sus contratos, Python y Windows comprueban la
+equivalencia léxica y proyectan únicamente los campos de fuente contra el archivo
+autenticado del mismo propietario. La presentación histórica permanece intacta.
+
+Cuando la fuente histórica utiliza un formato distinto del archivo original,
+su bloque completo debe corresponder a un nodo exacto de la cadena editorial de
+esa identidad. Conservar los mismos tokens no basta para inventar otra versión
+histórica. También se mantienen los controles de respuestas, oráculos, rutas de
+proyecto, relaciones y capturas acumulativas. Una lectura anterior a una ampliación
+autenticada conserva la versión que realmente existía entonces; la fuente ampliada
+posterior no sustituye ese programa previo.
+
+Windows conserva además las fuentes y los fragmentos originales necesarios para
+las claves de los borradores, objetivos y respuestas de las lecturas archivadas.
+El código visible del archivo histórico mantiene sus bytes publicados. El mismo
+contrato se comprueba en la carga completa de la lección y en la carga de progreso.
+
+El plan de retiro sigue sujeto a los propietarios admitidos por cada contrato.
+`textSemantics` resuelve propietarios activos; retirar un bloque que conserva
+campos en ese mapa requiere una transición que archive también sus descriptores.
+La composición de formato descrita aquí conserva esas marcas y su validación.
+
 ## Lectura y alcance de la recuperación
 
 El acceso Windows también conserva qué páginas se han alcanzado, sin confundir

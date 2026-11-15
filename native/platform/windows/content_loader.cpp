@@ -2123,7 +2123,22 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
                     const auto general=general_choice_revisions.find(id);
                     const auto prompt=math_text_originals.find(id);
-                    const auto projected=prompt!=math_text_originals.end()?math_prompt_projection(source,prompt->second,true):source;
+                    auto projected=source;
+                    if(const auto format=source_format_originals.find(id);format!=source_format_originals.end()) {
+                        // A reading archive keeps an actual published presentation,
+                        // not a newly invented spelling of equivalent source code.
+                        require(editorial_nodes.contains(id)&&
+                            std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
+                            "A historical formatted source needs an exact occurrence in its owner's editorial chain");
+                        // The complete original of a closed expansion/refinement
+                        // can precede the formatting archive. Its older starter,
+                        // reference calls or grouped cards must remain untouched.
+                        const auto previous_version=revised_compilers.contains(id)||
+                            revised_compiler_references.contains(id)||refined_order_signatures.contains(id);
+                        if(!previous_version||state_fingerprint(source)!=result.signatures.at(id))
+                            projected=source_format_projection(source,format->second);
+                    }
+                    if(prompt!=math_text_originals.end())projected=math_prompt_projection(projected,prompt->second,true);
                     if(prompt!=math_text_originals.end()){
                         require(editorial_nodes.contains(id)&&std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                             "A historical mathematical prompt needs an exact occurrence in its owner's editorial chain");
@@ -2135,7 +2150,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
                         std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                         "A historical compilation diagnostic needs an exact occurrence in its owner's published editorial chain");
-                    validate_choice_pair(blocks.GetAt(static_cast<unsigned>(b)).GetObject(),reviewed_choice_owner(lesson_id,id));
+                    validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
                     snapshot_contracts.emplace(id,digest);
                     if(reviewed_compiler_payload(digest))require(revised_compilers.contains(id)&&revised_compilers.at(id)->lesson==lesson_id&&locale=="es",
                         "An expanded historical compiler needs its active reviewed snapshot");
@@ -2674,6 +2689,31 @@ void resolve_addresses(Lesson& lesson) {
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
     std::map<std::string,const SourceFormatRevision*> source_formats;
     for (const auto& format : layout.source_format_revisions) source_formats.emplace(format.id,&format);
+    std::set<std::string> earlier_source_versions;
+    for(const auto& refinement:layout.order_refinements)earlier_source_versions.insert(refinement.id);
+    for(const auto& revision:layout.compiler_revisions) {
+        earlier_source_versions.insert(revision.id);
+        for(const auto& reference:revision.references)earlier_source_versions.insert(reference.id);
+    }
+    const auto historical_format_source=[&](const std::string& owner,const JsonObject& source)->std::optional<JsonObject> {
+        const auto format=source_formats.find(owner);
+        if(format==source_formats.end())return {};
+        // read_layout already authenticated the full historical node and
+        // its exact contract. Do not attach a later starter/card identity
+        // to a snapshot of the original closed expansion or refinement.
+        if(earlier_source_versions.contains(owner)&&state_fingerprint(source)==layout.signatures.at(owner))return {};
+        return JsonObject::Parse(key(format->second->raw_json));
+    };
+    const auto apply_source_format=[&](Block& block,const JsonObject& source) {
+        const auto original=read_block(source,utf8(source.Stringify()));
+        require(original.type==block.type,"A source-format archive changed its activity type");
+        if(block.type==BlockType::cpp_compiler) {
+            block.source_format_original_initial_code=original.initial_code;
+            if(!original.project_files.empty())
+                block.source_format_original_project_files=original.project_files;
+        } else if(block.type==BlockType::order_code)
+            block.source_format_original_fragments=original.fragments;
+    };
     std::map<std::string,const MathTextRevision*> math_texts;
     for(const auto& revision:layout.math_text_revisions)math_texts.emplace(revision.id,&revision);
     const auto apply_math_text=[&](Block& block,bool archived){
@@ -2711,17 +2751,8 @@ void resolve_addresses(Lesson& lesson) {
             auto& block = page.blocks[b];
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
-            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end()) {
-                const auto& snapshot=*format->second;
-                const auto original=read_block(JsonObject::Parse(key(snapshot.raw_json)),snapshot.raw_json);
-                require(original.type==block.type,"A source-format archive changed its activity type");
-                if(block.type==BlockType::cpp_compiler){
-                    block.source_format_original_initial_code=original.initial_code;
-                    if(!original.project_files.empty())
-                        block.source_format_original_project_files=original.project_files;
-                }else if(block.type==BlockType::order_code)
-                    block.source_format_original_fragments=original.fragments;
-            }
+            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end())
+                apply_source_format(block,JsonObject::Parse(key(format->second->raw_json)));
             if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end()) {
                 require(block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature,
                     "An ordering refinement belongs to another visible representation");
@@ -2778,7 +2809,12 @@ void resolve_addresses(Lesson& lesson) {
             const auto blocks=array(page_source,"blocks");
             for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
-                auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
+                const auto& identity=snapshot.current[p].blocks[b];
+                const auto format_source=historical_format_source(identity,source);
+                auto block=read_block(source,utf8(source.Stringify()),format_source?&*format_source:nullptr);
+                block.stable_id=identity;
+                if(format_source)apply_source_format(block,*format_source);
+                const auto protected_source=format_source?source_format_projection(source,*format_source):source;
                 apply_math_text(block,true);
                 intentional_exit_owner(block);
                 crt_output_owner(block);
@@ -2819,7 +2855,7 @@ void resolve_addresses(Lesson& lesson) {
                     block.type==BlockType::multiple_choice&&sha256(choice_representation_frame(block))==choice->second->representation_signature)
                     block.choice_revision=*choice->second;
                 if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end()&&block.type==BlockType::cpp_compiler&&
-                    state_fingerprint(source)==compiler->second->current_payload)block.compiler_revision=*compiler->second;
+                    state_fingerprint(protected_source)==compiler->second->current_payload)block.compiler_revision=*compiler->second;
                 block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));
             }
             snapshot.pages.push_back(std::move(page));
