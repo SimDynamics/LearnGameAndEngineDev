@@ -29,7 +29,7 @@ bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste) {
 }
 )cpp";
 std::vector<OpenBatteryRun> correct(OpenBatteryCall added) {
-    std::vector<OpenBatteryRun> runs(originals.size()+3);
+    std::vector<OpenBatteryRun> runs(2*originals.size()+3);
     runs[0].program_frame="project-fingerprint";
     runs[0].compiled=runs[0].executed=true;
     runs[0].exit_code=0;
@@ -40,10 +40,11 @@ std::vector<OpenBatteryRun> correct(OpenBatteryCall added) {
         runs[i]=runs[0];
         runs[i].exit_code=1;
         runs[i].stdout_bytes="Fallos=1\n";
-        runs[i].mutation=i==originals.size()+2?
-            OpenBatteryMutation::corrupt_destination:
+        // Deliberately independent of the production plan implementation.
+        runs[i].mutation=i%2==0?OpenBatteryMutation::corrupt_destination:
             OpenBatteryMutation::invert_acceptance;
-        runs[i].target=i<=originals.size()?originals[i-1]:added;
+        const auto target=(i-1)/2;
+        runs[i].target=target<originals.size()?originals[target]:added;
     }
     return runs;
 }
@@ -132,6 +133,37 @@ void agreement() {
     verify(open_battery_expected({21,3,7,59})==std::pair{false,59},
            "Rejected request must preserve destination");
 }
+void destination_coverage() {
+    const OpenBatteryCall added{3,3,7,59};
+    const auto plan=open_battery_mutation_plan(originals,added);
+    verify(plan&&plan->size()==25,"Eleven old cases require 25 native phases");
+    const auto reference=correct(added);
+    for(std::size_t i=0;i<plan->size();++i)
+        verify((*plan)[i].mutation==reference[i].mutation&&
+               (*plan)[i].target==reference[i].target,
+               "Native plan skipped or reordered an observation");
+    for(std::size_t i=0;i<originals.size();++i) {
+        auto runs=reference;
+        runs[2*i+2].exit_code=0;
+        verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+               "An accepted or rejected historical call ignored its destination");
+        runs=reference;
+        runs[2*i+2]=runs[2*i+1];
+        verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
+               "Repeated acceptance evidence replaced a destination mutation");
+    }
+    std::vector<OpenBatteryRun> legacy{reference.front()};
+    for(std::size_t i=0;i<originals.size();++i)legacy.push_back(reference[2*i+1]);
+    legacy.push_back(reference[reference.size()-2]);
+    legacy.push_back(reference.back());
+    verify(legacy.size()==14&&
+           !open_battery_verify(originals,legacy,"project-fingerprint").accepted,
+           "A former fourteen-run witness silently acquired v2 credit");
+    verify(!open_battery_mutation_plan({},added),"An empty plan was accepted");
+    verify(open_battery_objective_version==
+           "open-cmake-battery-independent-mutations-v2",
+           "The stronger contract reused the previous receipt version");
+}
 void judgments() {
     for(const auto added:{OpenBatteryCall{3,3,7,59},
                           OpenBatteryCall{7,3,7,-13}}) {
@@ -169,7 +201,7 @@ void judgments() {
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A historical comparison silently returned 1 without reporting its failure");
     runs=correct({3,3,7,59});
-    runs[originals.size()].stdout_bytes=runs.front().stdout_bytes;
+    runs[2*originals.size()].stdout_bytes=runs.front().stdout_bytes;
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "The final historical comparison silently passed an incorrect report");
     runs=correct({3,3,7,59});
@@ -182,7 +214,7 @@ void judgments() {
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A silent destination failure passed without its contrast");
     runs=correct({3,3,7,59});
-    runs[originals.size()+1].stdout_bytes=runs.front().stdout_bytes;
+    runs[2*originals.size()+1].stdout_bytes=runs.front().stdout_bytes;
     verify(!open_battery_verify(originals,runs,"project-fingerprint").accepted,
            "A fixed new-case label passed without reporting the acceptance error");
     runs=correct({3,3,7,59});
@@ -215,7 +247,7 @@ void judgments() {
 }
 }
 int main()try{
-    generated();parsing();specification();reporting();agreement();judgments();
+    generated();parsing();specification();reporting();agreement();destination_coverage();judgments();
     std::cout<<"PASS open-battery portable core: original, new, mutation and provenance\n";
     return 0;
 }catch(const std::exception& error){

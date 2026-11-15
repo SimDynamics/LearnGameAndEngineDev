@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'WasiRunner', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'MathEditorial', 'WasiRunner', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -83,9 +83,19 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_cpp_cmake_runner_tests',
                 'lgaed_u3_runtime_semantics_tests',
                 'lgaed_premium_windows_tests',
-                'lgaed_compiler_first_case_view_tests'
+                'lgaed_compiler_first_case_view_tests',
+                'lgaed_semantic_retirement_view_tests'
             )
             Results = 'reader-build'
+        }
+    }
+    'MathEditorial' {
+        @{
+            Directory = 'math-editorial-ci'
+            CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
+            Targets = @('lgaed_editorial_matching_view_tests')
+            Results = 'math-editorial'
+            Tests = @('native.assetcheck_prompt_editorial')
         }
     }
     'WasiRunner' {
@@ -280,7 +290,7 @@ $qaPython = (Get-Command python.exe -CommandType Application -ErrorAction Stop |
 $qaGit = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $qaRuntimeOptions = ''
 $qaRuntimePaths = @()
-if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
+if ($Suite -in @('MathEditorial', 'NarrationWorker', 'U12Reader', 'U11EditorialReader',
     'CompilerHistoricalReader', 'U6DiagnosticReader')) {
     # This job uses a new checkout with no restored runtime or audio caches.
     # Existing QA/user data is never removed to manufacture a first generation.
@@ -291,7 +301,7 @@ if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
         (Join-Path $qaRoot 'out\qa\narration-worker-tests')
     )) {
         if (Test-Path -LiteralPath $qaFreshPath) {
-            throw "Real synthesis CI requires a fresh destination; existing data is preserved: $qaFreshPath"
+            throw "Real worker CI requires a fresh destination; existing data is preserved: $qaFreshPath"
         }
     }
     New-Item -ItemType Directory -Path $qaBuild | Out-Null
@@ -311,6 +321,9 @@ if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
         "`"-DLGAED_NARRATION_RESOURCES=$qaKokoro`"",
         "`"-DLGAED_ENGLISH_RESOURCES=$qaEnglish`""
     ) -join ' '
+}
+if ($Suite -eq 'MathEditorial') {
+    $qaRuntimeOptions += ' -DLGAED_MATH_EDITORIAL_QA_ONLY=ON'
 }
 foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPython, $qaGit) + $qaRuntimePaths) {
     if ($qaPath -match '["%!?&|<>^;\r\n]') { throw "Unsupported command metacharacter in native QA path: $qaPath" }
@@ -366,10 +379,10 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles')
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
-        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium and first-case compiler regressions.'
+        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler and semantic retirement regressions.'
     }
     & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
     if ($LASTEXITCODE -ne 0) { throw 'The native Win32 History, fullscreen editor viewport or focused U3 lesson regression failed.' }

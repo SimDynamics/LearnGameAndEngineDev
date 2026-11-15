@@ -56,7 +56,8 @@ Protege los tipos, identificadores, código, respuestas, opciones y reglas de
 evaluación. Se excluyen campos editoriales concretos de texto o retroalimentación
 según `state_payload`; el validador curricular existente sigue decidiendo qué
 revisiones editoriales están autorizadas. Los puzzles matemáticos mantienen la
-huella de su payload completo, con la excepción exacta descrita abajo. No se deben editar ni recalcular los hashes de
+huella de su payload completo, con las revisiones exactas de rótulos y la
+proyección contextual de enunciado descritas abajo. No se deben editar ni recalcular los hashes de
 origen para hacer pasar una modificación incompatible.
 
 Una lección sin `stateLayout` conserva el comportamiento posicional anterior.
@@ -127,7 +128,7 @@ familia existente sin acreditar su procedencia.
 
 El objeto `stateLayout` v2 contiene estos campos obligatorios y admite los archivos
 opcionales `retired`, `retirementHistory`, `orderRefinements`,
-`choiceRevisions` y `compilerRevisions` descritos más abajo:
+`choiceRevisions`, `compilerRevisions` y `mathTextRevisions` descritos más abajo:
 
 | Campo | Contrato |
 | --- | --- |
@@ -142,6 +143,7 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
 | `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement, semanticBefore}`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
 | `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
+| `mathTextRevisions` | Opcional. Archivo inmutable por propietario para precisar únicamente `/prompt` de un `math_puzzle`: `{id, field, rawJson, semanticBefore}`. Conserva el bloque completo y su descriptor anterior; no altera el contrato de respuesta. |
 
 ### Revisión editorial general de una opción existente
 
@@ -423,6 +425,82 @@ conserva esta procedencia, como las otras fijaciones de estado.
 Este contrato pertenece al cargador y herramientas Windows. La app Android
 independiente conserva su contrato anterior. El retorno editorial tampoco
 declara implementado el color neutro ni el subrayado tipográfico.
+
+### Revisión general del enunciado matemático en Windows
+
+Work puede aclarar únicamente el campo `/prompt` de un `math_puzzle` español
+con mapa v2 mediante:
+
+```python
+revised = stable_state_layout.revise_math_prompt_editorial(
+    published, identity, revised_prompt, spans=authored_spans)
+```
+
+`published` es la lección completa anterior; `identity` es su propietario
+estable en `stateLayout.current`. El nuevo texto debe ser distinto, existente
+y no vacío. `spans` es la lista explícita de segmentos UTF-16, incluido `[]`
+cuando Work declara prosa sin marcas. La herramienta genera el SHA-256 exacto
+de `/prompt`, conserva los descriptores de los otros campos y no permite
+eliminar silenciosamente todos los segmentos de un enunciado ya marcado.
+
+La acción CLI equivalente es `revise-math-prompt-editorial`, con los argumentos
+`SOURCE --identity ID --replacement TEXT --semantic-spans SPANS.json --output NEW`.
+`SPANS.json` contiene la lista de segmentos, sin envolverla en otro objeto.
+El origen se comprueba mediante `--previous PUBLISHED`, o mediante
+`--locale es --base-ref SHA` para leer la familia publicada desde Git. `SHA`
+debe identificar la publicación verificada. La salida se crea exclusivamente
+en una ruta nueva; repetir el comando sobre un archivo existente falla sin
+sobrescribirlo. Después de integrar la propuesta, se ejecuta el control de
+transición de todo el árbol contra esa misma publicación.
+
+La primera revisión incorpora una entrada en `stateLayout.mathTextRevisions`:
+
+| Campo | Contenido y protección |
+| --- | --- |
+| `id` | Propietario estable del bloque matemático, sin crear ni renombrar una actividad. |
+| `field` | Exactamente `"/prompt"`. No admite etiquetas, feedback, datos ni otros textos. |
+| `rawJson` | Cadena JSON con el bloque anterior **completo**, incluyendo su orden de claves y sus valores numéricos. La herramienta la crea desde el propietario publicado; no debe editarse ni reconstruirse con el serializador de Windows. |
+| `semanticBefore` | Descriptor anterior completo de `/prompt`, o `null` si no existía. Un descriptor presente con `spans: []` se conserva como tal. |
+
+El archivo permanece inmutable en revisiones posteriores. La cadena
+`editorial` añade una prueba de bloque completo por revisión; admite nuevas
+redacciones sin registrar cada frase en el motor. Un retorno a una redacción
+publicada anterior debe declararse mediante `return_to` en la función o
+`--return-to` en la CLI. Usa la prueba `returnTo` habitual, conserva la cadena
+completa y mantiene la fuente original de evaluación.
+
+Los cargadores completo y de progreso comprueban el propietario, la firma
+histórica, la cadena editorial y el descriptor actual. Para contrastar el
+contrato protegido, restituyen únicamente el enunciado original. Permanecen
+exactos el tipo, `schemaVersion`, ID, representaciones, herramientas, respuestas,
+etiquetas, pares, validadores, esperados y feedback. La transición comprueba
+también el orden de claves y la representación numérica; el hash canónico de
+`stateLayout` no reemplaza esas comprobaciones. No se recalculan `origin`,
+`family`, direcciones ni claves de respuesta para aceptar una revisión.
+
+El JSON visible y su `prompt` siguen conteniendo la redacción actual. El
+cargador conserva aparte el `rawJson` autenticado de evaluación, que utilizan
+el envío de respuestas, la recuperación de respuestas guardadas y el cálculo
+de progreso del catálogo. Así el puente matemático conserva exactamente su
+algoritmo y la `contentFingerprint` anterior. El archivo no se acepta como una
+propiedad arbitraria del bloque ni sirve para aprobar otros cambios
+matemáticos. Esta integración pertenece a Windows y no cambia el contrato de
+la app Android independiente.
+
+El lector utiliza el texto y marcado actuales y conserva la fuente original
+para contrastar procedencia de lectura. No atribuye escucha a palabras nuevas,
+no reproduce automáticamente y no reescribe audios. Una pausa sólo reutiliza
+sus datos cuando supera las comprobaciones de compatibilidad existentes.
+
+`math_prompt_fixture_source.py` obtiene de Git la lección auténtica de
+AssetCheck en una publicación fijada y comprueba su hash de bytes independiente.
+Genera el antes y la propuesta en el directorio de pruebas, conservando los
+assets. `test_math_prompt_revision.py` verifica autoría, revisiones encadenadas,
+retornos, procedencia, marcado y rechazo de cambios ajenos. La prueba Windows
+focal usa el bridge matemático real para comprobar la misma huella anterior,
+recuperación, guardado, reapertura e importación en un perfil QA. Su alcance no
+incluye escucha humana ni integración de la propuesta en el currículo; esta
+última corresponde a Work.
 
 ### Correcciones exactas de rótulos matemáticos en Windows
 
@@ -904,15 +982,20 @@ cambiar su contrato ni modificar las traducciones. El lector y el catálogo usan
 hacia contenido activo sin aplicar sus milisegundos a otra frase ni borrar el
 registro histórico.
 
-Cada lote nuevo añade una entrada inmutable a `retirementHistory`, con estas
-seis claves: `retired` (identidades retiradas por el lote, en el orden del archivo),
+Cada lote nuevo añade una entrada inmutable a `retirementHistory`, con
+`retired` (identidades retiradas por el lote, en el orden del archivo),
 `current` (mapa visible anterior completo), `pages` (páginas anteriores completas,
 incluidos todos sus bloques), `compilerPuzzlesRequired` (booleano efectivo anterior),
 `referenceAfter` y `activityAfter` (relaciones anteriores exactas, o listas vacías).
+El helper captura además `textSemantics`: el objeto completo anterior, incluidos
+`rootFields` y los descriptores con `spans: []`, o `null` si no existía.
+Los archivos antiguos de seis claves conservan su forma original.
+
 El generador captura estos valores antes de retirar bloques o cambiar relaciones.
 La puerta de transición contrasta esa captura con la versión publicada; no permite
-inventar texto anterior, orden, dependencias ni reglas de avance. Una revisión de
-prosa simultánea conserva así el texto que realmente escuchó el estudiante.
+inventar texto anterior, marcas, orden, dependencias ni reglas de avance. Una
+revisión de prosa simultánea conserva así el texto y la intención de lectura
+que realmente estaban publicados.
 
 Este archivo es procedencia histórica para verificar una lectura anterior; sus
 bloques no crean controles, actividades ni narración nueva. El lector reconstruye
@@ -955,6 +1038,65 @@ el mecanismo técnico no modifica automáticamente ningún JSON del curso.
 
 Este contrato y sus verificadores son de Windows. No acreditan soporte ni
 ejecución de esta extensión en Android.
+
+### Lecturas archivadas después de formatear código
+
+Una retirada posterior de otro bloque puede capturar una lección que ya contiene
+fuentes revisadas mediante `sourceFormatRevisions`. La captura conserva los
+bloques completos, incluidos los espacios y saltos físicos que estaban publicados
+en ese momento. Para comparar sus contratos, Python y Windows comprueban la
+equivalencia léxica y proyectan únicamente los campos de fuente contra el archivo
+autenticado del mismo propietario. La presentación histórica permanece intacta.
+
+Cuando la fuente histórica utiliza un formato distinto del archivo original,
+su bloque completo debe corresponder a un nodo exacto de la cadena editorial de
+esa identidad. Conservar los mismos tokens no basta para inventar otra versión
+histórica. También se mantienen los controles de respuestas, oráculos, rutas de
+proyecto, relaciones y capturas acumulativas. Una lectura anterior a una ampliación
+autenticada conserva la versión que realmente existía entonces; la fuente ampliada
+posterior no sustituye ese programa previo.
+
+Windows conserva además las fuentes y los fragmentos originales necesarios para
+las claves de los borradores, objetivos y respuestas de las lecturas archivadas.
+El código visible del archivo histórico mantiene sus bytes publicados. El mismo
+contrato se comprueba en la carga completa de la lección y en la carga de progreso.
+
+El plan de retiro sigue sujeto a los propietarios admitidos por cada contrato.
+Esta composición permite retirar otro bloque de la lección; no autoriza retirar
+el propietario de un archivo `sourceFormatRevisions` que deba seguir activo.
+
+### Marcado semántico de las lecturas retiradas
+
+`retire()` archiva el mapa semántico anterior y retira del mapa de la raíz
+únicamente los campos de los propietarios que dejan el recorrido activo.
+Conserva los campos de los demás bloques, el título, el orden de los descriptores
+y un objeto explícitamente vacío si ya existía. No altera las cadenas, los
+fragmentos marcados, sus roles ni sus intenciones de narración. Work utiliza la
+misma API de retiro y valida la transición contra la publicación anterior.
+
+Cada captura valida sus marcas contra sus propias páginas e identidades. El
+SHA-256 se calcula sobre el campo histórico exacto; se mantienen los controles
+de rutas públicas, duplicados, rangos UTF-16, caracteres Unicode, roles e
+intenciones. Cuando la captura contiene `textSemantics`, el bloque completo
+de cada propietario retirado en ese lote debe coincidir con su entrada en
+`retired`. Los campos del bloque archivado se recuperan exclusivamente de ese
+lote, sin tomar marcas de otra versión ni de otro propietario.
+
+Las capturas son acumulativas e inmutables. Una corrección editorial o un cambio
+posterior de marcado en un bloque que sigue activo no modifica el descriptor
+capturado antes del retiro. Tampoco se reconstruyen las marcas históricas a
+partir de sus coincidencias con el texto actual. La ausencia de la clave en un
+archivo antiguo significa que no se archivó esa información; `null` documenta
+que la publicación capturada no tenía mapa semántico. No se rellena ninguno de
+esos casos con el mapa actual.
+
+Windows carga las mismas marcas históricas en el lector completo y en el
+catálogo de progreso. Al reconstruir las regiones de lectura admitidas, utiliza
+los campos históricos exactos y conserva el marcado al componer la
+retroalimentación. La identificación del guion incluye esa semántica, de modo
+que una pausa anterior sólo se recupera bajo el contrato de lectura que le
+corresponde. Esta reconstrucción no crea respuestas, actividades ni audios, y
+mantiene las reglas existentes de destino activo y conservación de datos.
 
 ## Lectura y alcance de la recuperación
 

@@ -14,6 +14,11 @@ option(LGAED_NARRATION_PLAYER_QA_ONLY
     "Build only the three real Windows narration-player probes with the official Windows toolchain" OFF)
 option(LGAED_READER_BUILD_QA_ONLY
     "Compile and link the three original curricular reader/diagnostic test executables without running them" OFF)
+option(LGAED_MATH_EDITORIAL_QA_ONLY
+    "Within ReaderBuild, run only the real math-worker prompt revision and native/imported reader preservation test" OFF)
+if(LGAED_MATH_EDITORIAL_QA_ONLY AND NOT LGAED_READER_BUILD_QA_ONLY)
+    message(FATAL_ERROR "LGAED_MATH_EDITORIAL_QA_ONLY requires the ReaderBuild toolchain profile.")
+endif()
 option(LGAED_WASI_RUNNER_QA_ONLY
     "Build and run actual Windows WASI SDK / Wasmtime single-file compiler and output regressions" OFF)
 option(LGAED_NARRATION_WORKER_QA_ONLY
@@ -206,6 +211,29 @@ if(LGAED_NARRATION_WORKER_QA_ONLY)
 endif()
 
 include(cmake/CurricularWindows.cmake)
+
+# Shared by the complete application test configuration and the focused real
+# math-worker QA. Fixtures are pinned Git publications plus an in-memory
+# authoring proposal; this never rewrites the curricular lesson.
+function(lgaed_add_math_prompt_editorial_test)
+    set(_math_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/assetcheck-prompt")
+    set(_math_before "${_math_fixture_dir}/assetcheck-prompt-before.json")
+    set(_math_after "${_math_fixture_dir}/assetcheck-prompt-after.json")
+    add_custom_command(OUTPUT "${_math_before}" "${_math_after}"
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_SOURCE_DIR}/scripts/curriculum/math_prompt_fixture_source.py"
+            --output-dir "${_math_fixture_dir}"
+        DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/math_prompt_fixture_source.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        COMMENT "Authenticating the original AssetCheck math prompt and its explicit editorial proposal"
+        VERBATIM)
+    add_custom_target(lgaed_math_prompt_editorial_fixture DEPENDS "${_math_before}" "${_math_after}")
+    add_dependencies(lgaed_editorial_matching_view_tests lgaed_math_prompt_editorial_fixture lgaed_narration_runtime)
+    add_test(NAME native.assetcheck_prompt_editorial COMMAND lgaed_editorial_matching_view_tests
+        --assetcheck-prompt "${_math_before}" "${_math_after}")
+    set_tests_properties(native.assetcheck_prompt_editorial PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+endfunction()
+
 if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
         OR LGAED_COMPILER_HISTORICAL_READER_QA_ONLY OR LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     include(CTest)
@@ -251,7 +279,23 @@ if(LGAED_READER_BUILD_QA_ONLY)
     if(NOT BUILD_TESTING)
         message(FATAL_ERROR "LGAED_READER_BUILD_QA_ONLY requires BUILD_TESTING=ON.")
     endif()
+    if(LGAED_MATH_EDITORIAL_QA_ONLY)
+        if(NOT IS_DIRECTORY "${LGAED_NARRATION_RESOURCES}" OR NOT IS_DIRECTORY "${LGAED_ENGLISH_RESOURCES}")
+            message(FATAL_ERROR "Math editorial QA requires the existing authenticated worker resource directories.")
+        endif()
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        include(cmake/NarrationRuntime.cmake)
+        lgaed_add_narration_runtime(NarrationHost)
+        add_executable(lgaed_editorial_matching_view_tests native/presentation/windows/editorial_matching_view_tests.cpp)
+        target_link_libraries(lgaed_editorial_matching_view_tests PRIVATE lgaed_curricular_windows)
+        lgaed_add_math_prompt_editorial_test()
+        message(STATUS "Focused math editorial QA: real worker, native/imported state and reader archives; no audio playback.")
+        return()
+    endif()
     lgaed_add_curricular_reader_test_targets()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    include(cmake/StateImportTests.cmake)
+    lgaed_add_semantic_retirement_view_test()
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
@@ -533,6 +577,7 @@ if(BUILD_TESTING)
     lgaed_add_named_rule_source_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
+    lgaed_add_semantic_retirement_view_test()
     add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)
     target_link_libraries(lgaed_text_semantics_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.text_semantics COMMAND lgaed_text_semantics_tests)
@@ -998,6 +1043,7 @@ if(BUILD_TESTING)
         VERBATIM)
     add_custom_target(lgaed_editorial_matching_fixture DEPENDS "${LGAED_EDITORIAL_MATCHING_FIXTURE}")
     add_dependencies(lgaed_editorial_matching_view_tests lgaed_editorial_matching_fixture lgaed_narration_runtime)
+    lgaed_add_math_prompt_editorial_test()
     add_executable(lgaed_curricular_order_view_tests native/presentation/windows/curricular_order_view_tests.cpp)
     target_link_libraries(lgaed_curricular_order_view_tests PRIVATE lgaed_presentation_windows)
     foreach(order_case RANGE 0 13)

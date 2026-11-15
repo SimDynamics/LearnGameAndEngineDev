@@ -870,10 +870,10 @@ def is_source_file(path):
     return "." in path and path.rsplit(".", 1)[1].lower() in SOURCE_SUFFIXES
 
 
-def validate_cpp_compiler(block, where):
+def validate_cpp_compiler(block, where, *, document=None, position=None):
     require(isinstance(block.get("initialCode"), str), where, "initialCode debe ser texto")
     validate_cpp_output_check_contract(block, where)
-    validate_cpp_compile_check_contract(block, where)
+    validate_cpp_compile_check_contract(block, where, document=document, position=position)
     if "initialStandardInput" in block:
         require(isinstance(block["initialStandardInput"], str), where, "initialStandardInput debe ser texto")
 
@@ -938,11 +938,35 @@ def normalize_output_check_input(value, mode):
     return value
 
 
-def validate_cpp_compile_check_contract(block, where):
-    """A reviewed compile-time rejection is independent of an execution oracle."""
+def validate_cpp_compile_check_contract(block, where, *, document=None, position=None):
+    """Check the visible block; project source only with whole-lesson provenance.
+
+    Standalone callers retain the exact closed-source requirement. A format
+    snapshot is not permission by itself: validate the complete state map,
+    editorial chain, owner and lexical equivalence before projecting bytes
+    solely for this closed diagnostic check. Other structural checks still
+    inspect the unchanged visible block, not its historical projection.
+    """
     try:
-        _state_layout.validate_compile_check_contract(block)
-    except (ValueError, KeyError, TypeError) as error:
+        reviewed = block
+        if "compileCheck" in block and (document is not None or position is not None):
+            _state_layout.require(type(document) is dict and type(position) is tuple
+                                  and len(position) == 2
+                                  and all(type(index) is int and index >= 0 for index in position),
+                                  "A contextual diagnostic requires its document and current position")
+            _state_layout.validate(document)
+            page, index = position
+            _state_layout.require(document["pages"][page]["blocks"][index] == block,
+                                  "Diagnostic block is detached from its validated owner")
+            metadata = document["stateLayout"]
+            identity = metadata["current"][page]["blocks"][index]
+            archive = next((entry["block"] for entry in
+                            metadata.get("sourceFormatRevisions", [])
+                            if entry["id"] == identity), None)
+            if archive is not None:
+                reviewed = _state_layout.code_format.source_projection(block, archive)
+        _state_layout.validate_compile_check_contract(reviewed)
+    except (ValueError, KeyError, TypeError, IndexError) as error:
         require(False, where, f"objetivo de diagnóstico de compilación inválido: {error}")
 
 
@@ -1432,6 +1456,7 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
     the archive and historical exercise address.
     """
     if (course_id not in STRUCTURAL_COURSES or
+            type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0 or
             not isinstance(previous_document, dict) or
             not isinstance(current_document, dict) or
             not isinstance(old, dict) or not isinstance(current, dict) or
@@ -1445,6 +1470,18 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
             previous_document.get("id") != current_document.get("id")):
         return False
     try:
+        # Bind the complete lesson to its actual repository path, not
+        # merely a course prefix shared by unrelated lesson files.
+        lesson_path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(
+            PurePosixPath("app/src/main/assets/content/es/programming") / course_id)
+        if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                or lesson_path.suffix != ".json"
+                or not lesson_path.stem.startswith("lesson_")
+                or not lesson_path.stem[7:]):
+            return False
+        lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
+        if previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id:
+            return False
         baseline = _state_layout.prepare(previous_document)
         storage = _state_layout.validate(baseline)
         identities = [baseline["stateLayout"]["current"][page]["blocks"][block]
@@ -1452,6 +1489,10 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         if len(identities) != 1:
             return False
         identity = identities[0]
+        # Equivalent tokens alone cannot authenticate the caller's
+        # claimed old block. It must be the exact published owner.
+        if _state_layout._blocks(baseline).get(identity) != old:
+            return False
         archives = meta.get("sourceFormatRevisions", [])
         if not isinstance(archives, list) or not any(
                 isinstance(entry, dict) and entry.get("id") == identity for entry in archives):
@@ -1466,9 +1507,66 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
         return False
 
 
+def preserves_math_prompt_editorial_revision(relative, pn, bn, old, current, *,
+                                             previous_document=None, current_document=None,
+                                             course_id="cpp_fundamentals"):
+    """Bind a /prompt revision to its complete published Spanish v2 owner.
+
+    The archive authorizes explanatory text only. The exact path, historical
+    coordinates, ordered mathematical payload and full editorial transition
+    must all describe the supplied old/current blocks.
+    """
+    if (course_id not in STRUCTURAL_COURSES or type(pn) is not int or type(bn) is not int
+            or pn < 0 or bn < 0 or type(previous_document) is not dict
+            or type(current_document) is not dict or type(old) is not dict
+            or type(current) is not dict or old.get("type") != "math_puzzle"
+            or current.get("type") != "math_puzzle"):
+        return False
+    prefix = PurePosixPath("app/src/main/assets/content/es/programming") / course_id
+    try:
+        lesson_path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(prefix)
+        if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                or lesson_path.suffix != ".json" or not lesson_path.stem.startswith("lesson_")
+                or not lesson_path.stem[7:]):
+            return False
+        lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
+        meta, old_meta = current_document.get("stateLayout"), previous_document.get("stateLayout")
+        if (type(meta) is not dict or type(old_meta) is not dict
+                or meta.get("version") != 2 or old_meta.get("version") != 2
+                or meta.get("locale") != "es" or old_meta.get("locale") != "es"
+                or previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id):
+            return False
+        baseline = _state_layout.prepare(previous_document)
+        storage = _state_layout.validate(baseline)
+        identities = [baseline["stateLayout"]["current"][page]["blocks"][block]
+                      for (page, block), position in storage.items() if position == (pn, bn)]
+        if len(identities) != 1:
+            return False
+        identity = identities[0]
+        if (_state_layout._math_ordered_json(_state_layout._blocks(baseline).get(identity))
+                != _state_layout._math_ordered_json(old)):
+            return False
+        archives = meta.get("mathTextRevisions", [])
+        if type(archives) is not list or not any(type(entry) is dict
+                and entry.get("id") == identity for entry in archives):
+            return False
+        _state_layout.validate_transition(previous_document, current_document)
+        if (_state_layout._math_ordered_json(_state_layout._blocks(current_document).get(identity))
+                != _state_layout._math_ordered_json(current)):
+            return False
+        _state_layout._historical_math_text_contract(current_document, identity, current)
+        return True
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError):
+        return False
+
+
 def preserves_previous_exercise(relative, pn, bn, old, current, *,
                                 previous_document=None, current_document=None,
                                 course_id="cpp_fundamentals"):
+    if preserves_math_prompt_editorial_revision(
+            relative, pn, bn, old, current, previous_document=previous_document,
+            current_document=current_document, course_id=course_id):
+        return True
     if preserves_source_format_revision(relative, pn, bn, old, current,
                                         previous_document=previous_document,
                                         current_document=current_document,
@@ -1671,7 +1769,7 @@ def main(argv=None):
                 if kind == "math_puzzle":
                     validate_math_puzzle_contract(block, where)
                 if kind == "cpp_compiler":
-                    validate_cpp_compiler(block, where)
+                    validate_cpp_compiler(block, where, document=doc, position=(pn - 1, bn - 1))
                 if kind == "image":
                     validate_image_contract(block, where, ROOT / "app/src/main/assets/content")
                 if kind in {"heading", "paragraph", "note"}:

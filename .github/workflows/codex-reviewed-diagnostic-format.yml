@@ -1,0 +1,56 @@
+name: Codex authenticated diagnostic structural formatting
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - scripts/curriculum/validar_json_programacion.py
+      - scripts/curriculum/validate_programming_practice_tools.py
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/test_code_format_compat.py
+      - scripts/curriculum/test_source_format_retirement.py
+      - scripts/curriculum/test_semantic_retirement.py
+      - scripts/curriculum/semantic_retirement_fixture_source.py
+      - scripts/curriculum/text_semantics.py
+      - scripts/curriculum/test_text_semantics.py
+      - scripts/curriculum/test_retired_state_layout.py
+      - scripts/curriculum/source_format_retirement_fixture_source.py
+      - scripts/curriculum/test_compile_check_source_format.py
+      - scripts/curriculum/test_reviewed_diagnostic_structural_format.py
+      - scripts/curriculum/test_source_format_provenance.py
+      - .github/workflows/codex-reviewed-diagnostic-format.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify source-format fixtures and combined editorial revisions
+        run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
+      - name: Verify published formatted sources survive later retirement history
+        run: python -B -m unittest discover -s scripts/curriculum -p test_source_format_retirement.py -v
+      - name: Verify exact authored semantics across retirement snapshots
+        run: python -B -m unittest discover -s scripts/curriculum -p test_semantic_retirement.py -v
+      - name: Preserve strict public text annotation contracts
+        run: python -B -m unittest discover -s scripts/curriculum -p test_text_semantics.py -v
+      - name: Preserve existing retirement and legacy reading archives
+        run: python -B -m unittest discover -s scripts/curriculum -p test_retired_state_layout.py -v
+      - name: Verify original layout and diagnostic contracts
+        run: python -B -m unittest discover -s scripts/curriculum -p test_compile_check_source_format.py -v
+      - name: Verify ordinary validators, authenticated formatting and tampering
+        run: python -B -m unittest discover -s scripts/curriculum -p test_reviewed_diagnostic_structural_format.py -v
+      - name: Reject detached source-format provenance and wrong lesson paths
+        run: python -B -m unittest discover -s scripts/curriculum -p test_source_format_provenance.py -v

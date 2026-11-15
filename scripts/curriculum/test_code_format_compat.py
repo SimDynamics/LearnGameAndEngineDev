@@ -16,7 +16,7 @@ layout_spec.loader.exec_module(layout)
 
 def fixture():
     return {
-        "id": "cpp_fundamentals__source_format_qa",
+        "id": "cpp_fundamentals__source_format_qa__source_format_qa",
         "title": "Contrato de formato",
         "pages": [{"blocks": [
             {"type": "code", "code": "#include <iostream>\nint main(){int number=2;return number;}\n"},

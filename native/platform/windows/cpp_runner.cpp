@@ -1882,7 +1882,7 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
         private_request.cmake_graph_check.reset();
         private_request.capture_cmake_graph=false;
         private_request.stdin_utf8.clear();
-        private_request.project_key+="/open-battery-private-v1/"+std::to_string(index);
+        private_request.project_key+="/open-battery-private-v2/"+std::to_string(index);
         private_request.request_id=~(request.request_id+index);
         for(auto& item:private_request.project_files)
             if(item.first==spec.library_path) { item.second=*source;break; }
@@ -1918,13 +1918,12 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
             added=call;
         }
     if(!added)return;
-    for(std::size_t i=0;i<spec.original_cases.size();++i)
-        if(!run(curriculum::OpenBatteryMutation::invert_acceptance,
-                spec.original_cases[i],i+1))return;
-    if(!run(curriculum::OpenBatteryMutation::invert_acceptance,
-            added,spec.original_cases.size()+1))return;
-    if(!run(curriculum::OpenBatteryMutation::corrupt_destination,
-            added,spec.original_cases.size()+2))return;
+    const auto plan=curriculum::open_battery_mutation_plan(spec.original_cases,*added);
+    if(!plan)return;
+    // The clean baseline above is phase zero. Preserve separate builds
+    // and executions for both observations of every historical case.
+    for(std::size_t i=1;i<plan->size();++i)
+        if(!run((*plan)[i].mutation,(*plan)[i].target,i))return;
     result.open_battery_evidence=std::move(evidence);
 }
 

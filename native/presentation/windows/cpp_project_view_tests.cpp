@@ -10,6 +10,8 @@
 #include <commctrl.h>
 #include <richedit.h>
 #include <winrt/base.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Data.Json.h>
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -229,25 +231,38 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
 
 
 std::string legacy_u3_without_workflow(std::string source) {
-    // Git may checkout this JSON with LF or CRLF on different platforms.
-    // Remove only the one published root declaration, preserving every other
-    // byte including the historical editor and stateLayout payload.
-    const std::string field=R"(  "compilerWorkflowChecks": [{"activity": "block_0010_0003", "kind": "cmakeSelectiveRecoveryV1"}],)";
-    const auto start=source.find(field);
-    require(start!=std::string::npos &&
-            source.find(field,start+field.size())==std::string::npos,
+    // Validate with the JSON engine, then erase only the raw root field.
+    // Stringify would rewrite historical block bytes and number tokens.
+    const auto root=winrt::Windows::Data::Json::JsonObject::Parse(winrt::to_hstring(source));
+    require(root.HasKey(L"compilerWorkflowChecks"),"Missing published U3 workflow root");
+    const auto checks=root.GetNamedArray(L"compilerWorkflowChecks");
+    require(checks.Size()==1,
         "The published U3 workflow must have exactly one root declaration");
-    auto end=start+field.size();
-    if(source.compare(end,2,"\r\n")==0)end+=2;
-    else if(source.compare(end,1,"\n")==0)++end;
-    else throw std::runtime_error("The published U3 workflow has no isolated line boundary");
-    source.erase(start,end-start);
+    const auto item=checks.GetObjectAt(0);
+    require(item.Size()==2&&item.GetNamedString(L"activity")==L"block_0010_0003"&&
+        item.GetNamedString(L"kind")==L"cmakeSelectiveRecoveryV1",
+        "Unexpected published U3 workflow owner or kind");
+    const std::string field=R"("compilerWorkflowChecks")";
+    const auto start=source.find(field);
+    require(start!=std::string::npos&&source.find(field,start+field.size())==std::string::npos,
+        "The published U3 workflow root must have one exact source location");
+    const auto colon=source.find_first_not_of(" \t\r\n",start+field.size());
+    require(colon!=std::string::npos&&source[colon]==':',"Missing workflow property separator");
+    const auto open=source.find_first_not_of(" \t\r\n",colon+1);
+    require(open!=std::string::npos&&source[open]=='[',"Missing workflow declaration array");
+    // Both validated values are exact strings without a closing bracket.
+    const auto close=source.find(']',open+1);
+    require(close!=std::string::npos,"Missing workflow declaration array boundary");
+    const auto comma=source.find_first_not_of(" \t\r\n",close+1);
+    require(comma!=std::string::npos&&source[comma]==',',
+        "The workflow must precede the next published root field");
+    source.erase(start,comma+1-start);
     return source;
 }
 
 void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_lesson) {
-    // Load the genuine 13-page curriculum. Until Work publishes the root
-    // declaration, simulate it only in memory, never in student profiles.
+    // Load the genuine 13-page curriculum and its published root contract.
+    // All historical and malformed variants remain isolated in memory.
     const auto published=windows::load_lesson(authored_lesson);
     require(published.pages.size()==13&&published.pages[10].blocks.size()>3,
         "The authentic U3 recovery owner is missing");
@@ -282,12 +297,40 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
         "The U3 root declaration changed the original response or stored completion identity");
     const auto declared_at=declared_json.find("\"compilerWorkflowChecks\"");
     require(declared_at!=std::string::npos,"The published U3 source lost its workflow root");
+    const auto declaration_open=declared_json.find('[',declared_at);
+    const auto declaration_close=declaration_open==std::string::npos?
+        std::string::npos:declared_json.find(']',declaration_open);
+    require(declaration_open!=std::string::npos&&declaration_close!=std::string::npos,
+        "Cannot locate the validated curricular declaration array");
+    const std::array<std::string_view,2> declaration_formats{
+        R"([{"activity":"block_0010_0003","kind":"cmakeSelectiveRecoveryV1"}])",
+        "[\r\n    {\r\n      \"activity\": \"block_0010_0003\",\r\n"
+        "      \"kind\": \"cmakeSelectiveRecoveryV1\"\r\n    }\r\n  ]"
+    };
+    for(const auto format:declaration_formats){
+        auto formatted=declared_json;
+        formatted.replace(declaration_open,declaration_close+1-declaration_open,format);
+        require(legacy_u3_without_workflow(formatted)==legacy_json,
+            "Workflow JSON spacing changed bytes outside the removed root field");
+        const auto alternative=windows::parse_lesson_json(formatted,"es");
+        const auto& alternate_owner=alternative.pages[10].blocks[3];
+        require(alternate_owner.raw_json==previous.raw_json&&
+            alternate_owner.project_files==previous.project_files&&
+            curriculum::exercise_key(alternative,alternate_owner)==
+                curriculum::exercise_key(published,previous)&&
+            alternate_owner.compiler_workflow_check==
+                curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1&&
+            windows::compiler_selective_history_required(alternative,alternate_owner),
+            "Equivalent workflow JSON formatting changed the original owner or History contract");
+    }
     // Match meaningful tokens only inside the root declaration. The actual
     // curriculum may contain spaces, line breaks or Git-normalized CRLF.
     auto rejects=[&](std::string_view from,std::string_view replacement) {
         auto invalid=declared_json;
-        const auto at=invalid.find(from,declared_at);
-        require(at!=std::string::npos,"Missing workflow token for negative curriculum test");
+        const auto at=invalid.find(from,declaration_open);
+        require(at!=std::string::npos&&at+from.size()<=declaration_close&&
+            invalid.find(from,at+from.size())>=declaration_close,
+            "Missing or ambiguous workflow token inside the root declaration");
         invalid.replace(at,from.size(),replacement);
         bool rejected=false;
         try {(void)windows::parse_lesson_json(invalid,"es");}
@@ -296,16 +339,13 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
     };
     rejects("cmakeSelectiveRecoveryV1","unrecognizedWorkflow");
     rejects("block_0010_0003","block_0003_0004");
-    rejects("cmakeSelectiveRecoveryV1\"}",
-            "cmakeSelectiveRecoveryV1\", \"extra\": true}");
+    rejects("\"cmakeSelectiveRecoveryV1\"",
+            "\"cmakeSelectiveRecoveryV1\", \"extra\": true");
     {
         auto duplicated=declared_json;
-        const auto open=duplicated.find('[',declared_at);
-        const auto close=open==std::string::npos?std::string::npos:duplicated.find(']',open);
-        require(open!=std::string::npos&&close!=std::string::npos&&close>open+1,
-            "Cannot locate the exact curricular declaration array");
-        const auto item=duplicated.substr(open+1,close-open-1);
-        duplicated.insert(close,","+item);
+        const auto item=duplicated.substr(declaration_open+1,
+            declaration_close-declaration_open-1);
+        duplicated.insert(declaration_close,","+item);
         bool rejected=false;
         try {(void)windows::parse_lesson_json(duplicated,"es");}
         catch(const std::exception&){rejected=true;}

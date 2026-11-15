@@ -147,6 +147,29 @@ foreach(name IN ITEMS
     list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
         "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/${name}.json")
 endforeach()
+# Every closed source diagnostic is compiled before and after formatting.
+# The manifest identifies owners independently of presentation positions.
+list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
+    "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/all-diagnostics.manifest.json")
+foreach(reviewed_index RANGE 0 5)
+    foreach(reviewed_side IN ITEMS before after)
+        list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
+            "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/all-${reviewed_index}.${reviewed_side}.json")
+    endforeach()
+endforeach()
+set(LGAED_REVIEWED_DIAGNOSTIC_INPUTS)
+foreach(reviewed_lesson IN ITEMS
+    funciones_y_contratos/lesson_declaraciones_y_firmas.json
+    funciones_y_contratos/lesson_interfaces_cabeceras_y_programas_con_varios_archivos.json
+    funciones_y_contratos/lesson_construir_un_proyecto_desde_su_interfaz.json
+    datos_propios_y_estado_valido/lesson_consultas_const_y_objetos_constantes.json
+    datos_propios_y_estado_valido/lesson_valores_por_defecto_con_significado.json
+    datos_propios_y_estado_valido/lesson_argumentos_con_tipos_que_expresan_su_funcion.json)
+    foreach(reviewed_locale IN ITEMS es en fr)
+        list(APPEND LGAED_REVIEWED_DIAGNOSTIC_INPUTS
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/${reviewed_locale}/programming/cpp_fundamentals/${reviewed_lesson}")
+    endforeach()
+endforeach()
 add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
     COMMAND ${_lgaed_state_fixture_python}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
@@ -154,6 +177,9 @@ add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
     DEPENDS
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_compile_check_source_format.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_reviewed_diagnostic_structural_format.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+        ${LGAED_REVIEWED_DIAGNOSTIC_INPUTS}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
         "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_declaraciones_y_firmas.json"
@@ -191,6 +217,67 @@ add_custom_command(OUTPUT ${LGAED_REAL_CODE_FORMAT_PILOT_FILES}
     VERBATIM)
 add_custom_target(lgaed_real_code_format_pilot_fixtures DEPENDS ${LGAED_REAL_CODE_FORMAT_PILOT_FILES})
 
+
+# A format review and an unrelated retirement must compose without changing
+# either publication. The manifest lists exact historical source documents and
+# adversarial snapshots; all output stays under the isolated CMake build tree.
+set(LGAED_SOURCE_FORMAT_RETIREMENT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/source-format-retirement")
+set(LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST
+    "${LGAED_SOURCE_FORMAT_RETIREMENT_DIR}/manifest.json")
+add_custom_command(OUTPUT "${LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST}"
+    COMMAND ${_lgaed_state_fixture_python}
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/source_format_retirement_fixture_source.py"
+        --output-dir "${LGAED_SOURCE_FORMAT_RETIREMENT_DIR}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/source_format_retirement_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Verify published physical-format sources across unrelated retirement histories"
+    VERBATIM)
+add_custom_target(lgaed_source_format_retirement_fixtures
+    DEPENDS "${LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST}")
+
+# Keep explicit meanings in their own exact retirement version, including
+# published U7 and legacy six-field snapshots. No curricular file is written.
+set(LGAED_SEMANTIC_RETIREMENT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/semantic-retirement")
+set(LGAED_SEMANTIC_RETIREMENT_MANIFEST
+    "${LGAED_SEMANTIC_RETIREMENT_DIR}/manifest.json")
+add_custom_command(OUTPUT "${LGAED_SEMANTIC_RETIREMENT_MANIFEST}"
+    COMMAND ${_lgaed_state_fixture_python}
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/semantic_retirement_fixture_source.py"
+        --output-dir "${LGAED_SEMANTIC_RETIREMENT_DIR}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/semantic_retirement_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/source_format_retirement_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Verify exact semantic descriptors across authenticated retirement batches"
+    VERBATIM)
+add_custom_target(lgaed_semantic_retirement_fixtures
+    DEPENDS "${LGAED_SEMANTIC_RETIREMENT_MANIFEST}")
+
+function(lgaed_add_semantic_retirement_view_test)
+    add_executable(lgaed_semantic_retirement_view_tests
+        native/presentation/windows/semantic_retirement_view_tests.cpp)
+    target_link_libraries(lgaed_semantic_retirement_view_tests PRIVATE lgaed_curricular_windows)
+    add_dependencies(lgaed_semantic_retirement_view_tests lgaed_semantic_retirement_fixtures)
+    add_test(NAME native.semantic_retirement_view COMMAND lgaed_semantic_retirement_view_tests
+        "${LGAED_SEMANTIC_RETIREMENT_DIR}")
+    set_tests_properties(native.semantic_retirement_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+endfunction()
+
 function(lgaed_add_state_import_tests qa_root)
     # In the isolated Windows QA mode, test the actual immutable project
     # revision files and selective restoration, not only compiler state.
@@ -225,11 +312,13 @@ function(lgaed_add_state_import_tests qa_root)
     target_link_libraries(lgaed_code_format_loader_tests PRIVATE
         lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures
-        lgaed_real_code_format_pilot_fixtures lgaed_u6_compile_check_format_fixtures)
+        lgaed_real_code_format_pilot_fixtures lgaed_u6_compile_check_format_fixtures
+        lgaed_source_format_retirement_fixtures lgaed_semantic_retirement_fixtures)
     add_test(NAME native.code_format_loader COMMAND lgaed_code_format_loader_tests
         "${LGAED_CODE_FORMAT_FIXTURE_DIR}" "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}"
-        "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}")
-    set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 45)
+        "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}" "${LGAED_SOURCE_FORMAT_RETIREMENT_DIR}"
+        "${qa_root}/source-format-retirement" "${LGAED_SEMANTIC_RETIREMENT_DIR}")
+    set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 90)
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
     add_executable(lgaed_stderr_exact_tests native/core/stderr_exact_contract_tests.cpp)

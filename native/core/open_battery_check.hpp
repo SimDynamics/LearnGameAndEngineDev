@@ -21,6 +21,15 @@ struct OpenBatteryCall {
     bool operator==(const OpenBatteryCall&) const = default;
 };
 enum class OpenBatteryMutation { baseline, invert_acceptance, corrupt_destination };
+// V1 checked only acceptance for historical calls. Its receipts remain
+// historical data, but cannot certify the stronger two-observation goal.
+inline constexpr std::string_view open_battery_objective_version =
+    "open-cmake-battery-independent-mutations-v2";
+struct OpenBatteryPhase {
+    OpenBatteryMutation mutation=OpenBatteryMutation::baseline;
+    std::optional<OpenBatteryCall> target;
+    bool operator==(const OpenBatteryPhase&) const = default;
+};
 struct OpenBatteryProbeSpec {
     std::string library_path, test_path, function_name, comparison_name, test_target;
     std::vector<OpenBatteryCall> original_cases;
@@ -60,6 +69,23 @@ inline bool open_battery_originals_valid(std::span<const OpenBatteryCall> cases)
         for(std::size_t j=0;j<i;++j)
             if(cases[i]==cases[j])return false;
     return true;
+}
+// Shared by the native worker and verifier: one clean execution, then an
+// acceptance-only and a destination-only defect for every old/new call.
+// Call distinctness is checked by the verifier before awarding credit.
+inline std::optional<std::vector<OpenBatteryPhase>> open_battery_mutation_plan(
+        std::span<const OpenBatteryCall> original,OpenBatteryCall added) {
+    if(!open_battery_originals_valid(original))return {};
+    std::vector<OpenBatteryPhase> plan;
+    plan.reserve(2*original.size()+3);
+    plan.push_back({OpenBatteryMutation::baseline,std::nullopt});
+    const auto append=[&](OpenBatteryCall target) {
+        plan.push_back({OpenBatteryMutation::invert_acceptance,target});
+        plan.push_back({OpenBatteryMutation::corrupt_destination,target});
+    };
+    for(const auto& target:original)append(target);
+    append(added);
+    return plan;
 }
 // Authenticated source file names and finite mutation work are required.
 // The curriculum loader, not an editable student project, owns this request.
@@ -104,15 +130,28 @@ inline std::optional<std::string> open_battery_mutated_library(
        original.find(declaration,position+declaration.size())!=original.npos)return {};
     const std::string renamed="lgaed_open_battery_original_"+std::string(function);
     if(original.find(renamed)!=original.npos)return {};
-    std::string result="#include <iostream>\n";
+    std::string result="#include <charconv>\n#include <iostream>\n#include <limits>\n";
     result+=original.substr(0,position);
     result+="bool "+renamed+"(int valor, int inferior, int superior, int& ajuste) {";
     result+=original.substr(position+declaration.size());
     result+="\nbool "+std::string(function)+
         "(int valor, int inferior, int superior, int& ajuste) {\n";
     result+="    const int anterior = ajuste;\n";
-    result+="    std::cerr << \"LGAED_OPEN_BATTERY_CALL:\" << valor << ',' << inferior"
-            " << ',' << superior << ',' << anterior << '\\n';\n";
+    // Serialize the private record independently of the student's numeric
+    // flags, locale and pending field width. Unformatted write preserves all
+    // of those settings for the student's next output operation.
+    result+="    char traza[sizeof(\"LGAED_OPEN_BATTERY_CALL:\") +\n"
+            "        4 * (std::numeric_limits<int>::digits10 + 3)] =\n"
+            "        \"LGAED_OPEN_BATTERY_CALL:\";\n"
+            "    char* fin = traza + sizeof(\"LGAED_OPEN_BATTERY_CALL:\") - 1;\n"
+            "    const int datos[]{valor, inferior, superior, anterior};\n"
+            "    for (unsigned i = 0; i < 4; ++i) {\n"
+            "        const auto numero = std::to_chars(fin, traza + sizeof(traza) - 1, datos[i]);\n"
+            "        if (numero.ec != std::errc{}) return false;\n"
+            "        fin = numero.ptr;\n"
+            "        *fin++ = i == 3 ? '\\n' : ',';\n"
+            "    }\n"
+            "    std::cerr.write(traza, static_cast<std::streamsize>(fin - traza));\n";
     result+="    const bool aceptado = "+renamed+
         "(valor, inferior, superior, ajuste);\n";
     if(target) {
@@ -129,65 +168,74 @@ inline std::optional<std::string> open_battery_mutated_library(
     result+="    return aceptado;\n}\n";
     return result;
 }
-// Remove only the runtime-owned call markers from stderr; real student
-// diagnostics must remain byte-exact for the independent reporting check.
-inline std::string open_battery_student_stderr(std::string_view all) {
-    constexpr std::string_view marker="LGAED_OPEN_BATTERY_CALL:";
+namespace open_battery_detail {
+struct DecodedTrace {
+    std::vector<OpenBatteryCall> calls;
     std::string visible;
+};
+// A caller may write a partial message before invoking the library. The
+// private record need not begin a line: retain the prefix byte-for-byte and
+// remove only a complete, numerically valid record. Parsing and filtering
+// share one definition so private evidence never becomes student feedback.
+inline std::optional<DecodedTrace> decode_trace(std::string_view all) {
+    constexpr std::string_view marker="LGAED_OPEN_BATTERY_CALL:";
+    DecodedTrace result;
     for(std::size_t position=0;position<all.size();) {
-        auto end=all.find('\n',position);
-        if(end==all.npos)end=all.size();
-        const auto line=all.substr(position,end-position);
-        if(!line.starts_with(marker)) {
-            visible.append(line);
-            if(end<all.size())visible.push_back('\n');
+        const auto begin=all.find(marker,position);
+        if(begin==all.npos) {
+            result.visible.append(all.substr(position));
+            break;
         }
+        result.visible.append(all.substr(position,begin-position));
+        const auto payload=begin+marker.size();
+        auto end=all.find('\n',payload);
+        if(end==all.npos)end=all.size();
+        auto line=all.substr(payload,end-payload);
+        if(line.ends_with('\r'))line.remove_suffix(1);
+        int value[4]{};
+        for(unsigned i=0;i<4;++i) {
+            const auto comma=line.find(',');
+            const auto field=line.substr(0,comma);
+            if(field.empty())return {};
+            const auto [ptr,ec]=std::from_chars(field.data(),
+                field.data()+field.size(),value[i]);
+            if(ec!=std::errc{}||ptr!=field.data()+field.size())return {};
+            if(i==3) {
+                if(comma!=line.npos)return {};
+            }else{
+                if(comma==line.npos)return {};
+                line.remove_prefix(comma+1);
+            }
+        }
+        result.calls.push_back({value[0],value[1],value[2],value[3]});
+        if(result.calls.size()>34)return {};
         position=end<all.size()?end+1:end;
     }
-    return visible;
+    return result;
+}
+} // namespace open_battery_detail
+
+inline std::string open_battery_student_stderr(std::string_view all) {
+    auto decoded=open_battery_detail::decode_trace(all);
+    // Malformed or truncated evidence fails the call parser. Do not also
+    // erase diagnostics from the failed execution while reporting the error.
+    return decoded?std::move(decoded->visible):std::string(all);
 }
 inline std::optional<std::vector<OpenBatteryCall>> open_battery_parse_calls(
         std::string_view stderr_bytes) {
-    constexpr std::string_view marker="LGAED_OPEN_BATTERY_CALL:";
-    std::vector<OpenBatteryCall> calls;
-    for(std::size_t offset=0;offset<stderr_bytes.size();) {
-        auto end=stderr_bytes.find('\n',offset);
-        if(end==stderr_bytes.npos)end=stderr_bytes.size();
-        auto line=stderr_bytes.substr(offset,end-offset);
-        if(line.ends_with('\r'))line.remove_suffix(1);
-        if(line.starts_with(marker)) {
-            line.remove_prefix(marker.size());
-            int value[4]{};
-            for(unsigned i=0;i<4;++i) {
-                const auto comma=line.find(',');
-                const auto field=line.substr(0,comma);
-                if(field.empty())return {};
-                auto [ptr,ec]=std::from_chars(field.data(),
-                    field.data()+field.size(),value[i]);
-                if(ec!=std::errc{}||ptr!=field.data()+field.size())return {};
-                if(i==3) {
-                    if(comma!=line.npos)return {};
-                }else{
-                    if(comma==line.npos)return {};
-                    line.remove_prefix(comma+1);
-                }
-            }
-            calls.push_back({value[0],value[1],value[2],value[3]});
-            if(calls.size()>34)return {};
-        }
-        offset=end<stderr_bytes.size()?end+1:end;
-    }
-    return calls;
+    auto decoded=open_battery_detail::decode_trace(stderr_bytes);
+    if(!decoded)return {};
+    return std::move(decoded->calls);
 }
-// The runner supplies the baseline followed by one inversion of each old
-// call, then one acceptance and one destination mutation of the new call.
+// The worker supplies the baseline and both result dimensions for every
+// historical call and the new call, in open_battery_mutation_plan order.
 // This core does not infer completion from stdout or a forged "Fallos=0".
 inline OpenBatteryVerdict open_battery_verify(
         std::span<const OpenBatteryCall> original,
         std::span<const OpenBatteryRun> runs,std::string_view program_frame) {
     if(!open_battery_originals_valid(original))
         return {false,"Casos originales vacíos, repetidos o excesivos.",{}};
-    if(program_frame.empty()||runs.size()!=original.size()+3)
+    if(program_frame.empty()||runs.size()!=2*original.size()+3)
         return {false,"Faltan mutaciones independientes compiladas.",{}};
     for(const auto& run:runs)
         if(run.program_frame!=program_frame||!run.compiled||!run.executed)
@@ -217,14 +265,12 @@ inline OpenBatteryVerdict open_battery_verify(
         if(item.value==extra->value&&item.lower==extra->lower&&
            item.upper==extra->upper)
             return {false,"La nueva terna repite una original.",{}};
+    const auto plan=open_battery_mutation_plan(original,*extra);
+    if(!plan||plan->size()!=runs.size())
+        return {false,"No existe un plan completo de mutaciones independientes.",{}};
     for(std::size_t i=1;i<runs.size();++i) {
-        const auto required=i<=original.size()?
-            OpenBatteryMutation::invert_acceptance:
-            i==original.size()+1?
-                OpenBatteryMutation::invert_acceptance:
-                OpenBatteryMutation::corrupt_destination;
-        const auto target=i<=original.size()?original[i-1]:*extra;
-        if(runs[i].mutation!=required||runs[i].target!=target)
+        const auto& required=(*plan)[i];
+        if(runs[i].mutation!=required.mutation||runs[i].target!=required.target)
             return {false,"La mutación no corresponde a su caso original o nuevo.",extra};
         if(runs[i].exit_code!=1)
             return {false,"Una mutación no cambió el resultado final.",extra};

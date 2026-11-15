@@ -880,8 +880,59 @@ public:
         }
         return result;
     }
+    // Preserve evaluation object order and exact numeric tokens. Decoded
+    // strings and insignificant whitespace may differ; only the explicit
+    // root prompt slice is excluded from this protected contract.
+    [[nodiscard]] std::string ordered_frame(Slice item,const std::vector<Slice>& ignored={}) const {
+        auto cursor=item.begin;std::string result;ordered_value(cursor,result,ignored,0);
+        require(cursor==item.end,"Incomplete ordered JSON contract");return result;
+    }
 private:
     std::string_view source_;
+    std::string ordered_string(std::size_t& cursor,std::string& output) const {
+        const auto end=string_end(cursor);
+        const auto parsed=JsonValue::Parse(key(source_.substr(cursor,end-cursor))).GetString();
+        for(decltype(parsed.size()) at=0;at<parsed.size();++at){const auto c=parsed[at];
+            if(c>=0xd800&&c<=0xdbff){require(at+1<parsed.size()&&parsed[at+1]>=0xdc00&&parsed[at+1]<=0xdfff,
+                "Invalid Unicode scalar in mathematical contract");++at;}
+            else require(c<0xdc00||c>0xdfff,"Invalid Unicode scalar in mathematical contract");}
+        canonical(JsonValue::CreateStringValue(parsed),output);cursor=end;return utf8(parsed);
+    }
+    void ordered_value(std::size_t& cursor,std::string& output,const std::vector<Slice>& ignored,unsigned depth) const {
+        require(depth<=64,"JSON nesting too deep");space(cursor);
+        const auto omitted=std::ranges::find(ignored,cursor,&Slice::begin);
+        if(omitted!=ignored.end()){require(value(cursor)==omitted->end,"Invalid archived text slice");
+            output+='p';cursor=omitted->end;return;}
+        const auto first=source_.at(cursor);
+        if(first=='"'){(void)ordered_string(cursor,output);return;}
+        if(first=='{'){
+            ++cursor;output+='{';std::set<std::string> names;space(cursor);
+            if(source_.at(cursor)!='}')for(;;){
+                space(cursor);const auto name=ordered_string(cursor,output);
+                require(names.insert(name).second,"Duplicate mathematical JSON property");space(cursor);
+                require(source_.at(cursor++)==':',"Expected mathematical JSON property");
+                ordered_value(cursor,output,ignored,depth+1);space(cursor);
+                if(source_.at(cursor)=='}')break;
+                require(source_.at(cursor++)==',',"Expected mathematical object separator");
+            }
+            ++cursor;output+='}';return;
+        }
+        if(first=='['){
+            ++cursor;output+='[';space(cursor);
+            if(source_.at(cursor)!=']')for(;;){
+                ordered_value(cursor,output,ignored,depth+1);space(cursor);
+                if(source_.at(cursor)==']')break;
+                require(source_.at(cursor++)==',',"Expected mathematical array separator");
+            }
+            ++cursor;output+=']';return;
+        }
+        const auto end=value(cursor);const auto token=source_.substr(cursor,end-cursor);
+        const auto parsed=JsonValue::Parse(key(token));
+        if(parsed.ValueType()==JsonValueType::Number){require(std::isfinite(parsed.GetNumber()),"Nonfinite mathematical number");
+            output+='n'+std::to_string(token.size())+':';output+=token;}
+        else canonical(parsed,output);
+        cursor=end;
+    }
     void space(std::size_t& cursor) const { while (cursor < source_.size() && std::string_view(" \t\r\n").find(source_[cursor]) != std::string_view::npos) ++cursor; }
     std::size_t string_end(std::size_t cursor) const {
         require(source_.at(cursor++) == '"',"Expected original JSON string");
@@ -909,6 +960,25 @@ private:
         return cursor;
     }
 };
+void require_math_prompt_contract(std::string_view current,std::string_view previous,bool historical=false) {
+    const OriginalJson live(current),original(previous);
+    const auto live_root=live.root(),old_root=original.root();
+    std::vector<OriginalJson::Slice> live_ignored{live.member(live_root,"prompt")},old_ignored{original.member(old_root,"prompt")};
+    // A snapshot can precede one of the two already published label reviews.
+    // Only that exact full before/after pair may omit its reviewed label too;
+    // arbitrary historical labels remain part of the ordered contract.
+    if(historical)if(const auto reviewed=reviewed_math_label(JsonObject::Parse(key(previous)));
+            reviewed&&fingerprint(JsonObject::Parse(key(current)))==reviewed->before){
+        const auto label=[&](const OriginalJson& source,OriginalJson::Slice root){
+            const auto response=source.elements(source.member(root,"responses")).at(0);
+            const auto item=source.elements(source.member(response,"sources")).at(reviewed->source_index);
+            return source.member(item,"label");
+        };
+        live_ignored.push_back(label(live,live_root));old_ignored.push_back(label(original,old_root));
+    }
+    require(live.ordered_frame(live_root,live_ignored)==original.ordered_frame(old_root,old_ignored),
+        "A mathematical prompt revision changed evaluation data, property order or numeric tokens");
+}
 Block read_block(const JsonObject& value,std::string_view original,
     const JsonObject* authenticated_source_before=nullptr);
 std::string bibliography_string(const winrt::hstring& value){
@@ -930,6 +1000,46 @@ std::optional<TextSemantics> bibliography_semantics(const IJsonValue& value,std:
         selected.text=bibliography_string(span.GetNamedString(L"text"));selected.role=parse_semantic_role(text(span,"role"));
         if(span.HasKey(L"reading"))selected.reading=parse_semantic_reading(text(span,"reading"));result.spans.push_back(std::move(selected));}
     validate_text_semantics(result);return result;
+}
+JsonObject math_prompt_projection(const JsonObject& current,const JsonObject& previous,bool historical=false) {
+    const auto prompt=[](const JsonObject& block){
+        require(text(block,"type")=="math_puzzle"&&block.HasKey(L"prompt")&&!block.HasKey(L"question"),
+            "A mathematical text archive requires the original explicit prompt field");
+        const auto authored=block.GetNamedValue(L"prompt");require(authored.ValueType()==JsonValueType::String,"A mathematical prompt must be text");
+        const auto value=authored.GetString();require(std::ranges::any_of(value,[](wchar_t c){return !narration_space(c);}),
+            "A mathematical prompt cannot be blank");return value;
+    };
+    (void)prompt(current);const auto before=prompt(previous);
+    if(historical)if(const auto reviewed=reviewed_math_label(previous);
+            reviewed&&fingerprint(current)==reviewed->before)return previous;
+    const auto projected=JsonObject::Parse(current.Stringify());
+    projected.Insert(L"prompt",JsonValue::CreateStringValue(before));
+    require(fingerprint(projected)==fingerprint(previous),"A mathematical prompt revision changed another field");
+    return projected;
+}
+std::optional<TextSemantics> math_prompt_semantics(const IJsonValue& value,std::string_view owner,const JsonObject& block) {
+    if(value.ValueType()==JsonValueType::Null)return {};
+    const auto field=value.GetObject();allowed_keys(field,{"block","path","sourceSha256","spans"},true);
+    require(text(field,"block")==owner&&text(field,"path")=="/prompt","Archived mathematical semantics has a different owner or field");
+    TextSemantics result;result.source=bibliography_string(block.GetNamedString(L"prompt"));
+    const auto digest=text(field,"sourceSha256");require(valid_hash(digest)&&sha256(result.source)==digest,"Stale archived mathematical prompt semantics");
+    const auto spans=array(field,"spans");require(spans.Size()<=100000,"Too many archived mathematical semantic spans");
+    for(const auto& value:spans){const auto span=value.GetObject();allowed_keys(span,{"start","end","text","role","reading"});
+        SemanticSpan item;item.start=integer(span.GetNamedValue(L"start"),16*1024*1024);item.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
+        item.text=bibliography_string(span.GetNamedString(L"text"));item.role=parse_semantic_role(text(span,"role"));
+        if(span.HasKey(L"reading"))item.reading=parse_semantic_reading(text(span,"reading"));result.spans.push_back(std::move(item));}
+    validate_text_semantics(result);return result;
+}
+void require_math_prompt_semantics(const JsonObject& root,std::string_view owner,const JsonObject& current,bool retain_spans) {
+    require(root.HasKey(L"textSemantics"),"A mathematical prompt revision needs explicit current semantics");
+    const auto metadata=root.GetNamedObject(L"textSemantics");const auto fields=array(metadata,"fields");
+    std::size_t matches=0;
+    for(const auto& value:fields){const auto field=value.GetObject();
+        if(text(field,"block")==owner&&text(field,"path")=="/prompt"){
+            const auto descriptor=math_prompt_semantics(value,owner,current);
+            require(descriptor.has_value(),"A mathematical prompt descriptor cannot be null");
+            require(!retain_spans||!descriptor->spans.empty(),"A mathematical prompt revision cannot discard all existing semantic spans");++matches;}}
+    require(matches==1,"A mathematical prompt revision needs exactly one current prompt descriptor");
 }
 bool bibliography_pair(const JsonObject& before,const JsonObject& after){
     static const std::set<std::string> types{"multiple_choice","output_prediction","fill_code","order_code","drag_fill_code","inline_fill_code"};
@@ -1533,14 +1643,14 @@ std::optional<StateReadingRevision> composed_feedback_reading_revision(const Jso
     result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
     return result;
 }
-StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id,const JsonObject& root) {
+StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std::string_view locale, std::string_view lesson_id,const JsonObject& root,std::string_view document_source) {
     StateLayout result;
     result.raw_json = utf8(metadata.Stringify());
     result.version = static_cast<int>(integer(metadata.GetNamedValue(L"version"), 2));
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -1718,6 +1828,48 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
         }
     }
+    // The full original string preserves the mathematical worker's insertion
+    // order and exact numbers. It never substitutes the visible authored block.
+    std::map<std::string,JsonObject> math_text_originals;
+    if(metadata.HasKey(L"mathTextRevisions")) {
+        const auto revisions=array(metadata,"mathTextRevisions");
+        require(result.version==2&&locale=="es"&&revisions.Size()<=100000,"Mathematical prompt archives require Spanish stateLayout v2");
+        for(const auto& value:revisions){
+            const auto item=value.GetObject();allowed_keys(item,{"id","field","rawJson","semanticBefore"},true);
+            MathTextRevision record;record.id=text(item,"id");record.field=text(item,"field");record.raw_json=text(item,"rawJson");
+            require(valid_id(record.id)&&current_blocks.contains(record.id)&&!math_text_originals.contains(record.id)
+                &&record.field=="/prompt","Unknown, inactive or duplicated mathematical prompt owner");
+            require(!record.raw_json.empty()&&record.raw_json.size()<=32*1024*1024,"Invalid mathematical prompt archive size");
+            require_integer_json_numbers(record.raw_json);
+            const auto previous=JsonObject::Parse(key(record.raw_json));
+            (void)math_prompt_projection(previous,previous);
+            require_math_prompt_contract(record.raw_json,record.raw_json);
+            require(state_fingerprint(previous)==result.signatures.at(record.id),"Mathematical prompt archive changed its original state contract");
+            (void)read_block(previous,record.raw_json);
+            record.sha256=fingerprint(previous);
+            record.semantic_before=math_prompt_semantics(item.GetNamedValue(L"semanticBefore"),record.id,previous);
+            math_text_originals.emplace(record.id,previous);result.math_text_revisions.push_back(std::move(record));
+        }
+    }
+    std::map<std::string,std::string_view> math_text_raw,math_current_raw;
+    std::set<std::string> math_marked_prompts;
+    for(const auto& revision:result.math_text_revisions){
+        math_text_raw.emplace(revision.id,revision.raw_json);
+        if(revision.semantic_before&&!revision.semantic_before->spans.empty())math_marked_prompts.insert(revision.id);
+    }
+    const OriginalJson original_document(document_source);
+    std::vector<OriginalJson::Slice> original_editorial;
+    std::optional<OriginalJson::Slice> original_metadata;
+    if(!math_text_originals.empty()){
+        const auto document=original_document.root();original_metadata=original_document.member(document,"stateLayout");
+        original_editorial=original_document.elements(original_document.member(*original_metadata,"editorial"));
+        const auto original_pages=original_document.elements(original_document.member(document,"pages"));
+        for(std::size_t p=0;p<result.current.size();++p){
+            const auto blocks=original_document.elements(original_document.member(original_pages.at(p),"blocks"));
+            for(std::size_t b=0;b<result.current[p].blocks.size();++b){const auto& id=result.current[p].blocks[b];
+                if(math_text_originals.contains(id))math_current_raw.emplace(id,original_document.text(blocks.at(b)));}
+        }
+    }
     std::map<std::string, std::string> successors;
     if (metadata.HasKey(L"retired")) {
         require(result.version == 2, "Retirement requires state layout v2");
@@ -1751,10 +1903,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             "State map loses historical identities");
     // Historical reading / bibliography checks compare against the immutable
     // pre-format source, never an unreviewed hash of freshly spaced code.
-    const auto protected_source=[&](const std::string& owner,const JsonObject& current) {
+    const auto protected_source=[&](const std::string& owner,const JsonObject& current,bool historical=false) {
+        auto projected=current;
         if(const auto it=source_format_originals.find(owner);it!=source_format_originals.end())
-            return source_format_projection(current,it->second);
-        return current;
+            projected=source_format_projection(projected,it->second);
+        if(const auto it=math_text_originals.find(owner);it!=math_text_originals.end())
+            projected=math_prompt_projection(projected,it->second,historical);
+        return projected;
     };
     std::map<std::string, std::string> editorial;
     std::map<std::string,std::set<std::pair<std::string,std::string>>> editorial_edges;
@@ -1820,7 +1975,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 collect_actual();
                 const auto active=return_actual_blocks.find(id);
                 require(active!=return_actual_blocks.end()&&text(previous,"type")==text(active->second,"type")
-                    &&state_fingerprint(previous)==state_fingerprint(protected_source(id,active->second)),
+                    &&state_fingerprint(protected_source(id,previous,true))==state_fingerprint(protected_source(id,active->second)),
                     "Editorial return archive changed the current owner's protected contract");
                 if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
                     "A published intentional-exit objective cannot be removed by an editorial return");
@@ -1830,6 +1985,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                     "A published compilation diagnostic cannot be removed or replaced by an editorial return");
                 if(reviewed_crt_output_original(previous))require(reviewed_crt_output_original(active->second).has_value(),
                     "A published reviewed CRT spelling cannot be removed by an editorial return");
+                if(math_text_originals.contains(id)){
+                    const auto raw_target=original_document.member(original_editorial.at(prefix.Size()),"returnTo");
+                    require_math_prompt_contract(original_document.text(original_document.member(raw_target,"previousBlock")),math_text_raw.at(id),true);
+                }
                 const auto previous_raw=utf8(previous.Stringify());
                 (void)read_block(previous,previous_raw);
                 result.editorial_returns.push_back({id,previous_raw});
@@ -1840,6 +1999,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             editorial_edges[id].emplace(before,after);
         }
     }
+    for(const auto& revision:result.math_text_revisions)
+        require(editorial.contains(revision.id)&&std::ranges::any_of(editorial_edges.at(revision.id),
+                [&](const auto& edge){return edge.first==revision.sha256;}),
+            "A mathematical prompt archive needs its exact original editorial predecessor");
     for(const auto& revision:result.source_format_revisions)
         require(editorial.contains(revision.id)&&seen.at(revision.id).contains(revision.sha256),
             "A source format archive needs its original exact editorial predecessor");
@@ -1869,14 +2032,20 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         require(blocks.Size() == result.current[p].blocks.size(), "State map block count differs");
         for (std::size_t b = 0; b < result.current[p].blocks.size(); ++b) {
             const auto id = result.current[p].blocks[b]; const auto block = blocks.GetAt(static_cast<unsigned>(b)).GetObject();
-            if (const auto reviewed=reviewed_math_label(block)) {
+            const auto projected=protected_source(id,block);
+            if (const auto reviewed=reviewed_math_label(projected)) {
                 require(result.version == 2 && locale == "es" && lesson_id == reviewed->lesson && id == reviewed->identity,
                     "The reviewed mathematical label belongs to its original Spanish activity");
-                require(editorial.contains(id) && editorial.at(id) == reviewed->after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(reviewed->before)),
+                if(math_text_originals.contains(id))
+                    require(editorial_edges[id].contains({std::string(reviewed->before),std::string(reviewed->after)}),
+                        "The reviewed mathematical label needs its exact published editorial edge");
+                else require(editorial.contains(id) && editorial.at(id) == reviewed->after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(reviewed->before)),
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
-            const auto projected=source_format_originals.contains(id)?
-                source_format_projection(block,source_format_originals.at(id)):block;
+            if(math_text_originals.contains(id)){
+                require_math_prompt_contract(math_current_raw.at(id),math_text_raw.at(id));
+                require_math_prompt_semantics(root,id,block,math_marked_prompts.contains(id));
+            }
             if(const auto prior=source_format_originals.find(id);
                     prior!=source_format_originals.end())
                 require_formatted_question_semantics(root,id,prior->second,block);
@@ -1910,7 +2079,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         if (editorial.contains(retired.id)) require(retired.sha256 == editorial.at(retired.id),"Stale retired editorial fingerprint");
     if (metadata.HasKey(L"retirementHistory")) {
         const auto history = array(metadata,"retirementHistory"); require(history.Size() <= 100000,"Too many retirement reading snapshots");
+        const auto original_history=original_document.elements(original_document.member(
+            original_document.member(original_document.root(),"stateLayout"),"retirementHistory"));
+        std::size_t history_index=0;
         std::vector<std::string> covered;
+        std::map<std::string,std::string> retired_fingerprints;
+        for(const auto& retired:result.retired)retired_fingerprints.emplace(retired.id,retired.sha256);
         std::map<std::string,JsonObject> shells;
         for (std::size_t p=0;p<result.current.size();++p) {
             auto shell=JsonObject::Parse(pages.GetAt(static_cast<unsigned>(p)).Stringify());shell.Remove(L"blocks");
@@ -1918,8 +2092,20 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         }
         for (const auto& value : history) {
             const auto item=value.GetObject();
-            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter"},true);
+            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter","textSemantics"});
+            for(const auto field:{L"retired",L"current",L"pages",L"compilerPuzzlesRequired",L"referenceAfter",L"activityAfter"})
+                require(item.HasKey(field),"Incomplete retirement reading snapshot");
             StateRetirementHistory snapshot;
+            snapshot.has_text_semantics=item.HasKey(L"textSemantics");
+            if(snapshot.has_text_semantics) {
+                const auto semantics=item.GetNamedValue(L"textSemantics");
+                require(semantics.ValueType()==JsonValueType::Null||semantics.ValueType()==JsonValueType::Object,
+                    "Historical text semantics must be an object or null");
+                // Check the authored token spelling before WinRT Stringify can
+                // turn a fractional/exponent index into an integer.
+                require_integer_json_numbers(original_document.text(original_document.member(
+                    original_history.at(history_index),"textSemantics")));
+            }
             snapshot.retired=strings(array(item,"retired"),true,false);
             std::set<std::string> unique;
             for (const auto& id:snapshot.retired) {
@@ -1931,6 +2117,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             snapshot.compiler_puzzles_required=required.GetBoolean();
             snapshot.current=read_pages(array(item,"current"),nullptr);
             const auto historical_pages=array(item,"pages");
+            std::vector<OriginalJson::Slice> original_pages;
+            if(original_metadata)original_pages=original_document.elements(original_document.member(original_history.at(history_index),"pages"));
+            ++history_index;
             require(snapshot.current.size()==result.current.size()&&historical_pages.Size()==snapshot.current.size(),"Historical reading page count changed");
             std::set<std::string> snapshot_pages;
             std::map<std::string,std::string> snapshot_contracts;
@@ -1939,19 +2128,46 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(shells.contains(record.id),"Unknown historical reading page");
                 const auto page=historical_pages.GetAt(static_cast<unsigned>(p)).GetObject();
                 const auto blocks=array(page,"blocks");require(blocks.Size()==record.blocks.size(),"Historical reading block ownership changed");
+                std::vector<OriginalJson::Slice> original_blocks;
+                if(original_metadata)original_blocks=original_document.elements(original_document.member(original_pages.at(p),"blocks"));
                 auto shell=JsonObject::Parse(page.Stringify());shell.Remove(L"blocks");
                 require(fingerprint(shell)==fingerprint(shells.at(record.id)),"Historical reading page metadata changed");
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
+                    if(snapshot.has_text_semantics&&unique.contains(id))
+                        require(fingerprint(source)==retired_fingerprints.at(id),
+                            "A semantic retirement batch must preserve its exact archived block");
                     const auto general=general_choice_revisions.find(id);
+                    const auto prompt=math_text_originals.find(id);
+                    auto projected=source;
+                    if(const auto format=source_format_originals.find(id);format!=source_format_originals.end()) {
+                        // A reading archive keeps an actual published presentation,
+                        // not a newly invented spelling of equivalent source code.
+                        require(editorial_nodes.contains(id)&&
+                            std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
+                            "A historical formatted source needs an exact occurrence in its owner's editorial chain");
+                        // The complete original of a closed expansion/refinement
+                        // can precede the formatting archive. Its older starter,
+                        // reference calls or grouped cards must remain untouched.
+                        const auto previous_version=revised_compilers.contains(id)||
+                            revised_compiler_references.contains(id)||refined_order_signatures.contains(id);
+                        if(!previous_version||state_fingerprint(source)!=result.signatures.at(id))
+                            projected=source_format_projection(source,format->second);
+                    }
+                    if(prompt!=math_text_originals.end())projected=math_prompt_projection(projected,prompt->second,true);
+                    if(prompt!=math_text_originals.end()){
+                        require(editorial_nodes.contains(id)&&std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
+                            "A historical mathematical prompt needs an exact occurrence in its owner's editorial chain");
+                        require_math_prompt_contract(original_document.text(original_blocks.at(b)),math_text_raw.at(id),true);
+                    }
                     const auto normalized=general!=general_choice_revisions.end()?
-                        general_choice_projection(source,general->second,true):source;
+                        general_choice_projection(projected,general->second,true):projected;
                     const auto digest = state_fingerprint(normalized);
                     if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
                         std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                         "A historical compilation diagnostic needs an exact occurrence in its owner's published editorial chain");
-                    validate_choice_pair(blocks.GetAt(static_cast<unsigned>(b)).GetObject(),reviewed_choice_owner(lesson_id,id));
+                    validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
                     snapshot_contracts.emplace(id,digest);
                     if(reviewed_compiler_payload(digest))require(revised_compilers.contains(id)&&revised_compilers.at(id)->lesson==lesson_id&&locale=="es",
                         "An expanded historical compiler needs its active reviewed snapshot");
@@ -2490,6 +2706,41 @@ void resolve_addresses(Lesson& lesson) {
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
     std::map<std::string,const SourceFormatRevision*> source_formats;
     for (const auto& format : layout.source_format_revisions) source_formats.emplace(format.id,&format);
+    std::set<std::string> earlier_source_versions;
+    for(const auto& refinement:layout.order_refinements)earlier_source_versions.insert(refinement.id);
+    for(const auto& revision:layout.compiler_revisions) {
+        earlier_source_versions.insert(revision.id);
+        for(const auto& reference:revision.references)earlier_source_versions.insert(reference.id);
+    }
+    const auto historical_format_source=[&](const std::string& owner,const JsonObject& source)->std::optional<JsonObject> {
+        const auto format=source_formats.find(owner);
+        if(format==source_formats.end())return {};
+        // read_layout already authenticated the full historical node and
+        // its exact contract. Do not attach a later starter/card identity
+        // to a snapshot of the original closed expansion or refinement.
+        if(earlier_source_versions.contains(owner)&&state_fingerprint(source)==layout.signatures.at(owner))return {};
+        return JsonObject::Parse(key(format->second->raw_json));
+    };
+    const auto apply_source_format=[&](Block& block,const JsonObject& source) {
+        const auto original=read_block(source,utf8(source.Stringify()));
+        require(original.type==block.type,"A source-format archive changed its activity type");
+        if(block.type==BlockType::cpp_compiler) {
+            block.source_format_original_initial_code=original.initial_code;
+            if(!original.project_files.empty())
+                block.source_format_original_project_files=original.project_files;
+        } else if(block.type==BlockType::order_code)
+            block.source_format_original_fragments=original.fragments;
+    };
+    std::map<std::string,const MathTextRevision*> math_texts;
+    for(const auto& revision:layout.math_text_revisions)math_texts.emplace(revision.id,&revision);
+    const auto apply_math_text=[&](Block& block,bool archived){
+        if(const auto found=math_texts.find(block.stable_id);found!=math_texts.end()){
+            const auto& revision=*found->second;require(block.type==BlockType::math_puzzle,"A mathematical prompt archive changed its owner type");
+            block.math_evaluation_raw_json=revision.raw_json;
+            if(archived&&revision.semantic_before&&revision.semantic_before->source==block.prompt)
+                block.text_semantics.emplace("/prompt",*revision.semantic_before);
+        }
+    };
     std::map<std::string,ChoiceRevision*> choices;
     std::map<std::string,CompilerRevision*> compilers;
     for(auto& revision:layout.compiler_revisions) {
@@ -2517,27 +2768,19 @@ void resolve_addresses(Lesson& lesson) {
             auto& block = page.blocks[b];
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
-            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end()) {
-                const auto& snapshot=*format->second;
-                const auto original=read_block(JsonObject::Parse(key(snapshot.raw_json)),snapshot.raw_json);
-                require(original.type==block.type,"A source-format archive changed its activity type");
-                if(block.type==BlockType::cpp_compiler){
-                    block.source_format_original_initial_code=original.initial_code;
-                    if(!original.project_files.empty())
-                        block.source_format_original_project_files=original.project_files;
-                }else if(block.type==BlockType::order_code)
-                    block.source_format_original_fragments=original.fragments;
-            }
+            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end())
+                apply_source_format(block,JsonObject::Parse(key(format->second->raw_json)));
             if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end()) {
                 require(block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature,
                     "An ordering refinement belongs to another visible representation");
                 block.order_refinement = *refinement->second;
             }
+            apply_math_text(block,false);
             apply_reviewed_order_equivalences(lesson,block);
-            if(block.type==BlockType::math_puzzle)if(const auto reviewed=reviewed_math_label(JsonObject::Parse(key(block.raw_json)))){
+            if(block.type==BlockType::math_puzzle)if(const auto reviewed=reviewed_math_label(JsonObject::Parse(key(math_evaluation_source(block))))){
                 require(layout.version==2&&lesson.locale=="es"&&lesson.id==reviewed->lesson&&block.stable_id==reviewed->identity,
                     "A mathematical reading revision belongs to its authenticated Spanish activity");
-                const auto prior=JsonObject::Parse(key(block.raw_json));
+                const auto prior=JsonObject::Parse(key(math_evaluation_source(block)));
                 const auto response=prior.GetNamedArray(L"responses").GetObjectAt(0);
                 const auto source=response.GetNamedArray(L"sources").GetObjectAt(reviewed->source_index);
                 const auto current_label=text(source,"label");
@@ -2563,6 +2806,7 @@ void resolve_addresses(Lesson& lesson) {
     for (const auto& retired : layout.retired) {
         auto block = read_block(JsonObject::Parse(winrt::to_hstring(retired.raw_json)),retired.raw_json);
         block.stable_id = retired.id; block.address = addresses.at(retired.id);
+        apply_math_text(block,true);
         intentional_exit_owner(block);
         crt_output_owner(block);
         if(block.compile_check) {
@@ -2582,7 +2826,13 @@ void resolve_addresses(Lesson& lesson) {
             const auto blocks=array(page_source,"blocks");
             for(std::size_t b=0;b<snapshot.current[p].blocks.size();++b) {
                 const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
-                auto block=read_block(source,utf8(source.Stringify()));block.stable_id=snapshot.current[p].blocks[b];
+                const auto& identity=snapshot.current[p].blocks[b];
+                const auto format_source=historical_format_source(identity,source);
+                auto block=read_block(source,utf8(source.Stringify()),format_source?&*format_source:nullptr);
+                block.stable_id=identity;
+                if(format_source)apply_source_format(block,*format_source);
+                const auto protected_source=format_source?source_format_projection(source,*format_source):source;
+                apply_math_text(block,true);
                 intentional_exit_owner(block);
                 crt_output_owner(block);
                 if(block.crt_output_original) {
@@ -2622,7 +2872,7 @@ void resolve_addresses(Lesson& lesson) {
                     block.type==BlockType::multiple_choice&&sha256(choice_representation_frame(block))==choice->second->representation_signature)
                     block.choice_revision=*choice->second;
                 if(const auto compiler=compilers.find(block.stable_id);compiler!=compilers.end()&&block.type==BlockType::cpp_compiler&&
-                    state_fingerprint(source)==compiler->second->current_payload)block.compiler_revision=*compiler->second;
+                    state_fingerprint(protected_source)==compiler->second->current_payload)block.compiler_revision=*compiler->second;
                 block.address=addresses.at(block.stable_id);page.blocks.push_back(std::move(block));
             }
             snapshot.pages.push_back(std::move(page));
@@ -2630,6 +2880,26 @@ void resolve_addresses(Lesson& lesson) {
         Lesson previous;previous.id=lesson.id;previous.title=lesson.title;previous.locale=lesson.locale;
         previous.state_layout.version=2;previous.pages=snapshot.pages;previous.compiler_puzzles_required=snapshot.compiler_puzzles_required;
         previous.reference_after=snapshot.reference_after;previous.activity_after=snapshot.activity_after;
+        if(snapshot.has_text_semantics) {
+            // The snapshot is a complete authoring version, including explicit
+            // unmarked fields. Do not mix it with a prompt archive or today's
+            // overlay, even when the visible wording happens to be identical.
+            for(auto& page:previous.pages)for(auto& block:page.blocks)block.text_semantics.clear();
+            if(archived.GetNamedValue(L"textSemantics").ValueType()==JsonValueType::Object) {
+                auto semantic_root=JsonObject::Parse(key(snapshot.raw_json));
+                semantic_root.Insert(L"title",JsonValue::CreateStringValue(key(previous.title)));
+                previous.raw_json=snapshot.raw_json;
+                read_text_semantics(semantic_root,previous);
+            }
+            for(const auto& identity:snapshot.retired) {
+                const auto source=stable_block_position(previous,identity);
+                const auto retired=std::ranges::find(lesson.retired_blocks,identity,&Block::stable_id);
+                require(source&&retired!=lesson.retired_blocks.end(),"Missing semantic retirement owner");
+                retired->text_semantics=previous.pages[source->page].blocks[source->block].text_semantics;
+            }
+            snapshot.pages=previous.pages;
+            snapshot.text_semantics=std::move(previous.text_semantics);
+        }
         validate_reference_relationships(previous);validate_activity_relationships(previous);
     }
 }
@@ -3675,7 +3945,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         const auto pages = array(root, "pages"); require(pages.Size() > 0 && pages.Size() <= 2048, "Invalid page count");
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
-            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id,root);
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"), pages, expected_locale, lesson.id,root,source);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
         const OriginalJson original(source);
@@ -3737,7 +4007,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         require(pages.Size() > 0 && pages.Size() <= 2048,"Invalid page count");
         if (root.HasKey(L"stateLayout")) {
             require_integer_json_numbers(source);
-            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id,root);
+            lesson.state_layout = read_layout(root.GetNamedObject(L"stateLayout"),pages,expected_locale,lesson.id,root,source);
         } else {reject_unmapped_reviewed_math(pages);reject_unmapped_reviewed_choices(pages);reject_unmapped_compiler_revisions(pages);}
         read_relationships(root,lesson);
         // Every explicit curricular compiler objective participates in linear
