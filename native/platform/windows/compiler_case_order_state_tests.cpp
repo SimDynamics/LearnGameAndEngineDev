@@ -228,11 +228,70 @@ void export_preferences(const std::filesystem::path& directory, const StateData&
         text_file(directory / "shared_prefs" / (domain + ".xml"), xml);
     }
 }
+// Only these reviewed append-only metadata families can grow in this matrix.
+// Build their complete expected values from the independently parsed layout;
+// no learning_progress prefix or arbitrary new value is exempted below.
+std::map<std::string, std::string> reviewed_metadata(const Lesson& lesson) {
+    const auto& layout = lesson.state_layout;
+    require(layout.version == 2, "Case-order metadata QA requires the stable v2 layout");
+    const auto prefix = "lesson_" + lesson.id + "_state_";
+    const auto suffix = '_' + lesson.locale;
+    std::map<std::string, std::string> result;
+    const auto strings = [](const auto& values) {
+        JsonArray row;
+        for (const auto& value : values)
+            row.Append(JsonValue::CreateStringValue(winrt::to_hstring(value)));
+        return row;
+    };
+    const auto keep = [&](std::string_view name, const JsonArray& rows, bool allow_empty = false) {
+        if (rows.Size() || allow_empty)
+            result.emplace(prefix + std::string(name) + suffix, winrt::to_string(rows.Stringify()));
+    };
+    JsonArray additions;
+    for (const auto& entry : layout.additions) {
+        auto row = strings(std::array{entry.id, entry.sha256});
+        row.Append(JsonValue::CreateNumberValue(static_cast<double>(entry.storage.page)));
+        row.Append(JsonValue::CreateNumberValue(static_cast<double>(entry.storage.block)));
+        row.Append(JsonValue::CreateStringValue(winrt::to_hstring(entry.progress_page)));
+        additions.Append(row);
+    }
+    keep("additions_v2", additions, true);
+    JsonArray compilers;
+    for (const auto& revision : layout.compiler_revisions) {
+        auto row = strings(std::array{revision.id, revision.sha256, revision.current_payload});
+        for (const auto& reference : revision.references)
+            for (const auto& value : {reference.id, reference.sha256, reference.current_payload})
+                row.Append(JsonValue::CreateStringValue(winrt::to_hstring(value)));
+        compilers.Append(row);
+    }
+    keep("compiler_revisions_v1", compilers);
+    JsonArray choices;
+    for (const auto& revision : layout.choice_revisions)
+        choices.Append(strings(std::array{revision.id, revision.sha256, revision.representation_signature}));
+    keep("choice_revisions_v1", choices);
+    JsonArray retired;
+    for (const auto& entry : layout.retired)
+        retired.Append(strings(std::array{entry.id, entry.page, entry.next, entry.sha256}));
+    keep("retired_v2", retired);
+    JsonArray retirement_history;
+    for (const auto& snapshot : layout.retirement_history)
+        retirement_history.Append(JsonValue::CreateStringValue(winrt::to_hstring(snapshot.sha256)));
+    keep("retirement_history_v2", retirement_history);
+    if (layout.has_editorial_returns) {
+        JsonArray editorial;
+        for (const auto& proof : JsonObject::Parse(winrt::to_hstring(layout.raw_json)).GetNamedArray(L"editorial"))
+            editorial.Append(JsonValue::CreateStringValue(winrt::to_hstring(
+                test::compile_check_test_fingerprint(proof))));
+        keep("editorial_returns_v1", editorial);
+    }
+    return result;
+}
+
 void preserved_values(const StateData& before, const StateData& after,
         const Lesson& lesson, std::string_view owner, std::string_view order_pin) {
     for (const auto& [domain, values] : before.preferences) for (const auto& [key, value] : values) {
         const auto stored = find(after, domain, key);
-        require(stored != nullptr, "Case-order adoption deleted an existing preference");
+        require(stored != nullptr, "Case-order adoption deleted an existing preference: " + domain + "/" + key);
         if (domain == "learning_progress" && key == order_pin) {
             require(std::holds_alternative<std::vector<std::string>>(value)
                 && std::holds_alternative<std::vector<std::string>>(*stored),
@@ -243,14 +302,15 @@ void preserved_values(const StateData& before, const StateData& after,
                 && std::equal(old_rows.begin(), old_rows.end(), new_rows.begin()),
                 "Case-order adoption truncated or rewrote an old provenance row");
         } else require(*stored == value,
-            "Case-order adoption changed an old receipt, answer, draft, pause or unrelated typed value");
+            "Case-order adoption changed an old receipt, answer, draft, pause or unrelated typed value: "
+                + domain + "/" + key);
     }
     const auto allowed_root = receipt_root(lesson, editor(lesson, owner));
     for (const auto& [domain, values] : after.preferences) for (const auto& [key, value] : values)
         if (!find(before, domain, key))
             require((domain == "learning_progress" && key == order_pin)
                 || (domain == "native_windows" && key.starts_with(allowed_root)),
-                "Case-order adoption created state outside the reviewed owner");
+                "Case-order adoption created state outside the reviewed owner: " + domain + "/" + key);
     require(narration::read_history(after) == narration::read_history(before)
         && narration::read_history(after).entries.size() == 3,
         "Case-order adoption changed a stored narration pause");
@@ -518,34 +578,40 @@ void no_old_feedback_lent(const StateData& data, const Lesson& lesson, const Blo
 }
 void check_composite_values(const StateData& before, const StateData& after,
         const Fixture& fixture) {
-    // First permutations have no reason to alter any pre-existing preference.
-    // The real original-19 source also adopts genuine addition/expansion pins.
-    if (fixture.name != "real-u11-expanded-order" && fixture.name != "synthetic-retire-after") {
-        preserved_values(before, after, fixture.after, fixture.id, order_pin(fixture.after));
-        return;
-    }
-    const auto prefix = "lesson_" + fixture.after.id;
-    const std::set<std::string> growing = fixture.name == "real-u11-expanded-order"
-        ? std::set<std::string>{prefix + "_state_additions_v2_" + fixture.after.locale,
-            prefix + "_state_compiler_revisions_v1_" + fixture.after.locale}
-        : std::set<std::string>{prefix + "_state_retired_v2_" + fixture.after.locale,
-            prefix + "_state_retirement_history_v2_" + fixture.after.locale};
+    const auto previous = reviewed_metadata(fixture.before);
+    const auto current = reviewed_metadata(fixture.after);
     auto unchanged = before;
-    for (const auto& key : growing)
-        if (const auto old_value = find(before, "learning_progress", key)) {
-            const auto new_value = find(after, "learning_progress", key);
-            require(new_value && std::holds_alternative<std::string>(*old_value)
-                && std::holds_alternative<std::string>(*new_value),
-                "Authentic expanded history changed a metadata type");
+    for (const auto& [key, expected] : current) {
+        const auto old_value = find(before, "learning_progress", key);
+        const auto new_value = find(after, "learning_progress", key);
+        require(new_value && std::holds_alternative<std::string>(*new_value),
+            "Reviewed metadata is absent or has a different type: learning_progress/" + key);
+        const auto new_rows = JsonArray::Parse(winrt::to_hstring(std::get<std::string>(*new_value)));
+        require(winrt::to_string(new_rows.Stringify()) == expected,
+            "Reviewed metadata differs from the complete current layout: learning_progress/" + key);
+        if (old_value) {
+            require(std::holds_alternative<std::string>(*old_value) && previous.contains(key),
+                "Reviewed metadata changed its original type or owner: learning_progress/" + key);
             const auto old_rows = JsonArray::Parse(winrt::to_hstring(std::get<std::string>(*old_value)));
-            const auto new_rows = JsonArray::Parse(winrt::to_hstring(std::get<std::string>(*new_value)));
-            require(new_rows.Size() >= old_rows.Size(), "Expanded history removed a prior metadata row");
+            require(winrt::to_string(old_rows.Stringify()) == previous.at(key),
+                "Reviewed metadata differs from its complete predecessor: learning_progress/" + key);
+            require(new_rows.Size() >= old_rows.Size(),
+                "Reviewed metadata truncated a prior row: learning_progress/" + key);
             for (unsigned i = 0; i < old_rows.Size(); ++i)
                 require(old_rows.GetAt(i).Stringify() == new_rows.GetAt(i).Stringify(),
-                    "Expanded history changed a prior addition or reviewed compiler archive");
-            unchanged.preferences["learning_progress"][key] = *new_value;
-        } else if (const auto new_value = find(after, "learning_progress", key))
-            unchanged.preferences["learning_progress"][key] = *new_value;
+                    "Reviewed metadata rewrote a prior row: learning_progress/" + key);
+            if (new_rows.Size() == old_rows.Size())
+                require(*old_value == *new_value,
+                    "Unchanged reviewed metadata lost its exact stored bytes: learning_progress/" + key);
+        } else require(!previous.contains(key),
+            "The original state omitted its reviewed metadata: learning_progress/" + key);
+        // Exempt only the exact, fully checked append above. Every other key
+        // must remain byte/type identical under preserved_values.
+        unchanged.preferences["learning_progress"][key] = *new_value;
+    }
+    for (const auto& [key, expected] : previous)
+        require(current.contains(key),
+            "The current layout removed reviewed metadata: learning_progress/" + key);
     preserved_values(unchanged, after, fixture.after, fixture.id, order_pin(fixture.after));
 }
 void imported_state(const Fixture& fixture, const StateData& original,
@@ -1010,30 +1076,60 @@ int main(int argc, char** argv) try {
     require(manifest.GetNamedNumber(L"version", 1) == 1, "Unsupported case-order QA manifest version");
     std::map<std::filesystem::path, std::string> originals;
     std::vector<Fixture> cases;
-    for (const auto& value : manifest.GetNamedArray(L"cases"))
-        cases.push_back(read_fixture(value.GetObject(), fixtures, originals));
-    require(!cases.empty(), "No authenticated compiler case-order fixtures were generated");
-    std::size_t scenarios = 0;
-    for (const auto& fixture : cases) {
+    std::size_t failures = 0, scenarios = 0, invalid = 0;
+    const auto run = [&](std::string_view label, const auto& action) {
         try {
-            verify_publication(fixture);
-            scenarios += native_matrix(fixture, qa);
-            successive_adoption(fixture);
+            action();
+            return true;
+        } catch (const winrt::hresult_error& error) {
+            std::cerr << "FAIL case-order " << label << ": " << winrt::to_string(error.message()) << '\n';
         } catch (const std::exception& error) {
-            throw std::runtime_error("Case-order fixture " + fixture.name + ": " + error.what());
+            std::cerr << "FAIL case-order " << label << ": " << error.what() << '\n';
         }
+        ++failures;
+        return false;
+    };
+    for (const auto& value : manifest.GetNamedArray(L"cases")) {
+        const auto entry = value.GetObject();
+        const auto name = winrt::to_string(entry.GetNamedString(L"name"));
+        run("load " + name, [&] { cases.push_back(read_fixture(entry, fixtures, originals)); });
+    }
+    run("fixture inventory", [&] {
+        require(!cases.empty(), "No authenticated compiler case-order fixtures were generated");
+    });
+    for (const auto& fixture : cases) {
+        if (!run(fixture.name + " publication", [&] { verify_publication(fixture); })) continue;
+        run(fixture.name + " conservation/import", [&] { scenarios += native_matrix(fixture, qa); });
+        run(fixture.name + " chronological adoption", [&] { successive_adoption(fixture); });
     }
     const auto real = std::ranges::find(cases, "real-u11-six-movements", &Fixture::name);
-    require(real != cases.end(), "Case-order QA omitted the complete real U11L7 22-case publication");
-    different_programs(*real, qa);
-    empty_draft(*real);
+    run("programs A/B", [&] {
+        require(real != cases.end(), "Case-order QA omitted the complete real U11L7 22-case publication");
+        different_programs(*real, qa);
+    });
+    run("untouched draft", [&] {
+        require(real != cases.end(), "Case-order QA omitted the complete real U11L7 22-case publication");
+        empty_draft(*real);
+    });
     const auto returned = std::ranges::find(cases, "real-u11-return", &Fixture::name);
-    require(returned != cases.end(), "Case-order QA omitted its authenticated return");
-    explicit_return(*returned);
-    const auto invalid = invalid_documents(manifest.GetNamedArray(L"invalid"), fixtures);
-    actual_reference_runs(*real, qa);
-    for (const auto& [path, original] : originals)
-        require(bytes(path) == original, "Case-order QA rewrote an authenticated fixture publication");
+    run("explicit return", [&] {
+        require(returned != cases.end(), "Case-order QA omitted its authenticated return");
+        explicit_return(*returned);
+    });
+    run("invalid documents", [&] { invalid = invalid_documents(manifest.GetNamedArray(L"invalid"), fixtures); });
+    run("actual MSVC references", [&] {
+        require(real != cases.end(), "Case-order QA omitted the complete real U11L7 22-case publication");
+        actual_reference_runs(*real, qa);
+    });
+    run("original fixture bytes", [&] {
+        for (const auto& [path, original] : originals)
+            require(bytes(path) == original, "Case-order QA rewrote an authenticated fixture publication");
+    });
+    if (failures) {
+        std::cerr << "FAIL compiler case-order: " << failures
+            << " independent QA groups failed; the remaining groups were still checked.\n";
+        return 1;
+    }
     std::cout << "PASS compiler case-order: " << cases.size() << " complete-source fixtures, "
         << scenarios << " native conservation/import scenarios, " << invalid
         << " invalid documents through both loaders, and exactly two real MSVC runs.\n"
