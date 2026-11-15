@@ -460,6 +460,11 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             token(item.expected ? "true" : "false");
         }
     }
+    if(activity.reduction_probe) {
+        // The new reduction objective keeps its historical editor address,
+        // but needs evidence bound to this preserved source and call history.
+        token(reduction_spec_frame(*activity.reduction_probe));
+    }
     if(activity.cmake_graph_check) {
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
@@ -746,6 +751,22 @@ bool uses_single_line_answer(const Block& block) {
     return !block.answers.empty() && std::ranges::all_of(block.answers, [](const auto& text) { return text.find_first_of("\r\n") == text.npos; });
 }
 OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExecution& execution, std::uint64_t current_revision) {
+    if(check.reduction_check) {
+        if(execution.source_revision!=current_revision||
+           !execution.compilation_succeeded||check.cases.size()!=1||
+           check.input_comparison!=TextComparison::exact)return {};
+        const auto& selected=check.cases.front();
+        if(selected.standard_input!=execution.standard_input||
+           (selected.executable&&selected.executable!=execution.executable))return {};
+        const bool exit_correct=execution.execution_completed&&execution.exit_code==0;
+        const bool proved=execution.reduction_probe_correct;
+        const bool correct=proved&&exit_correct;
+        const auto feedback=correct?selected.explanation:
+            !execution.reduction_probe_feedback.empty()?execution.reduction_probe_feedback:
+                "La reducción todavía no acredita la reproducción calculada del fallo.";
+        return {correct?OutputVerdict::correct:OutputVerdict::incorrect,
+            feedback,proved,proved,exit_correct};
+    }
     if(check.boolean_battery_result) {
         // Only the authenticated mutation evidence can certify this open
         // objective. A normal Win32 return is a DWORD, not an 8-bit status.

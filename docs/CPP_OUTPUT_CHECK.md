@@ -135,6 +135,164 @@ conservan su contrato. La lista admite añadir propietarios al final, manteniend
 literalmente el prefijo publicado. No permite retirar, reordenar o reescribir
 una declaración anterior para reutilizar su evidencia.
 
+## Reducciones de una reproducción con estado
+
+La raíz española con `stateLayout` v2 puede añadir `compilerReductionChecks`
+a un editor C++ de archivo único que todavía no tenga un objetivo. La
+declaración utiliza la identidad existente; no cambia su `initialCode`,
+mapas, familia de traducciones, respuestas ni borradores. Este ejemplo
+corresponde al propietario histórico de la práctica de reducción de U1;
+describe la capacidad de autoría y no modifica el recurso curricular:
+
+```json
+{
+  "compilerReductionChecks": [
+    {
+      "activity": "block_0002_0003",
+      "kind": "stateful-vector-int-v1",
+      "function": "contar_altos",
+      "state": "acumulado",
+      "initialState": 0,
+      "calls": [
+        {
+          "values": [
+            2
+          ],
+          "argument": 2,
+          "result": 1,
+          "stateAfter": 1
+        },
+        {
+          "values": [],
+          "argument": 2,
+          "result": 1,
+          "stateAfter": 1
+        }
+      ],
+      "observedCall": 1,
+      "requiredResult": 0,
+      "exitCode": 0,
+      "dependencies": [
+        {
+          "header": "vector",
+          "symbols": [
+            "std::vector"
+          ]
+        },
+        {
+          "header": "iostream",
+          "symbols": [
+            "std::cout",
+            "std::cerr",
+            "std::clog"
+          ]
+        },
+        {
+          "header": "string",
+          "symbols": [
+            "std::string",
+            "std::to_string"
+          ]
+        },
+        {
+          "header": "cstdio",
+          "symbols": [
+            "std::printf",
+            "std::puts"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+`function` identifica una definición global
+`int nombre(std::vector<int> datos, int argumento)`. El motor deriva del
+inicial su cuerpo protegido y lo compara por tokens, permitiendo espacios
+y comentarios distintos. `state` identifica su entero global.
+`initialState` declara el estado anterior a la primera llamada.
+`calls` fija una secuencia dentro del mismo proceso: cada entrada incluye
+la colección, el segundo argumento, el retorno observado y el estado
+posterior. `observedCall` cuenta desde cero y selecciona una llamada que
+debe tener preparación anterior. `requiredResult` es el valor exigido
+por el requisito incumplido; debe diferir del resultado observado.
+Esta versión exige terminación normal con `exitCode: 0`.
+
+El contrato admite de 2 a 32 llamadas, hasta 64 enteros por colección y
+valores del dominio de `int32_t`. `dependencies` declara entre 1 y 32
+relaciones de cabecera y símbolos. Cada cabecera sólo se exige si alguno
+de sus símbolos permanece en la candidata, incluso en una función que
+ya no se llama; los comentarios y cadenas no cuentan como usos.
+Las declaraciones `using` también conservan esa dependencia. Una entrada
+puede prever símbolos que el inicial todavía no usa, como
+`std::printf`. Estas relaciones comprueban las dependencias declaradas;
+no son un catálogo exhaustivo de toda biblioteca que pueda introducir
+el estudiante.
+
+### Evidencia de la reducción
+
+La gramática reconoce esa firma global y un entero global sin sombras.
+Admite inicialización decimal con signo opcional mediante llaves, igualdad
+o paréntesis; la inicialización vacía o implícita equivale a cero. Las
+directivas admitidas son inclusiones. Los alias o macros que sustituyan
+la definición y los nombres de introspección de función no forman parte
+de este contrato instrumental.
+
+El análisis de la fuente exige conservar la función investigada y un
+estado global inicial compatible, declarar las dependencias que aún se
+usan y retirar estructura accesoria. El perfil distingue almacenamiento,
+funciones auxiliares, llamadas, presentación y operaciones. Deben disminuir
+tanto su medida estructural como la que normaliza la presentación entre
+flujos y formatos de impresión. Juntar dos impresiones manteniendo todas
+sus emisiones no basta. No concede
+una reducción por cambiar nombres, literales, espacios, comentarios,
+calificadores o sólo el retorno explícito de cero. No fija un número
+de líneas ni exige retirar una función auxiliar concreta.
+
+La ejecución privada conserva el cuerpo investigado y registra los
+argumentos, el estado anterior y posterior y el retorno de cada llamada.
+Se comprueba la secuencia completa y su preparación causal. El primer
+retorno puede descartarse sin guardarlo ni mostrarlo.
+
+Otras dos ejecuciones cambian únicamente el retorno entregado de la
+llamada observada. Comparan los valores enteros visibles para acreditar
+que el programa presenta ese resultado calculado. No se fija el texto
+de los mensajes ni se exige un canal concreto; se admiten las dos
+respuestas o únicamente la segunda. Una impresión constante no adquiere
+crédito por acompañarla de llamadas que no participan en lo mostrado.
+La comprobación de observación de esta versión utiliza valores enteros
+visibles; no evalúa explicaciones libres escritas sólo con palabras ni
+representaciones transformadas que oculten el valor observado.
+
+La ejecución publicada debe terminar normalmente con cero. Las
+contrapruebas deben terminar normalmente, pero pueden devolver otro
+código si el programa decide su retorno a partir del resultado observado.
+Un aborto, una interrupción o una ejecución incompleta no acredita la
+reproducción.
+
+### Ejecución, conservación y validación
+
+Las fases comparten las rutas físicas de fuente y ejecutable, argumentos,
+entrada, directorio, entorno y datos iniciales de herramientas. Los
+archivos y salidas de la ejecución pública se conservan y restauran tras
+las contrapruebas. La evidencia privada no reemplaza la consola visible.
+
+La captura y el recibo quedan ligados al programa, la revisión, el
+contrato, las opciones y la ejecución concreta. El cargador completo y
+el lector de progreso reconstruyen el mismo objetivo. Una visita, una
+compilación anterior, una salida coincidente o un recibo de otro objetivo
+no autorizan la referencia ni el avance. Los logros anteriores se
+conservan, pero no sustituyen la acreditación de este nuevo requisito.
+Toda la secuencia constituye una sola comprobación del editor.
+
+`test_reduction_contract.py` comprueba la autoría raíz y la conservación
+del recurso original sin editarlo. `native.reduction` verifica el
+núcleo portable y `native.reduction_runtime` ejecuta el propietario
+auténtico con declaraciones derivadas sólo en el perfil QA. Las mismas
+pruebas nativas están registradas en ReaderBuild y en la construcción
+completa de Windows.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.

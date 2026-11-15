@@ -42,7 +42,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks", "compilerOpenBatteryChecks", "compilerReductionChecks", "compilerCmakeGraphChecks", "orderEquivalenceGroups"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -3113,7 +3113,8 @@ def _validate_boolean_battery_record(document: dict, record: dict, block: dict) 
                     ("outputCheck", "compileCheck", "cmake", "projectFiles", "sourceFiles")),
             "A boolean battery must own an unevaluated single-file C++ editor")
     for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
-                  "compilerNamedRuleChecks", "compilerCmakeGraphChecks"):
+                  "compilerNamedRuleChecks", "compilerCmakeGraphChecks",
+                  "compilerReductionChecks"):
         declarations = document.get(field)
         require(type(declarations) is not list or
                 not any(type(item) is dict and item.get("activity") == record["activity"]
@@ -3135,6 +3136,262 @@ def _validate_boolean_battery_record(document: dict, record: dict, block: dict) 
         pair = case["first"], case["second"]
         require(pair not in seen, "Duplicate boolean battery input pair")
         seen.add(pair)
+
+
+def _reduction_source_contract(source: str, function: str, state: str,
+                               initial_state: int, dependencies: list[dict]) -> tuple[str, ...]:
+    """Admit the preserved int(vector<int>, int) source used by reduction QA.
+
+    This bounded grammar does not compile the program or certify its reduction.
+    It protects an original function and a global integer, while the native
+    worker checks the submitted source, real ordered calls and observation.
+    """
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]{0,127}\Z")
+    require(all(type(name) is str and identifier.fullmatch(name) and
+                not name.startswith("lgaed_reduction_") for name in (function, state))
+            and function != state and function != "main",
+            "Reduction function and state need different safe C++ identifiers")
+    require(type(initial_state) is int and -(2 ** 31) <= initial_state < 2 ** 31,
+            "Reduction initial state must be a signed C++ integer")
+    try:
+        source_size = len(source.encode("utf-8")) if type(source) is str else 0
+    except UnicodeError as exc:
+        raise LayoutError("Reduction source must be valid UTF-8") from exc
+    require(0 < source_size <= 4 * 1024 * 1024 and
+            "\x00" not in source and "\\\n" not in source and "\\\r\n" not in source,
+            "Reduction source is empty, excessive or contains a physical splice")
+    try:
+        tokens = tuple(token for token in code_format._cpp_tokens(source)
+                       if not token.startswith("comment:"))
+    except code_format.SourceFormatError as exc:
+        raise LayoutError("Reduction source cannot be tokenized: " + str(exc)) from exc
+
+    def closing(start: int, opening: str, ending: str) -> int:
+        nesting = 0
+        for index in range(start, len(tokens)):
+            if tokens[index] == opening or (opening == "op:{" and tokens[index] == "op:<%"):
+                nesting += 1
+                require(nesting <= 4096, "Reduction source nesting is excessive")
+            elif tokens[index] == ending or (ending == "op:}" and tokens[index] == "op:%>"):
+                nesting -= 1
+                if nesting == 0:
+                    return index
+        raise LayoutError("Reduction source has an unclosed delimiter")
+
+    def integer_literal(values: tuple[str, ...]) -> int:
+        require((len(values) == 1 and values[0].startswith("number:")) or
+                (len(values) == 2 and values[0] in {"op:+", "op:-"} and
+                 values[1].startswith("number:")),
+                "Reduction state requires one optionally signed decimal literal")
+        spelling = "".join(value[3:] if value.startswith("op:") else value[7:]
+                           if value.startswith("number:") else "?" for value in values)
+        require(re.fullmatch(r"[+-]?(?:0|[1-9][0-9]*)", spelling) is not None
+                and len(spelling.lstrip("+-")) <= 10,
+                "Reduction state requires a decimal integer initializer")
+        result = int(spelling)
+        require(-(2 ** 31) <= result < 2 ** 31,
+                "Reduction state initializer is outside signed C++ integer range")
+        return result
+
+    definitions, prototypes, states = [], [], []
+    included_headers = set()
+    depth = 0
+    for index, token in enumerate(tokens):
+        require(token not in {"op:#", "op:##", "op:%:", "op:%:%:"} and
+                not token.startswith(("id:lgaed_reduction_", "id:lgaed_boolean_battery_")),
+                "Reduction source uses unsupported preprocessing or private names")
+        if token.startswith("directive:"):
+            directive = token[10:]
+            require(depth == 0 and
+                    re.match(r'(?:#|%:)[ \t\r\v\f]*include[ \t\r\v\f]*[<"]', directive),
+                    "Reduction source permits only global #include directives")
+            included = re.match(
+                r'(?:#|%:)[ \t\r\v\f]*include[ \t\r\v\f]*(?:<([^>]+)>|"([^"]+)")',
+                directive)
+            require(included is not None, "Reduction include directive is incomplete")
+            included_headers.add(included[1] if included[1] is not None else included[2])
+        if token == "id:" + function and tokens[index + 1:index + 2] == ("op:(",):
+            previous = tokens[index - 1] if index else ""
+            call_end = closing(index + 1, "op:(", "op:)")
+            following = tokens[call_end + 1] if call_end + 1 < len(tokens) else ""
+            declaration = ((previous.startswith("id:") and
+                            previous not in {"id:return", "id:co_return", "id:throw"}) or
+                           following in {"op:{", "op:<%"} or
+                           (depth == 0 and previous in {"op:&", "op:*", "op:&&"} and
+                            index > 1 and tokens[index - 2] == "id:int"))
+            if declaration:
+                require(depth == 0 and previous == "id:int" and
+                        index + 13 < len(tokens) and
+                        (index == 1 or tokens[index - 2] in {"op:;", "op:}"} or
+                         tokens[index - 2].startswith("directive:")),
+                        "Reduction needs an unqualified global int function")
+                end = index + 12
+                signature = tokens[index - 1:end + 1]
+                require(len(signature) == 14 and
+                        signature[2:9] == ("op:(", "id:std", "op:::",
+                            "id:vector", "op:<", "id:int", "op:>") and
+                        signature[10:12] == ("op:,", "id:int") and
+                        signature[13] == "op:)" and
+                        all(value.startswith("id:") and identifier.fullmatch(value[3:])
+                            for value in (signature[9], signature[12])) and
+                        signature[9] != signature[12] and
+                        "id:" + state not in (signature[9], signature[12]),
+                        "Reduction function needs distinct named vector<int> and int parameters")
+                following = tokens[end + 1]
+                if following == "op:{":
+                    body_end = closing(end + 1, "op:{", "op:}")
+                    require(not any(part in {"id:__func__", "id:__FUNCTION__", "id:__FUNCSIG__"}
+                                    for part in tokens[end + 2:body_end]),
+                            "Reduction protected body cannot inspect its enclosing function identity")
+                    definitions.append(tokens[index - 1:body_end + 1])
+                else:
+                    require(following == "op:;",
+                            "Reduction function has an unsupported qualifier or declaration")
+                    prototypes.append(signature)
+        if token == "id:" + state:
+            previous = tokens[index - 1] if index else ""
+            declaration = ((previous.startswith("id:") and
+                            previous not in {"id:return", "id:co_return", "id:throw"}) or
+                           (previous in {"op:&", "op:*", "op:&&"} and index > 1 and
+                            tokens[index - 2].startswith("id:") and
+                            tokens[index - 2] not in {"id:return", "id:co_return", "id:throw"}))
+            if declaration:
+                require(depth == 0 and previous == "id:int" and
+                        (index == 1 or tokens[index - 2] in {"op:;", "op:}"} or
+                         tokens[index - 2].startswith("directive:")),
+                        "Reduction state must be one unqualified global int without shadows")
+                start = index + 1
+                require(start < len(tokens), "Reduction state declaration is incomplete")
+                if tokens[start] == "op:;":
+                    value = 0
+                elif tokens[start] in {"op:{", "op:("}:
+                    opening = tokens[start]
+                    end = closing(start, opening, "op:}" if opening == "op:{" else "op:)")
+                    values = tokens[start + 1:end]
+                    require(tokens[end + 1:end + 2] == ("op:;",) and
+                            (bool(values) or opening == "op:{"),
+                            "Reduction state needs a scalar integer initializer")
+                    value = integer_literal(values) if values else 0
+                else:
+                    require(tokens[start] == "op:=", "Reduction state initializer is unsupported")
+                    end = start + 1
+                    while end < len(tokens) and tokens[end] != "op:;":
+                        end += 1
+                    require(end < len(tokens), "Reduction state declaration has no terminator")
+                    value = integer_literal(tokens[start + 1:end])
+                require(value == initial_state,
+                        "Reduction state initializer differs from the declared initial state")
+                states.append(value)
+        if token in {"op:{", "op:<%"}:
+            depth += 1
+            require(depth <= 4096, "Reduction source nesting is excessive")
+        elif token in {"op:}", "op:%>"}:
+            depth -= 1
+            require(depth >= 0, "Reduction source has an unmatched closing brace")
+    require(depth == 0 and len(definitions) == 1,
+            "Reduction needs exactly one balanced original function definition")
+    require(len(states) == 1, "Reduction needs exactly one original global state definition")
+    require(all(signature == definitions[0][:14] for signature in prototypes),
+            "Reduction prototype differs from its original function signature")
+
+    # Declaration-driven dependency policy: optional entries may anticipate
+    # alternative output facilities. It is not a universal C++ header table.
+    code = tokens
+    def contains(sequence: tuple[str, ...]) -> bool:
+        return any(code[index:index + len(sequence)] == sequence
+                   for index in range(len(code) - len(sequence) + 1))
+    using_std = contains(("id:using", "id:namespace", "id:std", "op:;"))
+    for dependency in dependencies:
+        used = False
+        for symbol in dependency["symbols"]:
+            parts = symbol.split("::")
+            sequence = tuple(value for index, part in enumerate(parts)
+                             for value in (("op:::", "id:" + part) if index else ("id:" + part,)))
+            used = used or contains(sequence)
+            if parts[0] == "std" and len(parts) == 2 and using_std:
+                used = used or "id:" + parts[-1] in code
+        require(not used or dependency["header"] in included_headers,
+                "Reduction source lacks a declared directly included header: " + dependency["header"])
+    return definitions[0]
+
+
+def _validate_compiler_reduction_checks(document: dict) -> None:
+    """Admit new reduction goals without changing a historical editor."""
+    if "compilerReductionChecks" not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
+            "Reduction objectives require a Spanish v2 lesson")
+    checks = document["compilerReductionChecks"]
+    require(type(checks) is list and 1 <= len(checks) <= 32,
+            "Reduction declarations require 1..32 owners")
+    owners, seen = _blocks(document), set()
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]{0,127}\Z")
+    fields = {"activity", "kind", "function", "state", "initialState", "calls",
+              "observedCall", "requiredResult", "exitCode", "dependencies"}
+    def int32(value: object) -> bool:
+        return type(value) is int and -(2 ** 31) <= value < 2 ** 31
+    for record in checks:
+        require(type(record) is dict and set(record) == fields and
+                record["kind"] == "stateful-vector-int-v1",
+                "Unknown or missing reduction declaration field or kind")
+        identity = _identity(record["activity"])
+        require(identity not in seen, "Duplicate reduction owner")
+        seen.add(identity)
+        block = owners.get(identity)
+        require(type(block) is dict and block.get("type") == "cpp_compiler" and
+                block.get("language", "cpp") == "cpp" and
+                not any(field in block for field in
+                        ("outputCheck", "compileCheck", "cmake", "projectFiles", "sourceFiles")),
+                "A reduction must own an unevaluated single-file C++ editor")
+        for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
+                      "compilerNamedRuleChecks", "compilerOpenBatteryChecks",
+                      "compilerCmakeGraphChecks"):
+            declarations = document.get(field)
+            require(type(declarations) is not list or
+                    not any(type(item) is dict and item.get("activity") == identity
+                            for item in declarations),
+                    "Reduction owner conflicts with another compiler objective")
+        require(int32(record["initialState"]) and int32(record["requiredResult"]) and
+                type(record["exitCode"]) is int and record["exitCode"] == 0,
+                "Reduction state/result require signed C++ integers and exitCode integer zero")
+        calls = record["calls"]
+        require(type(calls) is list and 2 <= len(calls) <= 32,
+                "Reduction requires 2..32 ordered calls")
+        for call in calls:
+            require(type(call) is dict and set(call) == {"values", "argument", "result", "stateAfter"}
+                    and type(call["values"]) is list and len(call["values"]) <= 64
+                    and all(int32(value) for value in call["values"])
+                    and all(int32(call[name]) for name in ("argument", "result", "stateAfter")),
+                    "Reduction calls require bounded vectors and signed C++ integer observations")
+        observed = record["observedCall"]
+        require(type(observed) is int and 1 <= observed < len(calls) and
+                record["requiredResult"] != calls[observed]["result"],
+                "Reduction needs a prepared observed call with a result different from the requirement")
+        dependencies = record["dependencies"]
+        require(type(dependencies) is list and 1 <= len(dependencies) <= 32,
+                "Reduction dependencies require 1..32 header declarations")
+        headers, symbols = set(), set()
+        for dependency in dependencies:
+            require(type(dependency) is dict and set(dependency) == {"header", "symbols"},
+                    "Reduction dependencies require header and symbols only")
+            header = dependency["header"]
+            require(type(header) is str and re.fullmatch(r"[a-z][a-z0-9_.]{0,63}", header)
+                    and ".." not in header and header not in headers,
+                    "Reduction header must be a unique safe standard-header name")
+            headers.add(header)
+            names = dependency["symbols"]
+            require(type(names) is list and 1 <= len(names) <= 32,
+                    "Reduction dependencies need 1..32 qualified symbols")
+            for name in names:
+                require(type(name) is str and len(name) <= 512 and
+                        len(name.split("::")) >= 2 and
+                        all(identifier.fullmatch(part) and not part.startswith("lgaed_reduction_")
+                            for part in name.split("::")) and name not in symbols,
+                        "Reduction dependency needs a unique safe qualified symbol")
+                symbols.add(name)
+        _reduction_source_contract(block.get("initialCode"), record["function"],
+                                   record["state"], record["initialState"], dependencies)
 
 
 def _validate_compiler_open_battery_checks(document: dict) -> None:
@@ -3601,6 +3858,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_compiler_runtime_checks(document)
     _validate_compiler_named_rule_checks(document)
     _validate_compiler_open_battery_checks(document)
+    _validate_compiler_reduction_checks(document)
     _validate_compiler_cmake_graph_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
@@ -4117,6 +4375,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
              baseline["compilerOpenBatteryChecks"]),
             "Published open battery checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerReductionChecks") or
+            (type(current.get("compilerReductionChecks")) is list and
+             current["compilerReductionChecks"][:len(baseline["compilerReductionChecks"])] ==
+             baseline["compilerReductionChecks"]),
+            "Published reduction checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
             (type(current.get("compilerCmakeGraphChecks")) is list and
              current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
@@ -4450,6 +4713,11 @@ def validate_transition(previous: dict, current: dict) -> None:
              current["compilerOpenBatteryChecks"][:len(baseline["compilerOpenBatteryChecks"])] ==
              baseline["compilerOpenBatteryChecks"]),
             "Published open battery checks cannot be removed, reordered or rewritten")
+    require(not baseline.get("compilerReductionChecks") or
+            (type(current.get("compilerReductionChecks")) is list and
+             current["compilerReductionChecks"][:len(baseline["compilerReductionChecks"])] ==
+             baseline["compilerReductionChecks"]),
+            "Published reduction checks cannot be removed, reordered or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
             (type(current.get("compilerCmakeGraphChecks")) is list and
              current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==

@@ -92,7 +92,9 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_general_choice_editorial_tests',
                 'lgaed_general_choice_editorial_view_tests',
                 'lgaed_boolean_battery_check_tests',
-                'lgaed_boolean_battery_runtime_tests'
+                'lgaed_boolean_battery_runtime_tests',
+                'lgaed_reduction_check_tests',
+                'lgaed_reduction_runtime_tests'
             )
             Results = 'reader-build'
         }
@@ -387,10 +389,10 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused reader and catalog test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime')
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime', 'native.reduction', 'native.reduction_runtime')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
-        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial and boolean battery regressions.'
+        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery and stateful reduction regressions.'
     }
     & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }

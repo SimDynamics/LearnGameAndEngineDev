@@ -4134,6 +4134,108 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     }
 }
 
+// A reduction goal preserves the published editor bytes and authenticates
+// its stateful reproduction separately from successful process termination.
+void read_compiler_reduction_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerReductionChecks"))return;
+    const auto entries=array(root,"compilerReductionChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            entries.Size()>0&&entries.Size()<=32,
+        "Reduction goals require existing Spanish v2 owners");
+    const auto signed_int=[](const IJsonValue& value) {
+        require(value.ValueType()==JsonValueType::Number,
+            "Reduction facts must be signed C++ integers");
+        const auto number=value.GetNumber();
+        require(std::isfinite(number)&&std::trunc(number)==number&&
+                number>=static_cast<double>(std::numeric_limits<std::int32_t>::min())&&
+                number<=static_cast<double>(std::numeric_limits<std::int32_t>::max()),
+            "Reduction integer is outside its supported range");
+        return static_cast<std::int32_t>(number);
+    };
+    std::set<std::string> used;
+    for(const auto& entry:entries) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","kind","function","state","initialState",
+            "calls","observedCall","requiredResult","exitCode","dependencies"},true);
+        require(text(item,"kind")=="stateful-vector-int-v1",
+            "Unsupported reduction objective kind");
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&used.insert(identity).second,
+            "Duplicate or invalid reduction identity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Reduction has a duplicated mapped identity");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&
+                !owner->cmake&&owner->project_files.empty()&&owner->source_files.empty()&&
+                !owner->initial_code.empty()&&!owner->output_check&&!owner->compile_check&&
+                !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                !owner->reduction_probe&&!owner->cmake_graph_check,
+            "Reduction requires an original unevaluated single-file C++ editor");
+        const auto owner_json=JsonObject::Parse(winrt::to_hstring(owner->raw_json));
+        require(!owner_json.HasKey(L"language")||text(owner_json,"language")=="cpp",
+            "Reduction source language must be C++");
+        ReductionSpec spec;
+        spec.function_name=text(item,"function");
+        spec.state_name=text(item,"state");
+        spec.initial_source=owner->initial_code;
+        const auto definition=reduction_extract_definition(spec.initial_source,spec.function_name);
+        require(definition.has_value(),
+            "Reduction needs one original int(vector<int>,int) function");
+        spec.protected_definition=*definition;
+        spec.initial_state=signed_int(item.GetNamedValue(L"initialState"));
+        const auto calls=array(item,"calls");
+        require(calls.Size()>=2&&calls.Size()<=32,
+            "Reduction needs between 2 and 32 ordered calls");
+        for(const auto& value:calls) {
+            const auto call=value.GetObject();
+            allowed_keys(call,{"values","argument","result","stateAfter"},true);
+            ReductionCall fact;
+            const auto values=array(call,"values");
+            require(values.Size()<=64,"Reduction call has too many collection values");
+            for(const auto& element:values)fact.values.push_back(signed_int(element));
+            fact.argument=signed_int(call.GetNamedValue(L"argument"));
+            fact.result=signed_int(call.GetNamedValue(L"result"));
+            fact.state_after=signed_int(call.GetNamedValue(L"stateAfter"));
+            spec.calls.push_back(std::move(fact));
+        }
+        spec.observed_call=integer(item.GetNamedValue(L"observedCall"),31);
+        require(spec.observed_call>0&&spec.observed_call<spec.calls.size(),
+            "The observed reduction call needs earlier preparation");
+        spec.required_result=signed_int(item.GetNamedValue(L"requiredResult"));
+        require(signed_int(item.GetNamedValue(L"exitCode"))==0,
+            "This reduction objective requires normal completion with zero");
+        spec.exit_code=0;
+        const auto dependencies=array(item,"dependencies");
+        require(dependencies.Size()>0&&dependencies.Size()<=32,
+            "Reduction needs a bounded explicit dependency contract");
+        for(const auto& value:dependencies) {
+            const auto dependency=value.GetObject();
+            allowed_keys(dependency,{"header","symbols"},true);
+            const auto symbols=array(dependency,"symbols");
+            require(symbols.Size()>0&&symbols.Size()<=32,
+                "A reduction dependency needs a bounded list of symbols");
+            spec.dependencies.push_back({text(dependency,"header"),strings(symbols,true,false)});
+        }
+        require(reduction_spec_valid(spec),
+            "Invalid stateful reduction source, facts or dependency contract");
+        OutputCheck runtime;
+        runtime.reduction_check=true;
+        runtime.input_comparison=TextComparison::exact;
+        OutputCase first;
+        first.standard_input=owner->standard_input.value_or("");
+        first.outputs={""}; // The preserved execution and causal observation decide.
+        first.explanation="La reducción conservó la función, la preparación y el "
+            "resultado calculado que reproduce el fallo.";
+        runtime.cases.push_back(std::move(first));
+        owner->reduction_probe=std::move(spec);
+        owner->output_check=std::move(runtime);
+    }
+}
+
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
@@ -4406,6 +4508,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
+        read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
@@ -4480,8 +4583,20 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                                 declared_battery=true;break;
                             }
                     }
+                    bool declared_reduction=false;
+                    if(root.HasKey(L"compilerReductionChecks")) {
+                        require(lesson.state_layout.version==2&&
+                                p<lesson.state_layout.current.size()&&
+                                b<lesson.state_layout.current[p].blocks.size(),
+                            "Reduction progress requires an existing v2 mapped owner");
+                        const auto identity=lesson.state_layout.current[p].blocks[b];
+                        for(const auto& candidate:array(root,"compilerReductionChecks"))
+                            if(text(candidate.GetObject(),"activity")==identity) {
+                                declared_reduction=true;break;
+                            }
+                    }
                     if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||
-                       declared_runtime||declared_battery) {
+                       declared_runtime||declared_battery||declared_reduction) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
                         const auto historical=authenticated_compiler_source(lesson,p,b,block);
@@ -4514,6 +4629,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_compiler_runtime_checks(root,lesson);
         read_compiler_named_rule_checks(root,lesson);
         read_compiler_open_battery_checks(root,lesson);
+        read_compiler_reduction_checks(root,lesson);
         read_compiler_cmake_graph_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);

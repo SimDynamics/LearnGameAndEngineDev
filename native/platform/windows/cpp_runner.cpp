@@ -407,6 +407,23 @@ std::string boolean_battery_fingerprint(const CppRunRequest& request) {
             field(item.expected?"true":"false");
     return state::sha256(frame);
 }
+std::string reduction_fingerprint(const CppRunRequest& request) {
+    if(!request.reduction_probe||!curriculum::reduction_spec_valid(*request.reduction_probe))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    const auto frame=std::string("windows-reduction-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+
+        field(fingerprint(request))+field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(curriculum::reduction_spec_frame(*request.reduction_probe));
+    return state::sha256(frame);
+}
 void validate_request_project(const CppRunRequest& request){
     if(!request.projects_directory.is_absolute())throw std::invalid_argument("Student projects directory must be absolute");
     std::map<std::wstring,bool,CaseInsensitive> paths;for(const auto& [name,text]:request.project_files)if(!paths.emplace(project_path(name).generic_wstring(),true).second)throw std::invalid_argument("Case-colliding Windows project paths");
@@ -1658,6 +1675,9 @@ bool verified_default_option_probe(const CppRunRequest& request,
 std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest& request) {
     return boolean_battery_fingerprint(request);
 }
+std::string cpp_reduction_request_fingerprint(const CppRunRequest& request) {
+    return reduction_fingerprint(request);
+}
 
 curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,const CppRunResult& result) {
     curriculum::FreshExecution fresh;
@@ -1667,6 +1687,10 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
         ||(request.cmake&&result.executable!=std::optional<std::string>{request.cmake->target}))return fresh;
     if(request.boolean_battery_probe&&
        result.boolean_battery_request_fingerprint!=boolean_battery_fingerprint(request))return fresh;
+    if(request.reduction_probe) {
+        const auto binding=reduction_fingerprint(request);
+        if(binding.empty()||result.reduction_request_fingerprint!=binding)return fresh;
+    }
     fresh.source_revision=result.revision;
     fresh.compilation_succeeded=result.compilation.succeeded()
         &&(result.configuration.status==CppPhaseStatus::not_started||result.configuration.succeeded());
@@ -1692,7 +1716,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
         if(request.backend==CppRunRequest::Backend::native_msvc&&
            request.action==CppRunRequest::Action::compile_run&&!request.cmake&&
            request.project_files.empty()&&request.source_files.empty()&&
-           !request.open_battery_probe&&!request.named_rule_probe&&
+           !request.reduction_probe&&!request.open_battery_probe&&!request.named_rule_probe&&
            !request.rejection_probe&&!request.observation_probe&&!request.assertion_mode&&
            !request.cmake_graph_check&&!request.capture_cmake_graph&&
            curriculum::boolean_battery_preserves_function(request.source_utf8,spec)&&
@@ -1725,6 +1749,51 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 }else{
                     fresh.boolean_battery_probe_feedback=
                         "La ejecución publicada no tiene la misma salida y terminación normal que el fuente capturado.";
+                }
+            }
+        }
+    }
+    if(request.reduction_probe) {
+        fresh.execution_completed=false;
+        fresh.execution_succeeded=false;
+        fresh.reduction_probe_feedback=
+            "No se obtuvo una reproducción independiente completa para este fuente.";
+        const auto& spec=*request.reduction_probe;
+        const auto frame=reduction_fingerprint(request);
+        fresh.reduction_request_fingerprint=frame;
+        const auto source_check=curriculum::reduction_source_check(request.source_utf8,spec);
+        if(!source_check.accepted)fresh.reduction_probe_feedback=source_check.reason;
+        if(request.backend==CppRunRequest::Backend::native_msvc&&
+           request.action==CppRunRequest::Action::compile_run&&!request.cmake&&
+           request.project_files.empty()&&request.source_files.empty()&&
+           !request.boolean_battery_probe&&!request.open_battery_probe&&!request.named_rule_probe&&
+           !request.rejection_probe&&!request.observation_probe&&!request.assertion_mode&&
+           !request.cmake_graph_check&&!request.capture_cmake_graph&&result.reduction_evidence) {
+            const auto& evidence=*result.reduction_evidence;
+            const auto plan=curriculum::reduction_plan(spec);
+            if(evidence.original_program_fingerprint==frame&&plan&&
+               !evidence.runs.empty()&&evidence.runs.size()==plan->size()) {
+                const auto& published=evidence.runs.front();
+                // Only the public phase must return the authored zero. The
+                // private interventions may legitimately use a different
+                // normal exit when their delivered result changes.
+                const bool same_published=published.program_frame==frame&&
+                    !published.phase.replacement&&published.compiled&&published.executed&&
+                    published.completed_normally&&result.compilation.succeeded()&&
+                    result.execution.status==CppPhaseStatus::completed&&
+                    result.execution.exit_code&&published.exit_code==*result.execution.exit_code&&
+                    published.stdout_bytes==result.execution.stdout_bytes&&
+                    published.stderr_bytes==result.execution.stderr_bytes;
+                if(same_published) {
+                    fresh.execution_completed=true;
+                    fresh.execution_succeeded=published.exit_code==0;
+                    const auto verdict=curriculum::reduction_verify(spec,evidence.runs,frame);
+                    fresh.exit_code=static_cast<std::int32_t>(published.exit_code);
+                    fresh.reduction_probe_correct=source_check.accepted&&verdict.accepted;
+                    fresh.reduction_probe_feedback=source_check.accepted?verdict.reason:source_check.reason;
+                }else if(source_check.accepted) {
+                    fresh.reduction_probe_feedback=
+                        "La reproducción publicada no tiene la misma salida y terminación normal que el fuente capturado.";
                 }
             }
         }
@@ -2105,7 +2174,7 @@ std::vector<std::wstring> single_file_arguments(const std::filesystem::path& dir
 // Only the GUID-owned, already drained run directory may be cleared. Check
 // every entry before removal; a reparse point is an error, never a reason to
 // traverse another directory or touch a persisted learner draft.
-void clear_boolean_battery_directory(const std::filesystem::path& directory,
+void clear_private_probe_directory(const std::filesystem::path& directory,
         bool keep_execution_inputs=false) {
     state::require_safe_path(directory);
     std::vector<std::filesystem::path> entries;
@@ -2117,7 +2186,7 @@ void clear_boolean_battery_directory(const std::filesystem::path& directory,
                 if(name==L"program.exe"||name==L"stdin.bin"||
                    name==L"compiler-stdin.bin"||name==L"toolchain.txt") {
                     if(!entry.is_regular_file())
-                        throw std::runtime_error("A boolean battery execution input is not a regular file");
+                        throw std::runtime_error("A private execution input is not a regular file");
                     continue;
                 }
             }
@@ -2129,26 +2198,18 @@ void clear_boolean_battery_directory(const std::filesystem::path& directory,
     for(const auto& entry:entries) {
         state::require_safe_path(entry);
         if(!std::filesystem::remove(entry))
-            throw std::runtime_error("Cannot reset the private boolean battery workspace");
+            throw std::runtime_error("Cannot reset the private execution workspace");
     }
 }
 
-void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& result,
+// Each objective supplies its own instrumented sources and typed observations.
+// This helper owns only the physical execution: every phase sees the public
+// path/argv/input/environment, and the public filesystem is restored byte for byte.
+template<class MakeSource,class Observe>
+bool execute_private_single_file_phases(const CppRunRequest& request,const CppRunResult& result,
         const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
-        std::string_view initial_toolchain,std::stop_token stop) {
-    if(!request.boolean_battery_probe||request.cmake||!request.project_files.empty()||
-       !request.source_files.empty()||request.diagnostic||request.open_battery_probe||
-       request.named_rule_probe||request.rejection_probe||request.observation_probe||
-       request.assertion_mode||request.cmake_graph_check||request.capture_cmake_graph||
-       request.backend!=CppRunRequest::Backend::native_msvc||
-       request.action!=CppRunRequest::Action::compile_run||
-       !result.compilation.succeeded()||!result.error_utf8.empty()||
-       result.execution.status!=CppPhaseStatus::completed||!result.execution.exit_code||
-       stop.stop_requested())return;
-    const auto& spec=*request.boolean_battery_probe;
-    if(!curriculum::boolean_battery_preserves_function(request.source_utf8,spec))return;
-    const auto plan=curriculum::boolean_battery_mutation_plan(spec);
-    if(!plan)return;
+        std::string_view initial_toolchain,std::size_t count,
+        MakeSource&& make_source,Observe&& observe,std::stop_token stop) {
     const auto& directory=result.run_directory;
     const auto executable=directory/L"program.exe";
     const auto source=directory/L"main.cpp";
@@ -2176,7 +2237,7 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
                 if(size>artifact_limit-retained_bytes)return false;
                 auto bytes=read_exact(entry.path(),static_cast<std::size_t>(size));
                 if(bytes.size()!=size)
-                    throw std::runtime_error("A public boolean battery output could not be retained");
+                    throw std::runtime_error("A public execution output could not be retained");
                 retained_bytes+=size;
                 original_files.emplace_back(relative,std::move(bytes));
             }else{
@@ -2185,12 +2246,10 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
         }
         return true;
     };
-    if(!retain(retain,directory))return;
+    if(!retain(retain,directory))return false;
     const auto arguments=single_file_arguments(directory);
-    CppBooleanBatteryEvidence evidence;
-    evidence.original_program_fingerprint=boolean_battery_fingerprint(request);
     const auto restore=[&] {
-        clear_boolean_battery_directory(directory);
+        clear_private_probe_directory(directory);
         for(const auto& relative:original_directories) {
             const auto restored=directory/relative;
             std::filesystem::create_directories(restored);
@@ -2203,12 +2262,11 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
         }
     };
     try {
-        for(const auto& required:*plan) {
+        for(std::size_t index=0;index<count;++index) {
             if(stop.stop_requested())break;
-            const auto instrumented=curriculum::boolean_battery_instrument(
-                request.source_utf8,spec,required);
+            const auto instrumented=make_source(index);
             if(!instrumented)break;
-            clear_boolean_battery_directory(directory);
+            clear_private_probe_directory(directory);
             write_exact(source,*instrumented);
             write_exact(input,request.stdin_utf8);
             write_exact(compiler_input,"");
@@ -2218,39 +2276,119 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
                 stop,true,&environment);
             CppPhaseResult execution;
             if(compilation.succeeded()&&!stop.stop_requested()) {
-                // The executable has no source or object files to read while
-                // it runs. Its path, argv, cwd, stdin and environment remain
-                // identical to the public run and every private phase.
-                clear_boolean_battery_directory(directory,true);
+                // No source, object or previous phase output is visible.
+                // The executable path, argv, cwd, stdin and environment
+                // remain identical to the original public execution.
+                clear_private_probe_directory(directory,true);
                 execution=run_phase(executable,{},directory,input,L"execution",
                     request.execution_timeout,request.output_limit_bytes,false,
                     stop,false,&environment);
             }
-            curriculum::BooleanBatteryRun observation;
-            observation.program_frame=evidence.original_program_fingerprint;
-            observation.mutation=required.mutation;
-            observation.target=required.target;
-            observation.compiled=compilation.succeeded();
-            observation.executed=execution.status==CppPhaseStatus::completed&&
-                execution.exit_code.has_value();
-            if(execution.exit_code)observation.exit_code=*execution.exit_code;
-            observation.stdout_bytes=execution.stdout_bytes;
-            const auto trace=curriculum::boolean_battery_parse_trace(execution.stderr_bytes);
-            if(trace) {
-                observation.calls=trace->calls;
-                observation.completed_normally=observation.executed&&trace->completed_normally;
-                observation.stderr_bytes=trace->visible;
-            }else{
-                observation.stderr_bytes=execution.stderr_bytes;
-            }
-            evidence.runs.push_back(std::move(observation));
+            observe(index,compilation,execution);
         }
     }catch(...) {
         restore();
         throw;
     }
     restore();
-    if(!stop.stop_requested())result.boolean_battery_evidence=std::move(evidence);
+    return !stop.stop_requested();
+}
+
+void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    if(!request.boolean_battery_probe||request.reduction_probe||request.cmake||
+       !request.project_files.empty()||!request.source_files.empty()||
+       request.diagnostic||request.open_battery_probe||request.named_rule_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       !result.compilation.succeeded()||!result.error_utf8.empty()||
+       result.execution.status!=CppPhaseStatus::completed||!result.execution.exit_code||
+       stop.stop_requested())return;
+    const auto& spec=*request.boolean_battery_probe;
+    if(!curriculum::boolean_battery_preserves_function(request.source_utf8,spec))return;
+    const auto plan=curriculum::boolean_battery_mutation_plan(spec);
+    if(!plan)return;
+    CppBooleanBatteryEvidence evidence;
+    evidence.original_program_fingerprint=boolean_battery_fingerprint(request);
+    const auto make_source=[&](std::size_t index) {
+        return curriculum::boolean_battery_instrument(request.source_utf8,spec,(*plan)[index]);
+    };
+    const auto observe=[&](std::size_t index,const CppPhaseResult& compilation,
+                          const CppPhaseResult& execution) {
+        const auto& required=(*plan)[index];
+        curriculum::BooleanBatteryRun observation;
+        observation.program_frame=evidence.original_program_fingerprint;
+        observation.mutation=required.mutation;
+        observation.target=required.target;
+        observation.compiled=compilation.succeeded();
+        observation.executed=execution.status==CppPhaseStatus::completed&&
+            execution.exit_code.has_value();
+        if(execution.exit_code)observation.exit_code=*execution.exit_code;
+        observation.stdout_bytes=execution.stdout_bytes;
+        const auto trace=curriculum::boolean_battery_parse_trace(execution.stderr_bytes);
+        if(trace) {
+            observation.calls=trace->calls;
+            observation.completed_normally=observation.executed&&trace->completed_normally;
+            observation.stderr_bytes=trace->visible;
+        }else{
+            observation.stderr_bytes=execution.stderr_bytes;
+        }
+        evidence.runs.push_back(std::move(observation));
+    };
+    if(execute_private_single_file_phases(request,result,compiler,environment,initial_toolchain,
+            plan->size(),make_source,observe,stop))
+        result.boolean_battery_evidence=std::move(evidence);
+}
+
+void complete_reduction_probe(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    if(!request.reduction_probe||request.boolean_battery_probe||request.cmake||
+       !request.project_files.empty()||!request.source_files.empty()||
+       request.diagnostic||request.open_battery_probe||request.named_rule_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       !result.compilation.succeeded()||!result.error_utf8.empty()||
+       result.execution.status!=CppPhaseStatus::completed||!result.execution.exit_code||
+       stop.stop_requested())return;
+    const auto& spec=*request.reduction_probe;
+    const auto plan=curriculum::reduction_plan(spec);
+    if(!plan)return;
+    CppReductionEvidence evidence;
+    evidence.original_program_fingerprint=reduction_fingerprint(request);
+    const auto make_source=[&](std::size_t index) {
+        // Source reduction and direct-header checks decide credit separately.
+        // An unchanged initial driver can still provide a real normal witness.
+        return curriculum::reduction_instrument(request.source_utf8,spec,(*plan)[index]);
+    };
+    const auto observe=[&](std::size_t index,const CppPhaseResult& compilation,
+                          const CppPhaseResult& execution) {
+        curriculum::ReductionRun observation;
+        observation.program_frame=evidence.original_program_fingerprint;
+        observation.phase=(*plan)[index];
+        observation.compiled=compilation.succeeded();
+        observation.executed=execution.status==CppPhaseStatus::completed&&
+            execution.exit_code.has_value();
+        if(execution.exit_code)observation.exit_code=*execution.exit_code;
+        observation.stdout_bytes=execution.stdout_bytes;
+        const auto trace=curriculum::reduction_parse_trace(execution.stderr_bytes);
+        if(trace) {
+            observation.calls=trace->calls;
+            observation.completed_normally=observation.executed&&trace->completed_normally;
+            observation.stderr_bytes=trace->visible;
+        }else{
+            observation.stderr_bytes=execution.stderr_bytes;
+        }
+        evidence.runs.push_back(std::move(observation));
+    };
+    if(execute_private_single_file_phases(request,result,compiler,environment,initial_toolchain,
+            plan->size(),make_source,observe,stop))
+        result.reduction_evidence=std::move(evidence);
 }
 } // namespace
 
@@ -2262,6 +2400,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     try {
         if(request.boolean_battery_probe)
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
+        if(request.reduction_probe)
+            result.reduction_request_fingerprint=reduction_fingerprint(request);
         ensure_winrt_apartment();
         if (stop.stop_requested()) {
             (request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation).status = CppPhaseStatus::cancelled;
@@ -2319,9 +2459,10 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
-        const auto boolean_environment=request.boolean_battery_probe
+        const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe;
+        const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
-        const auto fixed_environment=request.boolean_battery_probe?&boolean_environment:nullptr;
+        const auto fixed_environment=has_private_probe?&private_environment:nullptr;
         // Localized MSVC diagnostics and Unicode paths need the same private
         // UTF-8 tool console as CMake. Program execution keeps raw binary I/O.
         result.compilation = run_phase(compiler, arguments, result.run_directory,
@@ -2329,15 +2470,15 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             request.output_limit_bytes, true, stop, true,fixed_environment);
         if (result.compilation.succeeded()) {
             result.artifact=executable;result.target_type="EXECUTABLE";
-            if(request.boolean_battery_probe) {
+            if(has_private_probe) {
                 // Match the private executions: no phase source/object file
                 // remains visible to the public program while it runs.
-                clear_boolean_battery_directory(result.run_directory,true);
+                clear_private_probe_directory(result.run_directory,true);
             }
             result.execution = run_phase(executable, {}, result.run_directory, input,
                 L"execution", request.execution_timeout, request.output_limit_bytes, false, stop,
                 false,fixed_environment);
-            if(request.boolean_battery_probe) {
+            if(has_private_probe) {
                 write_exact(source,request.source_utf8);
                 write_exact(result.run_directory/L"compilation-stdout.bin",result.compilation.stdout_bytes);
                 write_exact(result.run_directory/L"compilation-stderr.bin",result.compilation.stderr_bytes);
@@ -2346,7 +2487,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         complete_named_rule_probe(request,result,stop);
         complete_rejection_stream_probe(request,result,stop);
         complete_observation_probes(request,result,stop);
-        complete_boolean_battery_probe(request,result,compiler,boolean_environment,initial_toolchain,stop);
+        complete_boolean_battery_probe(request,result,compiler,private_environment,initial_toolchain,stop);
+        complete_reduction_probe(request,result,compiler,private_environment,initial_toolchain,stop);
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();
         auto& phase = request.diagnostic?result.compilation:request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:

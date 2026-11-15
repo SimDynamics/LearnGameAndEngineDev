@@ -2239,6 +2239,7 @@ struct LessonView {
             request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
+        request.reduction_probe=block(index).reduction_probe;
         request.cmake_graph_check=block(index).cmake_graph_check;
         request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
@@ -4076,10 +4077,10 @@ struct LessonView {
         // crashing. Presentation must not depend on whether this source earned
         // the authored objective (for example, a deliberately edited client).
         // Existing objectives keep their application-return domain. The
-        // boolean battery additionally witnesses a normal full DWORD return.
+        // open single-file objectives additionally witness normal termination.
         const bool normal_execution=result->error_utf8.empty()&&
             result->execution.status==windows::CppPhaseStatus::completed&&
-            result->execution.exit_code&&(block(index).boolean_battery_probe
+            result->execution.exit_code&&((block(index).boolean_battery_probe||block(index).reduction_probe)
                 ?fresh.execution_completed:*result->execution.exit_code<=255);
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
@@ -4167,7 +4168,8 @@ struct LessonView {
                     (!block(index).open_battery_probe||
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
-                     fresh.boolean_battery_probe_correct);
+                     fresh.boolean_battery_probe_correct)&&
+                    (!block(index).reduction_probe||fresh.reduction_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4188,12 +4190,14 @@ struct LessonView {
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
                 if(!independent&&preserved_source&&!block(index).open_battery_probe&&
-                   !block(index).boolean_battery_probe)
+                   !block(index).boolean_battery_probe&&!block(index).reduction_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
                         "La sortie du test modifié correspond, mais la vérification indépendante des fonctions a échoué. Vérifiez le calcul réel.");
-                if(!preserved_source) {
+                // Reduction feedback already identifies its exact source or
+                // observation failure; do not append an unrelated project rule.
+                if(!preserved_source&&!block(index).reduction_probe) {
                     if(block(index).boolean_battery_probe)
                         text+='\n'+ui(
                             "Conserva la función proporcionada y modifica la batería que la comprueba. La entrada y el criterio deben corresponder a este mismo editor.",

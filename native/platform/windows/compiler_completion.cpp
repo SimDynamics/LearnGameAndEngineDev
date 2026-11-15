@@ -148,6 +148,9 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
             (!execution.boolean_battery_request_fingerprint.empty()&&
              execution.boolean_battery_request_fingerprint==
                 cpp_boolean_battery_request_fingerprint(captured)))
+        &&(!captured.reduction_probe||
+            (!execution.reduction_request_fingerprint.empty()&&
+             execution.reduction_request_fingerprint==cpp_reduction_request_fingerprint(captured)))
         &&(captured.action==CppRunRequest::Action::compile_run||captured.action==CppRunRequest::Action::execute)
         &&captured.stdin_utf8==execution.standard_input
         &&(!captured.cmake||execution.executable==std::optional<std::string>{captured.cmake->target});
@@ -171,6 +174,10 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
                 frame+=token(std::to_string(item.first))+token(std::to_string(item.second))+
                     token(item.expected?"true":"false");
         }
+    }
+    if(check.reduction_check) {
+        frame+=token(curriculum::reduction_objective_version);
+        if(block.reduction_probe)frame+=token(curriculum::reduction_spec_frame(*block.reduction_probe));
     }
     if(check.rejection_operation)
         frame+=token(*check.rejection_operation==curriculum::RejectionOperation::boxes
@@ -371,6 +378,7 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     if(request.boolean_battery_probe!=block.boolean_battery_probe)return false;
+    if(request.reduction_probe!=block.reduction_probe)return false;
     if(block.boolean_battery_probe) {
         if(block.cmake||request.cmake||!block.project_files.empty()||
            !request.project_files.empty()||!block.source_files.empty()||
@@ -378,11 +386,24 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
            request.backend!=CppRunRequest::Backend::native_msvc||
            request.action!=CppRunRequest::Action::compile_run||
            request.stdin_utf8!=block.standard_input.value_or("")||
-           request.open_battery_probe||request.named_rule_probe||
+           request.reduction_probe||request.open_battery_probe||request.named_rule_probe||
            request.rejection_probe||request.observation_probe||
            request.assertion_mode||request.cmake_graph_check||request.capture_cmake_graph||
            !curriculum::boolean_battery_preserves_function(
                request.source_utf8,*block.boolean_battery_probe))return false;
+    }
+    if(block.reduction_probe) {
+        if(block.cmake||request.cmake||!block.project_files.empty()||
+           !request.project_files.empty()||!block.source_files.empty()||
+           !request.source_files.empty()||request.diagnostic||
+           request.backend!=CppRunRequest::Backend::native_msvc||
+           request.action!=CppRunRequest::Action::compile_run||
+           request.stdin_utf8!=block.standard_input.value_or("")||
+           request.boolean_battery_probe||request.open_battery_probe||request.named_rule_probe||
+           request.rejection_probe||request.observation_probe||request.assertion_mode||
+           request.cmake_graph_check||request.capture_cmake_graph||
+           !curriculum::reduction_source_check(request.source_utf8,*block.reduction_probe).accepted)
+            return false;
     }
     if(request.open_battery_probe!=block.open_battery_probe)return false;
     if(block.open_battery_probe) {
@@ -565,6 +586,7 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
         const curriculum::Block& block,const CppRunRequest& current) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!curriculum::has_compiler_objective(block))return {};
     if(block.boolean_battery_probe!=current.boolean_battery_probe)return {};
+    if(block.reduction_probe!=current.reduction_probe)return {};
     const auto key=base(lesson,block)+"review/";
     const auto text=[&](std::string_view suffix)->const std::string*{
         const auto value=state::find(data,"native_windows",key+std::string(suffix));
@@ -618,6 +640,7 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
         std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()||!matches_runtime_capture(captured,execution))return false;
     if(block.boolean_battery_probe!=captured.boolean_battery_probe)return false;
+    if(block.reduction_probe!=captured.reduction_probe)return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::incorrect)return false;
     const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
@@ -799,6 +822,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
            !execution.named_rule_probe_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
         (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
+       (block.reduction_probe&&!execution.reduction_probe_correct)||
        (block.cmake_graph_check&&!execution.cmake_graph_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
