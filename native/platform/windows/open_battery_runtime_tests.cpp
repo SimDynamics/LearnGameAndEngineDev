@@ -226,15 +226,7 @@ int main(int argc,char** argv) {
         auto projected_files=before.project_files;
         file(projected_files,"CMakeLists.txt")=
             portable_warning_fixture(file(before.project_files,"CMakeLists.txt"));
-        const auto raw_owner=document.GetNamedArray(L"pages").
-            GetObjectAt(static_cast<std::uint32_t>(position->page)).
-            GetNamedArray(L"blocks").GetObjectAt(static_cast<std::uint32_t>(position->block));
-        for(const auto& value:raw_owner.GetNamedArray(L"projectFiles")) {
-            const auto item=value.GetObject();
-            if(item.GetNamedString(L"path")==L"CMakeLists.txt")
-                item.Insert(L"initialCode",JsonValue::CreateStringValue(
-                    winrt::to_hstring(file(projected_files,"CMakeLists.txt"))));
-        }
+        const bool warning_projection_changed=projected_files!=before.project_files;
         auto declarations=document.HasKey(L"compilerOpenBatteryChecks")
             ?document.GetNamedArray(L"compilerOpenBatteryChecks"):JsonArray{};
         const auto desired=JsonObject::Parse(winrt::to_hstring(declaration));
@@ -255,45 +247,88 @@ int main(int argc,char** argv) {
                     "The QA addition changed another existing root declaration");
         }
         const auto reviewed=winrt::to_string(document.Stringify());
-        const auto lesson=parse_lesson_json(reviewed,"es");
-        const auto progress=parse_lesson_progress_metadata(reviewed,"es");
+        const auto published_lesson=parse_lesson_json(reviewed,"es");
+        const auto published_progress=parse_lesson_progress_metadata(reviewed,"es");
+        const auto& published_block=owner(published_lesson);
+        const auto& published_restored=owner(published_progress);
+        require(original.pages.size()==published_lesson.pages.size()&&
+                published_lesson.pages.size()==published_progress.pages.size()&&
+                original.state_layout.raw_json==published_lesson.state_layout.raw_json&&
+                original.state_layout.raw_json==published_progress.state_layout.raw_json&&
+                original.state_layout.signatures==published_lesson.state_layout.signatures&&
+                original.state_layout.signatures==published_progress.state_layout.signatures&&
+                original.state_layout.lineage==published_lesson.state_layout.lineage&&
+                original.state_layout.lineage==published_progress.state_layout.lineage,
+            "The QA root goal changed the original stable state layout");
+        require(published_block.open_battery_probe&&published_restored.open_battery_probe&&
+                published_block.open_battery_probe==published_restored.open_battery_probe&&
+                published_block.open_battery_probe->original_cases.size()==11&&
+                published_block.output_check&&published_restored.output_check&&
+                published_block.output_check->open_battery_check&&published_restored.output_check->open_battery_check&&
+                published_block.output_check->cases.size()==1&&published_restored.output_check->cases.size()==1&&
+                published_block.output_check->input_comparison==TextComparison::exact&&
+                published_restored.output_check->input_comparison==TextComparison::exact&&
+                published_block.output_check->cases.front().standard_input.empty()&&
+                published_restored.output_check->cases.front().standard_input.empty()&&
+                published_block.output_check->cases.front().executable==
+                    std::optional<std::string>{published_block.open_battery_probe->test_target}&&
+                published_restored.output_check->cases.front().executable==
+                    published_block.output_check->cases.front().executable,
+            "Full/progress loading did not require the instructed empty checker input");
+        require(published_block.project_files==before.project_files&&
+                published_restored.project_files==before.project_files&&
+                published_block.initial_code==before.initial_code&&published_restored.initial_code==before.initial_code&&
+                published_block.standard_input==before.standard_input&&published_restored.standard_input==before.standard_input&&
+                published_block.cmake==before.cmake&&published_restored.cmake==before.cmake&&
+                published_block.stable_id==before.stable_id&&published_restored.stable_id==before.stable_id&&
+                published_block.address.page==before.address.page&&published_block.address.block==before.address.block&&
+                published_restored.address.page==before.address.page&&published_restored.address.block==before.address.block&&
+                exercise_key(original,before)==exercise_key(published_lesson,published_block)&&
+                draft_key("programming",original,before)==draft_key("programming",published_lesson,published_block)&&
+                reference_objective_frame(published_lesson,published_block)==
+                    reference_objective_frame(published_progress,published_restored),
+            "The new goal changed source, initial input, target, identity or full/progress evidence");
+        if(warning_projection_changed) {
+            // An edited curricular recipe still needs real editorial provenance.
+            // Do not rewrite its map or let an unrelated loader error pass.
+            auto incompatible=JsonObject::Parse(winrt::to_hstring(reviewed));
+            const auto edited=incompatible.GetNamedArray(L"pages").
+                GetObjectAt(static_cast<std::uint32_t>(position->page)).
+                GetNamedArray(L"blocks").GetObjectAt(static_cast<std::uint32_t>(position->block));
+            for(const auto& value:edited.GetNamedArray(L"projectFiles")) {
+                const auto item=value.GetObject();
+                if(item.GetNamedString(L"path")==L"CMakeLists.txt")
+                    item.Insert(L"initialCode",JsonValue::CreateStringValue(
+                        winrt::to_hstring(file(projected_files,"CMakeLists.txt"))));
+            }
+            const auto incompatible_text=winrt::to_string(incompatible.Stringify());
+            for(const bool progress_only:{false,true}) {
+                std::string rejection;
+                try {
+                    if(progress_only)(void)parse_lesson_progress_metadata(incompatible_text,"es");
+                    else (void)parse_lesson_json(incompatible_text,"es");
+                }catch(const std::exception& error) { rejection=error.what(); }
+                require(rejection=="Curriculum: State-bearing block changed without a compatible map",
+                    "An unauthenticated CMake edit did not hit the exact state-map guard: "+rejection);
+            }
+        }
+        // Execute against explicit QA copies only after both authentic models
+        // passed their loaders. This projection is not an editorial transition.
+        auto lesson=published_lesson;
+        auto progress=published_progress;
+        for(auto* qa_model:{&lesson,&progress}) {
+            auto& qa_block=qa_model->pages.at(position->page).blocks.at(position->block);
+            require(qa_block.stable_id==activity,"The QA projection changed its mapped owner");
+            file(qa_block.project_files,"CMakeLists.txt")=file(projected_files,"CMakeLists.txt");
+        }
         const auto& block=owner(lesson);
         const auto& restored=owner(progress);
-        require(original.pages.size()==lesson.pages.size()&&
-                lesson.pages.size()==progress.pages.size()&&
-                original.state_layout.raw_json==lesson.state_layout.raw_json&&
-                original.state_layout.raw_json==progress.state_layout.raw_json&&
-                original.state_layout.signatures==lesson.state_layout.signatures&&
-                original.state_layout.signatures==progress.state_layout.signatures&&
-                original.state_layout.lineage==lesson.state_layout.lineage&&
-                original.state_layout.lineage==progress.state_layout.lineage,
-            "The QA root goal changed the original stable state layout");
-        require(block.open_battery_probe&&restored.open_battery_probe&&
-                block.open_battery_probe==restored.open_battery_probe&&
-                block.open_battery_probe->original_cases.size()==11&&
-                block.output_check&&restored.output_check&&
-                block.output_check->open_battery_check&&restored.output_check->open_battery_check&&
-                block.output_check->cases.size()==1&&restored.output_check->cases.size()==1&&
-                block.output_check->input_comparison==TextComparison::exact&&
-                restored.output_check->input_comparison==TextComparison::exact&&
-                block.output_check->cases.front().standard_input.empty()&&
-                restored.output_check->cases.front().standard_input.empty()&&
-                block.output_check->cases.front().executable==
-                    std::optional<std::string>{block.open_battery_probe->test_target}&&
-                restored.output_check->cases.front().executable==
-                    block.output_check->cases.front().executable,
-            "Full/progress loading did not require the instructed empty checker input");
         require(block.project_files==projected_files&&restored.project_files==projected_files&&
-                block.initial_code==before.initial_code&&restored.initial_code==before.initial_code&&
-                block.standard_input==before.standard_input&&restored.standard_input==before.standard_input&&
-                block.cmake==before.cmake&&restored.cmake==before.cmake&&
-                block.stable_id==before.stable_id&&restored.stable_id==before.stable_id&&
-                block.address.page==before.address.page&&block.address.block==before.address.block&&
-                restored.address.page==before.address.page&&restored.address.block==before.address.block&&
-                exercise_key(original,before)==exercise_key(lesson,block)&&
-                draft_key("programming",original,before)==draft_key("programming",lesson,block)&&
-                reference_objective_frame(lesson,block)==reference_objective_frame(progress,restored),
-            "The new goal changed source, initial input, target, identity or full/progress evidence");
+                block.raw_json==published_block.raw_json&&restored.raw_json==published_restored.raw_json&&
+                reference_objective_frame(lesson,block)==reference_objective_frame(progress,restored)&&
+                (reference_objective_frame(lesson,block)!=
+                    reference_objective_frame(published_lesson,published_block))==warning_projection_changed,
+            "The QA projection lost its source boundary or reused the published objective identity");
         auto former_input_contract=block;
         former_input_contract.output_check->cases.front().standard_input=*before.standard_input;
         require(reference_objective_frame(lesson,former_input_contract)!=
@@ -444,6 +479,10 @@ int main(int argc,char** argv) {
             "The real configure/build/execute sequence did not earn a sealed receipt");
         completion(data,lesson,true);
         const auto earned=data;
+        if(warning_projection_changed)
+            require(!compiler_puzzle_completed(earned,published_lesson,published_block)&&
+                    !compiler_puzzle_completed(earned,published_progress,published_restored),
+                "The QA receipt credited the unmodified published CMake objective");
         std::cout << "PASS actual configure build execute, 25 private phases and first-case completion\n";
 
         auto old_input=first;
@@ -500,6 +539,10 @@ int main(int argc,char** argv) {
         const auto reopened=reopened_storage.load();
         require(reopened==earned,"Physical reopening changed the sealed receipt or saved drafts");
         completion(reopened,progress,true);
+        if(warning_projection_changed)
+            require(!compiler_puzzle_completed(reopened,published_lesson,published_block)&&
+                    !compiler_puzzle_completed(reopened,published_progress,published_restored),
+                "Reopening promoted the QA receipt to the unmodified published objective");
         validate_compiler_puzzle_state(reopened,progress,restored);
         state::validate_lesson_state(reopened,progress);
         auto tampered=reopened;
