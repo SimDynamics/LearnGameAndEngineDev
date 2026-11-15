@@ -1,0 +1,1532 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__comprobar_operaciones_antes_de_calcular",
+  "title": "Comprobar operaciones antes de calcular",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir, calcular y guardar en ese orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior elegiste el tipo con el que se realiza una operación. Ahora mantendremos los operandos y el destino como int y comprobaremos si el resultado cabe antes de calcularlo. Prepararemos dos funciones: una suma que admite negativos y un producto cuyo dominio sólo admite datos no negativos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ambas funciones reciben dos datos por valor y un destino por referencia. El destino ya contiene un int válido. Si se acepta la operación, se guarda el resultado exacto y se retorna true. Si se rechaza, se retorna false y el destino conserva exactamente su valor anterior. Estas condiciones definen qué puede exigir el llamador y qué debe garantizar la función (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcular primero a + b para comprobar después si ha superado el máximo puede ejecutar ya una suma int fuera de rango. El comportamiento sería indefinido y la comprobación posterior no lo corrige. Necesitamos comparaciones que puedan evaluarse sin realizar antes la suma o el producto peligrosos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l4_rechazo_y_destino",
+          "question": "El destino contiene 17. La función rechaza una operación porque su resultado no cabe. ¿Qué debe ocurrir según el contrato?",
+          "options": [
+            "Retorna false y mantiene 17 en el destino.",
+            "Retorna false y sustituye el destino por cero.",
+            "Retorna true porque conservar un int válido basta para aceptar."
+          ],
+          "correctIndex": 0,
+          "explanation": "El rechazo debe comunicar false y conservar el valor anterior. Cero puede ser un resultado correcto de otra operación; no se utiliza como sustituto del dato al rechazar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Suma: comprobar el extremo superior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Derivemos primero la comparación con un límite sencillo del problema: el resultado no debe superar 100. Este 100 es un límite didáctico del problema, no el máximo real de int. Si a vale 98 y b vale 2, la suma matemática llega a 100 y está permitida. Con a igual a 98 y b igual a 3, llegaría a 101 y debe rechazarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando b es positivo, queremos que a + b sea menor o igual que el máximo permitido. Restar b en ambos lados da la condición equivalente a <= maximo - b. Por tanto, se rechaza sólo cuando a > maximo - b. La igualdad se acepta porque significa llegar exactamente al máximo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para los datos anteriores:\nCon b = 2, el mayor a permitido es 100 - 2 = 98. El dato 98 coincide y se acepta.\nCon b = 3, el mayor a permitido es 100 - 3 = 97. El dato 98 lo supera y se rechaza.\n\nNo hemos necesitado calcular la suma del programa para tomar la decisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al utilizar el máximo real consultado con numeric_limits<int>::max(), la resta maximo - b es segura dentro del caso b > 0: b está entre 1 y maximo, y la resta queda entre 0 y maximo - 1. Sumar un positivo tampoco puede dejar el resultado por debajo del mínimo si a ya es un int válido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Suma: comprobar el extremo inferior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con b negativo, la suma puede bajar del mínimo. Retomemos un límite didáctico de −100. Si a vale −98 y b vale −2, la suma matemática llega a −100 y se admite. Si b vale −3, llegaría a −101 y se rechaza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Queremos que a + b sea mayor o igual que minimo. Restar b a ambos lados da a >= minimo - b. Se rechaza cuando a < minimo - b. Para b = -2, el menor a permitido es -100 - (-2) = -98. Para b = -3, ese umbral es -97; el dato -98 queda por debajo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el mínimo real de int, la resta minimo - b también es segura cuando b < 0. Su resultado queda entre minimo + 1 y 0. Si b es el propio mínimo, se calcula minimo - minimo, que da 0. No hay que obtener primero el opuesto -b: negar el mínimo puede quedar fuera de int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si b vale cero, el resultado de la suma es a, que ya es representable. Por eso ninguna de las dos comprobaciones de desbordamiento debe rechazar ese caso."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l4_umbrales",
+          "question": "Predice los cuatro valores, en su orden. Un 1 significa que la comparación de rechazo resulta verdadera para el límite didáctico.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int superior = 100;\n    const int inferior = -100;\n    std::cout << (98 > superior - 2) << \":\"\n              << (98 > superior - 3) << \":\"\n              << (-98 < inferior - (-2)) << \":\"\n              << (-98 < inferior - (-3));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "98 no supera 98, pero sí supera 97. −98 no es menor que −98, pero sí es menor que −97. Llegar al extremo se permite; quedar fuera se rechaza."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar el signo antes de evaluar la resta"
+        },
+        {
+          "type": "paragraph",
+          "text": "La resta maximo - b sólo debe evaluarse en el caso positivo. Si b fuera negativo, esa resta podría superar el máximo. Del mismo modo, minimo - b se calcula únicamente en el caso negativo. No calcules ambas restas por adelantado para elegir después."
+        },
+        {
+          "type": "paragraph",
+          "text": "El operador lógico && permite mantener ese orden: primero se evalúa su expresión izquierda y, si es falsa, no se evalúa la derecha. En b > 0 && a > maximo - b, la resta sólo se alcanza cuando b es positivo. Esta evaluación condicionada se conoce como cortocircuito (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u1l4_comparaciones_de_rechazo",
+          "language": "cpp",
+          "question": "Completa sólo < o > en cada comparación para rechazar resultados fuera del rango y permitir llegar exactamente a sus extremos. El fragmento pertenece a una función que retorna bool.",
+          "template": "if (b > 0 && a [] maximo - b) {\n    return false;\n}\nif (b < 0 && a [] minimo - b) {\n    return false;\n}\n",
+          "answers": [
+            ">",
+            "<"
+          ],
+          "explanation": "Se rechaza a > maximo-b en el caso positivo y a < minimo-b en el negativo. Usar >= o <= rechazaría también el resultado que llega exactamente al extremo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva también el orden de las expresiones unidas por &&. Para b igual al mínimo, la primera condición b > 0 es falsa y no evalúa maximo - b. La segunda condición sí permite evaluar minimo - b, que en ese caso da 0."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia de la suma comprobada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa sumar_comprobado. Sus datos a y b pueden ser cualquier int. Usa los extremos consultados en <limits>, compara antes de sumar y escribe en resultado sólo cuando sepas que la suma cabe. Se aceptan comprobaciones equivalentes que respeten ese orden y conserven el destino al rechazar. La solución no debe depender de disponer de otro tipo con un rango mayor."
+        },
+        {
+          "type": "paragraph",
+          "text": "El main proporciona casos sin escribir a mano los extremos del equipo. Lee un número y switch selecciona los dos datos correspondientes. Así el mismo número de caso se puede usar con implementaciones que tengan límites diferentes. maximo - 2 y minimo + 2 son datos representables; preparar esos datos no ejecuta la suma que vamos a comprobar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva main y su selección de datos. Cada ejecución empieza con resultado igual a 17 y muestra cuatro líneas:\nAceptado indica el bool retornado.\nEsMaximo indica si el destino final coincide con el máximo.\nEsMinimo indica si coincide con el mínimo.\nConservado indica si sigue conteniendo 17.\n\nLos bool se muestran como 0 o 1. Un rechazo correcto de la operación sigue siendo una ejecución normal que retorna 0 desde main."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\na = maximo - 2; b = 2. La suma llega exactamente al máximo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=1\nEsMinimo=0\nConservado=0\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    if (b == 0) {\n        resultado = a;\n        return true;\n    }\n\n    // Completa las comprobaciones y sustituye este resultado provisional.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=1\nEsMinimo=0\nConservado=0\n"
+                ],
+                "explanation": "a = maximo - 2; b = 2. La suma llega exactamente al máximo."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+                ],
+                "explanation": "a = maximo - 2; b = 3. La suma matemática supera el máximo en una unidad."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsMinimo=1\nConservado=0\n"
+                ],
+                "explanation": "a = minimo + 2; b = -2. La suma llega exactamente al mínimo."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+                ],
+                "explanation": "a = minimo + 2; b = -3. La suma matemática queda una unidad por debajo del mínimo."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsMinimo=1\nConservado=0\n"
+                ],
+                "explanation": "a = 0; b = minimo. La suma da el mínimo y debe aceptarse."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+                ],
+                "explanation": "a = -1; b = minimo. La suma matemática queda por debajo del mínimo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2\na = maximo - 2; b = 3. La suma matemática supera el máximo en una unidad.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3\na = minimo + 2; b = -2. La suma llega exactamente al mínimo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=0\nEsMinimo=1\nConservado=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4\na = minimo + 2; b = -3. La suma matemática queda una unidad por debajo del mínimo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 5\na = 0; b = minimo. La suma da el mínimo y debe aceptarse.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=0\nEsMinimo=1\nConservado=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 6\na = -1; b = minimo. La suma matemática queda por debajo del mínimo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEsMaximo=0\nEsMinimo=0\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Cada número selecciona una ejecución independiente; los restantes ensayos conservan su carácter opcional."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la suma: guardar sólo después de comprobar"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool sumar_comprobado(int a, int b, int& resultado) {\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    if (b > 0 && a > maximo - b) {\n        return false;\n    }\n    if (b < 0 && a < minimo - b) {\n        return false;\n    }\n\n    resultado = a + b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    const int minimo = std::numeric_limits<int>::lowest();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo - 2; b = 2; break;\n    case 2: a = maximo - 2; b = 3; break;\n    case 3: a = minimo + 2; b = -2; break;\n    case 4: a = minimo + 2; b = -3; break;\n    case 5: a = 0; b = minimo; break;\n    case 6: a = -1; b = minimo; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = sumar_comprobado(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsMinimo=\" << (resultado == minimo) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos comparaciones pueden terminar la función con false sin escribir en resultado. Cuando ambas se han superado, a + b es representable y se guarda una sola vez. Si b es cero, las dos condiciones son falsas y se guarda a + 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso 5, a vale 0 y b es minimo. La primera resta no se evalúa. La segunda condición compara 0 < minimo - minimo, es decir, 0 < 0: es falsa. Se acepta la suma, que da minimo. En el caso 6, a vale −1 y se compara −1 < 0: es verdadera. Se rechaza sin sumar y resultado conserva 17."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l4_minimo_completo",
+          "question": "Para comprobar a = 0 y b = minimo, ¿qué cálculo de la condición negativa permite decidir sin negar el mínimo?",
+          "options": [
+            "Calcular primero -b y después sumarlo a minimo.",
+            "Calcular minimo - b, que aquí es minimo - minimo y da 0.",
+            "Calcular primero a + b - 1 para comprobar el siguiente valor."
+          ],
+          "correctIndex": 1,
+          "explanation": "La resta de los dos int iguales da 0 y es representable. Calcular -b por separado negaría el mínimo, y comprobar otro resultado mediante una suma previa no es el procedimiento seguro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Producto: fijar el dominio y resolver el cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda función calcula productos sólo para datos int no negativos. Por ejemplo, puede servir para contar casillas a partir de filas y columnas. Su contrato rechaza cualquier dato negativo, aunque el producto matemático con el otro dato fuese cero. El bool false no distinguirá entre ese rechazo por dominio y un rechazo porque el resultado no cabe."
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden será el siguiente:\nPrimero rechazar si a < 0 o b < 0, conservando el destino.\nDespués, si alguno es cero, guardar 0 y aceptar.\nCon los restantes datos, ambos son positivos y se puede comprobar el producto antes de multiplicar.\n\nResolver el cero en ese lugar permite aceptar un resultado cero sin confundirlo con un rechazo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l4_negativo_y_cero",
+          "question": "La función acepta únicamente datos no negativos. Recibe a = -1 y b = 0. ¿Qué debe hacer?",
+          "options": [
+            "Guardar 0 y aceptar porque el producto matemático es cero.",
+            "Guardar 0 y retornar false para señalar que hubo un dato negativo.",
+            "Retornar false sin cambiar el destino porque a incumple el dominio."
+          ],
+          "correctIndex": 2,
+          "explanation": "El contrato restringe los datos de entrada. El negativo debe rechazarse antes de aceptar el caso de cero, y ese rechazo mantiene el destino anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Producto: obtener el mayor factor permitido mediante división"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que el producto no debe superar 100 y que b vale 6. La división entera 100 / 6 da 16: la parte fraccionaria se descarta. Con a = 16, el producto matemático es 96 y cabe; con a = 17, sería 102 y no cabe. El cociente 16 es el mayor a permitido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de resolver los negativos y el cero, b es positivo. Podemos consultar maximo y calcular maximo / b: el divisor no es cero y el cociente está entre 0 y maximo. Para estos datos positivos, la división entera obtiene el mayor factor a que permite mantener el producto dentro del límite. Se rechaza cuando a > maximo / b y se permite la igualdad. La división entera descarta la fracción, conforme a las reglas del lenguaje (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La división debe ir antes del producto. Evaluar a * b y dividir después para ver si recuperas un operando puede ejecutar ya una multiplicación fuera de rango. También hay que resolver b = 0 antes de consultar maximo / b."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l4_factor_en_limite",
+          "question": "Con límite didáctico 100 y b = 6, la comprobación utiliza a > 100 / 6. ¿Qué decisiones corresponden?",
+          "options": [
+            "a = 16 se acepta; a = 17 se rechaza.",
+            "Ambos se aceptan porque los dos valores a caben en int.",
+            "Ambos se rechazan porque la división 100 / 6 no es exacta."
+          ],
+          "correctIndex": 0,
+          "explanation": "El cociente entero es 16. La igualdad se permite: 16×6=96. El siguiente factor produciría 102 y se rechaza sin multiplicar en el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia del producto no negativo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara producto_no_negativo en el editor. Mantén el rechazo de negativos. Añade la aceptación de cero y la comparación mediante división antes de multiplicar. El resultado exacto debe guardarse en resultado cuando cabe; en cualquier rechazo, resultado queda intacto. La solución debe utilizar operaciones int seguras y no depender de otro tipo con un rango mayor."
+        },
+        {
+          "type": "paragraph",
+          "text": "El main vuelve a seleccionar una pareja mediante un número de caso. Aquí el resultado anterior es 17 y las cuatro líneas significan:\nAceptado: bool retornado.\nEsMaximo: el destino final coincide con el máximo.\nEsCero: el destino final vale 0.\nConservado: el destino final sigue siendo 17.\n\nmaximo / 2 + 1 es un dato válido que se prepara antes de llamar; no se calcula el producto rechazado para obtener el esperado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\na = maximo; b = 1. El producto llega exactamente al máximo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=1\nEsCero=0\nConservado=0\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n\n    // Sustituye este resultado provisional por el calculo comprobado.\n    resultado = 0;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=1\nEsCero=0\nConservado=0\n"
+                ],
+                "explanation": "a = maximo; b = 1. El producto llega exactamente al máximo."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsCero=0\nConservado=0\n"
+                ],
+                "explanation": "a = 8; b = 3. El producto es 24: cabe, es positivo y no llega al máximo."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+                ],
+                "explanation": "a = maximo / 2 + 1; b = 2. Se debe rechazar antes de multiplicar."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsCero=1\nConservado=0\n"
+                ],
+                "explanation": "a = maximo; b = 0. El producto aceptado es cero."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+                ],
+                "explanation": "a = -1; b = 0. El primer dato está fuera del dominio no negativo."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Aceptado=1\nEsMaximo=0\nEsCero=1\nConservado=0\n"
+                ],
+                "explanation": "a = 0; b = maximo. El producto aceptado es cero."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+                ],
+                "explanation": "a = 0; b = -1. El segundo dato está fuera del dominio no negativo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2\na = 8; b = 3. El producto es 24: cabe, es positivo y no llega al máximo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=0\nEsCero=0\nConservado=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3\na = maximo / 2 + 1; b = 2. Se debe rechazar antes de multiplicar.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4\na = maximo; b = 0. El producto aceptado es cero.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=0\nEsCero=1\nConservado=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 5\na = -1; b = 0. El primer dato está fuera del dominio no negativo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 6\na = 0; b = maximo. El producto aceptado es cero.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=1\nEsMaximo=0\nEsCero=1\nConservado=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 7\na = 0; b = -1. El segundo dato está fuera del dominio no negativo.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Aceptado=0\nEsMaximo=0\nEsCero=0\nConservado=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Cada número selecciona una ejecución independiente; los restantes ensayos conservan su carácter opcional."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia del producto: dominio, cero, límite y escritura"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    int a = 0;\n    int b = 0;\n    switch (caso) {\n    case 1: a = maximo; b = 1; break;\n    case 2: a = 8; b = 3; break;\n    case 3: a = maximo / 2 + 1; b = 2; break;\n    case 4: a = maximo; b = 0; break;\n    case 5: a = -1; b = 0; break;\n    case 6: a = 0; b = maximo; break;\n    case 7: a = 0; b = -1; break;\n    default: return 1;\n    }\n\n    int resultado = 17;\n    const bool aceptado = producto_no_negativo(a, b, resultado);\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << \"EsMaximo=\" << (resultado == maximo) << '\\n';\n    std::cout << \"EsCero=\" << (resultado == 0) << '\\n';\n    std::cout << \"Conservado=\" << (resultado == 17) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera condición rechaza cualquier negativo. La segunda acepta cero y guarda ese resultado. Si se continúa, a y b son positivos: la división maximo / b es segura y establece el mayor a admisible. Sólo cuando a no supera ese cociente se ejecuta a * b y se guarda el resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso 1, maximo / 1 es maximo y se permite la igualdad; el destino queda en el máximo. En el caso 3, a se ha preparado como maximo / 2 + 1 y supera el umbral maximo / 2; se rechaza sin multiplicar. En el caso 4, el cero se resuelve antes de intentar dividir por b."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para a = -1 y b = 0 se rechaza por el primer control, por lo que el destino no pasa a cero. Para a = 0 y b = maximo se acepta y sí se guarda cero. El bool y el contenido del destino describen dos aspectos diferentes del resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el último resultado válido durante una secuencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente utiliza el mismo destino en dos llamadas. La primera acepta 6 por 7. Después se solicita un producto que no cabe. Sigue qué valor queda disponible para el llamador tras cada respuesta."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l4_secuencia_conservada",
+          "question": "Predice las dos líneas exactas. Cada una muestra el bool retornado y el contenido actual del mismo destino.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <limits>\n\nbool producto_no_negativo(int a, int b, int& resultado) {\n    if (a < 0 || b < 0) {\n        return false;\n    }\n    if (a == 0 || b == 0) {\n        resultado = 0;\n        return true;\n    }\n\n    const int maximo = std::numeric_limits<int>::max();\n    if (a > maximo / b) {\n        return false;\n    }\n\n    resultado = a * b;\n    return true;\n}\n\nint main() {\n    int resultado = 17;\n    const bool primero = producto_no_negativo(6, 7, resultado);\n    std::cout << primero << \":\" << resultado << '\\n';\n\n    const int maximo = std::numeric_limits<int>::max();\n    const bool segundo = producto_no_negativo(maximo, 2, resultado);\n    std::cout << segundo << \":\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "1:42\n0:42"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada acepta y guarda 42. La segunda detecta que maximo×2 no cabe, retorna false y conserva ese último resultado válido. Por eso la segunda línea es 0:42, no 0:17 ni 0:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "La conservación no significa volver a un valor fijo de prueba. Significa dejar el destino como estaba justo antes de la llamada rechazada. Si ya habías guardado 42, ése es el valor que debe mantenerse. Esta propiedad servirá al actualizar las series y los resultados de sus consultas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué queda demostrado y qué restricciones siguen vigentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La suma preparada trabaja con cualquier pareja de int y evita evaluar una suma que quede fuera del tipo. El producto preparado comprueba el dominio no negativo y, dentro de él, el tamaño del resultado. Para aceptar también productos con negativos habrá que razonar sobre sus signos y sobre los dos extremos; cambiar sólo la primera condición no proporciona esa solución."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las pruebas deben distinguir estos casos:\nLlegar exactamente al extremo permitido.\nQuedar un paso fuera de ese extremo.\nAceptar un resultado cero.\nRechazar un dato fuera del dominio.\nConservar el destino anterior tras un rechazo.\n\nLas salidas verificadas permiten contrastar cada ejecución. El razonamiento de las condiciones explica por qué el programa evita evaluar los cálculos peligrosos para el dominio declarado."
+        },
+        {
+          "type": "paragraph",
+          "text": "A continuación ampliaremos el producto a los distintos signos. Conservaremos el mismo orden: comprobar las condiciones, ejecutar sólo una operación representable y escribir en el destino después de aceptar."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "b16627030a5167a26f5776610824caf225d65aa32eb48326fcd21911a0f9545a"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1bb9176b15f434f5d73a0b55ef4b4f113a99c21028299ab8add95db8b3df18b4"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "b37bec9a178490788f700eb4a486105ae70d729f58e57fe7fc0db08d1f931ca3"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "a5027db22ef06f4cbdf6029f046781b8621f47a65f539f93180f4341ab2c67db"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "afb0c13a137d6f0c351549fd311c6b63548107290b7ec573a4dc6fa05144bb27"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "dce251007b5ea9d86bb754ecedf89d978c7a6a81f5d95d9501e117eeb1108476"
+          },
+          {
+            "id": "block_0004_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0010",
+            "sha256": "50df9d1e3c960becd4212ba74bca34c475897024242bcf218e6b9ba526835f39"
+          },
+          {
+            "id": "block_0004_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0012",
+            "sha256": "dce251007b5ea9d86bb754ecedf89d978c7a6a81f5d95d9501e117eeb1108476"
+          },
+          {
+            "id": "block_0004_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0014",
+            "sha256": "50df9d1e3c960becd4212ba74bca34c475897024242bcf218e6b9ba526835f39"
+          },
+          {
+            "id": "block_0004_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0016",
+            "sha256": "dce251007b5ea9d86bb754ecedf89d978c7a6a81f5d95d9501e117eeb1108476"
+          },
+          {
+            "id": "block_0004_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "c26cd7509c7c9cf0ad0d294574542fb7c2bf088cdd285e6a21eeb5dee159f9d1"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "9639a8c995cd107faecdb2b2386539dac6a4c8d28fca058d3c28f5e505b54a78"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "a35e821e4b109902840382108ab849975de4beb000fa30132904fb4416d89eef"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "22cf524e22061e163584a7bc9bd1694240bd379f42a59d5969be0d8df9e2874a"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "820517af7d7e4a809c8c8170181a2ec52d672426567be0cc43622885f703d629"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "d001365c2510e75a1ef08a8c40d442875ae7fe8258426c3fceb843d0db17b793"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "62817192e40fbd83bd334f6c295fc9bd937a255eab8a33e00cc90544f5081ad5"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0009",
+            "sha256": "a37bf3457b93214f06252c5bf4a2d83acab4b8727c82367d2d45ed5c9000f716"
+          },
+          {
+            "id": "block_0008_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0011",
+            "sha256": "4318a777e7f76d005db32bcc7ad6485710c8adbb5c07cae8fcd5f990cd1d64df"
+          },
+          {
+            "id": "block_0008_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0013",
+            "sha256": "a37bf3457b93214f06252c5bf4a2d83acab4b8727c82367d2d45ed5c9000f716"
+          },
+          {
+            "id": "block_0008_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0015",
+            "sha256": "4318a777e7f76d005db32bcc7ad6485710c8adbb5c07cae8fcd5f990cd1d64df"
+          },
+          {
+            "id": "block_0008_0016",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0017",
+            "sha256": "a37bf3457b93214f06252c5bf4a2d83acab4b8727c82367d2d45ed5c9000f716"
+          },
+          {
+            "id": "block_0008_0018",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "c46ad6dd17089c97e24320743787bd0183b441dc5f5ff864a4eda4513089cb1f"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "5c4cca7dcc5f996aded39a7032a0ce0da99da7238d3d4cf84551269ec68fc566"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008",
+          "block_0004_0009",
+          "block_0004_0010",
+          "block_0004_0011",
+          "block_0004_0012",
+          "block_0004_0013",
+          "block_0004_0014",
+          "block_0004_0015",
+          "block_0004_0016",
+          "block_0004_0017"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008",
+          "block_0008_0009",
+          "block_0008_0010",
+          "block_0008_0011",
+          "block_0008_0012",
+          "block_0008_0013",
+          "block_0008_0014",
+          "block_0008_0015",
+          "block_0008_0016",
+          "block_0008_0017",
+          "block_0008_0018"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "57445bc202f1a8cd37c2c038873440cd40f081dfc0eb177a062e188eb756932f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "b16627030a5167a26f5776610824caf225d65aa32eb48326fcd21911a0f9545a"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1bb9176b15f434f5d73a0b55ef4b4f113a99c21028299ab8add95db8b3df18b4"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "b37bec9a178490788f700eb4a486105ae70d729f58e57fe7fc0db08d1f931ca3"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "a5027db22ef06f4cbdf6029f046781b8621f47a65f539f93180f4341ab2c67db"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "afb0c13a137d6f0c351549fd311c6b63548107290b7ec573a4dc6fa05144bb27"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "dce251007b5ea9d86bb754ecedf89d978c7a6a81f5d95d9501e117eeb1108476"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0010",
+                "sha256": "50df9d1e3c960becd4212ba74bca34c475897024242bcf218e6b9ba526835f39"
+              },
+              {
+                "id": "block_0004_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0012",
+                "sha256": "dce251007b5ea9d86bb754ecedf89d978c7a6a81f5d95d9501e117eeb1108476"
+              },
+              {
+                "id": "block_0004_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0014",
+                "sha256": "50df9d1e3c960becd4212ba74bca34c475897024242bcf218e6b9ba526835f39"
+              },
+              {
+                "id": "block_0004_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0016",
+                "sha256": "dce251007b5ea9d86bb754ecedf89d978c7a6a81f5d95d9501e117eeb1108476"
+              },
+              {
+                "id": "block_0004_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "c26cd7509c7c9cf0ad0d294574542fb7c2bf088cdd285e6a21eeb5dee159f9d1"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "9639a8c995cd107faecdb2b2386539dac6a4c8d28fca058d3c28f5e505b54a78"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "a35e821e4b109902840382108ab849975de4beb000fa30132904fb4416d89eef"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "22cf524e22061e163584a7bc9bd1694240bd379f42a59d5969be0d8df9e2874a"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "820517af7d7e4a809c8c8170181a2ec52d672426567be0cc43622885f703d629"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "d001365c2510e75a1ef08a8c40d442875ae7fe8258426c3fceb843d0db17b793"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "62817192e40fbd83bd334f6c295fc9bd937a255eab8a33e00cc90544f5081ad5"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0009",
+                "sha256": "a37bf3457b93214f06252c5bf4a2d83acab4b8727c82367d2d45ed5c9000f716"
+              },
+              {
+                "id": "block_0008_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0011",
+                "sha256": "4318a777e7f76d005db32bcc7ad6485710c8adbb5c07cae8fcd5f990cd1d64df"
+              },
+              {
+                "id": "block_0008_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0013",
+                "sha256": "a37bf3457b93214f06252c5bf4a2d83acab4b8727c82367d2d45ed5c9000f716"
+              },
+              {
+                "id": "block_0008_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0015",
+                "sha256": "4318a777e7f76d005db32bcc7ad6485710c8adbb5c07cae8fcd5f990cd1d64df"
+              },
+              {
+                "id": "block_0008_0016",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0017",
+                "sha256": "a37bf3457b93214f06252c5bf4a2d83acab4b8727c82367d2d45ed5c9000f716"
+              },
+              {
+                "id": "block_0008_0018",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "c46ad6dd17089c97e24320743787bd0183b441dc5f5ff864a4eda4513089cb1f"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "5c4cca7dcc5f996aded39a7032a0ce0da99da7238d3d4cf84551269ec68fc566"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

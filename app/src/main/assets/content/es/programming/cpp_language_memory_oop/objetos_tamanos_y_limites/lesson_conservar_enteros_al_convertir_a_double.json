@@ -1,0 +1,1617 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__conservar_enteros_al_convertir_a_double",
+  "title": "Conservar enteros al convertir a double",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rango mayor no garantiza conservar todos los enteros"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lección anterior utilizó límites int que cabían exactamente en double. Ahora trabajaremos con long long de 64 bits y double binary64, como en este entorno Windows. En este modelo, ambos objetos ocupan ocho bytes, pero reparten su representación de manera distinta. No podemos decidir qué valores conservan sólo comparando sus tamaños (Microsoft, 2021, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Todos los valores long long de este modelo están dentro del rango finito de double. Sin embargo, algunos enteros no tienen una representación exacta como double: al convertirlos se pierde precisión. C++ conserva el entero exactamente si puede representarlo; si está dentro del rango pero no cabe exactamente, obtiene uno de los valores representables vecinos según la implementación (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l11_rango_y_exactitud",
+          "question": "Un long long está dentro del rango finito de double. ¿Qué sabemos antes de comprobar su precisión?",
+          "options": [
+            "La conversión conserva siempre el mismo entero.",
+            "El rango permite la conversión, pero todavía puede perderse precisión.",
+            "La conversión necesariamente produce infinito."
+          ],
+          "correctIndex": 1,
+          "explanation": "Estar dentro del rango no garantiza que exista una representación exacta del entero. Hay que distinguir el tamaño máximo de las cantidades y la separación entre los valores representables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar la separación entre valores con 53 cifras binarias"
+        },
+        {
+          "type": "paragraph",
+          "text": "En binary64, double dispone de 53 cifras binarias de precisión para los valores normales. Las cifras permiten distinguir el valor; el exponente cambia su escala. Es la misma separación entre precisión y escala que observamos en float, ahora con más posiciones disponibles (Microsoft, 2021)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El número 2⁵³ vale 9007199254740992. Todos los enteros desde −9007199254740992 hasta 9007199254740992 se representan exactamente en double binary64. Llamaremos umbral a ese valor positivo y lo guardaremos como long long con el literal 9007199254740992LL."
+        },
+        {
+          "type": "paragraph",
+          "text": "Inmediatamente por encima del umbral, los valores double avanzan de dos en dos. La escala es 2⁵³ y la última de las 52 posiciones fraccionarias del significando aporta 2 al número completo. Por eso:\n9007199254740992 cabe exactamente.\n9007199254740993 no cabe exactamente.\n9007199254740994 sí cabe exactamente.\n\nEl intervalo anterior es una zona donde todos los enteros caben, no la lista completa de enteros representables."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l11_fuera_del_intervalo",
+          "question": "¿Qué conclusión es correcta sobre 9007199254740994 en binary64?",
+          "options": [
+            "Es representable exactamente, aunque supera el intervalo donde caben todos los enteros.",
+            "Se rechaza por superar el máximo finito de double.",
+            "Se conserva sólo si lo imprimimos con más decimales."
+          ],
+          "correctIndex": 0,
+          "explanation": "Después de 2⁵³ la separación inmediata es 2. Por eso 2⁵³+2 es exacto aunque 2⁵³+1 no lo sea. Las cifras que se imprimen no cambian esa representación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar dos conversiones no comprueba el entero original"
+        },
+        {
+          "type": "paragraph",
+          "text": "Observaremos el entorno MSVC habitual, con redondeo al representable más cercano y empates al par, como en U1L9. En una comparación entre un double y un long long, las conversiones habituales convierten el entero a double antes de comparar. El resultado puede ser verdadero aunque el entero no se haya conservado exactamente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa escribe explícitamente la conversión del lado derecho para que podamos seguirla. Primero guarda original como long long. Después prepara aproximado como double. Al comparar, vuelve a convertir original a double. La comparación enfrenta las dos conversiones, no un double con una copia entera que conserve toda su información."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l11_igualdad_convertida",
+          "question": "Predice las tres líneas en el formato y redondeo indicados. La última compara dos double.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long original = 9007199254740993LL;\n    double aproximado = static_cast<double>(original);\n\n    std::cout << original << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << aproximado << '\\n';\n    std::cout << (aproximado == static_cast<double>(original));\n    return 0;\n}\n",
+          "answers": [
+            "9007199254740993\n9007199254740992\n1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El entero original conserva 9007199254740993. Convertirlo a binary64 en esta configuración obtiene 9007199254740992. La conversión explícita del otro lado obtiene lo mismo, por lo que la comparación es verdadera sin acreditar exactitud."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cast tampoco modifica original: se prepara otro valor para el destino o la expresión. Para comprobar conservación necesitamos un procedimiento que no haya perdido ya la información que pretende comparar (Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un máximo entero aproximado puede admitir un dato exterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "El máximo long long del modelo estudiado es 9223372036854775807, es decir, 2⁶³−1. En la configuración de redondeo indicada, convertir ese máximo a double produce 9223372036854775808, que es 2⁶³. La cota preparada quedó una unidad por encima del verdadero máximo entero. En cambio, el mínimo −2⁶³ tiene magnitud 2⁶³ y signo negativo, ambos representables exactamente en binary64."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    long long maximo = std::numeric_limits<long long>::max();\n    double cota = static_cast<double>(maximo);\n\n    std::cout << maximo << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << cota << '\\n';\n    std::cout << (cota <= static_cast<double>(maximo));\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida comprobada en este entorno es:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9223372036854775807\n9223372036854775808\n1"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa sólo convierte desde entero a double y compara; no convierte cota de vuelta a long long. Si usáramos cota <= static_cast<double>(maximo) para autorizar esa vuelta, el dato 2⁶³ pasaría la condición, pero no cabe en long long. El cast de vuelta tendría comportamiento no definido. Haber calculado una cota con numeric_limits no basta si después la conversión cambió su valor (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l11_limite_aproximado",
+          "question": "¿Por qué una comprobación contra static_cast<double>(maximo_long_long) puede fallar en este modelo?",
+          "options": [
+            "Porque numeric_limits cambia el máximo guardado en el objeto entero.",
+            "Porque toda comparación con double es falsa.",
+            "Porque preparar la cota como double puede aproximarla a un valor exterior al intervalo entero."
+          ],
+          "correctIndex": 2,
+          "explanation": "El máximo entero sigue siendo correcto. El problema aparece al convertirlo: la cota double vale 2⁶³. Una condición inclusiva contra esa cota admitiría un valor que no cabe al volver a long long."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Usar la escala sin perder las cifras necesarias"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para entender la comprobación exacta, imaginemos primero un formato binario con sólo tres cifras de precisión y escala suficiente para estos números. Es un modelo pequeño para razonar, no el tipo float de C++."
+        },
+        {
+          "type": "paragraph",
+          "text": "40 se escribe 101000 en binario. Podemos expresar ese valor como 101 en binario multiplicado por 8: las tres cifras finales cero se representan mediante la escala. Sólo hacen falta las tres cifras 101 para distinguirlo, de modo que cabe en ese modelo. No basta con contar las seis posiciones de su escritura entera completa."
+        },
+        {
+          "type": "paragraph",
+          "text": "42 se escribe 101010 en binario. Retirar el cero final mediante la escala deja 10101, que necesita cinco cifras. Con sólo tres no se conserva exactamente. Dividir por dos un entero par retira un cero final sin perder información: después podemos recuperar el original multiplicando por dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el modelo de tres cifras, todos los enteros entre −8 y 8 caben. Podemos comprobar 40 reduciendo sólo pares:\n40 es par; 40/2 da 20.\n20 es par; 20/2 da 10.\n10 es par; 10/2 da 5.\n5 está dentro de la zona exacta.\n\nEl 40 original cabe porque es ese 5 exacto con la escala multiplicada por 8."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l11_modelo_pequeno",
+          "question": "En el mismo modelo, 42 se divide exactamente por 2 y deja 21. Ese 21 es impar y sigue fuera de −8..8. ¿Qué indica?",
+          "options": [
+            "Que dividirlo como entero por 2 otra vez conserva toda la información.",
+            "Que el 42 original no se representa exactamente con tres cifras de precisión.",
+            "Que sólo se debe cambiar su signo para conservarlo."
+          ],
+          "correctIndex": 1,
+          "explanation": "21 no tiene un factor 2 que podamos retirar sin pérdida. Es un impar fuera de la zona de precisión disponible. Sus cifras necesarias ya no caben; dividirlo truncando no demostraría exactitud."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aplicar la misma comprobación a double"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora utilizaremos el umbral real 2⁵³. Conservaremos dato y trabajaremos con una copia long long llamada reducido. Mientras reducido quede fuera de −umbral..umbral:\nSi es impar, rechazamos. Fuera de esa zona, un impar necesita más de 53 cifras binarias entre su primera y su última cifra 1.\nSi es par, lo dividimos por 2. La división es exacta y sólo retira un factor de escala.\n\nPor ejemplo, 2⁵³+1 se escribe con un 1 inicial, 52 ceros y otro 1 al final: necesita 54 posiciones y no tiene ceros finales que podamos retirar mediante la escala. Un impar de mayor magnitud necesita al menos esas posiciones. El signo negativo no reduce la precisión que requiere su magnitud.\n\nSi la copia llega a la zona exacta, el original también se representa exactamente: las divisiones sólo retiraron factores de dos y la escala de binary64 permite recuperar todos los valores long long de este modelo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 9007199254740994:\nSupera el umbral y es par.\nAl dividir por 2 queda 4503599627370497.\nEse entero está dentro de la zona exacta.\nSe acepta la conversión del original 9007199254740994.\n\nCon 9007199254740993, en cambio, el primer valor ya es impar y exterior; se rechaza sin convertirlo para intentar demostrar su exactitud."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u1l11_condicion_de_reduccion",
+          "language": "cpp",
+          "question": "reducido y umbral son long long, y umbral es positivo. Completa < o > para entrar al bucle sólo fuera del intervalo exacto, dejando incluidos sus extremos.",
+          "template": "while (reducido [] -umbral || reducido [] umbral) {\n    // Comprobar paridad antes de dividir.\n}\n",
+          "answers": [
+            "<",
+            ">"
+          ],
+          "explanation": "Se sigue reduciendo por debajo de −umbral o por encima de umbral. Los dos extremos son representables y deben permitir salir del bucle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ser par una vez no basta en cualquier escala"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 18014398509481986, que vale 2⁵⁴+2:\nEs par y exterior; al dividir por 2 queda 9007199254740993.\nLa copia sigue fuera del umbral y ahora es impar.\nSe rechaza.\n\nLa primera división era exacta, pero todavía faltaban cifras después de retirar ese factor de escala."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con 18014398509481988, que vale 2⁵⁴+4:\nLa primera división deja 9007199254740994.\nEsa copia sigue fuera, pero es par y puede dividirse otra vez.\nLa segunda división deja 4503599627370497, que ya cabe en la zona exacta.\nSe acepta el original.\n\nPor eso repetimos la comprobación, en lugar de aceptar cualquier dato exterior que sea par una sola vez."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l11_repetir_prueba",
+          "question": "La copia sigue fuera del intervalo exacto después de una división por 2. ¿Qué debe hacer el procedimiento?",
+          "options": [
+            "Comprobar otra vez su paridad y continuar sólo si la siguiente división conserva el valor.",
+            "Aceptar porque el original era par.",
+            "Guardar ya la copia reducida como resultado final."
+          ],
+          "correctIndex": 0,
+          "explanation": "La escala puede exigir retirar más de un factor de dos. Cada paso debe ser exacto hasta alcanzar la zona donde todos los enteros caben. El resultado final debe corresponder al original, no a su copia reducida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negativos, cero y terminación sin negar el mínimo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para saber si un entero es impar utiliza reducido % 2 != 0. Un negativo impar puede dejar resto −1, no 1. Un negativo par deja resto cero y dividirlo por 2 conserva exactamente su valor dividido. No necesitamos convertirlo en positivo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l11_paridad_negativa",
+          "question": "Predice las tres comparaciones. La última usa == 1 para que puedas contrastarla con != 0.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    long long par = -18;\n    long long impar = -17;\n    std::cout << (par % 2 != 0) << ':'\n              << (impar % 2 != 0) << ':'\n              << (impar % 2 == 1);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "−18 es par y deja resto cero. −17 es impar y deja resto −1: != 0 lo detecta, pero == 1 no lo detecta."
+        },
+        {
+          "type": "paragraph",
+          "text": "El mínimo long long, −9223372036854775808, puede dividirse por 2 sin desbordar. Las divisiones exactas permiten llegar hasta −9007199254740992. No se calcula su opuesto ni un valor absoluto entero: el positivo correspondiente no cabe en long long."
+        },
+        {
+          "type": "paragraph",
+          "text": "El procedimiento termina porque, mientras la copia está fuera, cada división admitida reduce a la mitad su distancia a cero. Si encuentra un impar exterior termina rechazando; si llega al intervalo termina aceptando. Cero empieza dentro del intervalo, no entra al bucle y se acepta como cero. No hacemos una división repetida de cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la conversión que conserva todos los enteros representables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa bool convertir_ll_exacto(long long dato, double& destino). En el modelo long long de 64 bits y double binary64, acepta si y sólo si el entero original tiene representación exacta como double. Al aceptar devuelve true y guarda ese mismo número. Al rechazar devuelve false sin modificar destino. La función no imprime y no debe limitarse al intervalo −2⁵³..2⁵³: también admite los enteros exteriores que sean exactamente representables."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicio compara dos conversiones a double y no detecta la pérdida del primer caso. Sustituye esa comprobación por la reducción entera explicada. Mantén el dato original, comprueba paridad antes de cada división y convierte el original sólo cuando se haya demostrado que se conserva. No conviertas ningún double de vuelta a long long para hacer la prueba."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén main. Su control inicial comprueba base 2, 63 cifras de valor para long long y 53 de precisión para double; termina con código 2 si no coincide con el modelo de la práctica. Cada selector prepara una sola llamada con destino inicial 17.0. Original se escribe como entero, Aceptado muestra el bool y Destino se escribe sin parte decimal. Este formato no interviene en la decisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 1\nDato preparado como long long: 9007199254740993.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=9007199254740993\nAceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    double candidato = static_cast<double>(dato);\n    // A la derecha tambien se convierte el original a double.\n    if (candidato != static_cast<double>(dato)) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Original=9007199254740993\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original 9007199254740993: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Original=9007199254740992\nAceptado=1\nDestino=9007199254740992\n"
+                ],
+                "explanation": "Entero original 9007199254740992: representable exactamente."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Original=9007199254740994\nAceptado=1\nDestino=9007199254740994\n"
+                ],
+                "explanation": "Entero original 9007199254740994: representable exactamente."
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Original=-9007199254740994\nAceptado=1\nDestino=-9007199254740994\n"
+                ],
+                "explanation": "Entero original -9007199254740994: representable exactamente."
+              },
+              {
+                "standardInput": "5\n",
+                "outputs": [
+                  "Original=-9223372036854775808\nAceptado=1\nDestino=-9223372036854775808\n"
+                ],
+                "explanation": "Entero original -9223372036854775808: representable exactamente."
+              },
+              {
+                "standardInput": "6\n",
+                "outputs": [
+                  "Original=-9223372036854775807\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original -9223372036854775807: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "7\n",
+                "outputs": [
+                  "Original=9223372036854775807\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original 9223372036854775807: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "8\n",
+                "outputs": [
+                  "Original=0\nAceptado=1\nDestino=0\n"
+                ],
+                "explanation": "Entero original 0: representable exactamente."
+              },
+              {
+                "standardInput": "9\n",
+                "outputs": [
+                  "Original=-42\nAceptado=1\nDestino=-42\n"
+                ],
+                "explanation": "Entero original -42: representable exactamente."
+              },
+              {
+                "standardInput": "10\n",
+                "outputs": [
+                  "Original=18014398509481986\nAceptado=0\nDestino=17\n"
+                ],
+                "explanation": "Entero original 18014398509481986: no representable exactamente; conservar el destino."
+              },
+              {
+                "standardInput": "11\n",
+                "outputs": [
+                  "Original=18014398509481988\nAceptado=1\nDestino=18014398509481988\n"
+                ],
+                "explanation": "Entero original 18014398509481988: representable exactamente."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo el primer caso correcto es obligatorio para avanzar. Cada selector adicional es un ensayo opcional e independiente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: el umbral no es un máximo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia sólo la entrada del editor anterior para ejecutar cada ensayo por separado. Los dos valores exteriores de signos opuestos deben aceptarse porque sus cifras necesarias sí caben."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 2\nDato preparado como long long: 9007199254740992.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=9007199254740992\nAceptado=1\nDestino=9007199254740992\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 3\nDato preparado como long long: 9007199254740994.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=9007199254740994\nAceptado=1\nDestino=9007199254740994\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 4\nDato preparado como long long: -9007199254740994.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=-9007199254740994\nAceptado=1\nDestino=-9007199254740994\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: extremos, cero y negativo ordinario"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada ejecución vuelve a preparar destino igual a 17.0. Los extremos se obtienen con numeric_limits; no se forma el mínimo construyendo primero el positivo 2⁶³, que no cabe en long long."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 5\nDato preparado como long long: -9223372036854775808.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=-9223372036854775808\nAceptado=1\nDestino=-9223372036854775808\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 6\nDato preparado como long long: -9223372036854775807.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=-9223372036854775807\nAceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 7\nDato preparado como long long: 9223372036854775807.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=9223372036854775807\nAceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 8\nDato preparado como long long: 0.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=0\nAceptado=1\nDestino=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 9\nDato preparado como long long: -42.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=-42\nAceptado=1\nDestino=-42\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: repetir la reducción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos dos datos sólo difieren en dos unidades. Uno encuentra un impar todavía exterior después de la primera división; el otro puede dividirse exactamente de nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 10\nDato preparado como long long: 18014398509481986.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=18014398509481986\nAceptado=0\nDestino=17\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 11\nDato preparado como long long: 18014398509481988.\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original=18014398509481988\nAceptado=1\nDestino=18014398509481988\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: comprobar con enteros y convertir el original"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    int caso = 0;\n    if (!(std::cin >> caso)) {\n        return 1;\n    }\n\n    const long long umbral = 9007199254740992LL;\n    long long dato = 0;\n    switch (caso) {\n    case 1:\n        dato = umbral + 1;\n        break;\n    case 2:\n        dato = umbral;\n        break;\n    case 3:\n        dato = umbral + 2;\n        break;\n    case 4:\n        dato = -umbral - 2;\n        break;\n    case 5:\n        dato = std::numeric_limits<long long>::lowest();\n        break;\n    case 6:\n        dato = std::numeric_limits<long long>::lowest() + 1;\n        break;\n    case 7:\n        dato = std::numeric_limits<long long>::max();\n        break;\n    case 8:\n        dato = 0;\n        break;\n    case 9:\n        dato = -42;\n        break;\n    case 10:\n        dato = 18014398509481986LL;\n        break;\n    case 11:\n        dato = 18014398509481988LL;\n        break;\n    default:\n        return 1;\n    }\n\n    double destino = 17.0;\n    const bool aceptado = convertir_ll_exacto(dato, destino);\n    std::cout << \"Original=\" << dato << '\\n';\n    std::cout << \"Aceptado=\" << aceptado << '\\n';\n    std::cout << std::fixed << std::setprecision(0);\n    std::cout << \"Destino=\" << destino << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comparaciones del bucle y el resto se calculan siempre con enteros. Mientras la copia queda fuera, un impar provoca el rechazo antes de asignar. Un par se divide sin pérdida. Si el bucle termina, el original es el valor reducido exacto multiplicado por los factores de dos retirados. No necesitamos multiplicarlos en el programa ni arriesgar un desbordamiento al reconstruirlo: dato conserva el original."
+        },
+        {
+          "type": "paragraph",
+          "text": "La asignación final utiliza dato, no reducido. Por ejemplo, 9007199254740994 se redujo a 4503599627370497 para comprobarlo, pero el destino debe recibir 9007199254740994. Guardar la copia reducida daría una cantidad distinta aunque fuera exacta como double."
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer caso descubre el defecto del inicial: las dos conversiones comparadas obtienen el mismo double aproximado y se acepta indebidamente 9007199254740993. La referencia identifica que es impar y exterior y conserva 17. Los ensayos opcionales muestran además por qué rechazar todo lo exterior al umbral tampoco cumpliría el contrato completo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un resultado anterior cuando el siguiente dato pierde precisión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llamadas siguientes comparten un solo destino. El primer dato es exterior al intervalo donde todos los enteros son representables exactamente, pero él sí tiene una representación exacta. El segundo está a una unidad del umbral y se rechaza. Después se acepta cero y finalmente se rechaza el máximo long long. Sigue cada bool antes de interpretar el contenido del destino."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l11_secuencia",
+          "question": "Predice las cuatro líneas en el entorno de la práctica. Cada una escribe el bool y el destino posterior.",
+          "language": "cpp",
+          "code": "#include <iomanip>\n#include <iostream>\n#include <limits>\n\nbool convertir_ll_exacto(long long dato, double& destino) {\n    const long long umbral = 9007199254740992LL;\n    long long reducido = dato;\n    while (reducido < -umbral || reducido > umbral) {\n        if (reducido % 2 != 0) {\n            return false;\n        }\n        reducido /= 2;\n    }\n\n    destino = static_cast<double>(dato);\n    return true;\n}\n\nint main() {\n    if (std::numeric_limits<long long>::radix != 2\n        || std::numeric_limits<long long>::digits != 63\n        || std::numeric_limits<double>::radix != 2\n        || std::numeric_limits<double>::digits != 53) {\n        return 2;\n    }\n\n    double destino = 17.0;\n    std::cout << std::fixed << std::setprecision(0);\n    bool aceptado = convertir_ll_exacto(9007199254740994LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(9007199254740993LL, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(0, destino);\n    std::cout << aceptado << ':' << destino << '\\n';\n    aceptado = convertir_ll_exacto(std::numeric_limits<long long>::max(), destino);\n    std::cout << aceptado << ':' << destino;\n    return 0;\n}\n",
+          "answers": [
+            "1:9007199254740994\n0:9007199254740994\n1:0\n0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se guarda 9007199254740994 porque es exacto. El rechazo del siguiente dato conserva ese valor. Cero se acepta y lo sustituye. El máximo long long necesita más precisión de la disponible y se rechaza conservando cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La interfaz debe recibir la información que se quiere comprobar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función recibe long long porque ése es el dato que queremos conservar. Si primero leyéramos o convirtiéramos la cantidad a double, un entero no representable podría haber cambiado antes de entrar. La función ya no recibiría la información original con la que decidir si se perdió precisión (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l11_interfaz_original",
+          "question": "Una cantidad original está guardada exactamente como long long. ¿Qué llamada permite comprobarla sin una conversión previa que pueda perder precisión?",
+          "options": [
+            "convertir_ll_exacto(static_cast<long long>(static_cast<double>(dato)), destino)",
+            "Preparar primero una copia double y reconstruir el long long sin comprobar su rango.",
+            "convertir_ll_exacto(dato, destino)"
+          ],
+          "correctIndex": 2,
+          "explanation": "La llamada directa conserva el dato entero para la comprobación. Pasar antes por double puede cambiarlo; convertir de vuelta no lo recupera y hasta podría quedar fuera del dominio de ese cast."
+        },
+        {
+          "type": "paragraph",
+          "text": "El criterio exacto de esta lección no impone que todos los cálculos numéricos deban rechazar aproximaciones. Si un problema admite aproximar, tendrá otro contrato. Aquí el requisito es conservar un entero ya conocido, y por eso no se acepta una diferencia pequeña como tolerancia."
+        },
+        {
+          "type": "paragraph",
+          "text": "A continuación construiremos la conversión en sentido contrario, desde double a long long. Recuperaremos el truncamiento y la finitud de U1L10, pero utilizaremos límites que no admitan por error el valor 2⁶³. No reutilizaremos sin revisión la comparación inclusiva con un máximo entero aproximado."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "4765ce2b0e79cd8ad9679436f5a740eda70de7111a294a57077605df61691ed3"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "62041b55273f98376345cc4d8aa5aabeafa2d7bbd78f3e5674b9e30c5e8cfffc"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "a0316b486b732d21a36ffacfea7fed79138d8adc397247b25d718a6ef8668e1f"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "d06ddca8a29e695e970b9baafabae8b17b70f6e356a0756a3e7856a894e1bd0b"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "5146e8c99084eef14b3b94c61a507788f2f5c1c2ef2e48762172b98ac286cf15"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "c383532d4849011b0c330e21acf69efab1fa7bb3bc12b715c2b6dc643de4abab"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "9161d64eab42abfb09676ec9a046e9238b32ea5ddba9d3f8c2b28a9054019a54"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "e1f29f74b3f627719140eb42508a2fcf6cf6b776429eff6e4ed669ea36074ee2"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "baf24f459d2c7851e50c067355e07cd4f6e9f0e100ed923e85700eb82aac140c"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "2d222507ba65859203f45eac78cbce87b444a95bfee306d4621f6480d70222f0"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "76e5f8f9bf3b5911920093b577e9089f2de6204f8e122b0eb782002e075babf1"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "e9d7f05f5ad8f9aca9a0aceae0ec73b347125873b93b789a9af42de7930ddc1d"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "023cb1f7f104c197083184fc36990cc1b77034b0f6ff2fa54853cf8bb532283f"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "58a8bf6b9614be67e88f4d1e7e934a785a6b8a838428c28ac625ce23da91294f"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0007",
+            "sha256": "873a1d9b38676f64d0e2f8495a938c043186fc052ad81488080edbeee5bedc29"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "5e628dcd48817f1f5b6969036705d8e0a6a88d2b34ef63d5da983d570c7ebd31"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0005",
+            "sha256": "c80f19ebeecd38e0f74e5ce434c7a6b34b79edf40cc565fdbf62de3ea4b0b425"
+          },
+          {
+            "id": "block_0010_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0007",
+            "sha256": "72f921fb7e97dfe171f42267da50fd2fb399314014c5236e97b5fb53c06fe6f3"
+          },
+          {
+            "id": "block_0010_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0009",
+            "sha256": "0b89088cc626b25eaf988f06328f5a48389eae111a528d2753145bdf1f4513e6"
+          },
+          {
+            "id": "block_0010_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0011",
+            "sha256": "a416dd280d57121138517518e98e37f15931d1b96d9dec9deb48a595d6e1b3f8"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "b2e4af17059324f73ea6c0c4942cfd7f90d004d855d32e01fc0a9aa18ab43323"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "ecf063e6f12112e5bd4f96788bf67b6883c7952ba7d039c7d10242fb0d0f7767"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "7a7ebb5de3fb1fab5d7046b533ec8a1cf3f344ae1bcd60fa60e36040bca82329"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "ba1cc1f0bc3703eb13d9df7e255ba93d1f04c3293fcd35257557fe9d22ab197c"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "50f9c9f44f0ef4c4ec17558c96f7d1b3dcae62a5a225baaee1f00bc0a70df6d2"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006",
+          "block_0009_0007"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004",
+          "block_0010_0005",
+          "block_0010_0006",
+          "block_0010_0007",
+          "block_0010_0008",
+          "block_0010_0009",
+          "block_0010_0010",
+          "block_0010_0011"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "dfa80efb7d29edd86d2ab26effa545f997450a23d6d9eba8dfb4d06a8009984c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "4765ce2b0e79cd8ad9679436f5a740eda70de7111a294a57077605df61691ed3"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "62041b55273f98376345cc4d8aa5aabeafa2d7bbd78f3e5674b9e30c5e8cfffc"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "a0316b486b732d21a36ffacfea7fed79138d8adc397247b25d718a6ef8668e1f"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "d06ddca8a29e695e970b9baafabae8b17b70f6e356a0756a3e7856a894e1bd0b"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "5146e8c99084eef14b3b94c61a507788f2f5c1c2ef2e48762172b98ac286cf15"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "c383532d4849011b0c330e21acf69efab1fa7bb3bc12b715c2b6dc643de4abab"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "9161d64eab42abfb09676ec9a046e9238b32ea5ddba9d3f8c2b28a9054019a54"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "e1f29f74b3f627719140eb42508a2fcf6cf6b776429eff6e4ed669ea36074ee2"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "baf24f459d2c7851e50c067355e07cd4f6e9f0e100ed923e85700eb82aac140c"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "2d222507ba65859203f45eac78cbce87b444a95bfee306d4621f6480d70222f0"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "76e5f8f9bf3b5911920093b577e9089f2de6204f8e122b0eb782002e075babf1"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "e9d7f05f5ad8f9aca9a0aceae0ec73b347125873b93b789a9af42de7930ddc1d"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "023cb1f7f104c197083184fc36990cc1b77034b0f6ff2fa54853cf8bb532283f"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "58a8bf6b9614be67e88f4d1e7e934a785a6b8a838428c28ac625ce23da91294f"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "873a1d9b38676f64d0e2f8495a938c043186fc052ad81488080edbeee5bedc29"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "5e628dcd48817f1f5b6969036705d8e0a6a88d2b34ef63d5da983d570c7ebd31"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0005",
+                "sha256": "c80f19ebeecd38e0f74e5ce434c7a6b34b79edf40cc565fdbf62de3ea4b0b425"
+              },
+              {
+                "id": "block_0010_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0007",
+                "sha256": "72f921fb7e97dfe171f42267da50fd2fb399314014c5236e97b5fb53c06fe6f3"
+              },
+              {
+                "id": "block_0010_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0009",
+                "sha256": "0b89088cc626b25eaf988f06328f5a48389eae111a528d2753145bdf1f4513e6"
+              },
+              {
+                "id": "block_0010_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0011",
+                "sha256": "a416dd280d57121138517518e98e37f15931d1b96d9dec9deb48a595d6e1b3f8"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "b2e4af17059324f73ea6c0c4942cfd7f90d004d855d32e01fc0a9aa18ab43323"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "ecf063e6f12112e5bd4f96788bf67b6883c7952ba7d039c7d10242fb0d0f7767"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "7a7ebb5de3fb1fab5d7046b533ec8a1cf3f344ae1bcd60fa60e36040bca82329"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "ba1cc1f0bc3703eb13d9df7e255ba93d1f04c3293fcd35257557fe9d22ab197c"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "50f9c9f44f0ef4c4ec17558c96f7d1b3dcae62a5a225baaee1f00bc0a70df6d2"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
