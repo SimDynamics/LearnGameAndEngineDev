@@ -709,5 +709,356 @@ class CompilerCaseRevisionTest(unittest.TestCase):
                     self.assertEqual(proposal, output.read_bytes())
 
 
+
+
+# General revisions coexist with every closed expansion tested above.
+import compiler_case_revision_fixture_source as general_fixtures
+
+
+class GeneralCompilerCaseRevisionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.manifest, cls.payloads = general_fixtures.build_fixtures()
+        cls.entries = {entry['name']: entry for entry in cls.manifest['cases']}
+
+    def pair(self, name):
+        entry = self.entries[name]
+        return (json.loads(self.payloads[entry['before']]), json.loads(self.payloads[entry['after']]))
+
+    def reject(self, operation):
+        with self.assertRaises((ValueError, KeyError, TypeError, IndexError)):
+            operation()
+
+    def test_real_publications_are_byte_pinned_and_references_use_the_existing_assembler(self):
+        for name, spec in general_fixtures.SOURCES.items():
+            with self.subTest(name=name):
+                raw = general_fixtures.historical_bytes(name)
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), spec['sha256'])
+                self.assertEqual(self.payloads[name + '.before.json'].encode('utf-8'), raw)
+                reference = self.payloads[name + '.reference.cpp']
+                self.assertEqual(hashlib.sha256(reference.encode('utf-8')).hexdigest(), spec['referenceSha256'])
+                self.assertEqual(reference, general_fixtures.reference_source(name))
+
+    def test_real_revisions_change_only_cases_under_the_same_owners(self):
+        for name, count in (('u4l4', 16), ('u4l6', 9), ('u4l7', 8)):
+            with self.subTest(name=name):
+                before, after = self.pair('real-' + name)
+                identity = general_fixtures.SOURCES[name]['id']
+                old, new = layout._blocks(before)[identity], layout._blocks(after)[identity]
+                self.assertEqual(len(new['outputCheck']['cases']), count)
+                restored = deepcopy(new)
+                restored['outputCheck']['cases'] = deepcopy(old['outputCheck']['cases'])
+                self.assertEqual(old, restored)
+                for key in ('origin', 'family', 'current', 'additions'):
+                    self.assertEqual(before['stateLayout'][key], after['stateLayout'][key])
+                for key in ('referenceAfter', 'activityAfter', 'compilerPuzzlesRequired',
+                            'compilerWorkflowChecks', 'compilerRuntimeChecks', 'compilerNamedRuleChecks'):
+                    self.assertEqual(before.get(key), after.get(key))
+                for other, original in layout._blocks(before).items():
+                    if other != identity:
+                        self.assertEqual(original, layout._blocks(after)[other])
+                self.assertEqual(layout.validate(before), layout.validate(after))
+
+    def test_real_first_cases_are_the_requested_discriminants(self):
+        expected = {
+            'u4l4': ('1\n', '1:1:1\n'),
+            'u4l6': ('LF\n', 'LF:2:0:0:0\n'),
+            'u4l7': ('1\n4\ntextura 5\nmalla 240\nsonido 8\nsonido 2\n',
+                     'textura=1 malla=1 sonido=2 bytes=255\n'),
+        }
+        for name, (stdin, stdout) in expected.items():
+            _, after = self.pair('real-' + name)
+            case = layout._blocks(after)[general_fixtures.SOURCES[name]['id']]['outputCheck']['cases'][0]
+            self.assertEqual(case['standardInput'], stdin)
+            self.assertEqual(case['outputs'], [stdout])
+            self.assertEqual(case.get('exitCode', 0), 0)
+
+    def test_complete_original_aggregates_and_editorial_prefix_are_archived(self):
+        for name, spec in general_fixtures.SOURCES.items():
+            before, after = self.pair('real-' + name)
+            item = after['stateLayout']['compilerCaseRevisions'][0]
+            self.assertEqual(set(item), {'id', 'block', 'cases', 'editorialIndex', 'historySha256',
+                                         'semanticBefore', 'semanticAfter'})
+            self.assertEqual(item['block'], layout._blocks(before)[spec['id']])
+            self.assertEqual(len(item['block']['outputCheck']['cases']), 4)
+            self.assertEqual(item['cases'], layout._blocks(after)[spec['id']]['outputCheck']['cases'])
+            self.assertEqual(item['editorialIndex'], len(before['stateLayout']['editorial']))
+            self.assertEqual(item['historySha256'], layout.fingerprint({
+                'lessonId': before['id'], 'locale': 'es', 'editorial': before['stateLayout']['editorial']}))
+            self.assertEqual(after['stateLayout']['editorial'][:-1], before['stateLayout']['editorial'])
+
+    def test_u4l7_retains_all_four_historical_cases_without_duplicate_active_inputs(self):
+        before, after = self.pair('real-u4l7')
+        identity = general_fixtures.SOURCES['u4l7']['id']
+        old = layout._blocks(before)[identity]['outputCheck']['cases']
+        current = layout._blocks(after)[identity]['outputCheck']['cases']
+        for case in old:
+            self.assertEqual(sum(candidate == case for candidate in current), 1)
+        self.assertEqual(current[6:], old[:2])
+        self.assertEqual(len({case['standardInput'] for case in current}), 8)
+        self.assertEqual(after['stateLayout']['sourceFormatRevisions'], before['stateLayout']['sourceFormatRevisions'])
+
+    def test_case_marks_are_archived_and_replaced_explicitly_without_touching_other_fields(self):
+        for name, spec in general_fixtures.SOURCES.items():
+            before, after = self.pair('real-' + name)
+            item = after['stateLayout']['compilerCaseRevisions'][0]
+            self.assertEqual(item['semanticBefore'], layout._compiler_case_order_fields(before, spec['id']))
+            self.assertEqual(item['semanticAfter'], layout._compiler_case_order_fields(after, spec['id']))
+            self.assertTrue(item['semanticAfter'])
+            def unrelated(document):
+                return [field for field in document.get('textSemantics', {}).get('fields', [])
+                        if field['block'] != spec['id'] or not field['path'].startswith('/outputCheck/cases/')]
+            self.assertEqual(unrelated(before), unrelated(after))
+            self.assertEqual(before.get('textSemantics', {}).get('rootFields'), after.get('textSemantics', {}).get('rootFields'))
+            layout.text_semantics.validate(after)
+
+    def test_new_api_requires_explicit_cases_and_semantics_and_rejects_noop(self):
+        before, after = self.pair('synthetic-optional-becomes-first')
+        owner = general_fixtures.OWNER
+        cases = layout._blocks(after)[owner]['outputCheck']['cases']
+        self.reject(lambda: layout.revise_compiler_cases(before, owner, cases))
+        self.reject(lambda: layout.revise_compiler_cases(before, owner, cases, case_semantics=None))
+        self.reject(lambda: layout.revise_compiler_cases(before, owner, None, case_semantics=[]))
+        self.reject(lambda: layout.revise_compiler_cases(before, owner,
+            layout._blocks(before)[owner]['outputCheck']['cases'],
+            case_semantics=layout._compiler_case_order_fields(before, owner)))
+
+    def test_lost_or_invented_authorship_is_rejected_against_the_actual_predecessor(self):
+        before, after = self.pair('synthetic-optional-becomes-first')
+        bad = deepcopy(after)
+        bad['stateLayout']['compilerCaseRevisions'][0]['semanticBefore'] = []
+        layout.validate(bad)  # Structural validity cannot certify a prior publication's marks.
+        self.reject(lambda: layout.validate_transition(before, bad))
+        bad = deepcopy(after)
+        field = bad['textSemantics']['fields'][0]
+        field['spans'][0]['role'] = 'data' if field['spans'][0]['role'] != 'data' else 'cpp'
+        layout.validate(bad)
+        self.reject(lambda: layout.validate_transition(before, bad))
+
+    def test_both_journals_are_append_only_even_when_a_rewrite_is_structurally_valid(self):
+        entry = self.entries['synthetic-successive']
+        intermediate = json.loads(self.payloads[entry['history'][0]['source']])
+        _, after = self.pair('synthetic-successive')
+        bad = deepcopy(after)
+        bad['stateLayout']['compilerCaseRevisions'][0]['semanticAfter'][0]['spans'][0]['reading'] = 'characters'
+        layout.validate(bad)
+        self.reject(lambda: layout.validate_transition(intermediate, bad))
+        before, mixed = self.pair('synthetic-order-cases-order')
+        self.assertEqual(len(mixed['stateLayout']['compilerCaseOrderRevisions']), 2)
+        self.assertEqual(len(mixed['stateLayout']['compilerCaseRevisions']), 1)
+        self.assertNotIn('compilerCaseOrderRevisions', before['stateLayout'])
+
+    def test_mixed_timeline_reverses_each_event_at_its_own_cardinality(self):
+        before, after = self.pair('synthetic-order-cases-order')
+        owner = general_fixtures.OWNER
+        events = layout._compiler_case_events(after, owner)
+        self.assertEqual([kind for kind, _ in events], ['order', 'cases', 'order'])
+        self.assertEqual([len(item['block']['outputCheck']['cases']) for _, item in events], [3, 3, 4])
+        projected = layout._compiler_case_order_projection(after, owner, layout._blocks(after)[owner])
+        self.assertEqual(projected, layout._blocks(before)[owner])
+        layout.validate_transition(before, after)
+        entry = self.entries['synthetic-order-cases-order']
+        for stage in entry['history']:
+            previous = json.loads(self.payloads[stage['source']])
+            layout.validate_transition(previous, after)
+
+    def test_authentic_return_retains_intermediate_cases_and_needs_explicit_return_to(self):
+        before, after = self.pair('synthetic-return')
+        owner = general_fixtures.OWNER
+        entry = self.entries['synthetic-return']
+        middle = json.loads(self.payloads[entry['history'][0]['source']])
+        self.assertEqual(layout._blocks(before)[owner], layout._blocks(after)[owner])
+        self.assertEqual(len(after['stateLayout']['compilerCaseRevisions']), 2)
+        self.assertEqual(len(middle['stateLayout']['compilerCaseRevisions'][0]['cases']), 4)
+        self.assertIn('returnTo', after['stateLayout']['editorial'][-1])
+        old_cases = layout._blocks(before)[owner]['outputCheck']['cases']
+        fields = layout._compiler_case_order_fields(before, owner)
+        self.reject(lambda: layout.revise_compiler_cases(middle, owner, old_cases, case_semantics=fields))
+        self.reject(lambda: layout.revise_compiler_cases(middle, owner, old_cases, case_semantics=fields, return_to=1))
+        layout.validate_transition(before, after)
+
+    def test_format_on_either_side_preserves_its_authentic_source_archive(self):
+        owner = general_fixtures.OWNER
+        for name in ('synthetic-format-before', 'synthetic-format-after'):
+            before, after = self.pair(name)
+            self.assertEqual(len(after['stateLayout']['sourceFormatRevisions']), 1)
+            layout.validate_transition(before, after)
+            self.assertNotEqual(layout._blocks(after)[owner]['initialCode'],
+                                after['stateLayout']['sourceFormatRevisions'][0]['block']['initialCode'])
+        # As with the established order API, a batched authoring check cannot
+        # invent an intermediate publication as its first archived predecessor.
+        plain = general_fixtures.order_fixtures.synthetic_publication()
+        _, formatted_after = self.pair('synthetic-format-before')
+        self.reject(lambda: layout.validate_transition(plain, formatted_after))
+
+    def test_other_retirements_keep_the_full_case_list_and_marks_of_each_snapshot(self):
+        for name in ('synthetic-retire-before', 'synthetic-retire-after'):
+            before, after = self.pair(name)
+            snapshot = after['stateLayout']['retirementHistory'][0]
+            view = {'pages': snapshot['pages'], 'stateLayout': {'current': snapshot['current']}}
+            cases = layout._blocks(view)[general_fixtures.OWNER]['outputCheck']['cases']
+            self.assertEqual(len(cases), 3 if name.endswith('before') else 4)
+            self.assertIn('textSemantics', snapshot)
+            if name.endswith('after'):
+                entry = self.entries[name]
+                preceding = json.loads(self.payloads[entry['history'][-2]['source']])
+                layout.validate_transition(preceding, after)
+                self.reject(lambda: layout.validate_transition(before, after))
+            else:
+                layout.validate_transition(before, after)
+        _, after = self.pair('synthetic-optional-becomes-first')
+        self.reject(lambda: layout.retire(after, [general_fixtures.OWNER], reference_after=[]))
+
+    def test_later_guides_and_marks_remain_valid_without_rewriting_archives(self):
+        for name in ('synthetic-later-guidance', 'synthetic-later-marks'):
+            before, after = self.pair(name)
+            self.assertEqual(before['stateLayout']['compilerCaseRevisions'], after['stateLayout']['compilerCaseRevisions'])
+            layout.validate_transition(before, after)
+
+    def test_intermediate_authorship_changes_require_their_actual_stage_as_baseline(self):
+        before, first = self.pair('synthetic-optional-becomes-first')
+        revised_guide = general_fixtures.order_fixtures.revised_guidance(first, general_fixtures.OWNER)
+        cases = deepcopy(layout._blocks(revised_guide)[general_fixtures.OWNER]['outputCheck']['cases'])
+        cases.append({'standardInput': '6\n', 'outputs': ['6\n'], 'explanation': 'Valor de otra comprobación.'})
+        second = general_fixtures.revised(revised_guide, general_fixtures.OWNER, cases)
+        layout.validate_transition(first, revised_guide)
+        layout.validate_transition(revised_guide, second)
+        self.reject(lambda: layout.validate_transition(before, second))
+
+    def test_optional_exact_case_can_become_first_but_aggregates_do_not_match_members(self):
+        before, after = self.pair('synthetic-optional-becomes-first')
+        old = layout._blocks(before)[general_fixtures.OWNER]['outputCheck']['cases']
+        new = layout._blocks(after)[general_fixtures.OWNER]['outputCheck']['cases']
+        self.assertEqual(new[0], old[2])
+        self.assertNotEqual(new[0], old[0])
+        for name in ('u4l4', 'u4l6'):
+            before, after = self.pair('real-' + name)
+            owner = general_fixtures.SOURCES[name]['id']
+            old = layout._blocks(before)[owner]['outputCheck']['cases']
+            first = layout._blocks(after)[owner]['outputCheck']['cases'][0]
+            self.assertTrue(all(case['standardInput'] != first['standardInput'] for case in old))
+
+    def test_same_stdout_does_not_make_different_runtime_requirements_identical(self):
+        before, after = self.pair('synthetic-new-runtime-requirements')
+        old = layout._blocks(before)[general_fixtures.OWNER]
+        new = layout._blocks(after)[general_fixtures.OWNER]
+        self.assertEqual(old['initialCode'], new['initialCode'])
+        self.assertEqual(old['projectFiles'], new['projectFiles'])
+        self.assertEqual(old['cmake'], new['cmake'])
+        self.assertEqual(old['outputCheck']['cases'][0]['outputs'], new['outputCheck']['cases'][0]['outputs'])
+        for field in ('exitCode', 'standardErrorExact', 'target'):
+            self.assertNotEqual(old['outputCheck']['cases'][0][field], new['outputCheck']['cases'][0][field])
+
+    def test_legacy_two_argument_reviewed_expansion_keeps_its_existing_behavior(self):
+        fixture = general_fixtures.order_fixtures
+        before = fixture.published(fixture.ORIGINAL_COMMIT)
+        after = layout.revise_compiler_cases(before, fixture.EXPANDED_OWNER)
+        self.assertEqual(len(layout._blocks(before)[fixture.EXPANDED_OWNER]['outputCheck']['cases']), 19)
+        self.assertEqual(len(layout._blocks(after)[fixture.EXPANDED_OWNER]['outputCheck']['cases']), 21)
+        self.assertIn('compilerRevisions', after['stateLayout'])
+        self.assertNotIn('compilerCaseRevisions', after['stateLayout'])
+
+    def test_general_revision_composes_with_the_same_owners_published_closed_expansion(self):
+        fixture = general_fixtures.order_fixtures
+        entry = self.entries['real-u11-closed-expansion']
+        before, after = self.pair(entry['name'])
+        expanded = json.loads(self.payloads[entry['history'][0]['source']])
+        self.assertEqual(self.payloads[entry['before']].encode('utf-8'),
+                         fixture.historical_bytes(fixture.ORIGINAL_COMMIT))
+        self.assertEqual(self.payloads[entry['history'][0]['source']].encode('utf-8'),
+                         fixture.historical_bytes(fixture.CURRENT_COMMIT))
+        owner = fixture.EXPANDED_OWNER
+        archived = next(item['block'] for item in after['stateLayout']['compilerRevisions']
+                        if item['id'] == owner)
+        self.assertEqual(archived, layout._blocks(before)[owner])
+        self.assertEqual([len(layout._blocks(document)[owner]['outputCheck']['cases'])
+                          for document in (before, expanded, after)], [19, 21, 20])
+        self.assertEqual(after['stateLayout']['compilerRevisions'], expanded['stateLayout']['compilerRevisions'])
+        self.assertEqual(after['stateLayout']['sourceFormatRevisions'], expanded['stateLayout']['sourceFormatRevisions'])
+        self.assertEqual(after['stateLayout']['compilerCaseRevisions'][0]['block'], layout._blocks(expanded)[owner])
+        self.assertEqual(layout._compiler_case_order_projection(after, owner, archived), archived)
+        aligned = layout.align_for_previous_validation(expanded, after)
+        self.assertEqual(layout._blocks(aligned)[owner], layout._blocks(expanded)[owner])
+        layout.validate_transition(expanded, after)
+
+    def test_recovered_case_is_absent_from_the_immediate_predecessor_but_archived_exactly(self):
+        entry = self.entries['synthetic-case-absent-then-recovered']
+        before, after = self.pair(entry['name'])
+        middle = json.loads(self.payloads[entry['history'][0]['source']])
+        owner = general_fixtures.OWNER
+        first = layout._blocks(before)[owner]['outputCheck']['cases'][0]
+        current = layout._blocks(after)[owner]['outputCheck']['cases']
+        self.assertNotIn(first, layout._blocks(middle)[owner]['outputCheck']['cases'])
+        self.assertEqual(current[0], first)
+        self.assertEqual(current[1:], layout._blocks(middle)[owner]['outputCheck']['cases'])
+        records = after['stateLayout']['compilerCaseRevisions']
+        self.assertEqual(records[0]['block']['outputCheck']['cases'][0], first)
+        self.assertNotIn(first, records[1]['block']['outputCheck']['cases'])
+        for document in (middle, after):
+            self.assertEqual(layout._blocks(document)[owner]['initialCode'], layout._blocks(before)[owner]['initialCode'])
+        layout.validate_transition(before, after)
+
+    def test_curricular_alignment_restores_the_previous_publication_not_the_latest_epoch(self):
+        before, after = self.pair('synthetic-order-cases-order')
+        aligned = layout.align_for_previous_validation(before, after)
+        self.assertEqual(layout._blocks(aligned)[general_fixtures.OWNER], layout._blocks(before)[general_fixtures.OWNER])
+        entry = self.entries['synthetic-order-cases-order']
+        intermediate = json.loads(self.payloads[entry['history'][1]['source']])
+        aligned = layout.align_for_previous_validation(intermediate, after)
+        self.assertEqual(layout._blocks(aligned)[general_fixtures.OWNER], layout._blocks(intermediate)[general_fixtures.OWNER])
+
+    def test_all_shared_invalid_documents_fail_before_projection_can_hide_the_change(self):
+        for item in self.manifest['invalid']:
+            with self.subTest(name=item['name']):
+                self.reject(lambda: layout.validate(json.loads(self.payloads[item['file']])))
+
+    def test_fixture_histories_are_complete_and_each_stage_validates_against_its_actual_source(self):
+        self.assertEqual(len(self.manifest['cases']), 16)
+        self.assertEqual(len(self.manifest['invalid']), 30)
+        for entry in self.manifest['cases']:
+            self.assertEqual(entry['history'][-1]['source'], entry['after'])
+            previous = json.loads(self.payloads[entry['before']])
+            for index, stage in enumerate(entry['history']):
+                current = json.loads(self.payloads[stage['source']])
+                if entry['name'] == 'real-u11-closed-expansion' and index == 0:
+                    # Both old publications are independently pinned and the
+                    # original owner is the exact closed archive. This fixture
+                    # does not recreate that historical authoring operation.
+                    fixture = general_fixtures.order_fixtures
+                    self.assertEqual(current, fixture.published())
+                    self.assertEqual(previous, fixture.published(fixture.ORIGINAL_COMMIT))
+                    archived = next(item['block'] for item in current['stateLayout']['compilerRevisions']
+                                    if item['id'] == entry['id'])
+                    self.assertEqual(archived, layout._blocks(previous)[entry['id']])
+                else:
+                    layout.validate_transition(previous, current)
+                previous = current
+
+    def test_cli_authors_a_new_file_with_explicit_cases_and_semantics_without_overwrite(self):
+        from contextlib import redirect_stderr, redirect_stdout
+        import io
+        from unittest.mock import patch
+        before, after = self.pair('synthetic-optional-becomes-first')
+        item = after['stateLayout']['compilerCaseRevisions'][0]
+        with tempfile.TemporaryDirectory(prefix='case-revision-cli-') as directory:
+            root = Path(directory)
+            source, cases, semantics, output = (root / name for name in ('source.json', 'cases.json', 'semantics.json', 'new.json'))
+            source.write_text(json.dumps(before), encoding='utf-8')
+            cases.write_text(json.dumps(item['cases']), encoding='utf-8')
+            semantics.write_text(json.dumps(item['semanticAfter']), encoding='utf-8')
+            original = source.read_bytes()
+            argv = ['stable_state_layout.py', 'revise-compiler-cases', str(source), '--previous', str(source),
+                    '--identity', general_fixtures.OWNER, '--cases', str(cases), '--case-semantics', str(semantics), '--output', str(output)]
+            with patch.object(sys, 'argv', argv), redirect_stdout(io.StringIO()):
+                layout.main()
+            self.assertEqual(json.loads(output.read_text()), after)
+            saved = output.read_bytes()
+            with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                layout.main()
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(output.read_bytes(), saved)
+
+
 if __name__ == "__main__":
     unittest.main()
+

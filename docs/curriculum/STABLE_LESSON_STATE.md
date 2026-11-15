@@ -143,6 +143,8 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `retirementHistory` | Opcional para archivos anteriores. Presentaciones anteriores completas, una por lote nuevo de retiro, para comprobar las identidades y dependencias de lectura publicadas. |
 | `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement, semanticBefore}`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
 | `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
+| `compilerCaseOrderRevisions` | Opcional. Permutaciones autenticadas de casos completos, con archivo anterior, biyección y procedencia editorial. |
+| `compilerCaseRevisions` | Opcional. Sustituciones autenticadas de la lista de casos, con el bloque anterior completo, casos nuevos y semántica anterior/posterior explícita. Mantiene intacto el resto del editor. |
 | `mathTextRevisions` | Opcional. Archivo inmutable por propietario para precisar únicamente `/prompt` de un `math_puzzle`: `{id, field, rawJson, semanticBefore}`. Conserva el bloque completo y su descriptor anterior; no altera el contrato de respuesta. |
 
 ### Revisión editorial general de una opción existente
@@ -780,6 +782,86 @@ importación Android real, reapertura, navegación y controles Win32. Los recibo
 modelados para probar estados se distinguen de las dos ejecuciones MSVC de la
 referencia publicada de U11L7. Ninguna prueba reescribe los assets; Work publica
 la aplicación curricular de la capacidad.
+
+### Revisión general de los casos de un editor
+
+`revise_compiler_cases(document, identity, cases, case_semantics=...)` permite
+sustituir la lista completa de casos de un editor activo español con mapa v2.
+La llamada histórica de dos argumentos conserva las ampliaciones cerradas del
+apartado anterior. Los casos nuevos y sus descriptores semánticos son datos
+explícitos de autoría; `case_semantics` debe proporcionarse incluso cuando sea
+`[]`.
+
+Esta operación sólo cambia `outputCheck.cases`. Conserva exactamente el
+programa inicial, el cliente, los archivos del proyecto, sus objetivos, el modo
+de comparación y los demás campos del bloque. No transforma una ejecución
+agrupada en varias ejecuciones ni adapta automáticamente un cliente que tenga
+las entradas escritas en el código. Ese cambio de programa requiere su propia
+capacidad compatible.
+
+El archivo acumulativo `stateLayout.compilerCaseRevisions` contiene:
+
+| Campo | Contenido autenticado |
+| --- | --- |
+| `id` | Identidad estable del editor activo. |
+| `block` | Bloque anterior completo y exacto. |
+| `cases` | Lista nueva completa, con entradas, esperados, canales, retornos y guías. |
+| `editorialIndex` | Arista editorial exacta de esta revisión. |
+| `historySha256` | Fingerprint del ID de lección, idioma y prefijo editorial anterior a esa arista. |
+| `semanticBefore` | Descriptores de campos públicos de los casos anteriores. |
+| `semanticAfter` | Descriptores explícitos de los nuevos casos del mismo propietario. |
+
+El sucesor se deriva del predecesor sustituyendo únicamente su lista de casos.
+Cada transición comprueba el bloque publicado anterior y conserva intacto el
+prefijo de ambos archivos de revisiones. Las permutaciones de
+`compilerCaseOrderRevisions` y las sustituciones de `compilerCaseRevisions`
+comparten una cronología por `editorialIndex`; una permutación conserva su
+biyección dentro de su propia versión. La proyección valida primero el contrato
+de esa versión y sólo después retrocede por las operaciones autenticadas.
+Conserva también la composición con formato, ediciones posteriores de guías o
+semántica y retirada de otros propietarios. No autoriza retirar el propio
+editor revisado.
+
+El CLI `revise-compiler-cases` selecciona esta operación al recibir
+`--cases casos.json --case-semantics semantica.json`, además de la identidad,
+la fuente publicada y el destino nuevo habituales. Un retorno utiliza
+`--return-to` y la prueba editorial de retorno correspondiente; no borra los
+pasos intermedios. Sin los dos archivos nuevos permanece la operación cerrada
+anterior.
+
+Windows conserva un prefijo tipado de fingerprints en
+`lesson_<id>_state_compiler_case_revisions_v1_<locale>`. Eliminar, sustituir o
+reordenar registros ya adoptados rechaza toda la adopción antes de escribir
+preferencias. Cada etapa tiene su marcador propio bajo
+`case-revision-adopted/<record_sha256>`. La importación y la reapertura aplican
+las mismas guardas.
+
+Un recibo sólo puede reutilizarse para el **mismo caso completo y el mismo
+programa capturado**: entrada, salidas admitidas, stderr, retorno, objetivo y
+reglas de comparación deben coincidir. El progreso actual conserva su
+programa si ya lo tiene; si todavía no lo tiene, se toma la versión anterior
+más reciente que tenga un recibo reutilizable. Después sólo pueden sumarse
+recibos auténticos de ese mismo programa. Una entrada que desaparece y vuelve
+puede recuperar su comprobación de una versión archivada. No se cortan
+recibos de agregados, no se mezclan programas distintos y no se sobrescriben
+logros ya completos. Sólo un recibo válido del primer caso actual permite
+acreditar esa versión; los otros casos siguen siendo opcionales.
+
+Las propuestas de prueba para AssetCheck conservan las lecciones publicadas
+completas: U4L4 pasa de cuatro grupos a dieciséis entradas y U4L6 de cuatro a
+nueve. U4L7 conserva seis colecciones individuales y los dos agregados
+distintos, ocho casos activos únicos: los otros dos casos históricos ya eran
+individuales y siguen presentes una vez. Los cuatro contratos anteriores
+quedan íntegros en cada archivo. No se publican modificaciones curriculares
+mediante el generador de pruebas.
+
+`compiler_case_revision_fixture_source.py` prepara estas propuestas y sus
+alternativas inválidas. Las pruebas de estado distinguen los recibos
+modelados para verificar conservación de las ejecuciones reales de los
+programas completos. La prueba Win32 utiliza el editor U4L4 y comprueba su
+historia, su primer caso obligatorio, el borrador, la reapertura y el reinicio;
+sus prerrequisitos de relaciones se evalúan mediante un adaptador aislado de
+prueba, sin atribuir esa comprobación al motor matemático general.
 
 ## Piezas independientes de una línea en Windows
 

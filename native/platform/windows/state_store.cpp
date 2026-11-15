@@ -724,6 +724,24 @@ std::optional<std::vector<std::string>> compiler_case_order_state_update(
     }else if(current.empty())return {};
     return current;
 }
+std::string compiler_case_revision_key(const curriculum::Lesson& lesson) {
+    return "lesson_"+lesson.id+"_state_compiler_case_revisions_v1_"+lesson.locale;
+}
+std::optional<std::vector<std::string>> compiler_case_revision_state_update(
+        const StateData& data,const curriculum::Lesson& lesson) {
+    std::vector<std::string> current;
+    for(const auto& revision:lesson.state_layout.compiler_case_revisions)
+        current.push_back(revision.record_sha256);
+    if(const auto stored=find(data,"learning_progress",compiler_case_revision_key(lesson))) {
+        const auto previous=std::get_if<std::vector<std::string>>(stored);
+        if(lesson.state_layout.version!=2||!previous||previous->empty()||previous->size()>current.size())
+            throw std::runtime_error("Falta la historia de los casos publicados; los datos se conservan.");
+        if(!std::equal(previous->begin(),previous->end(),current.begin()))
+            throw std::runtime_error("Cambió una revisión publicada de casos; los datos se conservan.");
+        if(previous->size()==current.size())return {};
+    }else if(current.empty())return {};
+    return current;
+}
 std::string editorial_returns_key(const curriculum::Lesson& lesson) {
     return "lesson_"+lesson.id+"_state_editorial_returns_v1_"+lesson.locale;
 }
@@ -794,6 +812,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
     const auto choice_revision_update = choice_revision_state_update(data,lesson);
     const auto compiler_revision_update = compiler_revision_state_update(data,lesson);
     const auto compiler_case_order_update = compiler_case_order_state_update(data,lesson);
+    const auto compiler_case_revision_update = compiler_case_revision_state_update(data,lesson);
     const auto compile_check_update = compile_check_state_update(data,lesson);
     const auto editorial_returns_update = editorial_returns_state_update(data,lesson);
     const auto old_pin_key = base + "_state_lineage_v1";
@@ -838,6 +857,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
         if (choice_revision_update) data.preferences["learning_progress"][choice_revision_key(lesson)] = *choice_revision_update;
         if (compiler_revision_update) data.preferences["learning_progress"][compiler_revision_key(lesson)] = *compiler_revision_update;
         if (compiler_case_order_update) data.preferences["learning_progress"][compiler_case_order_key(lesson)] = *compiler_case_order_update;
+        if (compiler_case_revision_update) data.preferences["learning_progress"][compiler_case_revision_key(lesson)] = *compiler_case_revision_update;
         if (compile_check_update) data.preferences["learning_progress"][compile_check_key(lesson)] = *compile_check_update;
         if (editorial_returns_update) data.preferences["learning_progress"][editorial_returns_key(lesson)] = *editorial_returns_update;
         return;
@@ -850,6 +870,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
                                find(data,"learning_progress",choice_revision_key(lesson)) ||
                                find(data,"learning_progress",compiler_revision_key(lesson)) ||
                                find(data,"learning_progress",compiler_case_order_key(lesson)) ||
+                               find(data,"learning_progress",compiler_case_revision_key(lesson)) ||
                                find(data,"learning_progress",compile_check_key(lesson)) ||
                                find(data,"learning_progress",editorial_returns_key(lesson)))))
         throw std::runtime_error("Migracion de estado incompleta; no se reemplaza el progreso.");
@@ -885,6 +906,7 @@ static void prepare_lesson_state_staged(StateData& data, const curriculum::Lesso
     if (choice_revision_update) prefs[choice_revision_key(lesson)] = *choice_revision_update;
     if (compiler_revision_update) prefs[compiler_revision_key(lesson)] = *compiler_revision_update;
     if (compiler_case_order_update) prefs[compiler_case_order_key(lesson)] = *compiler_case_order_update;
+    if (compiler_case_revision_update) prefs[compiler_case_revision_key(lesson)] = *compiler_case_revision_update;
     if (compile_check_update) prefs[compile_check_key(lesson)] = *compile_check_update;
     if (editorial_returns_update) prefs[editorial_returns_key(lesson)] = *editorial_returns_update;
     if (started && !find(data, "learning_progress", base + "_page")) prefs[base + "_page"] = std::int64_t{0};
@@ -895,10 +917,11 @@ void prepare_lesson_state(StateData& data,const curriculum::Lesson& lesson) {
     windows::ensure_winrt_apartment();
     if(lesson.state_layout.compiler_revisions.empty()&&!find(data,"learning_progress",compiler_revision_key(lesson))
         &&lesson.state_layout.compiler_case_order_revisions.empty()&&!find(data,"learning_progress",compiler_case_order_key(lesson))
+        &&lesson.state_layout.compiler_case_revisions.empty()&&!find(data,"learning_progress",compiler_case_revision_key(lesson))
         &&compile_check_contracts(lesson).empty()&&!find(data,"learning_progress",compile_check_key(lesson))
         &&!find(data,"learning_progress",editorial_returns_key(lesson))&&!has_editorial_return(lesson)) {
         // Preserve legacy map-node lifetime when no compiler expansion,
-        // case permutation, editorial return or pinned rollback needs adoption.
+        // case revision, editorial return or pinned rollback needs adoption.
         prepare_lesson_state_staged(data,lesson);return;
     }
     // All provenance and compiler receipt checks complete before publishing

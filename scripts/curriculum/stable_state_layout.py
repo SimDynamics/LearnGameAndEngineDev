@@ -38,7 +38,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions", "mathTextRevisions", "compilerCaseOrderRevisions", "compilerCaseRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
@@ -1161,38 +1161,362 @@ def _compiler_case_order_remap_fields(fields: list[dict], order: list[int]) -> l
     return result
 
 
-def _compiler_case_order_projection(document: dict, identity: str, block: dict) -> dict:
-    """Restore case positions for this exact published node, never by payload sorting."""
-    records = _compiler_case_order_records(document, identity)
-    if not records:
-        return block
+
+
+def _compiler_case_revision_records(document: dict, identity: str | None = None) -> list[dict]:
+    records = document.get("stateLayout", {}).get("compilerCaseRevisions", [])
+    return records if identity is None else [item for item in records if item["id"] == identity]
+
+
+def _compiler_case_events(document: dict, identity: str | None = None) -> list[tuple[str, dict]]:
+    """Merge authenticated journals without treating epochs as case indices."""
+    result = []
+    for kind, field in (("order", "compilerCaseOrderRevisions"), ("cases", "compilerCaseRevisions")):
+        records = document.get("stateLayout", {}).get(field, [])
+        require(type(records) is list and len(records) <= 100_000,
+                "Malformed compiler case history")
+        previous = -1
+        for item in records:
+            require(type(item) is dict and type(item.get("editorialIndex")) is int
+                    and item["editorialIndex"] > previous,
+                    "Compiler case history must keep chronological integer edges")
+            previous = item["editorialIndex"]
+            if identity is None or item.get("id") == identity:
+                result.append((kind, item))
+    result.sort(key=lambda event: event[1]["editorialIndex"])
+    require(len({item["editorialIndex"] for _, item in result}) == len(result),
+            "Compiler case journals cannot claim the same editorial edge")
+    return result
+
+
+def _validate_compiler_case_payload(block: dict) -> None:
+    """Validate the authored output contract before allowing a new case epoch."""
+    require(type(block) is dict and block.get("type") == "cpp_compiler" and "compileCheck" not in block,
+            "A case revision requires an output compiler with no diagnostic objective")
+    config = block.get("outputCheck")
+    require(type(config) is dict and set(config) <= {"inputComparison", "cases"}
+            and config.get("inputComparison", "exact") in {"exact", "tokens"},
+            "A case revision needs a supported output comparison contract")
+    cases = config.get("cases")
+    require(type(cases) is list and 0 < len(cases) <= 100_000,
+            "A case revision needs a nonempty explicit case list")
+    seen = []
+    def outputs(values):
+        require(type(values) is list and values and all(type(value) is str for value in values)
+                and len(set(values)) == len(values), "Case outputs must be unique exact strings")
+        return set(values)
+    for case in cases:
+        require(type(case) is dict and {"standardInput", "outputs"} <= set(case) <= {
+            "standardInput", "outputs", "explanation", "reviewFeedback", "target",
+            "standardError", "standardErrorExact", "exitCode"},
+            "A case revision contains an unsupported or incomplete case")
+        require(type(case["standardInput"]) is str, "A case input must be exact text")
+        target = case.get("target")
+        if "target" in case:
+            require(type(block.get("cmake")) is dict and type(target) is str
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.+-]{0,127}", target) is not None,
+                    "An explicit case target requires a valid CMake project target")
+        value = case["standardInput"]
+        if config.get("inputComparison", "exact") == "tokens":
+            value = tuple(re.findall(r"[^ \t\r\n\v\f]+", value))
+        require(not any(prior_input == value and (prior_target is None or target is None or prior_target == target)
+                        for prior_target, prior_input in seen),
+                "Case targets and inputs must remain unambiguous")
+        seen.append((target, value))
+        if "exitCode" in case:
+            require(type(case["exitCode"]) is int and 0 <= case["exitCode"] <= 255,
+                    "Case exitCode must be an integer from 0 through 255")
+        if "standardError" in case:
+            require(case["standardError"] == "nonBlank" and "standardErrorExact" not in case,
+                    "A case stderr condition is unsupported or ambiguous")
+        if "standardErrorExact" in case:
+            require(type(case["standardErrorExact"]) is str,
+                    "A case stderr exact condition must be text")
+        claimed = outputs(case["outputs"])
+        if "explanation" in case:
+            require(type(case["explanation"]) is str and case["explanation"].strip(),
+                    "A case explanation must be nonblank text")
+        if "reviewFeedback" in case:
+            require(type(case["reviewFeedback"]) is list, "Case feedback must be a list")
+            for review in case["reviewFeedback"]:
+                require(type(review) is dict and set(review) == {"outputs", "text"}
+                        and type(review["text"]) is str and review["text"].strip(),
+                        "Case feedback must preserve exact outputs and nonblank text")
+                values = outputs(review["outputs"])
+                require(not claimed.intersection(values), "Case feedback outputs must remain unambiguous")
+                claimed.update(values)
+
+
+def _compiler_case_revision_after(item: dict) -> dict:
+    before = item["block"]
+    _validate_compiler_case_payload(before)
+    result = deepcopy(before)
+    result["outputCheck"]["cases"] = deepcopy(item["cases"])
+    _validate_compiler_case_payload(result)
+    require(fingerprint(result) != fingerprint(before), "A case revision must change its declared cases")
+    return result
+
+
+def _compiler_case_event_after(kind: str, item: dict) -> dict:
+    return _compiler_case_order_after(item) if kind == "order" else _compiler_case_revision_after(item)
+
+
+def _compiler_case_epoch(document: dict, identity: str, block: dict,
+                         events: list[tuple[str, dict]]) -> int:
     signature = fingerprint(block)
     epochs = []
     for index, proof in enumerate(document["stateLayout"]["editorial"]):
         if proof["id"] != identity:
             continue
         if proof["beforeSha256"] == signature:
-            epochs.append(sum(item["editorialIndex"] < index for item in records))
+            epochs.append(sum(item["editorialIndex"] < index for _, item in events))
         if proof["afterSha256"] == signature:
-            epochs.append(sum(item["editorialIndex"] <= index for item in records))
+            epochs.append(sum(item["editorialIndex"] <= index for _, item in events))
     require(epochs, "A compiler case source needs an exact node in its owner's editorial chain")
-    # Explicit returns can repeat a full block; all such nodes have the same
-    # case presentation. Choosing the latest retains its full accumulated chain.
+    return max(epochs)
+
+
+def _compiler_case_order_projection(document: dict, identity: str, block: dict) -> dict:
+    """Undo only the case events preceding this exact published source node."""
+    events = _compiler_case_events(document, identity)
+    if not events:
+        return block
+    epoch = _compiler_case_epoch(document, identity, block, events)
+    expected = (events[0][1]["block"] if epoch == 0
+                else _compiler_case_event_after(*events[epoch - 1]))
+    if without_compiler_guidance(block).get("outputCheck") != without_compiler_guidance(expected).get("outputCheck"):
+        original = _compiler_revisions(document).get(identity)
+        if (epoch == 0 and original is not None
+                and without_compiler_guidance(block).get("outputCheck")
+                == without_compiler_guidance(original).get("outputCheck")
+                and state_fingerprint(block) == state_fingerprint(original)):
+            return block
+        raise LayoutError("Compiler case ordering changed a case, channel, comparison mode or program")
     result = deepcopy(block)
-    for item in reversed(records[:max(epochs)]):
-        cases = result.get("outputCheck", {}).get("cases")
-        require(type(cases) is list and len(cases) == len(item["order"]),
-                "A compiler case order cannot add or remove cases")
-        original = [None] * len(cases)
-        for new, old in enumerate(item["order"]):
-            original[old] = cases[new]
-        result["outputCheck"]["cases"] = original
+    for kind, item in reversed(events[:epoch]):
+        if kind == "cases":
+            result["outputCheck"]["cases"] = deepcopy(item["block"]["outputCheck"]["cases"])
+        else:
+            cases = result.get("outputCheck", {}).get("cases")
+            require(type(cases) is list and len(cases) == len(item["order"]),
+                    "A compiler case order cannot add or remove cases")
+            original = [None] * len(cases)
+            for new, old in enumerate(item["order"]):
+                original[old] = cases[new]
+            result["outputCheck"]["cases"] = original
     return result
+
+
+def _validate_compiler_case_semantics(fields: list[dict], identity: str, block: dict) -> None:
+    require(type(fields) is list, "Compiler case semantics must preserve an explicit field list")
+    sources = text_semantics.public_text_fields(block)
+    seen = set()
+    for field in fields:
+        require(type(field) is dict and set(field) == {"block", "path", "sourceSha256", "spans"}
+                and field["block"] == identity and type(field["path"]) is str
+                and field["path"].startswith("/outputCheck/cases/")
+                and field["path"] in sources and field["path"] not in seen,
+                "Archived compiler case semantics must belong to exact public fields of their owner")
+        try:
+            text_semantics._descriptor(field, sources[field["path"]])
+        except (ValueError, KeyError, TypeError) as exc:
+            raise LayoutError("Invalid archived compiler case semantics") from exc
+        seen.add(field["path"])
+
+
+def _validate_compiler_case_order_revisions(document: dict, storage: dict, digests: dict) -> dict[str, list[dict]]:
+    """Validate the shared timeline before any epoch is projected to its origin."""
+    meta = document["stateLayout"]
+    events = _compiler_case_events(document)
+    require(not events or meta["locale"] == "es", "Compiler case revisions require Spanish v2")
+    active, groups = _blocks(document), {}
+    editorial = meta["editorial"]
+    require(type(editorial) is list, "Malformed editorial proof")
+    for kind, item in events:
+        fields = {"id", "block", "editorialIndex", "historySha256", "semanticBefore"}
+        fields |= {"order"} if kind == "order" else {"cases", "semanticAfter"}
+        require(set(item) == fields,
+                "A compiler case revision needs its exact owner, predecessor, edge, cases and semantics")
+        identity = _identity(item["id"])
+        require(identity in storage and identity in active,
+                "A compiler case revision must retain its existing active owner")
+        index = item["editorialIndex"]
+        require(0 <= index < len(editorial), "Compiler case history names an unknown editorial edge")
+        after = _compiler_case_event_after(kind, item)
+        proof = editorial[index]
+        require(type(proof) is dict and proof.get("id") == identity
+                and proof.get("beforeSha256") == fingerprint(item["block"])
+                and proof.get("afterSha256") == fingerprint(after),
+                "A compiler case revision needs its exact own predecessor-to-successor edge")
+        require(_digest(item["historySha256"]) == fingerprint({
+            "lessonId": document["id"], "locale": meta["locale"], "editorial": editorial[:index]}),
+            "Compiler case history differs from its complete published editorial prefix")
+        _validate_compiler_case_semantics(item["semanticBefore"], identity, item["block"])
+        if kind == "order":
+            _compiler_case_order_remap_fields(item["semanticBefore"], item["order"])
+        else:
+            _validate_compiler_case_semantics(item["semanticAfter"], identity, after)
+        groups.setdefault(identity, []).append((kind, item))
+    for identity, own in groups.items():
+        baseline = _compiler_case_order_contract(document, identity, own[0][1]["block"])
+        require(state_fingerprint(baseline) == digests[identity],
+                "The compiler case predecessor changed its owner's immutable contract")
+        sources = [item["block"] for _, item in own]
+        sources += [_compiler_case_event_after(kind, item) for kind, item in own]
+        sources.append(active[identity])
+        for block in sources:
+            epoch = _compiler_case_epoch(document, identity, block, own)
+            expected = (own[0][1]["block"] if epoch == 0
+                        else _compiler_case_event_after(*own[epoch - 1]))
+            require(without_compiler_guidance(block).get("outputCheck")
+                    == without_compiler_guidance(expected).get("outputCheck"),
+                    "Compiler case ordering changed a case, channel, comparison mode or program")
+            projected = _compiler_case_order_contract(document, identity, block)
+            require(state_fingerprint(projected) == state_fingerprint(baseline),
+                    "Compiler case ordering changed a case, channel, comparison mode or program")
+            if any(kind == "cases" for kind, _ in own):
+                _validate_compiler_case_payload(block)
+    return {identity: [item for _, item in own] for identity, own in groups.items()}
+
+
+def _compiler_case_order_realign(previous: dict, current: dict, identity: str, block: dict) -> dict:
+    """Restore the prior publication's epoch for the existing curricular guards."""
+    result = _compiler_case_order_projection(current, identity, block)
+    for kind, item in _compiler_case_events(previous, identity):
+        if kind == "cases":
+            result["outputCheck"]["cases"] = deepcopy(item["cases"])
+        else:
+            cases = result["outputCheck"]["cases"]
+            require(len(cases) == len(item["order"]), "Compiler case counts changed during alignment")
+            result["outputCheck"]["cases"] = [cases[index] for index in item["order"]]
+    before = _all_blocks(previous).get(identity)
+    if before is not None and any(entry["id"] == identity for entry in
+                                  current["stateLayout"].get("sourceFormatRevisions", [])):
+        result = code_format.source_projection(result, before)
+    return result
+
+
+def _compiler_case_replace_fields(overlay, identity: str, fields: list[dict]):
+    if overlay is None:
+        return {"version": 1, "fields": deepcopy(fields)} if fields else None
+    result = deepcopy(overlay)
+    previous = result["fields"]
+    positions = [index for index, field in enumerate(previous) if field.get("block") == identity
+                 and field.get("path", "").startswith("/outputCheck/cases/")]
+    insertion = positions[0] if positions else len(previous)
+    result["fields"] = (previous[:insertion] + deepcopy(fields)
+                        + [field for index, field in enumerate(previous[insertion:], insertion)
+                           if index not in positions])
+    return result
+
+
+def _validate_compiler_case_order_transition(previous: dict, current: dict) -> set[str]:
+    prior_meta, meta = previous["stateLayout"], current["stateLayout"]
+    for field in ("compilerCaseOrderRevisions", "compilerCaseRevisions"):
+        old, records = prior_meta.get(field, []), meta.get(field, [])
+        require(records[:len(old)] == old,
+                "Published compiler case histories are append-only and cannot be removed or rewritten")
+    additions = []
+    for kind, field in (("order", "compilerCaseOrderRevisions"), ("cases", "compilerCaseRevisions")):
+        additions.extend((kind, item) for item in meta.get(field, [])[len(prior_meta.get(field, [])):])
+    additions.sort(key=lambda event: event[1]["editorialIndex"])
+    if not additions:
+        return set()
+    require(prior_meta.get("version") == 2,
+            "A new compiler case revision requires an existing published v2 owner")
+    prior_edge_count = len(prior_meta["editorial"])
+    prior_blocks, first = _blocks(previous), set()
+    expected_overlay = deepcopy(previous.get(text_semantics.ROOT_FIELD))
+    for kind, item in additions:
+        identity = item["id"]
+        require(identity in prior_blocks and item["editorialIndex"] >= prior_edge_count,
+                "A new compiler case revision needs a genuinely published active predecessor")
+        if identity not in first:
+            require(item["block"] == prior_blocks[identity],
+                    "A new compiler case revision must archive its exact complete published predecessor")
+            first.add(identity)
+        fields = ([] if expected_overlay is None else [field for field in expected_overlay.get("fields", [])
+                  if field.get("block") == identity and field.get("path", "").startswith("/outputCheck/cases/")])
+        require(item["semanticBefore"] == fields,
+                "Compiler case semantic history differs from its exact published predecessor")
+        if kind == "order":
+            moved = iter(_compiler_case_order_remap_fields(fields, item["order"]))
+            if expected_overlay is not None:
+                expected_overlay["fields"] = [next(moved) if field.get("block") == identity and
+                    field.get("path", "").startswith("/outputCheck/cases/") else field
+                    for field in expected_overlay.get("fields", [])]
+        else:
+            expected_overlay = _compiler_case_replace_fields(expected_overlay, identity, item["semanticAfter"])
+    retired_before = prior_meta.get("retired", [])
+    retiring = {item["id"] for item in meta.get("retired", [])[len(retired_before):]}
+    if expected_overlay is not None and retiring:
+        expected_overlay["fields"] = [field for field in expected_overlay.get("fields", [])
+                                      if field.get("block") not in retiring]
+    require(expected_overlay == current.get(text_semantics.ROOT_FIELD),
+            "Compiler case revision lost, invented or changed an authored semantic field")
+    return first
+
+
+_UNSET_COMPILER_CASES = object()
+
+
+def revise_compiler_cases(document: dict, identity: str, cases=_UNSET_COMPILER_CASES, *,
+                          case_semantics=_UNSET_COMPILER_CASES, return_to: int | None = None) -> dict:
+    """Revise cases explicitly; the original two-argument reviewed API is unchanged."""
+    if cases is _UNSET_COMPILER_CASES:
+        require(case_semantics is _UNSET_COMPILER_CASES and return_to is None,
+                "The closed compiler API does not accept general revision options")
+        return _revise_closed_compiler_cases(document, identity)
+    require(case_semantics is not _UNSET_COMPILER_CASES,
+            "A general compiler case revision requires explicit case_semantics, including []")
+    validate(document)
+    meta = document.get("stateLayout", {})
+    require(meta.get("version") == 2 and meta.get("locale") == "es",
+            "Compiler case revisions require an existing published Spanish v2 owner")
+    _identity(identity)
+    original = _blocks(document).get(identity)
+    require(type(original) is dict, "Compiler case revisions require an active existing owner")
+    require(return_to is None or (type(return_to) is int and return_to >= 0),
+            "A compiler case return needs an explicit nonnegative revision")
+    record = {"id": identity, "block": deepcopy(original), "cases": deepcopy(cases),
+              "editorialIndex": len(meta["editorial"]),
+              "historySha256": fingerprint({"lessonId": document["id"], "locale": meta["locale"],
+                                             "editorial": meta["editorial"]}),
+              "semanticBefore": _compiler_case_order_fields(document, identity),
+              "semanticAfter": deepcopy(case_semantics)}
+    changed = _compiler_case_revision_after(record)
+    _validate_compiler_case_semantics(record["semanticAfter"], identity, changed)
+    result = deepcopy(document)
+    target = _blocks(result)[identity]
+    target.clear()
+    target.update(changed)
+    overlay = _compiler_case_replace_fields(result.get(text_semantics.ROOT_FIELD), identity, case_semantics)
+    if overlay is None:
+        result.pop(text_semantics.ROOT_FIELD, None)
+    else:
+        result[text_semantics.ROOT_FIELD] = overlay
+    proof = {"id": identity, "beforeSha256": fingerprint(original), "afterSha256": fingerprint(changed)}
+    prior = [edge for edge in meta["editorial"] if edge["id"] == identity]
+    nodes = ([prior[0]["beforeSha256"]] + [edge["afterSha256"] for edge in prior]) if prior else []
+    if proof["afterSha256"] in nodes:
+        require(return_to is not None and return_to < len(nodes) - 1
+                and nodes[return_to] == proof["afterSha256"],
+                "Returning compiler cases requires their explicit authentic earlier revision")
+        proof["returnTo"] = {"revision": return_to, "historySha256": record["historySha256"],
+                             "previousBlock": deepcopy(original)}
+    else:
+        require(return_to is None, "New compiler cases cannot claim an editorial return")
+    result["stateLayout"].setdefault("compilerCaseRevisions", []).append(record)
+    result["stateLayout"]["editorial"].append(proof)
+    validate_transition(document, result)
+    return result
+
+
 
 
 def _compiler_case_order_contract(document: dict, identity: str, block: dict) -> dict:
     result = _compiler_case_order_projection(document, identity, block)
-    if _compiler_case_order_records(document, identity):
+    if _compiler_case_events(document, identity):
         require(all(type(case) is dict and ("exitCode" not in case or type(case["exitCode"]) is int)
                     for case in result["outputCheck"]["cases"]),
                 "Compiler case exit codes must preserve their integer type")
@@ -1207,120 +1531,10 @@ def _compiler_case_order_contract(document: dict, identity: str, block: dict) ->
     return result
 
 
-def _validate_compiler_case_order_revisions(document: dict, storage: dict, digests: dict) -> dict[str, list[dict]]:
-    meta = document["stateLayout"]
-    records = meta.get("compilerCaseOrderRevisions", [])
-    require(type(records) is list and len(records) <= 100_000,
-            "Malformed compiler case order history")
-    require(not records or meta["locale"] == "es", "Compiler case orders require Spanish v2")
-    active, groups, previous_index = _blocks(document), {}, -1
-    editorial = meta["editorial"]
-    require(type(editorial) is list, "Malformed editorial proof")
-    for item in records:
-        require(type(item) is dict and set(item) == {
-            "id", "block", "order", "editorialIndex", "historySha256", "semanticBefore"},
-            "A compiler case order needs its owner, complete predecessor, permutation, exact edge and semantics")
-        identity = _identity(item["id"])
-        require(identity in storage and identity in active,
-                "A compiler case order must retain its existing active owner")
-        index = item["editorialIndex"]
-        require(type(index) is int and previous_index < index < len(editorial),
-                "Compiler case order edges must be chronological and unique")
-        previous_index = index
-        after = _compiler_case_order_after(item)
-        proof = editorial[index]
-        require(type(proof) is dict and proof.get("id") == identity
-                and proof.get("beforeSha256") == fingerprint(item["block"])
-                and proof.get("afterSha256") == fingerprint(after),
-                "A compiler case order needs its exact own predecessor-to-permutation edge")
-        require(_digest(item["historySha256"]) == fingerprint({
-            "lessonId": document["id"], "locale": meta["locale"], "editorial": editorial[:index]}),
-            "Compiler case order history differs from its complete published editorial prefix")
-        fields = item["semanticBefore"]
-        require(type(fields) is list, "Compiler case semantics must preserve an explicit field list")
-        sources = text_semantics.public_text_fields(item["block"])
-        seen = set()
-        for field in fields:
-            require(type(field) is dict and set(field) == {"block", "path", "sourceSha256", "spans"}
-                    and field["block"] == identity and type(field["path"]) is str
-                    and field["path"].startswith("/outputCheck/cases/")
-                    and field["path"] in sources and field["path"] not in seen,
-                    "Archived compiler case semantics must belong to exact public fields of their owner")
-            try:
-                text_semantics._descriptor(field, sources[field["path"]])
-            except (ValueError, KeyError, TypeError) as exc:
-                raise LayoutError("Invalid archived compiler case semantics") from exc
-            seen.add(field["path"])
-        _compiler_case_order_remap_fields(fields, item["order"])
-        groups.setdefault(identity, []).append(item)
-    for identity, own in groups.items():
-        baseline = _compiler_case_order_contract(document, identity, own[0]["block"])
-        require(state_fingerprint(baseline) == digests[identity],
-                "The compiler case predecessor changed its owner's immutable contract")
-        expected = without_compiler_guidance(baseline).get("outputCheck")
-        for block in [item["block"] for item in own] + [active[identity]]:
-            projected = _compiler_case_order_contract(document, identity, block)
-            require(without_compiler_guidance(projected).get("outputCheck") == expected
-                    and state_fingerprint(projected) == state_fingerprint(baseline),
-                    "Compiler case ordering changed a case, channel, comparison mode or program")
-    return groups
 
 
-def _compiler_case_order_realign(previous: dict, current: dict, identity: str, block: dict) -> dict:
-    """Give the legacy curricular guard the previous published case positions."""
-    result = _compiler_case_order_projection(current, identity, block)
-    for item in _compiler_case_order_records(previous, identity):
-        cases = result["outputCheck"]["cases"]
-        require(len(cases) == len(item["order"]), "Compiler case counts changed during alignment")
-        result["outputCheck"]["cases"] = [cases[index] for index in item["order"]]
-    before = _all_blocks(previous).get(identity)
-    if before is not None and any(entry["id"] == identity for entry in
-                                  current["stateLayout"].get("sourceFormatRevisions", [])):
-        # validate_transition already authenticated every lexical-only change.
-        # This view is for old curricular guards, never displayed or compiled.
-        result = code_format.source_projection(result, before)
-    return result
 
 
-def _validate_compiler_case_order_transition(previous: dict, current: dict) -> set[str]:
-    old = _compiler_case_order_records(previous)
-    records = _compiler_case_order_records(current)
-    require(records[:len(old)] == old,
-            "Published compiler case orders are append-only and cannot be removed or rewritten")
-    additions = records[len(old):]
-    if not additions:
-        return set()
-    prior_meta, meta = previous["stateLayout"], current["stateLayout"]
-    prior_blocks = _blocks(previous)
-    first = {}
-    expected_overlay = deepcopy(previous.get(text_semantics.ROOT_FIELD))
-    for item in additions:
-        identity = item["id"]
-        require(identity in prior_blocks and item["editorialIndex"] >= len(prior_meta["editorial"]),
-                "A new compiler case order needs a genuinely published active predecessor")
-        if identity not in first:
-            require(item["block"] == prior_blocks[identity],
-                    "A new compiler case order must archive its exact complete published predecessor")
-            first[identity] = item
-        fields = ([] if expected_overlay is None else [field for field in expected_overlay.get("fields", [])
-                  if field.get("block") == identity and field.get("path", "").startswith("/outputCheck/cases/")])
-        require(item["semanticBefore"] == fields,
-                "Compiler case semantic history differs from its exact published predecessor")
-        moved = iter(_compiler_case_order_remap_fields(fields, item["order"]))
-        if expected_overlay is not None:
-            expected_overlay["fields"] = [next(moved) if field.get("block") == identity and
-                field.get("path", "").startswith("/outputCheck/cases/") else field
-                for field in expected_overlay.get("fields", [])]
-    # Other owners can be retired in the same authenticated transition; their
-    # exact preceding marks belong to retirementHistory, never this operation.
-    retired_before = previous["stateLayout"].get("retired", [])
-    retiring = {item["id"] for item in meta.get("retired", [])[len(retired_before):]}
-    if expected_overlay is not None and retiring:
-        expected_overlay["fields"] = [field for field in expected_overlay.get("fields", [])
-                                      if field.get("block") not in retiring]
-    require(expected_overlay == current.get(text_semantics.ROOT_FIELD),
-            "Compiler case permutation lost, invented or changed an authored semantic field")
-    return set(first)
 
 
 
@@ -3558,7 +3772,7 @@ def reorder_compiler_cases(document: dict, identity: str, order: list[int], *,
     return result
 
 
-def revise_compiler_cases(document: dict, identity: str) -> dict:
+def _revise_closed_compiler_cases(document: dict, identity: str) -> dict:
     """Prepare exactly one reviewed compiler expansion without editing assets."""
     validate(document)
     meta = document.get("stateLayout", {})
@@ -4122,7 +4336,7 @@ def align_for_previous_validation(previous: dict, current: dict) -> dict:
     blocks = {identity: _historical_choice_contract(current, identity, block)
               if identity not in old_choices else block for identity, block in blocks.items()}
     blocks = {identity: _compiler_case_order_realign(old, current, identity, block)
-              if _compiler_case_order_records(current, identity) else block
+              if _compiler_case_events(current, identity) else block
               for identity, block in blocks.items()}
     old_compilers = _compiler_revisions(old) | _compiler_references(old)
     blocks = {identity: _historical_compiler_contract(current, identity, block)
@@ -4468,6 +4682,8 @@ def main() -> None:
                         help="Authoring JSON list: id, storage, progressPage and block; requires v2 and --plan")
     parser.add_argument("--identity", help="Existing reviewed stable identity for a refinement/revision")
     parser.add_argument("--case-order", type=Path, help="JSON permutation: new case index to previous case index")
+    parser.add_argument("--cases", type=Path, help="Explicit replacement outputCheck case list")
+    parser.add_argument("--case-semantics", type=Path, help="Explicit replacement case descriptors, including []")
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
     parser.add_argument("--replacement", help="Exact revised nonblank choice or math prompt text")
     parser.add_argument("--semantic-spans", type=Path,
@@ -4487,8 +4703,10 @@ def main() -> None:
                 "Replacement text belongs to a choice or mathematical prompt revision")
         require(args.action == "revise-math-prompt-editorial" or args.semantic_spans is None,
                 "Semantic spans belong only to revise-math-prompt-editorial")
-        require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases"}
+        require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases", "revise-compiler-cases"}
                 or args.return_to is None, "Return-to belongs to a supported authenticated editorial return")
+        require(args.action == "revise-compiler-cases" or (args.cases is None and args.case_semantics is None),
+                "Replacement cases and their semantics belong only to revise-compiler-cases")
         require(args.action == "reorder-compiler-cases" or args.case_order is None,
                 "Case order belongs only to reorder-compiler-cases")
         require(args.action == "revise-ordinary-editorial" or args.editorial_fields is None,
@@ -4577,7 +4795,14 @@ def main() -> None:
             require(args.identity is not None and args.plan is None and args.additions is None,
                     "revise-compiler-cases requires --identity without a move/addition plan")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
-            result = revise_compiler_cases(baseline, args.identity)
+            if args.cases is None and args.case_semantics is None:
+                require(args.return_to is None, "A closed compiler revision cannot claim a general return")
+                result = revise_compiler_cases(baseline, args.identity)
+            else:
+                require(args.cases is not None and args.case_semantics is not None,
+                        "General compiler cases require both --cases and --case-semantics")
+                result = revise_compiler_cases(baseline, args.identity, load(args.cases),
+                    case_semantics=load(args.case_semantics), return_to=args.return_to)
         else:
             validate(source)
             validate_transition(previous, source)

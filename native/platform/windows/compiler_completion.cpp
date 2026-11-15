@@ -233,7 +233,8 @@ curriculum::Block historical_block(const curriculum::Block& block) {
     // Closed archives predate formatting: do not prefer an expanded starter sidecar.
     original.source_format_original_initial_code.reset();
     original.source_format_original_project_files.reset();
-    original.compiler_case_order_revisions.clear();return original;
+    original.compiler_case_order_revisions.clear();
+    original.compiler_case_revisions.clear();return original;
 }
 // Each journal entry carries its exact predecessor; case indices are mapped
 // only by its authenticated bijection, never by sorting outputs or examples.
@@ -258,6 +259,26 @@ curriculum::Block case_order_after_block(const curriculum::Block& current,
     }
     return result;
 }
+struct CompilerCaseStage {
+    std::size_t editorial_index;
+    std::string marker;
+    curriculum::Block previous,after;
+};
+std::vector<CompilerCaseStage> compiler_case_stages(const curriculum::Block& block) {
+    std::vector<CompilerCaseStage> stages;
+    for(const auto& revision:block.compiler_case_order_revisions)
+        stages.push_back({revision.editorial_index,"case-order-adopted/"+revision.record_sha256,
+            curriculum::compiler_case_order_previous_block(block,revision),case_order_after_block(block,revision)});
+    for(const auto& revision:block.compiler_case_revisions)
+        stages.push_back({revision.editorial_index,"case-revision-adopted/"+revision.record_sha256,
+            curriculum::compiler_case_revision_previous_block(block,revision),
+            curriculum::compiler_case_revision_after_block(block,revision)});
+    std::ranges::sort(stages,{},&CompilerCaseStage::editorial_index);
+    for(std::size_t index=1;index<stages.size();++index)
+        if(stages[index-1].editorial_index==stages[index].editorial_index)
+            throw std::runtime_error("Ambiguous compiler case revision history; data was preserved.");
+    return stages;
+}
 std::vector<curriculum::Block> historical_blocks(const curriculum::Lesson& lesson,
         const curriculum::Block& block) {
     std::vector<curriculum::Block> result;
@@ -265,13 +286,13 @@ std::vector<curriculum::Block> historical_blocks(const curriculum::Lesson& lesso
     const auto append=[&](curriculum::Block previous) {
         if(seen.insert(base(lesson,previous)).second)result.push_back(std::move(previous));
     };
-    for(auto it=block.compiler_case_order_revisions.rbegin();it!=block.compiler_case_order_revisions.rend();++it) {
-        append(case_order_after_block(block,*it));
-        append(curriculum::compiler_case_order_previous_block(block,*it));
+    const auto stages=compiler_case_stages(block);
+    for(auto it=stages.rbegin();it!=stages.rend();++it) {
+        append(it->after);
+        append(it->previous);
     }
     if(block.compiler_revision) {
-        const auto expanded=block.compiler_case_order_revisions.empty()?block:
-            curriculum::compiler_case_order_previous_block(block,block.compiler_case_order_revisions.front());
+        const auto expanded=stages.empty()?block:stages.front().previous;
         append(historical_block(expanded));
     }
     return result;
@@ -630,7 +651,7 @@ void validate_compiler_puzzle_state(const state::StateData& data,const curriculu
     // Existing objectives retain their historical permissive decoding. The
     // reviewed migration validates every receipt it is about to reuse.
     if(block.compile_check){validate_receipts(data,lesson,block);return;}
-    if(!block.compiler_revision&&block.compiler_case_order_revisions.empty())return;
+    if(!block.compiler_revision&&block.compiler_case_order_revisions.empty()&&block.compiler_case_revisions.empty())return;
     for(const auto& previous:historical_blocks(lesson,block))validate_receipts(data,lesson,previous);
     validate_receipts(data,lesson,block);
 }
@@ -662,67 +683,77 @@ static void prepare_compiler_expansion(state::StateData& data,const curriculum::
         data.preferences["native_windows"][marker]=true;
     }
 }
+// Reuse only an execution of the identical complete case by one program.
+// An aggregate receipt never proves any of the isolated inputs it contains.
+static void adopt_compiler_case_stage(state::StateData& data,const curriculum::Lesson& lesson,
+        const curriculum::Block& after,const std::vector<curriculum::Block>& previous_versions) {
+    const auto key=base(lesson,after);
+    if(state::find(data,"native_windows",key+"completed"))return;
+    auto program=state::string_value(data,"native_windows",key+"program");
+    auto proofs=case_proofs(data,key);proofs.resize(after.output_check->cases.size());
+    bool added=false;
+    for(auto version=previous_versions.rbegin();version!=previous_versions.rend();++version) {
+        if(!version->output_check||version->output_check->input_comparison!=after.output_check->input_comparison)continue;
+        const auto old_key=base(lesson,*version);
+        if(old_key==key)continue;
+        const auto previous_program=state::string_value(data,"native_windows",old_key+"program");
+        if(previous_program.empty()||(!program.empty()&&previous_program!=program))continue;
+        const auto previous_proofs=case_proofs(data,old_key);
+        for(std::size_t index=0;index<after.output_check->cases.size();++index) {
+            if(!proofs[index].empty())continue;
+            for(std::size_t prior=0;prior<previous_proofs.size();++prior) {
+                if(previous_proofs[prior].empty()||!curriculum::same_output_case_requirements(
+                        version->output_check->cases[prior],after.output_check->cases[index]))continue;
+                if(program.empty())program=previous_program;
+                proofs[index]=proof(key,program,index,after.output_check->cases[index]);added=true;break;
+            }
+        }
+    }
+    if(program.empty()||(!added&&(proofs.empty()||proofs.front().empty())))return;
+    auto& values=data.preferences["native_windows"];
+    values[key+"program"]=program;values[key+"cases"]=proofs;
+    // Existing proof positions remain intact, including on an explicit return.
+    // Historical completion by itself never grants this version's first case.
+    if(!proofs.empty()&&!proofs.front().empty()) {
+        const auto seal=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();})
+            ?complete_seal(key,program,proofs):first_case_complete_seal(key,program,proofs);
+        values[key+"completed"]=seal;
+        if(!state::find(data,"native_windows",key+"feedback")) {
+            const auto& guide=after.output_check->cases.front().explanation;
+            if(!guide.empty()) {
+                values[key+"feedback"]=guide;
+                record_feedback_origin(data,key,after,"/outputCheck/cases/0/explanation",guide,seal);
+            }
+        }
+    }
+}
 void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::Lesson& lesson) {
     // Validate every reusable version before the staged store changes any receipt.
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
-        if(block.compiler_revision||!block.compiler_case_order_revisions.empty())
+        if(block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
             validate_compiler_puzzle_state(data,lesson,block);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
-        if(block.compiler_case_order_revisions.empty()) {
+        const auto stages=compiler_case_stages(block);
+        if(stages.empty()) {
             prepare_compiler_expansion(data,lesson,block);continue;
         }
-        // A preceding reviewed expansion retains its original adoption rules.
-        // Apply it in its own order, then project the independent permutations.
-        prepare_compiler_expansion(data,lesson,curriculum::compiler_case_order_previous_block(
-            block,block.compiler_case_order_revisions.front()));
-        for(const auto& revision:block.compiler_case_order_revisions) {
-            const auto marker=root(lesson,block)+"case-order-adopted/"+revision.record_sha256;
+        // Expansions, permutations and case replacements keep their own epochs.
+        // Archived versions remain available even when a case disappears and
+        // subsequently returns; proofs are never combined across programs.
+        prepare_compiler_expansion(data,lesson,stages.front().previous);
+        std::vector<curriculum::Block> previous_versions;
+        if(block.compiler_revision)previous_versions.push_back(historical_block(stages.front().previous));
+        for(const auto& stage:stages) {
+            previous_versions.push_back(stage.previous);
+            const auto marker=root(lesson,block)+stage.marker;
             if(const auto adopted=state::find(data,"native_windows",marker)) {
                 if(!std::holds_alternative<bool>(*adopted)||!std::get<bool>(*adopted))
-                    throw std::runtime_error("Invalid compiler case-order adoption marker; data was preserved.");
-                continue;
+                    throw std::runtime_error("Invalid compiler case adoption marker; data was preserved.");
+            } else {
+                adopt_compiler_case_stage(data,lesson,stage.after,previous_versions);
+                data.preferences["native_windows"][marker]=true;
             }
-            const auto previous=curriculum::compiler_case_order_previous_block(block,revision);
-            const auto after=case_order_after_block(block,revision);
-            const auto old_key=base(lesson,previous),key=base(lesson,after);
-            const auto program=state::string_value(data,"native_windows",old_key+"program");
-            const auto current_program=state::string_value(data,"native_windows",key+"program");
-            // Existing achievements are immutable. A draft/program B must not
-            // receive optional execution receipts collected by program A.
-            if(!program.empty()&&!state::find(data,"native_windows",key+"completed")&&
-                    (current_program.empty()||current_program==program)) {
-                const auto prior=case_proofs(data,old_key);
-                auto proofs=case_proofs(data,key);proofs.resize(revision.order.size());
-                bool added=false;
-                for(std::size_t index=0;index<revision.order.size();++index) {
-                    const auto source=revision.order[index];
-                    if(proofs[index].empty()&&source<prior.size()&&!prior[source].empty()) {
-                        proofs[index]=proof(key,program,index,after.output_check->cases[index]);added=true;
-                    }
-                }
-                if(added||(!proofs.empty()&&!proofs.front().empty())) {
-                    auto& values=data.preferences["native_windows"];
-                    values[key+"program"]=program;values[key+"cases"]=proofs;
-                    // Only this exact case's receipt earns the current first
-                    // objective. An old completion flag alone grants nothing.
-                    if(!proofs.empty()&&!proofs.front().empty()) {
-                        const auto seal=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();})
-                            ?complete_seal(key,program,proofs):first_case_complete_seal(key,program,proofs);
-                        values[key+"completed"]=seal;
-                        // Optional historical cases need not have success
-                        // feedback. Use their own authored guide, never another
-                        // case's saved response; old feedback remains untouched.
-                        if(!state::find(data,"native_windows",key+"feedback")) {
-                            const auto& guide=after.output_check->cases.front().explanation;
-                            if(!guide.empty()) {
-                                values[key+"feedback"]=guide;
-                                record_feedback_origin(data,key,after,"/outputCheck/cases/0/explanation",guide,seal);
-                            }
-                        }
-                    }
-                }
-            }
-            data.preferences["native_windows"][marker]=true;
+            previous_versions.push_back(stage.after);
         }
     }
 }

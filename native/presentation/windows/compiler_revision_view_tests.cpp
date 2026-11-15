@@ -18,6 +18,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <winrt/Windows.Data.Json.h>
 
 namespace {
 using namespace lgaed;
@@ -33,9 +34,10 @@ std::int64_t now_ms(){return std::chrono::duration_cast<std::chrono::millisecond
 struct View {
     WindowsEnvironment environment;
     curriculum::Lesson lesson;
+    LessonViewHooks hooks;
     HWND host=nullptr,view=nullptr;
-    View(curriculum::Lesson model,const state::StateData& initial):environment(resolve_windows_environment({ProfileId::Codex,
-        L"compiler-revision-view-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})),lesson(std::move(model)){
+    View(curriculum::Lesson model,const state::StateData& initial,LessonViewHooks callbacks = {}):environment(resolve_windows_environment({ProfileId::Codex,
+        L"compiler-revision-view-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false})),lesson(std::move(model)),hooks(std::move(callbacks)){
         check(!std::filesystem::exists(environment.paths.root),"Compiler revision QA must own a new profile");
         initialize_profile_directories(environment.paths);state::StateStore store(environment.paths.root);(void)store.load();store.save(initial);
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Hidden compiler revision QA",WS_OVERLAPPEDWINDOW,
@@ -43,7 +45,7 @@ struct View {
         check(host!=nullptr,"Cannot create the hidden compiler revision host");open();
     }
     ~View(){if(view){(void)flush_lesson_view(view);DestroyWindow(view);}if(host)DestroyWindow(host);}
-    void open(){view=create_lesson_view(host,environment,lesson);check(view!=nullptr,"Cannot create a compiler revision lesson");
+    void open(){view=create_lesson_view(host,environment,lesson,hooks);check(view!=nullptr,"Cannot create a compiler revision lesson");
         MoveWindow(view,0,0,1100,850,TRUE);pump();check(!IsWindowVisible(host),"Compiler revision QA exposed the desktop");}
     void reopen(){check(flush_lesson_view(view),"Cannot save compiler revision QA");DestroyWindow(view);view=nullptr;open();}
     void restore(const state::StateData& next){
@@ -341,22 +343,62 @@ void compiler_revisions_keep_prior_progress(bool late){
     std::cout<<"PASS "<<scenarios<<" hidden real compiler views: "<<(late?"U11L15/U11L16 exact proposals":"seven earlier exact expansions")
         <<", prior empty/draft/partial/complete states, same-program projection, current gate, original drafts/preferences, stored reader history, completion, Reset and reopen (synthetic QA receipts, no compilation or listening claimed)\n";
 }
-void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& before_file,
-        const std::filesystem::path& after_file) {
+// These matching-only prerequisites belong to the unchanged P2 fixture.
+// Re-evaluate their saved pairs independently; this isolates compiler UI QA
+// and does not claim to exercise the separate general mathematics worker.
+winrt::Windows::Data::Json::JsonObject matching_answers(std::string_view original) {
+    using namespace winrt::Windows::Data::Json;
+    const auto block=JsonObject::Parse(winrt::to_hstring(original));JsonObject answers;
+    for(const auto& item:block.GetNamedArray(L"responses")) {
+        const auto response=item.GetObject(),validator=response.GetNamedObject(L"validator");
+        check(response.GetNamedString(L"type")==L"math_matching_drag"&&validator.GetNamedString(L"type")==L"matching",
+            "The compiler view's independent prerequisite evaluator only supports matching");
+        JsonObject answer;answer.Insert(L"type",JsonValue::CreateStringValue(L"matching"));
+        answer.Insert(L"pairs",validator.GetNamedObject(L"expected"));
+        answers.Insert(response.GetNamedString(L"id"),answer);
+    }
+    return answers;
+}
+LessonViewHooks matching_prerequisite_hooks() {
+    LessonViewHooks hooks;
+    hooks.validate_math=[](std::string_view original,std::string_view response,std::string_view,std::stop_token) {
+        using namespace winrt::Windows::Data::Json;
+        const auto expected=matching_answers(original),answers=JsonObject::Parse(winrt::to_hstring(response));
+        bool correct=expected.Size()==answers.Size();
+        for(const auto& item:expected) {
+            if(!answers.HasKey(item.Key())){correct=false;continue;}
+            const auto actual=answers.GetNamedObject(item.Key());
+            if(actual.GetNamedString(L"type",L"")!=L"matching"){correct=false;continue;}
+            const auto pairs=actual.GetNamedObject(L"pairs"),required=item.Value().GetObject().GetNamedObject(L"pairs");
+            if(pairs.Size()!=required.Size())correct=false;
+            for(const auto& pair:required)
+                if(pairs.GetNamedString(pair.Key(),L"")!=pair.Value().GetString())correct=false;
+        }
+        JsonObject reply;reply.Insert(L"evaluable",JsonValue::CreateBooleanValue(true));
+        reply.Insert(L"correct",JsonValue::CreateBooleanValue(correct));
+        reply.Insert(L"contentFingerprint",JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(original))));
+        return winrt::to_string(reply.Stringify());
+    };
+    return hooks;
+}
+void compiler_cases_keep_first_case_gate(const std::filesystem::path& before_file,
+        const std::filesystem::path& after_file,bool replace_cases) {
     const auto before_hash=state::sha256(state::read_bytes(before_file));
     const auto after_hash=state::sha256(state::read_bytes(after_file));
     const auto before=windows::load_lesson(before_file),after=windows::load_lesson(after_file);
-    constexpr auto id="u11_movimientos_compensados_en_los_extremos_comprobacion";
+    const auto id=replace_cases?"block_0005_0002":"u11_movimientos_compensados_en_los_extremos_comprobacion";
     const auto position=curriculum::stable_block_position(before,id);
     const auto revised_position=curriculum::stable_block_position(after,id);
     check(position&&revised_position&&position->page==revised_position->page&&position->block==revised_position->block,
         "The permutation moved its published editor");
     const auto& old=before.pages[position->page].blocks[position->block];
     const auto& current=after.pages[position->page].blocks[position->block];
-    check(old.output_check&&current.output_check&&old.output_check->cases.size()==22&&
-        current.output_check->cases.front().standard_input==old.output_check->cases.back().standard_input&&
-        !current.compiler_case_order_revisions.empty()&&!current.compiler_revision,
-        "The real U11L7 permutation fixture lost its independent contract");
+    check(old.output_check&&current.output_check&&!current.compiler_revision&&
+        (replace_cases?(old.output_check->cases.size()==4&&current.output_check->cases.size()==16&&
+            current.output_check->cases.front().standard_input=="1\n"&&!current.compiler_case_revisions.empty()):
+            (old.output_check->cases.size()==22&&current.output_check->cases.front().standard_input==old.output_check->cases.back().standard_input&&
+            !current.compiler_case_order_revisions.empty())),
+        "The published compiler fixture lost its independent case contract");
     const auto seed_one=[](state::StateData& data,const curriculum::Lesson& lesson,
             const curriculum::Block& owner,std::string source,std::size_t index,std::string_view feedback) {
         const auto& item=owner.output_check->cases.at(index);
@@ -386,6 +428,13 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
             } else if(owner.type==curriculum::BlockType::output_prediction&&!owner.answers.empty()) {
                 answer.answer=owner.answers.front();
                 answer.correct=curriculum::evaluate_text_answer(owner,answer.answer).correct;
+            } else if(replace_cases&&owner.type==curriculum::BlockType::math_puzzle) {
+                using namespace winrt::Windows::Data::Json;
+                const auto original=curriculum::math_evaluation_source(owner);
+                JsonObject stored;stored.Insert(L"responses",matching_answers(original));
+                stored.Insert(L"correct",JsonValue::CreateBooleanValue(true));
+                stored.Insert(L"contentFingerprint",JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(original))));
+                answer.raw_json=winrt::to_string(stored.Stringify());answer.correct=true;
             } else continue;
             check(answer.correct,"The case-order view prerequisite answer is invalid");
             state::put_response(data,before,owner,answer);
@@ -394,22 +443,31 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
             if(owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&owner.stable_id!=id)
                 seed_one(data,before,owner,owner.initial_code,0,"Correcto\nPrerrequisito QA.");
         const auto source=old.initial_code+"\n// Borrador personal QA conservado.\n";
-        if(mode!="none")seed_one(data,before,old,source,mode=="old-first"?0:21,
-            "Correcto\nGuía del primer caso anterior.");
+        if(mode=="old-first"||(!replace_cases&&mode=="new-first"))
+            seed_one(data,before,old,source,mode=="old-first"?0:21,"Correcto\nGuía del primer caso anterior.");
         state::Draft draft;draft.source=source;draft.input=" entrada personal\n";
         draft.selection_start=3;draft.selection_end=7;
         const auto key=curriculum::draft_key("programming",before,old);state::put_draft(data,key,draft);
         for(std::size_t page=0;page<=position->page;++page)state::save_current_page(data,before,page);
-        View fixture(after,data);
-        const auto verify=[&] {
+        if(replace_cases&&mode=="new-first") {
+            state::prepare_lesson_state(data,after);
+            seed_one(data,after,current,source,0,"Correcto\nPrimer caso actual QA.");
+        }
+        View fixture(after,data,replace_cases?matching_prerequisite_hooks():LessonViewHooks{});
+        const auto wait_for_editor=[&] {
+            const auto deadline=GetTickCount64()+5000;
+            while(lesson_page_state(fixture.view).index!=position->page&&GetTickCount64()<deadline){pump();Sleep(5);}
             check(lesson_page_state(fixture.view).index==position->page,
                 "The case-order view did not reach its independently prepared editor page");
+        };
+        const auto verify=[&] {
+            wait_for_editor();
             const auto saved=fixture.saved();const bool complete=mode=="new-first";
             check(windows::compiler_puzzle_completed(saved,after,current)==complete,
                 "The native view confused an earlier first case with the current one");
             check(windows::compiler_puzzle_completed(saved,before,old)==(mode=="old-first"),
                 "The native view replaced the historical achievement");
-            check(windows::compiler_puzzle_case_count(saved,after,current)==(mode=="none"?0:1),
+            check(windows::compiler_puzzle_case_count(saved,after,current)==(mode=="none"||(replace_cases&&mode=="old-first")?0:1),
                 "The native view lost or invented projected case receipts");
             const auto summary=fixture.text(position->block,40);
             check(summary.empty()==(mode!="old-first"),"The native case-order history label is incorrect");
@@ -432,10 +490,12 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
         if(mode!="new-first") {
             auto next=fixture.saved();seed_one(next,after,current,source,0,"Correcto\nPrimer caso actual QA.");
             fixture.restore(next);
+            wait_for_editor();
             check(windows::compiler_puzzle_completed(fixture.saved(),after,current)&&fixture.text(position->block,40).empty(),
                 "Checking the current first case left the native editor pending");
         }
         fixture.reset(position->block);fixture.reopen();
+        wait_for_editor();
         const auto reset=fixture.saved();
         check(!windows::compiler_puzzle_completed(reset,after,current)&&
             windows::compiler_puzzle_case_count(reset,before,old)==0&&fixture.text(position->block,40).empty(),
@@ -443,7 +503,7 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
     }
     check(state::sha256(state::read_bytes(before_file))==before_hash&&state::sha256(state::read_bytes(after_file))==after_hash,
         "The native view changed its read-only curricular fixtures");
-    std::cout<<"PASS 3 real hidden U11L7 Win32 views: no proof, old first only, new first previously optional; "
+    std::cout<<"PASS 3 hidden Win32 views for "<<(replace_cases?"P2 U4L4 case separation":"U11L7 case permutation")<<": no proof, old first only, current first proved; "
         "own historical feedback, current first gate, unchanged editor, reopen and Reset. Modeled receipts; no compilation or listening claimed.\n";
 }
 
@@ -451,8 +511,8 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
 int main(int argc,char** argv){const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
     try{check(argc==1||(argc==2&&(std::string_view(argv[1])=="--u11-late"||std::string_view(argv[1])=="--u11-starter"))||
-            (argc==4&&std::string_view(argv[1])=="--case-order"),"Unknown compiler revision view selector");
-        if(argc==4)compiler_case_order_keeps_first_case_gate(std::filesystem::u8path(argv[2]),std::filesystem::u8path(argv[3]));
+            (argc==4&&(std::string_view(argv[1])=="--case-order"||std::string_view(argv[1])=="--case-revision")),"Unknown compiler revision view selector");
+        if(argc==4)compiler_cases_keep_first_case_gate(std::filesystem::u8path(argv[2]),std::filesystem::u8path(argv[3]),std::string_view(argv[1])=="--case-revision");
         else if(argc==2&&std::string_view(argv[1])=="--u11-starter")starter_revision_keeps_existing_program();
         else compiler_revisions_keep_prior_progress(argc==2);}catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;

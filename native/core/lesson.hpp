@@ -171,6 +171,18 @@ struct CompilerCaseOrderRevision {
     std::optional<CppProjectFiles> previous_source_format_project_files;
     std::map<std::string,TextSemantics> previous_case_text_semantics;
 };
+// An authored replacement of cases changes only outputCheck.cases. Complete
+// before/after sources and explicit case semantics own their historical views.
+struct CompilerCaseRevision {
+    std::string id, raw_json, after_raw_json, sha256, record_sha256, history_sha256;
+    std::size_t editorial_index = 0;
+    std::string previous_initial_code;
+    CppProjectFiles previous_project_files;
+    OutputCheck previous_output_check, revised_output_check;
+    std::optional<std::string> previous_source_format_initial_code;
+    std::optional<CppProjectFiles> previous_source_format_project_files;
+    std::map<std::string,TextSemantics> previous_case_text_semantics, revised_case_text_semantics;
+};
 // Derived only from a complete, closed mathematical label review. This is
 // reading provenance, never another authored field or response identity.
 struct MathLabelRevision {
@@ -212,6 +224,7 @@ struct Block {
     std::optional<ChoiceRevision> choice_revision;
     std::optional<CompilerRevision> compiler_revision;
     std::vector<CompilerCaseOrderRevision> compiler_case_order_revisions;
+    std::vector<CompilerCaseRevision> compiler_case_revisions;
     std::optional<CompilerWorkflowCheck> compiler_workflow_check;
     // Lesson-root source prerequisite. It is checked before any case receipt
     // and keeps the original editor payload, answers and stable identity.
@@ -315,6 +328,7 @@ struct StateLayout {
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
     std::vector<CompilerCaseOrderRevision> compiler_case_order_revisions;
+    std::vector<CompilerCaseRevision> compiler_case_revisions;
     std::vector<StateEditorialReturn> editorial_returns;
     std::vector<StateReadingRevision> reading_revisions;
     std::vector<StatePositionalReadingPage> positional_reading_pages;
@@ -364,6 +378,10 @@ void validate_activity_relationships(const Lesson&);
 // Complete reading versions use their own retirementHistory overlay instead.
 [[nodiscard]] Block compiler_case_order_previous_block(
     const Block&, const CompilerCaseOrderRevision&);
+[[nodiscard]] Block compiler_case_revision_previous_block(
+    const Block&, const CompilerCaseRevision&);
+[[nodiscard]] Block compiler_case_revision_after_block(
+    const Block&, const CompilerCaseRevision&);
 // Fragments and their canonical permutation only; prose and view placement do
 // not change an ordering draft's representation. The platform hashes this frame.
 [[nodiscard]] std::string order_representation_frame(const Block&);

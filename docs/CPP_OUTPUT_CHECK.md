@@ -679,6 +679,30 @@ editor y la reapertura no recupera los eliminados. Esta capacidad general no
 autoriza cambiar esperados, agrupar casos independientes ni atribuir una
 ejecución nueva a una comprobación histórica.
 
+### Separar o sustituir casos conservando su historia
+
+La revisión general `compilerCaseRevisions` permite que Work sustituya la
+lista de casos de un editor ya publicado sin cambiar su programa, cliente,
+archivos ni otros campos. El helper `revise_compiler_cases` recibe la lista
+completa nueva y sus marcas semánticas explícitas; archiva el predecesor
+íntegro y autentica la transición editorial. Véase el esquema y el CLI en
+`docs/curriculum/STABLE_LESSON_STATE.md`.
+
+Un éxito de una entrada agrupada conserva su valor histórico. No acredita
+por sí mismo las entradas separadas. El nuevo primer caso necesita su propia
+comprobación correcta, salvo que ya exista un recibo auténtico del caso
+completo idéntico y del mismo programa. La adopción puede recuperarlo de una
+versión anterior archivada, pero no combina pruebas de programas distintos.
+Los casos restantes son opcionales y cada uno conserva su entrada, resultado,
+canales, retorno y guía propios.
+
+La interfaz muestra el logro anterior mientras el primer caso de la versión
+actual siga pendiente. Conserva el borrador sin insertar una fuente nueva.
+Una revisión de casos, una permutación, un formato compatible y un retorno se
+aplican en su orden editorial, conservando sus archivos y las pruebas de cada
+versión. El reinicio explícito del editor elimina los recibos y marcadores de
+sus versiones, de forma que una reapertura no restaure un logro reiniciado.
+
 ## Actividad integrada
 
 En `programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`,

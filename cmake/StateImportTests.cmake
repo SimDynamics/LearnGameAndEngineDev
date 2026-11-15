@@ -301,15 +301,50 @@ add_custom_command(OUTPUT ${LGAED_COMPILER_CASE_ORDER_FILES}
     VERBATIM)
 add_custom_target(lgaed_compiler_case_order_fixtures DEPENDS ${LGAED_COMPILER_CASE_ORDER_FILES})
 
+# Case-contract proposals preserve the complete published AssetCheck programs.
+set(LGAED_COMPILER_CASE_REVISION_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/compiler-case-revision")
+set(LGAED_COMPILER_CASE_REVISION_FILES
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/manifest.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l4.before.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l4.after.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l6.before.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l6.after.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l7.before.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l7.after.json")
+add_custom_command(OUTPUT ${LGAED_COMPILER_CASE_REVISION_FILES}
+    COMMAND ${_lgaed_state_fixture_python}
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_case_revision_fixture_source.py"
+        --output-dir "${LGAED_COMPILER_CASE_REVISION_DIR}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_case_revision_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_compiler_case_revision.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/verify_assetcheck_editor_references_cpp23.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/assetcheck_curricular_targets.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/assetcheck_differential_cases.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_case_order_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Authenticate isolated case revisions against three complete published AssetCheck lessons"
+    VERBATIM)
+add_custom_target(lgaed_compiler_case_revision_fixtures DEPENDS ${LGAED_COMPILER_CASE_REVISION_FILES})
+
 function(lgaed_add_compiler_case_order_view_test)
     add_executable(lgaed_compiler_case_order_view_tests
         native/presentation/windows/compiler_revision_view_tests.cpp)
     target_link_libraries(lgaed_compiler_case_order_view_tests PRIVATE lgaed_curricular_windows)
     add_dependencies(lgaed_compiler_case_order_view_tests lgaed_compiler_case_order_fixtures)
+    add_dependencies(lgaed_compiler_case_order_view_tests lgaed_compiler_case_revision_fixtures)
     add_test(NAME native.compiler_case_order_view COMMAND lgaed_compiler_case_order_view_tests
         --case-order "${LGAED_COMPILER_CASE_ORDER_DIR}/u11l7.before.json"
         "${LGAED_COMPILER_CASE_ORDER_DIR}/u11l7.after.json")
     set_tests_properties(native.compiler_case_order_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    add_test(NAME native.compiler_case_revision_view COMMAND lgaed_compiler_case_order_view_tests
+        --case-revision "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l4.before.json"
+        "${LGAED_COMPILER_CASE_REVISION_DIR}/u4l4.after.json")
+    set_tests_properties(native.compiler_case_revision_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
 endfunction()
 
 function(lgaed_add_state_import_tests qa_root)
@@ -321,6 +356,15 @@ function(lgaed_add_state_import_tests qa_root)
     add_test(NAME native.compiler_case_order_state COMMAND lgaed_compiler_case_order_state_tests
         "${LGAED_COMPILER_CASE_ORDER_DIR}" "${qa_root}/compiler-case-order")
     set_tests_properties(native.compiler_case_order_state PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+
+    add_executable(lgaed_compiler_case_revision_state_tests
+        native/platform/windows/compiler_case_revision_state_tests.cpp)
+    target_link_libraries(lgaed_compiler_case_revision_state_tests PRIVATE
+        lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_compiler_case_revision_state_tests lgaed_compiler_case_revision_fixtures)
+    add_test(NAME native.compiler_case_revision_state COMMAND lgaed_compiler_case_revision_state_tests
+        "${LGAED_COMPILER_CASE_REVISION_DIR}" "${qa_root}/compiler-case-revision")
+    set_tests_properties(native.compiler_case_revision_state PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
 
     # In the isolated Windows QA mode, test the actual immutable project
     # revision files and selective restoration, not only compiler state.

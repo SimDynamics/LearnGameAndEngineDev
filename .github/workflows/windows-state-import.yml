@@ -54,7 +54,9 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_compile_check_source_format.py -v
       - name: Verify authenticated case permutations and published U11L7 history
         run: python -B -m unittest discover -s scripts/curriculum -p test_compiler_case_order.py -v
-      - name: Verify MSVC and execute four historical suites plus exact stderr contract
+      - name: Verify authenticated case revisions and preserved AssetCheck programs
+        run: python -B -m unittest discover -s scripts/curriculum -p test_compiler_case_revision.py -v
+      - name: Verify MSVC and execute history, case-revision and exact stderr contracts
         run: .\scripts\windows\Test-StateImportCI.ps1
       - name: Preserve configure and test results
         if: always()
