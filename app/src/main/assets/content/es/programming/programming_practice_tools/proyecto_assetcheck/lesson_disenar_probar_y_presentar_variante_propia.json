@@ -1895,7 +1895,113 @@
         },
         {
           "type": "paragraph",
-          "text": "Una batería propia de estadísticas llama a procesar_linea para preparar el lote y a contar_tipos para calcular el resultado. Compara por separado texturas, mallas, sonidos y bytes_total con valores esperados fijados antes de ejecutar; no los obtengas de la propia función.\n\nOrganiza los casos de regresión por el comportamiento que deben distinguir:\n\n1. Lote vacío: los cuatro campos permanecen en cero.\n\n2. Varios registros admitidos por tipo: cada contador sólo aumenta por sus admisiones y la suma incluye sus bytes.\n\n3. Primer identificador inválido y posterior aparición válida: la primera línea no ocupa una admisión; la siguiente sí puede hacerlo.\n\n4. Identificador duplicado: el registro repetido no aumenta ningún contador ni la suma.\n\n5. Identificadores que difieren por mayúsculas: se conservan como identificadores distintos según el contrato.\n\n6. Cien admisiones con identificadores diferentes y 30000 bytes cada una: la suma esperada es 3000000 bytes.\n\nEstos casos sirven para probar la referencia y sus cambios, sin convertir cada uno en una pulsación obligatoria adicional del editor curricular."
+          "text": "Vas a crear pruebas/estadisticas_casos.cpp, un programa de comprobación de la biblioteca. Primero prepararás lotes conocidos con procesar_linea y verificarás sus admisiones y rechazos. Después consultarás contar_tipos y compararás por separado texturas, mallas, sonidos y bytes_total con expectativas fijadas antes de ejecutar. La batería incluye límites y consultas repetidas para distinguir errores que un único ejemplo podría dejar pasar."
+        },
+        {
+          "type": "heading",
+          "text": "Fijar los cuatro resultados antes de consultar la función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuatro valores esperados harán aquí de oráculo: permiten decidir si el cálculo cumple el contrato. Fíjalos con las reglas del proyecto y con los registros que deben admitirse. Prepara por separado texturas, mallas, sonidos y bytes_total. No copies el resultado de contar_tipos para preparar el esperado: si la función se equivoca, estarías comparando el error con otra copia del mismo error."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera estas cinco llamadas a procesar_linea sobre un Lote nuevo. El número de cada llamada es la línea de origen. Se procesan en el orden mostrado. El tamaño cero se rechaza; un rechazo no reserva el identificador. Más adelante, sólo se rechaza como duplicado un identificador que ya tenga una admisión válida. Rio y rio son distintos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "assetcheck::Lote lote;\nassetcheck::procesar_linea(\"Brote textura 0\", 1, lote);\nassetcheck::procesar_linea(\"Brote textura 3\", 2, lote);\nassetcheck::procesar_linea(\"Rio malla 12\", 3, lote);\nassetcheck::procesar_linea(\"Brote sonido 9\", 4, lote);\nassetcheck::procesar_linea(\"rio sonido 4\", 5, lote);"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_u4l7_oraculo_cuatro_campos",
+          "prompt": "Completa los cuatro valores esperados de contar_tipos para el lote preparado con esas cinco líneas. Utiliza las admisiones que exige el contrato, sin ejecutar la función para obtenerlos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estadisticas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Texturas admitidas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "Mallas admitidas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "Sonidos admitidos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Bytes declarados admitidos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "s": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "19"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se admiten Brote textura 3, Rio malla 12 y rio sonido 4. Hay un registro de cada tipo y 3 + 12 + 4 = 19 bytes. Las líneas 1 y 4 no aportan registros al cálculo.",
+            "incorrect": "La línea 1 falla por tamaño y no reserva Brote. La línea 2 lo admite; la línea 4 lo repite y se rechaza. Rio y rio son distintos. Cuenta y suma sólo las líneas 2, 3 y 5."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "El lote debe conservar tres admisiones, procedentes de las líneas 2, 3 y 5. En rechazados debe guardar la línea 1 con causa tamano y la línea 4 con causa duplicado y primera igual a 2. Las admisiones aportan una textura de 3 bytes, una malla de 12 y un sonido de 4. Por eso el esperado es texturas 1, mallas 1, sonidos 1 y bytes_total 19. La línea duplicada no añade los 9 bytes que declara."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el lote que se va a consultar"
+        },
+        {
+          "type": "paragraph",
+          "text": "procesar_linea no devuelve un veredicto: su tipo de retorno es void. Cada llamada actualiza admitidos o rechazados del Lote recibido. Después de preparar las líneas, examina esas colecciones antes de atribuir un resultado a contar_tipos. Si faltara una admisión, un contador pequeño podría deberse al lote preparado y no al cálculo que quieres probar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una preparación, comprueba tanto las cantidades de elementos como sus datos. Una admisión debe conservar su línea, identificador, tipo y tamaño. Un rechazo debe conservar su línea, causa y primera; este último campo señala la admisión original cuando la causa es duplicado. Verificar sólo que hay tres admisiones no distingue tres registros correctos de otros tres registros preparados por error."
+        },
+        {
+          "type": "heading",
+          "text": "Leer un ejemplo pequeño de comparación"
+        },
+        {
+          "type": "paragraph",
+          "text": "comprobar recibirá una condición verdadera o falsa y una etiqueta. Cuando la condición sea falsa, anotará un fallo y mostrará qué comparación falló. En el fragmento siguiente, e es el resultado de contar_tipos. == compara un campo con un valor ya fijado; no modifica el resultado. La fuente completa definirá comprobar y sus contadores antes de usarla."
         },
         {
           "type": "code",
@@ -1904,11 +2010,337 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas de consola comparan stdout, stderr y el código por separado. Para un archivo vacío se espera TIPOS con ceros y código 0. Para la muestra de ocho líneas se esperan 255 y código 1. Para 101 líneas, stdout debe estar vacío y stderr contener sólo ERROR causa=LIMITE_LINEAS con código 2. Un resultado numérico acertado sin examinar los otros canales no basta."
+          "text": "A malla 2 es la primera admisión de A. B sonido 7 también se admite y A sonido 9 se rechaza como duplicado. La suma prevista es 2 + 7 = 9. Este fragmento muestra tres comparaciones; para revisar los cuatro campos falta comprobar que texturas sea 0. Además, sus tres llamadas no verifican todavía la preparación del lote. La batería completa añadirá ambas comprobaciones."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_u4l7_evitar_oraculo_circular",
+          "question": "Un comprobador calcula esperado = contar_tipos(lote), vuelve a llamar a contar_tipos(lote) para obtener obtenido y compara los cuatro campos. ¿Qué cambio permite detectar que la función omite siempre los sonidos?",
+          "options": [
+            "Llamar una tercera vez a contar_tipos y usar su resultado como esperado.",
+            "Fijar el esperado con los registros admitidos antes de llamar a contar_tipos y comprobar también que el lote se preparó correctamente.",
+            "Comparar sólo bytes_total, porque los contadores no forman parte del contrato."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las dos llamadas pueden omitir los sonidos y producir el mismo resultado equivocado. El esperado debe proceder del contrato y de los datos conocidos. Revisar previamente las admisiones evita confundir un lote mal preparado con un fallo del contador."
+        },
+        {
+          "type": "heading",
+          "text": "Elegir qué error debe distinguir cada estado"
         },
         {
           "type": "paragraph",
-          "text": "La referencia de U4L7 se comprobó con C++23 en Linux mediante GCC 14.2 y Clang 17, y después en GitHub Actions sobre Windows Server 2022 con MSVC 19.44. La validación Windows construyó ambos clientes y sus comprobadores y superó las seis suites CTest, incluidas 22 comparaciones de estadísticas y nueve escenarios del segundo cliente. Puedes consultar el resultado publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional/actions/runs/43654194345. Estas son pruebas de la referencia del autor: no acreditan una instalación desde cero ni las acciones manuales realizadas en el equipo del estudiante."
+          "text": "Preparar una batería no consiste en repetir una llamada muchas veces. Elige datos que puedan separar el resultado correcto de un error concreto. Fijar resultados conocidos, revisar límites y conservar casos que descubrieron defectos son parte del diseño de las pruebas; el propio comprobador también necesita revisión (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La mezcla de la batería amplía el pequeño ejemplo anterior. Admite A malla 2 y B sonido 7; rechaza A sonido 9 como duplicado de la línea 1. Después admite C textura 5, D malla 3, E sonido 4 y F sonido 6. Hay una textura, dos mallas y tres sonidos. Los bytes suman 2 + 7 + 5 + 3 + 4 + 6 = 27. El esperado 1, 2, 3, 27 permite detectar también que se hayan intercambiado dos contadores: las tres cantidades son diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprobar que texturas + mallas + sonidos coincide con la cantidad de admisiones es un control complementario. No sustituye las cuatro expectativas. Si una implementación intercambia las dos mallas con los tres sonidos, la suma de contadores sigue siendo seis, pero dos campos son incorrectos. De forma parecida, acertar bytes_total no demuestra que cada tipo esté bien contado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los otros lotes preparados distinguen estas decisiones del contrato:\nUna aparición inválida de Loma seguida por otra válida comprueba que el rechazo no reserva el identificador.\nA y a comprueba que las mayúsculas distinguen identificadores; sus duplicados posteriores deben conservar la primera admisión de cada uno.\nUn lote con sólo rechazos comprueba que esos registros no entran en las estadísticas.\nCada preparación compara admisiones y rechazos completos antes de consultar sus estadísticas."
+        },
+        {
+          "type": "paragraph",
+          "text": "El límite superior utiliza cien identificadores distintos, todos con tipo textura y tamaño 30000. El identificador de cada línea debe cambiar: repetir el mismo produciría duplicados y no probaría cien admisiones. Se esperan texturas 100, mallas 0, sonidos 0 y bytes_total 3000000, porque 100 × 30000 = 3000000. La preparación también comprobará que se conservaron los cien registros y sus líneas de origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las consultas se ejecutan dentro de un mismo proceso. Primero se comprueba un lote vacío. Después de los lotes con datos, se vuelve a consultar la primera mezcla: debe devolver otra vez 1, 2, 3, 27, sin añadir el resultado anterior. Por último, se vuelve a consultar el lote vacío y deben reaparecer los cuatro ceros. Estas últimas llamadas están colocadas así para buscar estado arrastrado de llamadas anteriores; no son nuevas líneas del mismo manifiesto."
+        },
+        {
+          "type": "heading",
+          "text": "Leer el programa de comprobación antes de guardarlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa actúa como otro consumidor de la biblioteca: prepara un entorno conocido, llama a su interfaz y contrasta el resultado con el contrato. Separar esa preparación de la operación que se quiere probar permite reconocer qué falló (Thomas & Hunt, 2020). Aquí los lotes están en memoria y no dependen de un archivo que otra persona pueda cambiar durante la prueba."
+        },
+        {
+          "type": "paragraph",
+          "text": "El comprobador será un programa distinto del cliente. Tendrá su propio main, llamará a las funciones de la biblioteca y terminará con 0 cuando complete las cuarenta comparaciones sin fallos, o con 1 en otro caso. Sus contadores comparaciones y fallos describen las comprobaciones del programa, no las admisiones ni los rechazos de AssetCheck. Deben acumular los veredictos de toda esta ejecución; las estadísticas de cada consulta, en cambio, deben comenzar de nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "comprobar recibe un bool y una etiqueta. Cada llamada aumenta comparaciones; si el bool es falso, también aumenta fallos y escribe un diagnóstico en stderr. Devuelve ese bool para que main pueda decidir si continúa. comprobar_estadisticas llama a esa función auxiliar una vez por campo. Así, un lote aporta cuatro comparaciones aunque se haya llamado una sola vez a contar_tipos. Los valores esperados se pasan como números fijados en la batería; no se calculan con otra llamada a la función que se está examinando."
+        },
+        {
+          "type": "paragraph",
+          "text": "mismo_lote comprueba las dos colecciones de la preparación. Primero compara sus tamaños y después cada campo de sus elementos en el mismo orden. Sólo tras una preparación correcta se llama a contar_tipos para ese lote. Si una preparación falla, main termina con código 1 y un resumen parcial: no continúa fingiendo que estaba consultando el lote previsto."
+        },
+        {
+          "type": "paragraph",
+          "text": "comprobar_salida compara una cadena completa devuelta por salida_tipos con otra escrita de antemano. Incluye palabras, valores, espacios y los dos saltos de línea. Estas comparaciones usan cadenas en memoria; no ejecutan assetcheck_tipos ni capturan stdout o stderr de ese cliente. El diagnóstico del comprobador sí utiliza sus propios canales."
+        },
+        {
+          "type": "paragraph",
+          "text": "En comprobar_estadisticas(datos, {1, 2, 3, 27}, \"mezcla\"), las llaves preparan el objeto Estadisticas esperado siguiendo el orden de sus campos: texturas, mallas, sonidos y bytes_total. No son cuatro llamadas ni una colección de registros. obtenido y esperado se consultan mediante referencias const, como las funciones ya estudiadas; la etiqueta permite reconocer el caso y el campo en un diagnóstico."
+        },
+        {
+          "type": "paragraph",
+          "text": "En mezcla_esperada, el primer grupo de llaves contiene las admisiones y el segundo los rechazos. Por ejemplo, {1, {\"A\", \"malla\", 2}} describe una admisión: línea 1 y registro A, malla, 2 bytes. {3, Resultado::duplicado, 1} describe un rechazo: línea 3, causa duplicado y primera admisión en la línea 1. Esos datos se escriben de forma explícita; no se obtienen copiando el lote que se quiere comprobar."
+        },
+        {
+          "type": "paragraph",
+          "text": "namespace { ... } agrupa los contadores y las funciones auxiliares de esta fuente, de modo que sus nombres pertenecen a este archivo. main queda después del cierre. Dentro de main, using namespace assetcheck permite escribir Lote, Estadisticas y procesar_linea sin repetir assetcheck:: en cada uso. No cambia las funciones de la biblioteca ni las mueve al comprobador."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el bucle del máximo, i toma los valores de 0 a 99. std::to_string(i) convierte cada uno a texto; al añadir \"Item\" se obtienen Item0 hasta Item99. La línea usa i + 1, por lo que va de 1 a 100. static_cast<std::size_t> expresa la conversión a ese tipo de numeración. procesar_linea prepara el lote obtenido; push_back prepara por separado la admisión esperada con los datos conocidos, sin volver a llamar al analizador para decidir el esperado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos literales de cadena escritos uno después del otro en C++ forman una sola cadena. Por eso cada esperado de informe aparece repartido entre la fila TIPOS y la fila RESUMEN. Dentro de cada literal, \\n aporta un carácter de salto de línea; la separación física entre los literales no añade otro. Aquí se comparan los caracteres de la cadena, antes de que un cliente pueda escribirlos con terminadores de Windows."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando las cinco preparaciones pasan, el programa completa cuarenta comparaciones:\nCinco comparaciones verifican los lotes preparados.\nOcho consultas de estadísticas comparan cuatro campos cada una: 8 × 4 = 32.\nTres comparaciones revisan cadenas completas: vacío, mezcla y máximo.\nEl total es 5 + 32 + 3 = 40. terminar muestra el resumen y devuelve el código de salida. Cuarenta comparaciones internas seguirán siendo un solo proceso cuando lo ejecute CTest."
+        },
+        {
+          "type": "paragraph",
+          "text": "La condición comparaciones == 40 && fallos == 0 exige a la vez el total previsto y cero fallos. El operador ? elige el valor siguiente cuando la condición es verdadera, y : introduce el valor para el caso falso. Así, return ... ? 0 : 1; devuelve 0 sólo si se cumplen ambas condiciones. Una salida parcial, aunque aún muestre cero fallos, no se acepta como una batería completa."
+        },
+        {
+          "type": "heading",
+          "text": "Crear pruebas/estadisticas_casos.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde Windows PowerShell 5.1 y AssetCheck, guarda la fuente completa siguiente.\n1. Test-Path -LiteralPath comprueba el nombre exacto y detiene la receta con throw si el archivo ya existe: consérvalo y examínalo antes de decidir una modificación. -PathType Container exige que pruebas ya sea una carpeta.\n2. $codigoChecker recibe el texto delimitado por @' y '@; la apertura termina su línea y el cierre ocupa una línea propia.\n3. Set-Content escribe -Value en la ruta de -LiteralPath. -Encoding UTF8 usa UTF8 con BOM en esta PowerShell y -ErrorAction Stop detiene la escritura si falla.\nLos comentarios SECCION permiten localizar las funciones auxiliares y main que acabas de estudiar."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$rutaChecker = '.\\pruebas\\estadisticas_casos.cpp'\nif (Test-Path -LiteralPath $rutaChecker) {\n    throw 'estadisticas_casos.cpp ya existe. Conserva su contenido y revisalo antes de continuar.'\n}\nif (-not (Test-Path -LiteralPath '.\\pruebas' -PathType Container)) {\n    throw 'Falta la carpeta pruebas. Comprueba que estas en AssetCheck.'\n}\n$codigoChecker = @'\n// pruebas/estadisticas_casos.cpp\n#include \"assetcheck/estadisticas.hpp\"\n\n#include <iostream>\n#include <string>\n\nnamespace {\n\nint comparaciones = 0;\nint fallos = 0;\n\n// SECCION 1: comparar y mostrar el resultado de cada comprobacion.\nbool comprobar(bool coincide, const std::string& nombre) {\n    ++comparaciones;\n    if (!coincide) {\n        ++fallos;\n        std::cerr << \"FALLO \" << nombre << '\\n';\n    }\n    return coincide;\n}\n\nint terminar() {\n    std::cout << \"Comparaciones=\" << comparaciones\n              << \" Fallos=\" << fallos << '\\n';\n    return comparaciones == 40 && fallos == 0 ? 0 : 1;\n}\n\n// SECCION 2: verificar el lote preparado, antes de contar sus tipos.\nbool mismo_lote(const assetcheck::Lote& obtenido,\n                const assetcheck::Lote& esperado) {\n    if (obtenido.admitidos.size() != esperado.admitidos.size()\n        || obtenido.rechazados.size() != esperado.rechazados.size()) {\n        return false;\n    }\n\n    for (std::size_t i = 0; i < esperado.admitidos.size(); ++i) {\n        const auto& a = obtenido.admitidos[i];\n        const auto& e = esperado.admitidos[i];\n        if (a.linea != e.linea || a.registro.id != e.registro.id\n            || a.registro.tipo != e.registro.tipo\n            || a.registro.tamano_bytes != e.registro.tamano_bytes) {\n            return false;\n        }\n    }\n\n    for (std::size_t i = 0; i < esperado.rechazados.size(); ++i) {\n        const auto& a = obtenido.rechazados[i];\n        const auto& e = esperado.rechazados[i];\n        if (a.linea != e.linea || a.causa != e.causa\n            || a.primera != e.primera) {\n            return false;\n        }\n    }\n    return true;\n}\n\n// SECCION 3: cuatro comparaciones separadas y un diagnostico de sus valores.\nvoid comprobar_estadisticas(const assetcheck::Estadisticas& obtenido,\n                            const assetcheck::Estadisticas& esperado,\n                            const std::string& nombre) {\n    comprobar(obtenido.texturas == esperado.texturas, nombre + \"/texturas\");\n    comprobar(obtenido.mallas == esperado.mallas, nombre + \"/mallas\");\n    comprobar(obtenido.sonidos == esperado.sonidos, nombre + \"/sonidos\");\n    comprobar(obtenido.bytes_total == esperado.bytes_total, nombre + \"/bytes\");\n\n    if (obtenido.texturas != esperado.texturas\n        || obtenido.mallas != esperado.mallas\n        || obtenido.sonidos != esperado.sonidos\n        || obtenido.bytes_total != esperado.bytes_total) {\n        std::cerr << nombre << \" esperado: \" << esperado.texturas << ' '\n                  << esperado.mallas << ' ' << esperado.sonidos << ' '\n                  << esperado.bytes_total << '\\n';\n        std::cerr << nombre << \" obtenido: \" << obtenido.texturas << ' '\n                  << obtenido.mallas << ' ' << obtenido.sonidos << ' '\n                  << obtenido.bytes_total << '\\n';\n    }\n}\n\nvoid comprobar_salida(const std::string& obtenido,\n                      const std::string& esperado,\n                      const std::string& nombre) {\n    if (!comprobar(obtenido == esperado, nombre)) {\n        std::cerr << \"Esperado:\\n\" << esperado\n                  << \"Obtenido:\\n\" << obtenido;\n    }\n}\n\n} // namespace\n\n// SECCION 4: casos y expectativas independientes de contar_tipos.\nint main() {\n    using namespace assetcheck;\n\n    // Caso 1: lote vacio, cuatro ceros y dos filas completas.\n    const Lote vacio{};\n    const Estadisticas cero = contar_tipos(vacio);\n    comprobar_estadisticas(cero, {0, 0, 0, 0}, \"vacio\");\n    comprobar_salida(salida_tipos(cero, vacio),\n        \"TIPOS textura=0 malla=0 sonido=0 bytes_total=0\\n\"\n        \"RESUMEN lineas=0 aceptados=0 rechazados=0\\n\", \"vacio/salida\");\n\n    // Caso 2: seis admisiones asimetricas y un duplicado que no suma 9.\n    Lote mezcla{};\n    procesar_linea(\"A malla 2\", 1, mezcla);\n    procesar_linea(\"B sonido 7\", 2, mezcla);\n    procesar_linea(\"A sonido 9\", 3, mezcla);\n    procesar_linea(\"C textura 5\", 4, mezcla);\n    procesar_linea(\"D malla 3\", 5, mezcla);\n    procesar_linea(\"E sonido 4\", 6, mezcla);\n    procesar_linea(\"F sonido 6\", 7, mezcla);\n    const Lote mezcla_esperada{\n        {{1, {\"A\", \"malla\", 2}}, {2, {\"B\", \"sonido\", 7}},\n         {4, {\"C\", \"textura\", 5}}, {5, {\"D\", \"malla\", 3}},\n         {6, {\"E\", \"sonido\", 4}}, {7, {\"F\", \"sonido\", 6}}},\n        {{3, Resultado::duplicado, 1}}\n    };\n    if (!comprobar(mismo_lote(mezcla, mezcla_esperada), \"preparacion/mezcla\")) {\n        return terminar();\n    }\n    const Estadisticas datos = contar_tipos(mezcla);\n    comprobar_estadisticas(datos, {1, 2, 3, 27}, \"mezcla\");\n    comprobar_salida(salida_tipos(datos, mezcla),\n        \"TIPOS textura=1 malla=2 sonido=3 bytes_total=27\\n\"\n        \"RESUMEN lineas=7 aceptados=6 rechazados=1\\n\", \"mezcla/salida\");\n\n    // Caso 3: un rechazo no reserva el ID para una aparicion valida posterior.\n    Lote invalido_valido{};\n    procesar_linea(\"Loma textura 0\", 1, invalido_valido);\n    procesar_linea(\"Loma textura 11\", 2, invalido_valido);\n    procesar_linea(\"_Eco sonido 2\", 3, invalido_valido);\n    procesar_linea(\"Eco sonido 2\", 4, invalido_valido);\n    procesar_linea(\"Plano imagen 3\", 5, invalido_valido);\n    procesar_linea(\"Sobran sonido 2 extra\", 6, invalido_valido);\n    const Lote invalido_valido_esperado{\n        {{2, {\"Loma\", \"textura\", 11}}, {4, {\"Eco\", \"sonido\", 2}}},\n        {{1, Resultado::tamano, 0}, {3, Resultado::id, 0},\n         {5, Resultado::tipo, 0}, {6, Resultado::formato, 0}}\n    };\n    if (!comprobar(mismo_lote(invalido_valido, invalido_valido_esperado),\n                   \"preparacion/invalido_valido\")) {\n        return terminar();\n    }\n    comprobar_estadisticas(contar_tipos(invalido_valido),\n                            {1, 0, 1, 13}, \"invalido_valido\");\n\n    // Caso 4: A y a son distintos; cada uno conserva su primer origen.\n    Lote mayusculas{};\n    procesar_linea(\"A textura 3\", 1, mayusculas);\n    procesar_linea(\"a malla 5\", 2, mayusculas);\n    procesar_linea(\"A sonido 9\", 3, mayusculas);\n    procesar_linea(\"a sonido 8\", 4, mayusculas);\n    const Lote mayusculas_esperadas{\n        {{1, {\"A\", \"textura\", 3}}, {2, {\"a\", \"malla\", 5}}},\n        {{3, Resultado::duplicado, 1}, {4, Resultado::duplicado, 2}}\n    };\n    if (!comprobar(mismo_lote(mayusculas, mayusculas_esperadas),\n                   \"preparacion/mayusculas\")) {\n        return terminar();\n    }\n    comprobar_estadisticas(contar_tipos(mayusculas), {1, 1, 0, 8}, \"mayusculas\");\n\n    // Caso 5: hay tres lineas revisadas, pero ninguna admision que contar.\n    Lote rechazados{};\n    procesar_linea(\"A malla 0\", 1, rechazados);\n    procesar_linea(\"_B textura 5\", 2, rechazados);\n    procesar_linea(\"C imagen 7\", 3, rechazados);\n    const Lote rechazos_esperados{\n        {},\n        {{1, Resultado::tamano, 0}, {2, Resultado::id, 0},\n         {3, Resultado::tipo, 0}}\n    };\n    if (!comprobar(mismo_lote(rechazados, rechazos_esperados),\n                   \"preparacion/rechazados\")) {\n        return terminar();\n    }\n    comprobar_estadisticas(contar_tipos(rechazados), {0, 0, 0, 0}, \"rechazados\");\n\n    // Caso 6: cien IDs diferentes, cada uno con el tamano maximo permitido.\n    Lote maximo{};\n    Lote maximo_esperado{};\n    for (int i = 0; i < 100; ++i) {\n        const std::string id = \"Item\" + std::to_string(i);\n        const std::size_t linea = static_cast<std::size_t>(i + 1);\n        procesar_linea(id + \" textura 30000\", linea, maximo);\n        maximo_esperado.admitidos.push_back({linea, {id, \"textura\", 30000}});\n    }\n    if (!comprobar(mismo_lote(maximo, maximo_esperado), \"preparacion/maximo\")) {\n        return terminar();\n    }\n    const Estadisticas limite = contar_tipos(maximo);\n    comprobar_estadisticas(limite, {100, 0, 0, 3000000}, \"maximo\");\n    comprobar_salida(salida_tipos(limite, maximo),\n        \"TIPOS textura=100 malla=0 sonido=0 bytes_total=3000000\\n\"\n        \"RESUMEN lineas=100 aceptados=100 rechazados=0\\n\", \"maximo/salida\");\n\n    // Casos 7 y 8: cada consulta reinicia sus cuatro campos.\n    comprobar_estadisticas(contar_tipos(mezcla), {1, 2, 3, 27}, \"mezcla_repetida\");\n    comprobar_estadisticas(contar_tipos(vacio), {0, 0, 0, 0}, \"vacio_tras_mezcla\");\n    return terminar();\n}\n'@\nSet-Content -LiteralPath $rutaChecker -Value $codigoChecker -Encoding UTF8 -ErrorAction Stop\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se crea un archivo fuente, pruebas/estadisticas_casos.cpp. Debe contener las cuatro secciones y terminar después del cierre de main. Su contenido todavía debe incorporarse a CMake y construirse."
+        },
+        {
+          "type": "heading",
+          "text": "Consultar la fuente guardada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Get-Content muestra el archivo indicado por -LiteralPath e interpreta sus bytes con -Encoding UTF8. -ErrorAction Stop detiene una consulta que no pueda leerlo. Ejecuta la orden desde AssetCheck."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Get-Content -LiteralPath '.\\pruebas\\estadisticas_casos.cpp' -Encoding UTF8 -ErrorAction Stop\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba que se ven comprobar, terminar, mismo_lote, comprobar_estadisticas, comprobar_salida y los ocho estados de main. En la mezcla debe aparecer el esperado {1, 2, 3, 27}; en terminar, el total previsto debe ser 40."
+        },
+        {
+          "type": "heading",
+          "text": "Registrar un ejecutable y una prueba"
+        },
+        {
+          "type": "paragraph",
+          "text": "add_executable declara comprobar_estadisticas y su única fuente, pruebas/estadisticas_casos.cpp. target_link_libraries lo enlaza con assetcheck_estadisticas mediante PRIVATE: este programa consume la biblioteca y sus requisitos de uso. La dependencia PUBLIC de estadísticas mantiene disponibles lote y registro. add_test, en su forma NAME ... COMMAND ..., registra el nombre de prueba y el objetivo que se ejecutará; CMake sustituye ese objetivo por la ruta de su ejecutable. enable_testing() ya existe en la raíz y conserva el registro de las pruebas anteriores (Kitware, 2026)."
+        },
+        {
+          "type": "heading",
+          "text": "Incorporar las tres órdenes a CMakeLists.txt"
+        },
+        {
+          "type": "paragraph",
+          "text": "La receta se ejecuta desde AssetCheck y conserva el archivo existente.\n1. Resolve-Path obtiene su ruta exacta y -ErrorAction Stop exige que exista. Test-Path -PathType Leaf comprueba la fuente nueva.\n2. ReadAllBytes consulta los bytes para reconocer el BOM. Get-Content -Raw -Encoding UTF8 obtiene el texto completo de CMakeLists.txt.\n3. Contains detiene la inserción si ya aparece comprobar_estadisticas o falta la preparación anterior. IndexOf y LastIndexOf, con comparación Ordinal de caracteres exactos, exigen que el add_test del manifiesto aparezca una vez.\n4. $saltoCMake conserva CRLF o LF. Join une las tres órdenes con ese separador y Replace las inserta después del ancla.\n5. Los bytes 239, 187 y 191 identifican un BOM UTF8. UTF8Encoding::new($teniaBOM) y WriteAllText conservan esa elección al guardar el texto actualizado."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$rutaCMake = (Resolve-Path -LiteralPath '.\\CMakeLists.txt' -ErrorAction Stop).Path\nif (-not (Test-Path -LiteralPath '.\\pruebas\\estadisticas_casos.cpp' -PathType Leaf)) {\n    throw 'Falta el comprobador. Crealo antes de integrarlo en CMake.'\n}\n$bytesCMake = [IO.File]::ReadAllBytes($rutaCMake)\n$codigoCMake = Get-Content -LiteralPath $rutaCMake -Raw -Encoding UTF8\nif ($codigoCMake.Contains('comprobar_estadisticas')) {\n    throw 'El comprobador ya aparece. Revisa CMakeLists.txt sin duplicarlo.'\n}\nif (-not $codigoCMake.Contains('enable_testing()') -or\n    -not $codigoCMake.Contains('add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)')) {\n    throw 'Falta la preparacion de pruebas o la biblioteca de estadisticas. Revisa la etapa anterior.'\n}\n$anclaCMake = 'add_test(NAME comprobar_manifiesto COMMAND comprobar_manifiesto)'\n$primera = $codigoCMake.IndexOf($anclaCMake, [StringComparison]::Ordinal)\n$ultima = $codigoCMake.LastIndexOf($anclaCMake, [StringComparison]::Ordinal)\nif ($primera -lt 0 -or $primera -ne $ultima) {\n    throw 'La prueba del manifiesto debe aparecer exactamente una vez. Conserva y revisa el archivo.'\n}\nif ($codigoCMake.Contains(\"`r`n\")) { $saltoCMake = \"`r`n\" } else { $saltoCMake = \"`n\" }\n$ordenesCMake = @(\n    'add_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)'\n    'target_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)'\n    'add_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)'\n)\n$insercionCMake = $saltoCMake + $saltoCMake + [string]::Join($saltoCMake, $ordenesCMake)\n$codigoCMake = $codigoCMake.Replace($anclaCMake, $anclaCMake + $insercionCMake)\n$teniaBOM = $bytesCMake.Length -ge 3 -and $bytesCMake[0] -eq 239 -and $bytesCMake[1] -eq 187 -and $bytesCMake[2] -eq 191\n[IO.File]::WriteAllText($rutaCMake, $codigoCMake, [Text.UTF8Encoding]::new($teniaBOM))\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El archivo añade el objetivo comprobar_estadisticas, su enlace y su add_test. Los objetivos y pruebas anteriores permanecen. Hay cuatro bibliotecas, seis programas y cinco pruebas CTest registradas; la construcción todavía debe actualizarse con CMake."
+        },
+        {
+          "type": "heading",
+          "text": "Revisar la integración guardada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde AssetCheck, Get-Content consulta CMakeLists.txt con su ruta exacta, codificación UTF8 y detención ante errores de lectura."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Get-Content -LiteralPath '.\\CMakeLists.txt' -Encoding UTF8 -ErrorAction Stop\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deben verse las tres órdenes después del add_test de comprobar_manifiesto, una sola vez. Conserva también las bibliotecas, los dos clientes y las pruebas anteriores."
+        },
+        {
+          "type": "heading",
+          "text": "Configurar antes de construir el comprobador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Continúa en Windows PowerShell 5.1 x64 abierta desde la CMD de herramientas nativas, como en la página anterior, y en la carpeta AssetCheck. Recupera estas comprobaciones breves: la versión debe ser 5.1 y las arquitecturas deben ser x64. where.exe debe localizar cl, cmake y ninja. Si falta el entorno, vuelve con exit a la CMD preparada y recupera el paso de entrada a PowerShell de la página 9."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$PSVersionTable.PSVersion\n$env:VSCMD_ARG_HOST_ARCH\n$env:VSCMD_ARG_TGT_ARCH\nwhere.exe cl\nwhere.exe cmake\nwhere.exe ninja\n(Get-Location).Path"
+        },
+        {
+          "type": "paragraph",
+          "text": "La configuración vuelve a leer CMakeLists.txt e incorpora el objetivo nuevo. -S . selecciona las fuentes de AssetCheck; -B build conserva el árbol de construcción propio; -G Ninja selecciona el generador y -DCMAKE_BUILD_TYPE=Debug la configuración de depuración. Los requisitos de C++23 continúan en CMakeLists.txt. Guarda inmediatamente $LASTEXITCODE en $codigoConfiguracion antes de consultar el valor. Si no es 0, throw detiene este paso: corrige la configuración antes de construir."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug\n$codigoConfiguracion = $LASTEXITCODE\n\"CodigoConfiguracion=$codigoConfiguracion\"\nif ($codigoConfiguracion -ne 0) { throw \"La configuracion no termino con codigo 0.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "CodigoConfiguracion debe ser 0 y CMake debe completar la generación. Si el árbol corresponde a otra fuente o generador, consérvalo y recupera la elección de una carpeta nueva explicada en U4L3, ajustando las rutas siguientes. Configurar no ejecuta las comparaciones."
+        },
+        {
+          "type": "heading",
+          "text": "Construir sólo el comprobador y sus dependencias"
+        },
+        {
+          "type": "paragraph",
+          "text": "--build build utiliza el árbol configurado. --target comprobar_estadisticas selecciona el ejecutable nuevo y las bibliotecas que necesite actualizar. --verbose muestra los comandos de las herramientas. La construcción compila pruebas/estadisticas_casos.cpp y enlaza sus llamadas con la biblioteca de estadísticas y sus dependencias. Guarda su código antes de cualquier otra ejecución nativa."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "cmake --build build --target comprobar_estadisticas --verbose\n$codigoConstruccion = $LASTEXITCODE\n\"CodigoConstruccion=$codigoConstruccion\"\nif ($codigoConstruccion -ne 0) { throw \"La construccion no termino con codigo 0.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "CodigoConstruccion debe ser 0 y debe existir build/comprobar_estadisticas.exe. Si Ninja indica que no hay trabajo pendiente, el objetivo ya estaba actualizado; no significa que lo haya recompilado. Ante un fallo, detente antes de ejecutar: un ejecutable antiguo podría seguir presente y no representar la fuente que acabas de guardar."
+        },
+        {
+          "type": "heading",
+          "text": "Ejecutar y leer el resumen de la batería"
+        },
+        {
+          "type": "paragraph",
+          "text": "La ruta .\\build\\comprobar_estadisticas.exe selecciona el programa construido. No recibe un archivo de manifiesto: sus lotes y expectativas están dentro del código. La asignación inmediata conserva su código en $codigoComprobador. La línea siguiente consulta esa variable; su rótulo lo escribe PowerShell y no es otra fila del stdout nativo."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": ".\\build\\comprobar_estadisticas.exe\n$codigoComprobador = $LASTEXITCODE\n\"CodigoComprobador=$codigoComprobador\"\nif ($codigoComprobador -ne 0) { throw \"Revisa los diagnosticos y el resumen del comprobador.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "El stdout del comprobador debe contener una sola fila, con salto final:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Comparaciones=40 Fallos=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "stderr debe quedar vacío y CodigoComprobador debe ser 0. Si aparece FALLO, su etiqueta identifica el caso y, en las estadísticas, el campo. El diagnóstico añade los cuatro valores esperados y obtenidos cuando difieren. Un fallo de preparación muestra su etiqueta y termina con un total parcial; no se debe interpretar como cuarenta comparaciones realizadas. Corrige la causa, vuelve a construir y repite la ejecución."
+        },
+        {
+          "type": "heading",
+          "text": "Ejecutar esta prueba con CTest"
+        },
+        {
+          "type": "paragraph",
+          "text": "CTest usa la prueba registrada por add_test. -R recibe una expresión para seleccionar nombres: ^ indica el comienzo y $ el final. Por eso la expresión entre comillas simples selecciona sólo comprobar_estadisticas. --test-dir .\\build indica el árbol donde están sus registros. --output-on-failure muestra el diagnóstico del programa si falla; --no-tests=error hace fallar la orden si no encuentra ninguna prueba. CTest ejecuta el programa ya construido; no lo compila (Kitware, 2026)."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "ctest --test-dir .\\build -R '^comprobar_estadisticas$' --output-on-failure --no-tests=error\n$codigoCTest = $LASTEXITCODE\n\"CodigoCTest=$codigoCTest\"\nif ($codigoCTest -ne 0) { throw \"CTest no termino con una prueba correcta.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "CTest debe informar de una prueba ejecutada y aprobada; CodigoCTest debe ser 0. Las cuarenta comparaciones ocurren dentro de ese proceso y no aparecen como cuarenta pruebas CTest. En un resultado correcto, --output-on-failure no obliga a repetir la fila Comparaciones=40 Fallos=0. Las otras cuatro pruebas permanecen registradas; esta orden selecciona únicamente comprobar_estadisticas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin propiedades adicionales de evaluación, CTest decide este resultado por el código del proceso. La función terminar del comprobador devuelve 0 únicamente al alcanzar cuarenta comparaciones y cero fallos. Esa conexión hace que un resultado incompleto o un campo incorrecto provoquen también un fallo de CTest; imprimir un mensaje que parezca satisfactorio no basta (Kitware, 2026)."
+        },
+        {
+          "type": "heading",
+          "text": "Guardar qué comprueba esta etapa y cómo repetirla"
+        },
+        {
+          "type": "heading",
+          "text": "Añadir la etapa P11 al contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde AssetCheck, añade la sección de esta etapa al contrato.\n1. Resolve-Path localiza docs/contrato_tipos.md. ReadAllBytes conserva la información de BOM y Get-Content -Raw -Encoding UTF8 lee el texto completo.\n2. Contains comprueba si ya existe el título de esta etapa y throw impide añadirla dos veces. $etapaNueva recibe el contenido entre @' y '@.\n3. La suma de cadenas añade dos saltos, la sección y un salto final al documento leído, conservando su texto anterior.\n4. WriteAllText guarda con la elección previa de UTF8 con BOM o sin él. La sección distingue los resultados previstos y el alcance del comprobador de las pruebas de proceso."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$rutaArchivo = (Resolve-Path -LiteralPath '.\\docs\\contrato_tipos.md' -ErrorAction Stop).Path\n$bytesArchivo = [IO.File]::ReadAllBytes($rutaArchivo)\n$textoArchivo = Get-Content -LiteralPath $rutaArchivo -Raw -Encoding UTF8\nif ($textoArchivo.Contains('## Etapa P11: comprobador de estadísticas')) {\n    throw 'La etapa P11 ya aparece. Conserva el documento y revisalo sin anadirla otra vez.'\n}\n$etapaNueva = @'\n## Etapa P11: comprobador de estadísticas\n\nEl estado de esta sección actualiza la etapa anterior conservada en este documento. Está creado `pruebas/estadisticas_casos.cpp` y registrado el objetivo y la prueba `comprobar_estadisticas`. El proyecto local tiene cuatro bibliotecas, seis programas y cinco pruebas CTest; las pruebas de procesos del segundo cliente siguen pendientes.\n\nLas expectativas independientes para los cuatro campos, en orden texturas/mallas/sonidos/bytes_total, son:\n\nVacío: 0/0/0/0.\nMezcla con duplicado: 1/2/3/27.\nRechazos anteriores a admisiones: 1/0/1/13.\nIdentificadores A y a: 1/1/0/8.\nSólo rechazos: 0/0/0/0.\nCien texturas de 30000 bytes: 100/0/0/3000000.\nConsulta repetida de la mezcla: 1/2/3/27.\nVacío después de la mezcla: 0/0/0/0.\n\nCada fila origina cuatro comparaciones. Cinco verificaciones adicionales contrastan el lote preparado completo: tamaños y orden de ambos vectores, líneas, ID, tipo, tamaño, causa y primer origen. Tres verificaciones comparan las cadenas enteras de vacío, mezcla y máximo. El resumen normal es `Comparaciones=40 Fallos=0`, stderr vacío y código 0. Una discrepancia devuelve 1; una preparación incorrecta detiene el resto y se distingue por su nombre en el diagnóstico. No se utilizan resultados de la propia función como esperados.\n\nEsta ampliación no modifica las bibliotecas, ninguno de los dos clientes, las tres muestras ni las pruebas anteriores. No acredita todavía las comprobaciones de ambas CLI ni una sexta prueba CTest. El comportamiento ante LECTURA real en el proceso cliente conserva su alcance pendiente; una prueba del lote en memoria no lo demuestra.\n'@\n$textoArchivo = $textoArchivo + \"`n`n\" + $etapaNueva + \"`n\"\n$teniaBOM = $bytesArchivo.Length -ge 3 -and $bytesArchivo[0] -eq 239 -and $bytesArchivo[1] -eq 187 -and $bytesArchivo[2] -eq 191\n[IO.File]::WriteAllText($rutaArchivo, $textoArchivo, [Text.UTF8Encoding]::new($teniaBOM))\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al final del contrato debe verse Etapa P11: comprobador de estadísticas. Contiene los ocho esperados, las cinco preparaciones y las tres cadenas: cuarenta comparaciones cuando la preparación es correcta. Las secciones anteriores siguen disponibles; esta última actualiza el estado de la etapa."
+        },
+        {
+          "type": "heading",
+          "text": "Leer el contrato de las comprobaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Get-Content consulta docs/contrato_tipos.md con -LiteralPath, -Encoding UTF8 y -ErrorAction Stop desde AssetCheck."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Get-Content -LiteralPath '.\\docs\\contrato_tipos.md' -Encoding UTF8 -ErrorAction Stop\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisa los cuatro campos en el orden declarado y la condición del resumen: Comparaciones=40 Fallos=0, stderr vacío y código 0. Una preparación incorrecta puede terminar antes y debe devolver 1. La sección mantiene diferenciado el comprobador en memoria del proceso del cliente."
+        },
+        {
+          "type": "heading",
+          "text": "Añadir la reproducción al README"
+        },
+        {
+          "type": "paragraph",
+          "text": "La ruta ..\\README.md identifica el README de la raíz del repositorio, una carpeta por encima de AssetCheck.\n1. Resolve-Path obtiene su ruta; ReadAllBytes permite reconocer el BOM y Get-Content -Raw -Encoding UTF8 lee el documento completo.\n2. Contains evita duplicar el título. $etapaNueva conserva el texto de la sección P11, que se añade al documento anterior mediante la suma de cadenas.\n3. WriteAllText conserva el texto anterior y la elección de UTF8 con BOM o sin él al guardar la ampliación.\nLa receta CMD que quedará en README parte de la raíz: por eso sus rutas comienzan por AssetCheck. Las órdenes PowerShell de esta página parten de AssetCheck y usan .\\build. Ejecuta cada receta en la consola y carpeta que indica."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$rutaArchivo = (Resolve-Path -LiteralPath '..\\README.md' -ErrorAction Stop).Path\n$bytesArchivo = [IO.File]::ReadAllBytes($rutaArchivo)\n$textoArchivo = Get-Content -LiteralPath $rutaArchivo -Raw -Encoding UTF8\nif ($textoArchivo.Contains('## Etapa P11: comprobador de estadísticas')) {\n    throw 'La etapa P11 ya aparece. Conserva el documento y revisalo sin anadirla otra vez.'\n}\n$etapaNueva = @'\n## Etapa P11: comprobador de estadísticas\n\nEsta sección actualiza el inventario y las órdenes de la etapa anterior conservada arriba. Se añade `AssetCheck/pruebas/estadisticas_casos.cpp`, construido como `comprobar_estadisticas`. Ahora hay cuatro bibliotecas, seis programas y cinco pruebas registradas en CTest. Todavía queda pendiente el guion de procesos del segundo cliente y su sexta prueba CTest.\n\nEl nuevo comprobador verifica ocho estados. Compara los cuatro campos de cada resultado por separado, comprueba cinco lotes preparados completos antes de contar y contrasta tres cadenas completas de TIPOS/RESUMEN. Son 32 + 5 + 3 = 40 comparaciones. La mezcla normal espera una textura, dos mallas, tres sonidos y 27 bytes declarados; esas cantidades diferentes detectan también intercambios de categorías. Los esperados son literales independientes de `contar_tipos` y de la consulta anterior.\n\nDesde CMD x64 de desarrollo y la raíz del repositorio, ejecuta cada orden por separado:\n\n```cmd\ncmake -S AssetCheck -B AssetCheck/build -G Ninja -DCMAKE_BUILD_TYPE=Debug\necho CodigoConfiguracion=%ERRORLEVEL%\ncmake --build AssetCheck/build --target comprobar_estadisticas --verbose\necho CodigoConstruccionEstadisticas=%ERRORLEVEL%\nAssetCheck\\build\\comprobar_estadisticas.exe\necho CodigoComprobadorEstadisticas=%ERRORLEVEL%\nctest --test-dir AssetCheck/build -R \"^comprobar_estadisticas$\" --output-on-failure --no-tests=error\necho CodigoCTestEstadisticas=%ERRORLEVEL%\n```\n\nLa construcción selecciona sólo el nuevo comprobador y sus dependencias. La ejecución directa debe escribir `Comparaciones=40 Fallos=0` y un salto final, con stderr vacío y código 0. Una discrepancia produce código 1 y diagnóstico en stderr; si falla la preparación, la batería se detiene con un resumen parcial y señala `preparacion/...`, sin atribuir ese lote incorrecto a la función de estadísticas. El CTest focal debe mostrar una prueba superada. `-R` selecciona el nombre completo mediante la expresión entre `^` y `$`; `--no-tests=error` impide interpretar una selección vacía como éxito. CTest no construye el ejecutable.\n\nLa batería incluye vacío, duplicados, rechazos anteriores a una admisión, diferencias de mayúsculas, sólo rechazos, cien admisiones de 30000 bytes, una consulta repetida y un vacío posterior. No ejecuta el segundo cliente, no abre manifiestos y no añade automatización CI. La referencia y sus pruebas no acreditan la autoría ni el dominio del estudiante.\n'@\n$textoArchivo = $textoArchivo + \"`n`n\" + $etapaNueva + \"`n\"\n$teniaBOM = $bytesArchivo.Length -ge 3 -and $bytesArchivo[0] -eq 239 -and $bytesArchivo[1] -eq 187 -and $bytesArchivo[2] -eq 191\n[IO.File]::WriteAllText($rutaArchivo, $textoArchivo, [Text.UTF8Encoding]::new($teniaBOM))\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "README enumera cuatro bibliotecas, seis programas y cinco pruebas CTest y enseña la construcción y ejecución focal del nuevo comprobador. Conserva las instrucciones anteriores y diferencia los ocho estados, las cuarenta comparaciones y una prueba CTest seleccionada."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la reproducción documentada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde AssetCheck, Get-Content muestra ..\\README.md con la ruta exacta, UTF8 y detención ante un error de lectura."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Get-Content -LiteralPath '..\\README.md' -Encoding UTF8 -ErrorAction Stop\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba el objetivo de construcción, el nombre anclado de CTest y los códigos esperados. Al reproducirlo en tu equipo, contrasta el resumen y los diagnósticos con lo observado antes de describir el resultado en la documentación de tu proyecto."
         },
         {
           "type": "multiple_choice",
@@ -1929,16 +2361,15 @@
         },
         {
           "type": "heading",
-          "text": "Comparación de la configuración de la ampliación"
+          "text": "Distinguir el registro publicado de esta batería"
         },
         {
           "type": "paragraph",
-          "text": "Este fragmento reúne los objetivos de la biblioteca, el segundo cliente y sus dos pruebas. Sirve para comparar la ampliación completa con CMakeLists.txt cuando estén creadas esas fuentes. Cada objetivo se declara una sola vez en el archivo; el bloque reúne las declaraciones para su consulta conjunta."
+          "text": "La referencia de U4L7 se comprobó con C++23 en Linux mediante GCC 14.2 y Clang 17, y después en GitHub Actions sobre Windows Server 2022 con MSVC 19.44. La validación Windows construyó ambos clientes y sus comprobadores y superó las seis suites CTest, incluidas 22 comparaciones de estadísticas y nueve escenarios del segundo cliente. Puedes consultar el resultado publicado en https://github.com/SimDynamics/02_construccion_depuracion_y_practica_profesional/actions/runs/43654194345. Estas son pruebas de la referencia del autor: no acreditan una instalación desde cero ni las acciones manuales realizadas en el equipo del estudiante."
         },
         {
-          "type": "code",
-          "language": "cmake",
-          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\n\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\n\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\n\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
+          "type": "paragraph",
+          "text": "Ese registro corresponde a la revisión pública indicada y contiene veintidós comparaciones de estadísticas. La batería que acabas de construir usa otra matriz y completa cuarenta comparaciones internas. Su ejecución local se comprueba con sus propios diagnósticos, código y prueba CTest; el registro remoto conserva el alcance de aquella revisión."
         }
       ]
     },
@@ -1950,7 +2381,187 @@
         },
         {
           "type": "paragraph",
-          "text": "Una versión defectuosa podría sumar el registro duplicado Faro sonido 7 y producir 262 en lugar de 255. Otra podría conservar datos del lote anterior, imprimir antes de descubrir la línea 101 o romper el cliente original. Cada una necesita una prueba que produzca una observación distinta de una implementación correcta."
+          "text": "Una prueba útil permite observar una diferencia entre una implementación correcta y otra que tiene un defecto concreto. Empezaremos con una cifra inesperada en el informe del proyecto y separaremos sus posibles causas. Después repararás en la app un fallo provocado dentro de un recorrido. Se conservan el contrato, los esperados independientes y las comprobaciones de la etapa anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Separar lo observado de su posible explicación"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la muestra de ocho líneas, los bytes admitidos suman 255. La cifra 262 sería siete mayor, justo el tamaño que declara el duplicado Faro sonido 7. Esa coincidencia permite proponer una explicación posible, llamada hipótesis: quizá se sumó un registro que debía rechazarse. Todavía no la demuestra. Hay que observar los datos entre la preparación, el cálculo y el informe, y buscar una prueba que pueda confirmar o refutar esa explicación (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "paragraph",
+          "text": "contar_tipos recibe un Lote ya preparado y recorre únicamente admitidos. Si el duplicado fue excluido correctamente, sus 7 bytes no están entre los registros que esa función visita. Un resultado de 262 no permite afirmar por sí solo que el contador haya leído ese duplicado. Primero hay que comprobar qué registros recibió y después qué resultado devolvió."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reduce la hipótesis del duplicado a dos líneas: A malla 2 y A sonido 7. El lote esperado conserva una sola admisión, A de tipo malla y tamaño 2 en la línea 1. Su rechazo corresponde a la línea 2, con causa duplicado y primera igual a 1. Para ese lote, contar_tipos debe devolver texturas 0, mallas 1, sonidos 0 y bytes_total 2. La función devuelve una estructura; el código 1 será el resultado del cliente por ese rechazo local."
+        },
+        {
+          "type": "paragraph",
+          "text": "La reducción conserva la condición que se quiere investigar: dos líneas con el mismo identificador y tamaños diferentes. Si se dejara sólo A malla 2, desaparecería la repetición y podría dejar de verse un defecto relacionado con duplicados. Se simplifican los datos, no la condición que distingue el error."
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden de revisión depende de lo observado:\nSi el lote preparado no coincide con las admisiones y rechazos previstos, revisa tanto la entrada y su preparación como los datos esperados: el propio oráculo puede estar equivocado. Contrasta ambos con el contrato antes de culpar al contador.\nSi el lote y su esperado coinciden con el contrato, pero los campos devueltos no, examina el cálculo con esos registros conocidos.\nSi los campos son correctos, pero el texto publicado no coincide, revisa cómo se forma el informe.\nComprueba también que se ejecuta el programa construido con la fuente que estás revisando: una prueba o una versión distinta pueden producir una pista engañosa (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "heading",
+          "text": "Contrastar el mínimo con el cliente construido"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente correcto permite contrastar el caso reducido con sus tres resultados: stdout, stderr y código. Aquí crearás un archivo de manifiesto dentro de build. No es la entrada del editor C++ que aparecerá después: este archivo contiene ID, tipo y tamaño, y el cliente aplica también la regla de duplicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa la misma Windows PowerShell 5.1 x64 iniciada desde la CMD de herramientas nativas en la página 9, con AssetCheck como carpeta actual. Ejecuta los seis bloques siguientes en orden, dentro de esa sesión: las variables conservan la carpeta reservada, la ruta de la entrada y el código del cliente. El árbol build ya fue configurado en la página anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Actualizar los ejecutables antes del contraste"
+        },
+        {
+          "type": "paragraph",
+          "text": "1. --build build utiliza el árbol propio. --target assetcheck_tipos assetcheck selecciona los dos clientes y las dependencias que necesiten actualizar; --verbose muestra las órdenes de las herramientas.\n2. Guarda inmediatamente $LASTEXITCODE en $codigoConstruccion. La línea siguiente consulta ese código.\n3. Si su valor no es 0, throw detiene este paso: corrige la construcción antes de ejecutar. Un archivo .exe antiguo podría seguir presente después de un fallo."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "cmake --build build --target assetcheck_tipos assetcheck --verbose\n$codigoConstruccion = $LASTEXITCODE\n\"CodigoConstruccion=$codigoConstruccion\"\nif ($codigoConstruccion -ne 0) { throw \"Corrige la construccion antes de ejecutar los clientes.\" }\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "CodigoConstruccion debe ser 0. Ambos clientes quedan actualizados; esta orden todavía no ha revisado el archivo mínimo. Si Ninja indica que no hay trabajo pendiente, ya estaban actualizados: no significa que los haya recompilado en esta ejecución."
+        },
+        {
+          "type": "heading",
+          "text": "Reservar una carpeta de diagnóstico nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "1. Test-Path comprueba que build sea una carpeta y assetcheck_tipos.exe un archivo.\n2. El while aumenta $numero mientras el nombre ya exista. Así se elige un nombre que todavía esté libre.\n3. New-Item -ItemType Directory reserva la carpeta elegida y -ErrorAction Stop detiene la receta si falla. Out-Null omite sus datos de creación.\n4. $rutaMinimo reúne esa carpeta y entrada.txt. La última línea muestra la carpeta reservada."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "if (-not (Test-Path -LiteralPath '.\\build' -PathType Container) -or\n    -not (Test-Path -LiteralPath '.\\build\\assetcheck_tipos.exe' -PathType Leaf)) {\n    throw \"Falta el arbol o el cliente construido. Comprueba la carpeta AssetCheck y la construccion.\"\n}\n$numero = 1\nwhile (Test-Path -LiteralPath \".\\build\\minimo_duplicado_$numero\") {\n    $numero += 1\n}\n$revisionMinimo = \".\\build\\minimo_duplicado_$numero\"\nNew-Item -ItemType Directory -Path $revisionMinimo -ErrorAction Stop | Out-Null\n$rutaMinimo = $revisionMinimo + '\\entrada.txt'\n$revisionMinimo\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se crea build/minimo_duplicado_1 o el siguiente número libre. Las carpetas anteriores se conservan. Para repetir todo el contraste, comienza otra vez por esta reserva y utiliza la carpeta nueva."
+        },
+        {
+          "type": "heading",
+          "text": "Guardar las dos líneas como bytes ASCII"
+        },
+        {
+          "type": "paragraph",
+          "text": "1. La guarda Test-Path detiene la escritura si entrada.txt ya existe.\n2. $lineasMinimo contiene los dos registros. Join los une con CRLF, escrito en PowerShell como `r`n, y la suma final añade otro CRLF al terminar la segunda línea.\n3. ASCII.GetBytes convierte ese texto, formado sólo por caracteres ASCII, en bytes. WriteAllBytes guarda exactamente esa colección, sin BOM ni otros terminadores añadidos."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "if (Test-Path -LiteralPath $rutaMinimo) {\n    throw \"La entrada ya existe. Conserva sus datos y reserva una carpeta nueva.\"\n}\n$lineasMinimo = @('A malla 2', 'A sonido 7')\n$textoMinimo = [string]::Join(\"`r`n\", $lineasMinimo) + \"`r`n\"\n$bytesMinimo = [Text.Encoding]::ASCII.GetBytes($textoMinimo)\n[IO.File]::WriteAllBytes($rutaMinimo, $bytesMinimo)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "entrada.txt debe contener A malla 2 y A sonido 7, cada registro terminado con CRLF. Son 23 bytes. No modifica las muestras publicadas ni las fuentes de las bibliotecas."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la entrada que realmente se guardó"
+        },
+        {
+          "type": "paragraph",
+          "text": "1. ReadAllBytes consulta los bytes del archivo. Length proporciona su cantidad; [0] consulta el primero y los índices Length - 2 y Length - 1 consultan los dos últimos.\n2. Las expresiones dentro de $() se calculan antes de formar cada rótulo de PowerShell.\n3. Get-Content, con la ruta exacta y -Encoding ASCII, muestra después los dos registros."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$leidos = [IO.File]::ReadAllBytes($rutaMinimo)\n\"Bytes=$($leidos.Length)\"\n\"PrimerByte=$($leidos[0])\"\n\"PenultimoByte=$($leidos[$leidos.Length - 2])\"\n\"UltimoByte=$($leidos[$leidos.Length - 1])\"\nGet-Content -LiteralPath $rutaMinimo -Encoding ASCII -ErrorAction Stop\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "PowerShell debe mostrar Bytes=23, PrimerByte=65, PenultimoByte=13 y UltimoByte=10. El 65 corresponde a A; los dos últimos bytes son CR y LF. Después deben verse las dos líneas del manifiesto, sin una cifra inicial que indique cantidad de registros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para este archivo, fija los esperados antes de ejecutar. La primera línea admite una malla de 2 bytes y la segunda se rechaza por repetir A. stdout debe contener estas dos filas, cada una con salto final:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "TIPOS textura=0 malla=1 sonido=0 bytes_total=2\nRESUMEN lineas=2 aceptados=1 rechazados=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "stderr debe contener esta única fila, también con salto final:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "RECHAZO linea=2 causa=DUPLICADO primera=1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código esperado de assetcheck_tipos es 1: terminó de revisar las dos líneas y conservó un rechazo local. Es distinto del código 0 de una construcción correcta y del código que devolverá el programa del editor. Comparar sólo los bytes_total no revisaría los demás campos ni los rechazos."
+        },
+        {
+          "type": "heading",
+          "text": "Capturar los dos canales sin recodificarlos"
+        },
+        {
+          "type": "paragraph",
+          "text": "1. $orden forma la llamada al cliente con la ruta del archivo entre comillas. 1> dirige stdout a stdout.bin y 2> dirige stderr a stderr.bin dentro de la carpeta nueva.\n2. En cmd /d /c, /d evita ejecutar instrucciones automáticas de inicio de CMD y /c ejecuta la orden y termina. Permite conservar los bytes nativos sin la recodificación de una redirección de Windows PowerShell 5.1.\n3. La asignación inmediata guarda el código del cliente en $codigoMinimo. El rótulo CodigoMinimo lo imprime después PowerShell y no pertenece al stdout del cliente."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$orden = '.\\build\\assetcheck_tipos.exe \"' + $rutaMinimo + '\" 1>\"' + $revisionMinimo + '\\stdout.bin\" 2>\"' + $revisionMinimo + '\\stderr.bin\"'\ncmd /d /c $orden\n$codigoMinimo = $LASTEXITCODE\n\"CodigoMinimo=$codigoMinimo\"\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deben crearse stdout.bin y stderr.bin en la carpeta de este contraste. CodigoMinimo debe ser 1; aquí ese código no ordena corregir una compilación ni indica un error global."
+        },
+        {
+          "type": "heading",
+          "text": "Comparar cada resultado con su esperado"
+        },
+        {
+          "type": "paragraph",
+          "text": "1. Los rótulos stdout del cliente: y stderr del cliente: los añade PowerShell para separar las consultas.\n2. Get-Content lee cada captura por su ruta exacta y con ASCII; -ErrorAction Stop detiene una consulta fallida.\n3. La última línea vuelve a consultar el código guardado sin ejecutar otra vez el cliente."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "\"stdout del cliente:\"\nGet-Content -LiteralPath ($revisionMinimo + '\\stdout.bin') -Encoding ASCII -ErrorAction Stop\n\"stderr del cliente:\"\nGet-Content -LiteralPath ($revisionMinimo + '\\stderr.bin') -Encoding ASCII -ErrorAction Stop\n\"CodigoMinimo=$codigoMinimo\"\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara dos filas de stdout, una de stderr y CodigoMinimo=1 con lo previsto. No hay un orden conjunto garantizado entre los dos canales. El cliente debe informar de 2 bytes admitidos, no de 9. Estas salidas contrastan el proceso completo; para atribuir un fallo a la selección o al cálculo se revisan además los datos y las comparaciones de preparación, como en la batería de la página anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Reconocer dónde se detuvo una comprobación"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la batería de la página anterior, un diagnóstico FALLO preparacion/mezcla significa que el lote construido no coincide con el esperado. Revisa las líneas de entrada, los números de origen y los dos vectores; comprueba también que el lote esperado respeta el contrato. Esa rama termina antes de consultar las estadísticas de la mezcla. Una discrepancia de preparación, que también podría proceder de un esperado incorrecto, todavía no permite atribuir el fallo a contar_tipos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la preparación pasó y aparece FALLO mezcla/mallas, el fallo pertenece a esa comparación del resultado estadístico. Los renglones esperado y obtenido muestran los cuatro campos en el orden texturas, mallas, sonidos y bytes_total. Permiten ver, por ejemplo, si dos cantidades están intercambiadas o si sólo difiere la suma. Son diagnósticos para interpretar cuando haya una discrepancia; la referencia correcta escribe Comparaciones=40 Fallos=0 y no imprime esas líneas de fallo."
+        },
+        {
+          "type": "heading",
+          "text": "Elegir una prueba que distinga el defecto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las siguientes posibilidades pertenecen a partes distintas del programa completo. Un problema de selección afecta al lote preparado; publicar antes de terminar afecta al cliente; retener cantidades afecta a consultas sucesivas; modificar el informe original afecta al otro consumidor. En la opción sobre dos apariciones válidas del mismo ID, ambas líneas tienen campos correctos, pero la segunda debe rechazarse como duplicada. No son dos admisiones del mismo identificador."
         },
         {
           "type": "math_puzzle",
@@ -2016,12 +2627,237 @@
           }
         },
         {
-          "type": "paragraph",
-          "text": "Para depurar 262, crea un lote mínimo A malla 2 seguido de A sonido 7: el total esperado es 2 y el retorno es 1, no 9. Si falla, revisa si contar_tipos utiliza lote.admitidos o los datos antes de la selección. Corrige la causa y repite las pruebas de ambos clientes (Kernighan & Pike, 1999, capítulos 5 y 6)."
+          "type": "heading",
+          "text": "Laboratorio: reparar un reinicio durante el recorrido"
         },
         {
           "type": "paragraph",
-          "text": "Un informe de depuración documenta síntoma, entrada mínima, hipótesis, comparación, corrección y prueba posterior. Este ejemplo es un defecto deliberado de enseñanza: no se debe presentar como error realmente observado durante la construcción Windows."
+          "text": "Ahora trabajarás sólo en este editor de la app. Recupera la miniatura de la página 7: Registro contiene tipo y bytes; Totales contiene texturas, mallas, sonidos y bytes. Los registros del vector ya fueron admitidos. No hay ID, líneas de origen ni rechazos en esta representación. Por eso el siguiente fallo provocado es un problema del cálculo, distinto de la hipótesis anterior sobre preparar duplicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuatro miembros de Totales tienen su propio inicializador = 0. La declaración Totales total; crea el resultado con esos ceros. En cambio, total = {}; asigna otro valor al total que ya existe. En este tipo, los cuatro miembros vuelven a sus ceros iniciales. Si antes mallas valía 1 y bytes valía 2, después de esa asignación ambos valen 0; texturas y sonidos también quedan en 0. La asignación cambia un objeto existente; no declara otra variable (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara únicamente el cuerpo de contar_tipos. En cada llamada debe devolver los cuatro totales de todos los registros recibidos. Cada tipo aumenta su contador y todos los tamaños aportan a bytes. Conserva la firma, los tipos y main; no sustituyas el cálculo por una salida fija. La función consulta el vector sin modificarlo y no imprime."
+        },
+        {
+          "type": "paragraph",
+          "text": "main lee una sola colección por ejecución: primero su cantidad de registros y después esa cantidad de pares tipo bytes. El 2 de la primera entrada indica dos registros, no dos colecciones ni dos llamadas independientes. main prepara el vector, llama una vez a contar_tipos y muestra los cuatro campos devueltos."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2\nmalla 2\nsonido 7\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una malla de 2 bytes y un sonido de 7 deben conservar sus dos aportaciones. Se espera esta única fila, con salto final:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "textura=0 malla=1 sonido=1 bytes=9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compila y ejecuta primero el programa inicial con esa entrada. Su fila conserva sólo el sonido y sus 7 bytes, aunque se hayan recibido dos registros. La compilación y un código de salida 0 no bastan para dar el cálculo por correcto: la salida debe coincidir con el resultado solicitado. Sigue el valor de total durante las dos visitas y localiza la primera operación que hace perder una aportación. Después modifica la función y vuelve a comprobarla."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando main llega a su cierre sin ejecutar un return, termina con código 0. Aquí eso indica que pudo leer y mostrar los datos; la app todavía compara la salida. contar_tipos devuelve un Totales, no el código del proceso (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}\n\nint main() {\n    int cantidad=0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 100) return 1;\n    std::vector<Registro> admitidos;\n    for (int i=0; i<cantidad; ++i) {\n        Registro r;\n        if (!(std::cin >> r.tipo >> r.bytes)) return 1;\n        admitidos.push_back(r);\n    }\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
+          "initialStandardInput": "2\nmalla 2\nsonido 7\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "2\nmalla 2\nsonido 7\n",
+                "outputs": [
+                  "textura=0 malla=1 sonido=1 bytes=9\n"
+                ],
+                "explanation": "Una sola colección contiene una malla y un sonido. Sus bytes suman 2+7=9."
+              },
+              {
+                "standardInput": "0\n",
+                "outputs": [
+                  "textura=0 malla=0 sonido=0 bytes=0\n"
+                ],
+                "explanation": "Ensayo opcional: la colección vacía devuelve cuatro ceros; el programa inicial ya pasa este caso."
+              },
+              {
+                "standardInput": "1\ntextura 30000\n",
+                "outputs": [
+                  "textura=1 malla=0 sonido=0 bytes=30000\n"
+                ],
+                "explanation": "Ensayo opcional: con un solo registro no se observa lo que ocurre al visitar un segundo elemento."
+              },
+              {
+                "standardInput": "6\nmalla 2\nsonido 7\ntextura 5\nmalla 3\nsonido 4\nsonido 6\n",
+                "outputs": [
+                  "textura=1 malla=2 sonido=3 bytes=27\n"
+                ],
+                "explanation": "Ensayo opcional: seis admisiones, cantidades asimétricas y 2+7+5+3+4+6=27 bytes."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo la primera comprobación correcta del primer caso es obligatoria para avanzar. Cada entrada siguiente pertenece a una ejecución nueva con una sola colección. Puedes utilizarlas para contrastar tu reparación; no se agrupan como una segunda salida obligatoria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo opcional 2. Entrada completa:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "textura=0 malla=0 sonido=0 bytes=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo opcional 3. Entrada completa:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "1\ntextura 30000\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "textura=1 malla=0 sonido=0 bytes=30000\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo opcional 4. Entrada completa:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\nmalla 2\nsonido 7\ntextura 5\nmalla 3\nsonido 4\nsonido 6\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "textura=1 malla=2 sonido=3 bytes=27\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La colección vacía y la textura aislada ya pueden salir bien con el cuerpo inicial. No obligan a conservar el resultado de una visita cuando llega la siguiente. La mezcla de seis registros cambia tanto los contadores como la suma: espera una textura, dos mallas, tres sonidos y 27 bytes."
+        },
+        {
+          "type": "heading",
+          "text": "Comparación: conservar las aportaciones del recorrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado se prepara una vez para esta llamada, antes de recorrer el vector. Cada visita añade su contador y sus bytes al resultado existente. La asignación total = {}; que estaba dentro del for borraba lo conseguido por las visitas anteriores. Esta solución la retira; también son válidas otras reparaciones que respeten el mismo contrato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Totales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con malla 2, total pasa a texturas 0, mallas 1, sonidos 0 y bytes 2. La visita de sonido 7 conserva esa malla, aumenta sonidos a 1 y añade 7 a los 2 bytes: devuelve 9. En el cuerpo inicial, el segundo reinicio dejaba antes cuatro ceros y la última visita producía sólo sonidos 1 y bytes 7."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperar sólo la suma no basta. Una reparación que conserve bytes, pero siga borrando los tres contadores, podría mostrar 9 junto a mallas 0 y sonidos 1. El primer caso exige también conservar la malla. Por eso se comparan cuatro campos y no únicamente un número que parece corregido."
+        },
+        {
+          "type": "heading",
+          "text": "Reconocer un caso que deja pasar el defecto"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa de la actividad siguiente vuelve deliberadamente al cuerpo inicial sin corregir. Esta vez prepara un solo sonido de 7 bytes. Predice lo que muestra ese código, no lo que recuerdas de tu reparación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "assetcheck_u4l7_prediccion_caso_facil",
+          "question": "Este programa conserva deliberadamente el reinicio defectuoso y recibe un solo registro. Predice su única fila, sin incluir el salto de línea final en la respuesta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string tipo; int bytes; };\nstruct Totales { int texturas=0; int mallas=0; int sonidos=0; int bytes=0; };\n\n// Repara sólo esta función. Cada registro ya fue admitido.\nTotales contar_tipos(const std::vector<Registro>& admitidos) {\n    Totales total;\n    for (const Registro& r : admitidos) {\n        total = {};\n        if (r.tipo == \"textura\") ++total.texturas;\n        else if (r.tipo == \"malla\") ++total.mallas;\n        else if (r.tipo == \"sonido\") ++total.sonidos;\n        total.bytes += r.bytes;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<Registro> admitidos{{\"sonido\", 7}};\n    const Totales t=contar_tipos(admitidos);\n    std::cout << \"textura=\" << t.texturas << \" malla=\" << t.mallas\n              << \" sonido=\" << t.sonidos << \" bytes=\" << t.bytes << '\\n';\n}\n",
+          "answers": [
+            "textura=0 malla=0 sonido=1 bytes=7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo hay una visita. El reinicio deja cuatro ceros y esa misma visita añade un sonido y 7 bytes; ya no llega una segunda visita que borre esos datos. El resultado coincide con el correcto para este caso fácil. El caso de dos registros sí obliga a conservar una aportación anterior y distingue el defecto."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar también que una prueba detecta errores"
+        },
+        {
+          "type": "paragraph",
+          "text": "La batería externa de cuarenta comparaciones se contrastó en Windows con tres defectos provocados por separado: intercambiar mallas y sonidos produjo nueve comparaciones fallidas; conservar contadores entre llamadas produjo veinticinco; sumar un byte por admisión en lugar de su tamaño produjo siete. Las tres versiones terminaron con código 1 y diagnósticos de esperado y obtenido. Estas mediciones corresponden al comprobador de la página anterior, no a los casos del editor nuevo. Un único defecto puede hacer fallar varias comparaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Provocar un defecto conocido ayuda a comprobar la sensibilidad de las pruebas: si el resultado incorrecto también se aprobara, habría que revisar el caso o su comparación. Una batería que pasa para la referencia correcta y rechaza cambios equivocados aporta una evidencia más útil que su cantidad de líneas ejecutadas (Thomas & Hunt, 2020)."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar la regresión cuando cambie una fuente real"
+        },
+        {
+          "type": "paragraph",
+          "text": "La reparación de la miniatura se realiza dentro de la app. Cuando una corrección de tu proyecto cambie una biblioteca o un cliente real, utiliza la siguiente recuperación desde Windows PowerShell 5.1 x64 y AssetCheck. Mantiene el árbol build configurado con las cinco pruebas de esta etapa; si también cambiaste CMakeLists.txt, vuelve primero a su configuración. Esta recuperación no es una ejecución adicional requerida por resolver el editor."
+        },
+        {
+          "type": "paragraph",
+          "text": "--build .\\build utiliza el árbol propio y actualiza todos sus objetivos: en esta etapa son cuatro bibliotecas y seis programas, con sus dependencias. --verbose muestra las órdenes ejecutadas. El código se guarda inmediatamente; si falla la construcción, detente antes de probar ejecutables que podrían corresponder a una versión anterior."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "cmake --build .\\build --verbose\n$codigoReconstruccion = $LASTEXITCODE\n\"CodigoReconstruccion=$codigoReconstruccion\"\nif ($codigoReconstruccion -ne 0) { throw \"Corrige la construccion antes de ejecutar la regresion.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de una construcción con código 0, --test-dir .\\build selecciona el árbol. Sin un filtro de nombres, CTest ejecuta todas las pruebas registradas: cinco en esta etapa. --output-on-failure muestra el diagnóstico de una prueba que falle y --no-tests=error rechaza una selección vacía. Guarda el código de CTest inmediatamente. Entre estas pruebas está comprobar_cliente, que revisa el proceso del cliente original."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "ctest --test-dir .\\build --output-on-failure --no-tests=error\n$codigoRegresion = $LASTEXITCODE\n\"CodigoRegresion=$codigoRegresion\"\nif ($codigoRegresion -ne 0) { throw \"Consulta los diagnosticos de la regresion.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba que se hayan ejecutado y superado cinco pruebas y que CodigoRegresion sea 0. El total mostrado por CTest cuenta procesos de prueba, no cada comparación interna. Así se comprueba también que el cambio no rompió el cliente original ni las bibliotecas anteriores. Si falla una prueba, conserva el caso y su diagnóstico al revisar la corrección."
+        },
+        {
+          "type": "paragraph",
+          "text": "El reinicio dentro del recorrido se introdujo deliberadamente en el editor para practicar el diagnóstico. No es un defecto descubierto en las fuentes correctas del proyecto. Un informe de depuración distingue el síntoma, el esperado, la entrada mínima, la hipótesis, los datos que la apoyan o la refutan, la corrección y su regresión. Incluye también la revisión del programa y el entorno utilizados para que otra persona pueda reproducirlo. Cuando una corrección cambie una biblioteca real, reconstruye y comprueba los consumidores afectados, conservando los casos de regresión anteriores (Kernighan & Pike, 1999)."
         }
       ]
     },
@@ -2069,6 +2905,23 @@
             "Hay cuatro rechazos y no un error global.",
             "Un ejecutable inexistente no produciría ese informe."
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Las pruebas de consola comparan stdout, stderr y el código por separado. Para un archivo vacío se espera TIPOS con ceros y código 0. Para la muestra de ocho líneas se esperan 255 y código 1. Para 101 líneas, stdout debe estar vacío y stderr contener sólo ERROR causa=LIMITE_LINEAS con código 2. Un resultado numérico acertado sin examinar los otros canales no basta."
+        },
+        {
+          "type": "heading",
+          "text": "Comparación de la configuración de la ampliación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento reúne los objetivos de la biblioteca, el segundo cliente y sus dos pruebas. Sirve para comparar la ampliación completa con CMakeLists.txt cuando estén creadas esas fuentes. Cada objetivo se declara una sola vez en el archivo; el bloque reúne las declaraciones para su consulta conjunta."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "add_library(assetcheck_estadisticas STATIC src/estadisticas.cpp)\ntarget_include_directories(assetcheck_estadisticas PUBLIC include)\ntarget_link_libraries(assetcheck_estadisticas PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_estadisticas PUBLIC cxx_std_23)\n\nadd_executable(assetcheck_tipos src/cliente_tipos.cpp)\ntarget_link_libraries(assetcheck_tipos\n  PRIVATE assetcheck_estadisticas assetcheck_manifiesto)\n\nadd_executable(comprobar_estadisticas pruebas/estadisticas_casos.cpp)\ntarget_link_libraries(comprobar_estadisticas PRIVATE assetcheck_estadisticas)\nadd_test(NAME comprobar_estadisticas COMMAND comprobar_estadisticas)\n\nadd_test(NAME comprobar_tipos_cli COMMAND \"${CMAKE_COMMAND}\"\n  \"-DCLIENTE=$<TARGET_FILE:assetcheck_tipos>\"\n  \"-DDIR=${CMAKE_CURRENT_BINARY_DIR}\"\n  -P \"${CMAKE_CURRENT_SOURCE_DIR}/pruebas/comprobar_tipos_cli.cmake\")"
         }
       ]
     },
@@ -2381,6 +3234,18 @@
         "u4l7_est_explica_consultar_readme",
         "u4l7_est_ps_consultar_readme",
         "u4l7_est_espera_consultar_readme"
+      ]
+    },
+    {
+      "activity": "u4l7_depurar_editor",
+      "blocks": [
+        "u4l7_depurar_referencia_titulo",
+        "u4l7_depurar_referencia_idea",
+        "u4l7_depurar_referencia_funcion",
+        "u4l7_depurar_referencia_traza",
+        "u4l7_depurar_referencia_parcial",
+        "u4l7_depurar_prediccion_titulo",
+        "u4l7_depurar_prediccion_contexto"
       ]
     }
   ],
@@ -3305,48 +4170,6 @@
         "spans": []
       },
       {
-        "block": "block_0010_0001",
-        "path": "/text",
-        "sourceSha256": "dbeea5c1f54445b8919e3f6445687a59d8b518c943702a2e41084d0c853191cc",
-        "spans": [
-          {
-            "start": 43,
-            "end": 57,
-            "text": "procesar_linea",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 84,
-            "end": 96,
-            "text": "contar_tipos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 174,
-            "end": 185,
-            "text": "bytes_total",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 909,
-            "end": 920,
-            "text": "30000 bytes",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 951,
-            "end": 964,
-            "text": "3000000 bytes",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
         "block": "block_0010_0003",
         "path": "/text",
         "sourceSha256": "f35513e0f24f69e9a15383cce3a285fac126a29aa0c38693d92452c72f8c3e50",
@@ -3422,12 +4245,6 @@
         "spans": []
       },
       {
-        "block": "block_0011_0001",
-        "path": "/text",
-        "sourceSha256": "4280282ab4fb5efc023501c9af40e9d294d97ddd153d6887f93da9a924eca46a",
-        "spans": []
-      },
-      {
         "block": "block_0011_0002",
         "path": "/prompt",
         "sourceSha256": "623e5ba755cb6dcb44d81509b5ca6a5ab184c16970ed914a03bde165a7bbdb7b",
@@ -3491,18 +4308,6 @@
         "block": "block_0011_0002",
         "path": "/responses/0/targets/3/label",
         "sourceSha256": "e38926d7e1cc61e4ca6c3340879f2b0a7ae2b5ba9c1834772945c2af8057a7c1",
-        "spans": []
-      },
-      {
-        "block": "block_0011_0003",
-        "path": "/text",
-        "sourceSha256": "7491eba1094404002f99fc393cacc75cd48c6fa62493f347987cddb5641fbda9",
-        "spans": []
-      },
-      {
-        "block": "block_0011_0004",
-        "path": "/text",
-        "sourceSha256": "f6d6bbb5eb0d8b3c6dba5136ada0f99ae2ebc5db1c73a77d3f566ea9e1b1b77a",
         "spans": []
       },
       {
@@ -5151,6 +5956,186 @@
         "path": "/text",
         "sourceSha256": "651de9a10d423188c8f882166bd8f3753153b1d0f05508999f367af24d963935",
         "spans": []
+      },
+      {
+        "block": "block_0010_0001",
+        "path": "/text",
+        "sourceSha256": "1479fce103b976e90394d16fcf489fa6e28e38ff2bc35cf564815ce05ef3bece",
+        "spans": [
+          {
+            "start": 129,
+            "end": 143,
+            "text": "procesar_linea",
+            "role": "cpp"
+          },
+          {
+            "start": 205,
+            "end": 217,
+            "text": "contar_tipos",
+            "role": "cpp"
+          },
+          {
+            "start": 272,
+            "end": 283,
+            "text": "bytes_total",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_pruebas_matriz_proposito",
+        "path": "/text",
+        "sourceSha256": "8d400c7e91bee6fa1e4315647f110bac82a3abe76761a9f87ab16dde27e7c519",
+        "spans": [
+          {
+            "start": 318,
+            "end": 342,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_pruebas_programa_consumidor",
+        "path": "/text",
+        "sourceSha256": "e93db29f4c8776d9c3aeda02cff4e59a2be8ad2d53fbdb75c3d02a5b2814f659",
+        "spans": [
+          {
+            "start": 239,
+            "end": 260,
+            "text": "(Thomas & Hunt, 2020)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_pruebas_cmake_ordenes",
+        "path": "/text",
+        "sourceSha256": "347b2f1f5407616195f853f65c92017a05571bfdb726f449ca430abf47118d79",
+        "spans": [
+          {
+            "start": 563,
+            "end": 578,
+            "text": "(Kitware, 2026)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_pruebas_ctest_nombre",
+        "path": "/text",
+        "sourceSha256": "b3b57952c6d3ac7c4d60c1b0d1ef3b3eb219e5b134a728af0fbc40f056376daa",
+        "spans": [
+          {
+            "start": 467,
+            "end": 482,
+            "text": "(Kitware, 2026)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_pruebas_ctest_retorno",
+        "path": "/text",
+        "sourceSha256": "713958cb26e0f325d1aad782fbcc1ff2a241fbec8abff1fc173611fa1a8c4217",
+        "spans": [
+          {
+            "start": 366,
+            "end": 381,
+            "text": "(Kitware, 2026)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0001",
+        "path": "/text",
+        "sourceSha256": "824a6c3c065b7a6c5df4f248e86d845073b56a674123c44e75e77b5e13c5bbbe",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0003",
+        "path": "/text",
+        "sourceSha256": "69af4ce2652ac95b08c44b74650aa197721f44901c70fa64be0867c3f2a75142",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0004",
+        "path": "/text",
+        "sourceSha256": "321992e292ed842918099bce2c7b7bec8711c61dc39cd1a75df0d6afa16fab23",
+        "spans": [
+          {
+            "start": 590,
+            "end": 614,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_depurar_diferencia_siete",
+        "path": "/text",
+        "sourceSha256": "225297f90ef2e40d1a0473895b9e09cc84c955af4e060463ef3cd3944e2e7578",
+        "spans": [
+          {
+            "start": 440,
+            "end": 464,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_depurar_fronteras_evidencia",
+        "path": "/text",
+        "sourceSha256": "18d58eb2ac45b5d6987d0bb2a949111484521c88c6ee1033ee005102c9037401",
+        "spans": [
+          {
+            "start": 680,
+            "end": 704,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_depurar_asignacion",
+        "path": "/text",
+        "sourceSha256": "5e28ae19f522acdc7691004b5abb845d984cc80e95eea67908c4cb3e41ab81e1",
+        "spans": [
+          {
+            "start": 450,
+            "end": 483,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_depurar_cierre_main",
+        "path": "/text",
+        "sourceSha256": "b8638030ccfc23e8f7ea25c67ef52de0709753e9c25d649f7cfac98d1db70708",
+        "spans": [
+          {
+            "start": 220,
+            "end": 253,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023)",
+            "role": "citation"
+          }
+        ]
+      },
+      {
+        "block": "u4l7_depurar_sensibilidad_proposito",
+        "path": "/text",
+        "sourceSha256": "dc7a6fc6764fa7153ec45ea5c45c810d90f7b6457245764e82e3cd8e37709ff0",
+        "spans": [
+          {
+            "start": 318,
+            "end": 339,
+            "text": "(Thomas & Hunt, 2020)",
+            "role": "citation"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -6010,13 +6995,100 @@
         "blocks": [
           "block_0010_0000",
           "block_0010_0001",
+          "u4l7_pruebas_esperados_titulo",
+          "u4l7_pruebas_esperados_campos",
+          "u4l7_pruebas_datos_puzzle",
+          "u4l7_pruebas_datos_cinco",
+          "u4l7_pruebas_oraculo_cuatro_campos",
+          "u4l7_pruebas_traza_cinco",
+          "u4l7_pruebas_preparacion_titulo",
+          "u4l7_pruebas_preparacion_void",
+          "u4l7_pruebas_preparacion_datos",
+          "u4l7_pruebas_fragmento_titulo",
+          "u4l7_pruebas_fragmento_comprobar",
           "block_0010_0002",
-          "block_0010_0003",
-          "block_0010_0004",
+          "u4l7_pruebas_fragmento_parcial",
+          "u4l7_pruebas_evitar_oraculo_circular",
+          "u4l7_pruebas_matriz_titulo",
+          "u4l7_pruebas_matriz_proposito",
+          "u4l7_pruebas_matriz_mezcla",
+          "u4l7_pruebas_matriz_controles",
+          "u4l7_pruebas_matriz_rechazos",
+          "u4l7_pruebas_matriz_cien",
+          "u4l7_pruebas_matriz_aislamiento",
+          "u4l7_pruebas_programa_titulo",
+          "u4l7_pruebas_programa_consumidor",
+          "u4l7_pruebas_programa_contadores",
+          "u4l7_pruebas_programa_comprobar",
+          "u4l7_pruebas_programa_preparar",
+          "u4l7_pruebas_programa_textos",
+          "u4l7_pruebas_programa_llaves",
+          "u4l7_pruebas_programa_vectores",
+          "u4l7_pruebas_programa_ambito",
+          "u4l7_pruebas_programa_cien",
+          "u4l7_pruebas_programa_cadenas",
+          "u4l7_pruebas_programa_cuenta",
+          "u4l7_pruebas_programa_retorno",
+          "u4l7_pruebas_receta_crear_checker",
+          "u4l7_pruebas_explica_crear_checker",
+          "u4l7_pruebas_ps_crear_checker",
+          "u4l7_pruebas_esperado_crear_checker",
+          "u4l7_pruebas_receta_consultar_checker",
+          "u4l7_pruebas_explica_consultar_checker",
+          "u4l7_pruebas_ps_consultar_checker",
+          "u4l7_pruebas_esperado_consultar_checker",
+          "u4l7_pruebas_cmake_titulo",
+          "u4l7_pruebas_cmake_ordenes",
+          "u4l7_pruebas_receta_integrar_cmake",
+          "u4l7_pruebas_explica_integrar_cmake",
+          "u4l7_pruebas_ps_integrar_cmake",
+          "u4l7_pruebas_esperado_integrar_cmake",
+          "u4l7_pruebas_receta_consultar_cmake",
+          "u4l7_pruebas_explica_consultar_cmake",
+          "u4l7_pruebas_ps_consultar_cmake",
+          "u4l7_pruebas_esperado_consultar_cmake",
+          "u4l7_pruebas_configurar_titulo",
+          "u4l7_pruebas_entorno",
+          "u4l7_pruebas_ps_entorno",
+          "u4l7_pruebas_configurar_explica",
+          "u4l7_pruebas_ps_configurar",
+          "u4l7_pruebas_configurar_esperado",
+          "u4l7_pruebas_construir_titulo",
+          "u4l7_pruebas_construir_explica",
+          "u4l7_pruebas_ps_construir",
+          "u4l7_pruebas_construir_esperado",
+          "u4l7_pruebas_directa_titulo",
+          "u4l7_pruebas_directa_explica",
+          "u4l7_pruebas_ps_directa",
+          "u4l7_pruebas_directa_esperado",
+          "u4l7_pruebas_stdout_directa",
+          "u4l7_pruebas_directa_diagnosticos",
+          "u4l7_pruebas_ctest_titulo",
+          "u4l7_pruebas_ctest_nombre",
+          "u4l7_pruebas_ps_ctest",
+          "u4l7_pruebas_ctest_esperado",
+          "u4l7_pruebas_ctest_retorno",
+          "u4l7_pruebas_documentar_titulo",
+          "u4l7_pruebas_receta_actualizar_contrato",
+          "u4l7_pruebas_explica_actualizar_contrato",
+          "u4l7_pruebas_ps_actualizar_contrato",
+          "u4l7_pruebas_esperado_actualizar_contrato",
+          "u4l7_pruebas_receta_consultar_contrato",
+          "u4l7_pruebas_explica_consultar_contrato",
+          "u4l7_pruebas_ps_consultar_contrato",
+          "u4l7_pruebas_esperado_consultar_contrato",
+          "u4l7_pruebas_receta_actualizar_readme",
+          "u4l7_pruebas_explica_actualizar_readme",
+          "u4l7_pruebas_ps_actualizar_readme",
+          "u4l7_pruebas_esperado_actualizar_readme",
+          "u4l7_pruebas_receta_consultar_readme",
+          "u4l7_pruebas_explica_consultar_readme",
+          "u4l7_pruebas_ps_consultar_readme",
+          "u4l7_pruebas_esperado_consultar_readme",
           "block_0010_0005",
-          "u4l7_cmake_comparacion_final",
-          "u4l7_cmake_consulta_final",
-          "block_0008_0002"
+          "u4l7_pruebas_evidencia_remota_titulo",
+          "block_0010_0004",
+          "u4l7_pruebas_evidencia_remota_alcance"
         ]
       },
       {
@@ -6024,8 +7096,94 @@
         "blocks": [
           "block_0011_0000",
           "block_0011_0001",
-          "block_0011_0002",
+          "u4l7_depurar_hipotesis_titulo",
+          "u4l7_depurar_diferencia_siete",
+          "u4l7_depurar_frontera_contar",
           "block_0011_0003",
+          "u4l7_depurar_reduccion_no_perder",
+          "u4l7_depurar_fronteras_evidencia",
+          "u4l7_depurar_reproduccion_titulo",
+          "u4l7_depurar_reproduccion_contexto",
+          "u4l7_depurar_reproduccion_sesion",
+          "u4l7_depurar_orden_construir_clientes",
+          "u4l7_depurar_explica_construir_clientes",
+          "u4l7_depurar_ps_construir_clientes",
+          "u4l7_depurar_esperado_construir_clientes",
+          "u4l7_depurar_orden_reservar_directorio",
+          "u4l7_depurar_explica_reservar_directorio",
+          "u4l7_depurar_ps_reservar_directorio",
+          "u4l7_depurar_esperado_reservar_directorio",
+          "u4l7_depurar_orden_crear_minimo",
+          "u4l7_depurar_explica_crear_minimo",
+          "u4l7_depurar_ps_crear_minimo",
+          "u4l7_depurar_esperado_crear_minimo",
+          "u4l7_depurar_orden_consultar_minimo",
+          "u4l7_depurar_explica_consultar_minimo",
+          "u4l7_depurar_ps_consultar_minimo",
+          "u4l7_depurar_esperado_consultar_minimo",
+          "u4l7_depurar_canales_previos",
+          "u4l7_depurar_stdout_minimo",
+          "u4l7_depurar_stderr_previo",
+          "u4l7_depurar_stderr_minimo",
+          "u4l7_depurar_codigo_previo",
+          "u4l7_depurar_orden_capturar_minimo",
+          "u4l7_depurar_explica_capturar_minimo",
+          "u4l7_depurar_ps_capturar_minimo",
+          "u4l7_depurar_esperado_capturar_minimo",
+          "u4l7_depurar_orden_consultar_canales",
+          "u4l7_depurar_explica_consultar_canales",
+          "u4l7_depurar_ps_consultar_canales",
+          "u4l7_depurar_esperado_consultar_canales",
+          "u4l7_depurar_diagnosticos_titulo",
+          "u4l7_depurar_diagnosticos_preparacion",
+          "u4l7_depurar_diagnosticos_campos",
+          "u4l7_depurar_comparar_defectos",
+          "u4l7_depurar_contexto_matching",
+          "block_0011_0002",
+          "u4l7_depurar_editor_titulo",
+          "u4l7_depurar_modelo",
+          "u4l7_depurar_asignacion",
+          "u4l7_depurar_objetivo_editor",
+          "u4l7_depurar_entrada_editor",
+          "u4l7_depurar_entrada_primera",
+          "u4l7_depurar_esperado_editor",
+          "u4l7_depurar_salida_primera",
+          "u4l7_depurar_ensayo_inicial",
+          "u4l7_depurar_cierre_main",
+          "u4l7_depurar_editor",
+          "u4l7_depurar_opcionales_titulo",
+          "u4l7_depurar_opcionales_alcance",
+          "u4l7_depurar_opcional_2",
+          "u4l7_depurar_opcional_entrada_2",
+          "u4l7_depurar_opcional_rotulo_2",
+          "u4l7_depurar_opcional_salida_2",
+          "u4l7_depurar_opcional_3",
+          "u4l7_depurar_opcional_entrada_3",
+          "u4l7_depurar_opcional_rotulo_3",
+          "u4l7_depurar_opcional_salida_3",
+          "u4l7_depurar_opcional_4",
+          "u4l7_depurar_opcional_entrada_4",
+          "u4l7_depurar_opcional_rotulo_4",
+          "u4l7_depurar_opcional_salida_4",
+          "u4l7_depurar_opcionales_sentido",
+          "u4l7_depurar_referencia_titulo",
+          "u4l7_depurar_referencia_idea",
+          "u4l7_depurar_referencia_funcion",
+          "u4l7_depurar_referencia_traza",
+          "u4l7_depurar_referencia_parcial",
+          "u4l7_depurar_prediccion_titulo",
+          "u4l7_depurar_prediccion_contexto",
+          "u4l7_depurar_prediccion_caso_facil",
+          "u4l7_depurar_sensibilidad_titulo",
+          "u4l7_depurar_sensibilidad",
+          "u4l7_depurar_sensibilidad_proposito",
+          "u4l7_depurar_regresion_titulo",
+          "u4l7_depurar_regresion_condicion",
+          "u4l7_depurar_regresion_build",
+          "u4l7_depurar_ps_regresion_build",
+          "u4l7_depurar_regresion_ctest",
+          "u4l7_depurar_ps_regresion_ctest",
+          "u4l7_depurar_regresion_resultado",
           "block_0011_0004"
         ]
       },
@@ -6038,7 +7196,11 @@
           "block_0012_0003",
           "block_0012_0004",
           "block_0012_0005",
-          "block_0012_0006"
+          "block_0012_0006",
+          "block_0010_0003",
+          "u4l7_cmake_comparacion_final",
+          "u4l7_cmake_consulta_final",
+          "block_0008_0002"
         ]
       },
       {
@@ -8907,6 +10069,1599 @@
           "block": 257
         },
         "progressPage": "page_0009"
+      },
+      {
+        "id": "u4l7_pruebas_esperados_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 258
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperados_campos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 259
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_datos_puzzle",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 260
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_datos_cinco",
+        "sha256": "8b50a46442ea0fb95fde8306158be5c984ad26a307f59725c3e9e82c5c24068d",
+        "storage": {
+          "page": 18,
+          "block": 261
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_oraculo_cuatro_campos",
+        "sha256": "5b18bf1b7252a4676b1f2afce4c407c30617457d1c93951d7e86cf5445df5ee7",
+        "storage": {
+          "page": 18,
+          "block": 262
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_traza_cinco",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 263
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_preparacion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 264
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_preparacion_void",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 265
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_preparacion_datos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 266
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_fragmento_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 267
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_fragmento_comprobar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 268
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_fragmento_parcial",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 269
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_evitar_oraculo_circular",
+        "sha256": "c22d116ae1a0511649c65fb30bf9ff76c4ad467bf607348c3c6bd795e6f434f1",
+        "storage": {
+          "page": 18,
+          "block": 270
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 271
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_proposito",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 272
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_mezcla",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 273
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_controles",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 274
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_rechazos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 275
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_cien",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 276
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_matriz_aislamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 277
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 278
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_consumidor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 279
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_contadores",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 280
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_comprobar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 281
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_preparar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 282
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_textos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 283
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_llaves",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 284
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_vectores",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 285
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_ambito",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 286
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_cien",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 287
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_cadenas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 288
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_cuenta",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 289
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_programa_retorno",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 290
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_crear_checker",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 291
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_crear_checker",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 292
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_crear_checker",
+        "sha256": "510d21c4e7bc29ace265bcd682634a14904977ef029bf0e33d9ce79f4c1fcba9",
+        "storage": {
+          "page": 18,
+          "block": 293
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_crear_checker",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 294
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_consultar_checker",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 295
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_consultar_checker",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 296
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_consultar_checker",
+        "sha256": "852e015f3c6a9b619b99554efb9d46a52c5b90b8f262353d24d20c1ea904b5f8",
+        "storage": {
+          "page": 18,
+          "block": 297
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_consultar_checker",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 298
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_cmake_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 299
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_cmake_ordenes",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 300
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_integrar_cmake",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 301
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_integrar_cmake",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 302
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_integrar_cmake",
+        "sha256": "50217e9303f10534db6993d9f2dcdf179c1420a8ab89331fb295617eccadb550",
+        "storage": {
+          "page": 18,
+          "block": 303
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_integrar_cmake",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 304
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_consultar_cmake",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 305
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_consultar_cmake",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 306
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_consultar_cmake",
+        "sha256": "a4a012c26871fc81a65fe512ff8927ee93b4e3ba790c5786e334a63729588395",
+        "storage": {
+          "page": 18,
+          "block": 307
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_consultar_cmake",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 308
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_configurar_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 309
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_entorno",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 310
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_entorno",
+        "sha256": "fa59697b47c8c656caa2bf5367f85e74088fd9e514875e32447fdaf17cd7340d",
+        "storage": {
+          "page": 18,
+          "block": 311
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_configurar_explica",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 312
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_configurar",
+        "sha256": "db42473ad4cb6769b67bd5ec631b8b665f4b7b516d94ad0814ee862ba310cee2",
+        "storage": {
+          "page": 18,
+          "block": 313
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_configurar_esperado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 314
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_construir_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 315
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_construir_explica",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 316
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_construir",
+        "sha256": "97d186723cb84a5a267c6dbfed8824fc6054d5cf4dd45068bba192930c5d6d2e",
+        "storage": {
+          "page": 18,
+          "block": 317
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_construir_esperado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 318
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_directa_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 319
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_directa_explica",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 320
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_directa",
+        "sha256": "0845db7ac1e822c753a8cc6dc7253da7caee37754ff80dd05fa0c20e445c1298",
+        "storage": {
+          "page": 18,
+          "block": 321
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_directa_esperado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 322
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_stdout_directa",
+        "sha256": "d9f34d7a9ef727b390d1f4fba4465e8ea384ee0e46ffeb46881687d6eb19590d",
+        "storage": {
+          "page": 18,
+          "block": 323
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_directa_diagnosticos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 324
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ctest_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 325
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ctest_nombre",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 326
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_ctest",
+        "sha256": "f366d404ba0001ed0c75812eac888ffc7b71b2b3f338681411739c96e03346b7",
+        "storage": {
+          "page": 18,
+          "block": 327
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ctest_esperado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 328
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ctest_retorno",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 329
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_documentar_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 330
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_actualizar_contrato",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 331
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_actualizar_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 332
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_actualizar_contrato",
+        "sha256": "a78716515c3a9b593e4f043b872a81ab0e044d85cc9d38f56817d83e3a348382",
+        "storage": {
+          "page": 18,
+          "block": 333
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_actualizar_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 334
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_consultar_contrato",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 335
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_consultar_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 336
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_consultar_contrato",
+        "sha256": "74e2f0238cf006b9e089b09a334a083c8ec7a18b1534729341ee1e8471c579e9",
+        "storage": {
+          "page": 18,
+          "block": 337
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_consultar_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 338
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_actualizar_readme",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 339
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_actualizar_readme",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 340
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_actualizar_readme",
+        "sha256": "5a1119eb5f60c5ed19ded628a3685ba9ff6614137f69e800e4da34c889f20f49",
+        "storage": {
+          "page": 18,
+          "block": 341
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_actualizar_readme",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 342
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_receta_consultar_readme",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 343
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_explica_consultar_readme",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 344
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_ps_consultar_readme",
+        "sha256": "5f3671c7fcf1805a211faa586e5c464cdedc24c71adc10e61b9424bf613d1c98",
+        "storage": {
+          "page": 18,
+          "block": 345
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_esperado_consultar_readme",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 346
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_evidencia_remota_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 347
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_pruebas_evidencia_remota_alcance",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 348
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u4l7_depurar_hipotesis_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 349
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_diferencia_siete",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 350
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_frontera_contar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 351
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_reduccion_no_perder",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 352
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_fronteras_evidencia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 353
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_reproduccion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 354
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_reproduccion_contexto",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 355
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_reproduccion_sesion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 356
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_orden_construir_clientes",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 357
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_explica_construir_clientes",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 358
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_construir_clientes",
+        "sha256": "cbdcf55e26ec41899f7b0098186def347c69429abce28a442b2cac65708e7585",
+        "storage": {
+          "page": 18,
+          "block": 359
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_construir_clientes",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 360
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_orden_reservar_directorio",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 361
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_explica_reservar_directorio",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 362
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_reservar_directorio",
+        "sha256": "9107aff13221e1a96c9f40c41098454c22dee13069f0cb91e2a9cf193f03b12b",
+        "storage": {
+          "page": 18,
+          "block": 363
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_reservar_directorio",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 364
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_orden_crear_minimo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 365
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_explica_crear_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 366
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_crear_minimo",
+        "sha256": "e4bf583e34f16b022d23615d0662173a557a06e8d35e824c80f27199c2b1d1af",
+        "storage": {
+          "page": 18,
+          "block": 367
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_crear_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 368
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_orden_consultar_minimo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 369
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_explica_consultar_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 370
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_consultar_minimo",
+        "sha256": "3eb61ac1a7097e2671bb5517f2056c75c83ba055e62071048ae9c19c1bef4179",
+        "storage": {
+          "page": 18,
+          "block": 371
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_consultar_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 372
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_canales_previos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 373
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_stdout_minimo",
+        "sha256": "18aa3021f83e025550954900bb0671b1ef379d6bb465782fa78b542bc1c981fb",
+        "storage": {
+          "page": 18,
+          "block": 374
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_stderr_previo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 375
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_stderr_minimo",
+        "sha256": "aef8d3b1b6b5a02ba61ab7da2be7e3d25ec136a44286f4bacc23fe67275e2fa4",
+        "storage": {
+          "page": 18,
+          "block": 376
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_codigo_previo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 377
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_orden_capturar_minimo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 378
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_explica_capturar_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 379
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_capturar_minimo",
+        "sha256": "f6f9817c0fc2c0c6bab133e256e308234a3df6c27fb16a03bcc012529f4160ad",
+        "storage": {
+          "page": 18,
+          "block": 380
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_capturar_minimo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 381
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_orden_consultar_canales",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 382
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_explica_consultar_canales",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 383
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_consultar_canales",
+        "sha256": "773e120d851c2bb0b8e265e89ebddbae71c651ed7ee23fcb55619472a58742c1",
+        "storage": {
+          "page": 18,
+          "block": 384
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_consultar_canales",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 385
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_diagnosticos_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 386
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_diagnosticos_preparacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 387
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_diagnosticos_campos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 388
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_comparar_defectos",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 389
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_contexto_matching",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 390
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_editor_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 391
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_modelo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 392
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_asignacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 393
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_objetivo_editor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 394
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_entrada_editor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 395
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_entrada_primera",
+        "sha256": "27f312b302f91675c130815384746d06aa089b97385fa7560ddaee5cca080701",
+        "storage": {
+          "page": 18,
+          "block": 396
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_esperado_editor",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 397
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_salida_primera",
+        "sha256": "7fc5a8f002609fc5f1d89d4b46b8f9f430ad265ffb5834ab81f30c39c1808f12",
+        "storage": {
+          "page": 18,
+          "block": 398
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ensayo_inicial",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 399
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_cierre_main",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 400
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_editor",
+        "sha256": "f904ad74c8d852901ada9eb2625cb8fe8cb7a9dbf7643f6c82d5a60f3545bde8",
+        "storage": {
+          "page": 18,
+          "block": 401
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcionales_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 402
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcionales_alcance",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 403
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 404
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_entrada_2",
+        "sha256": "28aaf18d758884bae91470a52e858876a9f0679e94d760c09a302ac650c37850",
+        "storage": {
+          "page": 18,
+          "block": 405
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_rotulo_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 406
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_salida_2",
+        "sha256": "60e040c923a41237b47e17f8ce95faf5f556f482bba487ee7a7897a97deb3235",
+        "storage": {
+          "page": 18,
+          "block": 407
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 408
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_entrada_3",
+        "sha256": "b882a6fc33bf684317acd369a127b91d8e5da7d49c291999baced69692d7e53d",
+        "storage": {
+          "page": 18,
+          "block": 409
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_rotulo_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 410
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_salida_3",
+        "sha256": "428036da1e71ff634777a8d23fa51dd84b99c96d7dc03c402ef6e773ae5bb8d3",
+        "storage": {
+          "page": 18,
+          "block": 411
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 412
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_entrada_4",
+        "sha256": "e29fb91feea1b2c9903d838b725b868fac89bb8f32719ad1a0656b404728aea5",
+        "storage": {
+          "page": 18,
+          "block": 413
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_rotulo_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 414
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcional_salida_4",
+        "sha256": "4e382cbd9f6891b1d3955412b1c3520a73f203b0401015759fe1c7993dd0e979",
+        "storage": {
+          "page": 18,
+          "block": 415
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_opcionales_sentido",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 416
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 417
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_referencia_idea",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 418
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_referencia_funcion",
+        "sha256": "0740906acc170c36380e1b006fdae4b646fbff120a58d27083baa76d94f772b8",
+        "storage": {
+          "page": 18,
+          "block": 419
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_referencia_traza",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 420
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_referencia_parcial",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 421
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_prediccion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 422
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_prediccion_contexto",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 423
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_prediccion_caso_facil",
+        "sha256": "afc5f760be91b44518fbf3318c123a130f1c42a2e909148cf3730d5b6716d4bc",
+        "storage": {
+          "page": 18,
+          "block": 424
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_sensibilidad_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 425
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_sensibilidad",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 426
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_sensibilidad_proposito",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 427
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_regresion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 18,
+          "block": 428
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_regresion_condicion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 429
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_regresion_build",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 430
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_regresion_build",
+        "sha256": "ac5d77767ff021ad29b14073e75fe6e7aed739ae8ded411673dc7ca219742644",
+        "storage": {
+          "page": 18,
+          "block": 431
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_regresion_ctest",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 432
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_ps_regresion_ctest",
+        "sha256": "d6ed8f1fbfe2c8a63fc9478e2a13062fa8e00c686db269c213677fd4e7da62eb",
+        "storage": {
+          "page": 18,
+          "block": 433
+        },
+        "progressPage": "page_0011"
+      },
+      {
+        "id": "u4l7_depurar_regresion_resultado",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 18,
+          "block": 434
+        },
+        "progressPage": "page_0011"
       }
     ],
     "editorial": [
@@ -9134,6 +11889,26 @@
         "id": "block_0009_0003",
         "beforeSha256": "68e3a2488737c9e3df23b6794ac31ffadad35cc9fd08901296f424b6d38bc027",
         "afterSha256": "200cce5d02037eab3e3a5d1d1d904405da8669d7279b23bf39f41b50bab29df5"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "5dc079974555321514377ea6f08bc9dce9a3cae33a4c007c381a7a007cae75b5",
+        "afterSha256": "dd1b502e9eeec6f3f36b5caf071ade6064b30c054697eadaeef56e1b1e851b86"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "5cc9d8c7acb8f723bbef6f7e6ec2558f58b10f771ca8fa959c5db6eb33d1f809",
+        "afterSha256": "5290987d9ddf890bf0146cab7419f791c778bbda423f5c3ad97414cd00565a20"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "476ec3f8b7b6f91a512f63f8dcc31bad12306ebf50e1756293cb1c8ca7f0b41e",
+        "afterSha256": "a4e8e4e48587f00cccb211117149630cf252db3aabc7049cee03e85d744a07ee"
+      },
+      {
+        "id": "block_0011_0004",
+        "beforeSha256": "957b3357acfb5087580f8ae2f2fa4022c33886b7d92291ddc33c320641671010",
+        "afterSha256": "4f82ed72baf720bfcd7c7f3b009eb03caababd7de83e42982ca833c1b132a06d"
       }
     ],
     "sourceFormatRevisions": [
@@ -9219,5 +11994,13 @@
         }
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u4l7_depurar_prediccion_caso_facil",
+      "requires": [
+        "u4l7_depurar_editor"
+      ]
+    }
+  ]
 }
