@@ -118,15 +118,15 @@ std::size_t run_compiler_cases(const JsonObject& sample,const WindowsEnvironment
         const auto position=curriculum::stable_block_position(lesson,identity);
         check(position.has_value(),"Missing actual compiler owner for semantic feedback QA");
         const auto& block=lesson.pages[position->page].blocks[position->block];
-        check(block.output_check&&block.output_check->cases.size()>1,
-            "Semantic compiler QA requires distinct authenticated output cases");
+        check(block.output_check&&!block.output_check->cases.empty(),
+            "Semantic compiler QA requires authenticated output cases");
         const auto index=static_cast<std::size_t>(item.GetNamedNumber(L"case"));
         const auto& objective=block.output_check->cases.at(index);
         windows::CppRunRequest request;request.request_id=count+1;request.revision=count+1;
         request.source_utf8=block.initial_code;request.stdin_utf8=objective.standard_input;
         request.project_files=block.project_files;request.source_files=block.source_files;request.cmake=block.cmake;
         request.project_key=curriculum::draft_key("programming",lesson,block);
-        request.projects_directory=environment.paths.root/"semantic-compiler-runs";
+        request.projects_directory=environment.paths.root/"p";
         auto running=std::async(std::launch::async,[request]{return windows::run_cpp(request);});
         while(running.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready) {
             pump();MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);
@@ -155,19 +155,37 @@ std::vector<LessonReadingRegion> supported_regions(std::vector<LessonReadingRegi
         page.blocks[region.block_index].type==curriculum::BlockType::math_puzzle;});
     return regions;
 }
-void same_region(const LessonReadingRegion& expected,const LessonReadingRegion& actual) {
-    check(expected.key==actual.key&&expected.anchor==actual.anchor&&
+void describe_region(std::string_view label,std::size_t index,const LessonReadingRegion& region) {
+    const auto quoted=[](std::string_view value){return winrt::to_string(
+        JsonValue::CreateStringValue(winrt::to_hstring(value)).Stringify());};
+    std::cerr<<label<<'['<<index<<"] key="<<quoted(region.key)<<" block="<<region.block_index
+        <<" anchor="<<quoted(region.anchor)<<" source="<<quoted(region.source_text)
+        <<" context="<<quoted(region.reading_context)<<" math="<<quoted(region.math_mode)
+        <<" feedback="<<region.feedback<<" correct="<<region.correct
+        <<" passive="<<region.passive_label<<" semantics="<<region.text_semantics.has_value()<<'\n';
+    if(region.text_semantics)for(const auto& span:region.text_semantics->spans)
+        std::cerr<<"  span "<<span.start<<':'<<span.end<<' '<<quoted(span.text)<<' '
+            <<curriculum::semantic_role_name(span.role)<<'/'
+            <<curriculum::semantic_reading_name(span.reading)<<'\n';
+}
+void same_region(const LessonReadingRegion& expected,const LessonReadingRegion& actual,
+        std::string_view context,std::size_t index) {
+    const bool identity=expected.key==actual.key&&expected.anchor==actual.anchor&&
         expected.source_text==actual.source_text&&expected.block_index==actual.block_index&&
         expected.feedback==actual.feedback&&expected.correct==actual.correct&&
         expected.passive_label==actual.passive_label&&
-        expected.reading_context==actual.reading_context&&expected.math_mode==actual.math_mode,
-        "A retirement archive changed the actual old reading source, identity or context");
-    check(expected.text_semantics==actual.text_semantics,
-        "A retirement reading borrowed current meanings or composed feedback with the wrong descriptor");
+        expected.reading_context==actual.reading_context&&expected.math_mode==actual.math_mode;
+    const bool meaning=expected.text_semantics==actual.text_semantics;
+    if(!identity||!meaning) {
+        std::cerr<<"SEMANTIC_REGION_MISMATCH "<<context<<" index="<<index<<'\n';
+        describe_region("expected",index,expected);describe_region("archived",index,actual);
+    }
+    check(identity,"A retirement archive changed the actual old reading source, identity or context");
+    check(meaning,"A retirement reading borrowed current meanings or composed feedback with the wrong descriptor");
 }
 struct Counts {
     std::size_t pages=0,regions=0,marked=0,root=0,correct=0,reviewed=0,compilations=0;
-    std::size_t compiler_feedback=0,prior_choice_feedback=0;
+    std::size_t compiler_feedback=0,multicase_feedback=0,prior_choice_feedback=0;
 };
 void verify_history(const std::filesystem::path& directory,const JsonObject& sample,
         const JsonObject& history,const curriculum::Lesson& current,Counts& counts) {
@@ -187,8 +205,10 @@ void verify_history(const std::filesystem::path& directory,const JsonObject& sam
     }
     static std::size_t serial=0;
     for(const auto page:pages)for(int mode=0;mode<(sample.HasKey(L"compilerCases")?1:2);++mode) {
+        const auto context=winrt::to_string(sample.GetNamedString(L"name"))+" history="+
+            std::to_string(index)+" page="+std::to_string(page)+" mode="+std::to_string(mode);
         const auto environment=resolve_windows_environment({ProfileId::Codex,
-            L"semantic-retirement-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            L"sr-"+std::to_wstring(GetCurrentProcessId())+L"-"+
                 std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(++serial),false});
         check(!std::filesystem::exists(environment.paths.root),"Semantic view QA requires an unused isolated profile");
         initialize_profile_directories(environment.paths);
@@ -223,10 +243,18 @@ void verify_history(const std::filesystem::path& directory,const JsonObject& sam
             check(index<archives.size(),"The real view omitted a semantic retirement batch");
             const auto& archived=archives.at(index);
             const auto regions=supported_regions(archived.regions,original.pages[page]);
-            check(archived.page_identity==previous_page.narration_page_identity&&regions.size()==prior.size(),
-                "Retirement failed to reconstruct the exact published page identity or supported script");
+            const bool same_script=archived.page_identity==previous_page.narration_page_identity&&regions.size()==prior.size();
+            if(!same_script) {
+                std::cerr<<"SEMANTIC_SCRIPT_MISMATCH "<<context
+                    <<" expected_identity="<<previous_page.narration_page_identity
+                    <<" archived_identity="<<archived.page_identity
+                    <<" expected_regions="<<prior.size()<<" archived_regions="<<regions.size()<<'\n';
+                for(std::size_t i=0;i<prior.size();++i)describe_region("expected",i,prior[i]);
+                for(std::size_t i=0;i<regions.size();++i)describe_region("archived",i,regions[i]);
+            }
+            check(same_script,"Retirement failed to reconstruct the exact published page identity or supported script");
             for(std::size_t i=0;i<prior.size();++i) {
-                same_region(prior[i],regions[i]);++counts.regions;
+                same_region(prior[i],regions[i],context,i);++counts.regions;
                 if(prior[i].text_semantics) {
                     ++counts.marked;
                     counts.root+=prior[i].key.ends_with("/title");
@@ -237,15 +265,21 @@ void verify_history(const std::filesystem::path& directory,const JsonObject& sam
                 if(prior[i].feedback&&prior[i].block_index<original.pages[page].blocks.size()) {
                     const auto& owner=original.pages[page].blocks[prior[i].block_index];
                     if(owner.type==curriculum::BlockType::cpp_compiler) {
-                        check(regions[i].text_semantics&&std::ranges::any_of(regions[i].text_semantics->spans,
-                            [](const auto& span){return span.text=="resultado"&&
-                                span.role==curriculum::SemanticRole::output&&
-                                span.reading==curriculum::SemanticReading::natural;}),
-                            "The actual compiler archive lost the first sealed case's authored role/reading");
                         const auto& first=owner.text_semantics.at("/outputCheck/cases/0/explanation");
-                        const auto& optional=owner.text_semantics.at("/outputCheck/cases/1/explanation");
-                        check(first.source==optional.source&&first.spans!=optional.spans,
-                            "Compiler semantic QA must distinguish identical explanations by sealed origin");
+                        check(regions[i].text_semantics&&!first.spans.empty()&&
+                            std::ranges::all_of(first.spans,[&](const auto& authored){
+                                return std::ranges::any_of(regions[i].text_semantics->spans,[&](const auto& span){
+                                    return span.text==authored.text&&span.role==authored.role&&span.reading==authored.reading;
+                                });
+                            }),"The actual compiler archive lost the first sealed case's authored role/reading");
+                        if(owner.output_check&&owner.output_check->cases.size()>1) {
+                            const auto& optional=owner.text_semantics.at("/outputCheck/cases/1/explanation");
+                            check(first.source==optional.source&&first.spans!=optional.spans&&
+                                first.spans.front().role==curriculum::SemanticRole::output&&
+                                first.spans.front().reading==curriculum::SemanticReading::natural,
+                                "Multicase semantic QA must distinguish identical explanations by sealed origin");
+                            ++counts.multicase_feedback;
+                        }
                         ++counts.compiler_feedback;
                     }
                     if(sample.HasKey(L"stateSource")&&owner.type==curriculum::BlockType::multiple_choice) {
@@ -269,7 +303,7 @@ void verify_history(const std::filesystem::path& directory,const JsonObject& sam
                 const auto& block=current.pages[at->page].blocks[at->block];
                 const auto success=windows::compiler_puzzle_success_feedback(after,current,block);
                 check(success&&success->source_path=="/outputCheck/cases/0/explanation"&&
-                    windows::compiler_puzzle_case_count(after,current,block)==2,
+                    windows::compiler_puzzle_case_count(after,current,block)==sample.GetNamedArray(L"compilerCases").Size(),
                     "Opening retirement semantics rewrote real compiler receipt ownership");
             }
         }
@@ -300,15 +334,15 @@ int wmain(int argc,wchar_t** argv)try {
             verify_history(directory,sample,history.GetObject(),lesson,counts);
         check(state::read_bytes(after_file)==original,"Semantic view QA changed the current fixture");
     }
-    check(counts.root>0&&counts.marked>0&&counts.correct>0&&counts.reviewed>0&&counts.compilations==2&&
-        counts.compiler_feedback>0&&counts.prior_choice_feedback>0,
+    check(counts.root>0&&counts.marked>0&&counts.correct>0&&counts.reviewed>0&&counts.compilations==3&&
+        counts.compiler_feedback>0&&counts.multicase_feedback>0&&counts.prior_choice_feedback>0,
         "Semantic view QA omitted root, exact intent, feedback verdicts or real multicase execution");
     check(GetForegroundWindow()==foreground&&GetFocus()==focus,
         "Hidden semantic QA changed focus or the foreground application");
     FreeLibrary(edit);
     std::cout<<"PASS semantic retirement view: "<<counts.pages<<" historical page/verdict views, "
         <<counts.regions<<" exact supported reading regions, "<<counts.marked
-        <<" authored meanings, exact root/correct/reviewed feedback, and two real MSVC cases. "
+        <<" authored meanings, exact root/correct/reviewed feedback, and three real MSVC cases (two multicase, one prior choice). "
         <<"Isolated QA; no playback, human listening acceptance or learner credit.\n";
     return 0;
 }catch(const std::exception& error) {
