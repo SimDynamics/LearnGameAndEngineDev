@@ -19,6 +19,8 @@ on:
       - scripts/curriculum/test_compile_check_source_format.py
       - scripts/curriculum/test_reviewed_diagnostic_structural_format.py
       - scripts/curriculum/test_source_format_provenance.py
+      - scripts/curriculum/test_assetcheck_u4l7_source_format.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_disenar_probar_y_presentar_variante_propia.json
       - .github/workflows/codex-reviewed-diagnostic-format.yml
   workflow_dispatch:
 
@@ -54,3 +56,5 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_reviewed_diagnostic_structural_format.py -v
       - name: Reject detached source-format provenance and wrong lesson paths
         run: python -B -m unittest discover -s scripts/curriculum -p test_source_format_provenance.py -v
+      - name: Verify published AssetCheck formatting through stable owners and later curriculum growth
+        run: python -B -m unittest discover -s scripts/curriculum -p test_assetcheck_u4l7_source_format.py -v

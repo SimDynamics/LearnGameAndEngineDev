@@ -7,6 +7,7 @@ on:
       - .github/workflows/assetcheck-curricular-oracles.yml
       - scripts/curriculum/test_assetcheck_curricular_oracles.py
       - scripts/curriculum/verify_assetcheck_editor_references_cpp23.py
+      - scripts/curriculum/test_assetcheck_editor_references_cpp23.py
       - scripts/curriculum/assetcheck_differential_cases.py
       - scripts/curriculum/verify_assetcheck_cmake_preparation_windows.py
       - scripts/windows/Capture-AssetCheckCMakeU4L3.ps1
@@ -60,6 +61,8 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+      - name: Resolve published editors and references by their stable identities
+        run: python -B -m unittest discover -s scripts/curriculum -p test_assetcheck_editor_references_cpp23.py -v
       - name: Build four isolated C++23 reference executables and verify outputs
         run: python scripts/curriculum/verify_assetcheck_editor_references_cpp23.py --generator "${{ matrix.generator }}" --report "out/qa/assetcheck-curriculum/${{ matrix.report }}.json"
       - name: Preserve exact curricular-only results
