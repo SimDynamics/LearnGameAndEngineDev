@@ -138,13 +138,54 @@ std::string extended_driver(const Block& block,std::string_view call) {
     replace_once(source,summary,std::string(call)+summary);
     return source;
 }
-void public_success(const CppRunResult& result) {
-    require(result.error_utf8.empty(),"Runner error: "+result.error_utf8);
-    require(result.compilation.succeeded(),"Real CMake compilation failed: "+
-        result.compilation.stdout_bytes+result.compilation.stderr_bytes);
-    require(result.execution.succeeded(),"The actual checker did not finish with exit 0");
+std::string_view phase_status_name(CppPhaseStatus status) {
+    switch(status) {
+    case CppPhaseStatus::not_started:return "not_started";
+    case CppPhaseStatus::completed:return "completed";
+    case CppPhaseStatus::cancelled:return "cancelled";
+    case CppPhaseStatus::timed_out:return "timed_out";
+    case CppPhaseStatus::output_limit:return "output_limit";
+    case CppPhaseStatus::launch_failed:return "launch_failed";
+    }
+    return "unknown";
+}
+std::string run_diagnostic(const CppRunRequest& request,const CppRunResult& result) {
+    std::string details="\nrequest="+std::to_string(request.request_id)+
+        " revision="+std::to_string(request.revision)+
+        " action="+std::to_string(static_cast<int>(request.action))+
+        "\nprojects="+winrt::to_string(request.projects_directory.wstring())+
+        "\nrun_directory="+winrt::to_string(result.run_directory.wstring())+
+        "\nrequested_target="+(request.cmake?request.cmake->target:std::string{})+
+        "\nobserved_target="+result.executable.value_or("")+
+        "\nrunner_error="+result.error_utf8+"\n";
+    try {
+        const auto workspace=inspect_cpp_project(request).workspace;
+        details+="workspace="+winrt::to_string(workspace.wstring())+
+            "\nworkspace_characters="+std::to_string(workspace.native().size())+"\n";
+    }catch(const std::exception& error) {
+        details+="workspace_inspection_error="+std::string(error.what())+"\n";
+    }catch(const winrt::hresult_error& error) {
+        details+="workspace_inspection_error="+winrt::to_string(error.message())+"\n";
+    }
+    const auto append=[&](std::string_view name,const CppPhaseResult& phase) {
+        details+=std::string(name)+": status="+std::string(phase_status_name(phase.status))+
+            " exit="+(phase.exit_code?std::to_string(*phase.exit_code):"none")+
+            "\nstdout:\n"+phase.stdout_bytes+"\nstderr:\n"+phase.stderr_bytes+"\n";
+    };
+    append("configuration",result.configuration);
+    append("compilation",result.compilation);
+    append("execution",result.execution);
+    return details;
+}
+void public_success(const CppRunRequest& request,const CppRunResult& result) {
+    const auto diagnostic=run_diagnostic(request,result);
+    require(result.error_utf8.empty(),"Runner error: "+diagnostic);
+    require(result.configuration.status==CppPhaseStatus::not_started||
+            result.configuration.succeeded(),"Real CMake configuration failed: "+diagnostic);
+    require(result.compilation.succeeded(),"Real CMake compilation failed: "+diagnostic);
+    require(result.execution.succeeded(),"The actual checker did not finish with exit 0: "+diagnostic);
     require(result.executable==std::optional<std::string>{"comprobar_ajustes"},
-        "The wrong executable supplied the public observation");
+        "The wrong executable supplied the public observation: "+diagnostic);
 }
 void preserved_public_project(const CppRunRequest& request,const CppRunResult& result) {
     const auto available=inspect_cpp_project(request);
@@ -160,7 +201,7 @@ void preserved_public_project(const CppRunRequest& request,const CppRunResult& r
 }
 void checked_battery(const CppRunRequest& request,const CppRunResult& result,
         const FreshExecution& capture,const Block& block,OpenBatteryCall added,bool accepted) {
-    public_success(result);
+    public_success(request,result);
     require(result.open_battery_evidence.has_value(),"Missing actual independent CMake phases");
     const auto& evidence=*result.open_battery_evidence;
     const auto& spec=*block.open_battery_probe;
@@ -205,11 +246,13 @@ int main(int argc,char** argv) {
     if(argc!=2)return 2;
     try {
         const LaunchOptions options{ProfileId::Codex,
-            L"open-battery-action-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+            L"ob-"+std::to_wstring(GetCurrentProcessId())+L"-"+
                 std::to_wstring(GetTickCount64()),false};
         const auto environment=resolve_windows_environment(options);
         initialize_profile_directories(environment.paths);
-        const auto projects=environment.paths.projects/L"Open battery & (U3L10)";
+        // Keep room for CMakeScratch/TryCompile while retaining the path's
+        // spaces, ampersand, parentheses and the isolated PID/tick namespace.
+        const auto projects=environment.paths.projects/L"OB & (QA)";
         const auto fixture_path=std::filesystem::path(argv[1]);
         const auto original_text=read(fixture_path);
         const auto original_sha=state::sha256(original_text);
@@ -422,7 +465,7 @@ int main(int argc,char** argv) {
         require(compiler_runtime_request_allowed(previous,prerequisite),
             "The preceding editor rejected its legitimate repaired candidate");
         const auto prerequisite_result=run_cpp(prerequisite);
-        public_success(prerequisite_result);
+        public_success(prerequisite,prerequisite_result);
         const auto prerequisite_capture=capture_cpp_execution(prerequisite,prerequisite_result);
         require(!prerequisite_result.open_battery_evidence&&
                 evaluate_cpp_output_check(*previous.output_check,prerequisite_capture,
@@ -437,7 +480,7 @@ int main(int argc,char** argv) {
         std::cout << "PASS real repaired eleven-case prerequisite without altering activityAfter\n";
 
         const auto initial_result=run_cpp(initial);
-        public_success(initial_result);
+        public_success(initial,initial_result);
         const auto initial_capture=capture_cpp_execution(initial,initial_result);
         require(!initial_result.open_battery_evidence&&!initial_capture.open_battery_probe_correct&&
                 initial_result.execution.stdout_bytes.find("Fallos=0")!=std::string::npos&&
@@ -461,7 +504,8 @@ int main(int argc,char** argv) {
                 !configured.open_battery_evidence&&!compiler_runtime_request_allowed(block,first)&&
                 !record_compiler_puzzle_case(data,lesson,block,first,
                     capture_cpp_execution(first,configured),"configure")&&data==seed,
-            "Configuring claimed runtime credit or failed to generate the real project");
+            "Configuring claimed runtime credit or failed to generate the real project: "+
+                run_diagnostic(first,configured));
         const auto built=phase(first,CppRunRequest::Action::build);
         require(built.error_utf8.empty()&&built.compilation.succeeded()&&
                 built.execution.status==CppPhaseStatus::not_started&&
@@ -469,7 +513,8 @@ int main(int argc,char** argv) {
                 !record_compiler_puzzle_case(data,lesson,block,first,
                     capture_cpp_execution(first,built),"build")&&data==seed&&
                 inspect_cpp_project(first).built,
-            "Building claimed runtime credit or failed to leave the executable ready");
+            "Building claimed runtime credit or failed to leave the executable ready: "+
+                run_diagnostic(first,built));
         const auto first_result=phase(first,CppRunRequest::Action::execute);
         require(compiler_runtime_request_allowed(block,first),
             "Executing the configured and built target still failed its curricular gate");
@@ -491,7 +536,7 @@ int main(int argc,char** argv) {
         require(!compiler_runtime_request_allowed(block,old_input),
             "The historical client input was accepted by the checker request gate");
         const auto old_input_result=run_cpp(old_input);
-        public_success(old_input_result);
+        public_success(old_input,old_input_result);
         const auto old_input_capture=capture_cpp_execution(old_input,old_input_result);
         require(!old_input_result.open_battery_evidence&&!old_input_capture.open_battery_probe_correct&&
                 old_input_result.execution.stdout_bytes==first_result.execution.stdout_bytes&&
