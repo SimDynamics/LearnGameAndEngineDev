@@ -1,13 +1,14 @@
 """Regresiones del recorrido estructural multi-curso y de autoría editorial."""
 from __future__ import annotations
 
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from io import StringIO
 import json
 from pathlib import Path
 import tempfile
 import unittest
+import zlib
 from unittest import mock
 
 import stable_state_layout as layout
@@ -24,13 +25,17 @@ class StructuralCourseFixtures(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="multicourse-validation-")
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+        self.select_course(COURSE)
+
+    def select_course(self, course_id):
+        self.course_id = course_id
         base = self.root / "app/src/main/assets/content/es/programming"
         self.cpp = base / "cpp_fundamentals"
-        self.content = base / COURSE
+        self.content = base / course_id
         self.unit_path = self.content / "fixture" / "unit_fixture.json"
         self.lesson_path = self.content / "fixture" / "lesson_fixture.json"
-        self.course_path = self.content / f"course_{COURSE}.json"
-        self.unit_id = f"{COURSE}__fixture"
+        self.course_path = self.content / f"course_{course_id}.json"
+        self.unit_id = f"{course_id}__fixture"
         self.lesson_id = f"{self.unit_id}__fixture"
         self.lesson = {
             "id": self.lesson_id,
@@ -46,13 +51,13 @@ class StructuralCourseFixtures(unittest.TestCase):
             }],
         }
         self.unit = {
-            "courseId": COURSE,
+            "courseId": course_id,
             "unitId": self.unit_id,
             "title": "Unidad ficticia",
             "lessons": [{"id": self.lesson_id, "number": 1, "title": self.lesson["title"]}],
         }
         self.course = {
-            "id": COURSE,
+            "id": course_id,
             "title": "Curso ficticio",
             "units": [{"id": self.unit_id, "number": 1, "title": self.unit["title"]}],
         }
@@ -65,19 +70,21 @@ class StructuralCourseFixtures(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
-    def run_course(self, *, reject=False):
+    def run_course(self, *, reject=False, course=None, exit_code=1, state_error=None):
         output = StringIO()
         with mock.patch.object(validator, "ROOT", self.root), \
              mock.patch.object(validator, "CONTENT", self.cpp), \
              mock.patch.object(validator, "ERRORS", []), \
-             mock.patch.object(validator._state_layout, "check_repository", return_value={}), \
-             redirect_stdout(output):
+             mock.patch.object(validator._state_layout, "check_repository",
+                               return_value={}, side_effect=state_error), \
+             redirect_stdout(output), redirect_stderr(output):
+            arguments = ["--course", self.course_id if course is None else course, "--list-files"]
             if reject:
-                with self.assertRaises(SystemExit) as exit_code:
-                    validator.main(["--course", COURSE, "--list-files"])
-                self.assertEqual(exit_code.exception.code, 1)
+                with self.assertRaises(SystemExit) as failure:
+                    validator.main(arguments)
+                self.assertEqual(failure.exception.code, exit_code)
             else:
-                validator.main(["--course", COURSE, "--list-files"])
+                validator.main(arguments)
         return output.getvalue()
 
     def test_programming2_is_checked_with_its_actual_course_prefix_and_files(self):
@@ -159,8 +166,286 @@ class StructuralCourseFixtures(unittest.TestCase):
         self.lesson_path.unlink()
         self.content.rmdir() if not any(self.content.iterdir()) else None
         # A missing index must fail, not count as a valid empty course.
-        with self.assertRaises(FileNotFoundError):
-            self.run_course()
+        output = self.run_course(reject=True)
+        self.assertIn(COURSE, output)
+        self.assertIn(self.course_path.name, output)
+        self.assertNotIn("Traceback", output)
+
+
+
+    def complete_lesson(self):
+        """Small authored payloads use the production contracts, not validator stubs."""
+        code = '#include <iostream>\nint main() { std::cout << "7\\n"; }\n'
+        self.lesson["pages"][0]["blocks"].extend([
+            {"type": "order_code", "id": "orden_fixture", "language": "cpp",
+             "question": "Ordena las líneas.", "fragments": ["int n = 7;", "return n;"],
+             "correctOrder": [0, 1], "explanation": "Se declara antes de usar."},
+            {"type": "fill_code", "id": "relleno_fixture", "language": "cpp",
+             "question": "Completa el nombre.", "code": "int [] = 7;", "answers": ["n"],
+             "explanation": "n identifica el objeto."},
+            {"type": "output_prediction", "id": "salida_fixture", "language": "cpp",
+             "question": "Predice la salida.", "code": code, "answers": ["7"],
+             "explanation": "Se escribe el valor 7."},
+            {"type": "inline_fill_code", "id": "inline_fixture", "language": "cpp",
+             "question": "Completa el nombre.", "template": "int [] = 7;", "answers": ["n"]},
+            {"type": "drag_fill_code", "id": "ficha_fixture", "language": "cpp",
+             "question": "Elige el nombre.", "template": "int [] = 7;",
+             "choices": ["n", "m"], "correctOrder": [0]},
+            {"type": "cpp_compiler", "language": "cpp", "initialCode": code,
+             "projectFiles": [{"path": "main.cpp", "initialCode": code}],
+             "sourceFiles": ["main.cpp"],
+             "outputCheck": {"cases": [{"standardInput": "", "outputs": ["7"],
+                 "explanation": "El programa escribe 7."}]}},
+            {"type": "code", "language": "cpp", "code": code},
+            {"type": "image", "imageId": "fixture_pixel", "src": "images/fixture_pixel.png",
+             "alt": "Recurso mínimo para comprobar el contrato de imagen."},
+        ])
+        image = self.root / "app/src/main/assets/content/images/fixture_pixel.png"
+        image.parent.mkdir(parents=True, exist_ok=True)
+        def chunk(kind, payload):
+            return (len(payload).to_bytes(4, "big") + kind + payload +
+                    (zlib.crc32(kind + payload) & 0xffffffff).to_bytes(4, "big"))
+        image.write_bytes(b"\x89PNG\r\n\x1a\n" +
+            chunk(b"IHDR", b"\0\0\0\1\0\0\0\1\x08\x02\0\0\0") +
+            chunk(b"IDAT", zlib.compress(b"\0\0\0\0")) + chunk(b"IEND", b""))
+        self.save()
+
+    def test_new_and_future_course_ids_use_the_same_complete_contract(self):
+        for course_id in ("cpp_language_memory_oop", "future_programming_2040"):
+            with self.subTest(course=course_id):
+                self.select_course(course_id)
+                self.complete_lesson()
+                before = {p.relative_to(self.root): p.read_bytes()
+                          for p in self.root.rglob("*") if p.is_file()}
+                output = self.run_course()
+                self.assertIn(f"Curso {course_id}: 1 lecciones, 1 unidades, 10 bloques", output)
+                for path in (self.course_path, self.unit_path, self.lesson_path):
+                    self.assertIn(path.relative_to(self.root).as_posix(), output)
+                self.assertEqual(before, {p.relative_to(self.root): p.read_bytes()
+                                         for p in self.root.rglob("*") if p.is_file()})
+
+    def test_all_discovers_existing_new_and_future_folders_without_a_catalog(self):
+        courses = ("cpp_fundamentals", COURSE, "cpp_language_memory_oop",
+                   "systems_architecture_toolchain", "future_programming_2040")
+        for course_id in courses:
+            self.select_course(course_id)
+        output = self.run_course(course="all")
+        for course_id in courses:
+            self.assertIn(f"Curso {course_id}: 1 lecciones, 1 unidades, 2 bloques", output)
+        self.assertIn("5 lecciones, 10 bloques", output)
+        self.assertEqual(output.count("  archivo: "), 3 * len(courses))
+        self.assertFalse((self.root / "app/src/main/assets/content/catalog.json").exists())
+
+    def test_explicit_course_does_not_validate_a_different_unselected_course(self):
+        self.course_path.write_text("{invalid", encoding="utf-8")
+        self.select_course("cpp_language_memory_oop")
+        self.assertIn("Curso cpp_language_memory_oop:", self.run_course())
+        self.assertIn(COURSE, self.run_course(course="all", reject=True))
+
+    def test_all_does_not_skip_a_new_folder_without_its_real_index(self):
+        self.select_course("future_programming_2040")
+        self.course_path.unlink()
+        output = self.run_course(course="all", reject=True)
+        self.assertIn(self.course_id, output)
+        self.assertIn(self.course_path.name, output)
+
+    def test_selector_rejects_paths_reserved_forms_and_empty_ids(self):
+        for course_id in ("", "../outside", "a/b", "a\\b", "course__unit",
+                          "UPPER", "_leading", "trailing_", "all/../cpp_fundamentals",
+                          str(self.root / "outside")):
+            with self.subTest(selector=course_id):
+                output = self.run_course(course=course_id, reject=True, exit_code=2)
+                self.assertIn("Identificador de curso inválido", output)
+                self.assertNotIn("Traceback", output)
+
+    def test_unknown_but_well_formed_course_has_a_controlled_missing_directory_error(self):
+        output = self.run_course(course="not_authored_yet", reject=True)
+        self.assertIn("not_authored_yet", output)
+        self.assertIn("directorio", output)
+
+    def test_selected_course_cannot_redirect_outside_programming(self):
+        target = self.root / "external-course"
+        target.mkdir()
+        link = self.content.parent / "redirected_course"
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError as error:
+            self.skipTest(f"Directory symlinks unavailable for this QA profile: {error}")
+        output = self.run_course(course=link.name, reject=True)
+        self.assertIn("redirected_course", output)
+        self.assertIn("sin enlaces", output)
+
+    def test_new_course_rejects_broken_json_and_malformed_document_shapes(self):
+        for name in ("course", "unit", "lesson"):
+            for value in ("{invalid", "[]", "null", "{}"):
+                with self.subTest(document=name, payload=value):
+                    self.select_course("cpp_language_memory_oop")
+                    path = getattr(self, name + "_path")
+                    path.write_text(value, encoding="utf-8")
+                    output = self.run_course(reject=True)
+                    self.assertIn(self.course_id, output)
+                    self.assertTrue(path.name in output or path.parent.as_posix() in output)
+                    self.assertNotIn("Traceback", output)
+
+    def test_new_course_rejects_wrong_indices_numbers_and_cross_folder_references(self):
+        variants = (
+            ("course", lambda d: d.update(id="cpp_fundamentals"), "ID de curso"),
+            ("course", lambda d: d["units"][0].update(number=2), "numeración"),
+            ("course", lambda d: d["units"].append(deepcopy(d["units"][0])), "repetida"),
+            ("unit", lambda d: d.update(courseId=COURSE), "ID de unidad"),
+            ("unit", lambda d: d["lessons"][0].update(number=True), "numeración"),
+            ("unit", lambda d: d["lessons"][0].update(title="Otro título"), "título"),
+            ("unit", lambda d: d["lessons"][0].update(id="cpp_language_memory_oop__otra__fixture"), "inexistente"),
+            ("lesson", lambda d: d.update(id="cpp_fundamentals__fixture__fixture"), "ID de lección"),
+        )
+        for name, mutate, expected in variants:
+            with self.subTest(document=name, expected=expected):
+                self.select_course("cpp_language_memory_oop")
+                mutate(getattr(self, name))
+                self.save()
+                self.assertIn(expected, self.run_course(reject=True))
+
+    def test_new_course_rejects_a_valid_lesson_indexed_from_another_folder(self):
+        self.select_course("cpp_language_memory_oop")
+        other = deepcopy(self.lesson)
+        other["id"] = self.course_id + "__otra__fixture"
+        path = self.content / "otra" / "lesson_fixture.json"
+        path.parent.mkdir()
+        path.write_text(json.dumps(other, ensure_ascii=False), encoding="utf-8")
+        self.unit["lessons"].append({"number": 2, "id": other["id"], "title": other["title"]})
+        self.save()
+        self.assertIn("otra carpeta", self.run_course(reject=True))
+
+    def test_new_course_rejects_unindexed_active_content(self):
+        self.select_course("cpp_language_memory_oop")
+        orphan = deepcopy(self.lesson)
+        orphan["id"] = self.course_id + "__fixture__omitida"
+        path = self.lesson_path.with_name("lesson_omitida.json")
+        path.write_text(json.dumps(orphan, ensure_ascii=False), encoding="utf-8")
+        self.assertIn("lección publicada sin índice en unidad activa", self.run_course(reject=True))
+
+    def test_future_course_rejects_invalid_answers_fields_and_block_shapes(self):
+        changes = (
+            lambda d: d.update(pages={}),
+            lambda d: d["pages"][0].update(blocks=[]),
+            lambda d: d["pages"][0]["blocks"].append(None),
+            lambda d: d["pages"][0]["blocks"][1].pop("type"),
+            lambda d: d["pages"][0]["blocks"][1].update(type="unknown_activity"),
+            lambda d: d["pages"][0]["blocks"][1].update(unreviewed=True),
+            lambda d: d["pages"][0]["blocks"][1].update(options=["same", "same"]),
+            lambda d: d["pages"][0]["blocks"][1].update(options={}),
+            lambda d: d["pages"][0]["blocks"][1].update(correctIndex=True),
+            lambda d: d["pages"][0]["blocks"][1].update(correctIndex=2),
+            lambda d: d["pages"][0]["blocks"][2].update(correctOrder=[0, 0]),
+            lambda d: d["pages"][0]["blocks"][3].update(answers=[""]),
+            lambda d: d["pages"][0]["blocks"][4].update(answers={}),
+            lambda d: d["pages"][0]["blocks"][5].update(answers=["n", "m"]),
+            lambda d: d["pages"][0]["blocks"][6].update(correctOrder=[9]),
+        )
+        for index, mutate in enumerate(changes):
+            with self.subTest(mutation=index):
+                self.select_course("future_programming_2040")
+                self.complete_lesson()
+                mutate(self.lesson)
+                self.save()
+                output = self.run_course(reject=True)
+                self.assertIn(self.course_id, output)
+                self.assertNotIn("Traceback", output)
+
+    def test_new_course_reuses_compiler_project_and_oracle_guards(self):
+        changes = (
+            (lambda b: b.update(initialCode=3), "initialCode"),
+            (lambda b: b.update(sourceFiles=["missing.cpp"]), "fuente no existe"),
+            (lambda b: b["projectFiles"][0].update(path="../main.cpp"), "ruta"),
+            (lambda b: b["outputCheck"].update(cases=[]), "cases"),
+            (lambda b: b["outputCheck"]["cases"][0].update(outputs=[]), "outputs"),
+            (lambda b: b["outputCheck"]["cases"][0].update(exitCode=True), "exitCode"),
+        )
+        for mutate, expected in changes:
+            with self.subTest(expected=expected):
+                self.select_course("cpp_language_memory_oop")
+                self.complete_lesson()
+                mutate(self.lesson["pages"][0]["blocks"][7])
+                self.save()
+                self.assertIn(expected, self.run_course(reject=True))
+
+    def test_future_course_reuses_real_image_resource_checks(self):
+        self.select_course("future_programming_2040")
+        self.complete_lesson()
+        image = self.root / "app/src/main/assets/content/images/fixture_pixel.png"
+        image.unlink()
+        output = self.run_course(reject=True)
+        self.assertIn("imagen curricular no válida", output)
+        self.assertIn("ausente", output)
+        self.lesson["pages"][0]["blocks"][9]["src"] = "../fixture_pixel.png"
+        self.save()
+        self.assertIn("image.src", self.run_course(reject=True))
+
+    def test_new_course_reuses_relationship_and_state_identity_validation(self):
+        self.select_course("cpp_language_memory_oop")
+        self.complete_lesson()
+        self.lesson = layout.prepare(self.lesson)
+        self.lesson["referenceAfter"] = [{"activity": "block_0000_0007", "blocks": ["block_0000_0008"]}]
+        self.save()
+        self.run_course()
+        self.lesson["referenceAfter"][0]["blocks"] = ["unknown_owner"]
+        self.save()
+        self.assertIn("relación de presentación inválida", self.run_course(reject=True))
+        self.lesson.pop("referenceAfter")
+        self.lesson["stateLayout"]["origin"][0]["blocks"][1]["sha256"] = "0" * 64
+        self.save()
+        self.assertIn("identidad de estado", self.run_course(reject=True))
+
+    def test_global_family_conservation_gate_runs_before_accepting_a_new_course(self):
+        self.select_course("cpp_language_memory_oop")
+        output = self.run_course(reject=True, state_error=layout.LayoutError("family provenance changed"))
+        self.assertIn("Conservación de estado no verificada", output)
+        self.assertIn("family provenance changed", output)
+        self.assertNotIn("Contrato, referencias y posiciones previas correctos", output)
+
+    def test_authenticated_editorial_revision_is_generic_and_preserves_its_family(self):
+        for course_id in ("cpp_language_memory_oop", "future_programming_2040"):
+            with self.subTest(course=course_id):
+                self.select_course(course_id)
+                previous = layout.prepare_v2(self.lesson, "es", {"es": self.lesson})
+                identity = previous["stateLayout"]["current"][0]["blocks"][1]
+                current = layout.revise_ordinary_editorial(previous, identity, {"explanation": {
+                    "text": "El acuerdo exige la primera respuesta; la segunda no lo cumple.", "spans": []}})
+                layout.validate_transition(previous, current)
+                self.assertEqual(previous["stateLayout"]["family"], current["stateLayout"]["family"])
+                relative = self.lesson_path.relative_to(self.root).as_posix()
+                old, new = layout._blocks(previous)[identity], layout._blocks(current)[identity]
+                with mock.patch.object(validator, "ROOT", self.root), mock.patch.object(validator, "CONTENT", self.cpp):
+                    self.assertTrue(validator.preserves_previous_exercise(relative, 0, 1, old, new,
+                        previous_document=previous, current_document=current, course_id=course_id))
+                    for mutation in ("family", "owner", "descriptor", "answer"):
+                        bad = deepcopy(current)
+                        if mutation == "family":
+                            bad["stateLayout"]["family"]["es"]["sha256"] = "0" * 64
+                        elif mutation == "owner":
+                            bad["stateLayout"]["editorial"][0]["id"] = "block_0000_0000"
+                        elif mutation == "descriptor":
+                            bad["textSemantics"]["fields"] = []
+                        else:
+                            layout._blocks(bad)[identity]["correctIndex"] = 1
+                        self.assertFalse(validator.preserves_previous_exercise(relative, 0, 1, old,
+                            layout._blocks(bad)[identity], previous_document=previous,
+                            current_document=bad, course_id=course_id), mutation)
+
+    def test_future_courses_do_not_inherit_programming1_feedback_relaxations(self):
+        for course_id in (COURSE, "cpp_language_memory_oop", "future_programming_2040"):
+            with self.subTest(course=course_id):
+                self.select_course(course_id)
+                old = self.lesson["pages"][0]["blocks"][1]
+                new = dict(old, reviewFeedback=[{"option": 1, "text": "Guía sin publicación."}])
+                relative = self.lesson_path.relative_to(self.root).as_posix()
+                with mock.patch.object(validator, "ROOT", self.root), mock.patch.object(validator, "CONTENT", self.cpp):
+                    self.assertTrue(validator.preserves_previous_exercise(relative, 0, 1, old, deepcopy(old), course_id=course_id))
+                    self.assertFalse(validator.preserves_previous_exercise(relative, 0, 1, old, new, course_id=course_id))
+        legacy_relative = "app/src/main/assets/content/es/programming/cpp_fundamentals/fixture/lesson_fixture.json"
+        with mock.patch.object(validator, "ROOT", self.root), mock.patch.object(validator, "CONTENT", self.cpp):
+            self.assertTrue(validator.preserves_previous_exercise(legacy_relative, 0, 1, old, new,
+                course_id="cpp_fundamentals"))
 
 
 class PublishedOrdinaryExplanationGuard(unittest.TestCase):

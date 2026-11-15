@@ -12,19 +12,36 @@ representan el estado actual de la publicación.
 ## Qué implementó Codex
 
 El validador habitual `scripts/curriculum/validar_json_programacion.py` admite
-`--course cpp_fundamentals`, `--course programming_practice_tools` y
-`--course all` (valor predeterminado). `--list-files` identifica los JSON
-estructurales examinados. La puerta de mapas de estado sigue abarcando las
-familias e idiomas del repositorio completo antes de comprobar los bloques.
+`--course <id>`, donde el ID es el nombre del directorio real del curso.
+Por ejemplo, `--course cpp_language_memory_oop --base-ref HEAD --list-files`
+comprueba las lecciones, las unidades y el índice de ese curso. El nombre
+utiliza letras minúsculas, cifras y guiones bajos; no se aceptan rutas,
+travesías entre directorios ni enlaces que sustituyan el directorio del curso.
 
-`scripts/curriculum/validate_programming_practice_tools.py` reutiliza los
-contratos de ejercicios, respuestas, presentación, imágenes, CMake, índices,
-unidades e identificadores del validador original. Cuando existe Git, lee la
-publicación mediante `git show <commit>:<ruta>` y comprueba cada bloque anterior
-contra ella. Solo permite una nueva redacción de `/explanation` si el resto
-del bloque es idéntico y el documento conserva propietario, familia,
-transición editorial y descriptor semántico verificados. Las excepciones
-históricas de `cpp_fundamentals` no se aplican al segundo curso.
+`--course all` (valor predeterminado) descubre los directorios de cursos bajo
+`app/src/main/assets/content/es/programming/` y comprueba cada uno. No depende
+de su activación en el catálogo y no activa contenidos. Cada directorio debe
+tener su propio índice `course_<id>.json`; un índice ausente o inválido
+produce un error. `--list-files` identifica los JSON estructurales examinados.
+
+La puerta de mapas de estado sigue abarcando las familias e idiomas del
+repositorio completo antes de comprobar los bloques. Seleccionar un curso
+no desactiva la conservación de los demás. Un curso nuevo no requiere añadir
+su ID al validador ni recibe las excepciones históricas de otro.
+
+`scripts/curriculum/validate_programming_practice_tools.py` conserva su nombre
+y su API `validate(..., course_id=...)` para los consumidores existentes.
+Reutiliza los contratos de ejercicios, respuestas, presentación, imágenes,
+CMake, índices, unidades e identificadores del validador original. Comprueba
+los archivos en su ubicación real y rechaza campos, tipos, respuestas,
+referencias y configuraciones no admitidos.
+
+Cuando existe Git, lee la publicación mediante `git show <commit>:<ruta>`
+y comprueba cada bloque anterior contra ella. Las revisiones generales de
+pregunta, explicación o formato necesitan propietario, familia, transición
+editorial y descriptores semánticos verificados. Las excepciones históricas
+de `cpp_fundamentals` permanecen restringidas a ese curso. La validación
+estructural no certifica la semántica de C++ ni la ejecución de los programas.
 
 La ejecución CI `42972420741` confirmó **9/9 pruebas multicurso correctas**,
 incluidos índices corruptos y revisiones editoriales válidas e inválidas.

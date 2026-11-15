@@ -30,7 +30,26 @@ _bibliography_spec.loader.exec_module(_bibliography_revision)
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
-STRUCTURAL_COURSES = ("cpp_fundamentals", "programming_practice_tools")
+def is_structural_course_id(value):
+    """Accept a loader directory name, never a path or a reserved selector."""
+    return (isinstance(value, str) and value != "all"
+            and re.fullmatch(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*", value) is not None)
+
+
+def structural_course_ids():
+    """Discover authored Spanish courses, including those not yet in a catalog."""
+    programming = CONTENT.parent
+    if not programming.is_dir():
+        raise ValueError("No existe el directorio de cursos de Programación")
+    courses = tuple(sorted(path.name for path in programming.iterdir() if path.is_dir()))
+    if not courses:
+        raise ValueError("No hay directorios de cursos de Programación para validar")
+    for course_id in courses:
+        if not is_structural_course_id(course_id):
+            raise ValueError(f"Identificador de curso inválido: {course_id}")
+    return courses
+
+
 # These five choices pass the ordinary editorial-preservation guard after the
 # complete state-layout proof has projected only their reviewed option. This
 # does not authorize a detached new option or arbitrary later prose changes.
@@ -1400,11 +1419,13 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
     if current != dict(old, **{field: current[field] for field in revised_fields}):
         return False
     try:
-        if course_id not in STRUCTURAL_COURSES:
+        if not is_structural_course_id(course_id):
             return False
-        lesson_path = Path(relative).relative_to(
-            (CONTENT.parent / course_id).relative_to(ROOT))
-        if len(lesson_path.parts) != 2 or not lesson_path.stem.startswith("lesson_"):
+        lesson_path = PurePosixPath(str(relative).replace("\\", "/")).relative_to(
+            PurePosixPath("app/src/main/assets/content/es/programming") / course_id)
+        if (len(lesson_path.parts) != 2 or ".." in lesson_path.parts
+                or lesson_path.suffix != ".json" or not lesson_path.stem.startswith("lesson_")
+                or not lesson_path.stem[7:]):
             return False
         lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
         if (previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id
@@ -1455,7 +1476,7 @@ def preserves_source_format_revision(relative, pn, bn, old, current, *,
     The original Git publication, not a matching ad-hoc source snippet, owns
     the archive and historical exercise address.
     """
-    if (course_id not in STRUCTURAL_COURSES or
+    if (not is_structural_course_id(course_id) or
             type(pn) is not int or type(bn) is not int or pn < 0 or bn < 0 or
             not isinstance(previous_document, dict) or
             not isinstance(current_document, dict) or
@@ -1516,7 +1537,7 @@ def preserves_math_prompt_editorial_revision(relative, pn, bn, old, current, *,
     coordinates, ordered mathematical payload and full editorial transition
     must all describe the supplied old/current blocks.
     """
-    if (course_id not in STRUCTURAL_COURSES or type(pn) is not int or type(bn) is not int
+    if (not is_structural_course_id(course_id) or type(pn) is not int or type(bn) is not int
             or pn < 0 or bn < 0 or type(previous_document) is not dict
             or type(current_document) is not dict or type(old) is not dict
             or type(current) is not dict or old.get("type") != "math_puzzle"
@@ -1701,43 +1722,8 @@ def validate_lesson_state_contract(document, where):
         require(False, where, f"identidad de estado o relación de presentación inválida: {error}")
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-ref", help="Verified published commit; mandatory for stateLayout adoption/updates")
-    parser.add_argument("--course", choices=("all", *STRUCTURAL_COURSES), default="all",
-                        help="Curso estructural para validar; 'all' comprueba Programación 1 y 2")
-    parser.add_argument("--list-files", action="store_true",
-                        help="Mostrar las rutas de todos los JSON estructurales examinados")
-    args = parser.parse_args(argv)
-    # Check all routes/locales, including metadata removed from the working tree.
-    # A self-consistent regenerated origin is not evidence of a safe migration.
-    try:
-        _state_layout.check_repository(ROOT, args.base_ref)
-        base_commit = _state_layout.resolve_base_commit(ROOT, args.base_ref or "HEAD") if (ROOT / ".git").exists() else None
-    except (ValueError, KeyError, TypeError, OSError) as error:
-        parser.exit(1, f"Conservación de estado no verificada: {error}\n")
-    second_course = None
-    if args.course in {"all", "programming_practice_tools"}:
-        # Import only after the pinned, multilingual Git state check. The
-        # second course reuses this module's exact block validators.
-        from types import SimpleNamespace
-        import validate_programming_practice_tools
-        second_course = validate_programming_practice_tools.validate(
-            SimpleNamespace(**globals()), ROOT, base_commit)
-        if args.course == "programming_practice_tools":
-            if ERRORS:
-                print("\n".join(ERRORS))
-                raise SystemExit(1)
-            print(f"Curso {second_course['course']}: {second_course['lessons']} lecciones, "
-                  f"{second_course['units']} unidades, {second_course['blocks']} bloques; "
-                  f"{len(second_course['files'])} archivos JSON examinados; "
-                  f"{second_course['historical']} lecciones contrastadas con Git.")
-            if args.list_files:
-                for relative in second_course["files"]:
-                    print(f"  archivo: {relative}")
-            print("Contrato, referencias y posiciones previas correctos. "
-                  "No certifica semántica C++ ni ejecución de programas.")
-            return
+def _validate_cpp_fundamentals(base_commit):
+    """Keep Programación 1's original historical exceptions scoped to that course."""
     lessons = {}
     lesson_sources = {}
     blocks = 0
@@ -1886,27 +1872,67 @@ def main(argv=None):
                                     previous_document=old, current_document=delivered), relative,
                                 f"{previous_exercise_difference(block, current)} p{pn+1} b{bn+1}")
 
-    if ERRORS:
-        print("\n".join(ERRORS))
-        raise SystemExit(1)
     cpp_files = [*sorted(CONTENT.glob("*/lesson_*.json")),
                  *sorted(CONTENT.glob("*/unit_*.json")),
                  CONTENT / "course_cpp_fundamentals.json"]
-    print(f"Curso cpp_fundamentals: {len(lessons)} lecciones, {blocks} bloques; "
-          f"{len(cpp_files)} archivos JSON examinados.")
-    if args.list_files:
-        for path in cpp_files:
-            print(f"  archivo: {path.relative_to(ROOT).as_posix()}")
-    if second_course is not None:
-        print(f"Curso {second_course['course']}: {second_course['lessons']} lecciones, "
-              f"{second_course['units']} unidades, {second_course['blocks']} bloques; "
-              f"{len(second_course['files'])} archivos JSON examinados; "
-              f"{second_course['historical']} lecciones contrastadas con Git.")
+    return {
+        "course": "cpp_fundamentals", "lessons": len(lessons),
+        "units": len(units), "blocks": blocks,
+        "files": [path.relative_to(ROOT).as_posix() for path in cpp_files],
+        "historical": len(files) if git.exists() else 0,
+    }
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-ref", help="Verified published commit; mandatory for stateLayout adoption/updates")
+    parser.add_argument("--course", default="all", metavar="ID|all",
+                        help="ID del directorio del curso; 'all' descubre todos los cursos de Programación en español")
+    parser.add_argument("--list-files", action="store_true",
+                        help="Mostrar las rutas de todos los JSON estructurales examinados")
+    args = parser.parse_args(argv)
+    if args.course != "all" and not is_structural_course_id(args.course):
+        parser.error("Identificador de curso inválido: use el nombre de su directorio, sin rutas")
+    try:
+        courses = structural_course_ids() if args.course == "all" else (args.course,)
+    except (OSError, ValueError) as error:
+        parser.exit(1, f"Selección de cursos no válida: {error}\n")
+    # Check all routes/locales, including metadata removed from the working tree.
+    # A self-consistent regenerated origin is not evidence of a safe migration.
+    try:
+        _state_layout.check_repository(ROOT, args.base_ref)
+        base_commit = _state_layout.resolve_base_commit(ROOT, args.base_ref or "HEAD") if (ROOT / ".git").exists() else None
+    except (ValueError, KeyError, TypeError, OSError) as error:
+        parser.exit(1, f"Conservación de estado no verificada: {error}\n")
+    from types import SimpleNamespace
+    import validate_programming_practice_tools
+    results = []
+    for course_id in courses:
+        content = CONTENT.parent / course_id
+        try:
+            if content.is_symlink() or content.resolve().parent != CONTENT.parent.resolve():
+                raise ValueError("El directorio del curso debe permanecer dentro de Programación, sin enlaces")
+            if course_id == "cpp_fundamentals":
+                result = _validate_cpp_fundamentals(base_commit)
+            else:
+                result = validate_programming_practice_tools.validate(
+                    SimpleNamespace(**globals()), ROOT, base_commit, course_id=course_id)
+            results.append(result)
+        except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as error:
+            require(False, content, f"[{course_id}] contrato del curso inválido: {error}")
+    if ERRORS:
+        print("\n".join(ERRORS))
+        raise SystemExit(1)
+    for result in results:
+        print(f"Curso {result['course']}: {result['lessons']} lecciones, "
+              f"{result['units']} unidades, {result['blocks']} bloques; "
+              f"{len(result['files'])} archivos JSON examinados; "
+              f"{result['historical']} lecciones contrastadas con Git.")
         if args.list_files:
-            for relative in second_course["files"]:
+            for relative in result["files"]:
                 print(f"  archivo: {relative}")
-    total = len(lessons) + (second_course["lessons"] if second_course else 0)
-    total_blocks = blocks + (second_course["blocks"] if second_course else 0)
+    total = sum(result["lessons"] for result in results)
+    total_blocks = sum(result["blocks"] for result in results)
     print(f"Contrato, referencias y posiciones previas correctos: {total} lecciones, "
           f"{total_blocks} bloques. No certifica semántica C++ ni ejecución de programas.")
 

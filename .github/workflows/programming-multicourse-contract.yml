@@ -1,4 +1,4 @@
-name: Contrato curricular de Programación 1 y 2
+name: Contrato curricular de todos los cursos de Programación
 
 on:
   push:
@@ -27,8 +27,7 @@ on:
       - scripts/curriculum/test_diagnosticar_estado_multicurso.py
       - scripts/curriculum/auditar_estructura_multicurso.py
       - scripts/curriculum/test_auditar_estructura_multicurso.py
-      - app/src/main/assets/content/es/programming/cpp_fundamentals/**
-      - app/src/main/assets/content/es/programming/programming_practice_tools/**
+      - app/src/main/assets/content/es/programming/**
   workflow_dispatch:
 
 permissions:
@@ -44,7 +43,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Comprobar reglas estructurales y revisiones editoriales de ambos cursos
+      - name: Comprobar reglas estructurales y revisiones editoriales de cursos presentes y futuros
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_programming_multicourse_validation
       - name: Conservar regresiones previas del mapa de estado
@@ -86,9 +85,9 @@ jobs:
       - name: Validar específicamente Programación 1 sin relajar contratos anteriores
         run: |
           python3 scripts/curriculum/validar_json_programacion.py --course cpp_fundamentals --base-ref HEAD
-      - name: Comprobar que el uso habitual visita ambos cursos
+      - name: Validar todos los cursos presentes sin depender de su activación en el catálogo
         run: |
-          python3 scripts/curriculum/validar_json_programacion.py --base-ref HEAD
+          python3 scripts/curriculum/validar_json_programacion.py --base-ref HEAD --list-files
 
   diagnose-every-lesson:
     name: Diagnosticar todos los mapas visibles (no aprueba la publicación)
