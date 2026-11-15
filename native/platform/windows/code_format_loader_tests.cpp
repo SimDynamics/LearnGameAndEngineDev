@@ -1101,21 +1101,43 @@ void verify_source_format_retirement(const std::filesystem::path& fixtures,
         const auto sample=value.GetObject();
         const auto file=format_retirement_fixture(fixtures,sample.GetNamedString(L"file"));
         const auto raw=format_retirement_text(file);
-        (void)JsonObject::Parse(winrt::to_hstring(raw));
+        const auto legacy=JsonObject::Parse(winrt::to_hstring(raw));
+        const auto snapshots=legacy.GetNamedObject(L"stateLayout").GetNamedArray(L"retirementHistory");
+        check(snapshots.Size()>0,"A retirement rejection fixture lacks a historical snapshot");
+        for(const auto& snapshot:snapshots) {
+            const auto object=snapshot.GetObject();
+            check(object.HasKey(L"editorialPrefix"),
+                "A retirement rejection fixture lacks exact editorial provenance");
+            object.Remove(L"editorialPrefix");
+        }
+        // Strip provenance only in a separate legacy document. This is not an
+        // accepted publication transition and must still reach the old guard.
+        const auto legacy_raw=winrt::to_string(legacy.Stringify());
         const auto name=winrt::to_string(sample.GetNamedString(L"name"));
         const auto expected=sample.HasKey(L"message")
             ?winrt::to_string(sample.GetNamedString(L"message")):std::string{};
-        for(const bool catalog:{false,true}) {
+        const auto current_expected=
+            name=="unpublished-whitespace"||name=="unpublished-guidance"||name=="borrowed-owner"
+                ?std::string{"Historical reading source differs from its exact editorial prefix"}
+            :name=="changed-token"||name=="changed-answer"||name=="changed-oracle"||
+             name=="changed-order"||name=="changed-project-path"
+                ?std::string{"Retirement editorial prefix differs from its complete published history"}
+                :expected;
+        for(const bool catalog:{false,true})for(const bool legacy_copy:{false,true}) {
+            const auto& payload=legacy_copy?legacy_raw:raw;
+            const auto& intended=legacy_copy?expected:current_expected;
             std::string error;
             try {
-                if(catalog)(void)windows::parse_lesson_progress_metadata(raw,"es");
-                else(void)windows::parse_lesson_json(raw,"es");
+                if(catalog)(void)windows::parse_lesson_progress_metadata(payload,"es");
+                else(void)windows::parse_lesson_json(payload,"es");
             }catch(const std::exception& failure){error=failure.what();}
-            check(!error.empty(),"Windows admitted a forged formatted retirement history");
-            check(expected.empty()||error.find(expected)!=std::string::npos,
-                "Forged retirement history failed before reaching its intended guard");
-            std::cout<<"PASS source-format retirement rejection "<<name
-                <<(catalog?" progress: ":" full: ")<<error<<'\n';
+            const auto context=name+(catalog?" progress":" full")+
+                (legacy_copy?" legacy":" authenticated");
+            check(!error.empty(),"Windows admitted forged retirement history: "+context);
+            check(intended.empty()||error.find(intended)!=std::string::npos,
+                "Forged retirement history missed its intended guard: "+context+
+                "; expected: "+intended+"; received: "+error);
+            std::cout<<"PASS source-format retirement rejection "<<context<<": "<<error<<'\n';
         }
     }
     std::cout<<"PASS source-format retirement: "<<cases.Size()<<" cases, "
