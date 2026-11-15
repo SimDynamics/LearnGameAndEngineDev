@@ -1577,7 +1577,7 @@ Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
 ni se sustituye por una búsqueda textual del código fuente. Para exigir los requisitos explícitos de los objetivos, un elemento de
 `targets` puede declarar `"explicitCxx20": true` y
 `"explicitCxxExtensionsOff": true`. Estas propiedades optativas obligan a
-comprobar que **CMake ejecutó** una declaración de C++20 y una desactivación
+comprobar que **CMake ejecutó** una declaración de C++20 o posterior y una desactivación
 de extensiones sobre el objetivo, además de construirlo y ejecutar su primer
 caso correctamente. El perfil Windows puede aportar C++23 y extensiones
 desactivadas, pero eso **no** satisface las propiedades del alumno.
@@ -1587,8 +1587,15 @@ CMake limitada a los archivos CMake originales del proyecto. Sólo acepta
 órdenes ejecutadas y argumentos expandidos: `target_compile_features(objetivo
 PRIVATE cxx_std_20)`, `set_target_properties(objetivo PROPERTIES
 CXX_STANDARD 20)` y `set_property(TARGET objetivo PROPERTY
-CXX_STANDARD 20)` son formas equivalentes para el mínimo. Para extensiones
-se admiten `set_target_properties(... PROPERTIES CXX_EXTENSIONS OFF)` y
+CXX_STANDARD 20)` son formas equivalentes para el mínimo. También se
+admiten las declaraciones explícitas de C++23 y C++26 cuando el compilador
+permite construirlas. El motor distingue la lista `COMPILE_FEATURES` de la
+selección `CXX_STANDARD`: una característica `cxx_std_20` activa sigue
+exigiendo al menos C++20 aunque después se seleccione la propiedad 17; una
+propiedad 23 también satisface el mínimo. Bajar una propiedad 20 a 17 sin
+una característica suficiente, o retirar esa característica, no acredita
+el requisito. Los valores heredados del perfil siguen sin contar como una
+declaración del alumno. Para extensiones se admiten `set_target_properties(... PROPERTIES CXX_EXTENSIONS OFF)` y
 `set_property(TARGET ... PROPERTY CXX_EXTENSIONS OFF)`, con los valores
 falsos admitidos por CMake. Una orden posterior que active las extensiones
 invalida el requisito. Las rutas, fuentes y enlaces siguen contrastándose

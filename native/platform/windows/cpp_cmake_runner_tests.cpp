@@ -768,6 +768,68 @@ set(elegido comprobar)
 add_executable(comprobar inventario.cpp)
 target_compile_features(${elegido} PRIVATE cxx_std_20)
 set_property(TARGET ${elegido} PROPERTY CXX_EXTENSIONS OFF)
+)cmake",true},
+        // The authored minimum accepts stronger language modes. Features
+        // and CXX_STANDARD remain independent when either property changes.
+        {"stronger-feature-minimum",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_23)
+)cmake",true},
+        {"stronger-standard-property",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(comprobar PROPERTIES CXX_STANDARD 23)
+)cmake",true},
+        {"feature-before-stronger-standard",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_target_properties(comprobar PROPERTIES CXX_STANDARD 23)
+)cmake",true},
+        {"stronger-standard-before-feature",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 23)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+)cmake",true},
+        {"active-feature-with-lower-property",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",true},
+        {"lower-standard-only",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",false},
+        {"standard-minimum-overwritten",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 20)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",false},
+        {"feature-minimum-removed",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_property(TARGET comprobar PROPERTY COMPILE_FEATURES)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",false},
+        {"feature-list-keeps-property-boundaries",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(comprobar PROPERTIES COMPILE_FEATURES "cxx_std_20;cxx_std_17" CXX_STANDARD 17)
 )cmake",true}
     };
     std::uint64_t variant_id=1460;
