@@ -12,6 +12,11 @@ import re
 import unittest
 from pathlib import Path
 
+if __package__:
+    from .assetcheck_curricular_targets import declared_editor
+else:
+    from assetcheck_curricular_targets import declared_editor
+
 CONTENT = Path(__file__).resolve().parents[2] / (
     "app/src/main/assets/content/es/programming/"
     "programming_practice_tools/proyecto_assetcheck"
@@ -153,14 +158,8 @@ class AssetCheckCurricularOraclesTest(unittest.TestCase):
         for filename, oracle in EDITOR_ORACLES.items():
             with self.subTest(lesson=filename):
                 document = json.loads((CONTENT / filename).read_text(encoding="utf-8"))
-                editors = [
-                    block
-                    for page in document["pages"]
-                    for block in page["blocks"]
-                    if block["type"] == "cpp_compiler"
-                ]
-                self.assertEqual(len(editors), 1, "Expected one exercise editor")
-                check = editors[0]["outputCheck"]
+                _, editor, _ = declared_editor(document, filename=filename)
+                check = editor["outputCheck"]
                 self.assertEqual(check["inputComparison"], "exact")
                 self.assertGreaterEqual(len(check["cases"]), 4)
                 for case_number, case in enumerate(check["cases"], start=1):
