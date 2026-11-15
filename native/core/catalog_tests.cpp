@@ -291,12 +291,37 @@ void catalog_metadata_does_not_claim_cmake_execution_or_round_math_payloads() {
 void choice_revision_reset_keeps_exact_scope_and_provenance(){
     using namespace lgaed;
     const auto& plan=test::choice_revision_cases().front();
-    const auto integrated=windows::load_lesson(std::filesystem::path(build::source_root)/
+    // Reset operates on the currently published lesson. Later authenticated
+    // wording improvements do not require reconstructing an obsolete terminal
+    // payload or replaying the original option revision over them.
+    const auto revised=windows::load_lesson(std::filesystem::path(build::source_root)/
         "app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos"/plan.filename);
-    const auto original=test::choice_revision_before(integrated,plan.identity);
-    const auto revised=test::revise_choice_lesson(original,plan.identity);const auto at=curriculum::stable_block_position(revised,plan.identity);
-    check(at.has_value(),"Choice reset fixture lost its activity");const auto& block=revised.pages[at->page].blocks[at->block];
+    const auto at=curriculum::stable_block_position(revised,plan.identity);
+    check(at.has_value(),"Choice reset fixture lost its activity");
+    const auto& block=revised.pages[at->page].blocks[at->block];
+    check(block.choice_revision&&block.choice_revision->sha256==plan.before_full&&
+        !block.choice_revision->general_option_index&&block.options.at(plan.option)==plan.replacement,
+        "Catalog reset lost the authenticated historical choice revision");
+    const auto layout=winrt::Windows::Data::Json::JsonObject::Parse(
+        winrt::to_hstring(revised.raw_json)).GetNamedObject(L"stateLayout");
+    unsigned originals=0,transitions=0;
+    for(const auto& value:layout.GetNamedArray(L"choiceRevisions")) {
+        const auto record=value.GetObject();
+        if(winrt::to_string(record.GetNamedString(L"id"))!=plan.identity)continue;
+        ++originals;
+        check(test::compile_check_test_fingerprint(record.GetNamedObject(L"block"))==plan.before_full,
+            "Catalog reset accepted a different complete historical option");
+    }
+    for(const auto& value:layout.GetNamedArray(L"editorial")) {
+        const auto proof=value.GetObject();
+        if(winrt::to_string(proof.GetNamedString(L"id"))==plan.identity&&
+            winrt::to_string(proof.GetNamedString(L"beforeSha256"))==plan.before_full&&
+            winrt::to_string(proof.GetNamedString(L"afterSha256"))==plan.after_full)++transitions;
+    }
+    check(originals==1&&transitions==1,
+        "Catalog reset requires the original pinned archive and published option transition");
     const auto legacy=curriculum::exercise_key(revised,block),current=state::response_storage_key(revised,block);
+    check(legacy!=current,"Catalog reset did not distinguish historical and current choice receipts");
     state::StateData data;state::prepare_lesson_state(data,revised);
     state::Response response;response.correct=true;response.selected=static_cast<std::int64_t>(*block.correct_index);
     state::put_response(data,legacy,response);state::put_response(data,revised,block,response);
@@ -304,7 +329,7 @@ void choice_revision_reset_keeps_exact_scope_and_provenance(){
     for(const auto locale:{"en","fr"})removed.push_back("choice-options/v1/"+std::string(locale)+'/'+std::string(64,'a')+'/'+legacy);
     removed.push_back("order-lines/v1/es/"+std::string(64,'b')+'/'+legacy);
     for(const auto& key:removed)if(!state::find(data,"learning_progress",key))data.preferences["learning_progress"][key]=std::string("explicit reset target");
-    const auto foreign="exercise_"+original.id+"_extra_page_0_block_0";
+    const auto foreign="exercise_"+revised.id+"_extra_page_0_block_0";
     const std::vector<std::string> preserved{
         "choice-options/v1/es/"+std::string(64,'a')+'/'+foreign,
         "choice-options/v1/de/"+std::string(64,'a')+'/'+legacy,
@@ -312,9 +337,9 @@ void choice_revision_reset_keeps_exact_scope_and_provenance(){
         "choice-options/v1/es/"+std::string(64,'A')+'/'+legacy,
         "choice-options/v1/es/short/"+legacy};
     for(const auto& key:preserved)data.preferences["learning_progress"][key]=std::string("preserve unrecognized or foreign state");
-    data.preferences["cpp_lesson_drafts"]["programming/"+original.id+"/0/0/source"]=std::string("student source intact\r\n");
+    data.preferences["cpp_lesson_drafts"]["programming/"+revised.id+"/0/0/source"]=std::string("student source intact\r\n");
     data.preferences["narration_settings"]["voice"]=std::string("ef_dora");
-    const auto before=data;curriculum::CatalogScope scope;scope.lessons={original.id};
+    const auto before=data;curriculum::CatalogScope scope;scope.lessons={revised.id};
     check(curriculum::reset_catalog_progress(data,scope)==removed.size(),"Catalog reset did not remove exactly the scoped answer editions");
     for(const auto& key:removed)check(!state::find(data,"learning_progress",key),"Catalog reset retained a scoped choice/order answer");
     for(const auto& [domain,values]:before.preferences)for(const auto& [key,value]:values)
