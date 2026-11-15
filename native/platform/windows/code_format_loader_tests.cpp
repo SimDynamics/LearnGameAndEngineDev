@@ -663,6 +663,7 @@ void compare_format_history_block(const curriculum::Lesson& source,
         original.fragments==archived.fragments&&
         original.project_files==archived.project_files&&
         original.source_files==archived.source_files&&
+        original.compile_check==archived.compile_check&&
         original.answers==archived.answers&&original.correct_order==archived.correct_order&&
         original.correct_index==archived.correct_index&&
         curriculum::exercise_key(source,original)==
@@ -720,6 +721,7 @@ void check_format_retirement_ownership(const curriculum::Lesson& before,
             check(retired!=after.retired_blocks.end()&&
                   same_format_address(block.address,retired->address),
                 "An original block disappeared instead of retaining its retired identity");
+            compare_format_history_block(before,block,after,*retired);
             continue;
         }
         const auto& now=after.pages.at(position->page).blocks.at(position->block);
@@ -1003,7 +1005,8 @@ void verify_source_format_retirement(const std::filesystem::path& fixtures,
     check(std::filesystem::create_directory(state::native_io_path(qa)),
         "Source-format retirement QA must use a new isolated directory");
     std::size_t history_count=0,order_count=0,compiler_count=0,diagnostic_count=0;
-    std::size_t correct_count=0,reviewed_error_count=0;
+    std::size_t correct_count=0,reviewed_error_count=0,retired_formatted_compilers=0;
+    std::size_t retired_formatted_diagnostics=0;
     for(const auto& entry:cases) {
         const auto sample=entry.GetObject();
         const auto name=winrt::to_string(sample.GetNamedString(L"name"));
@@ -1034,8 +1037,29 @@ void verify_source_format_retirement(const std::filesystem::path& fixtures,
             const auto owner=winrt::to_string(identity.GetString());
             check(curriculum::retired_block(after,owner)&&
                   curriculum::retired_block(catalog,owner)&&
-                  !curriculum::stable_block_position(after,owner),
-                "An explicitly retired note remained active or lost its archived identity");
+                  !curriculum::stable_block_position(after,owner)&&
+                  !curriculum::stable_block_position(catalog,owner),
+                "An explicitly retired owner remained active or lost its archived identity");
+            const auto archived=std::ranges::find(after.retired_blocks,owner,
+                &curriculum::Block::stable_id);
+            const auto progress=std::ranges::find(catalog.retired_blocks,owner,
+                &curriculum::Block::stable_id);
+            check(archived!=after.retired_blocks.end()&&progress!=catalog.retired_blocks.end(),
+                "The retired owner is absent from the full/progress archive");
+            compare_format_history_block(after,*archived,catalog,*progress,false);
+            if(archived->type==curriculum::BlockType::cpp_compiler&&
+                archived->source_format_original_initial_code) {
+                const auto saved=std::ranges::find(after.state_layout.source_format_revisions,
+                    owner,&curriculum::SourceFormatRevision::id);
+                const auto projected=std::ranges::find(catalog.state_layout.source_format_revisions,
+                    owner,&curriculum::SourceFormatRevision::id);
+                check(saved!=after.state_layout.source_format_revisions.end()&&
+                    projected!=catalog.state_layout.source_format_revisions.end()&&
+                    saved->raw_json==projected->raw_json&&saved->sha256==projected->sha256,
+                    "A retired compiler lost its immutable source-format archive");
+                ++retired_formatted_compilers;
+                retired_formatted_diagnostics+=archived->compile_check.has_value();
+            }
         }
         const auto histories=sample.GetNamedArray(L"history");
         check(histories.Size()>0,"A format/retirement case has no exact historical source comparison");
@@ -1085,7 +1109,7 @@ void verify_source_format_retirement(const std::filesystem::path& fixtures,
                 "Inspecting retirement history changed its published source fixture");
             ++history_count;
         }
-        const auto [correct,reviewed_errors]=verify_format_retirement_state(qa,name,before,after);
+        const auto [correct,reviewed_errors]=verify_format_retirement_state(qa,name,before,after,true);
         correct_count+=correct;reviewed_error_count+=reviewed_errors;
         check(state::read_bytes(before_file)==before_bytes&&
               state::read_bytes(after_file)==after_bytes,
@@ -1095,6 +1119,10 @@ void verify_source_format_retirement(const std::filesystem::path& fixtures,
         "Retirement QA did not preserve both successes and reviewed incorrect answers");
     check(order_count>0&&compiler_count>0&&diagnostic_count>0,
         "Retirement QA did not exercise formatted order, compiler and compileCheck history");
+    check(retired_formatted_compilers>=2,
+        "Retirement QA omitted the formatted compiler itself or its successive history");
+    check(retired_formatted_diagnostics>0,
+        "Retirement QA omitted the authenticated formatted diagnostic compiler");
     const auto invalid=manifest.GetNamedArray(L"invalid");
     check(invalid.Size()>=5,"Source-format retirement QA lacks adversarial source/history coverage");
     for(const auto& value:invalid) {

@@ -98,7 +98,13 @@ class SourceFormatRetirementTest(unittest.TestCase):
                         self.assertEqual(old_addresses[identity], new_positions[p, b])
                 for field in ("origin", "family", "additions"):
                     self.assertEqual(before["stateLayout"][field], after["stateLayout"][field])
-                self.assertEqual(before.get("textSemantics"), after.get("textSemantics"))
+                expected_semantics = deepcopy(before.get("textSemantics"))
+                if expected_semantics is not None:
+                    newly_retired = ({item["id"] for item in after["stateLayout"].get("retired", [])}
+                                     - {item["id"] for item in before["stateLayout"].get("retired", [])})
+                    expected_semantics["fields"] = [field for field in expected_semantics["fields"]
+                                                    if field["block"] not in newly_retired]
+                self.assertEqual(expected_semantics, after.get("textSemantics"))
                 layout.validate_transition(before, after)
 
     def test_successive_formats_and_guidance_keep_both_exact_readings(self):
@@ -253,10 +259,111 @@ class SourceFormatRetirementTest(unittest.TestCase):
         with self.assertRaisesRegex(layout.LayoutError, "append-only"):
             layout.validate_transition(legacy_before, legacy_bad)
 
-    def test_retiring_the_formatted_owner_itself_remains_outside_this_transition(self):
-        before, _ = self.pair("synthetic-format-first")
-        with self.assertRaisesRegex(layout.LayoutError, "inactive.*source format"):
-            layout.retire(before, ["block_0000_0004"])
+    def test_retiring_formatted_owners_preserves_both_original_and_last_source(self):
+        for name, owner in (("formatted-owner-retired", "block_0000_0004"),
+                            ("formatted-code-owner-retired", "block_0000_0000")):
+            with self.subTest(case=name):
+                before, after = self.pair(name)
+                original = next(item["block"] for item in before["stateLayout"]["sourceFormatRevisions"]
+                                if item["id"] == owner)
+                active = layout._blocks(before)[owner]
+                archived = next(item["block"] for item in after["stateLayout"]["retired"]
+                                if item["id"] == owner)
+                self.assertNotEqual(original, active)
+                self.assertEqual(archived, active)
+                self.assertNotIn(owner, layout._blocks(after))
+                self.assertEqual(before["stateLayout"]["sourceFormatRevisions"],
+                                 after["stateLayout"]["sourceFormatRevisions"])
+                self.assertEqual(before["stateLayout"]["editorial"], after["stateLayout"]["editorial"])
+                self.assertEqual(fixtures.history_block(after, owner), active)
+                self.assertEqual(layout.state_fingerprint(original),
+                                 layout.state_fingerprint(layout.code_format.source_projection(archived, original)))
+                reopened = json.loads(json.dumps(after, ensure_ascii=False))
+                self.assertEqual(layout.validate(reopened), layout.validate(after))
+                layout.validate_transition(before, reopened)
+
+    def test_successive_retired_sources_keep_distinct_reading_and_storage_history(self):
+        before, after = self.pair("formatted-owners-successive")
+        compiler, code = "block_0000_0004", "block_0000_0000"
+        history = after["stateLayout"]["retirementHistory"]
+        self.assertEqual([item["retired"] for item in history], [[code], [compiler]])
+        self.assertNotEqual(fixtures.history_block(after, compiler, 0),
+                            fixtures.history_block(after, compiler, 1))
+        self.assertEqual(fixtures.history_block(after, compiler, 1), layout._blocks(before)[compiler])
+        self.assertNotIn(code, layout._blocks(before))
+        self.assertNotIn(compiler, layout._blocks(after))
+        for field in ("origin", "family", "additions", "sourceFormatRevisions", "editorial"):
+            self.assertEqual(before["stateLayout"][field], after["stateLayout"][field])
+        self.assertEqual(before["stateLayout"]["retired"], after["stateLayout"]["retired"][:-1])
+        self.assertEqual(before["stateLayout"]["retirementHistory"], history[:-1])
+        layout.validate_transition(before, after)
+
+    def test_retired_formatted_compiler_keeps_exact_feedback_marks(self):
+        before, after = self.pair("formatted-marked-owner-retired")
+        owner = "block_0000_0004"
+        self.assertTrue(before["compilerPuzzlesRequired"])
+        self.assertTrue(after["compilerPuzzlesRequired"])
+        self.assertEqual(after["textSemantics"]["fields"], [])
+        snapshot = after["stateLayout"]["retirementHistory"][0]
+        self.assertEqual(snapshot["textSemantics"], before["textSemantics"])
+        self.assertEqual(snapshot["textSemantics"]["fields"][0]["block"], owner)
+        self.assertEqual(fixtures.history_block(after, owner)["outputCheck"],
+                         layout._blocks(before)[owner]["outputCheck"])
+        bad = deepcopy(after)
+        bad["stateLayout"]["retirementHistory"][0]["textSemantics"]["fields"] = []
+        with self.assertRaisesRegex(layout.LayoutError, "complete previous published presentation"):
+            layout.validate_transition(before, bad)
+
+    def test_retired_formatted_diagnostic_keeps_its_exact_authenticated_original(self):
+        before, after = self.pair("formatted-diagnostic-owner-retired")
+        owner = "block_0017_0002"
+        original = next(item["block"] for item in before["stateLayout"]["sourceFormatRevisions"]
+                        if item["id"] == owner)
+        formatted = layout._blocks(before)[owner]
+        retired = layout._all_blocks(after)[owner]
+        self.assertNotEqual(formatted["initialCode"], original["initialCode"])
+        self.assertEqual(retired, formatted)
+        self.assertEqual(retired["compileCheck"], original["compileCheck"])
+        self.assertEqual(retired["compileCheck"]["diagnostic"], "u6-difference-missing-header")
+        self.assertEqual(retired["sourceFiles"], original["sourceFiles"])
+        self.assertEqual(fixtures.history_block(after, owner), formatted)
+        for field in ("origin", "family", "sourceFormatRevisions", "editorial"):
+            self.assertEqual(after["stateLayout"][field], before["stateLayout"][field])
+        self.assertNotIn(owner, layout._blocks(after))
+        layout.validate(json.loads(json.dumps(after, ensure_ascii=False)))
+        layout.validate_transition(before, after)
+
+    def test_retired_source_cannot_lose_ownership_or_change_its_protected_contract(self):
+        names = [name for name in self.invalid if name.startswith("retired-owner-")]
+        self.assertEqual(len(names), 10)
+        for name in names:
+            with self.subTest(mutation=name), self.assertRaises(layout.LayoutError):
+                layout.validate(self.invalid_document(name))
+
+    def test_formatted_retirement_archives_are_append_only_and_cannot_resurrect(self):
+        _, after = self.pair("formatted-owner-retired")
+        owner = "block_0000_0004"
+        bad = deepcopy(after)
+        block = bad["stateLayout"]["retired"].pop()["block"]
+        bad["stateLayout"]["retirementHistory"].clear()
+        bad["pages"][0]["blocks"].insert(4, block)
+        bad["stateLayout"]["current"][0]["blocks"].insert(4, owner)
+        layout.validate(bad)
+        with self.assertRaisesRegex(layout.LayoutError, "append-only"):
+            layout.validate_transition(after, bad)
+        prior = deepcopy(after)
+        prior["stateLayout"]["sourceFormatRevisions"].reverse()
+        layout.validate(prior)
+        with self.assertRaisesRegex(layout.LayoutError, "source-format archives are append-only"):
+            layout.validate_transition(after, prior)
+
+    def test_other_inactive_revision_contracts_are_not_enabled_by_format_retirement(self):
+        before, _ = self.pair("refined-historical-order")
+        with self.assertRaisesRegex(layout.LayoutError, "Only compiler activities"):
+            layout.retire(before, ["block_0000_0002"])
+        before, _ = self.pair("formatted-expanded-history")
+        with self.assertRaises(layout.LayoutError):
+            layout.retire(before, [fixtures.COMPILER], reference_after=[])
 
     def test_independent_source_hash_rejects_changed_bytes_for_every_real_pin(self):
         for name, (_, _, expected) in fixtures.SOURCES.items():

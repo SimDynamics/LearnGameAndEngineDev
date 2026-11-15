@@ -213,8 +213,8 @@ add_custom_command(OUTPUT ${LGAED_REAL_CODE_FORMAT_PILOT_FILES}
 add_custom_target(lgaed_real_code_format_pilot_fixtures DEPENDS ${LGAED_REAL_CODE_FORMAT_PILOT_FILES})
 
 
-# A format review and an unrelated retirement must compose without changing
-# either publication. The manifest lists exact historical source documents and
+# A format review and retirement, including the formatted owner itself, must
+# compose without changing either publication. The manifest lists exact source documents and
 # adversarial snapshots; all output stays under the isolated CMake build tree.
 set(LGAED_SOURCE_FORMAT_RETIREMENT_DIR
     "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/source-format-retirement")
@@ -233,7 +233,7 @@ add_custom_command(OUTPUT "${LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST}"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Verify published physical-format sources across unrelated retirement histories"
+    COMMENT "Verify published physical-format sources across authenticated retirement histories"
     VERBATIM)
 add_custom_target(lgaed_source_format_retirement_fixtures
     DEPENDS "${LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST}")
@@ -267,9 +267,10 @@ function(lgaed_add_semantic_retirement_view_test)
     add_executable(lgaed_semantic_retirement_view_tests
         native/presentation/windows/semantic_retirement_view_tests.cpp)
     target_link_libraries(lgaed_semantic_retirement_view_tests PRIVATE lgaed_curricular_windows)
-    add_dependencies(lgaed_semantic_retirement_view_tests lgaed_semantic_retirement_fixtures)
+    add_dependencies(lgaed_semantic_retirement_view_tests lgaed_semantic_retirement_fixtures
+        lgaed_source_format_retirement_fixtures)
     add_test(NAME native.semantic_retirement_view COMMAND lgaed_semantic_retirement_view_tests
-        "${LGAED_SEMANTIC_RETIREMENT_DIR}")
+        "${LGAED_SEMANTIC_RETIREMENT_DIR}" "${LGAED_SOURCE_FORMAT_RETIREMENT_DIR}")
     set_tests_properties(native.semantic_retirement_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
 endfunction()
 

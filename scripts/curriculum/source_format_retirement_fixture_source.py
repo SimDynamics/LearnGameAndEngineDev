@@ -226,6 +226,64 @@ def negative_documents(document: dict) -> dict[str, tuple[dict, str | None]]:
     return result
 
 
+def retired_owner_negative_documents(document: dict) -> dict[str, dict]:
+    """Keep the new inactive-owner support bound to the same exact archive."""
+    owner = "block_0000_0004"
+    result = {}
+
+    def make(name, mutate):
+        bad = deepcopy(document)
+        mutate(bad)
+        result["retired-owner-" + name] = bad
+
+    def retired(document):
+        return next(item["block"] for item in document["stateLayout"]["retired"]
+                    if item["id"] == owner)
+
+    def forged_payload(document, mutate):
+        block = retired(document)
+        mutate(block)
+        # Recomputing the final full-block hash cannot bless a changed token,
+        # oracle or file path under the original immutable response contract.
+        proofs = [item for item in document["stateLayout"]["editorial"]
+                  if item["id"] == owner]
+        proofs[-1]["afterSha256"] = layout.fingerprint(block)
+
+    make("changed-token", lambda bad: forged_payload(bad, lambda block:
+         block["projectFiles"][1].__setitem__("initialCode",
+             block["projectFiles"][1]["initialCode"].replace("return 0", "return 1"))))
+    make("changed-oracle", lambda bad: forged_payload(bad, lambda block:
+         block["outputCheck"]["cases"][0].__setitem__("outputs", ["forged"])))
+    make("changed-project-path", lambda bad: forged_payload(bad, lambda block:
+         block["projectFiles"][1].__setitem__("path", "renamed.cpp")))
+    make("missing-format-archive", lambda bad: bad["stateLayout"].__setitem__(
+         "sourceFormatRevisions", [item for item in bad["stateLayout"]["sourceFormatRevisions"]
+                                   if item["id"] != owner]))
+    make("duplicate-format-archive", lambda bad:
+         bad["stateLayout"]["sourceFormatRevisions"].append(deepcopy(next(
+             item for item in bad["stateLayout"]["sourceFormatRevisions"] if item["id"] == owner))))
+    make("missing-retired-owner", lambda bad: bad["stateLayout"].__setitem__("retired", []))
+    make("unknown-format-owner", lambda bad: next(item for item in
+         bad["stateLayout"]["sourceFormatRevisions"] if item["id"] == owner).__setitem__(
+             "id", "unknown_formatted_owner"))
+    make("duplicate-retired-owner", lambda bad:
+         bad["stateLayout"]["retired"].append(deepcopy(bad["stateLayout"]["retired"][0])))
+
+    def restore_active(bad):
+        bad["pages"][0]["blocks"].append(deepcopy(retired(bad)))
+        bad["stateLayout"]["current"][0]["blocks"].append(owner)
+    make("active-and-retired", restore_active)
+
+    def old_presentation(bad):
+        original = next(item["block"] for item in bad["stateLayout"]["sourceFormatRevisions"]
+                        if item["id"] == owner)
+        actual = retired(bad)
+        actual.clear()
+        actual.update(deepcopy(original))
+    make("stale-presentation", old_presentation)
+    return result
+
+
 def build_fixtures() -> tuple[dict[str, dict], dict]:
     documents = {}
     manifest = {"cases": [], "invalid": []}
@@ -237,7 +295,7 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
         documents[filename] = deepcopy(document)
         return filename
 
-    def case(name, before, after, history):
+    def case(name, before, after, history, *, retired_compiler_cases=()):
         layout.validate(before)
         layout.validate(after)
         layout.validate_transition(before, after)
@@ -255,6 +313,9 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
             "retired": [entry["id"] for entry in metadata.get("retired", [])],
             "history": sources,
         })
+        if retired_compiler_cases:
+            manifest["cases"][-1]["retiredCompilerCases"] = [
+                {"id": identity, "case": index} for identity, index in retired_compiler_cases]
 
     real_before, real_after = real_pair()
     case("source-format-retirement", real_before, real_after, [real_before])
@@ -263,6 +324,36 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
     first = layout.prepare_v2(edited(original), "es", family, original)
     one_retirement = layout.retire(first, ["block_0000_0005"])
     case("synthetic-format-first", first, one_retirement, [first])
+
+    owner_retired = layout.retire(first, ["block_0000_0004"])
+    case("formatted-owner-retired", first, owner_retired, [first],
+         retired_compiler_cases=[("block_0000_0004", 0)])
+    code_retired = layout.retire(first, ["block_0000_0000"])
+    case("formatted-code-owner-retired", first, code_retired, [first])
+    later_proposal = deepcopy(code_retired)
+    later_compiler = layout._blocks(later_proposal)["block_0000_0004"]
+    later_compiler["initialCode"] = "\n" + later_compiler["initialCode"]
+    later_compiler["projectFiles"][1]["initialCode"] += "\n"
+    later = layout.prepare_v2(later_proposal, "es", family, code_retired)
+    owners_retired = layout.retire(later, ["block_0000_0004"])
+    case("formatted-owners-successive", later, owners_retired, [first, later],
+         retired_compiler_cases=[("block_0000_0004", 0)])
+
+    marked_source = fixture()
+    marked_source["compilerPuzzlesRequired"] = True
+    marked_source["pages"][0]["blocks"][4]["outputCheck"]["cases"][0]["explanation"] = (
+        "La salida permanece vacía y el retorno es cero.")
+    marked_family = {"es": deepcopy(marked_source)}
+    marked_original = layout.prepare_v2(marked_source, "es", marked_family)
+    marked = layout.prepare_v2(edited(marked_original), "es", marked_family, marked_original)
+    marked_text = layout._blocks(marked)["block_0000_0004"]["outputCheck"]["cases"][0]["explanation"]
+    marked["textSemantics"] = {"version": 1, "fields": [layout.text_semantics.make_field(
+        marked, "block_0000_0004", "/outputCheck/cases/0/explanation", [
+            layout.text_semantics.select(marked_text, "vacía", "output", reading="natural")])]}
+    layout.validate(marked)
+    marked_retired = layout.retire(marked, ["block_0000_0004"])
+    case("formatted-marked-owner-retired", marked, marked_retired, [marked],
+         retired_compiler_cases=[("block_0000_0004", 0)])
 
     retired_first = layout.retire(original, ["block_0000_0005"])
     formatted_later = layout.prepare_v2(edited(retired_first), "es", family, retired_first)
@@ -293,6 +384,9 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
     diagnostic_retired = layout.retire(diagnostic_formatted, [QA_RETIRED])
     case("reviewed-diagnostic-history", diagnostic_formatted, diagnostic_retired,
          [diagnostic_formatted])
+    diagnostic_owner_retired = layout.retire(diagnostic_formatted, ["block_0017_0002"])
+    case("formatted-diagnostic-owner-retired", diagnostic_formatted, diagnostic_owner_retired,
+         [diagnostic_formatted])
 
     compiler_original = published("compiler")
     compiler_retired = layout.retire(compiler_original, [RETIRED])
@@ -310,6 +404,9 @@ def build_fixtures() -> tuple[dict[str, dict], dict]:
     after_expanded_format = layout.retire(expanded_formatted, [RETIRED])
     case("formatted-expanded-history", expanded_formatted, after_expanded_format,
          [expanded_formatted])
+
+    for name, bad in retired_owner_negative_documents(owner_retired).items():
+        manifest["invalid"].append({"name": name, "file": put("invalid-" + name, bad)})
 
     for name, (bad, message) in negative_documents(one_retirement).items():
         record = {"name": name, "file": put("invalid-" + name, bad)}

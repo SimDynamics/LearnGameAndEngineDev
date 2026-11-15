@@ -1768,6 +1768,24 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     require(type(revisions) is list and len(revisions) <= 100_000,
             "Malformed source format history")
     active_blocks = _blocks(document)
+    # A source-format archive survives its owner's retirement. Its exact final
+    # presentation lives in retired; the original source and editorial chain
+    # keep their existing immutable identity. Validate these references before
+    # using them, without accepting an unknown or duplicated historical owner.
+    format_sources = dict(active_blocks)
+    if revisions:
+        format_retired = meta.get("retired", [])
+        require(type(format_retired) is list and len(format_retired) <= 100_000,
+                "Malformed retired activity archive")
+        for item in format_retired:
+            require(type(item) is dict and set(item) == {"id", "page", "next", "block"},
+                    "A retired activity needs its identity, page, successor and complete block")
+            identity = _identity(item["id"])
+            require(identity in storage and identity not in format_sources,
+                    "A retired identity is unknown, duplicated or still active")
+            require(type(item["block"]) is dict and item["block"].get("type") in RETIRABLE_TYPES,
+                    "Only compiler activities and their presentation blocks can be retired")
+            format_sources[identity] = item["block"]
     math_texts = {}
     math_revisions = meta.get("mathTextRevisions", [])
     require(type(math_revisions) is list and len(math_revisions) <= 100_000,
@@ -1806,8 +1824,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(type(entry) is dict and set(entry) == {"id", "block"},
                 "A source format revision needs its identity and complete original block")
         identity = _identity(entry["id"])
-        require(identity in active_blocks and identity not in formatted,
-                "Unknown, inactive or duplicate source format owner")
+        require(identity in storage and identity in format_sources and identity not in formatted,
+                "Unknown, absent or duplicate source format owner")
         original = entry["block"]
         require(type(original) is dict, "Source format history must preserve a full original block")
         ordered_original = _compiler_case_order_projection(document, identity, original)
@@ -1817,15 +1835,28 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 "Source formatting archive changed the historical answer contract")
         # A formatted block cannot silently replace the question without
         # declaring exactly which phrase the reader should display and narrate.
-        if original.get("question") != active_blocks[identity].get("question"):
-            question_fields = [entry for entry in
-                               document.get(text_semantics.ROOT_FIELD, {}).get("fields", [])
+        if original.get("question") != format_sources[identity].get("question"):
+            semantic_source = document
+            if identity not in active_blocks:
+                history = meta.get("retirementHistory", [])
+                require(type(history) is list,
+                        "Malformed retirement reading history")
+                sources = [snapshot for snapshot in history if type(snapshot) is dict
+                           and type(snapshot.get("retired")) is list
+                           and identity in snapshot["retired"]]
+                require(len(sources) == 1,
+                        "A retired formatted question needs its exact reading snapshot")
+                semantic_source = sources[0]
+            overlay = semantic_source.get(text_semantics.ROOT_FIELD) or {}
+            require(type(overlay) is dict and type(overlay.get("fields", [])) is list,
+                    "Formatted question has malformed authored source descriptors")
+            question_fields = [entry for entry in overlay.get("fields", [])
                                if type(entry) is dict and entry.get("block") == identity
                                and entry.get("path") == "/question"]
             require(len(question_fields) == 1,
                     "Formatted question has no explicit authored source descriptor")
         try:
-            code_format.require_source_lexical(original, active_blocks[identity])
+            code_format.require_source_lexical(original, format_sources[identity])
         except code_format.SourceFormatError as exc:
             raise LayoutError(f"Unsafe source formatting for {identity}: {exc}") from exc
         formatted[identity] = original
@@ -2002,11 +2033,13 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 and item["next"] != identity, "Invalid retired activity successor")
         require(type(item["block"]) is dict and item["block"].get("type") in RETIRABLE_TYPES,
                 "Only compiler activities and their presentation blocks can be retired")
-        require(_reviewed_compiler(item["block"]) is None,
+        source = (code_format.source_projection(item["block"], formatted[identity])
+                  if identity in formatted else item["block"])
+        require(_reviewed_compiler(source) is None,
                 "A revised compiler must retain its active revision archive")
-        require(_reviewed_compiler_reference(item["block"]) is None,
+        require(_reviewed_compiler_reference(source) is None,
                 "A revised compiler reference must retain its active revision archive")
-        require(state_fingerprint(item["block"]) == digests[identity],
+        require(state_fingerprint(source) == digests[identity],
                 "The retired response/code contract changed")
         retired_ids.add(identity)
     require(len(set(seen_blocks)) == len(seen_blocks) and set(seen_blocks) | retired_ids == set(storage),
