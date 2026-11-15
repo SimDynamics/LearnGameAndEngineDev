@@ -40,6 +40,7 @@ constexpr std::string_view real_owner =
     "u11_movimientos_compensados_en_los_extremos_comprobacion";
 constexpr std::string_view real_reference =
     "u11_movimientos_compensados_en_los_extremos_referencia_codigo";
+constexpr std::string_view real_full_reference = "block_0005_0002";
 constexpr std::string_view real_before_sha =
     "5f0b750fed94e1200c9a7c9be7f1247b2396ac86556685dab9abed4c3a7bed88";
 
@@ -949,10 +950,19 @@ void empty_draft(const Fixture& fixture) {
 void actual_reference_runs(const Fixture& fixture, const std::filesystem::path& directory) {
     const auto& before = editor(fixture.before, fixture.id);
     const auto& after = editor(fixture.after, fixture.id);
-    const auto& reference = editor(fixture.before, real_reference);
+    const auto& reference = editor(fixture.before, real_full_reference);
+    const auto& fragment = editor(fixture.before, real_reference);
     require(reference.type == BlockType::code && !reference.code.empty()
-        && reference.code == editor(fixture.after, real_reference).code,
-        "The two real MSVC runs need the exact unchanged U11L7 reference source");
+        && reference.code == editor(fixture.after, real_full_reference).code,
+        "The two real MSVC runs need the exact unchanged complete U11L7 reference source");
+    // The later reference is a function-body excerpt of this already complete
+    // published reader, not a separate translation unit or source replacement.
+    const auto excerpt = reference.code.find(fragment.code);
+    require(fragment.type == BlockType::code && !fragment.code.empty()
+        && fragment.code == editor(fixture.after, real_reference).code
+        && excerpt != std::string::npos
+        && reference.code.find(fragment.code, excerpt + fragment.code.size()) == std::string::npos,
+        "The published complete reference must contain its unchanged capacity fragment exactly once");
     std::size_t executions = 0;
     for (const std::size_t index : {std::size_t{0}, std::size_t{21}}) {
         CppRunRequest request;
@@ -967,7 +977,7 @@ void actual_reference_runs(const Fixture& fixture, const std::filesystem::path& 
         const auto result = run_cpp(request);
         require(result.error_utf8.empty() && result.compilation.succeeded(),
             "Actual U11 case-order MSVC compilation failed: "
-                + result.error_utf8 + result.compilation.stderr_bytes);
+                + result.error_utf8 + result.compilation.stdout_bytes + result.compilation.stderr_bytes);
         const auto execution = capture_cpp_execution(request, result);
         require(execution.execution_completed
             && evaluate_cpp_output_check(*before.output_check, execution, request.revision).verdict
