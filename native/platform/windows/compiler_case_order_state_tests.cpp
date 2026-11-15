@@ -176,13 +176,19 @@ StateData seeded_state(const Lesson& lesson, std::string_view owner, bool save_d
     data.preferences["case_order_qa"]["enabled"] = true;
     data.preferences["case_order_qa"]["counter"] = std::int64_t{29};
     data.preferences["case_order_qa"]["labels"] = std::vector<std::string>{"one", " \t two\r\n"};
+    // These are three independent QA page owners, including for one-page
+    // lesson fixtures. Reusing a page deliberately replaces its prior slot.
     auto history = narration::begin({}, "case-order-a", "qa-owner-a",
-        {0, 173, 0, false}, "stored source A", lesson.pages.front().stable_id);
+        {0, 173, 0, false}, "stored source A", "qa_case_order_lesson_a/page_0000");
     history = narration::begin(std::move(history), "case-order-b", "qa-owner-b",
-        {1, 239, 0, false}, "stored source B", lesson.pages.back().stable_id);
+        {1, 239, 0, false}, "stored source B", "qa_case_order_lesson_b/page_0000");
     history = narration::begin(std::move(history), "case-order-c", "qa-owner-c",
-        {2, 317, 0, false}, "stored source C", lesson.pages.front().stable_id);
+        {2, 317, 0, false}, "stored source C", "qa_case_order_lesson_c/page_0000");
+    require(history.entries.size() == 3,
+        "Case-order QA must seed three distinct page bookmarks before adoption");
     narration::write_history(data, history);
+    require(narration::read_history(data) == history,
+        "Case-order QA bookmarks must round-trip exactly before adoption");
     validate_lesson_state(data, lesson);
     return data;
 }

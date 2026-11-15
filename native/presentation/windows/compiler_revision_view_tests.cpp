@@ -376,6 +376,20 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
     for(const std::string mode:{"none","old-first","new-first"}) {
         state::StateData data;state::prepare_lesson_state(data,before);
         data.preferences["native_windows"]["ui_language"]=std::string("es");
+        // These independently evaluated prerequisite answers make the saved
+        // target page reachable; they do not credit either compiler contract.
+        for(std::size_t page=0;page<=position->page;++page)for(const auto& owner:before.pages[page].blocks) {
+            state::Response answer;
+            if(owner.type==curriculum::BlockType::multiple_choice&&owner.correct_index) {
+                answer.selected=static_cast<std::int64_t>(*owner.correct_index);
+                answer.correct=curriculum::evaluate_choice(owner,*owner.correct_index).correct;
+            } else if(owner.type==curriculum::BlockType::output_prediction&&!owner.answers.empty()) {
+                answer.answer=owner.answers.front();
+                answer.correct=curriculum::evaluate_text_answer(owner,answer.answer).correct;
+            } else continue;
+            check(answer.correct,"The case-order view prerequisite answer is invalid");
+            state::put_response(data,before,owner,answer);
+        }
         for(const auto& page:before.pages)for(const auto& owner:page.blocks)
             if(owner.type==curriculum::BlockType::cpp_compiler&&owner.output_check&&owner.stable_id!=id)
                 seed_one(data,before,owner,owner.initial_code,0,"Correcto\nPrerrequisito QA.");
@@ -385,9 +399,11 @@ void compiler_case_order_keeps_first_case_gate(const std::filesystem::path& befo
         state::Draft draft;draft.source=source;draft.input=" entrada personal\n";
         draft.selection_start=3;draft.selection_end=7;
         const auto key=curriculum::draft_key("programming",before,old);state::put_draft(data,key,draft);
-        state::save_current_page(data,before,position->page);
+        for(std::size_t page=0;page<=position->page;++page)state::save_current_page(data,before,page);
         View fixture(after,data);
         const auto verify=[&] {
+            check(lesson_page_state(fixture.view).index==position->page,
+                "The case-order view did not reach its independently prepared editor page");
             const auto saved=fixture.saved();const bool complete=mode=="new-first";
             check(windows::compiler_puzzle_completed(saved,after,current)==complete,
                 "The native view confused an earlier first case with the current one");
