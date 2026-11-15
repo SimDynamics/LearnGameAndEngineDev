@@ -440,8 +440,21 @@ std::size_t verify_formatted_compiler_retirement(const std::filesystem::path& di
                     same_region(previous[i],archived.regions[i],"formatted compiler retirement",i);
                 saved=view.saved();verify(saved);
             }
-            {state::StateStore store(environment.paths.root);check(store.load()==saved,
-                "Physical reopening changed the retired formatted compiler state");}
+            {state::StateStore store(environment.paths.root);auto physical=store.load();
+                verify(physical);
+                // Opening an unchanged page prepares authenticated provenance
+                // in memory; it does not mark the view dirty or force a write.
+                // Compare both snapshots at that same adoption stage, retaining
+                // every original preference, before explicitly persisting it.
+                state::prepare_lesson_state(physical,after);
+                check(physical==saved,
+                    "Physical reopening changed more than authenticated retirement adoption");
+                store.save(physical);
+            }
+            {state::StateStore store(environment.paths.root);const auto physical=store.load();
+                check(physical==saved,"Explicitly saved retired compiler state changed on reopening");
+                verify(physical);
+            }
             const auto empty_environment=resolve_windows_environment({ProfileId::Codex,
                 L"sfe-"+std::to_wstring(GetCurrentProcessId())+L"-"+
                     std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(executed),false});
