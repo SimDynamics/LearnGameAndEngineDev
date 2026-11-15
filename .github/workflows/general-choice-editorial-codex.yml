@@ -7,6 +7,17 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/text_semantics.py
       - scripts/curriculum/test_general_choice_editorial.py
+      - scripts/curriculum/test_published_u12_question_editorials.py
+      - scripts/curriculum/editorial_fixture_history.py
+      - scripts/curriculum/code_format_fixture_source.py
+      # Check live descendants when Work publishes compatible editorial changes.
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json
+      - app/src/main/assets/content/en/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json
+      - app/src/main/assets/content/en/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json
+      - app/src/main/assets/content/fr/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_estado_del_formato_y_flujos_independientes.json
+      - app/src/main/assets/content/fr/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_leer_un_grupo_con_cierre_propio.json
       - scripts/curriculum/math_prompt_fixture_source.py
       - scripts/curriculum/test_math_prompt_revision.py
       - scripts/windows/Test-NativeCurricularCI.ps1
@@ -52,10 +63,14 @@ jobs:
         run: |
           python3 -m py_compile scripts/curriculum/stable_state_layout.py \
             scripts/curriculum/test_general_choice_editorial.py \
+            scripts/curriculum/test_published_u12_question_editorials.py \
+            scripts/curriculum/editorial_fixture_history.py \
             scripts/curriculum/math_prompt_fixture_source.py \
             scripts/curriculum/test_math_prompt_revision.py
           python3 -B -m unittest discover \
             -s scripts/curriculum -p test_general_choice_editorial.py -v
+          python3 -B -m unittest discover \
+            -s scripts/curriculum -p test_published_u12_question_editorials.py -v
           python3 -B -m unittest discover \
             -s scripts/curriculum -p test_math_prompt_revision.py -v
   math-prompt-windows:

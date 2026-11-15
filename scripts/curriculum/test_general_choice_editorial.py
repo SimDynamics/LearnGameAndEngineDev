@@ -1,6 +1,7 @@
 """General choice wording revision: preserved responses and exact provenance.
 
-The real U9L13 published choice is read but never rewritten by these tests.
+Fixtures retain a pinned real U9L13 predecessor after Work updates the live
+lesson. The current curriculum is validated separately and never rewritten.
 """
 from copy import deepcopy
 import hashlib
@@ -10,27 +11,47 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
+import editorial_fixture_history as history
 import stable_state_layout as layout
 
 
-SOURCE = (
-    Path(__file__).resolve().parents[2]
-    / "app/src/main/assets/content/es/programming/cpp_fundamentals"
-    / "datos_propios_y_estado_valido"
-    / "lesson_construir_y_comprobar_un_modelo_de_pedidos.json"
-)
+RELATIVE = ("programming/cpp_fundamentals/datos_propios_y_estado_valido/"
+            "lesson_construir_y_comprobar_un_modelo_de_pedidos.json")
+SOURCE = history.CONTENT / "es" / RELATIVE
 OWNER = "block_0007_0002"
 REVISED = (
     "La operación incumple la condición para aceptar la transición, "
     "aunque conserve una cantidad válida."
 )
+EXPORT_MODES = ("--write-original", "--write-reviewed", "--write-reviewed-marked")
+
+
+def fixture_bytes(mode: str) -> bytes:
+    if mode not in EXPORT_MODES:
+        raise ValueError(f"Unknown U9 editorial fixture export: {mode}")
+    raw = history.historical_bytes("es/" + RELATIVE)
+    published = json.loads(raw)
+    layout.validate(published)
+    if mode == "--write-original":
+        return raw
+    if mode == "--write-reviewed-marked":
+        marker = next(field for field in published["textSemantics"]["fields"]
+                      if field["block"] == OWNER and field["path"] == "/options/0")
+        marker["spans"] = [layout.text_semantics.select(
+            layout._blocks(published)[OWNER]["options"][0],
+            "La operación", "prose", reading="natural")]
+    revised = layout.revise_choice_editorial(published, OWNER, 0, REVISED)
+    layout.validate_transition(published, revised)
+    return (json.dumps(revised, ensure_ascii=False, indent=2, allow_nan=False)
+            + "\n").encode("utf-8")
 
 
 class GeneralChoiceEditorialTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original = json.loads(SOURCE.read_text(encoding="utf-8"))
+        cls.original = json.loads(fixture_bytes("--write-original"))
         layout.validate(cls.original)
         cls.block = layout._blocks(cls.original)[OWNER]
         assert cls.block["correctIndex"] == 0
@@ -38,6 +59,70 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
 
     def revise(self):
         return layout.revise_choice_editorial(self.original, OWNER, 0, REVISED)
+
+    def test_pinned_sources_reject_tampered_bytes_or_missing_history(self):
+        for relative in history.SOURCE_SHA256:
+            raw = history.historical_bytes(relative)
+            with self.subTest(source=relative), self.assertRaises(ValueError):
+                history.verify_bytes(relative, raw + b"\n")
+        history.historical_bytes.cache_clear()
+        missing = subprocess.CalledProcessError(128, ["git", "show"])
+        with patch.object(history.subprocess, "check_output", side_effect=missing), \
+                patch.object(Path, "read_text", side_effect=AssertionError("Live fallback")), \
+                patch.object(Path, "read_bytes", side_effect=AssertionError("Live fallback")):
+            with self.assertRaises(subprocess.CalledProcessError):
+                history.historical_bytes("es/" + RELATIVE)
+
+    def test_live_lesson_preserves_origin_and_historical_provenance(self):
+        current = json.loads(SOURCE.read_text(encoding="utf-8"))
+        history.validate_live_descendant(self.original, current)
+
+    def test_live_validation_rejects_origin_archive_and_answer_tampering(self):
+        reviewed = self.revise()
+        variants = []
+        changed = deepcopy(reviewed)
+        changed["stateLayout"]["origin"][0]["blocks"][0]["sha256"] = "0" * 64
+        variants.append(changed)
+        changed = deepcopy(reviewed)
+        changed["stateLayout"]["choiceRevisions"][0]["block"]["options"][0] = "Origen falso"
+        variants.append(changed)
+        changed = deepcopy(reviewed)
+        layout._blocks(changed)[OWNER]["correctIndex"] = 1
+        variants.append(changed)
+        for index, current in enumerate(variants):
+            with self.subTest(mutation=index), self.assertRaises(ValueError):
+                history.validate_live_descendant(self.original, current)
+
+    def test_exports_ignore_live_correction_and_later_compatible_addition(self):
+        expected = {mode: fixture_bytes(mode) for mode in EXPORT_MODES}
+        reviewed = json.loads(expected["--write-reviewed"])
+        layout.validate_transition(self.original, reviewed)
+        plan = deepcopy(reviewed["stateLayout"]["current"])
+        identity = "qa_editorial_followup_note"
+        plan[-1]["blocks"].append(identity)
+        expanded = layout.reorder(reviewed, plan, [{
+            "id": identity, "storage": {"page": 900000, "block": 0},
+            "progressPage": plan[-1]["id"],
+            "block": {"type": "paragraph", "text": "Seguimiento editorial de QA."},
+        }])
+        unmarked = deepcopy(expanded)
+        expanded["textSemantics"]["fields"].append(
+            layout.text_semantics.make_field(expanded, identity, "/text", []))
+        layout.validate_transition(unmarked, expanded)
+
+        read_text, read_bytes = Path.read_text, Path.read_bytes
+        for label, current in (("corrected", reviewed), ("expanded", expanded)):
+            history.validate_live_descendant(self.original, current)
+            payload = json.dumps(current, ensure_ascii=False).encode("utf-8")
+            def live_text(path, *args, **kwargs):
+                return payload.decode("utf-8") if path == SOURCE else read_text(path, *args, **kwargs)
+            def live_bytes(path):
+                return payload if path == SOURCE else read_bytes(path)
+            with self.subTest(publication=label), \
+                    patch.object(Path, "read_text", live_text), \
+                    patch.object(Path, "read_bytes", live_bytes):
+                for mode in EXPORT_MODES:
+                    self.assertEqual(expected[mode], fixture_bytes(mode))
 
     def test_one_compatible_choice_keeps_complete_response_contract(self):
         changed = self.revise()
@@ -171,11 +256,14 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         # A published choice and its Spanish lesson are never rewritten here.
         published_bytes = SOURCE.read_bytes()
         with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "choice-original.json"
+            source.write_bytes(history.historical_bytes("es/" + RELATIVE))
+            original_bytes = source.read_bytes()
             proposal = Path(directory) / "choice-proposal.json"
             command = [
                 sys.executable, "-B", str(Path(layout.__file__)),
-                "revise-choice-editorial", str(SOURCE),
-                "--previous", str(SOURCE), "--identity", OWNER,
+                "revise-choice-editorial", str(source),
+                "--previous", str(source), "--identity", OWNER,
                 "--option-index", "0", "--replacement", REVISED,
                 "--output", str(proposal),
             ]
@@ -185,6 +273,7 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             self.assertEqual(self.revise(),
                              json.loads(proposal.read_text(encoding="utf-8")))
             self.assertEqual(published_bytes, SOURCE.read_bytes())
+            self.assertEqual(original_bytes, source.read_bytes())
 
             # Exclusive output creation avoids replacing another author's work.
             repeated = subprocess.run(command, capture_output=True, text=True,
@@ -211,6 +300,7 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
             self.assertNotEqual(0, outcome.returncode)
             self.assertFalse(rejected.exists())
             self.assertEqual(published_bytes, SOURCE.read_bytes())
+            self.assertEqual(original_bytes, source.read_bytes())
 
 
 class GeneralQuestionEditorialTests(unittest.TestCase):
@@ -218,11 +308,7 @@ class GeneralQuestionEditorialTests(unittest.TestCase):
 
     @staticmethod
     def lesson(relative: str):
-        root = Path(__file__).resolve().parents[2] / "app/src/main/assets/content"
-        family = {
-            locale: json.loads((root / locale / relative).read_text(encoding="utf-8"))
-            for locale in ("es", "en", "fr")
-        }
+        family = history.historical_family(relative)
         return family, "app/src/main/assets/content/es/" + relative
 
     @staticmethod
@@ -390,20 +476,9 @@ class GeneralQuestionEditorialTests(unittest.TestCase):
             previous_document=before, current_document=repainted))
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) == 3 and sys.argv[1] in {
-            "--write-reviewed", "--write-reviewed-marked"}:
-        published = json.loads(SOURCE.read_text(encoding="utf-8"))
-        if sys.argv[1] == "--write-reviewed-marked":
-            marker = next(field for field in published["textSemantics"]["fields"]
-                          if field["block"] == OWNER and field["path"] == "/options/0")
-            marker["spans"] = [layout.text_semantics.select(
-                layout._blocks(published)[OWNER]["options"][0],
-                "La operación", "prose", reading="natural")]
-        revised = layout.revise_choice_editorial(published, OWNER, 0, REVISED)
+    if len(sys.argv) == 3 and sys.argv[1] in EXPORT_MODES:
         output = Path(sys.argv[2])
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(revised, ensure_ascii=False, indent=2) + "\n",
-                          encoding="utf-8")
+        output.write_bytes(fixture_bytes(sys.argv[1]))
     else:
         unittest.main()

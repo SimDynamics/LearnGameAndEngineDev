@@ -315,40 +315,40 @@ endfunction()
 # ReaderBuild. The real hidden lesson view does not require audio synthesis.
 function(lgaed_add_general_choice_editorial_tests)
     add_test(NAME native.general_choice_editorial_authoring
-        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+        COMMAND ${_lgaed_state_fixture_python} -m unittest discover
             -s "${CMAKE_SOURCE_DIR}/scripts/curriculum"
             -p test_general_choice_editorial.py)
     set_tests_properties(native.general_choice_editorial_authoring PROPERTIES TIMEOUT 45)
     set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_general_choice_editorial.py")
     set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL
-        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json")
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-original.json")
     set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed.json")
-    add_custom_command(OUTPUT "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
-        COMMAND "${Python3_EXECUTABLE}" -B "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
-            --write-reviewed "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
-        DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
-            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
-            "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
-        COMMENT "Authenticating U9 editorial choice review without changing published lessons"
-        VERBATIM)
     set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED
         "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed-marked.json")
-    add_custom_command(OUTPUT "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
-        COMMAND "${Python3_EXECUTABLE}" -B "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
+    # All three snapshots share one authenticated historical source. An
+    # editorial correction in the live lesson must not rewrite its QA origin.
+    add_custom_command(
+        OUTPUT "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+        COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
+            --write-original "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
+        COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
+            --write-reviewed "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
+        COMMAND ${_lgaed_state_fixture_python} "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
             --write-reviewed-marked "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
         DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
-            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/editorial_fixture_history.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
-        COMMENT "Verifying a genuine UTF-16 highlight in archived U9 choice reading"
+        COMMENT "Authenticating historical U9 choice, revision and UTF-16 reading fixtures"
         VERBATIM)
     add_custom_target(lgaed_general_choice_editorial_fixture
-        DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
+        DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}")
     add_executable(lgaed_general_choice_editorial_tests
         native/platform/windows/general_choice_editorial_tests.cpp)

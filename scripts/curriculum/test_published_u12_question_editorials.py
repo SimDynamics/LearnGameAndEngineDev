@@ -1,8 +1,9 @@
 """Real U12L6/U12L22 ordinary editorial authoring, never editing curriculum.
 
-Work owns the exact wording and technical narration spans. Both candidate
-updates are prepared only in memory; the published sources and state remain
-byte-exact. The usual curriculum validator must accept their old addresses.
+Work owns the exact wording and technical narration spans. Both candidates
+use a fixed historical publication, so later compatible curricular edits do
+not replace their predecessor. Current sources are checked separately and
+remain byte-exact. The validator must still accept the historical addresses.
 """
 from __future__ import annotations
 
@@ -13,7 +14,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
+import editorial_fixture_history as history
 import stable_state_layout as state
 import validar_json_programacion as contract
 
@@ -35,10 +38,7 @@ CASES = {
 
 def family(name: str) -> dict[str, dict]:
     lesson = "programming/cpp_fundamentals/" + CASES[name]["relative"]
-    return {
-        locale: json.loads((CONTENT / locale / lesson).read_text(encoding="utf-8"))
-        for locale in ("es", "en", "fr")
-    }
+    return history.historical_family(lesson)
 
 
 def authored_fields(document: dict, name: str) -> dict:
@@ -94,7 +94,90 @@ def proposal(name: str) -> tuple[dict, dict, dict]:
 
 
 class PublishedU12QuestionTest(unittest.TestCase):
+    def test_live_lessons_preserve_their_historical_families_and_provenance(self):
+        for name in CASES:
+            lesson = "programming/cpp_fundamentals/" + CASES[name]["relative"]
+            current = {
+                locale: json.loads((CONTENT / locale / lesson).read_text(encoding="utf-8"))
+                for locale in ("es", "en", "fr")
+            }
+            with self.subTest(lesson=name):
+                history.validate_live_descendant(family(name)["es"], current["es"])
+                state.check_localized_family(list(current.values()), list(current))
+
+    def test_live_validation_rejects_origin_provenance_and_answer_tampering(self):
+        for name in CASES:
+            before, after, _ = proposal(name)
+            identity = CASES[name]["identity"]
+            variants = []
+            changed = deepcopy(after)
+            changed["stateLayout"]["origin"][0]["blocks"][0]["sha256"] = "0" * 64
+            variants.append(changed)
+            changed = deepcopy(after)
+            changed["stateLayout"]["editorial"][0]["beforeSha256"] = "0" * 64
+            variants.append(changed)
+            changed = deepcopy(after)
+            key = "correctIndex" if name == "formatting" else "answers"
+            state._blocks(changed)[identity][key] = 0 if name == "formatting" else ["FALSO"]
+            variants.append(changed)
+            for index, current in enumerate(variants):
+                with self.subTest(lesson=name, mutation=index), self.assertRaises(ValueError):
+                    history.validate_live_descendant(before, current)
+
+    def test_exports_ignore_live_corrections_and_later_compatible_additions(self):
+        from code_format_fixture_source import real_u12_editorial_fixtures
+        from test_general_choice_editorial import GeneralQuestionEditorialTests
+
+        def encoded_exports():
+            return {name: (json.dumps(document, ensure_ascii=False, indent=2,
+                                     allow_nan=False) + "\n").encode("utf-8")
+                    for name, document in real_u12_editorial_fixtures().items()}
+
+        expected = encoded_exports()
+        corrected, expanded = {}, {}
+        for name in CASES:
+            before, after, _ = proposal(name)
+            state.validate_transition(before, after)
+            lesson = "programming/cpp_fundamentals/" + CASES[name]["relative"]
+            source = CONTENT / "es" / lesson
+            corrected[source] = after
+            plan = deepcopy(after["stateLayout"]["current"])
+            identity = "qa_editorial_followup_note"
+            plan[-1]["blocks"].append(identity)
+            added = state.reorder(after, plan, [{
+                "id": identity, "storage": {"page": 900000, "block": 0},
+                "progressPage": plan[-1]["id"],
+                "block": {"type": "paragraph", "text": "Seguimiento editorial de QA."},
+            }])
+            unmarked = deepcopy(added)
+            added["textSemantics"]["fields"].append(
+                state.text_semantics.make_field(added, identity, "/text", []))
+            state.validate_transition(unmarked, added)
+            history.validate_live_descendant(before, after)
+            history.validate_live_descendant(before, added)
+            expanded[source] = added
+
+        read_text, read_bytes = Path.read_text, Path.read_bytes
+        for label, documents in (("corrected", corrected), ("expanded", expanded)):
+            payloads = {path: json.dumps(document, ensure_ascii=False).encode("utf-8")
+                        for path, document in documents.items()}
+            def live_text(path, *args, **kwargs):
+                return (payloads[path].decode("utf-8") if path in payloads
+                        else read_text(path, *args, **kwargs))
+            def live_bytes(path):
+                return payloads[path] if path in payloads else read_bytes(path)
+            with self.subTest(publication=label), \
+                    patch.object(Path, "read_text", live_text), \
+                    patch.object(Path, "read_bytes", live_bytes):
+                self.assertEqual(expected, encoded_exports())
+                for name in CASES:
+                    lesson = "programming/cpp_fundamentals/" + CASES[name]["relative"]
+                    self.assertEqual(family(name), GeneralQuestionEditorialTests.lesson(lesson)[0])
+
     def test_both_authored_real_edits_keep_their_original_answers_and_narration(self):
+        live_bytes = {CONTENT / locale / "programming/cpp_fundamentals" / spec["relative"]: None
+                      for spec in CASES.values() for locale in ("es", "en", "fr")}
+        live_bytes = {path: path.read_bytes() for path in live_bytes}
         for name in CASES:
             with self.subTest(lesson=name):
                 before, after, documents = proposal(name)
@@ -144,6 +227,7 @@ class PublishedU12QuestionTest(unittest.TestCase):
                                              ["es", "en", "fr"])
                 for locale in ("es", "en", "fr"):
                     self.assertEqual(documents[locale], family(name)[locale])
+        self.assertEqual(live_bytes, {path: path.read_bytes() for path in live_bytes})
 
     def test_reject_changes_to_answer_other_guides_identity_and_authored_markers(self):
         for name in CASES:
