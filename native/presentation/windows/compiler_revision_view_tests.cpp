@@ -53,7 +53,14 @@ struct View {
         state::StateStore store(environment.paths.root);(void)store.load();store.save(next);open();
     }
     state::StateData saved(){check(flush_lesson_view(view),"Cannot flush compiler revision QA");return read_lesson_state(view);}
-    HWND control(std::size_t block,int part){const auto item=descendant(view,control_id(block,part));check(item!=nullptr,"Missing compiler revision control");return item;}
+    HWND control(std::size_t block,int part){
+        const auto id=control_id(block,part);
+        const auto item=descendant(view,id);
+        if(!item)throw std::runtime_error("Missing compiler revision control: page="+
+            std::to_string(lesson_page_state(view).index)+", block="+std::to_string(block)+
+            ", part="+std::to_string(part)+", id="+std::to_string(id));
+        return item;
+    }
     std::string text(std::size_t block,int part){return edit_text(control(block,part));}
     void reset(std::size_t block){SendMessageW(control(block,12),BM_CLICK,0,0);pump();}
 };
@@ -455,10 +462,19 @@ void compiler_cases_keep_first_case_gate(const std::filesystem::path& before_fil
         }
         View fixture(after,data,replace_cases?matching_prerequisite_hooks():LessonViewHooks{});
         const auto wait_for_editor=[&] {
+            const auto ready=[&] {
+                // begin_entry already exposes the requested page while saved
+                // math is being checked. Wait for the actual editor controls,
+                // not for any correct verdict or an earned achievement.
+                return lesson_page_state(fixture.view).index==position->page&&
+                    descendant(fixture.view,control_id(position->block,10))&&
+                    descendant(fixture.view,control_id(position->block,40))&&
+                    descendant(fixture.view,control_id(position->block,12));
+            };
             const auto deadline=GetTickCount64()+5000;
-            while(lesson_page_state(fixture.view).index!=position->page&&GetTickCount64()<deadline){pump();Sleep(5);}
-            check(lesson_page_state(fixture.view).index==position->page,
-                "The case-order view did not reach its independently prepared editor page");
+            while(!ready()&&GetTickCount64()<deadline){pump();Sleep(5);}
+            check(ready(),
+                "The case-order view did not materialize its independently prepared editor controls");
         };
         const auto verify=[&] {
             wait_for_editor();
@@ -517,3 +533,4 @@ int main(int argc,char** argv){const auto apartment=OleInitialize(nullptr);if(FA
         else compiler_revisions_keep_prior_progress(argc==2);}catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();return result;
 }
+
