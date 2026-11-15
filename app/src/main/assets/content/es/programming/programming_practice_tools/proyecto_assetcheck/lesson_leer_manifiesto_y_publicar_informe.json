@@ -2303,6 +2303,118 @@
           ]
         },
         {
+          "type": "heading",
+          "text": "Elegir un dato que realmente descubra el error"
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera una implementación defectuosa que elimina el CR al llegar a EOF, pero todavía cuenta la última línea. Con un archivo que sólo contenga CR, el lector correcto entrega ese byte al validador y obtiene FORMATO. La implementación defectuosa entrega una cadena vacía, que también obtiene FORMATO. Coinciden el rechazo y el código aunque se haya borrado un dato indebidamente. Para descubrir ese defecto hace falta un caso que produzca resultados distintos con ambos procedimientos; no basta con repetir una entrada que ambos rechazan (Kernighan & Pike, 1999)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_u4l6_control_que_distingue_cr",
+          "question": "Para el defecto descrito, ¿qué entrada permite distinguir borrar el CR final de conservarlo correctamente?",
+          "options": [
+            "Un archivo vacío, sin CR, LF ni otro byte.",
+            "Un archivo con un único CR y después EOF, sin LF.",
+            "Vela malla 5 seguido de CR y después EOF, sin LF."
+          ],
+          "correctIndex": 2,
+          "explanation": "Conservar el CR hace que Vela malla 5 más ese control sea FORMATO. Borrarlo deja una declaración válida y provoca una admisión incorrecta. El archivo vacío no ejercita el CR; sólo CR puede producir FORMATO por dos motivos distintos.",
+          "reviewFeedback": [
+            "El caso vacío no contiene el byte cuya conservación quieres comprobar.",
+            "Este es precisamente el caso en el que ambas implementaciones pueden rechazar la línea.",
+            "El contenido restante cumple las reglas, de modo que borrar CR cambia el resultado observable."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Reunir las fronteras en una revisión con un prefijo válido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepararemos fronteras.dat con las seis líneas mostradas. Entre ellas habrá LF y, después del último 2, se guardará un único CR sin LF posterior. Usa la receta de bytes para crear ese control final, que no aparece como un carácter visible en el bloque. La primera línea válida permite comprobar que los rechazos posteriores no borran su admisión."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Faro textura 5\n_Mal imagen 0 extra\n_Mal imagen 0\nValido imagen 0\nValido malla 0\nEco sonido 2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fija el resultado antes de ejecutar:\n\nLa línea 1 se admite como Faro, textura, tamaño 5.\n\nLa línea 2 tiene un campo extra: FORMATO tiene prioridad sobre los otros defectos.\n\nLa línea 3 falla por ID; la línea 4 por TIPO; la línea 5 por TAMANO.\n\nLa línea 6 conserva el CR final y falla por FORMATO, aunque Eco sonido 2 sin ese byte sería válido.\n\nLa revisión termina: no apareció un error global. Hay una admisión, cinco rechazos y código 1. stdout y stderr se comparan por separado, sin mezclar el orden de ambos canales."
+        },
+        {
+          "type": "heading",
+          "text": "stdout esperado para fronteras.dat"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "ACEPTADO linea=1 id=Faro tipo=textura bytes=5\nRESUMEN lineas=6 aceptados=1 rechazados=5\n"
+        },
+        {
+          "type": "heading",
+          "text": "stderr esperado para fronteras.dat"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "RECHAZO linea=2 causa=FORMATO\nRECHAZO linea=3 causa=ID\nRECHAZO linea=4 causa=TIPO\nRECHAZO linea=5 causa=TAMANO\nRECHAZO linea=6 causa=FORMATO\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar un límite global después de haber admitido registros"
+        },
+        {
+          "type": "paragraph",
+          "text": "La otra entrada, limite_prefijo.dat, contiene Faro textura 5, Eco sonido 2 y después 99 líneas vacías. Todas terminan en LF. Las dos primeras declaraciones son válidas; las siguientes líneas cuentan aunque estén vacías. Al llegar a la línea 101, la revisión falla por LIMITE_LINEAS. El cliente debe escribir cero bytes en stdout, únicamente la línea siguiente en stderr y devolver 2. No debe publicar las admisiones ni un resumen parcial. Este contraste no provoca una avería de lectura: su causa global es el exceso de líneas."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "ERROR causa=LIMITE_LINEAS\n"
+        },
+        {
+          "type": "heading",
+          "text": "Crear las dos entradas sin modificar las muestras publicadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Windows PowerShell 5.1, desde AssetCheck y con el cliente ya construido, ejecuta el bloque siguiente. Test-Path comprueba el ejecutable y busca el primer nombre libre para una carpeta de resultados dentro de build. New-Item la crea y Resolve-Path obtiene su ruta completa. Las carpetas anteriores se conservan.\n\nEl primer arreglo contiene seis cadenas. [char]10 representa LF y [char]13 representa CR; [string] convierte el separador al texto que recibe Join. Se coloca LF entre esas seis cadenas y CR al final. @('') crea un arreglo con una cadena vacía; multiplicarlo por 99 repite ese elemento. El signo + concatena esas 99 cadenas con las dos declaraciones. Join y el LF final cierran sus 101 líneas. ASCII.GetBytes y WriteAllBytes guardan exactamente esos bytes, sin BOM ni traducción de terminadores. Get-Item consulta las longitudes y Get-FileHash calcula SHA-256 para contrastar el contenido."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "if (-not (Test-Path -LiteralPath '.\\build\\assetcheck.exe' -PathType Leaf)) { throw 'Completa primero la construccion del cliente.' }\n$numeroRegresion = 1\nwhile (Test-Path -LiteralPath \".\\build\\regresion_bordes_$numeroRegresion\") { $numeroRegresion += 1 }\n$carpetaRegresion = \".\\build\\regresion_bordes_$numeroRegresion\"\nNew-Item -ItemType Directory -Path $carpetaRegresion -ErrorAction Stop | Out-Null\n$directorioRegresion = (Resolve-Path -LiteralPath $carpetaRegresion -ErrorAction Stop).Path\n$lineasFronteras = @(\n    'Faro textura 5'\n    '_Mal imagen 0 extra'\n    '_Mal imagen 0'\n    'Valido imagen 0'\n    'Valido malla 0'\n    'Eco sonido 2'\n)\n$textoFronteras = [string]::Join([string][char]10, $lineasFronteras) + [char]13\n$lineasLimite = @('Faro textura 5', 'Eco sonido 2') + (@('') * 99)\n$textoLimite = [string]::Join([string][char]10, $lineasLimite) + [char]10\n$rutaFronteras = Join-Path $directorioRegresion 'fronteras.dat'\n$rutaLimite = Join-Path $directorioRegresion 'limite_prefijo.dat'\n[IO.File]::WriteAllBytes($rutaFronteras, [Text.Encoding]::ASCII.GetBytes($textoFronteras))\n[IO.File]::WriteAllBytes($rutaLimite, [Text.Encoding]::ASCII.GetBytes($textoLimite))\nGet-Item -LiteralPath $rutaFronteras, $rutaLimite | Select-Object Name, Length\nGet-FileHash -LiteralPath $rutaFronteras, $rutaLimite -Algorithm SHA256\n\"CarpetaRegresion=$directorioRegresion\""
+        },
+        {
+          "type": "paragraph",
+          "text": "fronteras.dat debe tener 93 bytes y huella 3710009967D4DA88E53968A83BA2B19ED37CB23107F002CE1B83659185E3BB99.\n\nlimite_prefijo.dat debe tener 127 bytes y huella A23343A769698E610BF50AC77C2AB6D4E6516D5F4C4298AF6858F86E18439E9B.\n\nSi no coinciden, conserva los archivos y revisa su preparación antes de atribuir la diferencia al lector. Una entrada alterada no comprueba el caso que acabas de definir."
+        },
+        {
+          "type": "heading",
+          "text": "Observar las dos revisiones del cliente original"
+        },
+        {
+          "type": "paragraph",
+          "text": "Continúa en la misma PowerShell y carpeta AssetCheck. Cada cadena orden prepara una llamada a CMD: /d desactiva AutoRun y /c ejecuta esa orden y termina. 1> guarda stdout y 2> guarda stderr en archivos distintos dentro de la carpeta nueva. Inmediatamente después se conserva LASTEXITCODE. Get-Content con ASCII permite leer los informes; los archivos .bin conservan los bytes originales.\n\nCompara el primer código con 1 y sus dos canales con los textos anteriores. Para el límite, compara el código con 2, comprueba que stdout tenga longitud cero y que stderr contenga sólo ERROR causa=LIMITE_LINEAS con su salto final. El código 2 es aquí el resultado esperado de esa entrada, no una configuración o compilación fallida."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "$ordenFronteras = '.\\build\\assetcheck.exe \"' + $rutaFronteras + '\" 1>\"' + $directorioRegresion + '\\original_local.stdout.bin\" 2>\"' + $directorioRegresion + '\\original_local.stderr.bin\"'\ncmd.exe /d /c $ordenFronteras\n$codigoFronteras = $LASTEXITCODE\n\"CodigoFronteras=$codigoFronteras\"\nGet-Content -LiteralPath (Join-Path $directorioRegresion 'original_local.stdout.bin') -Encoding ASCII\nGet-Content -LiteralPath (Join-Path $directorioRegresion 'original_local.stderr.bin') -Encoding ASCII\n\n$ordenLimite = '.\\build\\assetcheck.exe \"' + $rutaLimite + '\" 1>\"' + $directorioRegresion + '\\original_limite.stdout.bin\" 2>\"' + $directorioRegresion + '\\original_limite.stderr.bin\"'\ncmd.exe /d /c $ordenLimite\n$codigoLimite = $LASTEXITCODE\n\"CodigoLimite=$codigoLimite\"\nGet-Content -LiteralPath (Join-Path $directorioRegresion 'original_limite.stdout.bin') -Encoding ASCII\nGet-Content -LiteralPath (Join-Path $directorioRegresion 'original_limite.stderr.bin') -Encoding ASCII"
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Get-Item -LiteralPath (Join-Path $directorioRegresion 'original_limite.stdout.bin') | Select-Object Length"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos son dos contrastes directos adicionales del ejecutable construido. Sus archivos quedan en una carpeta generada: no cambian las fuentes, las muestras publicadas ni el guion de veintidós casos. Para convertirlos en regresión automatizada, el guion deberá preparar esas entradas, declarar sus esperados y comparar código y canales completos. Ejecutar los casos por consola no los incorpora automáticamente a CTest. Un LIMITE_LINEAS observado tampoco acredita el fallo LECTURA del proceso, que necesita observar un fallo del origen durante una ejecución de ese cliente. El origen controlado de la biblioteca no es por sí solo esa prueba del proceso."
+        },
+        {
           "type": "paragraph",
           "text": "El manifiesto de seis líneas y estos casos comprueban comportamientos concretos. No demuestran que los recursos declarados existan, que todas las entradas posibles se hayan ensayado ni que el estudiante ya haya creado una ampliación propia.\n\nConserva esa separación en la documentación: un resultado observado tiene datos y condiciones identificables; una función futura todavía no es una capacidad del programa. Las siguientes ampliaciones mantendrán las pruebas de los consumidores existentes para comprobar que no se pierda su comportamiento."
         },
@@ -6163,6 +6275,20 @@
         "path": "/text",
         "sourceSha256": "b9305d8eaaa1590f4b0ec77283abc9dd05fc3e55b27cabded1d2b026ed89cc09",
         "spans": []
+      },
+      {
+        "block": "u4l6_bordes_paragraph_control",
+        "path": "/text",
+        "sourceSha256": "51c43b996dc8de0cb7c0b2b579f55bf61e686a98743f6da1cff848132f87ed66",
+        "spans": [
+          {
+            "start": 538,
+            "end": 562,
+            "text": "(Kernighan & Pike, 1999)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -7014,6 +7140,29 @@
           "u4l6_variacion_precedencia_resultado",
           "u4l6_variacion_cr_intro",
           "u4l6_variacion_cr_puzzle",
+          "u4l6_bordes_heading_control",
+          "u4l6_bordes_paragraph_control",
+          "u4l6_bordes_multiple_choice_control",
+          "u4l6_bordes_heading_datos",
+          "u4l6_bordes_paragraph_datos",
+          "u4l6_bordes_code_entrada",
+          "u4l6_bordes_paragraph_esperados",
+          "u4l6_bordes_heading_stdout_esperado",
+          "u4l6_bordes_code_stdout",
+          "u4l6_bordes_heading_stderr_esperado",
+          "u4l6_bordes_code_stderr",
+          "u4l6_bordes_heading_limite",
+          "u4l6_bordes_paragraph_limite",
+          "u4l6_bordes_code_global",
+          "u4l6_bordes_heading_crear",
+          "u4l6_bordes_paragraph_crear",
+          "u4l6_bordes_code_crear",
+          "u4l6_bordes_paragraph_huellas",
+          "u4l6_bordes_heading_ejecutar",
+          "u4l6_bordes_paragraph_ejecutar",
+          "u4l6_bordes_code_ejecutar",
+          "u4l6_bordes_code_longitud",
+          "u4l6_bordes_paragraph_alcance",
           "u4l6_variacion_limites",
           "block_0013_0004",
           "block_0013_0005"
@@ -9953,6 +10102,213 @@
           "block": 279
         },
         "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_control",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 280
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_control",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 281
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_multiple_choice_control",
+        "sha256": "248a29a2eb25614d66153287478b641c368c72a184edbb05ffb106f99b804d99",
+        "storage": {
+          "page": 14,
+          "block": 282
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_datos",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 283
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_datos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 284
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_entrada",
+        "sha256": "8353db840bde7a2ecdf724bda86fdb5be35704091baa3a7b07f021a75a00f0ce",
+        "storage": {
+          "page": 14,
+          "block": 285
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_esperados",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 286
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_stdout_esperado",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 287
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_stdout",
+        "sha256": "f1980993c45b775b255a6afe364e7c49e1239dcf3fa3d1fb91b288f684c8d776",
+        "storage": {
+          "page": 14,
+          "block": 288
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_stderr_esperado",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 289
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_stderr",
+        "sha256": "68298fe5b9400c7d0b070ff56873f14f54519106963ef9a7a292ded2e03a2b16",
+        "storage": {
+          "page": 14,
+          "block": 290
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_limite",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 291
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_limite",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 292
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_global",
+        "sha256": "d2f5bfbad62fe281e371acaf8879c0a807ff8aaaca77416779b57913f83c83b5",
+        "storage": {
+          "page": 14,
+          "block": 293
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_crear",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 294
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_crear",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 295
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_crear",
+        "sha256": "258eecc4c79a964281e3123e81f3b7d23b47eaf26b02f57cb19c3dd095aedbba",
+        "storage": {
+          "page": 14,
+          "block": 296
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_huellas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 297
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_heading_ejecutar",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 14,
+          "block": 298
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_ejecutar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 299
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_ejecutar",
+        "sha256": "57c2da42e47866e6c44e7f29c014a1bf63a95b5036fc9bfede76e1c8ef0ab755",
+        "storage": {
+          "page": 14,
+          "block": 300
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_code_longitud",
+        "sha256": "29db3542f781b20fcb64ef94857c1ce8c67e6bec3e1b8841f0dcaba3f84eaf3f",
+        "storage": {
+          "page": 14,
+          "block": 301
+        },
+        "progressPage": "page_0013"
+      },
+      {
+        "id": "u4l6_bordes_paragraph_alcance",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 14,
+          "block": 302
+        },
+        "progressPage": "page_0013"
       }
     ],
     "editorial": [
@@ -10215,6 +10571,42 @@
         "id": "block_0013_0003",
         "beforeSha256": "8dbbb73395d744bb4aebda34de1271ffc94e9edabad0b913865eef940043d0a1",
         "afterSha256": "7ff6351026b248d6bc5b638bd6b4bb432ea9159e2a7b8b9a681bfd077f90e1a7"
+      },
+      {
+        "id": "u4l6_cliente_gitattributes_explicacion",
+        "beforeSha256": "988e3c120e371c7805eb1e1d68f525620f636ff476ed56fec77fd6c737a0cbd4",
+        "afterSha256": "eb2071ab76a5320545fdf2c9c390ab47304898c10562f9f399804501b41a5e22"
+      },
+      {
+        "id": "u4l6_variacion_atributos_explicacion",
+        "beforeSha256": "1e46b36e92103ed35ee13b1d818f39de2908c6b8b580f20d1560003a0187d403",
+        "afterSha256": "10082ebbe347bb821cb904251e61ba4840b1163f51ff4ff27ca2bf121a086588"
+      },
+      {
+        "id": "u4l6_cliente_gitattributes_explicacion",
+        "beforeSha256": "eb2071ab76a5320545fdf2c9c390ab47304898c10562f9f399804501b41a5e22",
+        "afterSha256": "988e3c120e371c7805eb1e1d68f525620f636ff476ed56fec77fd6c737a0cbd4",
+        "returnTo": {
+          "revision": 0,
+          "historySha256": "5f1fbd0d704d9960602bf03a72f777f7c8a160a02e1636f9bb7fe580716df3f5",
+          "previousBlock": {
+            "type": "paragraph",
+            "text": "Git puede convertir los finales de línea al preparar o recuperar archivos del repositorio. Esa conversión es útil para muchos archivos de texto, pero aquí queremos conservar exactamente los bytes de nuestra muestra. El archivo .gitattributes permite declarar una regla para una ruta concreta. Anteponer un guion al atributo text, como en -text, desactiva la conversión de finales de línea para esa ruta (Git, 2026a).\n\nLa regla de esta etapa sólo afecta a AssetCheck/muestras/lote.txt. Se guardará en .gitattributes, en la raíz del repositorio educativo, un nivel por encima de la carpeta actual. No cambiaremos la configuración global de Git ni el tratamiento de las fuentes C++."
+          }
+        }
+      },
+      {
+        "id": "u4l6_variacion_atributos_explicacion",
+        "beforeSha256": "10082ebbe347bb821cb904251e61ba4840b1163f51ff4ff27ca2bf121a086588",
+        "afterSha256": "1e46b36e92103ed35ee13b1d818f39de2908c6b8b580f20d1560003a0187d403",
+        "returnTo": {
+          "revision": 0,
+          "historySha256": "681099a2d9292d79d8bcad0f9245490d7ce4c98a806e636f28e46c01c1d0773b",
+          "previousBlock": {
+            "type": "paragraph",
+            "text": "Conservaremos estos bytes también al versionar el archivo. Desde AssetCheck, .. señala la carpeta padre del repositorio, donde ya existe .gitattributes. Añadiremos una regla para AssetCheck/muestras/variacion_lector.txt; la regla anterior de lote.txt permanece.\n\nEl atributo -text desactiva la conversión de finales de línea de Git para esa ruta (Git, 2026a). La receta obtiene la ruta existente con Resolve-Path y lee sus bytes con ReadAllBytes. ASCII.GetString permite comprobar el texto de esas reglas. Contains verifica que siga presente la regla de lote.txt y que la nueva no esté ya añadida. EndsWith comprueba que el archivo anterior termine en LF; si no se cumple alguna condición, se detiene sin reescribirlo.\n\nLa nueva regla se convierte a bytes con su terminador CRLF. El signo + concatena el arreglo anterior con esos bytes nuevos; [byte[]] conserva el tipo de elementos que espera WriteAllBytes. Se guarda el conjunto manteniendo intactos los bytes anteriores. Si la regla ya existe, la receta lo indica y no la duplica. No cambia la configuración global de Git ni publica archivos."
+          }
+        }
       }
     ]
   }

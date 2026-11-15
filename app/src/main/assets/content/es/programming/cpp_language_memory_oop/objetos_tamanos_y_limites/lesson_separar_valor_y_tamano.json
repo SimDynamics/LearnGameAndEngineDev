@@ -1,0 +1,856 @@
+{
+  "id": "cpp_language_memory_oop__objetos_tamanos_y_limites__separar_valor_y_tamano",
+  "title": "Separar el valor de un objeto y su tamaño",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un mismo tipo puede guardar valores diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "En los cursos anteriores has creado variables, colecciones y tipos propios, y has construido proyectos con pruebas. Ahora vas a estudiar con más detalle cómo C++ representa los datos, cuánto duran los objetos y qué ocurre cuando varios nombres permiten acceder al mismo objeto. Empezaremos por separar dos datos que se pueden confundir: el valor guardado y el espacio que ocupa un objeto de su tipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto de este curso será un programa de consola para conservar series de mediciones y consultarlas de distintas maneras. Su usuario necesita mantener separadas las series, copiar una sin alterar otra y conservar sus datos mientras los utiliza. Primero aprenderás y practicarás los elementos necesarios. La construcción, las pruebas y la publicación se desarrollarán después, paso a paso; el programa no se da por construido al presentar aquí su objetivo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cantidad = 8;\ncantidad = 600;\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera instrucción define un objeto de tipo int con el nombre cantidad y lo inicializa con el valor 8. La segunda guarda 600 en ese mismo objeto. Cambia el valor, pero el objeto sigue teniendo tipo int. Escribir tres cifras en lugar de una no convierte el objeto en uno de otro tipo ni hace que su tamaño dependa de cuántas cifras imprimimos (Prata, 2012)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l1_valor_y_objeto",
+          "question": "Después de ejecutar las dos instrucciones, ¿qué describe correctamente cantidad?",
+          "options": [
+            "Ahora tiene otro tipo porque 600 tiene más cifras que 8.",
+            "Sigue siendo el mismo objeto int; su valor actual es 600.",
+            "Conserva 8 como valor actual y añade 600 al espacio que ocupaba."
+          ],
+          "correctIndex": 1,
+          "explanation": "La asignación sustituye el valor guardado. No redefine cantidad ni cambia su tipo: después contiene 600."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bytes para medir espacio; bits para contar sus unidades internas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para expresar un tamaño necesitamos una unidad. En el modelo de memoria de C++, esa unidad es el byte. Un byte está formado por una cantidad de bits determinada por la implementación: el compilador y las reglas del entorno para el que construye el programa. Un bit permite distinguir dos estados, que representamos con 0 y 1. En los entornos que hemos utilizado, cada byte contiene 8 bits; no debemos convertir esa observación en una regla para cualquier implementación de C++ (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera <climits> proporciona el nombre CHAR_BIT para consultar cuántos bits tiene un byte en la implementación utilizada. Es una macro: durante el preprocesamiento, antes de compilar el código C++, ese nombre se sustituye por una expresión constante con el número correspondiente. No defines una variable llamada CHAR_BIT ni escribes a mano el valor que supones que tendrá (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un objeto ocupa 4 bytes y cada byte contiene 8 bits, esos bytes reúnen 4 × 8 = 32 bits. La unidad de la primera medida es bytes; la de la segunda, bits. Este cálculo describe el espacio del objeto. Por sí solo no determina todos los valores que su tipo permite guardar: para eso también importan las reglas del tipo. Estudiaremos sus límites con consultas específicas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l1_unidades",
+          "question": "Una implementación informa de 2 bytes para un objeto y de 16 bits por byte. ¿Cuántos bits reúnen esos 2 bytes?",
+          "options": [
+            "2 bits, porque el tamaño del objeto es 2.",
+            "16 bits, porque ése es el tamaño de cada byte.",
+            "32 bits, porque hay 2 grupos de 16 bits."
+          ],
+          "correctIndex": 2,
+          "explanation": "Se multiplican los 2 bytes por los 16 bits de cada byte: el total es 32 bits. Aquí se especifica una implementación posible; no se cambia la unidad de sizeof."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar el tamaño con sizeof"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ incluye el operador sizeof para consultar tamaños en bytes. sizeof(int) consulta el tamaño de un objeto de tipo int. sizeof(cantidad), cuando cantidad es la variable int del ejemplo, consulta el tamaño de ese mismo tipo mediante la expresión cantidad. Los paréntesis son obligatorios alrededor del nombre de un tipo; en esta lección los escribiremos también alrededor de las expresiones para mantener la notación uniforme (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado tiene el tipo entero sin signo std::size_t, que se utiliza para representar tamaños. Aquí podemos enviarlo directamente a std::cout; no tenemos que convertirlo a int. El tamaño no es el valor 8 ni el valor 600 guardado en cantidad. Para consultar el valor usamos cantidad; para consultar el tamaño usamos sizeof(cantidad) (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <climits>\n#include <iostream>\n\nint main() {\n    int cantidad = 8;\n    std::cout << \"Valor=\" << cantidad << '\\n';\n    std::cout << \"BytesInt=\" << sizeof(int) << '\\n';\n    std::cout << \"BytesCantidad=\" << sizeof(cantidad) << '\\n';\n    std::cout << \"BytesChar=\" << sizeof(char) << '\\n';\n    std::cout << \"BitsPorByte=\" << CHAR_BIT << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee cada rótulo por separado:\nValor acompaña al valor guardado, que es 8.\nBytesInt acompaña al tamaño del tipo int.\nBytesCantidad acompaña al tamaño consultado mediante cantidad; debe coincidir con BytesInt.\nBytesChar acompaña al tamaño de char, que C++ fija en 1 byte.\nBitsPorByte acompaña a CHAR_BIT, la cantidad de bits de cada byte (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, con int de 4 bytes y bytes de 8 bits, las cinco líneas serían las siguientes. Los valores 4 y 8 de estas medidas describen ese entorno; la coincidencia de ambos tamaños de int y el tamaño de char igual a 1 no dependen de elegir esos valores concretos."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Valor=8\nBytesInt=4\nBytesCantidad=4\nBytesChar=1\nBitsPorByte=8\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l1_otra_implementacion",
+          "question": "En otra implementación, sizeof(int) da 2 y CHAR_BIT da 16. ¿Qué debe mostrar el mismo programa para BytesCantidad y BytesChar?",
+          "options": [
+            "BytesCantidad=2 y BytesChar=1.",
+            "BytesCantidad=8 y BytesChar=16.",
+            "BytesCantidad=4 y BytesChar=1."
+          ],
+          "correctIndex": 0,
+          "explanation": "cantidad tiene tipo int, así que ambos tamaños coinciden en 2 bytes. char sigue ocupando 1 byte; en esa implementación ese byte contiene 16 bits."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guardar otro valor no cambia la medida del tipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente programa, antes conserva el resultado de sizeof(cantidad) obtenido cuando cantidad vale 8. const evita que cambiemos esa medida guardada y auto deduce su tipo a partir del resultado de sizeof. Después asignamos 600 a cantidad y volvemos a consultar su tamaño. La comparación responde si ambas medidas coinciden, no si cantidad sigue valiendo 8."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l1_cambiar_valor",
+          "question": "Predice la salida exacta, incluidos los dos separadores. No necesitas conocer cuántos bytes ocupa int en tu equipo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 8;\n    const auto antes = sizeof(cantidad);\n    cantidad = 600;\n    std::cout << cantidad << \":\"\n              << (antes == sizeof(cantidad)) << \":\"\n              << (sizeof(cantidad) == sizeof(int));\n    return 0;\n}\n",
+          "answers": [
+            "600:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La asignación deja 600 en cantidad. Su tipo sigue siendo int, así que antes y sizeof(cantidad) coinciden. También coincide sizeof(cantidad) con sizeof(int). cout representa cada comparación verdadera con 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es válida aunque int ocupe 2, 4 u otra cantidad de bytes permitida en el entorno. Las comparaciones verifican relaciones entre tamaños; no afirman que uno de esos tamaños tenga un valor universal. La primera parte, 600, sí es el valor guardado en el objeto después de la asignación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar una garantía del lenguaje de una medida del equipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Además de int, C++ ofrece los tipos enteros con signo short, long y long long. Son tipos diferentes, aunque dos de ellos puedan ocupar la misma cantidad de bytes. La forma short equivale a short int; long equivale a long int. En ese orden, cada tipo ofrece al menos tanto espacio como el anterior: short, int, long, long long (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esto permite igualdad de tamaños. Si en una prueba int y long ocupan 4 bytes cada uno, esa coincidencia cumple la regla. No demuestra que int y long sean el mismo tipo ni obliga a que long ocupe 4 bytes en otro entorno. La palabra long no promete duplicar el tamaño de int (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u1l1_relaciones_portables",
+          "question": "Predice la salida exacta de estas comparaciones. Utiliza las relaciones explicadas, sin suponer tamaños particulares para short, int, long o long long.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << (sizeof(char) == 1) << \":\"\n              << (sizeof(short) <= sizeof(int)) << \":\"\n              << (sizeof(int) <= sizeof(long)) << \":\"\n              << (sizeof(long) <= sizeof(long long));\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "char ocupa 1 byte. Las otras tres comparaciones permiten igualdad y siguen el orden de tamaños garantizado para esos tipos enteros. Las cuatro son verdaderas; se imprimen como 1."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l1_conclusion_de_medida",
+          "question": "Una ejecución muestra que int y long ocupan 4 bytes en el entorno usado. ¿Qué conclusión está respaldada?",
+          "options": [
+            "Cualquier programa C++ debe usar exactamente 4 bytes para ambos tipos.",
+            "En ese entorno sus tamaños coinciden; siguen siendo tipos diferentes.",
+            "La implementación está equivocada: long debe ocupar exactamente el doble."
+          ],
+          "correctIndex": 1,
+          "explanation": "La observación identifica dos tamaños de esa implementación. La igualdad está permitida y no elimina la distinción entre tipos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: comprobar la relación sin fijar el tamaño de int"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe el programa en el editor de esta página. Recibirá dos enteros entre 0 y 1000: el valor inicial y el posterior. Guarda el primero en una variable int llamada cantidad y conserva, en otra variable, el resultado de sizeof(cantidad). Después asigna el segundo entero a cantidad. Así podrás comparar la medida anterior con la medida del mismo objeto después del cambio."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa debe mostrar tres líneas:\nMismoTamano= seguido del resultado de comparar ambas medidas. Utiliza la comparación y deja que cout imprima el bool.\nCharBytes= seguido de sizeof(char).\nValor= seguido del valor actual de cantidad.\n\nCalcula las medidas mediante sizeof; escribir directamente los unos de la salida no comprueba los tamaños. Termina cada línea con un salto de línea y retorna 0 cuando las dos lecturas sean correctas. Si no puedes leer ambos enteros, retorna 1 sin mostrar esas líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso, obligatorio:\nEntrada: 8 600\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "MismoTamano=1\nCharBytes=1\nValor=600\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Lee los datos y construye las tres líneas solicitadas.\n    return 0;\n}\n",
+          "initialStandardInput": "8 600\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8 600\n",
+                "outputs": [
+                  "MismoTamano=1\nCharBytes=1\nValor=600\n"
+                ],
+                "explanation": "Se conserva el tamaño de cantidad después de asignar 600; char ocupa 1 byte y el valor final es 600."
+              },
+              {
+                "standardInput": "99 0\n",
+                "outputs": [
+                  "MismoTamano=1\nCharBytes=1\nValor=0\n"
+                ],
+                "explanation": "El valor final es ahora 0. Las relaciones de tamaño se conservan. Este ensayo es opcional."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ensayo adicional opcional:\nEntrada: 99 0\nSalida esperada:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "MismoTamano=1\nCharBytes=1\nValor=0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la entrada opcional cambia el valor final, pero se conservan las dos relaciones de tamaño. El primer acierto permite avanzar; este ensayo sirve para recuperar el razonamiento con otros datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una implementación de referencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int inicial = 0;\n    int posterior = 0;\n    if (!(std::cin >> inicial >> posterior)) {\n        return 1;\n    }\n\n    int cantidad = inicial;\n    const auto antes = sizeof(cantidad);\n    cantidad = posterior;\n\n    std::cout << \"MismoTamano=\" << (antes == sizeof(cantidad)) << '\\n';\n    std::cout << \"CharBytes=\" << sizeof(char) << '\\n';\n    std::cout << \"Valor=\" << cantidad << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lectura obtiene inicial y posterior. cantidad empieza con inicial. antes conserva una medida, no una copia del valor inicial. La asignación cambia cantidad a posterior. Al imprimir, la comparación de medidas produce 1 porque el tipo del objeto no cambió; sizeof(char) produce 1 por la regla del lenguaje. La última línea consulta el valor actual de cantidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta práctica comprueba las tres líneas y el código de salida del primer caso. La salida por sí sola no distingue el cálculo solicitado de un programa que copie números fijos. Por eso también has tenido que predecir los programas y elegir qué conclusiones justifican las medidas. Al comparar tu implementación con esta referencia, localiza qué expresión calcula cada medida y qué variable conserva cada dato."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u1l1_tamano_frente_a_rango",
+          "question": "Dos tipos enteros diferentes de una misma implementación ocupan 4 bytes cada uno. ¿Basta ese dato para asegurar que admiten exactamente los mismos valores?",
+          "options": [
+            "Sí; el tamaño por sí solo define el conjunto completo de valores de cualquier tipo.",
+            "Sí; 4 bytes significan siempre los valores enteros entre 0 y 4.",
+            "No; hay que conocer las reglas y los límites de cada tipo, además de su tamaño."
+          ],
+          "correctIndex": 2,
+          "explanation": "El espacio que ocupa un objeto y los valores representables de su tipo son preguntas diferentes. El dato de 4 bytes no especifica todavía los límites de esos tipos. La siguiente lección enseñará a consultarlos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué medida hemos obtenido"
+        },
+        {
+          "type": "paragraph",
+          "text": "sizeof mide el tamaño de los objetos de un tipo según las reglas de C++. No mide el tiempo que tarda el programa, la longitud de las cifras que envías a la consola ni el consumo total del proceso. Si guardas 600 en cantidad e imprimes tres cifras, eso no significa que cantidad ocupe tres bytes (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco debes usar sizeof de una colección como si contara sus elementos. En los cursos anteriores, datos.size() consultaba cuántos elementos contenía un vector. Es una pregunta diferente de sizeof(datos), que mide el objeto vector. Más adelante estudiarás cómo una colección conserva sus elementos y por qué el espacio de esos elementos puede estar separado del propio objeto que los administra (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la siguiente lección, conserva estas tres preguntas separadas:\n¿Qué valor contiene ahora el objeto?\n¿Cuántos bytes ocupa un objeto de ese tipo en la implementación?\n¿Qué valores puede representar ese tipo?\n\nYa has practicado las dos primeras. A continuación estudiaremos cómo consultar la tercera sin deducirla únicamente del tamaño."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "f151544b2a1d77309774885617b6056c7b4739a376537068aec2c05a950034cd"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "2869141f2a62fce8809e9af3a657b671682a716de51df8ffbf6987150825bf87"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "01d6745c6134194705b191d3a12fdd4a6a9f76919e8060e4beaf12de8e569803"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "403a71cbbfe4fb2dbae1781f0361efb2b9a2b54ae9fc561fe0e14a72985afc61"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "eefb791ba0ab161a98fc8fa52188440482c492e1547944a6e1b9371f14488c11"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "51ae19c5422ee1505869e6fcc7449df03e794be8558b35da1ec0a14aab818392"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "193a97b3b24eabb553827155d6fc04e3ac794ebc571b57e88135f757eb3f138e"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "0a4fcf3f01bd91c0e5552f0c7818cb869ce20c800c75f48295258ea26d9f1f51"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "e1870c3d1872d449af1b60dc5add50a23278d81020cc1287e180ede8928df58f"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "74abe848bcbda3e36e34374f70661526ea344e9d3276b719be9888b9c286e831"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "9d05fe6e5f37790c47032fdeaeb408e100eef12be13710ddaab98de9e3f3e717"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "5c8c2221ba847a9d047ed26726f174542ea28506bacc959a01ee4a1971857f56"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "cbea6edbcdd6dc8ccf1b5c0a38e2159ec38524a027934ea90da09bc2cfb2a756"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "0b118a499a675365634a6cee102761898bd9af298daadeab5c648bc5c2689312"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "96451cd6823553ada76f3fb752ed6d290369a596529b73db296c313cbacd0ce7",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "f151544b2a1d77309774885617b6056c7b4739a376537068aec2c05a950034cd"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "2869141f2a62fce8809e9af3a657b671682a716de51df8ffbf6987150825bf87"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "01d6745c6134194705b191d3a12fdd4a6a9f76919e8060e4beaf12de8e569803"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "403a71cbbfe4fb2dbae1781f0361efb2b9a2b54ae9fc561fe0e14a72985afc61"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "eefb791ba0ab161a98fc8fa52188440482c492e1547944a6e1b9371f14488c11"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "51ae19c5422ee1505869e6fcc7449df03e794be8558b35da1ec0a14aab818392"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "193a97b3b24eabb553827155d6fc04e3ac794ebc571b57e88135f757eb3f138e"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "0a4fcf3f01bd91c0e5552f0c7818cb869ce20c800c75f48295258ea26d9f1f51"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "e1870c3d1872d449af1b60dc5add50a23278d81020cc1287e180ede8928df58f"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "74abe848bcbda3e36e34374f70661526ea344e9d3276b719be9888b9c286e831"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "9d05fe6e5f37790c47032fdeaeb408e100eef12be13710ddaab98de9e3f3e717"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "5c8c2221ba847a9d047ed26726f174542ea28506bacc959a01ee4a1971857f56"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "cbea6edbcdd6dc8ccf1b5c0a38e2159ec38524a027934ea90da09bc2cfb2a756"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "0b118a499a675365634a6cee102761898bd9af298daadeab5c648bc5c2689312"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

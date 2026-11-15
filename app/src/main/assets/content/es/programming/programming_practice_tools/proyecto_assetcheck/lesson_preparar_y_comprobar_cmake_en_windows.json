@@ -93,6 +93,73 @@
         {
           "type": "paragraph",
           "text": "Si la consola de desarrollo correcta sigue sin encontrar una herramienta, vuelve a la preparación de Programación 1. En Visual Studio Installer revisa la carga «Desarrollo para el escritorio con C++» y los componentes de MSVC x64/x86, Windows SDK y herramientas de CMake para Windows, que aportan CMake y Ninja. La instalación y selección de componentes deben completarse antes de configurar esta prueba.\n\nEsta reproducción utilizó herramientas ya instaladas. Sus resultados no demuestran una instalación completa sobre un Windows vacío. Tampoco necesitas instalar las dependencias de narración o de la aplicación de cursos para construir este pequeño programa."
+        },
+        {
+          "type": "heading",
+          "text": "Completar un componente que todavía no está instalado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este recorrido se utiliza cuando la consola de desarrollo de la instalación correcta sigue sin encontrar una herramienta necesaria. Si las consultas ya identifican el compilador, CMake y Ninja y después pasa la prueba mínima, conserva esa instalación. Estudia igualmente qué componente aporta cada herramienta: no necesitas reinstalarla para repetir la lección. La selección de una casilla y la construcción de un programa son comprobaciones distintas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si no tienes Visual Studio Installer ni el entorno preparado en Programación 1, abre https://visualstudio.microsoft.com/downloads/ y localiza Visual Studio Community en las descargas oficiales. Descarga su instalador, ábrelo y sigue su preparación hasta que aparezca la selección de cargas de trabajo. Ese primer archivo inicia la obtención de los componentes; no contiene por sí solo toda la instalación de C++. La descarga actual puede mostrar una versión posterior a la de las capturas. No busques una edición antigua sólo para que coincida con la imagen (Microsoft, 2026)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si Visual Studio ya está instalado, abre Inicio, escribe Visual Studio Installer y abre esa aplicación. En la pestaña Instalado, localiza la tarjeta del producto cuya consola estabas comprobando y selecciona Modificar. Si hay varios productos, utiliza el nombre y la versión de la tarjeta para identificar el que corresponde a tus consultas. Espera a que termine la preparación del cuadro. Entrar en Modificar permite revisar las selecciones; todavía no aplica una descarga ni cambia las herramientas (Microsoft, 2026)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Cargas de trabajo, localiza Desarrollo para el escritorio con C++ dentro del grupo Móviles y de escritorio. La carga reúne componentes para ese tipo de programa. Revisa su casilla y despliega el apartado correspondiente en Detalles de la instalación. Para AssetCheck necesitas las herramientas de compilación MSVC para x64/x86, un Windows SDK compatible y las herramientas de CMake para Windows. MSVC aporta el compilador y el enlazador; el SDK aporta las cabeceras y bibliotecas de Windows que utilizan esas herramientas. Utiliza la versión compatible que ofrezca tu instalación y conserva los componentes compartidos existentes (Microsoft, 2026)."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_carga_cpp",
+          "src": "images/programming1/p1_windows_carga_cpp.jpg",
+          "alt": "Captura real reutilizada de Programación 1: Community 2026 18.11.3, carga de escritorio C++ marcada y herramientas de CMake seleccionadas en el panel derecho.",
+          "caption": "Revisión de una instalación existente, sin aplicar cambios. La tarjeta marcada corresponde a C++; el panel derecho muestra sus componentes. Esta imagen no registra una descarga ni una instalación inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si necesitas localizar un componente concreto, selecciona Componentes individuales y utiliza Buscar componentes. Para el SDK, busca SDK de Windows y lee las casillas junto a las versiones encontradas. La fila de un SDK que aparece vacía en la captura anterior no significa que no haya otro SDK seleccionado. La imagen siguiente muestra esa revisión por separado. Para MSVC, localiza las herramientas de compilación para x64/x86; el número puede variar respecto al observado por el autor. No elimines otras versiones para convertir tu selección en una copia de la captura."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_instalado",
+          "src": "images/programming1/p1_windows_sdk_instalado.jpg",
+          "alt": "Componentes individuales del mismo Installer: búsqueda SDK de Windows 11; versión 10.0.28000.2705 marcada y otras dos filas sin marcar.",
+          "caption": "La selección observada contiene un SDK distinto de la fila vacía de la imagen anterior. Conserva la diferencia entre revisar los componentes existentes e instalarlos en un equipo que todavía no los tiene."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el detalle de la carga, revisa Herramientas de CMake en C++ para Windows, cuyo nombre en la documentación inglesa es C++ CMake tools for Windows. Ese componente prepara la integración de CMake; el entorno de construcción de Visual Studio utiliza también Ninja (Microsoft, 2025c). Después comprobarás por separado ambos ejecutables con where y con sus consultas de versión. Que MSVC aparezca en la consola no demuestra por sí solo que CMake y Ninja estén disponibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando falte un componente, selecciónalo en el producto correcto y revisa el resumen de la modificación. En una preparación nueva utiliza Instalar; en un producto existente utiliza Modificar para aplicar la selección. Espera a que terminen la descarga y la instalación y atiende un reinicio si el instalador lo solicita. Si no hay cambios pendientes, conserva la configuración y cierra el cuadro. Las capturas anteriores muestran esta última situación; no son evidencia de haber aplicado ahora una instalación (Microsoft, 2026)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre de nuevo la consola de herramientas nativas x64 del producto correspondiente. Una consola anterior puede conservar su entorno previo. Ejecuta otra vez el bloque completo de consultas de esta página: identifica arquitecturas, rutas y versiones de cl, cmake y ninja. Con esas herramientas identificadas, continúa con la prueba mínima de las páginas siguientes. Si una herramienta sigue ausente, conserva el diagnóstico y revisa el producto y sus componentes antes de cambiar el código. La comprobación final es configurar, construir y ejecutar la prueba, no solamente observar casillas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_u4l3_componente_cmake_ausente",
+          "question": "En la consola x64 del producto correcto, cl responde pero where cmake no encuentra ningún ejecutable. Todavía no has configurado el proyecto. ¿Qué revisión corresponde?",
+          "options": [
+            "Añadir manualmente la carpeta del Windows SDK a PATH para que aparezca el programa CMake.",
+            "Revisar las herramientas CMake para Windows de esa instalación y, tras completar lo que falte, abrir de nuevo su consola.",
+            "Escribir CMAKE_CXX_STANDARD 23 en CMakeLists.txt para que se instale el ejecutable que falta."
+          ],
+          "correctIndex": 1,
+          "explanation": "MSVC y CMake son herramientas distintas. Hay que comprobar el componente que aporta CMake y volver a consultar el entorno. El SDK y la selección del estándar del proyecto no instalan ese ejecutable.",
+          "reviewFeedback": [
+            "El SDK aporta otros recursos; no sustituye la instalación del programa CMake.",
+            "La revisión atiende a la herramienta ausente y comprueba de nuevo su disponibilidad.",
+            "Una variable del proyecto no instala la herramienta que debe leer ese archivo."
+          ]
         }
       ]
     },
@@ -2113,6 +2180,76 @@
             "reading": "technical"
           }
         ]
+      },
+      {
+        "block": "u4l3_preparacion_paragraph_obtener",
+        "path": "/text",
+        "sourceSha256": "4bb2f7b1835b4a32011d573b3f46f273a275b791fb79d33e61249c2584b55158",
+        "spans": [
+          {
+            "start": 558,
+            "end": 575,
+            "text": "(Microsoft, 2026)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_preparacion_paragraph_abrir",
+        "path": "/text",
+        "sourceSha256": "cf9033b2e0ee962f7b2fdc5daf91b8572e936facbba8bdafe3f109c0c7e91abf",
+        "spans": [
+          {
+            "start": 501,
+            "end": 518,
+            "text": "(Microsoft, 2026)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_preparacion_paragraph_carga",
+        "path": "/text",
+        "sourceSha256": "0c3c2030bef6ced511d76e522758baa2723a5027e089dc6d22193b7eda27b531",
+        "spans": [
+          {
+            "start": 633,
+            "end": 650,
+            "text": "(Microsoft, 2026)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_preparacion_paragraph_cmake",
+        "path": "/text",
+        "sourceSha256": "1c96e25be7e3e8c84fcc5d1b06450bd26616cf48def399a718242a092abde5ba",
+        "spans": [
+          {
+            "start": 263,
+            "end": 281,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u4l3_preparacion_paragraph_aplicar",
+        "path": "/text",
+        "sourceSha256": "1d8dcbdd2d443216a890bc827b6e2f2d40dfecc80bb9590faba493ad9661b541",
+        "spans": [
+          {
+            "start": 510,
+            "end": 527,
+            "text": "(Microsoft, 2026)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2407,7 +2544,19 @@
           "block_0001_0003",
           "u4l3_imagen_herramientas",
           "block_0001_0004",
-          "block_0001_0005"
+          "block_0001_0005",
+          "u4l3_preparacion_heading_faltante",
+          "u4l3_preparacion_paragraph_antes",
+          "u4l3_preparacion_paragraph_obtener",
+          "u4l3_preparacion_paragraph_abrir",
+          "u4l3_preparacion_paragraph_carga",
+          "u4l3_preparacion_image_carga",
+          "u4l3_preparacion_paragraph_componentes",
+          "u4l3_preparacion_image_sdk",
+          "u4l3_preparacion_paragraph_cmake",
+          "u4l3_preparacion_paragraph_aplicar",
+          "u4l3_preparacion_paragraph_comprobar",
+          "u4l3_preparacion_multiple_choice_cmake_ausente"
         ]
       },
       {
@@ -2889,6 +3038,114 @@
           "block": 13
         },
         "progressPage": "page_0007"
+      },
+      {
+        "id": "u4l3_preparacion_heading_faltante",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 14
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_antes",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 15
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_obtener",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 16
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_abrir",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 17
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_carga",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 18
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_image_carga",
+        "sha256": "df3e7c7c4a77f09b86b98f27067cd4375a73671873887957fc349d50e250e10e",
+        "storage": {
+          "page": 9,
+          "block": 19
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_componentes",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 20
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_image_sdk",
+        "sha256": "3c73b2474bec25b4a07e2e3f0174235bdded1073c8034426dd8b18a6c462be7d",
+        "storage": {
+          "page": 9,
+          "block": 21
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_cmake",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 22
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_aplicar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 23
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_paragraph_comprobar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 24
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u4l3_preparacion_multiple_choice_cmake_ausente",
+        "sha256": "5e50f5ff1191c7feacc056b35cc85d94522f1cf0fbe7d0b3f66cbddec5fb6323",
+        "storage": {
+          "page": 9,
+          "block": 25
+        },
+        "progressPage": "page_0001"
       }
     ],
     "editorial": [
