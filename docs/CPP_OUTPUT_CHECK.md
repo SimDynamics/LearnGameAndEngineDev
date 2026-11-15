@@ -293,6 +293,217 @@ auténtico con declaraciones derivadas sólo en el perfil QA. Las mismas
 pruebas nativas están registradas en ReaderBuild y en la construcción
 completa de Windows.
 
+## Baterías CMake con resultados enteros
+
+`compilerOpenBatteryChecks` admite la variante `cmake-int-unary-v1` para
+una biblioteca con una función global `int nombre(int dato)`. La declaración
+añade un objetivo al propietario español con `stateLayout` v2 sin cambiar
+el editor, sus archivos iniciales, mapas, familia, respuestas o borradores.
+El estudiante sólo modifica el archivo indicado por `testPath`; la biblioteca,
+la interfaz, el cliente y la descripción CMake conservan sus bytes originales.
+El bloque no declara `sourceFiles`, ni siquiera como lista vacía, ni otro
+objetivo de evaluación. Las declaraciones publicadas se conservan como prefijo
+de la lista; añadir otro propietario no permite reescribir las anteriores.
+
+Estas declaraciones corresponden a los dos propietarios de U3L1. Son ejemplos
+de autoría del motor; el documento no modifica los recursos curriculares:
+
+```json
+{
+  "compilerOpenBatteryChecks": [
+    {
+      "activity": "block_0004_0003",
+      "kind": "cmake-int-unary-v1",
+      "libraryPath": "src/cajas.cpp",
+      "function": "cajas_para",
+      "testPath": "pruebas/cajas_casos.cpp",
+      "target": "comprobar_cajas",
+      "publishedResult": "failure",
+      "failureExitCode": "nonzero",
+      "cases": [
+        {
+          "input": 0,
+          "expected": 0
+        },
+        {
+          "input": 4,
+          "expected": 1
+        },
+        {
+          "input": 8,
+          "expected": 2
+        },
+        {
+          "input": 20,
+          "expected": 5
+        },
+        {
+          "input": 1,
+          "expected": 1
+        },
+        {
+          "input": 5,
+          "expected": 2
+        },
+        {
+          "input": 17,
+          "expected": 5
+        }
+      ],
+      "prerequisite": {
+        "target": "consultar_cajas",
+        "calls": [
+          {
+            "input": 4,
+            "result": 1
+          },
+          {
+            "input": 8,
+            "result": 2
+          }
+        ],
+        "standardInput": "",
+        "standardOutput": "1:2",
+        "standardError": "",
+        "exitCode": 0
+      }
+    },
+    {
+      "activity": "block_0010_0003",
+      "kind": "cmake-int-unary-v1",
+      "libraryPath": "motor/cantidad.cpp",
+      "function": "lotes_para",
+      "testPath": "pruebas/lotes_casos.cpp",
+      "target": "verificar_lotes",
+      "publishedResult": "success",
+      "failureExitCode": 1,
+      "cases": [
+        {
+          "input": 0,
+          "expected": 0
+        },
+        {
+          "input": 6,
+          "expected": 1
+        },
+        {
+          "input": 7,
+          "expected": 2
+        },
+        {
+          "input": 18,
+          "expected": 3
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Casos independientes y resultados publicados
+
+`libraryPath` y `testPath` identifican archivos distintos del proyecto original.
+`function` selecciona la definición protegida en la biblioteca y `target` el
+ejecutable que debe comprobarla. `cases` declara entre 1 y 32 entradas enteras
+distintas con sus esperados independientes, dentro del dominio de `int32_t`.
+`publishedResult` indica si la biblioteca original debe superar la batería
+(`success`, código 0) o provocar discrepancias (`failure`).
+`failureExitCode` declara el retorno normal exigido cuando falla una
+comparación: un entero de 1 a 4294967295 exige ese valor; `"nonzero"` admite
+cualquier retorno normal distinto de cero. La consigna de `envios` permite
+no-cero y la de `lotes` exige exactamente 1. La misma política rige sus
+contrapruebas, sin confundir un aborto con un retorno normal.
+No se exige un nombre de helper ni un orden concreto de las comparaciones.
+
+Las rutas son relativas, de 1 a 256 caracteres ASCII, terminan en `.cpp` y
+no contienen `..`, barras inversas ni un punto o barra al inicio. Los nombres
+de función y objetivos son identificadores ASCII de hasta 128 caracteres.
+La definición protegida es global y única, sin sobrecargas, calificadores ni
+espacios de nombres; admite prototipos idénticos. La instrumentación admite
+directivas `include`, pero no macros ni nombres privados de la evaluación.
+El comprobador tiene un único `main` global. La función no utiliza
+`__func__`, `__FUNCTION__` ni `__FUNCSIG__`; los fuentes instrumentados no
+contienen NUL ni continuación de línea y están limitados a 4 MiB.
+
+La evaluación ejecuta un control que entrega los esperados declarados, una
+alteración independiente de cada resultado y la biblioteca publicada
+instrumentada. Todas las fases deben observar una llamada por dato declarado
+y terminar normalmente. El control debe terminar con 0 y cada alteración
+con el retorno de fallo declarado; la publicada conserva el cuerpo original y el resultado de la
+declaración. La salida de esa fase publicada debe corresponder a la ejecución
+que vio el estudiante.
+Un testigo de terminación se instala en el consumidor antes de sus objetos
+globales y referencia la biblioteca sin llamar a la función investigada.
+Así, un `main` vacío termina normalmente y se rechaza por no comprobar casos,
+incluso cuando una biblioteca estática no tendría otra referencia de enlace.
+
+Cada comparación necesita un diagnóstico que permita reconocer el dato, el
+esperado, el obtenido y si coinciden. Esta versión admite un registro por
+línea o registros de varias líneas separados por una línea vacía. Permite
+cambiar nombres, mensajes, orden de campos, orden de casos y canal de salida,
+y presentar un informe después de haber calculado todos los resultados.
+Los tres valores se expresan como enteros decimales visibles. El veredicto
+puede ser textual o numérico; no se exige la palabra `OK` ni `FALLO`.
+
+El análisis asigna registros disjuntos a los casos sin elegir una lectura
+favorable cuando hay ambigüedad. La alteración de un caso debe cambiar su
+resultado mostrado y su veredicto, conservando las observaciones de los otros
+casos. Tras retirar la tripleta observada, se compara el resto del registro
+normalizando el orden de sus elementos, los espacios y las mayúsculas ASCII.
+Reordenar los mismos campos con una etiqueta fija no cuenta como cambiar el
+veredicto. Esta comprobación observa cambios causales entre ejecuciones; no
+interpreta el significado de mensajes arbitrarios en lenguaje natural.
+Un resumen global, una tabla fija acompañada de un contador variable y
+registros con sólo las tres cantidades no acreditan la batería.
+
+Cada canal admite hasta 4 MiB sin NUL; cada registro, hasta 64 KiB y 64 enteros.
+Se admiten hasta 1024 registros entre los dos canales. El control determina
+si se usan líneas o grupos separados por líneas vacías y las fases siguientes
+conservan ese modo de separación.
+
+### Observación anterior del cliente
+
+`prerequisite` es opcional. Cuando existe, identifica otro objetivo del mismo
+proyecto que debe ejecutarse antes del comprobador. `calls` declara entre 1 y
+32 llamadas en su orden real, con dato y retorno; `standardInput`,
+`standardOutput` y `standardError` conservan los canales exactos. El cliente
+debe terminar normalmente con `exitCode: 0`. Su entrada coincide con
+`initialStandardInput` del editor, o con la cadena vacía cuando se omite.
+
+El target inicial puede ser el cliente o el comprobador declarado. Sin
+prerrequisito, debe coincidir con el comprobador. Se conservan los controles
+«Configurar y generar», «Construir objetivo» y «Ejecutar objetivo construido»
+que nombran estas lecciones; construir o configurar no concede crédito.
+
+La observación del cliente tiene un recibo separado. Queda ligado al objetivo,
+al componente compartido, a los archivos protegidos y a la configuración.
+Editar únicamente el contenido de `testPath` no lo invalida. La reapertura
+conserva ese recibo, mientras que otro componente, cliente, CMake o contrato
+no puede reutilizarlo. Reiniciar expresamente el editor retira también ese
+prerrequisito de su intento.
+
+Al iniciar el comprobador se captura el recibo previo disponible. Una
+ejecución del comprobador que ocurrió antes del cliente no adquiere crédito
+retroactivamente por guardar después una observación del cliente. La
+observación previa tampoco completa por sí sola la batería ni desbloquea su
+referencia.
+
+### Conservación y pruebas
+
+La captura completa del comprobador queda ligada a todos los archivos
+presentados, incluido el archivo de pruebas, el objetivo, la configuración
+y la ejecución concreta. Las fases privadas conservan rutas, argumentos,
+entrada y entorno; al terminar restauran los archivos públicos y sus marcas
+de tiempo. Los recibos anteriores y los logros válidos no se sustituyen por
+una visita, una compilación anterior ni un resultado de otro objetivo.
+
+`test_integer_battery_contract.py` comprueba la autoría y la conservación
+de los propietarios reales. `native.integer_battery` verifica el núcleo
+portable; `native.integer_battery_runtime` ejecuta los proyectos originales
+con declaraciones incorporadas únicamente en el perfil QA y comprueba la
+secuencia del cliente, los recibos y la reapertura. Ambos tests nativos
+están registrados en ReaderBuild y en la construcción completa de Windows.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.

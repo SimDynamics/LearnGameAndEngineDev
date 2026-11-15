@@ -7,9 +7,12 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_open_battery_contract.py
       - scripts/curriculum/test_reduction_contract.py
+      - scripts/curriculum/test_integer_battery_contract.py
       - .github/workflows/codex-open-battery-contract.yml
       - native/core/boolean_battery_check.hpp
       - native/core/reduction_check.hpp
+      - native/core/integer_battery_check.hpp
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_bateria_como_segundo_consumidor.json
       - app/src/main/assets/content/es/programming/programming_practice_tools/evidencia_y_diagnostico/lesson_reducir_codigo_sin_borrar_el_fallo.json
       - app/src/main/assets/content/es/programming/programming_practice_tools/evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json
       - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json
@@ -30,3 +33,5 @@ jobs:
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_open_battery_contract.py -v
       - name: Verify stateful reduction authoring and historical preservation
         run: python3 -B -m unittest discover -s scripts/curriculum -p test_reduction_contract.py -v
+      - name: Verify integer CMake batteries and earlier client declarations
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_integer_battery_contract.py -v

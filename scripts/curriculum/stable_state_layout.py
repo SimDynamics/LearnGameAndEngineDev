@@ -3394,10 +3394,201 @@ def _validate_compiler_reduction_checks(document: dict) -> None:
                                    record["state"], record["initialState"], dependencies)
 
 
+def _integer_battery_definition(source: str, function: str) -> tuple[str, ...]:
+    """Admit the published global int(int) definition, without deriving expected values."""
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]{0,127}\Z")
+    try:
+        source_size = len(source.encode("utf-8")) if type(source) is str else 0
+    except UnicodeError as exc:
+        raise LayoutError("Integer battery source must be valid UTF-8") from exc
+    require(0 < source_size <= 4 * 1024 * 1024 and
+            "\x00" not in source and "\\\n" not in source and "\\\r\n" not in source,
+            "Integer battery source is empty, excessive or contains a physical splice")
+    require(type(function) is str and identifier.fullmatch(function) and
+            function != "main" and not function.startswith(
+                ("lgaed_boolean_battery_", "lgaed_integer_battery_")),
+            "Integer battery function must be a safe C++ identifier")
+    try:
+        tokens = tuple(token for token in code_format._cpp_tokens(source)
+                       if not token.startswith("comment:"))
+    except code_format.SourceFormatError as exc:
+        raise LayoutError("Integer battery source cannot be tokenized: " + str(exc)) from exc
+
+    def closing(start: int, opening: str, ending: str) -> int:
+        nesting = 0
+        for index in range(start, len(tokens)):
+            if tokens[index] == opening or (opening == "op:{" and tokens[index] == "op:<%"):
+                nesting += 1
+                require(nesting <= 4096, "Integer battery source nesting is excessive")
+            elif tokens[index] == ending or (ending == "op:}" and tokens[index] == "op:%>"):
+                nesting -= 1
+                if nesting == 0:
+                    return index
+        raise LayoutError("Integer battery definition has an unclosed delimiter")
+
+    definitions, prototypes = [], []
+    depth = 0
+    for index, token in enumerate(tokens):
+        require(token not in {"op:#", "op:##", "op:%:", "op:%:%:"} and
+                not token.startswith(("id:lgaed_boolean_battery_", "id:lgaed_integer_battery_")),
+                "Integer battery source uses unsupported preprocessing or private names")
+        if token.startswith("directive:"):
+            require(depth == 0 and re.match(r'(?:#|%:)[ \t\r\v\f]*include[ \t\r\v\f]*[<"]', token[10:]),
+                    "Integer battery source permits only global #include directives")
+        if token == "id:" + function and tokens[index + 1:index + 2] == ("op:(",):
+            previous = tokens[index - 1] if index else ""
+            call_end = closing(index + 1, "op:(", "op:)")
+            following = tokens[call_end + 1] if call_end + 1 < len(tokens) else ""
+            declaration = ((previous.startswith("id:") and
+                            previous not in {"id:return", "id:co_return", "id:throw"}) or
+                           following in {"op:{", "op:<%"} or
+                           (depth == 0 and previous in {"op:&", "op:*", "op:&&"} and
+                            index > 1 and tokens[index - 2] == "id:int"))
+            if declaration:
+                require(depth == 0 and previous == "id:int" and
+                        index + 5 < len(tokens) and
+                        (index == 1 or tokens[index - 2] in {"op:;", "op:}", "op:%>"} or
+                         tokens[index - 2].startswith("directive:")),
+                        "Integer battery needs an unqualified global int definition")
+                end = index + 4
+                signature = tokens[index - 1:end + 1]
+                require(len(signature) == 6 and
+                        signature[2:4] == ("op:(", "id:int") and
+                        signature[4].startswith("id:") and
+                        identifier.fullmatch(signature[4][3:]) and signature[5] == "op:)",
+                        "Integer battery function needs one named int parameter")
+                following = tokens[end + 1]
+                if following == "op:{":
+                    body_end = closing(end + 1, "op:{", "op:}")
+                    body = tokens[end + 2:body_end]
+                    require(not any(token in {"id:__func__", "id:__FUNCTION__", "id:__FUNCSIG__"}
+                                    for token in body),
+                            "Integer battery function cannot introspect its instrumented identity")
+                    definitions.append(tokens[index - 1:body_end + 1])
+                else:
+                    require(following == "op:;",
+                            "Integer battery function has an unsupported qualifier or declaration")
+                    prototypes.append(signature)
+        if token in {"op:{", "op:<%"}:
+            depth += 1
+            require(depth <= 4096, "Integer battery source nesting is excessive")
+        elif token in {"op:}", "op:%>"}:
+            depth -= 1
+            require(depth >= 0, "Integer battery source has an unmatched closing brace")
+    require(depth == 0 and len(definitions) == 1,
+            "Integer battery needs exactly one balanced original function definition")
+    require(all(signature == definitions[0][:6] for signature in prototypes),
+            "Integer battery prototype differs from its original function signature")
+    return definitions[0]
+
+
+def _validate_integer_battery_record(document: dict, record: dict, block: dict) -> None:
+    fields = {"activity", "kind", "libraryPath", "function", "testPath", "target",
+              "publishedResult", "failureExitCode", "cases"}
+    require(fields <= set(record) <= fields | {"prerequisite"} and
+            record["kind"] == "cmake-int-unary-v1",
+            "Unknown or missing integer CMake battery declaration field")
+    require(type(block) is dict and block.get("type") == "cpp_compiler" and
+            block.get("language", "cpp") == "cpp" and
+            type(block.get("cmake")) is dict and
+            type(block.get("projectFiles")) is list and bool(block["projectFiles"]) and
+            not any(field in block for field in ("outputCheck", "compileCheck", "sourceFiles")),
+            "An integer battery must own an unevaluated C++ CMake editor")
+    for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
+                  "compilerNamedRuleChecks", "compilerCmakeGraphChecks",
+                  "compilerReductionChecks"):
+        declarations = document.get(field)
+        require(type(declarations) is not list or
+                not any(type(item) is dict and item.get("activity") == record["activity"]
+                        for item in declarations),
+                "Integer battery owner conflicts with another compiler objective")
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]{0,127}\Z")
+    path_pattern = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9_./-]{0,255}\Z")
+
+    def target(value: object) -> bool:
+        return (type(value) is str and bool(identifier.fullmatch(value)) and
+                not value.startswith(("lgaed_boolean_battery_", "lgaed_integer_battery_")))
+
+    def int32(value: object) -> bool:
+        return type(value) is int and -(2 ** 31) <= value < 2 ** 31
+
+    def stream(value: object) -> bool:
+        if type(value) is not str or "\x00" in value:
+            return False
+        try:
+            return len(value.encode("utf-8")) <= 4 * 1024 * 1024
+        except UnicodeError:
+            return False
+
+    paths = record["libraryPath"], record["testPath"]
+    require(all(type(path) is str and path_pattern.fullmatch(path) and
+                path.endswith(".cpp") and ".." not in path and "\\" not in path
+                for path in paths) and paths[0] != paths[1],
+            "Integer battery needs distinct safe existing C++ library and test paths")
+    files = block["projectFiles"]
+    require(1 <= len(files) <= 128 and
+            all(type(entry) is dict and type(entry.get("path")) is str and
+                type(entry.get("initialCode")) is str for entry in files),
+            "Integer battery requires the original complete CMake project files")
+    by_name = {entry["path"]: entry["initialCode"] for entry in files}
+    ascii_lower = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
+    require(len({name.translate(ascii_lower) for name in by_name}) == len(files) and
+            all(path in by_name for path in (*paths, "CMakeLists.txt")),
+            "Integer battery source, test or build description is missing or repeated")
+    try:
+        require(sum(len(code.encode("utf-8")) for code in by_name.values()) <= 8 * 1024 * 1024,
+                "Integer battery CMake project exceeds its original size limit")
+    except UnicodeError as exc:
+        raise LayoutError("Integer battery project text must be valid UTF-8") from exc
+    _integer_battery_definition(by_name[paths[0]], record["function"])
+    require(target(record["target"]), "Integer battery target must be a safe identifier")
+    require(type(record["publishedResult"]) is str and
+            record["publishedResult"] in {"success", "failure"},
+            "Integer battery published result must be success or failure")
+    failure_exit = record["failureExitCode"]
+    require((type(failure_exit) is int and 1 <= failure_exit <= 0xFFFFFFFF) or
+            (type(failure_exit) is str and failure_exit == "nonzero"),
+            "Integer battery failure exit must be a nonzero DWORD or the exact nonzero policy")
+    cases = record["cases"]
+    require(type(cases) is list and 1 <= len(cases) <= 32,
+            "Integer battery requires 1..32 independently declared cases")
+    seen = set()
+    for case in cases:
+        require(type(case) is dict and set(case) == {"input", "expected"} and
+                int32(case["input"]) and int32(case["expected"]),
+                "Integer battery cases require signed C++ integers")
+        require(case["input"] not in seen, "Duplicate integer battery input")
+        seen.add(case["input"])
+    initial_target = block["cmake"].get("target")
+    if "prerequisite" not in record:
+        require(initial_target == record["target"],
+                "An integer battery without a prerequisite must retain its initial target")
+        return
+    prerequisite = record["prerequisite"]
+    require(type(prerequisite) is dict and set(prerequisite) == {
+        "target", "calls", "standardInput", "standardOutput", "standardError", "exitCode"},
+        "Integer battery prerequisite needs its exact client contract")
+    require(target(prerequisite["target"]) and prerequisite["target"] != record["target"] and
+            initial_target in (record["target"], prerequisite["target"]),
+            "Integer battery prerequisite needs a distinct target and the published selection")
+    require(type(prerequisite["exitCode"]) is int and prerequisite["exitCode"] == 0 and
+            all(stream(prerequisite[field]) for field in
+                ("standardInput", "standardOutput", "standardError")) and
+            prerequisite["standardInput"] == block.get("initialStandardInput", ""),
+            "Integer battery prerequisite requires bounded exact streams, original input and integer exit zero")
+    calls = prerequisite["calls"]
+    require(type(calls) is list and 1 <= len(calls) <= 32,
+            "Integer battery prerequisite requires 1..32 ordered client calls")
+    for call in calls:
+        require(type(call) is dict and set(call) == {"input", "result"} and
+                int32(call["input"]) and int32(call["result"]),
+                "Integer battery client observations require signed C++ integers")
+
+
 def _validate_compiler_open_battery_checks(document: dict) -> None:
     """Authenticate open battery goals without changing published exercise bytes.
 
-    Typed single-file goals declare independent boolean expectations. Legacy
+    Typed goals declare independent boolean or integer expectations. Legacy
     CMake goals keep their original fields and authenticated test calls.
     """
     if "compilerOpenBatteryChecks" not in document:
@@ -3416,12 +3607,15 @@ def _validate_compiler_open_battery_checks(document: dict) -> None:
     for record in checks:
         require(type(record) is dict, "Open battery declaration must be an object")
         if "kind" in record:
-            require(record.get("kind") == "boolean-pair-v1" and "activity" in record,
-                    "Unknown or missing open battery kind or owner")
+            require(record.get("kind") in ("boolean-pair-v1", "cmake-int-unary-v1") and
+                    "activity" in record, "Unknown or missing open battery kind or owner")
             identity = _identity(record["activity"])
             require(identity not in identities, "Duplicate open battery owner")
             identities.add(identity)
-            _validate_boolean_battery_record(document, record, owners.get(identity))
+            if record["kind"] == "boolean-pair-v1":
+                _validate_boolean_battery_record(document, record, owners.get(identity))
+            else:
+                _validate_integer_battery_record(document, record, owners.get(identity))
             continue
         require(set(record) == {
             "activity", "library", "test", "function", "comparison", "target",

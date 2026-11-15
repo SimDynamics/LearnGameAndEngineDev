@@ -375,6 +375,23 @@ endfunction()
 
 # The same open-program checks run in the focused Windows gate and the full
 # application build. Fixtures extend the original lesson only in isolated QA.
+function(lgaed_add_integer_battery_tests)
+    add_executable(lgaed_integer_battery_check_tests
+        native/core/integer_battery_check_tests.cpp)
+    target_link_libraries(lgaed_integer_battery_check_tests
+        PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.integer_battery COMMAND lgaed_integer_battery_check_tests)
+    set_tests_properties(native.integer_battery PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_integer_battery_runtime_tests
+        native/platform/windows/integer_battery_runtime_tests.cpp)
+    target_link_libraries(lgaed_integer_battery_runtime_tests
+        PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.integer_battery_runtime COMMAND lgaed_integer_battery_runtime_tests
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_bateria_como_segundo_consumidor.json")
+    set_tests_properties(native.integer_battery_runtime
+        PROPERTIES TIMEOUT 1200 RUN_SERIAL TRUE)
+endfunction()
+
 function(lgaed_add_reduction_tests)
     add_executable(lgaed_reduction_check_tests
         native/core/reduction_check_tests.cpp)
@@ -435,6 +452,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
+    lgaed_add_integer_battery_tests()
     lgaed_add_semantic_retirement_view_test()
     lgaed_add_compiler_case_order_view_test()
     # Run the real Win32 compiler view against thirteen authored inputs.
@@ -1378,6 +1396,7 @@ if(BUILD_TESTING)
     lgaed_add_general_choice_editorial_tests()
     lgaed_add_boolean_battery_tests()
     lgaed_add_reduction_tests()
+    lgaed_add_integer_battery_tests()
     add_executable(lgaed_compile_diagnostic_view_tests native/presentation/windows/compile_diagnostic_view_tests.cpp)
     target_link_libraries(lgaed_compile_diagnostic_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.compile_diagnostic_view COMMAND lgaed_compile_diagnostic_view_tests)

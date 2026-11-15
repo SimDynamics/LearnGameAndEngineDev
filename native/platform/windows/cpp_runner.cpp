@@ -424,6 +424,33 @@ std::string reduction_fingerprint(const CppRunRequest& request) {
         field(curriculum::reduction_spec_frame(*request.reduction_probe));
     return state::sha256(frame);
 }
+std::string integer_battery_fingerprint(const CppRunRequest& request) {
+    if(!request.integer_battery_probe||
+       !curriculum::integer_battery_spec_valid(*request.integer_battery_probe))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-integer-battery-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(curriculum::integer_battery_spec_frame(*request.integer_battery_probe))+
+        field(request.integer_battery_prerequisite));
+}
+bool integer_battery_context(const CppRunRequest& request) {
+    return request.integer_battery_probe&&request.cmake&&!request.project_files.empty()&&
+        request.source_files.empty()&&request.backend==CppRunRequest::Backend::native_msvc&&
+        !request.diagnostic&&!request.boolean_battery_probe&&!request.reduction_probe&&
+        !request.open_battery_probe&&!request.named_rule_probe&&!request.rejection_probe&&
+        !request.observation_probe&&!request.assertion_mode&&!request.cmake_graph_check&&
+        !request.capture_cmake_graph&&
+        curriculum::integer_battery_spec_valid(*request.integer_battery_probe);
+}
 void validate_request_project(const CppRunRequest& request){
     if(!request.projects_directory.is_absolute())throw std::invalid_argument("Student projects directory must be absolute");
     std::map<std::wstring,bool,CaseInsensitive> paths;for(const auto& [name,text]:request.project_files)if(!paths.emplace(project_path(name).generic_wstring(),true).second)throw std::invalid_argument("Case-colliding Windows project paths");
@@ -1036,9 +1063,13 @@ void run_multifile(const CppRunRequest& request,CppRunResult& result,const std::
     if(remaining().count()<=0){result.compilation.status=CppPhaseStatus::timed_out;return;}merge_phase(result.compilation,run_phase(compiler,link,result.run_directory,compiler_input,L"link",remaining(),request.output_limit_bytes,true,stop,true),request.output_limit_bytes);
     if(result.compilation.succeeded()){result.artifact=executable;result.target_type="EXECUTABLE";result.execution=run_phase(executable,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop);}
 }
-void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
-    validate_request_project(request);const auto workspace=cmake_workspace(request);const auto shared_lock=project_mutex(workspace);std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
-    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()){auto& phase=request.action==CppRunRequest::Action::execute?result.execution:request.action==CppRunRequest::Action::build?result.compilation:result.configuration;phase.status=CppPhaseStatus::cancelled;return;}
+// The ordinary wrapper keeps its existing lock and behavior. Only the opt-in
+// integer battery holds that same lock across several builds and executions.
+void run_cmake_unlocked(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& input,const std::filesystem::path& compiler_input,
+        std::stop_token stop,const std::vector<wchar_t>* fixed_environment=nullptr,
+        bool defer_execution=false) {
+    const auto workspace=cmake_workspace(request);
     result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);const auto& build_directory=workspace;const auto source=workspace/L"p",state_file=workspace/L"state.json";
     auto availability=inspect_unlocked(request);const auto action=request.action;
     const bool authored_trace=requires_authored_cmake_trace(request);
@@ -1076,7 +1107,7 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
                 throw std::invalid_argument(
                     "Explicit CMake rules need an original authored CMake file");
         }
-        result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true);
+        result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true,fixed_environment);
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
@@ -1095,7 +1126,7 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
             // selected File API target, so Ninja must produce it again.
             if(std::ranges::find(current_target.artifacts,old)!=current_target.artifacts.end()&&std::filesystem::is_regular_file(old)&&state::sha256(state::read_bytes(old,128*1024*1024))!=json_text(saved,L"artifactSha256"))std::filesystem::remove(old);}
         for(const auto key:{L"built",L"artifact",L"artifactSha256"})if(saved.HasKey(key))saved.Remove(key);save_json(state_file,saved);
-        result.compilation=run_phase(cmake,{L"--build",build_directory.wstring(),L"--target",std::wstring(winrt::to_hstring(request.cmake->target)),L"--parallel",L"2"},result.run_directory,compiler_input,L"build",request.compile_timeout,request.output_limit_bytes,true,stop,true);
+        result.compilation=run_phase(cmake,{L"--build",build_directory.wstring(),L"--target",std::wstring(winrt::to_hstring(request.cmake->target)),L"--parallel",L"2"},result.run_directory,compiler_input,L"build",request.compile_timeout,request.output_limit_bytes,true,stop,true,fixed_environment);
         if(!result.compilation.succeeded())return;const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;
         if(target.type=="EXECUTABLE"){for(const auto& artifact:target.artifacts)if(executable64(artifact)){result.artifact=artifact;break;}if(result.artifact.empty())throw std::runtime_error("The selected CMake executable did not produce a native x64 artifact inside its build directory");
             saved.Insert(L"built",JsonValue::CreateStringValue(winrt::to_hstring(result.project_fingerprint)));saved.Insert(L"artifact",JsonValue::CreateStringValue(result.artifact.lexically_relative(build_directory).generic_wstring()));saved.Insert(L"artifactSha256",JsonValue::CreateStringValue(winrt::to_hstring(state::sha256(state::read_bytes(result.artifact,128*1024*1024)))));save_json(state_file,saved);}
@@ -1104,7 +1135,13 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
     if(action==CppRunRequest::Action::build)return;
     if(!availability.built)throw std::runtime_error("Build the executable of the current project revision before running it");
     result.compilation.status=CppPhaseStatus::completed;result.compilation.exit_code=0;result.artifact=availability.artifact;result.target_type=availability.target_type;result.executable=request.cmake->target;
-    result.execution=run_phase(result.artifact,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop);
+    if(!defer_execution)result.execution=run_phase(result.artifact,{},result.run_directory,input,L"execution",request.execution_timeout,request.output_limit_bytes,false,stop,false,fixed_environment);
+}
+
+void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
+    validate_request_project(request);const auto workspace=cmake_workspace(request);const auto shared_lock=project_mutex(workspace);std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
+    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()){auto& phase=request.action==CppRunRequest::Action::execute?result.execution:request.action==CppRunRequest::Action::build?result.compilation:result.configuration;phase.status=CppPhaseStatus::cancelled;return;}
+    run_cmake_unlocked(request,result,input,compiler_input,stop);
 }
 
 std::string_view trim_ascii(std::string_view text) {
@@ -1678,6 +1715,26 @@ std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest& request
 std::string cpp_reduction_request_fingerprint(const CppRunRequest& request) {
     return reduction_fingerprint(request);
 }
+std::string cpp_integer_battery_request_fingerprint(const CppRunRequest& request) {
+    return integer_battery_fingerprint(request);
+}
+std::string cpp_integer_battery_component_fingerprint(const CppRunRequest& request) {
+    if(!integer_battery_context(request)||!request.integer_battery_probe->prerequisite)
+        return {};
+    auto component=request;
+    const auto& spec=*request.integer_battery_probe;
+    const auto test=std::ranges::find_if(component.project_files,
+        [&](const auto& item){return item.first==spec.test_path;});
+    if(test==component.project_files.end())return {};
+    test->second.clear();
+    component.cmake->target=spec.prerequisite->target;
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-integer-battery-component-v1/")+
+        field(fingerprint(component))+field(component.project_key)+
+        field(curriculum::integer_battery_spec_frame(spec)));
+}
 
 curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,const CppRunResult& result) {
     curriculum::FreshExecution fresh;
@@ -1690,6 +1747,12 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(request.reduction_probe) {
         const auto binding=reduction_fingerprint(request);
         if(binding.empty()||result.reduction_request_fingerprint!=binding)return fresh;
+    }
+    if(request.integer_battery_probe) {
+        const auto binding=integer_battery_fingerprint(request);
+        if(binding.empty()||result.integer_battery_request_fingerprint!=binding||
+           result.project_fingerprint!=fingerprint(request)||
+           result.configuration_fingerprint!=fingerprint(request,true))return fresh;
     }
     fresh.source_revision=result.revision;
     fresh.compilation_succeeded=result.compilation.succeeded()
@@ -1794,6 +1857,72 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 }else if(source_check.accepted) {
                     fresh.reduction_probe_feedback=
                         "La reproducción publicada no tiene la misma salida y terminación normal que el fuente capturado.";
+                }
+            }
+        }
+    }
+    if(request.integer_battery_probe) {
+        fresh.execution_completed=false;
+        fresh.execution_succeeded=false;
+        const auto& spec=*request.integer_battery_probe;
+        const auto frame=integer_battery_fingerprint(request);
+        fresh.integer_battery_request_fingerprint=frame;
+        fresh.integer_battery_probe_feedback=
+            "No se obtuvo una batería independiente completa para este proyecto y objetivo.";
+        if(result.execution.status==CppPhaseStatus::completed&&result.execution.exit_code)
+            fresh.integer_battery_exit_code=*result.execution.exit_code;
+        if(integer_battery_context(request)&&result.target_type=="EXECUTABLE"&&
+           result.integer_battery_evidence&&
+           result.integer_battery_evidence->original_program_fingerprint==frame) {
+            const auto& runs=result.integer_battery_evidence->runs;
+            const bool client=spec.prerequisite&&request.cmake->target==spec.prerequisite->target;
+            const auto plan=curriculum::integer_battery_plan(spec);
+            const bool count=client?runs.size()==1:plan&&runs.size()==plan->size();
+            if(count&&!runs.empty()) {
+                const auto& published=runs.back();
+                const bool same_published=published.program_frame==frame&&
+                    published.phase.mutation==curriculum::IntegerBatteryMutation::published&&
+                    !published.phase.target&&published.compiled&&published.executed&&
+                    published.completed_normally&&fresh.compilation_succeeded&&
+                    result.execution.status==CppPhaseStatus::completed&&result.execution.exit_code&&
+                    published.exit_code==*result.execution.exit_code&&
+                    published.stdout_bytes==result.execution.stdout_bytes&&
+                    published.stderr_bytes==result.execution.stderr_bytes;
+                if(same_published) {
+                    fresh.execution_completed=true;
+                    fresh.execution_succeeded=published.exit_code==0;
+                    if(published.exit_code<=255)fresh.exit_code=static_cast<int>(published.exit_code);
+                    if(client) {
+                        const auto& required=*spec.prerequisite;
+                        bool calls=published.calls.size()==required.calls.size();
+                        if(calls)for(std::size_t i=0;i<required.calls.size();++i)
+                            if(published.calls[i].input!=required.calls[i].input||
+                               published.calls[i].result!=required.calls[i].result)calls=false;
+                        fresh.integer_battery_client_correct=calls&&
+                            published.exit_code==required.exit_code&&
+                            request.stdin_utf8==required.standard_input&&
+                            published.stdout_bytes==required.standard_output&&
+                            published.stderr_bytes==required.standard_error;
+                        fresh.integer_battery_probe_feedback=fresh.integer_battery_client_correct
+                            ?"Se verificó la ejecución del cliente; continúa con el comprobador."
+                            :"La ejecución del cliente no conserva las llamadas y resultados declarados.";
+                    }else if(request.cmake->target==spec.test_target) {
+                        const auto verdict=curriculum::integer_battery_verify(spec,runs,frame);
+                        const auto driver=std::ranges::find_if(request.project_files,
+                            [&](const auto& item){return item.first==spec.test_path;});
+                        const bool driver_valid=driver!=request.project_files.end()&&
+                            curriculum::integer_battery_driver_valid(driver->second);
+                        const bool prerequisite=!spec.prerequisite||
+                            !request.integer_battery_prerequisite.empty();
+                        fresh.integer_battery_probe_correct=verdict.accepted&&prerequisite&&driver_valid;
+                        fresh.integer_battery_probe_feedback=!driver_valid
+                            ?"Conserva un comprobador sin macros ni nombres reservados de la evaluación."
+                            :prerequisite?verdict.reason:
+                                "Ejecuta primero el cliente publicado y después vuelve a ejecutar el comprobador.";
+                    }
+                }else{
+                    fresh.integer_battery_probe_feedback=
+                        "La ejecución publicada no tiene la misma salida y terminación normal que el proyecto capturado.";
                 }
             }
         }
@@ -2294,6 +2423,319 @@ bool execute_private_single_file_phases(const CppRunRequest& request,const CppRu
     return !stop.stop_requested();
 }
 
+
+// CMake private phases keep the same physical workspace, target and process
+// inputs. Snapshots live only in memory; no phase-labelled source, object or
+// cache remains observable while either the public or private program runs.
+struct CmakeProbeFile {
+    std::string bytes;
+    std::filesystem::file_time_type modified;
+};
+struct CmakeProbeTree {
+    std::filesystem::file_time_type modified;
+    std::map<std::filesystem::path,std::filesystem::file_time_type> directories;
+    std::map<std::filesystem::path,CmakeProbeFile> files;
+};
+CmakeProbeTree retain_cmake_probe_tree(const std::filesystem::path& root) {
+    state::require_safe_path(root);
+    CmakeProbeTree result;
+    result.modified=std::filesystem::last_write_time(root);
+    constexpr std::uintmax_t limit=128ULL*1024*1024;
+    std::uintmax_t bytes=0;
+    std::size_t entries=0;
+    const auto visit=[&](auto&& self,const std::filesystem::path& parent)->void {
+        for(const auto& entry:std::filesystem::directory_iterator(parent)) {
+            state::require_safe_path(entry.path());
+            if(++entries>65536)
+                throw std::runtime_error("The private CMake snapshot has too many entries");
+            const auto relative=entry.path().lexically_relative(root);
+            if(entry.is_directory()) {
+                result.directories.emplace(relative,entry.last_write_time());
+                self(self,entry.path());
+            }else if(entry.is_regular_file()) {
+                const auto size=entry.file_size();
+                if(size>limit-bytes)
+                    throw std::runtime_error("The private CMake snapshot exceeds128 MiB");
+                auto content=read_exact(entry.path(),static_cast<std::size_t>(size));
+                if(content.size()!=size)
+                    throw std::runtime_error("Cannot retain the public CMake artifact");
+                bytes+=size;
+                result.files.emplace(relative,CmakeProbeFile{
+                    std::move(content),entry.last_write_time()});
+            }else{
+                throw std::runtime_error("An unsupported entry prevents a private CMake snapshot");
+            }
+        }
+    };
+    visit(visit,root);
+    return result;
+}
+bool cmake_probe_descendant(const std::filesystem::path& path,
+        const std::filesystem::path& parent) {
+    const auto relative=path.lexically_relative(parent);
+    return !relative.empty()&&!relative.is_absolute()&&
+        *relative.begin()!=L"..";
+}
+void clear_cmake_probe_tree(const std::filesystem::path& root,
+        const std::vector<std::filesystem::path>& kept={}) {
+    state::require_safe_path(root);
+    const auto visit=[&](auto&& self,const std::filesystem::path& parent)->void {
+        for(const auto& entry:std::filesystem::directory_iterator(parent)) {
+            state::require_safe_path(entry.path());
+            const auto relative=entry.path().lexically_relative(root);
+            if(std::ranges::find(kept,relative)!=kept.end()) {
+                if(!entry.is_regular_file())
+                    throw std::runtime_error("A CMake execution input is not a regular file");
+                continue;
+            }
+            const bool ancestor=std::ranges::any_of(kept,
+                [&](const auto& path){return cmake_probe_descendant(path,relative);});
+            if(entry.is_directory())self(self,entry.path());
+            if(!ancestor&&!std::filesystem::remove(entry.path()))
+                throw std::runtime_error("Cannot reset the private CMake execution workspace");
+        }
+    };
+    visit(visit,root);
+}
+void restore_cmake_probe_tree(const std::filesystem::path& root,const CmakeProbeTree& tree) {
+    clear_cmake_probe_tree(root);
+    for(const auto& [relative,unused]:tree.directories) {
+        const auto path=root/relative;
+        state::require_safe_path(path);
+        std::filesystem::create_directories(path);
+        state::require_safe_path(path);
+    }
+    for(const auto& [relative,file]:tree.files) {
+        const auto path=root/relative;
+        state::require_safe_path(path);
+        std::filesystem::create_directories(path.parent_path());
+        state::require_safe_path(path);
+        write_exact(path,file.bytes);
+        std::filesystem::last_write_time(path,file.modified);
+    }
+    // Ninja's existing state is restored with the timestamps that belonged to
+    // its files, rather than pairing old bytes with new write times.
+    for(auto it=tree.directories.rbegin();it!=tree.directories.rend();++it)
+        std::filesystem::last_write_time(root/it->first,it->second);
+    std::filesystem::last_write_time(root,tree.modified);
+}
+void restore_cmake_public_tree(const std::filesystem::path& root,
+        const CmakeProbeTree& hidden,const CmakeProbeTree& visible_before) {
+    state::require_safe_path(root);
+    const auto root_time=std::filesystem::last_write_time(root);
+    std::vector<std::pair<std::filesystem::path,std::filesystem::file_time_type>> restored;
+    const auto safe=[&](const std::filesystem::path& path) {
+        try {state::require_safe_path(path);return true;}
+        catch(const std::exception&) {return false;}
+    };
+    // Restore only entries hidden before launching the public program. Existing
+    // public files, directories, replacements and deletions take precedence.
+    // This needs no snapshot of program-created data, which may exceed the
+    // private evidence capacity and must still be preserved.
+    for(const auto& [relative,modified]:hidden.directories) {
+        const auto path=root/relative;
+        if(!safe(path))continue;
+        if(std::filesystem::is_directory(path)) {
+            const auto actual=std::filesystem::last_write_time(path);
+            const auto before=visible_before.directories.find(relative);
+            restored.emplace_back(path,before!=visible_before.directories.end()&&
+                actual==before->second?modified:actual);
+            continue;
+        }
+        if(std::filesystem::exists(path))continue;
+        if(visible_before.directories.contains(relative))continue;
+        const auto parent=path.parent_path();
+        if(!safe(parent)||!std::filesystem::is_directory(parent))continue;
+        std::filesystem::create_directory(path);
+        state::require_safe_path(path);
+        restored.emplace_back(path,modified);
+    }
+    for(const auto& [relative,file]:hidden.files) {
+        if(visible_before.files.contains(relative))continue;
+        const auto path=root/relative;
+        if(!safe(path)||std::filesystem::exists(path))continue;
+        const auto parent=path.parent_path();
+        if(!safe(parent)||!std::filesystem::is_directory(parent))continue;
+        write_exact(path,file.bytes);
+        std::filesystem::last_write_time(path,file.modified);
+    }
+    for(auto it=restored.rbegin();it!=restored.rend();++it)
+        std::filesystem::last_write_time(it->first,it->second);
+    std::filesystem::last_write_time(root,root_time==visible_before.modified?
+        hidden.modified:root_time);
+}
+void execute_hidden_cmake_phase(const CppRunRequest& request,CppRunResult& observed,
+        const std::filesystem::path& workspace,const std::vector<wchar_t>& environment,
+        CmakeProbeTree& build_tree,CmakeProbeTree& run_tree,bool preserve_outputs,
+        std::stop_token stop) {
+    const auto& directory=observed.run_directory;
+    const auto artifact=contained(workspace,observed.artifact).lexically_relative(workspace);
+    CmakeProbeTree visible_build,visible_run;
+    bool launched=false;
+    const auto restore=[&] {
+        if(preserve_outputs&&launched) {
+            restore_cmake_public_tree(workspace,build_tree,visible_build);
+            restore_cmake_public_tree(directory,run_tree,visible_run);
+        }else{
+            restore_cmake_probe_tree(workspace,build_tree);
+            restore_cmake_probe_tree(directory,run_tree);
+        }
+    };
+    try {
+        clear_cmake_probe_tree(workspace,{artifact});
+        clear_cmake_probe_tree(directory,{L"stdin.bin",L"compiler-stdin.bin",L"toolchain.txt"});
+        visible_build=retain_cmake_probe_tree(workspace);
+        visible_run=retain_cmake_probe_tree(directory);
+        launched=true;
+        observed.execution=run_phase(observed.artifact,{},directory,directory/L"stdin.bin",
+            L"execution",request.execution_timeout,request.output_limit_bytes,false,stop,
+            false,&environment);
+    }catch(...) {
+        restore();
+        throw;
+    }
+    restore();
+    if(preserve_outputs) {
+        // If public output exceeds the evidence cap or introduces an unsafe
+        // entry, this read can fail without clearing any of those public files.
+        build_tree=retain_cmake_probe_tree(workspace);
+        run_tree=retain_cmake_probe_tree(directory);
+    }
+}
+
+
+std::optional<std::string> integer_battery_driver_path(const CppRunRequest& request,
+        const std::filesystem::path& workspace,bool client) {
+    const auto graph=snapshot_cmake_graph(workspace,request,
+        fingerprint(request),fingerprint(request,true));
+    const auto target=std::ranges::find_if(graph.targets,
+        [&](const auto& item){return item.name==request.cmake->target;});
+    if(target==graph.targets.end()||target->type!="EXECUTABLE")return {};
+    std::optional<std::string> driver;
+    for(const auto& path:target->compiled_sources) {
+        const auto absolute=contained(workspace/L"p",project_path(path));
+        const auto relative=utf8(absolute.lexically_relative(workspace/L"p").generic_wstring());
+        const auto source=std::ranges::find_if(request.project_files,
+            [&](const auto& item){return item.first==relative;});
+        if(source==request.project_files.end()||
+           !curriculum::integer_battery_driver_has_main(source->second))continue;
+        if(driver||(!client&&relative!=request.integer_battery_probe->test_path))return {};
+        driver=relative;
+    }
+    return driver;
+}
+
+void run_integer_battery_cmake(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& input,const std::filesystem::path& compiler_input,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    validate_request_project(request);
+    const auto workspace=cmake_workspace(request);
+    const auto shared_lock=project_mutex(workspace);
+    std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
+    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()) {
+        auto& phase=request.action==CppRunRequest::Action::execute?result.execution:
+            request.action==CppRunRequest::Action::build?result.compilation:result.configuration;
+        phase.status=CppPhaseStatus::cancelled;
+        return;
+    }
+    const auto& spec=*request.integer_battery_probe;
+    const bool client=spec.prerequisite&&request.cmake->target==spec.prerequisite->target;
+    const bool supported=integer_battery_context(request)&&
+        (request.cmake->target==spec.test_target||client);
+    const bool execute=supported&&(request.action==CppRunRequest::Action::compile_run||
+        request.action==CppRunRequest::Action::execute);
+    const auto environment=compiler_environment();
+    run_cmake_unlocked(request,result,input,compiler_input,stop,&environment,execute);
+    if(!execute||!result.compilation.succeeded()||result.artifact.empty()||
+       result.target_type!="EXECUTABLE"||stop.stop_requested())return;
+
+    // Resolve the trusted target before the public program can write files.
+    const auto library=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==spec.library_path;});
+    const auto driver_path=integer_battery_driver_path(request,workspace,client);
+    const auto driver=driver_path?std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==*driver_path;}):request.project_files.end();
+    const auto instrumented_driver=driver!=request.project_files.end()
+        ?curriculum::integer_battery_instrument_driver(driver->second,spec)
+        :std::optional<std::string>{};
+    auto build_tree=retain_cmake_probe_tree(workspace);
+    auto run_tree=retain_cmake_probe_tree(result.run_directory);
+    const auto original_build=build_tree;
+    execute_hidden_cmake_phase(request,result,workspace,environment,
+        build_tree,run_tree,true,stop);
+    if(result.execution.status!=CppPhaseStatus::completed||!result.execution.exit_code||
+       stop.stop_requested())return;
+
+    if(library==request.project_files.end()||!instrumented_driver)return;
+    const auto plan=curriculum::integer_battery_plan(spec);
+    if(!plan)return;
+    const std::vector<curriculum::IntegerBatteryPhase> phases=client
+        ?std::vector<curriculum::IntegerBatteryPhase>{
+            {curriculum::IntegerBatteryMutation::published,{}}}:*plan;
+    CppIntegerBatteryEvidence evidence;
+    evidence.original_program_fingerprint=integer_battery_fingerprint(request);
+    const auto restore_public=[&] {
+        restore_cmake_probe_tree(workspace,build_tree);
+        restore_cmake_probe_tree(result.run_directory,run_tree);
+    };
+    try {
+        restore_cmake_probe_tree(workspace,original_build);
+        for(const auto& phase:phases) {
+            if(stop.stop_requested())break;
+            const auto instrumented=curriculum::integer_battery_instrument(
+                library->second,spec,phase);
+            if(!instrumented)break;
+            auto private_request=request;
+            private_request.action=CppRunRequest::Action::compile_run;
+            for(auto& file:private_request.project_files)
+                if(file.first==spec.library_path)file.second=*instrumented;
+                else if(file.first==*driver_path)file.second=*instrumented_driver;
+            if(cmake_workspace(private_request)!=workspace)
+                throw std::runtime_error("An integer probe changed the CMake workspace identity");
+            clear_cmake_probe_tree(result.run_directory);
+            write_exact(input,request.stdin_utf8);
+            write_exact(compiler_input,"");
+            write_exact(result.run_directory/L"toolchain.txt",initial_toolchain);
+            CppRunResult observed;
+            observed.request_id=request.request_id;
+            observed.revision=request.revision;
+            observed.run_directory=result.run_directory;
+            run_cmake_unlocked(private_request,observed,input,compiler_input,stop,
+                &environment,true);
+            if(observed.compilation.succeeded()&&observed.artifact==result.artifact&&
+               observed.target_type=="EXECUTABLE"&&!stop.stop_requested()) {
+                auto private_build=retain_cmake_probe_tree(workspace);
+                auto private_run=retain_cmake_probe_tree(result.run_directory);
+                execute_hidden_cmake_phase(private_request,observed,workspace,environment,
+                    private_build,private_run,false,stop);
+            }
+            curriculum::IntegerBatteryRun run;
+            run.program_frame=evidence.original_program_fingerprint;
+            run.compiled=observed.compilation.succeeded()&&
+                (observed.configuration.status==CppPhaseStatus::not_started||
+                 observed.configuration.succeeded());
+            run.executed=observed.execution.status==CppPhaseStatus::completed&&
+                observed.execution.exit_code.has_value();
+            run.exit_code=observed.execution.exit_code.value_or(0);
+            run.phase=phase;
+            run.stdout_bytes=observed.execution.stdout_bytes;
+            run.stderr_bytes=observed.execution.stderr_bytes;
+            if(const auto trace=curriculum::integer_battery_parse_trace(run.stderr_bytes)) {
+                run.calls=trace->calls;
+                run.completed_normally=trace->completed_normally;
+                run.stderr_bytes=trace->visible;
+            }
+            evidence.runs.push_back(std::move(run));
+            if(!evidence.runs.back().compiled||!evidence.runs.back().executed)break;
+        }
+    }catch(...) {
+        restore_public();
+        throw;
+    }
+    restore_public();
+    result.integer_battery_evidence=std::move(evidence);
+}
+
 void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
         std::string_view initial_toolchain,std::stop_token stop) {
@@ -2402,6 +2844,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
         if(request.reduction_probe)
             result.reduction_request_fingerprint=reduction_fingerprint(request);
+        if(request.integer_battery_probe)
+            result.integer_battery_request_fingerprint=integer_battery_fingerprint(request);
         ensure_winrt_apartment();
         if (stop.stop_requested()) {
             (request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation).status = CppPhaseStatus::cancelled;
@@ -2450,6 +2894,11 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             return result;
         }
         if(request.cmake){
+            if(request.integer_battery_probe) {
+                run_integer_battery_cmake(request,result,input,compiler_input,
+                    initial_toolchain,stop);
+                return result;
+            }
             run_cmake(request,result,input,compiler_input,stop);
             complete_cmake_option_probe(request,result,stop);
             complete_named_rule_probe(request,result,stop);

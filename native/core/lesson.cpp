@@ -465,6 +465,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         // but needs evidence bound to this preserved source and call history.
         token(reduction_spec_frame(*activity.reduction_probe));
     }
+    if(activity.integer_battery_probe) {
+        // The original editor and its storage address stay unchanged, while
+        // the complete case table and any earlier client observation belong
+        // to this independently authenticated objective.
+        token(integer_battery_spec_frame(*activity.integer_battery_probe));
+    }
     if(activity.cmake_graph_check) {
         const auto& graph=*activity.cmake_graph_check;
         token("cmake-generated-graph-v1");
@@ -751,6 +757,28 @@ bool uses_single_line_answer(const Block& block) {
     return !block.answers.empty() && std::ranges::all_of(block.answers, [](const auto& text) { return text.find_first_of("\r\n") == text.npos; });
 }
 OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExecution& execution, std::uint64_t current_revision) {
+    if(check.integer_battery_check) {
+        if(execution.source_revision!=current_revision||
+           !execution.compilation_succeeded||!execution.integer_battery_exit_code||
+           check.cases.size()!=1||check.input_comparison!=TextComparison::exact)
+            return {};
+        const auto& selected=check.cases.front();
+        if(selected.standard_input!=execution.standard_input||
+           !selected.executable||selected.executable!=execution.executable)
+            return {};
+        const auto actual_exit=*execution.integer_battery_exit_code;
+        const bool exit_correct=execution.execution_completed&&
+            (selected.exit_code==0?actual_exit==0:
+                check.integer_battery_failure_exit_code
+                    ?actual_exit==*check.integer_battery_failure_exit_code:actual_exit!=0);
+        const bool proved=execution.integer_battery_probe_correct;
+        const bool correct=proved&&exit_correct;
+        const auto feedback=correct?selected.explanation:
+            !execution.integer_battery_probe_feedback.empty()?execution.integer_battery_probe_feedback:
+                "La batería todavía no acredita cada comparación y su diagnóstico.";
+        return {correct?OutputVerdict::correct:OutputVerdict::incorrect,
+            feedback,proved,proved,exit_correct};
+    }
     if(check.reduction_check) {
         if(execution.source_revision!=current_revision||
            !execution.compilation_succeeded||check.cases.size()!=1||

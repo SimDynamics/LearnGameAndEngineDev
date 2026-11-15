@@ -48,6 +48,56 @@ bool selective_history_receipt_valid(const state::StateData& data,
     return fields&&fields->size()==2&&!(*fields)[0].empty()
         &&(*fields)[1]==selective_history_seal(key,(*fields)[0]);
 }
+
+std::string integer_client_key(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    // This prerequisite survives edits to the unfinished test driver. It is
+    // still inside the owner's root, so an explicit exercise reset removes it.
+    return root(lesson,block)+"integer-client/v1/"+
+        state::sha256(curriculum::reference_objective_frame(lesson,block));
+}
+std::string integer_client_seal(std::string_view key,std::string_view component,
+        std::string_view capture) {
+    return state::sha256("compiler-integer-client-v1/"+
+        token(key)+token(component)+token(capture));
+}
+const std::vector<std::string>* integer_client_receipt(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    const auto key=integer_client_key(lesson,block);
+    const auto value=state::find(data,"native_windows",key);
+    if(!value)return nullptr;
+    const auto fields=std::get_if<std::vector<std::string>>(value);
+    return fields&&fields->size()==3&&!(*fields)[0].empty()&&!(*fields)[1].empty()&&
+        (*fields)[2]==integer_client_seal(key,(*fields)[0],(*fields)[1])?fields:nullptr;
+}
+bool integer_battery_project_matches(const curriculum::Block& block,const CppRunRequest& request) {
+    if(!block.integer_battery_probe||block.integer_battery_probe!=request.integer_battery_probe||
+       !block.cmake||!request.cmake||
+       !curriculum::integer_battery_spec_valid(*block.integer_battery_probe)||
+       request.backend!=CppRunRequest::Backend::native_msvc||request.diagnostic||
+       request.boolean_battery_probe||request.reduction_probe||request.open_battery_probe||
+       request.named_rule_probe||request.rejection_probe||request.observation_probe||
+       request.assertion_mode||request.cmake_graph_check||request.capture_cmake_graph||
+       !request.source_files.empty()||request.source_files!=block.source_files||
+       request.project_files.size()!=block.project_files.size())return false;
+    const auto& spec=*block.integer_battery_probe;
+    const bool client=spec.prerequisite&&request.cmake->target==spec.prerequisite->target;
+    if(request.cmake->target!=spec.test_target&&!client)return false;
+    auto expected=*block.cmake;
+    expected.target=request.cmake->target;
+    if(expected!=*request.cmake)return false;
+    if(request.stdin_utf8!=(client?spec.prerequisite->standard_input:
+            block.standard_input.value_or("")))return false;
+    std::set<std::string> seen;
+    for(const auto& [path,source]:request.project_files) {
+        if(!seen.insert(path).second)return false;
+        const auto original=std::ranges::find_if(block.project_files,
+            [&](const auto& file){return file.first==path;});
+        if(original==block.project_files.end()||
+           (path!=spec.test_path&&source!=original->second))return false;
+    }
+    return true;
+}
+
 std::vector<std::string_view> tokens(std::string_view text) {
     std::vector<std::string_view> result;
     for (std::size_t start=0;start<text.size();) {
@@ -151,6 +201,10 @@ bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::Fre
         &&(!captured.reduction_probe||
             (!execution.reduction_request_fingerprint.empty()&&
              execution.reduction_request_fingerprint==cpp_reduction_request_fingerprint(captured)))
+        &&(!captured.integer_battery_probe||
+            (!execution.integer_battery_request_fingerprint.empty()&&
+             execution.integer_battery_request_fingerprint==
+                cpp_integer_battery_request_fingerprint(captured)))
         &&(captured.action==CppRunRequest::Action::compile_run||captured.action==CppRunRequest::Action::execute)
         &&captured.stdin_utf8==execution.standard_input
         &&(!captured.cmake||execution.executable==std::optional<std::string>{captured.cmake->target});
@@ -179,6 +233,8 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
         frame+=token(curriculum::reduction_objective_version);
         if(block.reduction_probe)frame+=token(curriculum::reduction_spec_frame(*block.reduction_probe));
     }
+    if(check.integer_battery_check&&block.integer_battery_probe)
+        frame+=token(curriculum::integer_battery_spec_frame(*block.integer_battery_probe));
     if(check.rejection_operation)
         frame+=token(*check.rejection_operation==curriculum::RejectionOperation::boxes
             ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
@@ -360,6 +416,10 @@ std::optional<CurrentCompilerGuidance> current_v2_guidance(const curriculum::Les
 }
 void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return;const auto key=base(lesson,block);
+    if(block.integer_battery_probe&&block.integer_battery_probe->prerequisite&&
+       state::find(data,"native_windows",integer_client_key(lesson,block))&&
+       !integer_client_receipt(data,lesson,block))
+        throw std::runtime_error("Invalid integer battery client provenance; data was preserved.");
     for(const auto suffix:{"program","completed","feedback"})if(const auto value=state::find(data,"native_windows",key+suffix);value&&!std::holds_alternative<std::string>(*value))
         throw std::runtime_error("Invalid compiler execution provenance; data was preserved.");
     const auto program=state::string_value(data,"native_windows",key+"program");const auto proofs=case_proofs(data,key);
@@ -379,6 +439,19 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     if(request.boolean_battery_probe!=block.boolean_battery_probe)return false;
     if(request.reduction_probe!=block.reduction_probe)return false;
+    if(request.integer_battery_probe!=block.integer_battery_probe)return false;
+    if(block.integer_battery_probe&&
+       (!integer_battery_project_matches(block,request)||
+        request.cmake->target!=block.integer_battery_probe->test_target||
+        (request.action!=CppRunRequest::Action::compile_run&&
+         request.action!=CppRunRequest::Action::execute)))return false;
+    if(block.integer_battery_probe) {
+        const auto driver=std::ranges::find_if(request.project_files,[&](const auto& item) {
+            return item.first==block.integer_battery_probe->test_path;
+        });
+        if(driver==request.project_files.end()||
+           !curriculum::integer_battery_driver_valid(driver->second))return false;
+    }
     if(block.boolean_battery_probe) {
         if(block.cmake||request.cmake||!block.project_files.empty()||
            !request.project_files.empty()||!block.source_files.empty()||
@@ -587,6 +660,7 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
     if(block.type!=curriculum::BlockType::cpp_compiler||!curriculum::has_compiler_objective(block))return {};
     if(block.boolean_battery_probe!=current.boolean_battery_probe)return {};
     if(block.reduction_probe!=current.reduction_probe)return {};
+    if(block.integer_battery_probe!=current.integer_battery_probe)return {};
     const auto key=base(lesson,block)+"review/";
     const auto text=[&](std::string_view suffix)->const std::string*{
         const auto value=state::find(data,"native_windows",key+std::string(suffix));
@@ -641,6 +715,7 @@ bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Less
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||feedback.empty()||!matches_runtime_capture(captured,execution))return false;
     if(block.boolean_battery_probe!=captured.boolean_battery_probe)return false;
     if(block.reduction_probe!=captured.reduction_probe)return false;
+    if(block.integer_battery_probe!=captured.integer_battery_probe)return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::incorrect)return false;
     const auto key=base(lesson,block)+"review/",program=compiler_program_frame(captured),target=review_target(captured),rules=review_rules(block);
@@ -823,6 +898,11 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
         (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||
        (block.reduction_probe&&!execution.reduction_probe_correct)||
+        (block.integer_battery_probe&&(!execution.integer_battery_probe_correct||
+            (block.integer_battery_probe->prerequisite&&
+             (captured.integer_battery_prerequisite.empty()||
+              captured.integer_battery_prerequisite!=
+                compiler_integer_battery_prerequisite(data,lesson,block,captured)))))||
        (block.cmake_graph_check&&!execution.cmake_graph_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
@@ -866,6 +946,44 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     }
     return all||first;
 }
+
+std::string compiler_integer_battery_prerequisite(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,
+        const CppRunRequest& current) {
+    if(!block.integer_battery_probe||!block.integer_battery_probe->prerequisite||
+       !integer_battery_project_matches(block,current)||
+       current.cmake->target!=block.integer_battery_probe->test_target)return {};
+    const auto receipt=integer_client_receipt(data,lesson,block);
+    const auto component=cpp_integer_battery_component_fingerprint(current);
+    return receipt&&!component.empty()&&(*receipt)[0]==component?(*receipt)[2]:std::string{};
+}
+bool record_compiler_integer_battery_client(state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,
+        const CppRunRequest& captured,const curriculum::FreshExecution& execution) {
+    if(!block.integer_battery_probe||!block.integer_battery_probe->prerequisite||
+       !integer_battery_project_matches(block,captured)||
+       captured.cmake->target!=block.integer_battery_probe->prerequisite->target||
+       !matches_runtime_capture(captured,execution)||
+       execution.source_revision!=captured.revision||!execution.compilation_succeeded||
+       !execution.execution_completed||!execution.execution_succeeded||
+       !execution.integer_battery_client_correct||
+       execution.integer_battery_exit_code!=
+           std::optional<std::uint32_t>{block.integer_battery_probe->prerequisite->exit_code})
+        return false;
+    const auto component=cpp_integer_battery_component_fingerprint(captured);
+    if(component.empty())return false;
+    const auto key=integer_client_key(lesson,block);
+    if(const auto prior=integer_client_receipt(data,lesson,block);
+       prior&&(*prior)[0]==component)return true; // Preserve an already captured token.
+    // A malformed saved receipt is preserved for state-store validation.
+    if(state::find(data,"native_windows",key)&&!integer_client_receipt(data,lesson,block))
+        return false;
+    const auto& capture=execution.integer_battery_request_fingerprint;
+    data.preferences["native_windows"][key]=std::vector<std::string>{
+        component,capture,integer_client_seal(key,component,capture)};
+    return true;
+}
+
 bool record_compiler_selective_history_completion(state::StateData& data,
         const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& request,const curriculum::FreshExecution& execution,

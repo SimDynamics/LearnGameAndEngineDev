@@ -10,6 +10,8 @@ on:
       - native/core/boolean_battery_check_tests.cpp
       - native/core/reduction_check.hpp
       - native/core/reduction_check_tests.cpp
+      - native/core/integer_battery_check.hpp
+      - native/core/integer_battery_check_tests.cpp
       - native/core/code_format_compat.hpp
       - scripts/curriculum/test_open_battery_trace_runtime.py
       - .github/workflows/codex-open-battery-core.yml
@@ -40,11 +42,14 @@ jobs:
             native/core/boolean_battery_check_tests.cpp -o "${RUNNER_TEMP}/boolean_battery_core"
           "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
             native/core/reduction_check_tests.cpp -o "${RUNNER_TEMP}/reduction_core"
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/integer_battery_check_tests.cpp -o "${RUNNER_TEMP}/integer_battery_core"
       - name: Run portable mutation and provenance tests
         run: |
           "${RUNNER_TEMP}/open_battery_core"
           "${RUNNER_TEMP}/boolean_battery_core"
           "${RUNNER_TEMP}/reduction_core"
+          "${RUNNER_TEMP}/integer_battery_core"
       - name: Compile generated traces and preserve real student stderr
         env:
           CXX: ${{ matrix.compiler }}
@@ -66,6 +71,8 @@ jobs:
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\boolean_battery_check_tests.cpp /Fe:"%RUNNER_TEMP%\boolean_battery_core.exe"
           if errorlevel 1 exit /b %errorlevel%
           cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\reduction_check_tests.cpp /Fe:"%RUNNER_TEMP%\reduction_core.exe"
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\integer_battery_check_tests.cpp /Fe:"%RUNNER_TEMP%\integer_battery_core.exe"
       - name: Run MSVC core mutation tests
         shell: cmd
         run: |
@@ -74,6 +81,8 @@ jobs:
           "%RUNNER_TEMP%\boolean_battery_core.exe"
           if errorlevel 1 exit /b %errorlevel%
           "%RUNNER_TEMP%\reduction_core.exe"
+          if errorlevel 1 exit /b %errorlevel%
+          "%RUNNER_TEMP%\integer_battery_core.exe"
       - name: Compile generated traces and preserve real student stderr
         shell: pwsh
         env:

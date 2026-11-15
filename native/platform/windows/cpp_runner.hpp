@@ -4,6 +4,7 @@
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
+#include "core/integer_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
 
 #include <chrono>
@@ -115,6 +116,10 @@ struct CppRunRequest {
     std::optional<curriculum::CmakeGraphRequirement> cmake_graph_check;
     std::optional<curriculum::BooleanBatterySpec> boolean_battery_probe;
     std::optional<curriculum::ReductionSpec> reduction_probe;
+    std::optional<curriculum::IntegerBatterySpec> integer_battery_probe;
+    // Captured before starting the checker. A later client run cannot promote
+    // a checker whose request did not already carry its sealed prerequisite.
+    std::string integer_battery_prerequisite;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -145,6 +150,10 @@ struct CppBooleanBatteryEvidence {
 struct CppReductionEvidence {
     std::string original_program_fingerprint;
     std::vector<curriculum::ReductionRun> runs;
+};
+struct CppIntegerBatteryEvidence {
+    std::string original_program_fingerprint;
+    std::vector<curriculum::IntegerBatteryRun> runs;
 };
 
 // Read-only CMake File API evidence, pinned to the submitted project/configuration.
@@ -216,6 +225,8 @@ struct CppRunResult {
     std::string boolean_battery_request_fingerprint;
     std::optional<CppReductionEvidence> reduction_evidence;
     std::string reduction_request_fingerprint;
+    std::optional<CppIntegerBatteryEvidence> integer_battery_evidence;
+    std::string integer_battery_request_fingerprint;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
@@ -263,6 +274,10 @@ struct CppProjectAvailability {
 // It does not change any existing persisted program or CMake receipt frame.
 [[nodiscard]] std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_reduction_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);
+// Stable client provenance includes all project paths and all protected file
+// bytes. Only the editable test file's contents are omitted from this frame.
+[[nodiscard]] std::string cpp_integer_battery_component_fingerprint(const CppRunRequest&);
 
 } // namespace lgaed::windows
 

@@ -2189,7 +2189,7 @@ struct LessonView {
                 if (vm.input) set_rich_text(find_item(control_id(index,17)),ui("Entrada","Input","Entrée"));
                 SetWindowTextW(vm.compile,wide(current.compile_check
                     ? ui("Compilar y comprobar diagnóstico","Compile and check diagnostic","Compiler et vérifier le diagnostic")
-                    : current.output_check
+                    : current.output_check&&!current.integer_battery_probe
                     ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
                     : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                     : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter")).c_str());
@@ -2241,6 +2241,11 @@ struct LessonView {
         request.open_battery_probe=block(index).open_battery_probe;
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
+        request.integer_battery_probe=block(index).integer_battery_probe;
+        if(request.integer_battery_probe&&request.cmake&&
+           request.cmake->target==request.integer_battery_probe->test_target)
+            request.integer_battery_prerequisite=windows::compiler_integer_battery_prerequisite(
+                data,lesson,block(index),request);
         request.cmake_graph_check=block(index).cmake_graph_check;
         request.capture_cmake_graph=request.cmake_graph_check.has_value();
         // All C++ exercises use the native MSVC backend while the optional WASI
@@ -2285,7 +2290,7 @@ struct LessonView {
         catch(...){valid=false;}
         vm.project->set_availability(busy,configured,built);
         EnableWindow(vm.compile,!busy&&valid&&(!block(index).cmake||
-            (block(index).output_check&&block(index).compiler_workflow_check!=
+            (block(index).output_check&&!block(index).integer_battery_probe&&block(index).compiler_workflow_check!=
                 curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1)||built));
     }
     void project_changed(std::size_t index,bool source_changed) {
@@ -3175,7 +3180,7 @@ struct LessonView {
                 rows.push_back({{vm.input}, {0}, 74, false});
             }
             vm.compile = button(current.compile_check ? ui("Compilar y comprobar diagnóstico","Compile and check diagnostic","Compiler et vérifier le diagnostic")
-                : current.output_check&&current.compiler_workflow_check!=
+                : current.output_check&&!current.integer_battery_probe&&current.compiler_workflow_check!=
                     curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1
                     ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
                 : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
@@ -3968,7 +3973,7 @@ struct LessonView {
         vm.console_channels = {};
         request.request_id = ++request_id; request.revision = vm.revision;
         if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&
-            (!block(index).output_check||block(index).compiler_workflow_check==
+            (!block(index).output_check||block(index).integer_battery_probe||block(index).compiler_workflow_check==
                 curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1))
             action=windows::CppRunRequest::Action::execute;
         request.action=action;running_action=action;
@@ -4078,10 +4083,11 @@ struct LessonView {
         // crashing. Presentation must not depend on whether this source earned
         // the authored objective (for example, a deliberately edited client).
         // Existing objectives keep their application-return domain. The
-        // open single-file objectives additionally witness normal termination.
+        // Open-program objectives additionally witness normal termination.
         const bool normal_execution=result->error_utf8.empty()&&
             result->execution.status==windows::CppPhaseStatus::completed&&
-            result->execution.exit_code&&((block(index).boolean_battery_probe||block(index).reduction_probe)
+            result->execution.exit_code&&((block(index).boolean_battery_probe||
+                block(index).reduction_probe||block(index).integer_battery_probe)
                 ?fresh.execution_completed:*result->execution.exit_code<=255);
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
@@ -4159,6 +4165,18 @@ struct LessonView {
             ||(cmake&&result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded())) { vm.console_channels[2] = output; preferred_channel = 2; }
         else if (!result->execution.succeeded()&&!normal_execution) { vm.console_channels[1] = output; preferred_channel = 1; }
         console_present(index,preferred_channel);
+        if(executed&&block(index).integer_battery_probe&&
+           windows::record_compiler_integer_battery_client(
+               data,lesson,block(index),running_program,fresh)) {
+            // This records the observed client, not a completed battery. Its
+            // separately sealed receipt survives edits to the permitted test
+            // file and is captured by the next checker request.
+            mark_dirty();flush();
+            if(vm.status)set_rich_text(vm.status,ui(
+                "Cliente comprobado. Selecciona el comprobador y ejecuta la batería solicitada.",
+                "Client verified. Select the checker and execute the requested test battery.",
+                "Client vérifié. Sélectionnez le vérificateur et exécutez la batterie demandée."));
+        }
         if (block(index).output_check&&executed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
@@ -4170,7 +4188,8 @@ struct LessonView {
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
                      fresh.boolean_battery_probe_correct)&&
-                    (!block(index).reduction_probe||fresh.reduction_probe_correct);
+                    (!block(index).reduction_probe||fresh.reduction_probe_correct)&&
+                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4191,7 +4210,8 @@ struct LessonView {
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
                 if(!independent&&preserved_source&&!block(index).open_battery_probe&&
-                   !block(index).boolean_battery_probe&&!block(index).reduction_probe)
+                   !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
+                   !block(index).integer_battery_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
@@ -4199,7 +4219,12 @@ struct LessonView {
                 // Reduction feedback already identifies its exact source or
                 // observation failure; do not append an unrelated project rule.
                 if(!preserved_source&&!block(index).reduction_probe) {
-                    if(block(index).boolean_battery_probe)
+                    if(block(index).integer_battery_probe)
+                        text+='\n'+ui(
+                            "Conserva la biblioteca, el cliente y la descripción CMake. Modifica únicamente el archivo de pruebas autorizado y ejecuta el objetivo correspondiente.",
+                            "Preserve the library, client and CMake description. Edit only the authorized test file and execute the corresponding target.",
+                            "Conservez la bibliothèque, le client et la description CMake. Modifiez uniquement le fichier de tests autorisé et exécutez la cible correspondante.");
+                    else if(block(index).boolean_battery_probe)
                         text+='\n'+ui(
                             "Conserva la función proporcionada y modifica la batería que la comprueba. La entrada y el criterio deben corresponder a este mismo editor.",
                             "Preserve the provided function and edit its test battery. The input and objective must belong to this editor.",

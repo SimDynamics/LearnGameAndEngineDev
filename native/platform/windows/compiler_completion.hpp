@@ -67,6 +67,13 @@ void validate_compiler_puzzle_state(const state::StateData&, const curriculum::L
 // Legacy all-case achievements keep their original seals and identities.
 [[nodiscard]] bool record_compiler_puzzle_case(state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest&, const curriculum::FreshExecution&, std::string_view feedback);
+// A client observation is a prerequisite, never a completed checker objective.
+// Capture its token with the request before the checker is started.
+[[nodiscard]] std::string compiler_integer_battery_prerequisite(const state::StateData&,
+    const curriculum::Lesson&, const curriculum::Block&, const CppRunRequest&);
+[[nodiscard]] bool record_compiler_integer_battery_client(state::StateData&,
+    const curriculum::Lesson&, const curriculum::Block&, const CppRunRequest&,
+    const curriculum::FreshExecution&);
 /* For the exact U3 recovery owner, a saved stdout proof remains historical;
    a new independent sequence receipt requires authentic record, comparisons,
    selective restore, both builds and both runs. Never infer it from stdout. */

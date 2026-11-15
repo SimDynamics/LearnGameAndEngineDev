@@ -3974,6 +3974,127 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> used;
     for(const auto& entry:entries) {
         const auto item=entry.GetObject();
+        if(item.HasKey(L"kind")&&text(item,"kind")=="cmake-int-unary-v1") {
+            allowed_keys(item,{"activity","kind","libraryPath","function",
+                "testPath","target","publishedResult","failureExitCode","cases","prerequisite"});
+            require(item.Size()==(item.HasKey(L"prerequisite")?10u:9u),
+                "Integer CMake battery has an incomplete declaration");
+            const auto declared_text=[](const JsonObject& object,std::string_view name) {
+                const auto value=object.GetNamedValue(key(name));
+                require(value.ValueType()==JsonValueType::String,
+                    "Integer CMake battery properties require authored strings");
+                return utf8(value.GetString());
+            };
+            const auto identity=declared_text(item,"activity");
+            require(valid_id(identity)&&used.insert(identity).second,
+                "Duplicate or invalid integer battery identity");
+            Block* owner=nullptr;
+            for(auto& page:lesson.pages)for(auto& block:page.blocks)
+                if(block.stable_id==identity) {
+                    require(!owner,"Integer battery has duplicated mapped identity");
+                    owner=&block;
+                }
+            require(owner&&owner->type==BlockType::cpp_compiler&&owner->cmake&&
+                    !owner->project_files.empty()&&owner->source_files.empty()&&
+                    !owner->output_check&&!owner->compile_check&&
+                    !owner->compiler_workflow_check&&!owner->named_rule_source_check&&
+                    !owner->open_battery_probe&&!owner->boolean_battery_probe&&
+                    !owner->reduction_probe&&!owner->integer_battery_probe&&!owner->cmake_graph_check,
+                "Integer battery requires an original unevaluated CMake editor");
+            const auto owner_json=JsonObject::Parse(winrt::to_hstring(owner->raw_json));
+            require((!owner_json.HasKey(L"language")||text(owner_json,"language")=="cpp")&&
+                    !owner_json.HasKey(L"sourceFiles"),
+                "Integer battery requires the original C++ CMake project");
+            IntegerBatterySpec spec;
+            spec.library_path=declared_text(item,"libraryPath");
+            spec.test_path=declared_text(item,"testPath");
+            spec.function_name=declared_text(item,"function");
+            spec.test_target=declared_text(item,"target");
+            const auto source=[&](std::string_view name)->const std::string* {
+                const auto found=std::ranges::find(owner->project_files,name,
+                    &CppProjectFiles::value_type::first);
+                return found==owner->project_files.end()?nullptr:&found->second;
+            };
+            const auto library=source(spec.library_path);
+            require(library&&source(spec.test_path)&&source("CMakeLists.txt"),
+                "Integer battery paths must belong to its original CMake project");
+            const auto definition=integer_battery_extract_definition(*library,spec.function_name);
+            require(definition.has_value(),
+                "Integer battery needs one original global int(int) definition");
+            spec.protected_definition=*definition;
+            const auto published=declared_text(item,"publishedResult");
+            require(published=="success"||published=="failure",
+                "Integer battery requires its published comparison result");
+            spec.published_result=published=="success"
+                ?IntegerBatteryPublishedResult::success:IntegerBatteryPublishedResult::failure;
+            const auto failure_exit=item.GetNamedValue(L"failureExitCode");
+            if(failure_exit.ValueType()==JsonValueType::String) {
+                require(utf8(failure_exit.GetString())=="nonzero",
+                    "Integer battery failure exit must be exact or nonzero");
+                spec.failure_exit_code.reset();
+            } else {
+                require(failure_exit.ValueType()==JsonValueType::Number,
+                    "Integer battery failure exit must be a positive integer");
+                const double code=failure_exit.GetNumber();
+                require(std::isfinite(code)&&std::trunc(code)==code&&code>=1&&
+                        code<=static_cast<double>(std::numeric_limits<std::uint32_t>::max()),
+                    "Integer battery failure exit is outside the Win32 return range");
+                spec.failure_exit_code=static_cast<std::uint32_t>(code);
+            }
+            const auto cases=array(item,"cases");
+            require(cases.Size()>0&&cases.Size()<=32,
+                "Integer battery needs between 1 and 32 distinct inputs");
+            for(const auto& value:cases) {
+                const auto declared=value.GetObject();
+                allowed_keys(declared,{"input","expected"},true);
+                spec.cases.push_back({authored_int(declared.GetNamedValue(L"input")),
+                    authored_int(declared.GetNamedValue(L"expected"))});
+            }
+            if(item.HasKey(L"prerequisite")) {
+                const auto previous=item.GetNamedObject(L"prerequisite");
+                allowed_keys(previous,{"target","calls","standardInput","standardOutput",
+                    "standardError","exitCode"},true);
+                IntegerBatteryPrerequisite prerequisite;
+                prerequisite.target=declared_text(previous,"target");
+                prerequisite.standard_input=declared_text(previous,"standardInput");
+                prerequisite.standard_output=declared_text(previous,"standardOutput");
+                prerequisite.standard_error=declared_text(previous,"standardError");
+                require(authored_int(previous.GetNamedValue(L"exitCode"))==0,
+                    "The earlier client must finish normally with zero");
+                prerequisite.exit_code=0;
+                require(prerequisite.standard_input==owner->standard_input.value_or(""),
+                    "The earlier client must retain the original authored input");
+                const auto calls=array(previous,"calls");
+                require(calls.Size()>0&&calls.Size()<=32,
+                    "The earlier client needs between 1 and 32 ordered calls");
+                for(const auto& value:calls) {
+                    const auto call=value.GetObject();
+                    allowed_keys(call,{"input","result"},true);
+                    prerequisite.calls.push_back({authored_int(call.GetNamedValue(L"input")),
+                        authored_int(call.GetNamedValue(L"result"))});
+                }
+                spec.prerequisite=std::move(prerequisite);
+            }
+            require(integer_battery_spec_valid(spec)&&
+                    (owner->cmake->target==spec.test_target||
+                     (spec.prerequisite&&owner->cmake->target==spec.prerequisite->target)),
+                "Integer battery has invalid paths, targets, cases or client requirements");
+            OutputCheck runtime;
+            runtime.integer_battery_check=true;
+            runtime.integer_battery_failure_exit_code=spec.failure_exit_code;
+            runtime.input_comparison=TextComparison::exact;
+            OutputCase first;
+            first.standard_input=owner->standard_input.value_or("");
+            first.executable=spec.test_target;
+            first.exit_code=spec.published_result==IntegerBatteryPublishedResult::success?0:1;
+            first.outputs={""}; // Each independent comparison, not literal messages, decides credit.
+            first.explanation="La batería comprobó todos los datos, mostró sus esperados y "
+                "resultados, y detectó cada discrepancia sin omitir las comparaciones posteriores.";
+            runtime.cases.push_back(std::move(first));
+            owner->integer_battery_probe=std::move(spec);
+            owner->output_check=std::move(runtime);
+            continue;
+        }
         if(item.HasKey(L"kind")) {
             allowed_keys(item,{"activity","kind","function","publishedResult","cases"},true);
             require(text(item,"kind")=="boolean-pair-v1",
