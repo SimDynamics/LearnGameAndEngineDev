@@ -2079,10 +2079,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         if (editorial.contains(retired.id)) require(retired.sha256 == editorial.at(retired.id),"Stale retired editorial fingerprint");
     if (metadata.HasKey(L"retirementHistory")) {
         const auto history = array(metadata,"retirementHistory"); require(history.Size() <= 100000,"Too many retirement reading snapshots");
-        std::vector<OriginalJson::Slice> original_history;
-        if(original_metadata)original_history=original_document.elements(original_document.member(*original_metadata,"retirementHistory"));
+        const auto original_history=original_document.elements(original_document.member(
+            original_document.member(original_document.root(),"stateLayout"),"retirementHistory"));
         std::size_t history_index=0;
         std::vector<std::string> covered;
+        std::map<std::string,std::string> retired_fingerprints;
+        for(const auto& retired:result.retired)retired_fingerprints.emplace(retired.id,retired.sha256);
         std::map<std::string,JsonObject> shells;
         for (std::size_t p=0;p<result.current.size();++p) {
             auto shell=JsonObject::Parse(pages.GetAt(static_cast<unsigned>(p)).Stringify());shell.Remove(L"blocks");
@@ -2090,8 +2092,20 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         }
         for (const auto& value : history) {
             const auto item=value.GetObject();
-            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter"},true);
+            allowed_keys(item,{"retired","current","pages","compilerPuzzlesRequired","referenceAfter","activityAfter","textSemantics"});
+            for(const auto field:{L"retired",L"current",L"pages",L"compilerPuzzlesRequired",L"referenceAfter",L"activityAfter"})
+                require(item.HasKey(field),"Incomplete retirement reading snapshot");
             StateRetirementHistory snapshot;
+            snapshot.has_text_semantics=item.HasKey(L"textSemantics");
+            if(snapshot.has_text_semantics) {
+                const auto semantics=item.GetNamedValue(L"textSemantics");
+                require(semantics.ValueType()==JsonValueType::Null||semantics.ValueType()==JsonValueType::Object,
+                    "Historical text semantics must be an object or null");
+                // Check the authored token spelling before WinRT Stringify can
+                // turn a fractional/exponent index into an integer.
+                require_integer_json_numbers(original_document.text(original_document.member(
+                    original_history.at(history_index),"textSemantics")));
+            }
             snapshot.retired=strings(array(item,"retired"),true,false);
             std::set<std::string> unique;
             for (const auto& id:snapshot.retired) {
@@ -2121,6 +2135,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
+                    if(snapshot.has_text_semantics&&unique.contains(id))
+                        require(fingerprint(source)==retired_fingerprints.at(id),
+                            "A semantic retirement batch must preserve its exact archived block");
                     const auto general=general_choice_revisions.find(id);
                     const auto prompt=math_text_originals.find(id);
                     auto projected=source;
@@ -2863,6 +2880,26 @@ void resolve_addresses(Lesson& lesson) {
         Lesson previous;previous.id=lesson.id;previous.title=lesson.title;previous.locale=lesson.locale;
         previous.state_layout.version=2;previous.pages=snapshot.pages;previous.compiler_puzzles_required=snapshot.compiler_puzzles_required;
         previous.reference_after=snapshot.reference_after;previous.activity_after=snapshot.activity_after;
+        if(snapshot.has_text_semantics) {
+            // The snapshot is a complete authoring version, including explicit
+            // unmarked fields. Do not mix it with a prompt archive or today's
+            // overlay, even when the visible wording happens to be identical.
+            for(auto& page:previous.pages)for(auto& block:page.blocks)block.text_semantics.clear();
+            if(archived.GetNamedValue(L"textSemantics").ValueType()==JsonValueType::Object) {
+                auto semantic_root=JsonObject::Parse(key(snapshot.raw_json));
+                semantic_root.Insert(L"title",JsonValue::CreateStringValue(key(previous.title)));
+                previous.raw_json=snapshot.raw_json;
+                read_text_semantics(semantic_root,previous);
+            }
+            for(const auto& identity:snapshot.retired) {
+                const auto source=stable_block_position(previous,identity);
+                const auto retired=std::ranges::find(lesson.retired_blocks,identity,&Block::stable_id);
+                require(source&&retired!=lesson.retired_blocks.end(),"Missing semantic retirement owner");
+                retired->text_semantics=previous.pages[source->page].blocks[source->block].text_semantics;
+            }
+            snapshot.pages=previous.pages;
+            snapshot.text_semantics=std::move(previous.text_semantics);
+        }
         validate_reference_relationships(previous);validate_activity_relationships(previous);
     }
 }

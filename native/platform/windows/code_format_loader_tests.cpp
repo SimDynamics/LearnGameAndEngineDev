@@ -786,15 +786,31 @@ void export_format_retirement_preferences(const std::filesystem::path& root,
 }
 
 void compare_format_retirement_adoption(const state::StateData& before,
-        const state::StateData& after,const curriculum::Lesson& lesson) {
+        const state::StateData& after,const curriculum::Lesson& lesson,bool allow_choice_revisions=false) {
     using namespace winrt::Windows::Data::Json;
     const auto prefix="lesson_"+lesson.id;
+    const auto choice_key=prefix+"_state_choice_revisions_v1_"+lesson.locale;
+    if(allow_choice_revisions) {
+        JsonArray expected;
+        for(const auto& revision:lesson.state_layout.choice_revisions) {
+            JsonArray row;
+            row.Append(JsonValue::CreateStringValue(winrt::to_hstring(revision.id)));
+            row.Append(JsonValue::CreateStringValue(winrt::to_hstring(revision.sha256)));
+            row.Append(JsonValue::CreateStringValue(winrt::to_hstring(revision.representation_signature)));
+            expected.Append(row);
+        }
+        const auto* stored=state::find(after,"learning_progress",choice_key);
+        check((!stored&&expected.Size()==0)||(stored&&std::holds_alternative<std::string>(*stored)&&
+            JsonArray::Parse(winrt::to_hstring(std::get<std::string>(*stored))).Stringify()==expected.Stringify()),
+            "Semantic retirement changed the exact authenticated choice revision provenance");
+    }
     const std::array<std::string,2> allowed{{
         prefix+"_state_retired_v2_"+lesson.locale,
         prefix+"_state_retirement_history_v2_"+lesson.locale}};
     const auto is_provenance=[&](std::string_view domain,const std::string& key){
         return domain=="learning_progress"&&
-            std::find(allowed.begin(),allowed.end(),key)!=allowed.end();
+            (std::find(allowed.begin(),allowed.end(),key)!=allowed.end()||
+             (allow_choice_revisions&&key==choice_key));
     };
     for(const auto& [domain,values]:before.preferences)for(const auto& [key,value]:values) {
         const auto* current=state::find(after,domain,key);
@@ -817,13 +833,13 @@ void compare_format_retirement_adoption(const state::StateData& before,
 
 std::pair<std::size_t,std::size_t> verify_format_retirement_state(const std::filesystem::path& qa,
         std::string_view name,const curriculum::Lesson& before,
-        const curriculum::Lesson& after) {
+        const curriculum::Lesson& after,bool include_retired=false) {
     state::StateData original;
     state::prepare_lesson_state(original,before);
     std::size_t answer_count=0,draft_count=0,prediction_count=0;
     std::size_t correct_count=0,reviewed_error_count=0;
     for(const auto& page:before.pages)for(const auto& block:page.blocks) {
-        if(!curriculum::stable_block_position(after,block.stable_id))continue;
+        if(!include_retired&&!curriculum::stable_block_position(after,block.stable_id))continue;
         if(block.type==curriculum::BlockType::cpp_compiler) {
             state::Draft draft;
             draft.source="// borrador QA conservado\r\n"+block.initial_code+"\n";
@@ -883,8 +899,13 @@ std::pair<std::size_t,std::size_t> verify_format_retirement_state(const std::fil
             "Source-format retirement lost a saved pause or historical page");
         for(const auto& page:before.pages)for(const auto& block:page.blocks) {
             const auto position=curriculum::stable_block_position(after,block.stable_id);
-            if(!position)continue;
-            const auto& now=after.pages.at(position->page).blocks.at(position->block);
+            if(!position&&!include_retired)continue;
+            const auto retired=std::ranges::find(after.retired_blocks,block.stable_id,
+                &curriculum::Block::stable_id);
+            const auto* current=position?&after.pages.at(position->page).blocks.at(position->block)
+                :retired!=after.retired_blocks.end()?&*retired:nullptr;
+            check(current!=nullptr,"Retirement lost the exact owner of a stored answer or draft");
+            const auto& now=*current;
             if(block.type==curriculum::BlockType::cpp_compiler) {
                 const auto key=curriculum::draft_key("programming",before,block);
                 const auto a=state::get_draft(prior,key,block.initial_code,block.standard_input.value_or(""));
@@ -918,7 +939,7 @@ std::pair<std::size_t,std::size_t> verify_format_retirement_state(const std::fil
         adopted=store.load();
         check(adopted==original,"Native source-format state changed during physical reopening");
         state::prepare_lesson_state(adopted,after);
-        compare_format_retirement_adoption(original,adopted,after);
+        compare_format_retirement_adoption(original,adopted,after,include_retired);
         verify(adopted,original);
         store.save(adopted);
     }
@@ -949,7 +970,7 @@ std::pair<std::size_t,std::size_t> verify_format_retirement_state(const std::fil
         // the format/retirement transition; no completed compiler is invented.
         const auto before_adoption=imported;
         state::prepare_lesson_state(imported,after);
-        compare_format_retirement_adoption(before_adoption,imported,after);
+        compare_format_retirement_adoption(before_adoption,imported,after,include_retired);
         verify(imported,android);
         store.save(imported);
     }
@@ -1102,14 +1123,165 @@ void verify_source_format_retirement(const std::filesystem::path& fixtures,
         <<" negative fixtures checked by full/progress loaders\n";
 }
 
+
+void verify_semantic_retirement(const std::filesystem::path& fixtures,
+        const std::filesystem::path& qa_root) {
+    using namespace winrt::Windows::Data::Json;
+    const auto manifest=JsonObject::Parse(winrt::to_hstring(
+        format_retirement_text(fixtures/"manifest.json")));
+    const auto cases=manifest.GetNamedArray(L"cases");
+    check(cases.Size()>=3,"Semantic retirement QA lacks independent version histories");
+    std::filesystem::create_directories(state::native_io_path(qa_root));
+    const auto qa=qa_root/("semantic-retirement-"+std::to_string(
+        std::chrono::steady_clock::now().time_since_epoch().count()));
+    check(std::filesystem::create_directory(state::native_io_path(qa)),
+        "Semantic retirement QA must use a new isolated directory");
+    std::size_t authored=0,unmarked=0,legacy=0,marked_blocks=0,root_fields=0;
+    std::size_t correct_count=0,reviewed_error_count=0;
+    for(const auto& entry:cases) {
+        const auto sample=entry.GetObject();
+        const auto name=winrt::to_string(sample.GetNamedString(L"name"));
+        check(!name.empty()&&name.find_first_not_of(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")==std::string::npos,
+            "Invalid semantic retirement QA scenario name");
+        const auto before_file=format_retirement_fixture(fixtures,sample.GetNamedString(L"before"));
+        const auto after_file=format_retirement_fixture(fixtures,sample.GetNamedString(L"after"));
+        const auto before_bytes=state::read_bytes(before_file),after_bytes=state::read_bytes(after_file);
+        const auto before=windows::load_lesson(before_file,"es");
+        const auto after=windows::load_lesson(after_file,"es");
+        const auto catalog=windows::load_lesson_progress_metadata(after_file,"es");
+        check_format_retirement_ownership(before,after);
+        check(after.text_semantics==catalog.text_semantics&&
+            after.state_layout.raw_json==catalog.state_layout.raw_json&&
+            after.retired_blocks.size()==catalog.retired_blocks.size(),
+            "Full/progress loaders disagree about root meanings or retirement provenance");
+        for(const auto& page:after.pages)for(const auto& block:page.blocks) {
+            const auto at=curriculum::stable_block_position(catalog,block.stable_id);
+            check(at.has_value(),"The progress loader lost an active semantic sibling");
+            const auto& compact=catalog.pages.at(at->page).blocks.at(at->block);
+            compare_format_history_block(after,block,catalog,compact,false);
+            check(block.text_semantics==compact.text_semantics,
+                "The progress loader changed an active owner's exact meaning or reading intent");
+        }
+        const auto histories=sample.GetNamedArray(L"history");
+        check(histories.Size()==after.state_layout.retirement_history.size()&&
+            histories.Size()==catalog.state_layout.retirement_history.size(),
+            "Every semantic retirement snapshot needs its exact predecessor document");
+        for(const auto& value:histories) {
+            const auto expected=value.GetObject();
+            const auto index=static_cast<std::size_t>(expected.GetNamedNumber(L"index"));
+            const auto source_file=format_retirement_fixture(fixtures,expected.GetNamedString(L"source"));
+            const auto source_bytes=state::read_bytes(source_file);
+            const auto original=windows::load_lesson(source_file,"es");
+            const auto original_json=JsonObject::Parse(winrt::to_hstring(original.raw_json));
+            for(const auto* loaded:{&after,&catalog}) {
+                const auto& snapshot=loaded->state_layout.retirement_history.at(index);
+                const auto raw=JsonObject::Parse(winrt::to_hstring(snapshot.raw_json));
+                check(snapshot.has_text_semantics==raw.HasKey(L"textSemantics"),
+                    "The loader confused legacy absence with an explicit semantic snapshot");
+                if(snapshot.has_text_semantics) {
+                    const auto prior=original_json.HasKey(L"textSemantics")
+                        ?original_json.GetNamedValue(L"textSemantics"):JsonValue::CreateNullValue();
+                    check(raw.GetNamedValue(L"textSemantics").Stringify()==prior.Stringify(),
+                        "Retirement changed the complete authored overlay of its predecessor");
+                }
+                check(snapshot.text_semantics==original.text_semantics&&
+                    snapshot.pages.size()==original.pages.size()&&
+                    snapshot.compiler_puzzles_required==original.compiler_puzzles_required&&
+                    snapshot.reference_after.size()==original.reference_after.size()&&
+                    snapshot.activity_after.size()==original.activity_after.size(),
+                    "A semantic snapshot borrowed current root meanings or lost prior layout");
+                for(std::size_t p=0;p<original.pages.size();++p) {
+                    const auto& prior=original.pages[p];const auto& archived=snapshot.pages[p];
+                    check(prior.stable_id==archived.stable_id&&
+                        prior.narration_language==archived.narration_language&&
+                        prior.blocks.size()==archived.blocks.size(),
+                        "Semantic retirement changed historical page ownership or block order");
+                    for(std::size_t b=0;b<prior.blocks.size();++b) {
+                        compare_format_history_block(original,prior.blocks[b],*loaded,archived.blocks[b]);
+                        check(prior.blocks[b].text_semantics==archived.blocks[b].text_semantics,
+                            "A historical owner inherited a different semantic descriptor version");
+                        if(loaded==&after&&!archived.blocks[b].text_semantics.empty())++marked_blocks;
+                        if(std::ranges::find(snapshot.retired,archived.blocks[b].stable_id)!=snapshot.retired.end()) {
+                            const auto retired=std::ranges::find(loaded->retired_blocks,
+                                archived.blocks[b].stable_id,&curriculum::Block::stable_id);
+                            check(retired!=loaded->retired_blocks.end(),"A semantic batch lost its own retired block");
+                            compare_format_history_block(original,prior.blocks[b],*loaded,*retired);
+                            check(retired->text_semantics==archived.blocks[b].text_semantics,
+                                "A retired owner borrowed meanings from another retirement batch");
+                        }
+                    }
+                }
+                if(loaded==&after) {
+                    if(!snapshot.has_text_semantics)++legacy;
+                    else if(raw.GetNamedValue(L"textSemantics").ValueType()==JsonValueType::Null)++unmarked;
+                    else ++authored;
+                    root_fields+=snapshot.text_semantics.size();
+                }
+                const auto& full=after.state_layout.retirement_history.at(index);
+                check(snapshot.sha256==full.sha256&&snapshot.raw_json==full.raw_json,
+                    "Progress loading rewrote the authenticated semantic snapshot or its pin");
+            }
+            check(state::read_bytes(source_file)==source_bytes,
+                "Semantic retirement verification changed a predecessor fixture");
+        }
+        for(const auto& identity:sample.GetNamedArray(L"retired")) {
+            const auto owner=winrt::to_string(identity.GetString());
+            check(curriculum::retired_block(after,owner)&&curriculum::retired_block(catalog,owner)&&
+                !curriculum::stable_block_position(after,owner),
+                "A semantically marked retired owner remained active or disappeared");
+        }
+        const auto state_file=sample.HasKey(L"stateSource")
+            ?format_retirement_fixture(fixtures,sample.GetNamedString(L"stateSource")):before_file;
+        const auto state_bytes=state::read_bytes(state_file);
+        const auto state_source=windows::load_lesson(state_file,"es");
+        const auto [correct,reviewed]=verify_format_retirement_state(qa,name,state_source,after,true);
+        correct_count+=correct;reviewed_error_count+=reviewed;
+        check(state::read_bytes(before_file)==before_bytes&&state::read_bytes(after_file)==after_bytes,
+            "Semantic retirement state/import QA overwrote an authored fixture");
+        check(state::read_bytes(state_file)==state_bytes,
+            "Semantic retirement state/import QA changed its original answer source");
+    }
+    check(authored>0&&unmarked>0&&legacy>0&&marked_blocks>0&&root_fields>0,
+        "Semantic retirement QA omitted authored, null, legacy or lesson-root history");
+    check(correct_count>0&&reviewed_error_count>0,
+        "Semantic retirement QA omitted saved successes or reviewed errors");
+    const auto invalid=manifest.GetNamedArray(L"invalid");
+    check(invalid.Size()>=5,"Semantic retirement QA lacks adversarial descriptor histories");
+    for(const auto& value:invalid) {
+        const auto sample=value.GetObject();
+        const auto file=format_retirement_fixture(fixtures,sample.GetNamedString(L"file"));
+        const auto raw=format_retirement_text(file);(void)JsonObject::Parse(winrt::to_hstring(raw));
+        const auto name=winrt::to_string(sample.GetNamedString(L"name"));
+        const auto expected=sample.HasKey(L"message")
+            ?winrt::to_string(sample.GetNamedString(L"message")):std::string{};
+        for(const bool catalog:{false,true}) {
+            std::string error;
+            try {
+                if(catalog)(void)windows::parse_lesson_progress_metadata(raw,"es");
+                else(void)windows::parse_lesson_json(raw,"es");
+            }catch(const std::exception& failure){error=failure.what();}
+            check(!error.empty(),"Windows admitted a forged semantic retirement history");
+            check(expected.empty()||error.find(expected)!=std::string::npos,
+                "A semantic forgery failed before reaching its intended guard");
+            std::cout<<"PASS semantic retirement rejection "<<name
+                <<(catalog?" progress: ":" full: ")<<error<<'\n';
+        }
+    }
+    std::cout<<"PASS semantic retirement: "<<cases.Size()<<" cases, "<<authored
+        <<" authored / "<<unmarked<<" unmarked / "<<legacy<<" legacy snapshots, "
+        <<invalid.Size()<<" negative fixtures, exact full/progress meanings and native/imported state\n";
+}
+
 }
 
 int main(int argc,char** argv) {
     try{
-        if(argc!=6)throw std::invalid_argument("Expected source-format fixture directories and an isolated QA root");
+        if(argc!=7)throw std::invalid_argument("Expected source-format fixture directories and an isolated QA root");
         const std::filesystem::path dir(argv[1]);
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
         verify_source_format_retirement(std::filesystem::path(argv[4]),std::filesystem::path(argv[5]));
+        verify_semantic_retirement(std::filesystem::path(argv[6]),std::filesystem::path(argv[5]));
         verify_visual_separators_keep_order_and_history(dir);
         verify_real_u7_question_and_spacing(dir);
         verify_real_u12_editorials(dir);

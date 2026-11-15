@@ -2026,8 +2026,8 @@ def _validate_retirement_history(document: dict) -> None:
                    for page, record in zip(document["pages"], meta["current"])}
     covered, batches = [], []
     for snapshot in history:
-        require(type(snapshot) is dict and set(snapshot) == {
-            "retired", "current", "pages", "compilerPuzzlesRequired", "referenceAfter", "activityAfter"},
+        fields = {"retired", "current", "pages", "compilerPuzzlesRequired", "referenceAfter", "activityAfter"}
+        require(type(snapshot) is dict and fields <= set(snapshot) <= fields | {text_semantics.ROOT_FIELD},
             "A retirement reading snapshot needs the complete previous pages, layout, flow and relationships")
         require(type(snapshot["compilerPuzzlesRequired"]) is bool, "Historical compiler flow must be boolean")
         ids = snapshot["retired"]
@@ -2052,6 +2052,11 @@ def _validate_retirement_history(document: dict) -> None:
             for block_id, block in zip(record["blocks"], page.get("blocks", [])):
                 _identity(block_id)
                 require(block_id in available and block_id not in seen_blocks, "Unknown or repeated historical reading block")
+                if text_semantics.ROOT_FIELD in snapshot and block_id in ids:
+                    # This batch supplies the retired block's own reading marks.
+                    # Exact text alone cannot authenticate its complete source.
+                    require(fingerprint(block) == fingerprint(available[block_id]),
+                            "A semantic retirement batch must preserve its exact archived block")
                 source = _historical_source_format_contract(document, block_id, block)
                 historical_blocks[block_id] = source
                 reviewed = _reviewed_choice(source)
@@ -2094,8 +2099,22 @@ def _validate_retirement_history(document: dict) -> None:
                     require((_reviewed_compiler(historical_blocks[compiler]) is not None)
                             == (_reviewed_compiler_reference(historical_blocks[reference_id]) is not None),
                             "A historical compiler revision and reference must preserve the same published version")
-        historical = {"pages": pages, "stateLayout": {"current": current},
+        historical = {"pages": pages, "stateLayout": {"version": 2, "current": current},
                       "referenceAfter": snapshot["referenceAfter"], "activityAfter": snapshot["activityAfter"]}
+        # The lesson title is immutable across transitions. Never borrow the
+        # active overlay: equal text can still have different authored intent,
+        # and a legacy snapshot cannot certify that it originally had marks.
+        if "title" in document:
+            historical["title"] = document["title"]
+        overlay = snapshot.get(text_semantics.ROOT_FIELD)
+        require(overlay is None or type(overlay) is dict,
+                "Historical text semantics must be an object or null")
+        if overlay is not None:
+            historical[text_semantics.ROOT_FIELD] = overlay
+        try:
+            text_semantics.validate(historical)
+        except (ValueError, KeyError, TypeError) as error:
+            raise LayoutError(f"Invalid historical text semantics: {error}") from error
         _validate_presentation_relationships(historical)
         covered.extend(ids)
         batches.append((set(ids), seen_blocks))
@@ -3381,7 +3400,11 @@ def retire(document: dict, identities: list[str], *, activity_after: list[dict] 
                 "pages": deepcopy(document["pages"]),
                 "compilerPuzzlesRequired": document.get("compilerPuzzlesRequired", False),
                 "referenceAfter": deepcopy(document.get("referenceAfter", [])),
-                "activityAfter": deepcopy(document.get("activityAfter", []))}
+                "activityAfter": deepcopy(document.get("activityAfter", [])),
+                text_semantics.ROOT_FIELD: deepcopy(document.get(text_semantics.ROOT_FIELD))}
+    if text_semantics.ROOT_FIELD in result:
+        overlay = result[text_semantics.ROOT_FIELD]
+        overlay["fields"] = [field for field in overlay["fields"] if field["block"] not in retiring]
     for page, record in zip(result["pages"], result["stateLayout"]["current"]):
         old_ids, old_blocks = record["blocks"], page.get("blocks", [])
         for index, identity in enumerate(old_ids):
@@ -3508,6 +3531,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         expected_semantics = deepcopy(baseline.get(text_semantics.ROOT_FIELD))
         expectation = {**baseline}
         if expected_semantics is not None:
+            # A simultaneous retirement moves only its owners' marks into the
+            # exact predecessor snapshot validated below. Other markers remain
+            # protected by the existing choice-revision equality check.
+            retiring_owners = {item["id"] for item in retired[len(old_retired):]}
+            expected_semantics["fields"] = [field for field in expected_semantics["fields"]
+                                           if field["block"] not in retiring_owners]
             expectation = {**baseline, text_semantics.ROOT_FIELD: expected_semantics}
         for item in new_general_choices:
             marker = _choice_semantic_entry(expectation, item["id"], item["optionIndex"])
@@ -3582,6 +3611,11 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     "compilerPuzzlesRequired": baseline.get("compilerPuzzlesRequired", False),
                     "referenceAfter": baseline.get("referenceAfter", []),
                     "activityAfter": baseline.get("activityAfter", [])}
+        # Existing six-field snapshots retain their bytes and pins. A newly
+        # authored overlay, including an explicitly empty one, must be captured;
+        # a new helper snapshot records null when the predecessor had none.
+        if text_semantics.ROOT_FIELD in snapshot or text_semantics.ROOT_FIELD in baseline:
+            expected[text_semantics.ROOT_FIELD] = baseline.get(text_semantics.ROOT_FIELD)
         require(fingerprint(snapshot) == fingerprint(expected),
                 "Retirement reading snapshot does not match the complete previous published presentation")
     for item in retired[len(old_retired):]:

@@ -982,15 +982,20 @@ cambiar su contrato ni modificar las traducciones. El lector y el catálogo usan
 hacia contenido activo sin aplicar sus milisegundos a otra frase ni borrar el
 registro histórico.
 
-Cada lote nuevo añade una entrada inmutable a `retirementHistory`, con estas
-seis claves: `retired` (identidades retiradas por el lote, en el orden del archivo),
+Cada lote nuevo añade una entrada inmutable a `retirementHistory`, con
+`retired` (identidades retiradas por el lote, en el orden del archivo),
 `current` (mapa visible anterior completo), `pages` (páginas anteriores completas,
 incluidos todos sus bloques), `compilerPuzzlesRequired` (booleano efectivo anterior),
 `referenceAfter` y `activityAfter` (relaciones anteriores exactas, o listas vacías).
+El helper captura además `textSemantics`: el objeto completo anterior, incluidos
+`rootFields` y los descriptores con `spans: []`, o `null` si no existía.
+Los archivos antiguos de seis claves conservan su forma original.
+
 El generador captura estos valores antes de retirar bloques o cambiar relaciones.
 La puerta de transición contrasta esa captura con la versión publicada; no permite
-inventar texto anterior, orden, dependencias ni reglas de avance. Una revisión de
-prosa simultánea conserva así el texto que realmente escuchó el estudiante.
+inventar texto anterior, marcas, orden, dependencias ni reglas de avance. Una
+revisión de prosa simultánea conserva así el texto y la intención de lectura
+que realmente estaban publicados.
 
 Este archivo es procedencia histórica para verificar una lectura anterior; sus
 bloques no crean controles, actividades ni narración nueva. El lector reconstruye
@@ -1057,9 +1062,41 @@ El código visible del archivo histórico mantiene sus bytes publicados. El mism
 contrato se comprueba en la carga completa de la lección y en la carga de progreso.
 
 El plan de retiro sigue sujeto a los propietarios admitidos por cada contrato.
-`textSemantics` resuelve propietarios activos; retirar un bloque que conserva
-campos en ese mapa requiere una transición que archive también sus descriptores.
-La composición de formato descrita aquí conserva esas marcas y su validación.
+Esta composición permite retirar otro bloque de la lección; no autoriza retirar
+el propietario de un archivo `sourceFormatRevisions` que deba seguir activo.
+
+### Marcado semántico de las lecturas retiradas
+
+`retire()` archiva el mapa semántico anterior y retira del mapa de la raíz
+únicamente los campos de los propietarios que dejan el recorrido activo.
+Conserva los campos de los demás bloques, el título, el orden de los descriptores
+y un objeto explícitamente vacío si ya existía. No altera las cadenas, los
+fragmentos marcados, sus roles ni sus intenciones de narración. Work utiliza la
+misma API de retiro y valida la transición contra la publicación anterior.
+
+Cada captura valida sus marcas contra sus propias páginas e identidades. El
+SHA-256 se calcula sobre el campo histórico exacto; se mantienen los controles
+de rutas públicas, duplicados, rangos UTF-16, caracteres Unicode, roles e
+intenciones. Cuando la captura contiene `textSemantics`, el bloque completo
+de cada propietario retirado en ese lote debe coincidir con su entrada en
+`retired`. Los campos del bloque archivado se recuperan exclusivamente de ese
+lote, sin tomar marcas de otra versión ni de otro propietario.
+
+Las capturas son acumulativas e inmutables. Una corrección editorial o un cambio
+posterior de marcado en un bloque que sigue activo no modifica el descriptor
+capturado antes del retiro. Tampoco se reconstruyen las marcas históricas a
+partir de sus coincidencias con el texto actual. La ausencia de la clave en un
+archivo antiguo significa que no se archivó esa información; `null` documenta
+que la publicación capturada no tenía mapa semántico. No se rellena ninguno de
+esos casos con el mapa actual.
+
+Windows carga las mismas marcas históricas en el lector completo y en el
+catálogo de progreso. Al reconstruir las regiones de lectura admitidas, utiliza
+los campos históricos exactos y conserva el marcado al componer la
+retroalimentación. La identificación del guion incluye esa semántica, de modo
+que una pausa anterior sólo se recupera bajo el contrato de lectura que le
+corresponde. Esta reconstrucción no crea respuestas, actividades ni audios, y
+mantiene las reglas existentes de destino activo y conservación de datos.
 
 ## Lectura y alcance de la recuperación
 

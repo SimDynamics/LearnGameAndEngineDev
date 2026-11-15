@@ -293,6 +293,9 @@ if(LGAED_READER_BUILD_QA_ONLY)
         return()
     endif()
     lgaed_add_curricular_reader_test_targets()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    include(cmake/StateImportTests.cmake)
+    lgaed_add_semantic_retirement_view_test()
     # Run the real Win32 compiler view against thirteen authored inputs.
     # Exactly the first must unlock navigation; all others remain optional.
     add_executable(lgaed_compiler_first_case_view_tests
@@ -574,6 +577,7 @@ if(BUILD_TESTING)
     lgaed_add_named_rule_source_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
+    lgaed_add_semantic_retirement_view_test()
     add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)
     target_link_libraries(lgaed_text_semantics_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.text_semantics COMMAND lgaed_text_semantics_tests)

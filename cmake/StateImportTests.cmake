@@ -243,6 +243,41 @@ add_custom_command(OUTPUT "${LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST}"
 add_custom_target(lgaed_source_format_retirement_fixtures
     DEPENDS "${LGAED_SOURCE_FORMAT_RETIREMENT_MANIFEST}")
 
+# Keep explicit meanings in their own exact retirement version, including
+# published U7 and legacy six-field snapshots. No curricular file is written.
+set(LGAED_SEMANTIC_RETIREMENT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/semantic-retirement")
+set(LGAED_SEMANTIC_RETIREMENT_MANIFEST
+    "${LGAED_SEMANTIC_RETIREMENT_DIR}/manifest.json")
+add_custom_command(OUTPUT "${LGAED_SEMANTIC_RETIREMENT_MANIFEST}"
+    COMMAND ${_lgaed_state_fixture_python}
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/semantic_retirement_fixture_source.py"
+        --output-dir "${LGAED_SEMANTIC_RETIREMENT_DIR}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/semantic_retirement_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/source_format_retirement_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/image_resources.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Verify exact semantic descriptors across authenticated retirement batches"
+    VERBATIM)
+add_custom_target(lgaed_semantic_retirement_fixtures
+    DEPENDS "${LGAED_SEMANTIC_RETIREMENT_MANIFEST}")
+
+function(lgaed_add_semantic_retirement_view_test)
+    add_executable(lgaed_semantic_retirement_view_tests
+        native/presentation/windows/semantic_retirement_view_tests.cpp)
+    target_link_libraries(lgaed_semantic_retirement_view_tests PRIVATE lgaed_curricular_windows)
+    add_dependencies(lgaed_semantic_retirement_view_tests lgaed_semantic_retirement_fixtures)
+    add_test(NAME native.semantic_retirement_view COMMAND lgaed_semantic_retirement_view_tests
+        "${LGAED_SEMANTIC_RETIREMENT_DIR}")
+    set_tests_properties(native.semantic_retirement_view PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+endfunction()
+
 function(lgaed_add_state_import_tests qa_root)
     # In the isolated Windows QA mode, test the actual immutable project
     # revision files and selective restoration, not only compiler state.
@@ -278,12 +313,12 @@ function(lgaed_add_state_import_tests qa_root)
         lgaed_platform_windows lgaed_host_options)
     add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures
         lgaed_real_code_format_pilot_fixtures lgaed_u6_compile_check_format_fixtures
-        lgaed_source_format_retirement_fixtures)
+        lgaed_source_format_retirement_fixtures lgaed_semantic_retirement_fixtures)
     add_test(NAME native.code_format_loader COMMAND lgaed_code_format_loader_tests
         "${LGAED_CODE_FORMAT_FIXTURE_DIR}" "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}"
         "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}" "${LGAED_SOURCE_FORMAT_RETIREMENT_DIR}"
-        "${qa_root}/source-format-retirement")
-    set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 45)
+        "${qa_root}/source-format-retirement" "${LGAED_SEMANTIC_RETIREMENT_DIR}")
+    set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 90)
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
     add_executable(lgaed_stderr_exact_tests native/core/stderr_exact_contract_tests.cpp)

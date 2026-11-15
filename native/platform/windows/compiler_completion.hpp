@@ -28,6 +28,11 @@ class CmakeSelectiveRecoveryTrace;
 [[nodiscard]] std::string compiler_puzzle_review(const state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest& current);
 struct CompilerFeedback { std::string text; bool correct = false; std::string source_path; };
+// Resolve earned success and its authored origin without a live editor request.
+// Historical reading uses its own block version and never guesses a case path
+// from the feedback text. This read does not alter any execution receipt.
+[[nodiscard]] std::optional<CompilerFeedback> compiler_puzzle_success_feedback(const state::StateData&,
+    const curriculum::Lesson&, const curriculum::Block&);
 // The matching latest rejection takes presentation precedence over historical
 // success. Reading this choice never alters or revokes a completion receipt.
 [[nodiscard]] std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData&,

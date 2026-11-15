@@ -10,6 +10,11 @@ on:
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_code_format_compat.py
       - scripts/curriculum/test_source_format_retirement.py
+      - scripts/curriculum/test_semantic_retirement.py
+      - scripts/curriculum/semantic_retirement_fixture_source.py
+      - scripts/curriculum/text_semantics.py
+      - scripts/curriculum/test_text_semantics.py
+      - scripts/curriculum/test_retired_state_layout.py
       - scripts/curriculum/source_format_retirement_fixture_source.py
       - scripts/curriculum/test_compile_check_source_format.py
       - scripts/curriculum/test_reviewed_diagnostic_structural_format.py
@@ -37,6 +42,12 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_code_format_compat.py -v
       - name: Verify published formatted sources survive later retirement history
         run: python -B -m unittest discover -s scripts/curriculum -p test_source_format_retirement.py -v
+      - name: Verify exact authored semantics across retirement snapshots
+        run: python -B -m unittest discover -s scripts/curriculum -p test_semantic_retirement.py -v
+      - name: Preserve strict public text annotation contracts
+        run: python -B -m unittest discover -s scripts/curriculum -p test_text_semantics.py -v
+      - name: Preserve existing retirement and legacy reading archives
+        run: python -B -m unittest discover -s scripts/curriculum -p test_retired_state_layout.py -v
       - name: Verify original layout and diagnostic contracts
         run: python -B -m unittest discover -s scripts/curriculum -p test_compile_check_source_format.py -v
       - name: Verify ordinary validators, authenticated formatting and tampering

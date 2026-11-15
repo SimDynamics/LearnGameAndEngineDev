@@ -475,14 +475,10 @@ std::string compiler_puzzle_review(const state::StateData& data,const curriculum
     }else if((*rules!=review_rules(block)&&*rules!=review_rules(block,true))||*seal!=review_seal(key,*program,*input,*target,*rules,*feedback))return {};
     return *feedback;
 }
-std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData& data,
-        const curriculum::Lesson& lesson,const curriculum::Block& block,const CppRunRequest& current) {
+std::optional<CompilerFeedback> compiler_puzzle_success_feedback(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return std::nullopt;
     const auto key=base(lesson,block);
-    if(auto review=compiler_puzzle_review(data,lesson,block,current);!review.empty()){
-        auto path=restored_feedback_origin(data,key+"review/",block,review,state::string_value(data,"native_windows",key+"review/seal"));
-        return CompilerFeedback{std::move(review),false,std::move(path)};
-    }
     if(const auto guidance=current_v2_guidance(lesson,block);guidance&&compiler_puzzle_completed(data,lesson,block)){
         const auto original=state::string_value(data,"native_windows",key+"feedback");
         if(!original.empty()){
@@ -498,6 +494,16 @@ std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::St
         return CompilerFeedback{std::move(earned),true,std::move(path)};
     }
     return std::nullopt;
+}
+std::optional<CompilerFeedback> compiler_puzzle_current_feedback(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,const CppRunRequest& current) {
+    if(!curriculum::has_compiler_objective(block))return std::nullopt;
+    const auto key=base(lesson,block);
+    if(auto review=compiler_puzzle_review(data,lesson,block,current);!review.empty()){
+        auto path=restored_feedback_origin(data,key+"review/",block,review,state::string_value(data,"native_windows",key+"review/seal"));
+        return CompilerFeedback{std::move(review),false,std::move(path)};
+    }
+    return compiler_puzzle_success_feedback(data,lesson,block);
 }
 bool record_compiler_puzzle_review(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& block,const CppRunRequest& captured,const curriculum::FreshExecution& execution,

@@ -246,6 +246,11 @@ struct StateRetirementHistory {
     std::vector<ReferenceAfter> reference_after;
     std::vector<ActivityAfter> activity_after;
     std::string raw_json, sha256;
+    // Legacy snapshots did not record an overlay. A present null records its
+    // exact absence; a present object owns these root and per-block fields.
+    // Neither form may borrow authoring from the current lesson.
+    bool has_text_semantics = false;
+    std::map<std::string,TextSemantics> text_semantics;
 };
 // Authenticated presentation before one explicit editorial return. It is
 // archival reading provenance, never another active activity or state slot.
