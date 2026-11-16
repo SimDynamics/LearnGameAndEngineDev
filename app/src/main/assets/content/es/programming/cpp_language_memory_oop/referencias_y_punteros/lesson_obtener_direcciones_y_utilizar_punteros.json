@@ -1,0 +1,2140 @@
+{
+  "id": "cpp_language_memory_oop__referencias_y_punteros__obtener_direcciones_y_utilizar_punteros",
+  "title": "Obtener direcciones y utilizar punteros",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guardar dónde está un objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una referencia nos permite utilizar un objeto mediante otro nombre. Ahora aprenderemos a guardar un dato que indica dónde está un objeto, para elegirlo y acceder a él después. Ese dato es su dirección de memoria. En estos ejemplos utilizaremos enteros que ya están definidos y siguen vivos (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int dato = 4;\nint* acceso = &dato;\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera declaración define el entero dato y lo inicializa con 4. En la segunda, &dato obtiene la dirección de ese entero. int* declara el tipo puntero a int: acceso es otra variable que guarda un valor de puntero, aquí la dirección de dato. Decimos que acceso apunta a dato. Definir acceso no crea otro entero con 4 ni cambia el valor de dato (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En int& alias = dato;, el & forma parte de la declaración de una referencia. En &dato, aplicado a una expresión, es el operador que obtiene la dirección. El símbolo es el mismo, pero cumple una función distinta en cada lugar. Por eso leeremos la declaración y la expresión completas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La dirección identifica el objeto, no su valor guardado"
+        },
+        {
+          "type": "paragraph",
+          "text": "acceso guarda la dirección; dato guarda el entero 4. Podemos comprobar si acceso contiene la dirección de dato mediante acceso == &dato. La comparación produce un bool. Sin boolalpha, cout muestra 1 para true y 0 para false. No estamos imprimiendo la dirección como un número (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_misma_direccion",
+          "language": "cpp",
+          "question": "¿Qué muestra la comparación?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* acceso = &dato;\n    std::cout << (acceso == &dato);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso se inicializa con &dato. La comparación vuelve a obtener la dirección de ese mismo entero y da true, mostrado como 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa puede mostrar una dirección, pero sus cifras y su formato pueden variar entre entornos y ejecuciones. No identificaremos un objeto por una dirección numérica memorizada ni suponemos que todos los punteros ocupan siempre el mismo número de bytes (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Utilizar el entero señalado por el puntero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si acceso apunta al entero dato, *acceso permite utilizar ese entero. Para leerlo, por ejemplo, escribimos std::cout << *acceso;. Para cambiarlo escribimos *acceso = 6;. Esta operación de acceder al objeto señalado se llama indirección o desreferenciación. Necesita que el puntero permita acceder a un objeto adecuado que siga vivo (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_leer_y_escribir",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:*acceso?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* acceso = &dato;\n    *acceso = *acceso + 2;\n    std::cout << dato << ':' << *acceso;\n    return 0;\n}\n",
+          "answers": [
+            "6:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se lee 4 mediante *acceso y se suma 2. La asignación guarda 6 en el entero señalado, que es dato. Ambas lecturas posteriores utilizan ese entero."
+        },
+        {
+          "type": "paragraph",
+          "text": "El * de int* acceso declara un puntero. El * de *acceso utiliza el objeto señalado. Ninguno de estos usos es una multiplicación: no hay dos cantidades a ambos lados del símbolo. La declaración inicializa acceso con una dirección; la asignación a *acceso modifica el entero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar el puntero y cambiar el entero son acciones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "acceso = &segundo; guarda otra dirección en el puntero. Después *acceso utiliza segundo. El entero que estaba señalado antes conserva su propio valor. En cambio, *acceso = 8; escribe en el entero elegido en ese momento y no cambia qué objeto señala el puntero (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_cambiar_seleccion",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:*acceso?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* acceso = &primero;\n    *acceso = 8;\n    acceso = &segundo;\n    *acceso = *acceso + 1;\n    std::cout << primero << ':' << segundo << ':' << *acceso;\n    return 0;\n}\n",
+          "answers": [
+            "8:6:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera escritura deja primero en 8. acceso recibe después la dirección de segundo. La suma lee 5 y guarda 6 en segundo. La última lectura mediante el puntero también obtiene 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar un puntero conserva su selección de ese momento"
+        },
+        {
+          "type": "paragraph",
+          "text": "int* guardado = acceso; define otro puntero y copia en él el valor de acceso. Al comienzo ambos señalan primero. Después acceso = &segundo; sólo cambia acceso: guardado sigue señalando primero. Los dos punteros son variables distintas; copiar uno no hace que siga las reasignaciones futuras del otro (Prata, 2012; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_copia_del_puntero",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:*guardado:*acceso?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* acceso = &primero;\n    int* guardado = acceso;\n    acceso = &segundo;\n    *guardado = 4;\n    *acceso = 9;\n    std::cout << primero << ':' << segundo << ':' << *guardado << ':' << *acceso;\n    return 0;\n}\n",
+          "answers": [
+            "4:9:4:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "guardado conserva la dirección de primero y permite escribir 4 allí. acceso apunta después a segundo y permite escribir 9 allí. No se crearon copias de esos enteros."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_que_copia_el_puntero",
+          "question": "¿Qué crea int* guardado = acceso; cuando acceso apunta a un int vivo?",
+          "options": [
+            "Otro int con el valor del objeto señalado, que será independiente de ese objeto.",
+            "Otro puntero que inicialmente señala el mismo objeto, sin copiar ese entero.",
+            "Otro nombre para la variable acceso, de modo que reasignar una reasigna la otra."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se copia el valor de puntero. guardado y acceso pueden señalar el mismo entero y, aun así, cada puntero puede cambiar su propia selección."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar el valor del entero necesita leerlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "int copia = *acceso; hace otra tarea: utiliza el puntero para leer el entero y prepara otro int con ese valor. La copia del entero conserva su valor aunque después cambie el original. Compara esa declaración con int* guardado = acceso;, que copiaba un puntero (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_copia_del_entero",
+          "language": "cpp",
+          "question": "¿Qué muestra dato:copia:*acceso?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* acceso = &dato;\n    int copia = *acceso;\n    *acceso = 7;\n    std::cout << dato << ':' << copia << ':' << *acceso;\n    return 0;\n}\n",
+          "answers": [
+            "7:4:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibe el 4 leído en dato. Después se guarda 7 mediante el puntero. dato y *acceso leen 7; copia sigue valiendo 4."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia obtenida mediante un puntero conserva su objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "int& alias = *acceso; crea una referencia al entero señalado en esa inicialización. No crea una referencia a la variable puntero. Si acceso recibe después otra dirección, alias conserva el entero que eligió antes, del mismo modo que las referencias a elementos estudiadas en la lección anterior."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_referencia_desde_puntero",
+          "language": "cpp",
+          "question": "¿Qué muestra primero:segundo:alias?",
+          "code": "#include <iostream>\n\nint main() {\n    int primero = 2;\n    int segundo = 5;\n    int* acceso = &primero;\n    int& alias = *acceso;\n    acceso = &segundo;\n    *acceso = 6;\n    alias = 8;\n    std::cout << primero << ':' << segundo << ':' << alias;\n    return 0;\n}\n",
+          "answers": [
+            "8:6:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "alias se refiere a primero. El puntero cambia a segundo y permite guardar 6 allí. alias = 8 sigue modificando primero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Representar que no hay un objeto seleccionado"
+        },
+        {
+          "type": "paragraph",
+          "text": "int* acceso = nullptr; inicializa un puntero nulo. nullptr permite representar que ese puntero no señala ningún objeto. Está inicializado con un valor conocido, pero no podemos leer ni escribir un entero mediante *acceso. Antes habría que darle una selección adecuada (Stroustrup, 2024; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_nulo_y_entero_cero",
+          "language": "cpp",
+          "question": "¿Qué muestra ausente==nullptr:presente==nullptr:*presente?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 0;\n    int* ausente = nullptr;\n    int* presente = &dato;\n    std::cout << (ausente == nullptr) << ':' << (presente == nullptr) << ':' << *presente;\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "ausente es nulo. presente señala dato y por eso no es nulo, aunque dato guarde cero. La última lectura obtiene ese cero del entero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_nulo_no_es_valor_cero",
+          "question": "Un int vivo guarda 0 y acceso se inicializa con su dirección. ¿Qué significa ese cero?",
+          "options": [
+            "Que acceso pasa a ser nulo mientras el entero conserve cero.",
+            "Que leer *acceso está prohibido porque cero representa siempre ausencia.",
+            "Que el entero señalado vale cero; acceso sigue apuntando a ese objeto."
+          ],
+          "correctIndex": 2,
+          "explanation": "El valor del entero y el valor de puntero son datos distintos. nullptr indica ausencia de objeto; un entero que vale cero sigue siendo un objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Poner un puntero a nullptr no borra el entero"
+        },
+        {
+          "type": "paragraph",
+          "text": "acceso = nullptr; cambia el valor del puntero. No destruye el entero que señalaba ni cambia otros punteros que guardaran la dirección de ese entero. En este programa dato sigue vivo dentro de main y guardado conserva su dirección."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_desvincular_sin_borrar",
+          "language": "cpp",
+          "question": "¿Qué muestra acceso==nullptr:dato:*guardado?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* acceso = &dato;\n    int* guardado = acceso;\n    acceso = nullptr;\n    *guardado = 7;\n    std::cout << (acceso == nullptr) << ':' << dato << ':' << *guardado;\n    return 0;\n}\n",
+          "answers": [
+            "1:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo acceso se vuelve nulo. guardado sigue apuntando a dato y permite guardar 7 en él. La comparación da true y las dos lecturas del entero dan 7."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la ausencia antes de utilizar el objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "En los programas siguientes cada puntero será nulo o señalará un entero que sigue vivo. Con ese acuerdo, if (acceso != nullptr) permite separar dos caminos: utilizar el entero seleccionado o tratar la ausencia sin aplicar *. La comprobación debe ocurrir antes de la lectura o escritura (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_comprobar_antes_de_escribir",
+          "language": "cpp",
+          "question": "¿Qué muestra la secuencia?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 3;\n    int* acceso = nullptr;\n    if (acceso != nullptr) {\n        *acceso = 9;\n    } else {\n        std::cout << \"Sin seleccion\";\n    }\n    acceso = &dato;\n    if (acceso != nullptr) {\n        *acceso = 6;\n    }\n    std::cout << ':' << dato;\n    return 0;\n}\n",
+          "answers": [
+            "Sin seleccion:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera condición es falsa y no se ejecuta *acceso = 9. Se muestra Sin seleccion. Después acceso recibe &dato, la segunda condición es verdadera y se guarda 6 en ese entero."
+        },
+        {
+          "type": "paragraph",
+          "text": "También puedes encontrar if (acceso), que en este contexto comprueba que no sea nulo. Ninguna de estas formas comprueba por sí sola que el objeto siga vivo. En nuestros ejemplos conocemos además la procedencia y la duración del entero; esa información es necesaria para utilizarlo (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_alcance_de_la_comprobacion",
+          "question": "En el programa anterior, ¿qué comprueba acceso != nullptr?",
+          "options": [
+            "Que no es nulo; todavía hay que conocer si permite acceder al objeto vivo que queremos utilizar.",
+            "Que el objeto señalado seguirá vivo hasta que termine cualquier puntero que conserve su dirección.",
+            "Que el puntero creó un entero propio al recibir una dirección."
+          ],
+          "correctIndex": 0,
+          "explanation": "No ser nulo no mantiene vivo un objeto. El contrato de estos ejemplos añade que las direcciones proceden de enteros que siguen existiendo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inicializar el puntero y conservar vivo su objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los fragmentos siguientes se analizan como errores; no tienen una salida que debamos intentar obtener ejecutándolos. En el primero, acceso es un puntero local automático sin inicializar. No se ha establecido a qué objeto puede acceder. La escritura mediante *acceso no es un uso válido (Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void incorrecta() {\n    int* acceso;\n    *acceso = 7;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el segundo, local existe únicamente dentro del bloque interior. Mientras está vivo, &local permite señalarlo. Después de cerrar ese bloque ya no podemos utilizarlo mediante el puntero. Conservar acceso no mantiene vivo local ni hace que el puntero se convierta automáticamente en nullptr (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void incorrecta() {\n    int* acceso = nullptr;\n    {\n        int local = 4;\n        acceso = &local;\n    }\n    *acceso = 7;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_reparar_la_procedencia",
+          "question": "¿Qué debe cambiar para que el segundo diseño permita escribir de forma válida después del bloque interior?",
+          "options": [
+            "Compararlo con nullptr basta para poder escribir, aunque el bloque de local haya terminado.",
+            "Hacer que la escritura utilice un entero cuya vida abarque ese uso; comprobar sólo nullptr no recupera local.",
+            "Copiar acceso en otro puntero después del bloque para prolongar la vida de local."
+          ],
+          "correctIndex": 1,
+          "explanation": "Hay que corregir qué objeto se utiliza y durante cuánto tiempo existe. No se debe leer, copiar ni comprobar un puntero inválido como método para demostrar que el objeto sigue vivo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo de puntero y cada declaración importan"
+        },
+        {
+          "type": "paragraph",
+          "text": "int* permite señalar un int con el permiso de escritura que hemos utilizado. double* es otro tipo: permite señalar un double. Obtener una dirección no convierte el objeto a otro tipo. int* acceso = &medida; se rechaza si medida es double; no equivale a convertir su valor decimal a int (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    double medida = 1.5;\n    int* acceso = &medida;\n    return *acceso;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los espacios entre int, * y el nombre pueden variar. Pero en una declaración con varios nombres el * debe aparecer para cada puntero. En int* primero = &dato, segundo = 2;, primero es un puntero y segundo es un int. Escribir cada variable en su propia declaración evita esa confusión (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_declaracion_de_dos_nombres",
+          "language": "cpp",
+          "question": "¿Qué muestra *primero:segundo?",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* primero = &dato, segundo = 2;\n    std::cout << *primero << ':' << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "4:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El * declara primero como puntero a dato. segundo se declara sin ese * y guarda el entero 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos nullptr para expresar ausencia. El literal entero 0 también puede inicializar un puntero nulo en C++, pero no significa que los enteros se conviertan en direcciones arbitrariamente: acceso = 7; no es una asignación válida a un int* (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Devolver un puntero a un elemento o indicar ausencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "elegir recibe por referencia el array del llamador. Su tipo de retorno int* permite devolver la dirección de un elemento. Si el índice no está entre cero y dos, devuelve nullptr sin intentar acceder a una posición. Para un índice válido, at obtiene el elemento y & obtiene su dirección. El array de main permanece vivo durante todos los usos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u4l5_seleccionar_o_devolver_nulo",
+          "language": "cpp",
+          "question": "¿Qué muestra datos[2]:ausente==nullptr?",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* elegido = elegir(datos, 2);\n    if (elegido != nullptr) {\n        *elegido = 7;\n    }\n    int* ausente = elegir(datos, -1);\n    std::cout << datos[2] << ':' << (ausente == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "7:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El índice dos permite obtener la dirección del último entero y escribir 7. El índice -1 devuelve nullptr antes de convertirlo a std::size_t y antes del acceso."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_sentido_del_retorno_nulo",
+          "question": "¿Por qué elegir puede utilizar nullptr para un índice inválido?",
+          "options": [
+            "Porque nullptr es una referencia a un int especial que permite guardar cualquier error.",
+            "Porque devuelve int por valor y nullptr se convierte en el entero -1.",
+            "Porque devuelve un puntero y su contrato permite representar la ausencia sin devolver un elemento."
+          ],
+          "correctIndex": 2,
+          "explanation": "El resultado es un puntero, no una referencia ni una copia del entero. El llamador debe tratar el resultado nulo antes de utilizar *."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la dirección y el acceso al entero"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u4l5_direccion_y_objeto",
+          "question": "Completa el tipo usando int y *, el operador que obtiene la dirección de dato y el operador que permite guardar 7 en el entero señalado.",
+          "template": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    [] acceso = []dato;\n    []acceso = 7;\n    std::cout << dato;\n    return 0;\n}",
+          "answers": [
+            "int*",
+            "&",
+            "*"
+          ],
+          "answerAlternatives": [
+            [
+              "int*",
+              "int *"
+            ],
+            [
+              "&"
+            ],
+            [
+              "*"
+            ]
+          ],
+          "explanation": "int* declara el puntero, &dato proporciona la dirección y *acceso utiliza el entero al realizar la asignación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar una asignación dirigida a la variable equivocada"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor intenta guardar 7 en acceso, cuyo tipo es int*. Esa instrucción no compila. El objetivo es cambiar el entero dato mediante el puntero que ya está inicializado; la copia anterior debe conservar 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "Corrige únicamente la asignación que intenta guardar 7. Conserva las declaraciones, la copia y la salida. No cambies el tipo de acceso ni conviertas 7 en una dirección. Este caso no necesita entrada y debe mostrar 7:4."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* acceso = &dato;\n    const int copia = dato;\n    acceso = 7;\n    std::cout << dato << ':' << copia;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:4"
+                ],
+                "explanation": "La asignación debe utilizar el entero señalado. dato pasa a 7 y la copia independiente conserva 4."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la reparación: escribir en el objeto señalado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int dato = 4;\n    int* acceso = &dato;\n    const int copia = dato;\n    *acceso = 7;\n    std::cout << dato << ':' << copia;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "acceso ya contenía la dirección adecuada. *acceso = 7; utiliza esa dirección para escribir en dato. copia conserva el 4 que recibió antes; no se creó como referencia ni como puntero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_lectura_y_direccion",
+          "question": "¿Qué diferencia explica la reparación?",
+          "options": [
+            "acceso identifica el valor de puntero; *acceso permite utilizar el entero señalado.",
+            "acceso y *acceso son dos nombres del entero y reciben siempre las mismas asignaciones.",
+            "*acceso obtiene otro puntero y por eso acepta el entero 7 como dirección."
+          ],
+          "correctIndex": 0,
+          "explanation": "El destino de la asignación importa. Una dirección pertenece al puntero; el valor 7 se guarda en el entero al que permite acceder."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una selección actual y otra guardada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa las operaciones dentro del for del editor. Conserva elegir, las declaraciones, la lectura y el informe. datos es un array que comienza con 2,5,8. actual y guardado comienzan como punteros nulos. Todo el array sigue vivo durante la ejecución; los punteros válidos deben señalar sus elementos, sin crear enteros sustitutos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con la cantidad de órdenes, entre 1 y 12. Cada orden tiene dos enteros: operacion y argumento. Para las operaciones 3 y 4 se lee argumento, pero no se utiliza. Implementa los siguientes comportamientos y guarda el rótulo indicado en estado."
+        },
+        {
+          "type": "paragraph",
+          "text": "1 indice: asigna a actual el resultado de elegir(datos, indice). Si es nulo, estado será Indice invalido; en otro caso será Elegido. Un índice inválido deja actual nulo, incluso si antes había una selección. No cambia guardado ni los enteros."
+        },
+        {
+          "type": "paragraph",
+          "text": "2 valor: si actual es nulo, estado será Sin seleccion y no se aplica *. Si hay selección, acepta valores de 0 a 9, los guarda en el entero señalado y usa Cambio. Un valor fuera de ese intervalo usa Rechazo y conserva el entero. La ausencia de selección tiene prioridad sobre el rechazo del valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "3 argumento: copia el valor de puntero actual en guardado y usa Guardado. Si actual es nulo, guardado también queda nulo. Si señala un entero, ambos punteros señalan ese mismo entero; no se copia su valor a otro int."
+        },
+        {
+          "type": "paragraph",
+          "text": "4 argumento: asigna nullptr a actual y usa Sin seleccion. Conserva guardado y todo el array."
+        },
+        {
+          "type": "paragraph",
+          "text": "5 valor: aplica al puntero guardado las mismas condiciones de escritura de la operación 2. Si es nulo usa Sin guardado; con un valor fuera de 0 a 9 usa Rechazo; una escritura aceptada usa Cambio. No cambia qué objetos señalan los punteros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cualquier otro código de operación usa Operacion invalida y conserva ambos punteros y los enteros. Después de cada orden el informe ya preparado muestra Actual y Guardado como el valor del entero señalado, o X si no hay selección. Datos muestra las tres posiciones. Un entero seleccionado que vale cero se muestra como 0, no como X."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial compila y lee las órdenes, pero todavía no las realiza: muestra Pendiente y conserva los punteros nulos. Sustituye ese comportamiento implementando las decisiones donde aparece el comentario. Las salidas se obtienen del estado real del programa, sin escribir un informe fijo."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La secuencia conserva una selección guardada mientras cambia o se elimina la actual; después escribe mediante la guardada. También distingue un cero válido de la ausencia y conserva los datos ante rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n2 7\n1 1\n3 0\n1 2\n2 0\n5 9\n2 10\n4 0\n5 0\n1 1\n1 3\n2 10\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Sin seleccion;Actual:X;Guardado:X;Datos:2,5,8\nElegido;Actual:5;Guardado:X;Datos:2,5,8\nGuardado;Actual:5;Guardado:5;Datos:2,5,8\nElegido;Actual:8;Guardado:5;Datos:2,5,8\nCambio;Actual:0;Guardado:5;Datos:2,5,0\nCambio;Actual:0;Guardado:9;Datos:2,9,0\nRechazo;Actual:0;Guardado:9;Datos:2,9,0\nSin seleccion;Actual:X;Guardado:9;Datos:2,9,0\nCambio;Actual:X;Guardado:0;Datos:2,0,0\nElegido;Actual:0;Guardado:0;Datos:2,0,0\nIndice invalido;Actual:X;Guardado:0;Datos:2,0,0\nSin seleccion;Actual:X;Guardado:0;Datos:2,0,0\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        // Implementa aqui las operaciones; conserva la lectura y el informe.\n        std::cout << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "12\n2 7\n1 1\n3 0\n1 2\n2 0\n5 9\n2 10\n4 0\n5 0\n1 1\n1 3\n2 10\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n2 7\n1 1\n3 0\n1 2\n2 0\n5 9\n2 10\n4 0\n5 0\n1 1\n1 3\n2 10\n",
+                "outputs": [
+                  "Sin seleccion;Actual:X;Guardado:X;Datos:2,5,8\nElegido;Actual:5;Guardado:X;Datos:2,5,8\nGuardado;Actual:5;Guardado:5;Datos:2,5,8\nElegido;Actual:8;Guardado:5;Datos:2,5,8\nCambio;Actual:0;Guardado:5;Datos:2,5,0\nCambio;Actual:0;Guardado:9;Datos:2,9,0\nRechazo;Actual:0;Guardado:9;Datos:2,9,0\nSin seleccion;Actual:X;Guardado:9;Datos:2,9,0\nCambio;Actual:X;Guardado:0;Datos:2,0,0\nElegido;Actual:0;Guardado:0;Datos:2,0,0\nIndice invalido;Actual:X;Guardado:0;Datos:2,0,0\nSin seleccion;Actual:X;Guardado:0;Datos:2,0,0\n"
+                ],
+                "explanation": "Los punteros conservan sus propias selecciones. Copiar uno no copia el entero; las escrituras válidas cambian el elemento real y las ausencias se tratan antes de aplicar *."
+              },
+              {
+                "standardInput": "10\n5 7\n1 0\n3 0\n2 9\n1 2\n3 0\n2 8\n4 0\n3 0\n5 9\n",
+                "outputs": [
+                  "Sin guardado;Actual:X;Guardado:X;Datos:2,5,8\nElegido;Actual:2;Guardado:X;Datos:2,5,8\nGuardado;Actual:2;Guardado:2;Datos:2,5,8\nCambio;Actual:9;Guardado:9;Datos:9,5,8\nElegido;Actual:8;Guardado:9;Datos:9,5,8\nGuardado;Actual:8;Guardado:8;Datos:9,5,8\nCambio;Actual:8;Guardado:8;Datos:9,5,8\nSin seleccion;Actual:X;Guardado:8;Datos:9,5,8\nGuardado;Actual:X;Guardado:X;Datos:9,5,8\nSin guardado;Actual:X;Guardado:X;Datos:9,5,8\n"
+                ],
+                "explanation": "Los punteros conservan sus propias selecciones. Copiar uno no copia el entero; las escrituras válidas cambian el elemento real y las ausencias se tratan antes de aplicar *."
+              },
+              {
+                "standardInput": "10\n1 1\n3 0\n1 -2147483648\n5 2147483647\n1 2147483647\n6 0\n1 0\n2 -2147483648\n5 -1\n2 0\n",
+                "outputs": [
+                  "Elegido;Actual:5;Guardado:X;Datos:2,5,8\nGuardado;Actual:5;Guardado:5;Datos:2,5,8\nIndice invalido;Actual:X;Guardado:5;Datos:2,5,8\nRechazo;Actual:X;Guardado:5;Datos:2,5,8\nIndice invalido;Actual:X;Guardado:5;Datos:2,5,8\nOperacion invalida;Actual:X;Guardado:5;Datos:2,5,8\nElegido;Actual:2;Guardado:5;Datos:2,5,8\nRechazo;Actual:2;Guardado:5;Datos:2,5,8\nRechazo;Actual:2;Guardado:5;Datos:2,5,8\nCambio;Actual:0;Guardado:5;Datos:0,5,8\n"
+                ],
+                "explanation": "Los punteros conservan sus propias selecciones. Copiar uno no copia el entero; las escrituras válidas cambian el elemento real y las ausencias se tratan antes de aplicar *."
+              },
+              {
+                "standardInput": "9\n1 0\n3 0\n1 1\n3 0\n1 2\n2 0\n5 9\n1 1\n5 0\n",
+                "outputs": [
+                  "Elegido;Actual:2;Guardado:X;Datos:2,5,8\nGuardado;Actual:2;Guardado:2;Datos:2,5,8\nElegido;Actual:5;Guardado:2;Datos:2,5,8\nGuardado;Actual:5;Guardado:5;Datos:2,5,8\nElegido;Actual:8;Guardado:5;Datos:2,5,8\nCambio;Actual:0;Guardado:5;Datos:2,5,0\nCambio;Actual:0;Guardado:9;Datos:2,9,0\nElegido;Actual:9;Guardado:9;Datos:2,9,0\nCambio;Actual:0;Guardado:0;Datos:2,0,0\n"
+                ],
+                "explanation": "Los punteros conservan sus propias selecciones. Copiar uno no copia el entero; las escrituras válidas cambian el elemento real y las ausencias se tratan antes de aplicar *."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo este primer caso correcto es obligatorio para avanzar. Los casos siguientes son ensayos opcionales. Cada ejecución comienza otra vez con datos igual a 2,5,8 y ambos punteros nulos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: copiar ausencia y tratar los límites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guardar una selección nueva sustituye el puntero guardado anterior. Guardar la ausencia también es una copia válida del valor de puntero; no permite después utilizar un entero."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se escribe cuando ambas selecciones señalan el mismo entero, se guarda otro elemento y después se copia un puntero nulo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "10\n5 7\n1 0\n3 0\n2 9\n1 2\n3 0\n2 8\n4 0\n3 0\n5 9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Sin guardado;Actual:X;Guardado:X;Datos:2,5,8\nElegido;Actual:2;Guardado:X;Datos:2,5,8\nGuardado;Actual:2;Guardado:2;Datos:2,5,8\nCambio;Actual:9;Guardado:9;Datos:9,5,8\nElegido;Actual:8;Guardado:9;Datos:9,5,8\nGuardado;Actual:8;Guardado:8;Datos:9,5,8\nCambio;Actual:8;Guardado:8;Datos:9,5,8\nSin seleccion;Actual:X;Guardado:8;Datos:9,5,8\nGuardado;Actual:X;Guardado:X;Datos:9,5,8\nSin guardado;Actual:X;Guardado:X;Datos:9,5,8\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los índices int extremos dejan actual nulo. Los valores fuera del intervalo se rechazan sin escribir. Una operación desconocida conserva las dos selecciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "10\n1 1\n3 0\n1 -2147483648\n5 2147483647\n1 2147483647\n6 0\n1 0\n2 -2147483648\n5 -1\n2 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Elegido;Actual:5;Guardado:X;Datos:2,5,8\nGuardado;Actual:5;Guardado:5;Datos:2,5,8\nIndice invalido;Actual:X;Guardado:5;Datos:2,5,8\nRechazo;Actual:X;Guardado:5;Datos:2,5,8\nIndice invalido;Actual:X;Guardado:5;Datos:2,5,8\nOperacion invalida;Actual:X;Guardado:5;Datos:2,5,8\nElegido;Actual:2;Guardado:5;Datos:2,5,8\nRechazo;Actual:2;Guardado:5;Datos:2,5,8\nRechazo;Actual:2;Guardado:5;Datos:2,5,8\nCambio;Actual:0;Guardado:5;Datos:0,5,8\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayo opcional: objetos distintos y un objeto compartido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando actual y guardado señalan elementos distintos, escribir mediante uno no cambia el entero señalado por el otro. Cuando señalan el mismo elemento, ambos permiten leer su nuevo valor."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero se guardan selecciones distintas. Al final ambos punteros señalan el elemento uno y una escritura mediante guardado se observa también en Actual."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9\n1 0\n3 0\n1 1\n3 0\n1 2\n2 0\n5 9\n1 1\n5 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Elegido;Actual:2;Guardado:X;Datos:2,5,8\nGuardado;Actual:2;Guardado:2;Datos:2,5,8\nElegido;Actual:5;Guardado:2;Datos:2,5,8\nGuardado;Actual:5;Guardado:5;Datos:2,5,8\nElegido;Actual:8;Guardado:5;Datos:2,5,8\nCambio;Actual:0;Guardado:5;Datos:2,5,0\nCambio;Actual:0;Guardado:9;Datos:2,9,0\nElegido;Actual:9;Guardado:9;Datos:2,9,0\nCambio;Actual:0;Guardado:0;Datos:2,0,0\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_copia_guardada_no_sigue_reasignacion",
+          "question": "Después de guardado = actual;, actual recibe la dirección de otro elemento. ¿Qué conserva guardado?",
+          "options": [
+            "Una copia del valor entero anterior que ya no se modifica si cambia ese elemento.",
+            "La dirección que se copió; sigue señalando el elemento elegido en ese momento.",
+            "Una conexión con la variable actual que le hace recibir automáticamente su dirección nueva."
+          ],
+          "correctIndex": 1,
+          "explanation": "Copiar el puntero conserva la selección de ese instante. El elemento sigue vivo y puede cambiar por cualquiera de los accesos válidos que lo señalen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: cambiar una selección o utilizar su objeto"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <array>\n#include <cstddef>\n#include <iostream>\n#include <string>\n\nint* elegir(std::array<int, 3>& datos, int indice) {\n    if (indice < 0 || indice > 2) {\n        return nullptr;\n    }\n    return &datos.at(static_cast<std::size_t>(indice));\n}\n\nint main() {\n    std::array<int, 3> datos{2, 5, 8};\n    int* actual = nullptr;\n    int* guardado = nullptr;\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    for (int orden = 0; orden < cantidad; ++orden) {\n        int operacion = 0;\n        int argumento = 0;\n        if (!(std::cin >> operacion >> argumento)) {\n            return 1;\n        }\n        std::string estado = \"Pendiente\";\n        if (operacion == 1) {\n            actual = elegir(datos, argumento);\n            if (actual == nullptr) {\n                estado = \"Indice invalido\";\n            } else {\n                estado = \"Elegido\";\n            }\n        } else if (operacion == 2) {\n            if (actual == nullptr) {\n                estado = \"Sin seleccion\";\n            } else if (argumento < 0 || argumento > 9) {\n                estado = \"Rechazo\";\n            } else {\n                *actual = argumento;\n                estado = \"Cambio\";\n            }\n        } else if (operacion == 3) {\n            guardado = actual;\n            estado = \"Guardado\";\n        } else if (operacion == 4) {\n            actual = nullptr;\n            estado = \"Sin seleccion\";\n        } else if (operacion == 5) {\n            if (guardado == nullptr) {\n                estado = \"Sin guardado\";\n            } else if (argumento < 0 || argumento > 9) {\n                estado = \"Rechazo\";\n            } else {\n                *guardado = argumento;\n                estado = \"Cambio\";\n            }\n        } else {\n            estado = \"Operacion invalida\";\n        }\n        std::cout << estado << \";Actual:\";\n        if (actual == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *actual;\n        }\n        std::cout << \";Guardado:\";\n        if (guardado == nullptr) {\n            std::cout << 'X';\n        } else {\n            std::cout << *guardado;\n        }\n        std::cout << \";Datos:\" << datos[0] << ',' << datos[1] << ',' << datos[2] << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La operación 1 cambia actual y la 3 cambia guardado copiando un puntero. La 4 sólo vuelve nulo actual. Las operaciones 2 y 5, cuando tienen un destino válido y un valor aceptado, utilizan * para modificar el entero. Esas asignaciones no cambian qué elemento señala cada puntero."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el primer caso, guardado conserva el elemento uno después de seleccionar el elemento dos con actual. Por eso la escritura mediante guardado cambia el segundo entero y la escritura mediante actual cambia el tercero. Después de poner actual a nullptr, guardado todavía permite cambiar su entero a cero. El array permanece vivo todo ese tiempo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ante un índice inválido sólo se modifica actual para indicar ausencia; no se modifica un entero. Ante un valor rechazado se conserva el entero y la selección que ya existía. Ante una escritura sin selección no se intenta leer ni escribir mediante el puntero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer qué se conserva y qué se modifica"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al leer un programa, identifica primero el objeto entero y su duración.\nDespués identifica cada variable puntero y dónde recibe su dirección o nullptr.\nDistingue asignar al puntero de asignar al objeto mediante *.\nSi se copia un puntero, sigue cada selección por separado.\nAntes de utilizar el objeto, comprueba el caso nulo y que la procedencia del puntero permita utilizar un objeto vivo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u4l5_criterio_final",
+          "question": "¿Qué razonamiento permite utilizar los punteros de esta práctica con seguridad?",
+          "options": [
+            "Que todos los enteros del array son positivos, por lo que las direcciones siempre son válidas.",
+            "Que un puntero se vuelve nulo automáticamente cuando termina el objeto señalado.",
+            "Que cada puntero es nulo o señala un elemento del array que sigue vivo, y se trata la ausencia antes de acceder al entero."
+          ],
+          "correctIndex": 2,
+          "explanation": "Los ceros son válidos y los punteros no controlan por sí solos la vida del objeto. Aquí conocemos las únicas procedencias permitidas y comprobamos la ausencia antes del acceso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya podemos elegir un objeto mediante su dirección, conservar otra selección y distinguirla de una copia del entero. A continuación separaremos dos decisiones sobre const: si puede cambiar el puntero y si puede modificarse el objeto mediante él."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "f5a411d5e571794992e801cfa8d4cf945d1300346c59534220457c66e7d15116"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "d4d5073f2d50a5552590d9fc2bbb6977224c9ede46fa6e2b5d8db38847f9eb75"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "6dbc7463510d0be619874068f18cecc0dc0ae63437ffee26f18df3596d46503c"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "af035728b7bb2ac79151dd6d7bd784ca05890b4dacc0899da58b64f7065a14b5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "a0678108165765414145ab1424ac9e0f4d15fc977bed9eece76919a24a86e6de"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "4acc488d0c5a46ec8d4c1e76527ff64884f3761bf6851e6172a98dd72c35f9fd"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "65b98f14935075664baf8137f6b56f067ef9ea7e39e8d67905a472f42f9684bd"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "62b6f3cca30c5fd4e9b82950acde3953d054bce9be421212c5b2bc03e7f02371"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "f5a8ffcafee4b80ec6d0522458d843b0180fd15bcd15bde1c6dc225fcb9b0f97"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "c0260a7350c418eeb841b159c64695bb8514e61716cef3b8894ace387f161ddf"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1a6a68a7a5e69d9f07961e309df1efa19f62d0e083558f4fbe5cb359e4150e37"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "63495ee15867e0c785c6a771d2a9e85ae3ff1d52ea9294ced028d777d918bb98"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "d6babd5a958f810846f157e307010e15a318d6ba7fdf00938d04fe736d15ca77"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "08c383a86008e9d73e2a7d0ece923b7ecdd4daa2f54ac470c498c6c316eb38f5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "6993dbfddcb415e390bf5fec01eeedc10936dc64de70b639653961996c8ff335"
+          },
+          {
+            "id": "block_0010_0005",
+            "sha256": "16a67a6df5e56825aeaf2b4d360ab5b798fe97574979a33b78c82f5b2cf14fe8"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "ef96e4789dbf49d471af9f9c483058eac80e7a426862ed676002d1890ded77c5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "08498e04f1f6c87a5e846f18793b1ccc72953bd295d6992e927c7986f234a668"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "b9f5da314934cfc94b065b06806946be2f773f3d4e903d9ee3f509b454bc81da"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "37ee30bd7d051e6719d021f54f5b2ff4cfbaea6b5f9006e466bf19758dfaed16"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "a88a8d13d06033d08792c9edf7a5d17bcb807dfe72b70720fcf916cfbc97ba72"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "9eba349795bae254ba4513657c7f2ab8f463863577ad8bf40c142592ff5850a7"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "229d4d3ac97f7db7862d784306e567b38bde790708142bf897fca4eda100f60a"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "75efd5e018cbefbf60dce92ca4f12bfae4e1afe80044f72499e1a703521e5710"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0010",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0013",
+            "sha256": "ebdd2e1715c39fb695707ceacac7bead475a667d16cdb21a5a8ef5e7e4541a83"
+          },
+          {
+            "id": "block_0016_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0015",
+            "sha256": "23e6ca9d92827c5853415c24fc91b83428999c58a0006961ff2066b98b5f829c"
+          },
+          {
+            "id": "block_0016_0016",
+            "sha256": "29b754b44539f0bd555da4515dbfd829d70d22cedf36ced0e0738c31b8291cbd"
+          },
+          {
+            "id": "block_0016_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "3f9838c4641ea2acd0d3c13ba5307c116cac55ac5bdb77b80a1ac8dee9bc2661"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "743c44f8dd60d086d84576067e5dc52b9c8f6137b91f1d971d10b0fd217e22bb"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0011",
+            "sha256": "d192a282c0cedc58edda6957e56c5ac5a8ca8b0df8aaa37eaf50954426760238"
+          },
+          {
+            "id": "block_0017_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0013",
+            "sha256": "a68d44391c61789ac290c165f32f209639ce0930ae192637f5954cc61a29c47d"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "7caaec802dd7a963850766f78cfc8c391fc816f604ca86e187719b25abf2f5a1"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "1892ae29d26f48fa66db3d7ce5b570676f230924f4213d2dcc5d68e2f3dd3cd6"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "1b164fddbf5c376f74c97e7f8cb590d6746b5a03fa45f2670f59163ca1734007"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "762966e88f38db2efb284751de4e5daa77ff84c592e292f240d4512ab2aa1a33"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "f5e3d5db0f2cf369b622ce1199ece9bd6ed64ef4d66935efeede0c225441e5fa"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004",
+          "block_0010_0005"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008",
+          "block_0016_0009",
+          "block_0016_0010",
+          "block_0016_0011",
+          "block_0016_0012",
+          "block_0016_0013",
+          "block_0016_0014",
+          "block_0016_0015",
+          "block_0016_0016",
+          "block_0016_0017"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008",
+          "block_0017_0009",
+          "block_0017_0010",
+          "block_0017_0011",
+          "block_0017_0012",
+          "block_0017_0013"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "5c13717a34694563402f4aba250ca91d2762ac30d27808836a0590a41c2600f6",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "f5a411d5e571794992e801cfa8d4cf945d1300346c59534220457c66e7d15116"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "d4d5073f2d50a5552590d9fc2bbb6977224c9ede46fa6e2b5d8db38847f9eb75"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "6dbc7463510d0be619874068f18cecc0dc0ae63437ffee26f18df3596d46503c"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "af035728b7bb2ac79151dd6d7bd784ca05890b4dacc0899da58b64f7065a14b5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "a0678108165765414145ab1424ac9e0f4d15fc977bed9eece76919a24a86e6de"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "4acc488d0c5a46ec8d4c1e76527ff64884f3761bf6851e6172a98dd72c35f9fd"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "65b98f14935075664baf8137f6b56f067ef9ea7e39e8d67905a472f42f9684bd"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "62b6f3cca30c5fd4e9b82950acde3953d054bce9be421212c5b2bc03e7f02371"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "f5a8ffcafee4b80ec6d0522458d843b0180fd15bcd15bde1c6dc225fcb9b0f97"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "c0260a7350c418eeb841b159c64695bb8514e61716cef3b8894ace387f161ddf"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1a6a68a7a5e69d9f07961e309df1efa19f62d0e083558f4fbe5cb359e4150e37"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "63495ee15867e0c785c6a771d2a9e85ae3ff1d52ea9294ced028d777d918bb98"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "d6babd5a958f810846f157e307010e15a318d6ba7fdf00938d04fe736d15ca77"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "08c383a86008e9d73e2a7d0ece923b7ecdd4daa2f54ac470c498c6c316eb38f5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "6993dbfddcb415e390bf5fec01eeedc10936dc64de70b639653961996c8ff335"
+              },
+              {
+                "id": "block_0010_0005",
+                "sha256": "16a67a6df5e56825aeaf2b4d360ab5b798fe97574979a33b78c82f5b2cf14fe8"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "ef96e4789dbf49d471af9f9c483058eac80e7a426862ed676002d1890ded77c5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "08498e04f1f6c87a5e846f18793b1ccc72953bd295d6992e927c7986f234a668"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "b9f5da314934cfc94b065b06806946be2f773f3d4e903d9ee3f509b454bc81da"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "37ee30bd7d051e6719d021f54f5b2ff4cfbaea6b5f9006e466bf19758dfaed16"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "a88a8d13d06033d08792c9edf7a5d17bcb807dfe72b70720fcf916cfbc97ba72"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "9eba349795bae254ba4513657c7f2ab8f463863577ad8bf40c142592ff5850a7"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "229d4d3ac97f7db7862d784306e567b38bde790708142bf897fca4eda100f60a"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "75efd5e018cbefbf60dce92ca4f12bfae4e1afe80044f72499e1a703521e5710"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0010",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0013",
+                "sha256": "ebdd2e1715c39fb695707ceacac7bead475a667d16cdb21a5a8ef5e7e4541a83"
+              },
+              {
+                "id": "block_0016_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0015",
+                "sha256": "23e6ca9d92827c5853415c24fc91b83428999c58a0006961ff2066b98b5f829c"
+              },
+              {
+                "id": "block_0016_0016",
+                "sha256": "29b754b44539f0bd555da4515dbfd829d70d22cedf36ced0e0738c31b8291cbd"
+              },
+              {
+                "id": "block_0016_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "3f9838c4641ea2acd0d3c13ba5307c116cac55ac5bdb77b80a1ac8dee9bc2661"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "743c44f8dd60d086d84576067e5dc52b9c8f6137b91f1d971d10b0fd217e22bb"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0011",
+                "sha256": "d192a282c0cedc58edda6957e56c5ac5a8ca8b0df8aaa37eaf50954426760238"
+              },
+              {
+                "id": "block_0017_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0013",
+                "sha256": "a68d44391c61789ac290c165f32f209639ce0930ae192637f5954cc61a29c47d"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "7caaec802dd7a963850766f78cfc8c391fc816f604ca86e187719b25abf2f5a1"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "1892ae29d26f48fa66db3d7ce5b570676f230924f4213d2dcc5d68e2f3dd3cd6"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "1b164fddbf5c376f74c97e7f8cb590d6746b5a03fa45f2670f59163ca1734007"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "762966e88f38db2efb284751de4e5daa77ff84c592e292f240d4512ab2aa1a33"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "f5e3d5db0f2cf369b622ce1199ece9bd6ed64ef4d66935efeede0c225441e5fa"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
