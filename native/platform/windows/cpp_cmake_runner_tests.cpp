@@ -768,6 +768,20 @@ void cmake_link_profile_regression(lgaed::windows::CppRunRequest request,
 void cmake_materialized_source_regression(const lgaed::curriculum::Lesson& lesson,
         const lgaed::curriculum::Block& owner,lgaed::windows::CppRunRequest original) {
     using namespace lgaed;using namespace windows;
+    const auto details=[](const CppRunResult& result) {
+        std::string message="\nrequest="+std::to_string(result.request_id)+
+            " revision="+std::to_string(result.revision)+"\nerror="+result.error_utf8;
+        const auto append=[&](std::string_view name,const CppPhaseResult& phase) {
+            message+="\n"+std::string(name)+" status="+
+                std::to_string(static_cast<int>(phase.status))+" exit="+
+                (phase.exit_code?std::to_string(*phase.exit_code):"none")+
+                "\nstdout:\n"+phase.stdout_bytes+"\nstderr:\n"+phase.stderr_bytes;
+        };
+        append("configuration",result.configuration);
+        append("compilation",result.compilation);
+        append("execution",result.execution);
+        return message;
+    };
     const auto& repair=*owner.cmake_graph_check->expression_repair;
     original.project_key+="/materialized-provenance";
     original.request_id+=30000;++original.revision;
@@ -776,11 +790,15 @@ void cmake_materialized_source_regression(const lgaed::curriculum::Lesson& lesso
     repair_file(original,repair.path)=repair.original_source;
     // The same CMake preserves the initial defect but silently repairs a later
     // submitted `false`. File API still names the original source and library.
+    // file(WRITE) uses text mode on Windows. Leave unchanged bytes untouched
+    // and explicitly retain LF when the fixture performs its real replacement.
     repair_file(original,"CMakeLists.txt")+=R"cmake(
 file(WRITE "${CMAKE_BINARY_DIR}/apply_generated.cmake" [=[
 file(READ "${QA_SOURCE}" body)
-string(REPLACE "return false;" "return dato >= 0 && dato <= 20;" body "${body}")
-file(WRITE "${QA_SOURCE}" "${body}")
+string(REPLACE "return false;" "return dato >= 0 && dato <= 20;" repaired_body "${body}")
+if(NOT "${body}" STREQUAL "${repaired_body}")
+  file(CONFIGURE OUTPUT "${QA_SOURCE}" CONTENT "${repaired_body}" @ONLY NEWLINE_STYLE UNIX)
+endif()
 ]=])
 add_custom_target(preparar_cantidad
   COMMAND "${CMAKE_COMMAND}" "-DQA_SOURCE=${CMAKE_CURRENT_SOURCE_DIR}/cantidad.cpp"
@@ -790,7 +808,7 @@ add_dependencies(cantidades preparar_cantidad)
 )cmake";
     const auto first=run_cpp(original);
     check(first.error_utf8.empty()&&first.compilation.succeeded()&&
-        first.execution.exit_code==1,"The provenance fixture lost its real original defect");
+        first.execution.exit_code==1,"The provenance fixture lost its real original defect"+details(first));
     state::StateData saved;state::prepare_lesson_state(saved,lesson);
     const auto draft_key=curriculum::draft_key("programming",lesson,owner);
     state::Draft draft;draft.source="// conservar borrador personal\r\n";draft.input="personal";
@@ -823,7 +841,8 @@ add_dependencies(cantidades preparar_cantidad)
             !record_compiler_puzzle_case(saved,lesson,owner,request,
                 capture_cpp_execution(request,result),"Fuente sustituido durante CMake")&&
             state::encode(saved)==observed,
-            "CMake credited, retained availability for or executed a source different from the request");
+            "CMake credited, retained availability for or executed a source different from the request"+
+                details(result));
     };
     const auto rejected=run_cpp(candidate);
     reject_changed(candidate,rejected,"construcción");
@@ -834,7 +853,7 @@ add_dependencies(cantidades preparar_cantidad)
     auto configure=candidate;++configure.request_id;configure.action=CppRunRequest::Action::configure;
     const auto configured=run_cpp(configure);
     check(configured.error_utf8.empty()&&configured.configuration.succeeded(),
-        "Reconfiguring the preserved candidate unexpectedly failed");
+        "Reconfiguring the preserved candidate unexpectedly failed"+details(configured));
     auto build_request=candidate;build_request.request_id=configure.request_id+1;
     build_request.action=CppRunRequest::Action::build;
     const auto changed_build=run_cpp(build_request);
@@ -844,7 +863,7 @@ add_dependencies(cantidades preparar_cantidad)
     check(!refused.error_utf8.empty()&&!refused.execution.succeeded()&&
         !refused.execution.exit_code&&!inspect_cpp_project(execute).built&&
         state::encode(saved)==observed,
-        "Execute reused a build rejected for changing a materialized source");
+        "Execute reused a build rejected for changing a materialized source"+details(refused));
     // Adopting the actual correct expression is a new, authentic attempt. It
     // keeps the earlier observation and does not require deleting the cache.
     auto recovered=candidate;recovered.request_id=execute.request_id+1;++recovered.revision;
@@ -870,7 +889,7 @@ add_dependencies(cantidades preparar_cantidad)
         altered.error_utf8.find(repair.path)!=std::string::npos&&
         !altered.execution.succeeded()&&!altered.execution.exit_code&&
         !inspect_cpp_project(reuse).configured&&state::encode(saved)==earned,
-        "Execute accepted altered materialized bytes or damaged an earlier achievement");
+        "Execute accepted altered materialized bytes or damaged an earlier achievement"+details(altered));
     // Configuration itself must not silently replace one of the same four
     // submitted files, even before any build starts.
     auto configure_change=candidate;configure_change.project_key+="/configure-change";
@@ -884,7 +903,8 @@ add_dependencies(cantidades preparar_cantidad)
         changed_configuration.compilation.status==CppPhaseStatus::not_started&&
         !inspect_cpp_project(configure_change).configured&&
         state::encode(saved)==earned,
-        "Configuration silently replaced a submitted source or altered learner state");
+        "Configuration silently replaced a submitted source or altered learner state"+
+            details(changed_configuration));
     const auto restored=state::get_draft(saved,draft_key,"","");
     check(snapshot_files(first.run_directory)==prior_run&&
         std::pair{read(retained),std::filesystem::last_write_time(retained)}==retained_file&&
