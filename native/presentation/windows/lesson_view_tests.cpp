@@ -512,10 +512,21 @@ void console_fullscreen_zoom_escape() {
             original_source=fixture.text(0,10);
             fixture.replace(0,10,original_source+"// historial de edición conservado\n");
             draft=fixture.text(0,10);
-            // Seed only display text. This UI regression neither executes a
-            // compiler nor grants an output-check achievement.
-            if(surface==2)set_rich_text(display,"Salida conservada\n");
+            // Source editing presents a stale-output notice. Clear it through
+            // the real console action so surface1 is an actually empty console.
+            SendMessageW(fixture.view,WM_COMMAND,MAKEWPARAM(id(0,72),0),0);
+            if(surface==2) {
+                // Match console_present's code font/spacing and normal layout
+                // before recording geometry. A direct RichEdit write only
+                // updates requested_height; it does not reflow the lesson.
+                // This UI seed neither executes nor accredits a compiler.
+                set_rich_text(display,"Salida conservada\n",{},true);
+                RECT area{};GetClientRect(fixture.view,&area);
+                SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,MAKELPARAM(area.right,area.bottom));
+            }
             pump(fixture.host);
+            require(edit_text(display)==(surface==2?"Salida conservada\n":""),
+                "The console gesture fixture did not prepare its exact empty or populated output");
         }
         const auto text=edit_text(display),raw=fixture.lesson.raw_json;
         const auto script=reading_script(fixture.view);
