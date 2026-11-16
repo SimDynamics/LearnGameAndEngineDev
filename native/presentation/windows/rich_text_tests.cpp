@@ -658,7 +658,9 @@ void native_hit_geometry(HWND parent) {
                 <<" dpi="<<GetDpiForWindow(target.value)<<" readonly="<<((GetWindowLongPtrW(target.value,GWL_STYLE)&ES_READONLY)!=0)<<'\n';
             if(begin>=0&&end>begin){
                 const auto units=wide(text);const auto newline=units.find(L'\n');
-                const auto a=position(begin),b=position(end),first=position(0);
+                POINTL a{LONG_MIN,LONG_MIN},b{LONG_MIN,LONG_MIN};const auto first=position(0);
+                SendMessageW(target.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&a),begin);
+                SendMessageW(target.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&b),end);
                 POINTL second{LONG_MIN,LONG_MIN};
                 if(newline!=std::wstring::npos)SendMessageW(target.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),static_cast<LPARAM>(newline+1));
                 std::cerr<<"Native span start="<<a.x<<','<<a.y<<" end="<<b.x<<','<<b.y
@@ -748,6 +750,16 @@ void native_hit_geometry(HWND parent) {
         SendMessageW(target.value,EM_SETREADONLY,FALSE,0);set_edit_text(target.value,"");
         SendMessageW(target.value,EM_SETREADONLY,readonly,0);
         verify({format.left+advance,format.top+height/2},false,"An empty RichEdit document acquired a text hit");
+        // Adjacent identical supplementary characters exercise both the raw
+        // low-surrogate lookup and EOF without relying on a following BMP W.
+        setup("W𐐀𐐀",zoom,readonly);
+        span(1,3,true,"Adjacent surrogate pairs lost the first complete glyph");
+        const auto first_pair=position(1),last_pair=position(3);
+        const auto pair_advance=last_pair.x-first_pair.x;
+        check(first_pair.y==last_pair.y&&pair_advance>2,"The identical native surrogate pair has no usable advance");
+        verify({last_pair.x+1,last_pair.y+height/2},true,"The final surrogate pair's left side became EOF whitespace",3,5);
+        verify({last_pair.x+3*pair_advance/4,last_pair.y+height/2},true,
+            "The final surrogate pair's right side became EOF whitespace",3,5);
     }
     std::cout<<"PASS native glyph hit geometry: "<<checks<<" independent position probes, right halves/CR/EOF/surrogates, "
         "100/150/200% zoom, real horizontal/vertical scroll, editable/readonly and unchanged selection/focus/history\n";

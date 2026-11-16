@@ -924,10 +924,26 @@ bool rich_text_hit_test(HWND edit,POINT point) {
     POINTL location{point.x,point.y};
     const auto nearest=static_cast<LONG>(SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&location)));
     if(nearest<0)return false;
+    std::wstring native_units;
     const auto unit=[&](LONG at){
-        wchar_t value[2]{};
-        if(at>=0&&at<length){TEXTRANGEW range{{at,at+1},value};
-            SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));}
+        if(at<0||at>=length)return L'\0';
+        if(!native_units.empty())return native_units[static_cast<std::size_t>(at)];
+        wchar_t value[8]{};TEXTRANGEW range{{at,at+1},value};
+        SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));
+        if(IS_HIGH_SURROGATE(value[0])||IS_LOW_SURROGATE(value[0])){
+            // EM_GETTEXTRANGE can move a low-surrogate start back to the high
+            // surrogate without changing the requested indices or count.
+            // Read raw UTF-16 once for this hit; ordinary BMP hits stay small.
+            const auto bytes=(static_cast<std::size_t>(length)+1)*sizeof(wchar_t);
+            if(bytes>std::numeric_limits<DWORD>::max())return L'\0';
+            native_units.resize(static_cast<std::size_t>(length)+1);
+            GETTEXTEX request{static_cast<DWORD>(bytes),GT_RAWTEXT,1200,nullptr,nullptr};
+            const auto copied=SendMessageW(edit,EM_GETTEXTEX,reinterpret_cast<WPARAM>(&request),
+                reinterpret_cast<LPARAM>(native_units.data()));
+            if(copied!=length){native_units.clear();return L'\0';}
+            native_units.resize(static_cast<std::size_t>(length));
+            return native_units[static_cast<std::size_t>(at)];
+        }
         return value[0];
     };
     const auto first_unit=[&](LONG at){
@@ -940,9 +956,9 @@ bool rich_text_hit_test(HWND edit,POINT point) {
     if(ole)ole.As(&document);
     const auto contains=[&](LONG character){
         if(character<0||character>=length)return false;
-        wchar_t value[3]{};TEXTRANGEW range{{character,character+std::min<LONG>(2,length-character)},value};
-        SendMessageW(edit,EM_GETTEXTRANGE,0,reinterpret_cast<LPARAM>(&range));
+        wchar_t value[3]{unit(character),L'\0',L'\0'};
         if(!value[0]||value[0]==L'\r'||value[0]==L'\n'||value[0]==L' '||value[0]==L'\t')return false;
+        if(IS_HIGH_SURROGATE(value[0]))value[1]=unit(character+1);
         const int units=IS_HIGH_SURROGATE(value[0])&&IS_LOW_SURROGATE(value[1])?2:1;
         constexpr auto absent=std::numeric_limits<LONG>::min();
         POINTL start{absent,absent},end{absent,absent};
