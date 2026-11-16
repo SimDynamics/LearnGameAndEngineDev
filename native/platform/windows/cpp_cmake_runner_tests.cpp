@@ -857,7 +857,8 @@ add_dependencies(cantidades preparar_cantidad)
             capture_cpp_execution(recovered,recovery),"Fuente auténtico conservado")&&
         compiler_puzzle_completed(saved,lesson,owner)&&compiler_puzzle_case_count(saved,lesson,owner)==1,
         "An authentic repair did not recover after generated availability was invalidated");
-    const auto earned=state::encode(saved),cache=read(workspace/L"state.json");
+    const auto earned=state::encode(saved);
+    const auto cache=read(workspace/L"state.json");
     auto altered_source=correct;
     replace_repair_text(altered_source,"dato <= 20","dato <= 21");
     write(workspace/L"p/cantidad.cpp",altered_source);
