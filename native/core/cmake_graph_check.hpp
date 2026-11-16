@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/cpp_expression_repair.hpp"
+
 #include <array>
 #include <charconv>
 #include <cstdint>
@@ -89,6 +91,10 @@ struct CmakeGraphRequirement {
     // Opt-in floor semantics. Historical declarations retain their exact
     // numeric requirement and their original receipt frame when this is false.
     bool minimum_cmake_version_at_least = false;
+    // The immutable owner supplies the source and one unique expression.
+    // All bytes outside that interval and all other non-CMake files stay
+    // protected; equivalent replacement expressions are checked by execution.
+    std::optional<CppExpressionRepair> expression_repair{};
     bool operator==(const CmakeGraphRequirement&) const = default;
 };
 

@@ -4301,6 +4301,12 @@ struct LessonView {
                             "Conserva la función proporcionada y modifica la batería que la comprueba. La entrada y el criterio deben corresponder a este mismo editor.",
                             "Preserve the provided function and edit its test battery. The input and objective must belong to this editor.",
                             "Conservez la fonction fournie et modifiez sa batterie de tests. L’entrée et le critère doivent correspondre à cet éditeur.");
+                    else if(block(index).cmake_graph_check&&
+                            block(index).cmake_graph_check->expression_repair)
+                        text+='\n'+ui(
+                            "Modifica únicamente la expresión indicada. Conserva el comprobador, sus esperados, el resto de las fuentes C++ y las rutas del proyecto.",
+                            "Change only the indicated expression. Preserve the checker, its expected results, the remaining C++ sources and project paths.",
+                            "Modifiez uniquement l’expression indiquée. Conservez le vérificateur, ses résultats attendus, les autres sources C++ et les chemins du projet.");
                     else if(block(index).named_rule_source_check)
                         text+='\n'+ui(
                             "La salida coincide, pero este objetivo también exige declarar constantes locales con nombres de propósito, valores correctos y uso real en el cálculo. Comprueba las dos condiciones antes de continuar.",

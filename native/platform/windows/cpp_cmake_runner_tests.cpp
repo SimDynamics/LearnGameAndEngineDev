@@ -5,6 +5,8 @@
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 #include "native_build_config.hpp"
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <windows.h>
 #include <algorithm>
 #include <array>
@@ -42,6 +44,260 @@ bool visible_tool_console(){bool visible=false;EnumWindows([](HWND window,LPARAM
     return TRUE;
 },reinterpret_cast<LPARAM>(&visible));return visible;}
 std::string read(const std::filesystem::path& path){std::ifstream file(path,std::ios::binary);check(static_cast<bool>(file),"Read the existing owned CMake fixture");return std::string((std::istreambuf_iterator<char>(file)),{});}
+struct RepairLessons {
+    lgaed::curriculum::Lesson historical,reviewed,legacy_graph;
+};
+RepairLessons repair_lessons(const lgaed::curriculum::Lesson& published,
+        std::string_view activity,std::string_view authored_record) {
+    using namespace winrt::Windows::Data::Json;
+    // Validate every published extension before deriving a historical QA
+    // view. Never discard a malformed declaration or another owner's rubric.
+    const auto root=JsonObject::Parse(winrt::to_hstring(published.raw_json));
+    const auto wanted=JsonObject::Parse(winrt::to_hstring(authored_record));
+    const auto records=root.HasKey(L"compilerCmakeGraphChecks")?
+        root.GetNamedArray(L"compilerCmakeGraphChecks"):JsonArray{};
+    JsonArray historical_records,reviewed_records,legacy_records;
+    bool present=false;
+    const auto legacy_record=[](const JsonObject& value) {
+        auto result=JsonObject::Parse(value.Stringify());
+        result.Remove(L"sourceIntegrity");
+        return result;
+    };
+    for(const auto& value:records) {
+        const auto item=value.GetObject();
+        if(winrt::to_string(item.GetNamedString(L"activity"))!=activity) {
+            historical_records.Append(value);
+            reviewed_records.Append(value);
+            legacy_records.Append(value);
+            continue;
+        }
+        check(!present,"The published repair owner has duplicate CMake rubrics");
+        present=true;
+        const auto actual=item.GetNamedObject(L"sourceIntegrity");
+        const auto expected=wanted.GetNamedObject(L"sourceIntegrity");
+        const auto repair=actual.GetNamedObject(L"replaceExpression");
+        const auto expected_repair=expected.GetNamedObject(L"replaceExpression");
+        check(actual.GetNamedBoolean(L"preserveNonCmake")&&
+            repair.GetNamedString(L"path")==expected_repair.GetNamedString(L"path")&&
+            repair.GetNamedString(L"original")==expected_repair.GetNamedString(L"original"),
+            "The published expression-repair owner changed its authenticated source");
+        // Work may publish a more complete valid graph. Retain that contract
+        // and its order instead of replacing it with this QA reference.
+        reviewed_records.Append(value);
+        legacy_records.Append(legacy_record(item));
+    }
+    if(!present) {
+        reviewed_records.Append(wanted);
+        legacy_records.Append(legacy_record(wanted));
+    }
+    const auto model=[&](const JsonArray& declarations) {
+        auto result=JsonObject::Parse(root.Stringify());
+        if(declarations.Size())result.Insert(L"compilerCmakeGraphChecks",declarations);
+        else if(result.HasKey(L"compilerCmakeGraphChecks"))
+            result.Remove(L"compilerCmakeGraphChecks");
+        return lgaed::windows::parse_lesson_json(winrt::to_string(result.Stringify()),"es");
+    };
+    auto historical=model(historical_records),reviewed=model(reviewed_records),legacy=model(legacy_records);
+    check(historical.state_layout.lineage==published.state_layout.lineage&&
+        historical.state_layout.signatures==published.state_layout.signatures&&
+        reviewed.state_layout.lineage==published.state_layout.lineage&&
+        reviewed.state_layout.signatures==published.state_layout.signatures&&
+        legacy.state_layout.signatures==published.state_layout.signatures,
+        "The CMake repair fixture changed published lesson identities");
+    return {std::move(historical),std::move(reviewed),std::move(legacy)};
+}
+const lgaed::curriculum::Block& repair_owner(const lgaed::curriculum::Lesson& lesson,
+        std::string_view activity) {
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
+        if(block.stable_id==activity)return block;
+    throw std::runtime_error("The original expression-repair owner disappeared");
+}
+std::string& repair_file(lgaed::windows::CppRunRequest& request,std::string_view path) {
+    const auto found=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==path;});
+    check(found!=request.project_files.end(),"The repair fixture lost an original file");
+    return found->second;
+}
+void replace_repair_text(std::string& source,std::string_view from,std::string_view to) {
+    const auto at=source.find(from);
+    check(at!=source.npos&&source.find(from,at+from.size())==source.npos,
+        "The original repair fixture no longer has one matching source fragment");
+    source.replace(at,from.size(),to);
+}
+void verify_cmake_expression_repair(const RepairLessons& lessons,
+        std::string_view activity,const lgaed::windows::CppRunRequest& positive,
+        const lgaed::windows::CppRunResult& positive_result,
+        std::string_view checker_path,std::string_view equivalent_expression,
+        std::string_view old_expected,std::string_view altered_expected,
+        std::uint64_t counterfeit_id) {
+    using namespace lgaed;using namespace windows;
+    const auto& before=repair_owner(lessons.historical,activity);
+    const auto& owner=repair_owner(lessons.reviewed,activity);
+    const auto& legacy_owner=repair_owner(lessons.legacy_graph,activity);
+    check(!before.cmake_graph_check&&owner.cmake_graph_check&&
+        owner.cmake_graph_check->expression_repair&&legacy_owner.cmake_graph_check&&
+        !legacy_owner.cmake_graph_check->expression_repair&&
+        legacy_owner.cmake_graph_check->source_integrity.empty()&&
+        before.project_files==owner.project_files&&before.source_files==owner.source_files&&
+        before.initial_code==owner.initial_code&&before.standard_input==owner.standard_input&&
+        curriculum::exercise_key(lessons.historical,before)==
+            curriculum::exercise_key(lessons.reviewed,owner)&&
+        curriculum::draft_key("programming",lessons.historical,before)==
+            curriculum::draft_key("programming",lessons.reviewed,owner)&&
+        curriculum::reference_objective_frame(lessons.historical,before)!=
+            curriculum::reference_objective_frame(lessons.reviewed,owner),
+        "Expression repair changed an original source/draft or reused its old objective");
+    const auto metadata=parse_lesson_progress_metadata(lessons.reviewed.raw_json,"es");
+    check(repair_owner(metadata,activity).cmake_graph_check==owner.cmake_graph_check&&
+        metadata.state_layout.signatures==lessons.reviewed.state_layout.signatures,
+        "Progress metadata lost the authenticated expression repair");
+    const auto& repair=*owner.cmake_graph_check->expression_repair;
+    const auto fresh=capture_cpp_execution(positive,positive_result);
+    check(compiler_runtime_request_allowed(owner,positive)&&fresh.cmake_graph_correct&&
+        !fresh.cmake_graph_request_fingerprint.empty()&&
+        fresh.cmake_graph_request_fingerprint==cpp_cmake_graph_request_fingerprint(positive)&&
+        evaluate_cpp_output_check(*owner.output_check,fresh,positive.revision).verdict==
+            curriculum::OutputVerdict::correct,
+        "A real equivalent expression failed source conservation or CMake capture binding");
+
+    // A legacy stdout receipt and a personal draft survive adoption. Their
+    // historical success does not prove the newly protected repair.
+    state::StateData saved;
+    state::prepare_lesson_state(saved,lessons.historical);
+    const auto draft_address=curriculum::draft_key("programming",lessons.historical,before);
+    state::Draft draft;draft.source=before.initial_code;draft.input="draft input retained";
+    state::put_draft(saved,draft_address,draft);
+    auto historical_request=positive;
+    historical_request.cmake_graph_check.reset();historical_request.capture_cmake_graph=false;
+    const auto historical_capture=capture_cpp_execution(historical_request,positive_result);
+    check(record_compiler_puzzle_case(saved,lessons.historical,before,
+            historical_request,historical_capture,"Salida histórica auténtica"),
+        "A real earlier stdout capture failed to obtain its historical receipt");
+    state::prepare_lesson_state(saved,lessons.reviewed);
+    check(compiler_puzzle_completed(saved,lessons.historical,before)&&
+        !compiler_puzzle_completed(saved,lessons.reviewed,owner),
+        "An earlier stdout achievement falsely proved source conservation");
+    const auto seed=state::encode(saved);
+    const auto reject=[&](const CppRunRequest& request,
+            const curriculum::FreshExecution& captured,std::string_view reason) {
+        check(!record_compiler_puzzle_case(saved,lessons.reviewed,owner,
+                request,captured,reason)&&state::encode(saved)==seed,
+            "A missing, borrowed or unauthorized CMake repair capture changed learner state: "+
+                std::string(reason));
+    };
+    auto missing=fresh;missing.cmake_graph_request_fingerprint.clear();
+    reject(positive,missing,"Captura sin huella");
+    auto changed=positive;++changed.request_id;
+    reject(changed,fresh,"Otra solicitud");
+    changed=positive;++changed.revision;
+    reject(changed,fresh,"Otra revisión");
+    changed=positive;changed.action=CppRunRequest::Action::execute;
+    reject(changed,fresh,"Otra acción");
+    changed=positive;changed.stdin_utf8="Otra entrada\n";
+    reject(changed,fresh,"Otra entrada");
+    changed=positive;changed.cmake->build_type="Release";
+    reject(changed,fresh,"Otra configuración");
+    changed=positive;changed.project_key+="/another-owner";
+    reject(changed,fresh,"Otro editor");
+    changed=positive;
+    auto equivalent=repair.original_source;
+    replace_repair_text(equivalent,repair.expression,equivalent_expression);
+    repair_file(changed,repair.path)=std::move(equivalent);
+    check(compiler_runtime_request_allowed(owner,changed)&&
+        changed.project_files!=positive.project_files&&
+        !capture_cpp_execution(changed,positive_result).cmake_graph_correct,
+        "The borrowed-capture control must be a distinct, permitted expression");
+    reject(changed,fresh,"Expresión válida sin ejecución propia");
+    changed=positive;repair_file(changed,repair.path)+="\n// Fuera de la expresión\n";
+    check(!compiler_runtime_request_allowed(owner,changed),
+        "An edit outside the expression passed request conservation");
+    reject(changed,fresh,"Edición fuera de la expresión");
+    changed=positive;
+    replace_repair_text(repair_file(changed,checker_path),old_expected,altered_expected);
+    check(!compiler_runtime_request_allowed(owner,changed),
+        "An edited expected result passed request conservation");
+    reject(changed,fresh,"Resultado esperado alterado");
+    changed=positive;changed.project_files.emplace_back("extra.cpp","int extra;\n");
+    check(!compiler_runtime_request_allowed(owner,changed),
+        "A new project path bypassed the original repair file set");
+    reject(changed,fresh,"Archivo adicional");
+    changed=positive;changed.project_files.back().first="renamed.cpp";
+    check(!compiler_runtime_request_allowed(owner,changed),
+        "A renamed project path bypassed the original repair file set");
+    reject(changed,fresh,"Ruta sustituida");
+    auto weaker_request=positive;weaker_request.cmake_graph_check=legacy_owner.cmake_graph_check;
+    const auto weaker_capture=capture_cpp_execution(weaker_request,positive_result);
+    check(weaker_capture.cmake_graph_correct&&
+        weaker_capture.cmake_graph_request_fingerprint!=fresh.cmake_graph_request_fingerprint,
+        "CMake captures failed to distinguish the complete source contract");
+    reject(positive,weaker_capture,"Contrato sin protección de fuentes");
+
+    // Exactly one extra real MSVC build per owner: the graph, library link
+    // and public stdout remain correct while the original defect is retained.
+    auto counterfeit=positive;
+    counterfeit.request_id=counterfeit_id;++counterfeit.revision;
+    counterfeit.project_key+="/fixed-report-defective-library";
+    repair_file(counterfeit,repair.path)=repair.original_source;
+    const auto expected=owner.output_check->cases.front().outputs.front();
+    check(expected.find(")qa_report\"")==std::string::npos,
+        "The public report unexpectedly contains the QA raw-string delimiter");
+    repair_file(counterfeit,checker_path)=
+        "#include <iostream>\nint main() {\n    std::cout << R\"qa_report("+
+        expected+")qa_report\";\n    return 0;\n}\n";
+    const auto counterfeit_result=run_cpp(counterfeit);
+    ran(counterfeit_result);
+    const auto counterfeit_capture=capture_cpp_execution(counterfeit,counterfeit_result);
+    check(matches_native_console_output(counterfeit_result.execution.stdout_bytes,expected)&&
+        counterfeit_result.execution.stderr_bytes.empty()&&
+        evaluate_cpp_output_check(*owner.output_check,counterfeit_capture,
+            counterfeit.revision).verdict==curriculum::OutputVerdict::correct&&
+        !counterfeit_capture.cmake_graph_correct&&
+        !compiler_runtime_request_allowed(owner,counterfeit),
+        "The fixed report did not isolate the real source-conservation defect");
+    reject(counterfeit,counterfeit_capture,"Informe fijo con biblioteca defectuosa");
+    auto legacy_request=counterfeit;
+    legacy_request.cmake_graph_check=legacy_owner.cmake_graph_check;
+    const auto legacy_capture=capture_cpp_execution(legacy_request,counterfeit_result);
+    state::StateData legacy_saved;
+    state::prepare_lesson_state(legacy_saved,lessons.legacy_graph);
+    check(legacy_capture.cmake_graph_correct&&
+        compiler_runtime_request_allowed(legacy_owner,legacy_request)&&
+        record_compiler_puzzle_case(legacy_saved,lessons.legacy_graph,legacy_owner,
+            legacy_request,legacy_capture,"Control real sin conservación de fuentes")&&
+        compiler_puzzle_completed(legacy_saved,lessons.legacy_graph,legacy_owner),
+        "The unchanged legacy kernel did not reproduce the graph-plus-stdout loophole");
+
+    check(record_compiler_puzzle_case(saved,lessons.reviewed,owner,positive,fresh,
+            "Expresión y fuentes conservadas")&&
+        compiler_puzzle_completed(saved,lessons.reviewed,owner)&&
+        compiler_puzzle_case_count(saved,lessons.reviewed,owner)==1,
+        "The first authentic repaired case failed to earn its own receipt");
+    const auto earned=state::encode(saved);
+    check(!record_compiler_puzzle_case(saved,lessons.reviewed,owner,
+            counterfeit,counterfeit_capture,"Intento posterior rechazado")&&
+        state::encode(saved)==earned,
+        "A later false report erased an already earned repair receipt");
+    auto optional_owner=owner;
+    auto optional_case=optional_owner.output_check->cases.front();
+    optional_case.standard_input="optional unexecuted case\n";
+    optional_case.outputs={"optional result\n"};
+    optional_owner.output_check->cases.push_back(std::move(optional_case));
+    state::StateData first_only;state::prepare_lesson_state(first_only,lessons.reviewed);
+    check(record_compiler_puzzle_case(first_only,lessons.reviewed,optional_owner,
+            positive,fresh,"Primera comprobación auténtica")&&
+        compiler_puzzle_completed(first_only,lessons.reviewed,optional_owner)&&
+        compiler_puzzle_case_count(first_only,lessons.reviewed,optional_owner)==1,
+        "Expression preservation made an optional second case mandatory");
+    const auto reopened=state::decode(earned);
+    const auto restored=state::get_draft(reopened,draft_address,"","");
+    check(compiler_puzzle_completed(reopened,lessons.historical,before)&&
+        compiler_puzzle_completed(reopened,lessons.reviewed,owner)&&
+        restored.has_saved&&restored.source==draft.source&&restored.input==draft.input,
+        "Reopening lost the original draft or historical/new repair receipt");
+    std::cout<<"PASS authentic CMake expression repair "<<activity
+        <<": equivalent source, legacy fixed-report loophole reproduced, protected rejection, "
+        "capture binding, first case and historical draft retained\n";
+}
 struct OwnedQa {
     std::filesystem::path root,owned;bool removed=false;
     explicit OwnedQa(const std::filesystem::path& value):root(value){
@@ -2169,8 +2425,31 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     constexpr auto warning_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "comprobaciones_repetibles/lesson_leer_avisos_sin_sustituir_las_pruebas.json";
-    const auto warning_lesson=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/warning_relative);
+    constexpr auto warning_record=R"json({
+      "activity":"block_0002_0004","project":"AvisosYContrato",
+      "minimumCmakeVersion":"3.20",
+      "targets":[
+        {"name":"comprobar_cantidad","type":"EXECUTABLE",
+         "sources":["comprobar.cpp"],"linksTo":["cantidades"],"exactSources":true},
+        {"name":"cantidades","type":"STATIC_LIBRARY","sources":["cantidad.cpp"],
+         "exactSources":true,"authoredCompileOptions":["/W4","/permissive-"]}
+      ],
+      "sourceIntegrity":{"preserveNonCmake":true,
+        "replaceExpression":{"path":"cantidad.cpp","original":"(0 <= dato) <= 20"}}
+    })json";
+    const auto warning_lessons=repair_lessons(lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/warning_relative),
+        "block_0002_0004",warning_record);
+    const auto& warning_lesson=warning_lessons.historical;
+    const auto& warning_reviewed=repair_owner(warning_lessons.reviewed,"block_0002_0004");
+    const auto warning_activated=repair_lessons(warning_lessons.reviewed,
+        "block_0002_0004",warning_record);
+    check(repair_owner(warning_activated.reviewed,"block_0002_0004").cmake_graph_check==
+            warning_reviewed.cmake_graph_check&&
+        curriculum::reference_objective_frame(warning_activated.reviewed,
+            repair_owner(warning_activated.reviewed,"block_0002_0004"))==
+        curriculum::reference_objective_frame(warning_lessons.reviewed,warning_reviewed),
+        "A published U3L7 repair declaration changed its effective QA objective");
     const auto& warning_block=warning_lesson.pages.at(2).blocks.at(4);
     check(warning_block.stable_id=="block_0002_0004"&&warning_block.cmake&&
         warning_block.output_check&&warning_block.output_check->cases.size()==1&&
@@ -2207,15 +2486,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     check(adapted_warning_flags&&
         warning_request.project_files!=warning_original,
         "U3L7 platform-specific CMake flags were not prepared");
-    CppCmakeGraphRequirement warning_options{
-        "AvisosYContrato",{
-            {"comprobar_cantidad","EXECUTABLE",
-                {"comprobar.cpp"},{"cantidades"},true},
-            {"cantidades","STATIC_LIBRARY",{"cantidad.cpp"},{},true}
-        }};
-    warning_options.minimum_cmake_version="3.20";
-    warning_options.targets.back().authored_compile_options={
-        "/W4","/permissive-"};
+    const auto warning_options=*warning_reviewed.cmake_graph_check;
     warning_request.cmake_graph_check=warning_options;
     warning_request.capture_cmake_graph=true;
     const auto faulty_warning_run=run_cpp(warning_request);
@@ -2294,6 +2565,8 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
             warning_replace(file.second,
                 "target_compile_options(cantidades PRIVATE /W4 /permissive-)",
                 "target_compile_options(cantidades PUBLIC /W4 /permissive-)");
+    warning_replace(repair_file(public_warning,"cantidad.cpp"),
+        "dato >= 0 && dato <= 20","!(dato < 0 || dato > 20)");
     const auto public_run=run_cpp(public_warning);
     ran(public_run);
     const auto public_capture=capture_cpp_execution(public_warning,public_run);
@@ -2307,6 +2580,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
                 curriculum::OutputVerdict::correct,
         "U3L7 failed to accept effective PUBLIC compiler options on the library: "+
         public_graph.reason);
+    verify_cmake_expression_repair(warning_lessons,"block_0002_0004",
+        public_warning,public_run,"comprobar.cpp","dato >= 0 && dato <= 20",
+        "false, true, true, false","true, true, true, false",3391);
     // The same warning flags applied to the checker instead of cantidades
     // cannot satisfy a library-scoped compiler contract.
     auto misplaced_warning=warning_request;
@@ -2471,8 +2747,39 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     constexpr auto adjustments_relative=
         "app/src/main/assets/content/es/programming/programming_practice_tools/"
         "comprobaciones_repetibles/lesson_integrar_un_proyecto_y_sostener_su_evidencia.json";
-    const auto adjustments_lesson=lgaed::windows::load_lesson(
-        std::filesystem::path(build::source_root)/adjustments_relative);
+    constexpr auto adjustments_record=R"json({
+      "activity":"block_0006_0008","project":"AjustesConEvidencia",
+      "minimumCmakeVersion":"3.20",
+      "targets":[
+        {"name":"comprobar_ajustes","type":"EXECUTABLE",
+         "sources":["pruebas/casos.cpp"],"linksTo":["ajustes"],
+         "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true,
+         "authoredCompileOptions":["/W4","/permissive-"]},
+        {"name":"consultar_ajustes","type":"EXECUTABLE",
+         "sources":["app/consulta.cpp"],"linksTo":["ajustes"],
+         "exactSources":true,"explicitCxx20":true,"explicitCxxExtensionsOff":true,
+         "authoredCompileOptions":["/W4","/permissive-"]},
+        {"name":"ajustes","type":"STATIC_LIBRARY","sources":["src/ajuste.cpp"],
+         "publicIncludeRoots":["publico"],"exactSources":true,
+         "explicitCxx20":true,"explicitCxxExtensionsOff":true,
+         "authoredCompileOptions":["/W4","/permissive-"]}
+      ],
+      "sourceIntegrity":{"preserveNonCmake":true,
+        "replaceExpression":{"path":"src/ajuste.cpp","original":"valor - superior"}}
+    })json";
+    const auto adjustments_lessons=repair_lessons(lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/adjustments_relative),
+        "block_0006_0008",adjustments_record);
+    const auto& adjustments_lesson=adjustments_lessons.historical;
+    const auto adjustments_activated=repair_lessons(adjustments_lessons.reviewed,
+        "block_0006_0008",adjustments_record);
+    check(repair_owner(adjustments_activated.reviewed,"block_0006_0008").cmake_graph_check==
+            repair_owner(adjustments_lessons.reviewed,"block_0006_0008").cmake_graph_check&&
+        curriculum::reference_objective_frame(adjustments_activated.reviewed,
+            repair_owner(adjustments_activated.reviewed,"block_0006_0008"))==
+        curriculum::reference_objective_frame(adjustments_lessons.reviewed,
+            repair_owner(adjustments_lessons.reviewed,"block_0006_0008")),
+        "A published U3L10 repair declaration changed its effective QA objective");
     const auto& adjustments_before=adjustments_lesson.pages.at(6).blocks.at(6);
     check(adjustments_before.stable_id=="block_0006_0008"&&
         adjustments_before.cmake&&adjustments_before.output_check&&
@@ -2768,40 +3075,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     // student's checker still links to ajustes. Project an authenticated
     // structure rubric into the original stable owner without changing its
     // JSON, stateLayout, source, options or old completion receipt.
-    std::string adjustments_projected=adjustments_lesson.raw_json;
-    const auto adjustments_anchor=adjustments_projected.find(anchor);
-    check(adjustments_anchor!=adjustments_projected.npos&&
-        adjustments_projected.find(anchor,adjustments_anchor+1)==
-            adjustments_projected.npos,
-        "U3L10 source state map moved before graph projection");
-    adjustments_projected.insert(adjustments_anchor,R"json(
-  "compilerCmakeGraphChecks":[
-    {"activity":"block_0006_0008",
-     "project":"AjustesConEvidencia",
-     "minimumCmakeVersion":"3.20",
-     "targets":[
-       {"name":"comprobar_ajustes","type":"EXECUTABLE",
-        "sources":["pruebas/casos.cpp"],"linksTo":["ajustes"],
-        "exactSources":true,"explicitCxx20":true,
-        "explicitCxxExtensionsOff":true,
-        "authoredCompileOptions":["/W4","/permissive-"]},
-       {"name":"consultar_ajustes","type":"EXECUTABLE",
-        "sources":["app/consulta.cpp"],"linksTo":["ajustes"],
-        "exactSources":true,"explicitCxx20":true,
-        "explicitCxxExtensionsOff":true,
-        "authoredCompileOptions":["/W4","/permissive-"]},
-       {"name":"ajustes","type":"STATIC_LIBRARY",
-        "sources":["src/ajuste.cpp"],"publicIncludeRoots":["publico"],
-        "exactSources":true,"explicitCxx20":true,
-        "explicitCxxExtensionsOff":true,
-        "authoredCompileOptions":["/W4","/permissive-"]}
-     ]}
-  ],
-)json");
-    const auto adjustments_mapped=lgaed::windows::parse_lesson_json(
-        adjustments_projected,"es");
+    const auto& adjustments_mapped=adjustments_lessons.reviewed;
     const auto adjustments_metadata=lgaed::windows::parse_lesson_progress_metadata(
-        adjustments_projected,"es");
+        adjustments_mapped.raw_json,"es");
     const auto& adjustments_reviewed=adjustments_mapped.pages.at(6).blocks.at(6);
     const auto& adjustments_meta=adjustments_metadata.pages.at(6).blocks.at(6);
     check(!adjustments_before.cmake_graph_check&&
@@ -2829,6 +3105,8 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     ++adjustments_checked.revision;
     adjustments_checked.project_key+="/graph-verified";
     adjustments_checked.cmake_graph_check=adjustments_reviewed.cmake_graph_check;
+    adjustments_replace(repair_file(adjustments_checked,"src/ajuste.cpp"),
+        "ajuste = superior - valor;","ajuste = -(valor - superior);");
     check(compiler_runtime_request_allowed(adjustments_reviewed,adjustments_checked),
         "U3L10 original checker cannot run its published graph rubric");
     const auto checked_adjustments=run_cpp(adjustments_checked);
@@ -2845,6 +3123,9 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
         "Corrected original eleven-case checker lost its actual MSVC CMake "
         "library, consumers, include propagation or authored C++ requirements: "+
         checked_structure.reason);
+    verify_cmake_expression_repair(adjustments_lessons,"block_0006_0008",
+        adjustments_checked,checked_adjustments,"pruebas/casos.cpp","superior - valor",
+        "true, -2","true, 2",3591);
     state::prepare_lesson_state(adjustments_saved,adjustments_mapped);
     check(compiler_puzzle_completed(adjustments_saved,adjustments_lesson,
             adjustments_before)&&

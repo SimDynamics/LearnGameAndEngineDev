@@ -578,6 +578,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 token(path);token(digest);
             }
         }
+        if(graph.expression_repair)
+            token(cpp_expression_repair_frame(*graph.expression_repair));
         if(graph.option_selection) {
             token("cmake-option-default-off-v1");
             token(graph.option_selection->name);

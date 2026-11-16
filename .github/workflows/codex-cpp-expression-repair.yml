@@ -1,0 +1,76 @@
+name: Codex protected C++ expression repairs
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - native/core/cpp_expression_repair.hpp
+      - native/core/cpp_expression_repair_tests.cpp
+      - native/core/cmake_graph_check.hpp
+      - native/core/code_format_compat.hpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_cmake_graph_checks.py
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/text_semantics.py
+      - scripts/curriculum/image_resources.py
+      - scripts/curriculum/bibliography_revision.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/construccion_reproducible/lesson_*.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_*.json
+      - .github/workflows/codex-cpp-expression-repair.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expression-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Read the exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify optional repair contracts and historical preservation
+        run: python3 -B -m unittest discover -s scripts/curriculum -p test_cmake_graph_checks.py -v
+
+  expression-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - name: Read the exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile expression boundary regressions
+        env:
+          CXX: ${{ matrix.compiler }}
+        run: |
+          "$CXX" --version
+          "$CXX" -std=c++23 -Wall -Wextra -Werror -pedantic -Inative \
+            native/core/cpp_expression_repair_tests.cpp \
+            -o "${RUNNER_TEMP}/lgaed_cpp_expression_repair_tests"
+      - name: Verify equivalent repairs and rejected boundary escapes
+        run: "${RUNNER_TEMP}/lgaed_cpp_expression_repair_tests"
+
+  expression-msvc:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - name: Read the exact revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare Visual C++ toolchain
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Compile expression boundary regressions with MSVC
+        shell: cmd
+        run: |
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\cpp_expression_repair_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_cpp_expression_repair_tests.exe"
+      - name: Verify MSVC expression boundaries
+        shell: cmd
+        run: '"%RUNNER_TEMP%\lgaed_cpp_expression_repair_tests.exe"'

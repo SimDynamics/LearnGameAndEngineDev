@@ -1,6 +1,7 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "core/lesson.hpp"
 #include "core/cmake_message_trace.hpp"
+#include "core/cpp_expression_repair.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/winrt_apartment.hpp"
@@ -640,7 +641,34 @@ std::string adjustment_graph_frame(const curriculum::CmakeGraphRequirement& grap
         strings(graph.target_list->targets);
         field(graph.target_list->require_append?"append":"no-append");
     }
+    // An absent repair retains every byte of the earlier graph frame.
+    if(graph.expression_repair)
+        field(curriculum::cpp_expression_repair_frame(*graph.expression_repair));
     return result;
+}
+std::string cmake_graph_fingerprint(const CppRunRequest& request) {
+    if(!request.cmake||!request.cmake_graph_check||!request.capture_cmake_graph||
+       request.project_files.empty()||request.backend!=CppRunRequest::Backend::native_msvc||
+       request.diagnostic||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
+       (request.cmake_graph_check->expression_repair&&
+        !curriculum::cpp_expression_repair_valid(
+            *request.cmake_graph_check->expression_repair)))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-cmake-graph-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(fingerprint(request,true))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(adjustment_graph_frame(*request.cmake_graph_check)));
 }
 std::string adjustment_project_fingerprint(const CppRunRequest& request) {
     if(!request.adjustment_project_probe||!request.cmake_graph_check||
@@ -1766,6 +1794,15 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
            state::sha256(found->second)!=digest)
             return fail("Se modificó un archivo original fuera de la reparación autorizada: "+path);
     }
+    if(required.expression_repair) {
+        const auto& repair=*required.expression_repair;
+        const auto found=std::ranges::find_if(request.project_files,
+            [&](const auto& file){return file.first==repair.path;});
+        if(found==request.project_files.end()||
+           !curriculum::cpp_expression_repair_matches(repair,found->second))
+            return fail("Conserva el archivo y modifica sólo la expresión autorizada: "+
+                repair.path);
+    }
     const auto cmake_source=cmake_workspace(request)/L"p";
     const auto include_has=[&](const std::vector<std::string>& included,
             const std::filesystem::path& expected) {
@@ -2048,6 +2085,9 @@ std::string cpp_integer_battery_request_fingerprint(const CppRunRequest& request
 std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest& request) {
     return adjustment_project_fingerprint(request);
 }
+std::string cpp_cmake_graph_request_fingerprint(const CppRunRequest& request) {
+    return cmake_graph_fingerprint(request);
+}
 std::string cpp_integer_battery_component_fingerprint(const CppRunRequest& request) {
     if(!integer_battery_context(request)||!request.integer_battery_probe->prerequisite)
         return {};
@@ -2102,6 +2142,10 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
            result.project_fingerprint!=fingerprint(request)||
            result.configuration_fingerprint!=fingerprint(request,true))return fresh;
     }
+    if(request.cmake_graph_check&&
+       (cmake_graph_fingerprint(request).empty()||
+        result.project_fingerprint!=fingerprint(request)||
+        result.configuration_fingerprint!=fingerprint(request,true)))return fresh;
     fresh.source_revision=result.revision;
     fresh.compilation_succeeded=result.compilation.succeeded()
         &&(result.configuration.status==CppPhaseStatus::not_started||result.configuration.succeeded());
@@ -2278,6 +2322,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     }
     if(request.cmake_graph_check) {
         const auto& required=*request.cmake_graph_check;
+        fresh.cmake_graph_request_fingerprint=cmake_graph_fingerprint(request);
         fresh.cmake_graph_correct=evaluate_cmake_graph(
             request,result,required).correct;
         if(fresh.cmake_graph_correct&&required.option_selection)

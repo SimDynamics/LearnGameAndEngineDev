@@ -3935,12 +3935,15 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
         }
         if(item.HasKey(L"sourceIntegrity")) {
             const auto integrity=item.GetNamedObject(L"sourceIntegrity");
-            allowed_keys(integrity,{"preserveNonCmake","removePrefix"});
+            allowed_keys(integrity,{"preserveNonCmake","removePrefix","replaceExpression"});
             require(integrity.HasKey(L"preserveNonCmake")&&
                     integrity.GetNamedValue(L"preserveNonCmake").ValueType()==
                         JsonValueType::Boolean&&
                     integrity.GetNamedBoolean(L"preserveNonCmake"),
                 "CMake source integrity must explicitly preserve original files");
+            require(!(integrity.HasKey(L"removePrefix")&&
+                      integrity.HasKey(L"replaceExpression")),
+                "CMake source integrity permits only one bounded source repair");
             std::string removal_path,removal;
             if(integrity.HasKey(L"removePrefix")) {
                 const auto edit=integrity.GetNamedObject(L"removePrefix");
@@ -3955,18 +3958,39 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                         found->second.starts_with(removal),
                     "CMake allowed removal must match the published source prefix");
             }
+            if(integrity.HasKey(L"replaceExpression")) {
+                const auto edit=integrity.GetNamedObject(L"replaceExpression");
+                allowed_keys(edit,{"path","original"},true);
+                const auto path=text(edit,"path");
+                const auto found=std::ranges::find_if(owner->project_files,
+                    [&](const auto& file){return file.first==path;});
+                require(found!=owner->project_files.end()&&
+                        std::ranges::any_of(requirement.targets,
+                            [&](const auto& target) {
+                                return std::ranges::find(target.sources,path)!=
+                                    target.sources.end();
+                            }),
+                    "CMake expression repair must own an original required C++ source");
+                CppExpressionRepair repair{path,found->second,text(edit,"original")};
+                require(cpp_expression_repair_valid(repair),
+                    "CMake expression repair must identify one authentic bounded expression");
+                requirement.expression_repair=std::move(repair);
+            }
             bool found_removal=removal_path.empty();
             for(const auto& [path,source]:owner->project_files) {
                 const auto at=path.find_last_of('/');
                 const auto filename=path.substr(at==path.npos?0:at+1);
                 if(filename=="CMakeLists.txt"||path.ends_with(".cmake"))continue;
+                if(requirement.expression_repair&&
+                   path==requirement.expression_repair->path)continue;
                 const bool edited=path==removal_path;
                 if(edited)found_removal=true;
                 requirement.source_integrity.emplace_back(path,
                     sha256(edited?std::string_view(source).substr(removal.size()):
                         std::string_view(source)));
             }
-            require(found_removal&&!requirement.source_integrity.empty(),
+            require(found_removal&&(!requirement.source_integrity.empty()||
+                                   requirement.expression_repair.has_value()),
                 "CMake source integrity needs original non-CMake files");
         }
         if(owner->adjustment_project_probe)

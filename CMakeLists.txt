@@ -150,6 +150,17 @@ function(lgaed_add_named_rule_source_tests)
     set_tests_properties(native.named_rule_source PROPERTIES TIMEOUT 30)
 endfunction()
 
+function(lgaed_add_cpp_expression_repair_tests)
+    if(TARGET lgaed_cpp_expression_repair_tests)
+        return()
+    endif()
+    add_executable(lgaed_cpp_expression_repair_tests
+        native/core/cpp_expression_repair_tests.cpp)
+    target_link_libraries(lgaed_cpp_expression_repair_tests PRIVATE lgaed_host_options)
+    add_test(NAME native.cpp_expression_repair COMMAND lgaed_cpp_expression_repair_tests)
+    set_tests_properties(native.cpp_expression_repair PROPERTIES TIMEOUT 30)
+endfunction()
+
 if(LGAED_WASI_RUNNER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -493,6 +504,7 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     lgaed_add_named_rule_source_tests()
+    lgaed_add_cpp_expression_repair_tests()
     # Read-only CMake File API graph: a duplicated library source and a
     # real target_link_libraries() can print identical stdout but differ in
     # generated target types, source ownership and linker dependencies.
@@ -501,7 +513,8 @@ if(LGAED_READER_BUILD_QA_ONLY)
     target_link_libraries(lgaed_cpp_cmake_runner_tests PRIVATE lgaed_platform_windows)
     add_test(NAME native.cpp_cmake_graph
         COMMAND lgaed_cpp_cmake_runner_tests --graph)
-    set_tests_properties(native.cpp_cmake_graph PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    # Includes authentic fixed-report counterexamples for both repair owners.
+    set_tests_properties(native.cpp_cmake_graph PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     # Exercise the source-evidence prerequisite on four real, historically
     # mapped U3 editors, without changing their authored JSON contracts.
     add_executable(lgaed_named_rule_runtime_tests
@@ -770,6 +783,7 @@ option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
     lgaed_add_named_rule_source_tests()
+    lgaed_add_cpp_expression_repair_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
     lgaed_add_semantic_retirement_view_test()

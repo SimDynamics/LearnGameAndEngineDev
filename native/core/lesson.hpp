@@ -491,6 +491,9 @@ struct FreshExecution {
     std::string named_rule_battery_request_fingerprint;
     std::string named_rule_constant_variation_request_fingerprint;
     std::string named_rule_constant_variation_feedback;
+    // Live CMake evidence is bound to its complete request. This does not
+    // replace or change any persisted historical completion receipt.
+    std::string cmake_graph_request_fingerprint{};
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {

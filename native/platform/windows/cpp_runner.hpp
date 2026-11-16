@@ -306,6 +306,7 @@ struct CppProjectAvailability {
 [[nodiscard]] std::string cpp_reduction_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_cmake_graph_request_fingerprint(const CppRunRequest&);
 // Stable client provenance includes all project paths and all protected file
 // bytes. Only the editable test file's contents are omitted from this frame.
 [[nodiscard]] std::string cpp_integer_battery_component_fingerprint(const CppRunRequest&);

@@ -4369,6 +4369,242 @@ def _validate_compiler_open_battery_checks(document: dict) -> None:
                     "Original CMake battery result contradicts its independent contract")
 
 
+def _cpp_expression_repair_tokens(source: str) -> tuple[str, ...] | None:
+    """Mirror cpp_expression_repair.hpp without changing the legacy lexer."""
+    if type(source) is not str:
+        return None
+    try:
+        encoded = source.encode("utf-8")
+        if (not 0 < len(encoded) <= 4 * 1024 * 1024 or
+                "\x00" in source or "\\\n" in source or "\\\r\n" in source):
+            return None
+        # Native offsets and raw delimiters count UTF-8 bytes. Its identifier
+        # and pp-number scanners accept every non-ASCII byte as a continuation.
+        # Mask only already classified code tokens before the second scan, so
+        # Python's Unicode isalnum cannot split a native pp-number. Literal,
+        # comment and directive bodies remain exact throughout both scans.
+        wire = encoded.decode("latin1")
+
+        def positions(text, tokens):
+            result, offset = [], 0
+            for token in tokens:
+                kind, literal = token.split(":", 1)
+                begin = text.find(literal, offset)
+                if begin < 0 or any(c not in code_format._WS for c in text[offset:begin]):
+                    raise code_format.SourceFormatError("Unattributable C++ token")
+                offset = begin + len(literal)
+                result.append((kind, begin, offset))
+            if any(c not in code_format._WS for c in text[offset:]):
+                raise code_format.SourceFormatError("Unattributable C++ suffix")
+            return result
+
+        masked = list(wire)
+        for kind, begin, end in positions(wire, code_format._cpp_tokens(wire)):
+            if kind in ("id", "number"):
+                for at in range(begin, end):
+                    if ord(wire[at]) >= 128:
+                        masked[at] = "_"
+            elif kind == "literal":
+                literal = wire[begin:end]
+                raw = next((prefix for prefix in code_format._RAW_PREFIX
+                            if literal.startswith(prefix)), None)
+                if raw is not None and any(c in code_format._WS
+                                           for c in literal[len(raw):literal.find("(")]):
+                    return None
+        masked = "".join(masked)
+        tokens = tuple(kind + ":" + wire[begin:end]
+                       for kind, begin, end in positions(masked, code_format._cpp_tokens(masked)))
+        if code_format._cpp_position_sensitive_tokens(tokens):
+            return None
+        return tokens
+    except (UnicodeError, code_format.SourceFormatError):
+        return None
+
+
+def _cpp_expression_repair_include(token: str) -> bool:
+    source = token.removeprefix("directive:")
+    source = source[2:] if source.startswith("%:") else source[1:]
+    source = source.lstrip(code_format._WS)
+    if not source.startswith("include"):
+        return False
+    source = source[7:].lstrip(code_format._WS)
+    if not source or source[0] not in '<"':
+        return False
+    end = source.find(">" if source[0] == "<" else '"', 1)
+    if end <= 1:
+        return False
+    try:
+        return all(token.startswith("comment:")
+                   for token in code_format._cpp_tokens(source[end + 1:]))
+    except code_format.SourceFormatError:
+        return False
+
+
+def _cpp_expression_repair_number(value: str) -> bool:
+    def digit(character: str, base: int) -> bool:
+        return ("0" <= character <= "9" and ord(character) - ord("0") < base or
+                base == 16 and character in "abcdefABCDEF")
+
+    clean = []
+    for index, character in enumerate(value):
+        if character == "'":
+            if (index == 0 or index + 1 == len(value) or
+                    not digit(value[index - 1], 16) or not digit(value[index + 1], 16)):
+                return False
+        else:
+            clean.append(character)
+    value = "".join(clean)
+    base, at = 10, 0
+    if value.startswith(("0x", "0X")):
+        base, at = 16, 2
+    elif value.startswith(("0b", "0B")):
+        base, at = 2, 2
+    first = at
+    while at < len(value) and digit(value[at], base):
+        at += 1
+    has_digits, floating = at != first, False
+    if base != 2 and at < len(value) and value[at] == ".":
+        floating = True
+        at += 1
+        first = at
+        while at < len(value) and digit(value[at], base):
+            at += 1
+        has_digits = has_digits or at != first
+    if not has_digits:
+        return False
+    exponent = (at < len(value) and
+                (value[at] in "pP" if base == 16 else
+                 base == 10 and value[at] in "eE"))
+    if exponent:
+        floating = True
+        at += 1
+        if at < len(value) and value[at] in "+-":
+            at += 1
+        first = at
+        while at < len(value) and digit(value[at], 10):
+            at += 1
+        if at == first:
+            return False
+    if base == 16 and floating and not exponent:
+        return False
+    suffix = value[at:].lower()
+    return (suffix in ("", "f", "l") if floating else
+            suffix in ("", "u", "l", "ul", "lu", "ll", "ull", "llu", "z", "uz", "zu"))
+
+
+def _cpp_expression_repair_scalar(tokens: tuple[str, ...]) -> bool:
+    """Pure scalar expressions: no statements, calls, assignment or UDLs."""
+    values = tuple(token for token in tokens if not token.startswith("comment:"))
+    keywords = frozenset((
+        "alignas alignof and and_eq asm atomic_cancel atomic_commit atomic_noexcept "
+        "auto bitand bitor bool break case catch char char8_t char16_t char32_t "
+        "class compl concept const consteval constexpr constinit const_cast continue "
+        "co_await co_return co_yield decltype default delete do double dynamic_cast "
+        "else enum explicit export extern float for friend goto if inline "
+        "int long mutable namespace new noexcept not not_eq operator or or_eq "
+        "private protected public reflexpr register reinterpret_cast requires return "
+        "short signed sizeof static static_assert static_cast struct switch synchronized "
+        "template this thread_local throw try typedef typeid typename union unsigned "
+        "using virtual void volatile wchar_t while xor xor_eq"
+    ).split())
+    precedence = {
+        "op:||": 1, "id:or": 1, "op:&&": 2, "id:and": 2,
+        "op:|": 3, "id:bitor": 3, "op:^": 4, "id:xor": 4,
+        "op:&": 5, "id:bitand": 5, "op:==": 6, "op:!=": 6, "id:not_eq": 6,
+        "op:<": 7, "op:<=": 7, "op:>": 7, "op:>=": 7,
+        "op:<<": 8, "op:>>": 8, "op:+": 9, "op:-": 9,
+        "op:*": 10, "op:/": 10, "op:%": 10,
+    }
+    at = 0
+
+    def take(token: str) -> bool:
+        nonlocal at
+        if at == len(values) or values[at] != token:
+            return False
+        at += 1
+        return True
+
+    def character(value: str) -> bool:
+        if value.startswith("u8"):
+            value = value[2:]
+        elif value.startswith(("u", "U", "L")):
+            value = value[1:]
+        if len(value) < 3 or value[0] != "'" or "\n" in value or "\r" in value:
+            return False
+        try:
+            return code_format._literal_end(value, 0, 0) == len(value)
+        except code_format.SourceFormatError:
+            return False
+
+    def unary(depth: int) -> bool:
+        nonlocal at
+        if depth > 128 or at == len(values):
+            return False
+        token = values[at]
+        if token in ("op:+", "op:-", "op:!", "op:~", "id:not", "id:compl"):
+            at += 1
+            return unary(depth + 1)
+        if take("op:("):
+            return conditional(depth + 1) and take("op:)")
+        at += 1
+        if token.startswith("id:"):
+            return not token[3:].startswith("__") and token[3:] not in keywords
+        if token.startswith("number:"):
+            return _cpp_expression_repair_number(token[7:])
+        return token.startswith("literal:") and character(token[8:])
+
+    def binary(minimum: int, depth: int) -> bool:
+        nonlocal at
+        if not unary(depth):
+            return False
+        while at < len(values):
+            level = precedence.get(values[at], 0)
+            if level < minimum:
+                break
+            at += 1
+            if not binary(level + 1, depth + 1):
+                return False
+        return True
+
+    def conditional(depth: int) -> bool:
+        if depth > 128 or not binary(1, depth):
+            return False
+        if not take("op:?"):
+            return True
+        return conditional(depth + 1) and take("op::") and conditional(depth + 1)
+
+    return bool(values) and conditional(0) and at == len(values)
+
+
+def _cpp_expression_repair_valid(path: str, source: str, expression: str) -> bool:
+    """Authenticate one real token interval in the immutable original source."""
+    if (type(path) is not str or not 0 < len(path) <= 256 or
+            re.fullmatch(r"[A-Za-z0-9_.+/-]+", path) is None or
+            any(not part or part.startswith(".") or part.endswith(".") or
+                part.split(".", 1)[0].upper() in
+                {"CON", "PRN", "AUX", "NUL", *("COM" + str(i) for i in range(1, 10)),
+                 *("LPT" + str(i) for i in range(1, 10))}
+                for part in path.split("/")) or
+            not path.lower().endswith((".cpp", ".cc", ".cxx", ".c++")) or
+            type(expression) is not str):
+        return False
+    try:
+        if not 0 < len(expression.encode("utf-8")) <= 512:
+            return False
+    except UnicodeError:
+        return False
+    original = _cpp_expression_repair_tokens(source)
+    wanted = _cpp_expression_repair_tokens(expression)
+    if (original is None or wanted is None or
+            any(token.startswith("directive:") and not _cpp_expression_repair_include(token)
+                for token in original) or not _cpp_expression_repair_scalar(wanted)):
+        return False
+    code = tuple(token for token in original if not token.startswith("comment:"))
+    pattern = tuple(token for token in wanted if not token.startswith("comment:"))
+    return sum(code[at:at + len(pattern)] == pattern
+               for at in range(len(code) - len(pattern) + 1)) == 1
+
+
 def _validate_compiler_cmake_graph_checks(document: dict) -> None:
     """Bounded, append-only CMake structural objectives, without block edits."""
     if "compilerCmakeGraphChecks" not in document:
@@ -4436,12 +4672,14 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                             for c in item["text"])
                         for item in messages),
                     "CMake STATUS order needs original CMake files and text")
+        expression_repair = None
         if "sourceIntegrity" in entry:
             integrity = entry["sourceIntegrity"]
             require(type(integrity) is dict and
                     {"preserveNonCmake"} <= set(integrity) <=
-                    {"preserveNonCmake", "removePrefix"} and
+                    {"preserveNonCmake", "removePrefix", "replaceExpression"} and
                     integrity["preserveNonCmake"] is True and
+                    not {"removePrefix", "replaceExpression"} <= set(integrity) and
                     any(type(path) is str and
                         not (path.endswith("/CMakeLists.txt") or
                              path == "CMakeLists.txt" or
@@ -4464,6 +4702,21 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
                             f["initialCode"].startswith(removal["text"])
                             for f in block["projectFiles"]),
                         "CMake repair can only remove an authentic source prefix")
+            if "replaceExpression" in integrity:
+                expression_repair = integrity["replaceExpression"]
+                require(type(expression_repair) is dict and
+                        set(expression_repair) == {"path", "original"} and
+                        type(expression_repair["path"]) is str and
+                        type(expression_repair["original"]) is str,
+                        "CMake expression repair requires its original path and expression")
+                sources = [f for f in block["projectFiles"]
+                           if type(f) is dict and
+                           f.get("path") == expression_repair["path"]]
+                require(len(sources) == 1 and
+                        _cpp_expression_repair_valid(
+                            expression_repair["path"], sources[0].get("initialCode"),
+                            expression_repair["original"]),
+                        "CMake expression repair must identify one authentic bounded expression")
         targets = entry["targets"]
         require(type(targets) is list and 0 < len(targets) <= 16,
                 "CMake graph needs 1..16 targets")
@@ -4544,6 +4797,10 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
             require(not (set(target.get("publicIncludeRoots", [])) &
                          set(target.get("privateIncludeRoots", []))),
                     "CMake include roots cannot be both PUBLIC and PRIVATE")
+        if expression_repair is not None:
+            require(any(expression_repair["path"] in target.get("sources", [])
+                        for target in targets),
+                    "CMake expression repair must own an original required C++ source")
         for library in targets:
             if (library.get("publicIncludeRoots") or
                     library.get("privateIncludeRoots")):

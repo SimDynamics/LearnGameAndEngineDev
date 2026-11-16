@@ -2,6 +2,7 @@
 #include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/state_store.hpp"
 #include "core/code_format_compat.hpp"
+#include "core/cpp_expression_repair.hpp"
 #include "core/named_rule_constant_variation_check.hpp"
 
 #include <algorithm>
@@ -203,6 +204,10 @@ std::string review_target(const CppRunRequest& request) {
 }
 bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::FreshExecution& execution) {
     return !captured.diagnostic
+        &&(!captured.cmake_graph_check||
+            (!execution.cmake_graph_request_fingerprint.empty()&&
+             execution.cmake_graph_request_fingerprint==
+                cpp_cmake_graph_request_fingerprint(captured)))
         &&(!captured.named_rule_probe||!captured.named_rule_probe->battery_check||
             (!execution.named_rule_battery_request_fingerprint.empty()&&
              execution.named_rule_battery_request_fingerprint==
@@ -584,6 +589,31 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                            item.type=="EXECUTABLE";
                    }))
                 return false;
+        }
+        if(block.cmake_graph_check->expression_repair) {
+            const auto& repair=*block.cmake_graph_check->expression_repair;
+            const auto original=std::ranges::find_if(block.project_files,
+                [&](const auto& file){return file.first==repair.path;});
+            if(!curriculum::cpp_expression_repair_valid(repair)||
+               original==block.project_files.end()||
+               original->second!=repair.original_source||
+               request.source_files!=block.source_files||
+               request.project_files.size()!=block.project_files.size())return false;
+            std::set<std::string> seen;
+            for(const auto& [path,source]:request.project_files) {
+                if(!seen.insert(path).second)return false;
+                const auto published=std::ranges::find_if(block.project_files,
+                    [&](const auto& file){return file.first==path;});
+                if(published==block.project_files.end())return false;
+                if(path==repair.path) {
+                    if(!curriculum::cpp_expression_repair_matches(repair,source))return false;
+                }else {
+                    const auto slash=path.find_last_of('/');
+                    const auto filename=path.substr(slash==path.npos?0:slash+1);
+                    const bool cmake=filename=="CMakeLists.txt"||path.ends_with(".cmake");
+                    if(!cmake&&source!=published->second)return false;
+                }
+            }
         }
     }
     if(block.named_rule_source_check) {

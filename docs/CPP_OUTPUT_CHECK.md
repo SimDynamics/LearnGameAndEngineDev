@@ -2126,6 +2126,79 @@ Cada contrato ya publicado permanece inmutable. Es posible añadir
 nuevos propietarios al final de la declaración mediante una transición
 autenticada, sin modificar ni reordenar los anteriores.
 
+### Reparación de una expresión con las demás fuentes conservadas
+
+Una práctica que permite reparar sólo una expresión puede añadir
+`replaceExpression` a `sourceIntegrity`. La declaración pertenece a
+`compilerCmakeGraphChecks`, en la raíz de la lección:
+
+```json
+"sourceIntegrity": {
+  "preserveNonCmake": true,
+  "replaceExpression": {
+    "path": "src/ajuste.cpp",
+    "original": "valor - superior"
+  }
+}
+```
+
+`path` debe identificar un archivo C++ original declarado entre las fuentes de
+alguno de los objetivos comprobados. `original` selecciona una única expresión
+del código publicado. El cargador obtiene el archivo completo del propietario;
+la declaración no proporciona una copia alternativa de ese archivo ni una
+solución para el estudiante. La coincidencia se autentica mediante los tokens
+de C++ y sus posiciones: una aparición dentro de un comentario, literal o
+directiva no selecciona una zona editable. Un selector ausente o ambiguo
+invalida la declaración.
+
+El estudiante puede sustituir esa expresión y conserva exactamente los bytes
+anteriores y posteriores. Los demás archivos no CMake mantienen sus hashes
+originales, y el proyecto conserva su conjunto de rutas. `replaceExpression`
+y la retirada de prefijo `removePrefix` son alternativas excluyentes. Los
+archivos CMake siguen admitiendo las modificaciones necesarias para cumplir
+la rúbrica de construcción, incluidas las opciones apropiadas para MSVC.
+
+La sustitución admite expresiones escalares con operadores aritméticos,
+relacionales, lógicos y de bits, paréntesis y el operador condicional. Así,
+`superior - valor` y `-(valor - superior)` pueden reparar la misma resta;
+`dato >= 0 && dato <= 20` y `!(dato < 0 || dato > 20)` pueden reparar la
+comparación encadenada. La ejecución contrasta el resultado; el texto de la
+solución no se fija de antemano. Este contrato acotado excluye llamadas,
+asignaciones, incrementos, comas, accesos a miembros y otras instrucciones que
+podrían imprimir un informe o terminar el proceso desde la expresión. Tampoco
+permite introducir directivas, llaves, puntos y coma ni escapar de la zona
+declarada. No pretende admitir todas las expresiones posibles del lenguaje.
+
+El selector admite entre 1 y 512 bytes; la sustitución, entre 1 y 4096. La
+fuente completa se limita a 4 MiB. La ruta relativa admite hasta 256 caracteres
+ASCII y una extensión C++ compatible. Se rechazan los nombres reservados de
+Windows, NUL, continuaciones físicas de línea, macros locales y consultas que
+dependan de la posición del código. El anidamiento se limita a 128 niveles.
+Al comprobar la candidata se vuelve a analizar el archivo completo,
+para impedir que un comentario o un literal oculte el contexto protegido.
+
+La restricción añade una parte propia a la huella del objetivo únicamente
+cuando está presente. Omitirla conserva la identidad y el comportamiento de las
+declaraciones anteriores. Una declaración ya publicada sigue siendo inmutable;
+las fuentes, los mapas, los borradores y los recibos previos se conservan, pero
+un acierto obtenido sin esta protección no acredita automáticamente el objetivo
+nuevo.
+
+Las capturas nuevas de comprobaciones CMake incluyen además una huella de la
+solicitud, los archivos, la configuración, el contrato y la revisión. La
+finalización exige que esa huella corresponda a la solicitud que se acredita.
+Una captura positiva de otra revisión o de otros archivos no puede trasladar su
+veredicto del grafo, aunque coincidan la entrada y la salida visibles.
+
+Las regresiones de U3L7 y U3L10 se preparan sobre sus propietarios originales
+únicamente en memoria. Comparan reparaciones equivalentes con comprobadores que
+imprimen informes fijos mientras conservan la biblioteca defectuosa. También
+comprueban alteraciones de esperados, ediciones fuera de la expresión, capturas
+prestadas y conservación del estado. El primer caso correcto que cumpla la
+rúbrica basta para avanzar; los demás casos permanecen opcionales. Registrar
+el recorrido de la ejecución defectuosa anterior es un criterio distinto de
+esta protección de fuentes y no se deduce de una reparación correcta.
+
 ### Opciones de compilación declaradas y efectivas por objetivo
 
 Los ejercicios que enseñan avisos del compilador pueden exigir opciones
