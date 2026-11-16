@@ -23,7 +23,16 @@
 namespace {
 void check(bool value,const std::string& reason){if(!value)throw std::runtime_error(reason);}
 void built(const lgaed::windows::CppRunResult& result){check(result.error_utf8.empty()&&result.compilation.succeeded(),"Real build failed: "+result.error_utf8+result.configuration.stdout_bytes+result.configuration.stderr_bytes+result.compilation.stdout_bytes+result.compilation.stderr_bytes);}
-void ran(const lgaed::windows::CppRunResult& result){built(result);check(result.execution.succeeded(),"Real execution failed: "+result.error_utf8+result.execution.stderr_bytes);}
+void ran(const lgaed::windows::CppRunResult& result,std::string_view context={}) {
+    built(result);
+    check(result.execution.succeeded(),"Real execution failed ["+std::string(context)+
+        "] request="+std::to_string(result.request_id)+
+        " revision="+std::to_string(result.revision)+
+        " status="+std::to_string(static_cast<int>(result.execution.status))+
+        " exit="+(result.execution.exit_code?std::to_string(*result.execution.exit_code):"none")+
+        ": "+result.error_utf8+"\nstdout:\n"+result.execution.stdout_bytes+
+        "\nstderr:\n"+result.execution.stderr_bytes);
+}
 // MSVC/UCRT converts source LF to console CRLF. Preserve captured raw bytes;
 // this test helper only recognizes the expected LF-to-CRLF transformation.
 bool matches_native_console_output(std::string_view captured,
@@ -290,7 +299,7 @@ void verify_cmake_initial_observation(const RepairLessons& previous,
         state::encode(saved)==before_late,
         "Recording the original later retroactively credited an earlier repaired execution");
     ++late.request_id;late.action=CppRunRequest::Action::execute;
-    const auto final_run=run_cpp(late);ran(final_run);
+    const auto final_run=run_cpp(late);ran(final_run,"observation/fresh repaired case");
     const auto final_capture=capture_cpp_execution(late,final_run);
     check(record_compiler_puzzle_case(saved,lesson,owner,late,final_capture,
             "Fallo inicial y reparación comprobados")&&
@@ -321,7 +330,7 @@ void verify_cmake_initial_observation(const RepairLessons& previous,
     auto optional_request=late;++optional_request.request_id;
     optional_request.cmake_initial_observation_prerequisite=
         compiler_cmake_initial_observation_prerequisite(first_only,lesson,optional,optional_request);
-    const auto optional_run=run_cpp(optional_request);ran(optional_run);
+    const auto optional_run=run_cpp(optional_request);ran(optional_run,"observation/first case with optional sibling");
     check(record_compiler_puzzle_case(first_only,lesson,optional,optional_request,
             capture_cpp_execution(optional_request,optional_run),"Sólo el primer caso")&&
         compiler_puzzle_case_count(first_only,lesson,optional)==1&&
@@ -2781,7 +2790,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     auto warning_repair=warning_request;
     warning_repair.cmake_graph_check=warning_observation_owner.cmake_graph_check;
     const auto corrected_warning_run=run_cpp(warning_repair);
-    ran(corrected_warning_run);
+    ran(corrected_warning_run,"U3L7/first repaired build and run");
     const auto expected_warning_output=
         warning_block.output_check->cases.front().outputs.front();
     check(matches_native_console_output(
