@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -38,9 +39,19 @@ struct NamedRuleProbeCase {
     int input = 0, expected = 0;
     bool operator==(const NamedRuleProbeCase&) const = default;
 };
+// Required calls of the student's own battery, independently authored from
+// the private functional probe. source_path is derived from the source check;
+// empty denotes the single-file editor. The driver remains student-authored.
+struct NamedRuleBatterySpec {
+    std::string source_path;
+    std::vector<NamedRuleProbeCase> cases;
+    std::uint32_t failure_exit_code = 1;
+    bool operator==(const NamedRuleBatterySpec&) const = default;
+};
 struct NamedRuleExecutionProbe {
     std::string harness_path, header;
     std::vector<NamedRuleProbeCase> cases;
+    std::optional<NamedRuleBatterySpec> battery_check = std::nullopt;
     bool operator==(const NamedRuleExecutionProbe&) const = default;
 };
 

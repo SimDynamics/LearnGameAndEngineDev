@@ -1,11 +1,13 @@
 #pragma once
 #include "core/cpp_project.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/named_rule_battery_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
 #include "core/integer_battery_check.hpp"
 #include "core/cmake_graph_check.hpp"
+#include "core/adjustment_project_check.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -120,6 +122,9 @@ struct CppRunRequest {
     // Captured before starting the checker. A later client run cannot promote
     // a checker whose request did not already carry its sealed prerequisite.
     std::string integer_battery_prerequisite;
+    // A constructed component, client and battery are assessed together from
+    // this immutable request; no prerequisite from another revision is used.
+    std::optional<curriculum::AdjustmentProjectSpec> adjustment_project_probe;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -139,6 +144,10 @@ struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
     CppPhaseResult compilation, execution;
 };
+struct CppNamedRuleBatteryEvidence {
+    std::string original_program_fingerprint;
+    std::vector<curriculum::NamedRuleBatteryRun> runs;
+};
 struct CppOpenBatteryEvidence {
     std::string original_project_fingerprint;
     std::vector<curriculum::OpenBatteryRun> runs;
@@ -154,6 +163,10 @@ struct CppReductionEvidence {
 struct CppIntegerBatteryEvidence {
     std::string original_program_fingerprint;
     std::vector<curriculum::IntegerBatteryRun> runs;
+};
+struct CppAdjustmentProjectEvidence {
+    std::string original_program_fingerprint;
+    std::vector<curriculum::AdjustmentProjectRun> runs;
 };
 
 // Read-only CMake File API evidence, pinned to the submitted project/configuration.
@@ -172,6 +185,9 @@ struct CppCmakeTargetEvidence {
     std::vector<std::string> authored_private_include_directories;
     std::vector<std::string> authored_compile_options;
     std::vector<std::string> effective_compile_options;
+    // Every C++ compile group has a nonzero final MSVC warning level. Keep
+    // command order for this fact; the historical option list is deduplicated.
+    bool msvc_warnings_effective = false;
 };
 struct CppCmakeTargetListApplication {
     std::vector<std::string> targets;
@@ -218,6 +234,8 @@ struct CppRunResult {
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
+    std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
+    std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
     std::vector<CppObservationProbe> observation_probes;
     std::vector<CppAssertionProbe> assertion_probes;
@@ -227,6 +245,8 @@ struct CppRunResult {
     std::string reduction_request_fingerprint;
     std::optional<CppIntegerBatteryEvidence> integer_battery_evidence;
     std::string integer_battery_request_fingerprint;
+    std::optional<CppAdjustmentProjectEvidence> adjustment_project_evidence;
+    std::string adjustment_project_request_fingerprint;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
@@ -273,8 +293,10 @@ struct CppProjectAvailability {
 // Ephemeral proof binding used again when a captured execution is consumed.
 // It does not change any existing persisted program or CMake receipt frame.
 [[nodiscard]] std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_reduction_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest&);
 // Stable client provenance includes all project paths and all protected file
 // bytes. Only the editable test file's contents are omitted from this frame.
 [[nodiscard]] std::string cpp_integer_battery_component_fingerprint(const CppRunRequest&);

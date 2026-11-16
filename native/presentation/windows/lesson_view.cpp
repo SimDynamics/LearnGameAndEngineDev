@@ -738,19 +738,31 @@ struct LessonView {
             GC_PAN_WITH_GUTTER | GC_PAN_WITH_INERTIA};
         SetGestureConfig(item,0,1,&pan,sizeof(pan));
     }
+    bool restore_fullscreen_zoom() {
+        if(!fullscreen_block)return false;
+        const auto& vm=controls[*fullscreen_block];
+        const auto item=fullscreen_output?vm.console:vm.simulated_code;
+        const auto found=zoomed.find(item);
+        if(found==zoomed.end())return false;
+        SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
+        return true;
+    }
     bool double_click_zoom(HWND item,POINT point) {
         if(choice_labels.contains(item))return true;
-        const bool display=std::ranges::any_of(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
-        if(!display||!fullscreen_block)return false;
-        if(hits_text(item,point))return false;
+        const auto display=std::ranges::find_if(controls,[&](const auto& vm){return vm.simulated_code==item||vm.console==item;});
+        if(display==controls.end()||hits_text(item,point))return false;
         end_drag();
-        if(const auto found=zoomed.find(item);found!=zoomed.end()){
-            SendMessageW(item,EM_SETZOOM,found->second,100);zoomed.erase(found);
-        }else{
-            int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
-            const int previous=denominator?MulDiv(numerator,100,denominator):100;
-            zoomed[item]=previous;SendMessageW(item,EM_SETZOOM,std::min(previous*2,6400),100);
+        const auto index=static_cast<std::size_t>(display-controls.begin());
+        const bool output=display->console==item;
+        if(fullscreen_block!=index||fullscreen_output!=output){
+            toggle_fullscreen(index,output);return true;
         }
+        // Repeated empty-area double clicks keep the enlarged console open.
+        // Esc restores its previous scale before leaving full screen.
+        if(zoomed.contains(item))return true;
+        int numerator=0,denominator=0;SendMessageW(item,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+        const int previous=denominator?MulDiv(numerator,100,denominator):100;
+        zoomed[item]=previous;SendMessageW(item,EM_SETZOOM,std::min(previous*2,6400),100);
         reflow();return true;
     }
     HWND find_item(int id) const {
@@ -1984,6 +1996,7 @@ struct LessonView {
         auto focused=capture_console_focus();
         if(!focused.editor)for(const auto& [icon,snapshot]:icon_focus)if(snapshot.editor){focused=snapshot;break;}
         end_drag();
+        restore_fullscreen_zoom();
         restore_fullscreen_palette();
         restore_fullscreen_header();
         if (fullscreen_block == index && fullscreen_output == output) {
@@ -2242,6 +2255,7 @@ struct LessonView {
         request.boolean_battery_probe=block(index).boolean_battery_probe;
         request.reduction_probe=block(index).reduction_probe;
         request.integer_battery_probe=block(index).integer_battery_probe;
+        request.adjustment_project_probe=block(index).adjustment_project_probe;
         if(request.integer_battery_probe&&request.cmake&&
            request.cmake->target==request.integer_battery_probe->test_target)
             request.integer_battery_prerequisite=windows::compiler_integer_battery_prerequisite(
@@ -4087,7 +4101,8 @@ struct LessonView {
         const bool normal_execution=result->error_utf8.empty()&&
             result->execution.status==windows::CppPhaseStatus::completed&&
             result->execution.exit_code&&((block(index).boolean_battery_probe||
-                block(index).reduction_probe||block(index).integer_battery_probe)
+                block(index).reduction_probe||block(index).integer_battery_probe||
+                 block(index).adjustment_project_probe)
                 ?fresh.execution_completed:*result->execution.exit_code<=255);
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
@@ -4183,13 +4198,16 @@ struct LessonView {
                     block(index),running_program);
                 const bool independent=(!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
-                    fresh.named_rule_probe_correct)&&
+                    (fresh.named_rule_probe_correct&&
+                     (!block(index).named_rule_source_check->execution_probe->battery_check||
+                      fresh.named_rule_battery_correct)))&&
                     (!block(index).open_battery_probe||
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
                      fresh.boolean_battery_probe_correct)&&
                     (!block(index).reduction_probe||fresh.reduction_probe_correct)&&
-                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct);
+                    (!block(index).integer_battery_probe||fresh.integer_battery_probe_correct)&&
+                     (!block(index).adjustment_project_probe||fresh.adjustment_project_probe_correct);
                 const bool graph_ready=!block(index).cmake_graph_check||
                     fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
@@ -4209,9 +4227,15 @@ struct LessonView {
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
-                if(!independent&&preserved_source&&!block(index).open_battery_probe&&
+                const bool named_battery_pending=block(index).named_rule_source_check&&
+                    block(index).named_rule_source_check->execution_probe&&
+                    block(index).named_rule_source_check->execution_probe->battery_check&&
+                    fresh.named_rule_probe_correct&&!fresh.named_rule_battery_correct;
+                if(named_battery_pending&&preserved_source)
+                    text+='\n'+fresh.named_rule_battery_feedback;
+                if(!independent&&!named_battery_pending&&preserved_source&&!block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
-                   !block(index).integer_battery_probe)
+                   !block(index).integer_battery_probe&&!block(index).adjustment_project_probe)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
                         "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
@@ -4219,7 +4243,12 @@ struct LessonView {
                 // Reduction feedback already identifies its exact source or
                 // observation failure; do not append an unrelated project rule.
                 if(!preserved_source&&!block(index).reduction_probe) {
-                    if(block(index).integer_battery_probe)
+                    if(block(index).adjustment_project_probe)
+                        text+='\n'+ui(
+                            "Incluye la cabecera pública proporcionada en la biblioteca, el cliente y el comprobador, y conserva su interfaz y las rutas del proyecto. Ejecuta el comprobador con la entrada vacía y la configuración solicitada.",
+                            "Include the supplied public header in the library, client and checker, and preserve its interface and project paths. Run the checker with empty input and the requested configuration.",
+                            "Incluez l’en-tête public fourni dans la bibliothèque, le client et le vérificateur, et conservez son interface et les chemins du projet. Exécutez le vérificateur sans entrée avec la configuration demandée.");
+                    else if(block(index).integer_battery_probe)
                         text+='\n'+ui(
                             "Conserva la biblioteca, el cliente y la descripción CMake. Modifica únicamente el archivo de pruebas autorizado y ejecuta el objetivo correspondiente.",
                             "Preserve the library, client and CMake description. Edit only the authorized test file and execute the corresponding target.",
@@ -4474,7 +4503,10 @@ struct LessonView {
     }
     bool navigate_back(){
         if(import_open){close_import();return true;}
-        if(fullscreen_block){toggle_fullscreen(*fullscreen_block,fullscreen_output);return true;}
+        if(fullscreen_block){
+            if(restore_fullscreen_zoom()){reflow();return true;}
+            toggle_fullscreen(*fullscreen_block,fullscreen_output);return true;
+        }
         const auto root=GetAncestor(window,GA_ROOT),keyboard=math_keyboard_window(root);
         if(keyboard&&IsWindowVisible(keyboard)){hide_math_keyboard(root);reflow();return true;}
         if(!hooks.back_to_catalog)return false;

@@ -8,6 +8,7 @@
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
 #include "core/integer_battery_check.hpp"
+#include "core/adjustment_project_check.hpp"
 #include "core/cmake_graph_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
@@ -125,6 +126,8 @@ struct OutputCheck {
     bool integer_battery_check = false;
     // Null permits any witnessed normal nonzero return; otherwise exact.
     std::optional<std::uint32_t> integer_battery_failure_exit_code{1};
+    // One captured project proves its component, client and complete battery.
+    bool adjustment_project_check = false;
 };
 // A closed compile-time rejection is a different objective from runtime stdout.
 // The loader binds each diagnostic to its reviewed Spanish editor and source.
@@ -265,6 +268,7 @@ struct Block {
     std::vector<std::string> source_files;
     std::optional<CmakeConfig> cmake;
     StateAddress address;
+    std::optional<AdjustmentProjectSpec> adjustment_project_probe;
 };
 struct Page {
     std::string stable_id;
@@ -462,6 +466,12 @@ struct FreshExecution {
     std::string integer_battery_probe_feedback;
     std::optional<std::uint32_t> integer_battery_exit_code;
     std::string integer_battery_request_fingerprint;
+    bool adjustment_project_probe_correct = false;
+    std::string adjustment_project_probe_feedback;
+    std::string adjustment_project_request_fingerprint;
+    bool named_rule_battery_correct = false;
+    std::string named_rule_battery_feedback;
+    std::string named_rule_battery_request_fingerprint;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {

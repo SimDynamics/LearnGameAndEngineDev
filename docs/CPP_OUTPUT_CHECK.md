@@ -574,6 +574,154 @@ inicial, los propietarios y sus mapas conservan su identidad. La prueba nativa
 de este recorrido se registra como `native.open_battery_runtime`; la prueba
 de menor alcance del ejecutor sigue en `native.open_battery_runner`.
 
+## Construir el componente, cliente y batería de un proyecto CMake
+
+La variante `cmake-adjustment-project-v1` de `compilerOpenBatteryChecks`
+acredita una construcción completa de `bool(int, int, int, int&)`. Es un
+contrato distinto de la ampliación anterior: permite escribir la biblioteca,
+el cliente, el comprobador y `CMakeLists.txt`. No exige conservar once pruebas
+ni utilizar un nombre concreto para la función auxiliar que compara resultados.
+
+Se añade en la raíz de una lección española con `stateLayout` v2 y un editor
+C++/CMake todavía sin evaluación. El bloque publicado permanece intacto,
+incluidos sus cuerpos pendientes, su descripción CMake vacía, la entrada
+inicial, la selección del cliente, los mapas y las relaciones de actividades.
+La cabecera proporcionada conserva sus tokens y su declaración
+`bool nombre(int, int, int, int&)`; se admite formato equivalente sin convertir
+la interfaz en una definición inline. Las rutas siguen siendo las del proyecto
+original. Otros archivos originales ajenos a estas cuatro piezas se conservan.
+
+La declaración del constructor de U3L10 tiene once campos:
+
+```json
+{
+  "compilerOpenBatteryChecks": [
+    {
+      "activity": "block_0002_0003",
+      "kind": "cmake-adjustment-project-v1",
+      "libraryPath": "src/ajuste.cpp",
+      "headerPath": "publico/control/ajuste.h",
+      "header": "control/ajuste.h",
+      "function": "intentar_ajuste",
+      "libraryTarget": "ajustes",
+      "clientPath": "app/consulta.cpp",
+      "clientTarget": "consultar_ajustes",
+      "testPath": "pruebas/casos.cpp",
+      "target": "comprobar_ajustes"
+    }
+  ]
+}
+```
+
+El lote del cliente se obtiene de `initialStandardInput`; no hay un segundo
+campo editable `clientInput` en la declaración. La lista es acumulativa:
+añadir el constructor conserva literalmente las declaraciones anteriores,
+incluida la ampliación de `block_0006_0011`. Cada propietario sólo puede tener
+un objetivo de esta lista.
+
+### Estructura compartida y avisos
+
+Este contrato requiere también una declaración `compilerCmakeGraphChecks`
+para el mismo propietario. La biblioteca y ambos ejecutables se comprueban
+en el grafo generado de la revisión pública presentada:
+
+```json
+{
+  "compilerCmakeGraphChecks": [
+    {
+      "activity": "block_0002_0003",
+      "minimumCmakeVersion": "3.20",
+      "minimumCmakeVersionAtLeast": true,
+      "targets": [
+        {
+          "name": "ajustes",
+          "type": "STATIC_LIBRARY",
+          "sources": ["src/ajuste.cpp"],
+          "exactSources": true,
+          "publicIncludeRoots": ["publico"],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        },
+        {
+          "name": "consultar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": ["app/consulta.cpp"],
+          "exactSources": true,
+          "linksTo": ["ajustes"],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        },
+        {
+          "name": "comprobar_ajustes",
+          "type": "EXECUTABLE",
+          "sources": ["pruebas/casos.cpp"],
+          "exactSources": true,
+          "linksTo": ["ajustes"],
+          "explicitCxx20": true,
+          "explicitCxxExtensionsOff": true,
+          "requireExplicitMsvcWarnings": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+El mínimo declarado debe ser 3.20 o posterior; C++20 o posterior y extensiones
+desactivadas se exigen en los tres objetivos. La raíz pública se deriva de
+`headerPath` y `header`. Compilar la implementación directamente en cada
+ejecutable, omitir el enlace o sustituir la biblioteca compartida por una copia
+no acredita la construcción.
+
+`requireExplicitMsvcWarnings` exige que el proyecto declare y mantenga activo
+un nivel MSVC de avisos: `/W1`, `/W2`, `/W3`, `/W4` o `/Wall`. No fija un nivel
+literal; las pruebas de esta construcción utilizan `/W4`. `/W0` y `/w`
+desactivan los avisos y no satisfacen la exigencia. Véase la
+[documentación de niveles de avisos de MSVC](https://learn.microsoft.com/en-us/cpp/build/reference/compiler-option-warning-level?view=msvc-170).
+El grafo comprueba las opciones declaradas y las de la construcción real;
+las opciones del perfil por sí solas no sustituyen la decisión del proyecto.
+
+### Comprobación única de la misma revisión
+
+El motor genera un único caso obligatorio para `comprobar_ajustes`, con
+entrada vacía. La entrada histórica de seis ternas y la selección inicial de
+`consultar_ajustes` permanecen disponibles; no se reescriben para obtener ese
+caso. Ejecutar el cliente, configurar o construir por separado no concede
+el logro del constructor.
+
+La ejecución del comprobador captura el proyecto completo y verifica
+automáticamente tres aspectos de esa misma revisión:
+
+- El componente calcula el ajuste de menor magnitud cuando los tres datos están
+  en `[-20,20]` y los extremos están ordenados. Un rechazo devuelve `false` y
+  conserva el destino. El componente no imprime ni termina el proceso.
+- El cliente utiliza esa biblioteca, procesa hasta ocho ternas completas de
+  enteros representables y continúa tras un rechazo. Informa los resultados
+  aceptados en stdout y los rechazos contextualizados en stderr, cuenta y suma
+  sólo resultados nuevos, y termina normalmente con 1 si hubo rechazos o con
+  0 en otro caso. Se verifican el lote original y variaciones independientes;
+  los mensajes pueden variar conservando los hechos y la orientación exigidos.
+- El comprobador utiliza la misma biblioteca, ejecuta su propia batería con
+  esperados independientes y observa tanto la aceptación como el destino.
+  La batería cubre las categorías del contrato y continúa después de una
+  comparación fallida. Las mutaciones independientes deben cambiar sus
+  observaciones y su veredicto; imprimir un resumen fijo, omitir comparaciones,
+  obtener el esperado de la propia función o depender únicamente de `assert`
+  no basta.
+
+Las ejecuciones internas son parte de la primera comprobación, sin nuevos
+casos manuales obligatorios. Las trazas privadas no se presentan ni se narran.
+La evidencia se liga a todos los archivos, la receta, el objetivo ejecutado,
+el contrato y su grafo. No se unen una biblioteca de una revisión y recibos
+del cliente o de la batería de otra.
+
+La nueva rúbrica tiene su propia identidad de objetivo. Los recibos anteriores,
+los borradores y sus direcciones históricas permanecen guardados; no se
+convierten en logros del contrato nuevo. La carga de progreso reconstruye
+el mismo objetivo que la carga completa y verifica sus recibos al reabrir.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.
@@ -1484,6 +1632,136 @@ la sonda del primer caso forma parte de su propio criterio de corrección.
 Para los editores de un solo archivo, `path` y `editablePaths` deben
 ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
 
+### Batería del estudiante con comparaciones sensibles a errores
+
+Comprobar las funciones con un `main` privado no demuestra que el
+comprobador escrito por el estudiante realice sus propias comparaciones.
+Las funciones pueden ser correctas y, aun así, su `main` puede limitarse
+a imprimir el informe esperado. Cuando el objetivo de la práctica incluye
+conservar o construir una batería real, `executionProbe` admite el campo
+optativo `batteryCheck`:
+
+```json
+"batteryCheck": {
+  "cases": [
+    {"function": "cajas_para", "input": 0, "expected": 0},
+    {"function": "cajas_para", "input": 4, "expected": 1},
+    {"function": "cajas_para", "input": 8, "expected": 2},
+    {"function": "cajas_para", "input": 20, "expected": 4},
+    {"function": "cajas_para", "input": 1, "expected": 1},
+    {"function": "cajas_para", "input": 5, "expected": 1},
+    {"function": "cajas_para", "input": 17, "expected": 3},
+    {"function": "cajas_para", "input": 6, "expected": 1},
+    {"function": "cajas_para", "input": 7, "expected": 2},
+    {"function": "llega_a_tiempo", "input": 4, "expected": 1},
+    {"function": "llega_a_tiempo", "input": 5, "expected": 0}
+  ],
+  "failureExitCode": 1
+}
+```
+
+Este objeto se sitúa **dentro de `executionProbe`**. No se declara como
+otro campo de `compilerNamedRuleChecks`, ni en el bloque `cpp_compiler`.
+Es un ejemplo de autoría; incorporar el mecanismo al motor no modifica
+automáticamente los JSON curriculares existentes.
+
+Esta batería utiliza el backend nativo MSVC y la acción de compilar y
+ejecutar (`compile_run`). La entrada inicial del editor y la entrada del
+primer caso de `outputCheck` deben estar vacías: las llamadas se realizan
+desde el propio comprobador, sin datos por stdin. Ese primer caso espera
+código de salida cero y, si declara un `target`, debe ser el objetivo
+ejecutable original del editor CMake. Los ensayos posteriores
+del editor pueden conservar entradas opcionales. Un mismo editor no puede
+combinar `batteryCheck` con `compilerCmakeGraphChecks`; el cargador rechaza
+esa combinación antes de presentar una actividad que no podría acreditarse.
+
+Las dos listas de casos tienen propósitos separados:
+
+| Lista | Qué exige |
+| --- | --- |
+| `executionProbe.cases` | Las funciones entregadas calculan correctamente los datos de la sonda privada. |
+| `executionProbe.batteryCheck.cases` | El comprobador del estudiante llama a las funciones con los datos requeridos, utiliza sus resultados y detecta una discrepancia en cada comparación. |
+
+No se exige que ambas listas coincidan.
+Cuando un par función/entrada aparece en ambas listas, su esperado debe
+coincidir para que los dos requisitos puedan cumplirse a la vez.
+En el ejemplo, la sonda privada
+puede conservar la entrada `19` y la batería del estudiante exige sus
+nueve casos de piezas y dos de plazo. La entrada privada `19` no se añade
+por ello a la batería que debe escribir el estudiante. Para los editores
+de precio y mínimo, la batería puede exigir ambas funciones con las
+entradas `0`, `4`, `5`, `6` y `10`, mientras la sonda privada comprueba
+también el precio con `11`.
+
+El motor conserva el comprobador original del intento y prepara
+ejecuciones aisladas de control y de sensibilidad. En la ejecución de
+control registra las llamadas y comprueba los resultados requeridos.
+Cada par declarado debe llamarse exactamente una vez; el orden de las
+llamadas puede variar. Se aplica la misma cobertura en las ejecuciones
+de sensibilidad.
+En cada ejecución de sensibilidad altera el resultado de un solo par
+función/entrada, usando un valor distinto del esperado. La batería debe
+detectar el cambio, terminar con `failureExitCode` y continuar hasta
+comprobar los demás casos. Esta última condición impide que un primer
+fallo o una cadena con cortocircuito omitan el resto de la batería.
+Cada alteración debe producir un informe visible no vacío, distinto del
+control y de los informes de las demás alteraciones, para poder
+identificar qué caso falló. Los testigos privados de instrumentación
+no cuentan como parte de ese informe.
+Los esperados se declaran por separado de las funciones evaluadas;
+calcular el esperado llamando a esa misma función no demuestra
+independencia.
+
+Un informe fijo, llamadas cuyos resultados se descartan o una batería
+que elimina un caso requerido no acreditan este requisito. Se conservan
+además las comprobaciones de constantes nombradas, la sonda privada, el
+primer caso público, los permisos de archivos y las restricciones de
+cabeceras. No se exige un nombre concreto para las funciones auxiliares
+del comprobador.
+
+`batteryCheck.cases` contiene entre 1 y 32 objetos con exactamente
+`function`, `input` y `expected`. Cada par función/entrada debe ser único;
+las funciones deben estar declaradas en `rules` y todas deben tener
+algún caso de batería. Los datos son enteros con signo de 32 bits.
+Para una función que devuelve `bool`, `expected` utiliza el entero
+`0` o `1`, no un booleano JSON. `failureExitCode` es optativo, vale `1`
+cuando falta y admite un entero de `1` a `4294967295`.
+
+La instrumentación admite una definición global por función con firma
+`int nombre(int parametro)` o `bool nombre(int parametro)`. El tipo se
+obtiene del código real, sin un campo de tipos en JSON. Esta gramática
+acotada no admite sobrecargas, parámetros por referencia, `static`,
+`inline`, `constexpr`, atributos ni `noexcept` en esa firma. Las
+declaraciones de la misma función dentro de ese archivo, si existen,
+deben coincidir con su firma. El cuerpo puede utilizar las
+implementaciones válidas que admita el análisis de reglas nombradas;
+no se conserva una solución de referencia como única respuesta.
+
+El archivo fuente se deriva de `path`; el comprobador y la cabecera
+proceden de `executionProbe.harness` y `executionProbe.header`. No existe
+un `sourcePath` adicional que pueda desviar la comprobación. En un editor
+de archivo único se instrumenta su programa; en CMake se instrumentan
+el archivo de funciones y el comprobador declarado. El programa de
+archivo único y el comprobador CMake contienen exactamente un `main`
+global; el archivo de funciones CMake no contiene `main`. Se rechazan fuentes
+que dependan de marcadores del entorno, terminen anticipadamente el
+proceso o intenten usar los nombres y testigos privados de esta prueba.
+Los límites léxicos de la instrumentación no equivalen a una barrera
+de seguridad frente a código nativo deliberadamente hostil.
+
+La especificación y las ejecuciones pertenecen al intento concreto y a
+la revisión exacta de sus fuentes. El requisito forma parte de la huella
+del objetivo: un recibo obtenido sólo con la sonda de funciones no
+acredita posteriormente una batería. Cuando `batteryCheck` falta, se
+conservan los criterios y la huella anteriores, sin añadir fases ni
+tokens de ausencia. Los IDs, `stateLayout` y las direcciones de los
+borradores no cambian. Una declaración publicada conserva la misma
+regla de inmutabilidad: no puede retirarse o relajarse silenciosamente.
+
+Estas ejecuciones automáticas forman parte del criterio del primer caso
+del editor. Los demás casos de `outputCheck` siguen siendo ensayos
+optativos; no se convierten en pasos obligatorios de navegación.
+
 ### Cabeceras de edición limitada a comentarios
 
 Las actividades que piden corregir una descripción, sin alterar firmas ni
@@ -1572,8 +1850,12 @@ artefacto real. `minimumCmakeVersion` es una propiedad opcional del
 propietario, por ejemplo `"minimumCmakeVersion": "3.20"`. Comprueba la versión
 mínima declarada por `cmake_minimum_required(VERSION)` en el directorio raíz,
 según el dato `minimumCMakeVersion.string` de **CMake File API codemodel v2**.
-Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
-`3.19` y `3.21` no. No se deduce esta versión de la instalación de CMake,
+Por defecto se comparan componentes numéricos exactos: `3.20` y `3.20.0`
+son equivalentes, pero `3.19` y `3.21` no. La propiedad opcional
+`"minimumCmakeVersionAtLeast": true`, que requiere `minimumCmakeVersion`,
+acepta una versión mínima declarada igual o posterior: con `3.20`, admite
+`3.21` y rechaza `3.19`. Omitirla o declararla `false` conserva la comparación
+y los recibos históricos. No se deduce esta versión de la instalación de CMake,
 ni se sustituye por una búsqueda textual del código fuente. Para exigir los requisitos explícitos de los objetivos, un elemento de
 `targets` puede declarar `"explicitCxx20": true` y
 `"explicitCxxExtensionsOff": true`. Estas propiedades optativas obligan a
@@ -1581,6 +1863,13 @@ comprobar que **CMake ejecutó** una declaración de C++20 o posterior y una des
 de extensiones sobre el objetivo, además de construirlo y ejecutar su primer
 caso correctamente. El perfil Windows puede aportar C++23 y extensiones
 desactivadas, pero eso **no** satisface las propiedades del alumno.
+
+Cada objetivo admite también `"requireExplicitMsvcWarnings": true`. Exige una
+opción de avisos MSVC declarada por ese objetivo y un nivel no nulo efectivo
+en su construcción. Acepta `/W1` a `/W4` o `/Wall`; una opción posterior `/W0`
+o `/w` no puede anularlos. Omitir la propiedad o declararla `false` conserva
+los contratos y recibos anteriores. `authoredCompileOptions` mantiene su
+comprobación literal independiente para las rúbricas que la soliciten.
 
 En la configuración autenticada, el motor guarda una traza JSON privada de
 CMake limitada a los archivos CMake originales del proyecto. Sólo acepta

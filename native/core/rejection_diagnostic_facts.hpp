@@ -111,7 +111,7 @@ inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::s
     }
     return found;
 }
-inline bool range(std::string_view original,const std::vector<Word>& words,int upper) {
+inline bool range(std::string_view original,const std::vector<Word>& words,int upper,int lower_bound=0) {
     // The interval is a relationship, not two unrelated numeric fields.
     // In particular, "cobros=10 devoluciones=0 9" is NOT a statement
     // that the valid domain is 0..9. Require interval language and syntax.
@@ -171,7 +171,7 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                     if(one_of(words[j].text,{"enteros","valores"})&&
                             j+4<words.size()&&
                             one_of(words[j+1].text,{"entre","de","del"})&&
-                            words[j+2].number==0&&
+                            words[j+2].number==lower_bound&&
                             one_of(words[j+3].text,{"a","al","y","hasta"})&&
                             words[j+4].number==upper)
                         return true;
@@ -235,7 +235,7 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
             ++j;
         if(j>=words.size()||j>i+3||!words[j].number)return false;
         if(lower) {
-            if(*words[j].number!=0)return false;
+            if(*words[j].number!=lower_bound)return false;
             lower_found=true;
         }else{
             if(*words[j].number!=upper)return false;
@@ -297,7 +297,7 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
             if(interval)end=i+1;
         }
         if(interval&&describes_range(i,end)) {
-            if(*words[i].number!=0||stated_upper!=upper)
+            if(*words[i].number!=lower_bound||stated_upper!=upper)
                 return false;
             // The qualifier can follow the written bounds:
             // "rango 0..9 no válido" contradicts "permitido 0..9".
@@ -736,3 +736,4 @@ inline bool rejection_function_only_edit(std::string_view original,
 }
 
 } // namespace lgaed::curriculum
+

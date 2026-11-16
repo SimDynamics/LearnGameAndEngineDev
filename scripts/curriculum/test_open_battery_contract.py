@@ -302,6 +302,281 @@ class BooleanBatteryRootContractTest(unittest.TestCase):
                 state._boolean_battery_definition(source, "distinct")
 
 
+ADJUSTMENT_OWNER = "block_0002_0003"
+
+
+def adjustment_authorized(before: dict) -> dict:
+    """Add a construction objective; no published block or map is rewritten."""
+    result = deepcopy(before)
+    result.setdefault("compilerOpenBatteryChecks", []).append({
+        "activity": ADJUSTMENT_OWNER, "kind": "cmake-adjustment-project-v1",
+        "libraryPath": "src/ajuste.cpp", "headerPath": "publico/control/ajuste.h",
+        "header": "control/ajuste.h", "function": "intentar_ajuste",
+        "libraryTarget": "ajustes", "clientPath": "app/consulta.cpp",
+        "clientTarget": "consultar_ajustes", "testPath": "pruebas/casos.cpp",
+        "target": "comprobar_ajustes",
+    })
+    targets = []
+    for name, source, kind in (
+            ("ajustes", "src/ajuste.cpp", "STATIC_LIBRARY"),
+            ("consultar_ajustes", "app/consulta.cpp", "EXECUTABLE"),
+            ("comprobar_ajustes", "pruebas/casos.cpp", "EXECUTABLE")):
+        target = dict(name=name, type=kind, sources=[source], exactSources=True,
+                      explicitCxx20=True, explicitCxxExtensionsOff=True,
+                      requireExplicitMsvcWarnings=True)
+        if kind == "STATIC_LIBRARY":
+            target["publicIncludeRoots"] = ["publico"]
+        else:
+            target["linksTo"] = ["ajustes"]
+        targets.append(target)
+    result.setdefault("compilerCmakeGraphChecks", []).append({
+        "activity": ADJUSTMENT_OWNER, "minimumCmakeVersion": "3.20",
+        "minimumCmakeVersionAtLeast": True, "targets": targets,
+    })
+    return result
+
+
+class AdjustmentProjectRootContractTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.original_bytes = PATH.read_bytes()
+        cls.original = json.loads(cls.original_bytes)
+
+    def declared(self):
+        return adjustment_authorized(self.original)
+
+    def test_constructor_addition_preserves_sources_maps_input_and_relationships(self):
+        after = self.declared()
+        self.assertEqual(state.validate(self.original), state.validate(after))
+        state.validate_transition(self.original, after)
+        self.assertEqual(self.original,
+                         {key: value for key, value in after.items()
+                          if key not in ("compilerOpenBatteryChecks", "compilerCmakeGraphChecks")})
+        owner = state._blocks(after)[ADJUSTMENT_OWNER]
+        self.assertEqual(owner, state._blocks(self.original)[ADJUSTMENT_OWNER])
+        self.assertEqual(owner["cmake"]["target"], "consultar_ajustes")
+        self.assertEqual(owner["initialStandardInput"],
+                         "2 3 7\n5 3 7\n9 3 7\n0 7 3\n4 4 4\n21 3 7\n")
+        self.assertEqual(next(file["initialCode"] for file in owner["projectFiles"]
+                              if file["path"] == "CMakeLists.txt"), "")
+        self.assertNotIn("outputCheck", owner)
+        self.assertEqual(self.original_bytes, PATH.read_bytes())
+
+    def test_construction_appends_without_weakening_the_existing_extension(self):
+        before = authorized(self.original)
+        after = adjustment_authorized(before)
+        state.validate_transition(before, after)
+        self.assertEqual(before["compilerOpenBatteryChecks"], after["compilerOpenBatteryChecks"][:1])
+        self.assertEqual(state._blocks(before)[OWNER], state._blocks(after)[OWNER])
+        altered = deepcopy(after)
+        altered["compilerOpenBatteryChecks"][0]["originalCases"].clear()
+        with self.assertRaises(state.LayoutError):
+            state.validate(altered)
+        duplicate = deepcopy(after)
+        duplicate["compilerOpenBatteryChecks"].append(
+            deepcopy(duplicate["compilerOpenBatteryChecks"][-1]))
+        with self.assertRaisesRegex(state.LayoutError, "Duplicate"):
+            state.validate(duplicate)
+
+    def test_constructor_and_graph_declarations_remain_append_only(self):
+        before = self.declared()
+        for label, change in (
+            ("remove_goal", lambda d: d.pop("compilerOpenBatteryChecks")),
+            ("remove_graph", lambda d: d.pop("compilerCmakeGraphChecks")),
+            ("rewrite_minimum", lambda d: d["compilerCmakeGraphChecks"][0].update(minimumCmakeVersion="3.25")),
+            ("rewrite_warning", lambda d: d["compilerCmakeGraphChecks"][0]["targets"][0].update(
+                authoredCompileOptions=["/Wall"])),
+        ):
+            after = deepcopy(before)
+            change(after)
+            with self.subTest(change=label), self.assertRaises(state.LayoutError):
+                state.validate_transition(before, after)
+
+    def test_constructor_fields_and_owners_are_closed(self):
+        for field in tuple(self.declared()["compilerOpenBatteryChecks"][0]):
+            after = self.declared()
+            after["compilerOpenBatteryChecks"][0].pop(field)
+            with self.subTest(missing=field), self.assertRaises(state.LayoutError):
+                state.validate(after)
+        for label, change in (
+            ("unsupported_kind", lambda r: r.update(kind="cmake-adjustment-project-v2")),
+            ("missing_owner", lambda r: r.update(activity="missing_owner")),
+            ("not_editor", lambda r: r.update(activity="block_0000_0000")),
+            ("extension_owner", lambda r: r.update(activity=OWNER)),
+            ("old_cases", lambda r: r.update(originalCases=[])),
+            ("comparison_helper", lambda r: r.update(comparison="comprobar")),
+            ("new_input", lambda r: r.update(clientInput="1 2 3")),
+            ("optional", lambda r: r.update(required=False)),
+        ):
+            after = self.declared()
+            change(after["compilerOpenBatteryChecks"][0])
+            with self.subTest(bad=label), self.assertRaises(state.LayoutError):
+                state.validate(after)
+
+    def test_constructor_paths_names_and_original_files_are_authenticated(self):
+        for label, change in (
+            ("escape", lambda r: r.update(libraryPath="../src/ajuste.cpp")),
+            ("empty_component", lambda r: r.update(libraryPath="src//ajuste.cpp")),
+            ("backslash", lambda r: r.update(testPath="pruebas\\casos.cpp")),
+            ("absolute", lambda r: r.update(clientPath="/app/consulta.cpp")),
+            ("wrong_extension", lambda r: r.update(testPath="pruebas/casos.txt")),
+            ("duplicate_path", lambda r: r.update(testPath=r["clientPath"])),
+            ("foreign_header", lambda r: r.update(header="other/ajuste.h")),
+            ("no_public_root", lambda r: r.update(header=r["headerPath"])),
+            ("missing_file", lambda r: r.update(clientPath="app/another.cpp")),
+            ("unknown_function", lambda r: r.update(function="another_function")),
+            ("unsafe_function", lambda r: r.update(function="intentar_ajuste;exit")),
+            ("private_function", lambda r: r.update(function="lgaed_adjustment_hint")),
+            ("main_function", lambda r: r.update(function="main")),
+            ("same_targets", lambda r: r.update(target=r["clientTarget"])),
+            ("wrong_initial_target", lambda r: r.update(clientTarget="another_client")),
+            ("wrong_type", lambda r: r.update(header=False)),
+        ):
+            after = self.declared()
+            change(after["compilerOpenBatteryChecks"][0])
+            with self.subTest(bad=label), self.assertRaises(state.LayoutError):
+                state.validate(after)
+
+    def test_shared_graph_is_required_and_cannot_omit_a_construction_obligation(self):
+        for label, change in (
+            ("minimum_exact", lambda g: g.pop("minimumCmakeVersionAtLeast")),
+            ("minimum_false", lambda g: g.update(minimumCmakeVersionAtLeast=False)),
+            ("minimum_number", lambda g: g.update(minimumCmakeVersionAtLeast=1)),
+            ("minimum_missing", lambda g: g.pop("minimumCmakeVersion")),
+            ("minimum_old", lambda g: g.update(minimumCmakeVersion="3.19")),
+            ("minimum_range", lambda g: g.update(minimumCmakeVersion="3.20...4.0")),
+            ("missing_consumer", lambda g: g["targets"].pop()),
+            ("direct_source", lambda g: g["targets"][1]["sources"].append("src/ajuste.cpp")),
+            ("inexact_source", lambda g: g["targets"][1].update(exactSources=False)),
+            ("no_link", lambda g: g["targets"][2].update(linksTo=[])),
+            ("private_header", lambda g: g["targets"][0].pop("publicIncludeRoots")),
+            ("extensions", lambda g: g["targets"][2].update(explicitCxxExtensionsOff=False)),
+            ("old_cpp", lambda g: g["targets"][0].update(explicitCxx20=False)),
+            ("no_warning", lambda g: g["targets"][0].pop("requireExplicitMsvcWarnings")),
+            ("numeric_warning", lambda g: g["targets"][1].update(requireExplicitMsvcWarnings=1)),
+            ("disabled_warning", lambda g: g["targets"][2].update(requireExplicitMsvcWarnings=False)),
+            ("string_warning", lambda g: g["targets"][1].update(requireExplicitMsvcWarnings="/W4")),
+        ):
+            after = self.declared()
+            change(after["compilerCmakeGraphChecks"][0])
+            with self.subTest(bad=label), self.assertRaises(state.LayoutError):
+                state.validate(after)
+        for label, change in (
+            ("missing_graph", lambda d: d.pop("compilerCmakeGraphChecks")),
+            ("wrong_owner", lambda d: d["compilerCmakeGraphChecks"][0].update(activity=OWNER)),
+            ("duplicate_graph", lambda d: d["compilerCmakeGraphChecks"].append(
+                deepcopy(d["compilerCmakeGraphChecks"][0]))),
+        ):
+            after = self.declared()
+            change(after)
+            with self.subTest(bad=label), self.assertRaises(state.LayoutError):
+                state.validate(after)
+
+    def test_minimum_and_warning_levels_accept_equivalent_stronger_requirements(self):
+        for minimum in ("3.20", "3.20.0", "3.25", "4.0"):
+            for warning in ("/W1", "/W2", "/W3", "/W4", "/Wall"):
+                after = self.declared()
+                graph = after["compilerCmakeGraphChecks"][0]
+                graph["minimumCmakeVersion"] = minimum
+                for target in graph["targets"]:
+                    target["authoredCompileOptions"] = [warning]
+                with self.subTest(minimum=minimum, warning=warning):
+                    state.validate(after)
+
+    def test_graph_comparison_and_warning_flags_are_opt_in_and_immutable(self):
+        candidate = self.declared()
+        candidate.pop("compilerOpenBatteryChecks")
+        graph = candidate["compilerCmakeGraphChecks"][0]
+        graph["activity"] = "block_0006_0008"
+        for value in (False, True):
+            graph["minimumCmakeVersionAtLeast"] = value
+            for target in graph["targets"]:
+                target["requireExplicitMsvcWarnings"] = value
+            state.validate(candidate)
+            state.validate_transition(self.original, candidate)
+        published = deepcopy(candidate)
+        graph["minimumCmakeVersionAtLeast"] = False
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(published, candidate)
+        graph.pop("minimumCmakeVersionAtLeast")
+        for target in graph["targets"]:
+            target.pop("requireExplicitMsvcWarnings")
+        state.validate(candidate)
+        for field in ("minimumCmakeVersionAtLeast", "requireExplicitMsvcWarnings"):
+            for value in (1, "true", None):
+                changed = deepcopy(candidate)
+                destination = (changed["compilerCmakeGraphChecks"][0] if field == "minimumCmakeVersionAtLeast"
+                               else changed["compilerCmakeGraphChecks"][0]["targets"][0])
+                destination[field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(state.LayoutError):
+                    state.validate(changed)
+        missing_minimum = deepcopy(candidate)
+        graph = missing_minimum["compilerCmakeGraphChecks"][0]
+        graph.pop("minimumCmakeVersion")
+        graph["minimumCmakeVersionAtLeast"] = True
+        with self.assertRaises(state.LayoutError):
+            state.validate(missing_minimum)
+
+    def test_constructor_cannot_replace_other_objectives(self):
+        for field, value in (("outputCheck", {}), ("compileCheck", {}),
+                             ("sourceFiles", []), ("language", "python")):
+            after = self.declared()
+            owner = state._blocks(after)[ADJUSTMENT_OWNER]
+            owner[field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(state.LayoutError, "unevaluated"):
+                state._validate_compiler_open_battery_checks(after)
+        for field in ("compilerWorkflowChecks", "compilerRuntimeChecks",
+                      "compilerNamedRuleChecks", "compilerReductionChecks"):
+            after = self.declared()
+            after[field] = [{"activity": ADJUSTMENT_OWNER}]
+            with self.subTest(field=field), self.assertRaisesRegex(state.LayoutError, "conflicts"):
+                state._validate_compiler_open_battery_checks(after)
+        legacy = authorized(self.original)
+        legacy["compilerCmakeGraphChecks"] = self.declared()["compilerCmakeGraphChecks"]
+        legacy["compilerCmakeGraphChecks"][0]["activity"] = OWNER
+        with self.assertRaisesRegex(state.LayoutError, "output-check"):
+            state._validate_compiler_cmake_graph_checks(legacy)
+
+    def test_header_accepts_formatting_but_never_an_inline_implementation(self):
+        valid = (
+            "bool intentar_ajuste(int, int, int, int&);",
+            "#pragma once\nbool intentar_ajuste ( int value, int low, int high, int & destination );\n",
+            "// supplied interface\nbool /* result */ intentar_ajuste(\n"
+            "int valor, int inferior, int superior, int& ajuste);\n",
+        )
+        for source in valid:
+            with self.subTest(source=source):
+                self.assertTrue(state._adjustment_project_header_valid(source, "intentar_ajuste"))
+        for source in (
+            "bool intentar_ajuste(int, int, int, int&) { return false; }",
+            "inline bool intentar_ajuste(int, int, int, int&);",
+            "bool intentar_ajuste(int, int, int, int);",
+            "bool intentar_ajuste(int&, int, int, int&);",
+            "int intentar_ajuste(int, int, int, int&);",
+            "namespace nested { bool intentar_ajuste(int, int, int, int&); }",
+            "bool intentar_ajuste(int, int, int, int&);\nint auxiliary;",
+            "bool intentar_ajuste(int, int, int, int&);\n"
+            "bool intentar_ajuste(int, int, int, int&);",
+        ):
+            with self.subTest(source=source):
+                self.assertFalse(state._adjustment_project_header_valid(source, "intentar_ajuste"))
+
+    def test_client_batch_is_derived_from_the_original_bounded_input(self):
+        after = self.declared()
+        owner = state._blocks(after)[ADJUSTMENT_OWNER]
+        for batch in ("", " \t\r\n", "+2 3 7\n", "1+2-3", "-2147483648 2147483647 0\n",
+                      "2 3 7\n" * 8):
+            owner["initialStandardInput"] = batch
+            with self.subTest(batch=batch):
+                state._validate_compiler_open_battery_checks(after)
+        for batch in ("1 2", "1 2 3 4", "2 3 7\n" * 9, "2147483648 0 0",
+                      "-2147483649 0 0", "1.0 2 3", "x 2 3", "1\u00a02 3",
+                      "1\x002 3", "--1 2 3", True):
+            owner["initialStandardInput"] = batch
+            with self.subTest(batch=batch), self.assertRaises(state.LayoutError):
+                state._validate_compiler_open_battery_checks(after)
+
+
 if __name__ == "__main__":
     unittest.main()
 

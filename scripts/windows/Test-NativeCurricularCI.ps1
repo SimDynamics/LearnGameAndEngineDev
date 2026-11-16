@@ -72,6 +72,7 @@ $qaSuiteConfig = switch ($Suite) {
             CMakeOption = 'LGAED_READER_BUILD_QA_ONLY'
             Targets = @(
                 'lgaed_lesson_reader_tests',
+                'lgaed_lesson_view_tests',
                 'lgaed_u11_declarations_reader_tests',
                 'lgaed_u6_diagnostic_flow_tests',
                 'lgaed_cpp_project_view_tests',
@@ -393,14 +394,14 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the focused reader and catalog test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_editor', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime', 'native.reduction', 'native.reduction_runtime', 'native.integer_battery', 'native.integer_battery_runtime', 'native.open_battery_runtime')
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_editor_viewport', 'native.code_editor', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.cpp_cmake_graph', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles', 'native.semantic_retirement_view', 'native.compiler_case_order_view', 'native.compiler_case_revision_view', 'native.catalog', 'native.general_choice_editorial_authoring', 'native.general_choice_editorial', 'native.general_choice_editorial_reader', 'native.boolean_battery', 'native.boolean_battery_runtime', 'native.reduction', 'native.reduction_runtime', 'native.integer_battery', 'native.integer_battery_runtime', 'native.open_battery_runtime', 'native.lesson_menu', 'native.lesson_scroll_render')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
-        throw 'ReaderBuild must register Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
+        throw 'ReaderBuild must register console fullscreen/zoom, menu/scroll, Win32 History, spacing, fullscreen editor viewport, U3 semantic, code-format, Premium, first-case compiler, case-order/revision history, semantic retirement, catalog, general-choice editorial, boolean battery, stateful reduction, integer CMake battery and original open-battery execution regressions.'
     }
-    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
+    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300 --stop-on-failure
     if ($LASTEXITCODE -ne 0) { throw 'A focused native reader, catalog, compiler or Win32 regression failed.' }
-    Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
+    Write-Host 'PASS original reader/U6 executables compiled and linked; catalog, general-choice reading preservation, boolean battery execution/provenance, console fullscreen/zoom and Escape, actual Win32 History dialogs and focused published lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return
 }
 

@@ -384,6 +384,50 @@ std::string fingerprint(const CppRunRequest& request,bool configuration=false){r
     +"/windows-cpp-profile-v1/"+std::to_string(build::cpp_standard)+'/'+utf8(build::cpp_standard_option)+"/Zc:__cplusplus/cmake-rules-v1");}
 // A separate domain preserves every existing CMake fingerprint. Source and
 // prepared input must participate when no projectFiles exist.
+bool named_rule_battery_requested(const CppRunRequest& request) {
+    return request.named_rule_probe&&request.named_rule_probe->battery_check.has_value();
+}
+std::string named_rule_battery_fingerprint(const CppRunRequest& request) {
+    if(!named_rule_battery_requested(request)||
+       !curriculum::named_rule_battery_spec_valid(*request.named_rule_probe->battery_check))
+        return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    const auto& probe=*request.named_rule_probe;
+    auto frame=std::string("windows-named-rule-battery-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(probe.harness_path)+field(probe.header)+
+        field(std::to_string(probe.cases.size()));
+    for(const auto& item:probe.cases)
+        frame+=field(item.function)+field(std::to_string(item.input))+
+            field(std::to_string(item.expected));
+    frame+=field(curriculum::named_rule_battery_spec_frame(*probe.battery_check));
+    return state::sha256(frame);
+}
+bool named_rule_battery_context(const CppRunRequest& request) {
+    if(!named_rule_battery_requested(request)||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||!request.stdin_utf8.empty()||
+       request.diagnostic||request.open_battery_probe||request.boolean_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||request.adjustment_project_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||!request.source_files.empty())return false;
+    const auto& spec=*request.named_rule_probe->battery_check;
+    if(!curriculum::named_rule_battery_spec_valid(spec))return false;
+    if(request.cmake)return !request.project_files.empty()&&!spec.source_path.empty()&&
+        !request.named_rule_probe->harness_path.empty()&&
+        spec.source_path!=request.named_rule_probe->harness_path;
+    return request.project_files.empty()&&spec.source_path.empty()&&
+        request.named_rule_probe->harness_path.empty()&&request.named_rule_probe->header.empty();
+}
 std::string boolean_battery_fingerprint(const CppRunRequest& request) {
     if(!request.boolean_battery_probe)return {};
     const auto field=[](std::string_view value) {
@@ -448,8 +492,94 @@ bool integer_battery_context(const CppRunRequest& request) {
         !request.diagnostic&&!request.boolean_battery_probe&&!request.reduction_probe&&
         !request.open_battery_probe&&!request.named_rule_probe&&!request.rejection_probe&&
         !request.observation_probe&&!request.assertion_mode&&!request.cmake_graph_check&&
+        !request.adjustment_project_probe&&
         !request.capture_cmake_graph&&
         curriculum::integer_battery_spec_valid(*request.integer_battery_probe);
+}
+// New capture domain only: existing project, objective and receipt frames are
+// deliberately unchanged. Every authored graph field participates so a weaker
+// graph cannot borrow a proof captured for a different construction contract.
+std::string adjustment_graph_frame(const curriculum::CmakeGraphRequirement& graph) {
+    std::string result;
+    const auto field=[&](std::string_view value) {
+        result+=std::to_string(value.size())+":"+std::string(value);
+    };
+    const auto strings=[&](const std::vector<std::string>& values) {
+        field(std::to_string(values.size()));for(const auto& value:values)field(value);
+    };
+    const auto pairs=[&](const std::vector<std::pair<std::string,std::string>>& values) {
+        field(std::to_string(values.size()));
+        for(const auto& [name,value]:values){field(name);field(value);}
+    };
+    field("adjustment-cmake-graph-v1");field(graph.project_name);
+    field(graph.minimum_cmake_version);
+    field(graph.minimum_cmake_version_at_least?"floor":"exact");
+    field(std::to_string(graph.targets.size()));
+    for(const auto& target:graph.targets) {
+        field(target.name);field(target.type);strings(target.sources);strings(target.links_to);
+        field(target.exact_sources?"exact":"subset");
+        field(target.require_explicit_cxx20?"cxx20":"inherited-cxx");
+        field(target.require_explicit_extensions_off?"extensions-off":"inherited-extensions");
+        strings(target.public_include_roots);strings(target.private_include_roots);
+        field(target.source_directory);strings(target.authored_compile_options);
+        field(target.require_explicit_msvc_warnings?"msvc-warnings":"no-warning-requirement");
+    }
+    field(graph.option_selection?"option":"no-option");
+    if(graph.option_selection) {
+        const auto& option=*graph.option_selection;
+        field(option.name);field(option.library_target);
+        field(option.disabled_source);field(option.disabled_stdout);
+    }
+    pairs(graph.source_integrity);pairs(graph.configure_message_order);
+    field(graph.target_list?"list":"no-list");
+    if(graph.target_list) {
+        strings(graph.target_list->targets);
+        field(graph.target_list->require_append?"append":"no-append");
+    }
+    return result;
+}
+std::string adjustment_project_fingerprint(const CppRunRequest& request) {
+    if(!request.adjustment_project_probe||!request.cmake_graph_check||
+       !curriculum::adjustment_project_spec_valid(*request.adjustment_project_probe))return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    return state::sha256(std::string("windows-adjustment-project-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(curriculum::adjustment_project_spec_frame(*request.adjustment_project_probe))+
+        field(adjustment_graph_frame(*request.cmake_graph_check))+
+        field(request.capture_cmake_graph?"capture-graph":"no-graph"));
+}
+bool adjustment_project_sources_use_interface(const CppRunRequest& request) {
+    if(!request.adjustment_project_probe)return false;
+    const auto& spec=*request.adjustment_project_probe;
+    for(const auto* path:{&spec.library_path,&spec.client_path,&spec.test_path}) {
+        const auto found=std::ranges::find_if(request.project_files,
+            [&](const auto& file){return file.first==*path;});
+        if(found==request.project_files.end()||
+           !curriculum::adjustment_project_source_includes_header(found->second,spec))return false;
+    }
+    return true;
+}
+bool adjustment_project_context(const CppRunRequest& request) {
+    return request.adjustment_project_probe&&request.cmake&&request.cmake_graph_check&&
+        request.capture_cmake_graph&&!request.project_files.empty()&&request.source_files.empty()&&
+        request.backend==CppRunRequest::Backend::native_msvc&&request.stdin_utf8.empty()&&
+        !request.diagnostic&&!request.boolean_battery_probe&&!request.reduction_probe&&
+        !request.open_battery_probe&&!request.integer_battery_probe&&!request.named_rule_probe&&
+        !request.rejection_probe&&!request.observation_probe&&!request.assertion_mode&&
+        curriculum::adjustment_project_spec_valid(*request.adjustment_project_probe)&&
+        curriculum::adjustment_project_graph_valid(*request.adjustment_project_probe,
+            *request.cmake_graph_check)&&
+        adjustment_project_sources_use_interface(request)&&
+        request.cmake->target==request.adjustment_project_probe->test_target;
 }
 void validate_request_project(const CppRunRequest& request){
     if(!request.projects_directory.is_absolute())throw std::invalid_argument("Student projects directory must be absolute");
@@ -521,6 +651,15 @@ Target cmake_target(const std::filesystem::path& workspace,const curriculum::Cma
 }
 // Read the complete generated target graph, never a student's stdout or
 // a regular-expression guess about the CMakeLists.txt source.
+std::optional<int> msvc_warning_level(std::string_view option) {
+    if(option.size()<2||(option.front()!='/'&&option.front()!='-'))return {};
+    option.remove_prefix(1);
+    if(option=="w"||option=="W0")return 0;
+    if(option=="Wall")return 5;
+    if(option.size()==2&&option.front()=='W'&&option[1]>='1'&&option[1]<='4')
+        return option[1]-'0';
+    return {};
+}
 CppCmakeGraphEvidence snapshot_cmake_graph(
         const std::filesystem::path& workspace,
         const CppRunRequest& request,
@@ -601,10 +740,13 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
                     if(source.HasKey(L"compileGroupIndex"))
                         fact.compiled_sources.push_back(json_text(source,L"path"));
                 }
+            bool cxx_group_seen=false,all_warning_groups=true;
             if(target.HasKey(L"compileGroups"))
                 for(const auto& group_value:target.GetNamedArray(L"compileGroups")) {
                     const auto group=group_value.GetObject();
                     if(json_text(group,L"language")!="CXX")continue;
+                    cxx_group_seen=true;
+                    std::optional<int> last_warning_level;
                     if(group.HasKey(L"includes"))
                         for(const auto& item_include:group.GetNamedArray(L"includes")) {
                             const auto path=json_text(item_include.GetObject(),L"path");
@@ -625,6 +767,8 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
                                 remaining.remove_prefix(begin);
                                 const auto end=remaining.find_first_of(" \t\r\n");
                                 const std::string option(remaining.substr(0,end));
+                                if(const auto level=msvc_warning_level(option))
+                                    last_warning_level=level;
                                 if(std::ranges::find(fact.effective_compile_options,option)==
                                         fact.effective_compile_options.end())
                                     fact.effective_compile_options.push_back(option);
@@ -632,7 +776,10 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
                                 remaining.remove_prefix(end);
                             }
                         }
+                    all_warning_groups=all_warning_groups&&last_warning_level&&
+                        *last_warning_level>0;
                 }
+            fact.msvc_warnings_effective=cxx_group_seen&&all_warning_groups;
             if(target.HasKey(L"artifacts"))
                 for(const auto& artifact:target.GetNamedArray(L"artifacts"))
                     fact.artifacts.push_back(json_text(artifact.GetObject(),L"path"));
@@ -671,6 +818,7 @@ bool requires_authored_cmake_trace(const CppRunRequest& request) {
             [](const auto& target) {
                 return target.require_explicit_cxx20||
                     target.require_explicit_extensions_off||
+                    target.require_explicit_msvc_warnings||
                     !target.authored_compile_options.empty()||
                     !target.public_include_roots.empty()||
                     !target.private_include_roots.empty();
@@ -1457,8 +1605,11 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
             required.minimum_cmake_version);
         const auto actual=curriculum::cmake_numeric_version(
             graph.minimum_cmake_version);
-        if(!expected||!actual||*expected!=*actual)
-            return fail("La versión mínima de CMake declarada en el proyecto no coincide.");
+        if(!expected||!actual||
+           (required.minimum_cmake_version_at_least?*actual<*expected:*actual!=*expected))
+            return fail(required.minimum_cmake_version_at_least?
+                "La versión mínima de CMake declarada es inferior a la requerida.":
+                "La versión mínima de CMake declarada en el proyecto no coincide.");
     }
     if(required.option_selection) {
         const auto& opt=*required.option_selection;
@@ -1535,6 +1686,15 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
         if(item.require_explicit_extensions_off&&
            !found->explicit_extensions_off)
             return fail("Falta desactivar las extensiones explícitamente en: "+item.name);
+        if(item.require_explicit_msvc_warnings) {
+            const bool authored=std::ranges::any_of(found->authored_compile_options,
+                [](const auto& option) {
+                    const auto level=msvc_warning_level(option);
+                    return level&&*level>0;
+                });
+            if(!authored||!found->msvc_warnings_effective)
+                return fail("Declara y conserva un nivel de avisos MSVC activo en: "+item.name);
+        }
         for(const auto& option:item.authored_compile_options) {
             if(std::ranges::find(found->authored_compile_options,option)==
                     found->authored_compile_options.end())
@@ -1760,11 +1920,17 @@ bool verified_default_option_probe(const CppRunRequest& request,
 std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest& request) {
     return boolean_battery_fingerprint(request);
 }
+std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest& request) {
+    return named_rule_battery_fingerprint(request);
+}
 std::string cpp_reduction_request_fingerprint(const CppRunRequest& request) {
     return reduction_fingerprint(request);
 }
 std::string cpp_integer_battery_request_fingerprint(const CppRunRequest& request) {
     return integer_battery_fingerprint(request);
+}
+std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest& request) {
+    return adjustment_project_fingerprint(request);
 }
 std::string cpp_integer_battery_component_fingerprint(const CppRunRequest& request) {
     if(!integer_battery_context(request)||!request.integer_battery_probe->prerequisite)
@@ -1790,6 +1956,12 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
         ||(request.action!=CppRunRequest::Action::compile_run&&request.action!=CppRunRequest::Action::execute)
         ||!result.error_utf8.empty()
         ||(request.cmake&&result.executable!=std::optional<std::string>{request.cmake->target}))return fresh;
+    if(named_rule_battery_requested(request)) {
+        const auto binding=named_rule_battery_fingerprint(request);
+        if(binding.empty()||result.named_rule_battery_request_fingerprint!=binding||
+           (request.cmake&&(result.project_fingerprint!=fingerprint(request)||
+            result.configuration_fingerprint!=fingerprint(request,true))))return fresh;
+    }
     if(request.boolean_battery_probe&&
        result.boolean_battery_request_fingerprint!=boolean_battery_fingerprint(request))return fresh;
     if(request.reduction_probe) {
@@ -1799,6 +1971,12 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(request.integer_battery_probe) {
         const auto binding=integer_battery_fingerprint(request);
         if(binding.empty()||result.integer_battery_request_fingerprint!=binding||
+           result.project_fingerprint!=fingerprint(request)||
+           result.configuration_fingerprint!=fingerprint(request,true))return fresh;
+    }
+    if(request.adjustment_project_probe) {
+        const auto binding=adjustment_project_fingerprint(request);
+        if(binding.empty()||result.adjustment_project_request_fingerprint!=binding||
            result.project_fingerprint!=fingerprint(request)||
            result.configuration_fingerprint!=fingerprint(request,true))return fresh;
     }
@@ -1829,7 +2007,7 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
            request.project_files.empty()&&request.source_files.empty()&&
            !request.reduction_probe&&!request.open_battery_probe&&!request.named_rule_probe&&
            !request.rejection_probe&&!request.observation_probe&&!request.assertion_mode&&
-           !request.cmake_graph_check&&!request.capture_cmake_graph&&
+           !request.cmake_graph_check&&!request.capture_cmake_graph&&!request.adjustment_project_probe&&
            curriculum::boolean_battery_preserves_function(request.source_utf8,spec)&&
            result.boolean_battery_evidence) {
             const auto& evidence=*result.boolean_battery_evidence;
@@ -1879,7 +2057,8 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
            request.project_files.empty()&&request.source_files.empty()&&
            !request.boolean_battery_probe&&!request.open_battery_probe&&!request.named_rule_probe&&
            !request.rejection_probe&&!request.observation_probe&&!request.assertion_mode&&
-           !request.cmake_graph_check&&!request.capture_cmake_graph&&result.reduction_evidence) {
+           !request.cmake_graph_check&&!request.capture_cmake_graph&&!request.adjustment_project_probe&&
+           result.reduction_evidence) {
             const auto& evidence=*result.reduction_evidence;
             const auto plan=curriculum::reduction_plan(spec);
             if(evidence.original_program_fingerprint==frame&&plan&&
@@ -1983,6 +2162,40 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             fresh.cmake_graph_correct=verified_default_option_probe(
                 request,result,required);
     }
+    if(request.adjustment_project_probe) {
+        const auto& spec=*request.adjustment_project_probe;
+        const auto frame=adjustment_project_fingerprint(request);
+        fresh.adjustment_project_request_fingerprint=frame;
+        fresh.adjustment_project_probe_feedback=
+            "Falta verificar el componente, el cliente y la batería de esta revisión.";
+        if(!adjustment_project_sources_use_interface(request))
+            fresh.adjustment_project_probe_feedback=
+                "Incluye la cabecera pública en la biblioteca, el cliente y el comprobador.";
+        if(adjustment_project_context(request)&&fresh.compilation_succeeded&&
+           fresh.execution_completed&&fresh.execution_succeeded&&fresh.cmake_graph_correct&&
+           result.target_type=="EXECUTABLE"&&result.adjustment_project_evidence&&
+           result.adjustment_project_evidence->original_program_fingerprint==frame) {
+            const auto& runs=result.adjustment_project_evidence->runs;
+            const auto published=std::ranges::find_if(runs,[](const auto& run) {
+                return run.phase.part==curriculum::AdjustmentProjectPart::battery&&
+                    run.phase.mutation==curriculum::OpenBatteryMutation::baseline&&
+                    !run.phase.assertions_disabled;
+            });
+            const bool same_published=published!=runs.end()&&
+                published->program_frame==frame&&published->compiled&&published->executed&&
+                published->exit_code==fresh.exit_code&&published->standard_input.empty()&&
+                published->stdout_bytes==result.execution.stdout_bytes&&
+                published->stderr_bytes==result.execution.stderr_bytes;
+            if(same_published) {
+                const auto verdict=curriculum::adjustment_project_verify(spec,runs,frame);
+                fresh.adjustment_project_probe_correct=verdict.accepted;
+                fresh.adjustment_project_probe_feedback=verdict.reason;
+            }else{
+                fresh.adjustment_project_probe_feedback=
+                    "La batería capturada no reproduce la salida y terminación del proyecto ejecutado.";
+            }
+        }
+    }
     if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
         result.compilation.succeeded()&&
         result.target_type=="WASI_COMMAND"&&
@@ -2065,6 +2278,29 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 // run. Only the generated main emits this final witness.
                 probe.execution.stderr_bytes==
                     curriculum::named_rule_probe_completion_marker;
+        }
+    }
+    if(named_rule_battery_requested(request)) {
+        const auto frame=named_rule_battery_fingerprint(request);
+        fresh.named_rule_battery_request_fingerprint=frame;
+        fresh.named_rule_battery_feedback=
+            "No se obtuvo una comprobación completa de la batería de esta revisión.";
+        if(named_rule_battery_context(request)&&result.target_type=="EXECUTABLE"&&
+           result.named_rule_battery_evidence&&
+           result.named_rule_battery_evidence->original_program_fingerprint==frame) {
+            const auto& runs=result.named_rule_battery_evidence->runs;
+            if(!runs.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+               runs.front().exit_code==*result.execution.exit_code&&
+               runs.front().stdout_bytes==result.execution.stdout_bytes&&
+               runs.front().stderr_bytes==result.execution.stderr_bytes) {
+                const auto verdict=curriculum::named_rule_battery_verify(
+                    *request.named_rule_probe->battery_check,runs,frame);
+                fresh.named_rule_battery_correct=verdict.accepted;
+                fresh.named_rule_battery_feedback=verdict.reason;
+            }else{
+                fresh.named_rule_battery_feedback=
+                    "La batería observada no reproduce la salida y terminación del programa ejecutado.";
+            }
         }
     }
     if(request.rejection_probe&&result.rejection_probe&&
@@ -2679,6 +2915,145 @@ std::optional<std::string> integer_battery_driver_path(const CppRunRequest& requ
     return driver;
 }
 
+curriculum::NamedRuleBatteryRun named_rule_battery_observation(
+        const curriculum::NamedRuleBatteryPhase& phase,std::string_view frame,
+        const CppPhaseResult& compilation,const CppPhaseResult& execution) {
+    curriculum::NamedRuleBatteryRun run;
+    run.program_frame=frame;
+    run.phase=phase;
+    run.compiled=compilation.succeeded();
+    run.executed=execution.status==CppPhaseStatus::completed&&execution.exit_code.has_value();
+    run.exit_code=execution.exit_code.value_or(0);
+    run.stdout_bytes=execution.stdout_bytes;
+    run.stderr_bytes=execution.stderr_bytes;
+    if(const auto trace=curriculum::named_rule_battery_parse_trace(execution.stderr_bytes)) {
+        run.calls=trace->calls;
+        run.completed_normally=run.executed&&trace->completed_normally;
+        run.stderr_bytes=trace->visible;
+    }
+    return run;
+}
+
+// Preserve and execute the submitted checker. Only the reviewed functions are
+// instrumented, and one declared call receives a changed result per phase.
+// The existing owned-workspace helpers hide the phase sources while running
+// and restore the public build, logs and program-created files afterwards.
+void run_named_rule_battery_cmake(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& input,const std::filesystem::path& compiler_input,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    validate_request_project(request);
+    const auto workspace=cmake_workspace(request);
+    const auto shared_lock=project_mutex(workspace);
+    std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
+    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()) {
+        result.compilation.status=CppPhaseStatus::cancelled;
+        return;
+    }
+    const bool supported=named_rule_battery_context(request);
+    const auto environment=compiler_environment();
+    run_cmake_unlocked(request,result,input,compiler_input,stop,&environment,supported);
+    if(!supported||!result.compilation.succeeded()||result.artifact.empty()||
+       result.target_type!="EXECUTABLE"||stop.stop_requested())return;
+    const auto& probe=*request.named_rule_probe;
+    const auto& spec=*probe.battery_check;
+    const auto library=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==spec.source_path;});
+    const auto driver=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==probe.harness_path;});
+    const auto instrumented_driver=driver!=request.project_files.end()
+        ?curriculum::named_rule_battery_instrument_driver(driver->second,spec)
+        :std::optional<std::string>{};
+    auto build_tree=retain_cmake_probe_tree(workspace);
+    auto run_tree=retain_cmake_probe_tree(result.run_directory);
+    const auto original_build=build_tree;
+    execute_hidden_cmake_phase(request,result,workspace,environment,
+        build_tree,run_tree,true,stop);
+    if(!result.execution.succeeded()||stop.stop_requested()||
+       library==request.project_files.end()||!instrumented_driver)return;
+    const auto plan=curriculum::named_rule_battery_plan(spec);
+    if(!plan)return;
+    CppNamedRuleBatteryEvidence evidence;
+    evidence.original_program_fingerprint=named_rule_battery_fingerprint(request);
+    const auto restore_public=[&] {
+        restore_cmake_probe_tree(workspace,build_tree);
+        restore_cmake_probe_tree(result.run_directory,run_tree);
+    };
+    try {
+        restore_cmake_probe_tree(workspace,original_build);
+        for(const auto& phase:*plan) {
+            if(stop.stop_requested())break;
+            const auto instrumented=curriculum::named_rule_battery_instrument_source(
+                library->second,spec,phase);
+            if(!instrumented)break;
+            auto private_request=request;
+            private_request.named_rule_probe.reset();
+            for(auto& file:private_request.project_files)
+                if(file.first==spec.source_path)file.second=*instrumented;
+                else if(file.first==probe.harness_path)file.second=*instrumented_driver;
+            if(cmake_workspace(private_request)!=workspace)
+                throw std::runtime_error("A named-rule probe changed its CMake workspace identity");
+            clear_cmake_probe_tree(result.run_directory);
+            write_exact(input,request.stdin_utf8);
+            write_exact(compiler_input,"");
+            write_exact(result.run_directory/L"toolchain.txt",initial_toolchain);
+            CppRunResult observed;
+            observed.request_id=request.request_id;
+            observed.revision=request.revision;
+            observed.run_directory=result.run_directory;
+            run_cmake_unlocked(private_request,observed,input,compiler_input,stop,
+                &environment,true);
+            const bool bound=observed.project_fingerprint==fingerprint(private_request)&&
+                observed.configuration_fingerprint==fingerprint(private_request,true)&&
+                observed.artifact==result.artifact&&observed.target_type=="EXECUTABLE";
+            if(bound&&observed.compilation.succeeded()&&!stop.stop_requested()) {
+                auto private_build=retain_cmake_probe_tree(workspace);
+                auto private_run=retain_cmake_probe_tree(result.run_directory);
+                execute_hidden_cmake_phase(private_request,observed,workspace,environment,
+                    private_build,private_run,false,stop);
+            }
+            auto run=named_rule_battery_observation(phase,
+                evidence.original_program_fingerprint,observed.compilation,observed.execution);
+            run.compiled=run.compiled&&bound&&
+                (observed.configuration.status==CppPhaseStatus::not_started||
+                 observed.configuration.succeeded());
+            evidence.runs.push_back(std::move(run));
+            if(!evidence.runs.back().compiled||!evidence.runs.back().executed)break;
+        }
+    }catch(...) {
+        restore_public();
+        throw;
+    }
+    restore_public();
+    result.named_rule_battery_evidence=std::move(evidence);
+}
+
+void complete_named_rule_battery_single(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    if(!named_rule_battery_context(request)||request.cmake||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto& spec=*request.named_rule_probe->battery_check;
+    const auto plan=curriculum::named_rule_battery_plan(spec);
+    if(!plan)return;
+    CppNamedRuleBatteryEvidence evidence;
+    evidence.original_program_fingerprint=named_rule_battery_fingerprint(request);
+    const auto make_source=[&](std::size_t index)->std::optional<std::string> {
+        const auto instrumented=curriculum::named_rule_battery_instrument_source(
+            request.source_utf8,spec,(*plan)[index]);
+        return instrumented?curriculum::named_rule_battery_instrument_driver(*instrumented,spec)
+            :std::optional<std::string>{};
+    };
+    const auto observe=[&](std::size_t index,const CppPhaseResult& compilation,
+                          const CppPhaseResult& execution) {
+        evidence.runs.push_back(named_rule_battery_observation((*plan)[index],
+            evidence.original_program_fingerprint,compilation,execution));
+    };
+    if(execute_private_single_file_phases(request,result,compiler,environment,initial_toolchain,
+            plan->size(),make_source,observe,stop))
+        result.named_rule_battery_evidence=std::move(evidence);
+}
+
 void run_integer_battery_cmake(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& input,const std::filesystem::path& compiler_input,
         std::string_view initial_toolchain,std::stop_token stop) {
@@ -2790,6 +3165,151 @@ void run_integer_battery_cmake(const CppRunRequest& request,CppRunResult& result
     result.integer_battery_evidence=std::move(evidence);
 }
 
+// The whole construction is one captured request. Reuse its CMake configure
+// and rebuild only changed translation units while retaining the public
+// artifact, logs, files and timestamps for restoration before returning.
+void run_adjustment_project_cmake(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& input,const std::filesystem::path& compiler_input,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    validate_request_project(request);
+    const auto workspace=cmake_workspace(request);
+    const auto shared_lock=project_mutex(workspace);
+    std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
+    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()) {
+        auto& phase=request.action==CppRunRequest::Action::execute?result.execution:
+            request.action==CppRunRequest::Action::build?result.compilation:result.configuration;
+        phase.status=CppPhaseStatus::cancelled;
+        return;
+    }
+    const bool execute=adjustment_project_context(request)&&
+        (request.action==CppRunRequest::Action::compile_run||
+         request.action==CppRunRequest::Action::execute);
+    const auto environment=compiler_environment();
+    run_cmake_unlocked(request,result,input,compiler_input,stop,&environment,execute);
+    if(!execute||!result.compilation.succeeded()||result.artifact.empty()||
+       result.target_type!="EXECUTABLE"||stop.stop_requested())return;
+
+    const auto& spec=*request.adjustment_project_probe;
+    const auto source_at=[&](std::string_view path) {
+        return std::ranges::find_if(request.project_files,
+            [&](const auto& file){return file.first==path;});
+    };
+    const auto library=source_at(spec.library_path),header=source_at(spec.header_path);
+    const auto client=source_at(spec.client_path),battery=source_at(spec.test_path);
+    const auto component=curriculum::adjustment_project_component_source(spec);
+    auto build_tree=retain_cmake_probe_tree(workspace);
+    auto run_tree=retain_cmake_probe_tree(result.run_directory);
+    const auto original_build=build_tree;
+    execute_hidden_cmake_phase(request,result,workspace,environment,
+        build_tree,run_tree,true,stop);
+    if(!result.execution.succeeded()||stop.stop_requested()||!component||
+       library==request.project_files.end()||header==request.project_files.end()||
+       client==request.project_files.end()||battery==request.project_files.end()||
+       !curriculum::adjustment_project_header_valid(header->second,spec)||
+       !evaluate_cmake_graph(request,result,*request.cmake_graph_check).correct)return;
+
+    using Part=curriculum::AdjustmentProjectPart;
+    using Mutation=curriculum::OpenBatteryMutation;
+    using Phase=curriculum::AdjustmentProjectPhase;
+    const auto inputs=curriculum::adjustment_project_client_inputs(spec);
+    std::vector<Phase> phases{{Part::component,Mutation::baseline,{},0}};
+    for(std::size_t i=0;i<inputs.size();++i)
+        phases.push_back({Part::client,Mutation::baseline,{},i});
+    phases.push_back({Part::battery,Mutation::baseline,{},0});
+    phases.push_back({Part::battery,Mutation::baseline,{},0,true});
+    const auto prefix_count=phases.size();
+    CppAdjustmentProjectEvidence evidence;
+    evidence.original_program_fingerprint=adjustment_project_fingerprint(request);
+    const auto restore_public=[&] {
+        restore_cmake_probe_tree(workspace,build_tree);
+        restore_cmake_probe_tree(result.run_directory,run_tree);
+    };
+    try {
+        restore_cmake_probe_tree(workspace,original_build);
+        for(std::size_t index=0;index<phases.size();++index) {
+            if(stop.stop_requested())break;
+            // Copy: discovering the battery may replace/extend this vector.
+            const auto phase=phases[index];
+            auto private_request=request;
+            private_request.action=CppRunRequest::Action::compile_run;
+            private_request.adjustment_project_probe.reset();
+            private_request.capture_cmake_graph=false;
+            private_request.cmake_graph_check.reset();
+            private_request.cmake->target=phase.part==Part::client?
+                spec.client_target:spec.test_target;
+            private_request.stdin_utf8=phase.part==Part::client?
+                inputs.at(phase.sample_index):std::string{};
+            const auto instrumented=phase.part==Part::component?
+                std::optional<std::string>{library->second}:
+                curriculum::adjustment_project_instrumented_library(library->second,spec,phase);
+            if(!instrumented)break;
+            for(auto& file:private_request.project_files) {
+                if(file.first==spec.library_path)file.second=*instrumented;
+                else if(file.first==spec.test_path) {
+                    if(phase.part==Part::component)file.second=*component;
+                    else if(phase.assertions_disabled)
+                        file.second="#undef NDEBUG\n#define NDEBUG 1\n"+file.second;
+                }
+            }
+            if(cmake_workspace(private_request)!=workspace)
+                throw std::runtime_error("An adjustment probe changed the CMake workspace identity");
+            clear_cmake_probe_tree(result.run_directory);
+            write_exact(input,private_request.stdin_utf8);
+            write_exact(compiler_input,"");
+            write_exact(result.run_directory/L"toolchain.txt",initial_toolchain);
+            CppRunResult observed;
+            observed.request_id=request.request_id;
+            observed.revision=request.revision;
+            observed.run_directory=result.run_directory;
+            run_cmake_unlocked(private_request,observed,input,compiler_input,stop,
+                &environment,true);
+            const bool bound=observed.project_fingerprint==fingerprint(private_request)&&
+                observed.configuration_fingerprint==fingerprint(private_request,true)&&
+                observed.executable==private_request.cmake->target&&
+                observed.target_type=="EXECUTABLE"&&!observed.artifact.empty();
+            if(bound&&observed.compilation.succeeded()&&!stop.stop_requested()) {
+                auto private_build=retain_cmake_probe_tree(workspace);
+                auto private_run=retain_cmake_probe_tree(result.run_directory);
+                execute_hidden_cmake_phase(private_request,observed,workspace,environment,
+                    private_build,private_run,false,stop);
+            }
+            curriculum::AdjustmentProjectRun run;
+            run.program_frame=evidence.original_program_fingerprint;
+            run.compiled=bound&&observed.compilation.succeeded()&&
+                (observed.configuration.status==CppPhaseStatus::not_started||
+                 observed.configuration.succeeded());
+            run.executed=observed.execution.status==CppPhaseStatus::completed&&
+                observed.execution.exit_code&&*observed.execution.exit_code<=255;
+            if(run.executed)run.exit_code=static_cast<int>(*observed.execution.exit_code);
+            run.phase=phase;
+            run.standard_input=private_request.stdin_utf8;
+            run.stdout_bytes=observed.execution.stdout_bytes;
+            run.stderr_bytes=observed.execution.stderr_bytes;
+            if(const auto calls=curriculum::adjustment_project_parse_observations(run.stderr_bytes)) {
+                run.observations=*calls;
+                run.stderr_bytes=curriculum::adjustment_project_student_stderr(run.stderr_bytes);
+            }else{
+                run.executed=false; // an incomplete trace cannot attest a call
+            }
+            evidence.runs.push_back(std::move(run));
+            if(!evidence.runs.back().compiled||!evidence.runs.back().executed)break;
+            if(index+1==prefix_count) {
+                // Mutation targets come from real calls, not reference rows.
+                const auto complete=curriculum::adjustment_project_plan(
+                    spec,evidence.runs.back().observations);
+                if(!complete||complete->size()<prefix_count||
+                   !std::equal(phases.begin(),phases.end(),complete->begin()))break;
+                phases=*complete;
+            }
+        }
+    }catch(...) {
+        restore_public();
+        throw;
+    }
+    restore_public();
+    result.adjustment_project_evidence=std::move(evidence);
+}
+
 void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
         std::string_view initial_toolchain,std::stop_token stop) {
@@ -2797,7 +3317,7 @@ void complete_boolean_battery_probe(const CppRunRequest& request,CppRunResult& r
        !request.project_files.empty()||!request.source_files.empty()||
        request.diagnostic||request.open_battery_probe||request.named_rule_probe||
        request.rejection_probe||request.observation_probe||request.assertion_mode||
-       request.cmake_graph_check||request.capture_cmake_graph||
+       request.cmake_graph_check||request.capture_cmake_graph||request.adjustment_project_probe||
        request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
        !result.compilation.succeeded()||!result.error_utf8.empty()||
@@ -2846,7 +3366,7 @@ void complete_reduction_probe(const CppRunRequest& request,CppRunResult& result,
        !request.project_files.empty()||!request.source_files.empty()||
        request.diagnostic||request.open_battery_probe||request.named_rule_probe||
        request.rejection_probe||request.observation_probe||request.assertion_mode||
-       request.cmake_graph_check||request.capture_cmake_graph||
+       request.cmake_graph_check||request.capture_cmake_graph||request.adjustment_project_probe||
        request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
        !result.compilation.succeeded()||!result.error_utf8.empty()||
@@ -2894,12 +3414,16 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     result.revision = request.revision;
     if(request.diagnostic)result.diagnostic.emplace();
     try {
+        if(named_rule_battery_requested(request))
+            result.named_rule_battery_request_fingerprint=named_rule_battery_fingerprint(request);
         if(request.boolean_battery_probe)
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
         if(request.reduction_probe)
             result.reduction_request_fingerprint=reduction_fingerprint(request);
         if(request.integer_battery_probe)
             result.integer_battery_request_fingerprint=integer_battery_fingerprint(request);
+        if(request.adjustment_project_probe)
+            result.adjustment_project_request_fingerprint=adjustment_project_fingerprint(request);
         ensure_winrt_apartment();
         if (stop.stop_requested()) {
             (request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:request.cmake&&request.action==CppRunRequest::Action::execute?result.execution:result.compilation).status = CppPhaseStatus::cancelled;
@@ -2948,6 +3472,17 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             return result;
         }
         if(request.cmake){
+            if(named_rule_battery_requested(request)) {
+                run_named_rule_battery_cmake(request,result,input,compiler_input,
+                    initial_toolchain,stop);
+                complete_named_rule_probe(request,result,stop);
+                return result;
+            }
+            if(request.adjustment_project_probe) {
+                run_adjustment_project_cmake(request,result,input,compiler_input,
+                    initial_toolchain,stop);
+                return result;
+            }
             if(request.integer_battery_probe) {
                 run_integer_battery_cmake(request,result,input,compiler_input,
                     initial_toolchain,stop);
@@ -2962,7 +3497,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
-        const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe;
+        const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe||
+            named_rule_battery_requested(request);
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -2988,6 +3524,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             }
         }
         complete_named_rule_probe(request,result,stop);
+        complete_named_rule_battery_single(request,result,compiler,private_environment,
+            initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
         complete_observation_probes(request,result,stop);
         complete_boolean_battery_probe(request,result,compiler,private_environment,initial_toolchain,stop);
