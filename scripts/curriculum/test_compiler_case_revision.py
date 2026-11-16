@@ -1021,7 +1021,8 @@ class GeneralCompilerCaseRevisionTests(unittest.TestCase):
 
     def test_fixture_histories_are_complete_and_each_stage_validates_against_its_actual_source(self):
         self.assertEqual(len(self.manifest['cases']), 18)
-        self.assertEqual(len(self.manifest['invalid']), 37)
+        self.assertEqual(len([item for item in self.manifest['invalid']
+                              if not item['name'].startswith('client-')]), 37)
         for entry in self.manifest['cases']:
             self.assertEqual(entry['history'][-1]['source'], entry['after'])
             previous = json.loads(self.payloads[entry['before']])
@@ -1062,6 +1063,279 @@ class GeneralCompilerCaseRevisionTests(unittest.TestCase):
             saved = output.read_bytes()
             with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 layout.main()
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(output.read_bytes(), saved)
+
+
+class CompilerClientCaseRevisionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.manifest, cls.payloads = general_fixtures.build_client_fixtures()
+        cls.entry = cls.manifest['clientCases'][0]
+        cls.owner = general_fixtures.CLIENT_OWNER
+
+    def stage(self, key):
+        return json.loads(self.payloads[self.entry[key]])
+
+    def reject(self, operation):
+        with self.assertRaises((ValueError, KeyError, TypeError, IndexError)):
+            operation()
+
+    def test_real_source_and_shipped_translations_are_independently_byte_pinned(self):
+        for locale, (size, digest) in general_fixtures.CLIENT_SOURCES.items():
+            with self.subTest(locale=locale):
+                raw = general_fixtures.client_historical_bytes(locale)
+                self.assertEqual(len(raw), size)
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), digest)
+        before = self.stage('before')
+        self.assertEqual(self.payloads[self.entry['before']].encode('utf-8'),
+                         general_fixtures.client_historical_bytes())
+        source = layout._blocks(self.stage('after'))[self.owner]['initialCode']
+        self.assertEqual(source, layout._blocks(before)[general_fixtures.CLIENT_INPUT_OWNER]['initialCode'])
+        self.assertEqual(hashlib.sha256(source.encode('utf-8')).hexdigest(),
+                         'e9f48221b7862810d460cdc7b77078c4b93eb0d8d80791826b8cd27da023fc27')
+
+    def test_transition_changes_only_one_client_alias_and_explicit_individual_cases(self):
+        before, after = self.stage('before'), self.stage('after')
+        old, new = layout._blocks(before)[self.owner], layout._blocks(after)[self.owner]
+        restored = deepcopy(new)
+        restored['initialCode'] = old['initialCode']
+        restored['projectFiles'][-1]['initialCode'] = old['projectFiles'][-1]['initialCode']
+        restored['outputCheck']['cases'] = deepcopy(old['outputCheck']['cases'])
+        self.assertEqual(restored, old)
+        self.assertEqual(new['sourceFiles'], ['serie.cpp', 'main.cpp'])
+        self.assertNotIn('initialStandardInput', new)
+        self.assertEqual(new['outputCheck']['inputComparison'], 'tokens')
+        self.assertEqual([case['standardInput'] for case in new['outputCheck']['cases']],
+                         ['3 5', '0 0', '5 5', '0 40', '40 40'])
+        self.assertEqual([case['outputs'] for case in new['outputCheck']['cases']],
+            [[value, value + '\n'] for value in ['En curso: 2', 'Terminada: 0', 'Terminada: 0',
+                                               'En curso: 40', 'Terminada: 0']])
+        for identity, block in layout._blocks(before).items():
+            if identity != self.owner:
+                self.assertEqual(block, layout._blocks(after)[identity])
+        for key in ('origin', 'family', 'current', 'additions', 'sourceFormatRevisions'):
+            self.assertEqual(before['stateLayout'][key], after['stateLayout'][key])
+        for key in ('referenceAfter', 'activityAfter', 'compilerPuzzlesRequired', 'textSemantics'):
+            self.assertEqual(before.get(key), after.get(key))
+
+    def test_complete_predecessor_and_shared_editorial_prefix_authenticate_the_new_client(self):
+        before, after = self.stage('before'), self.stage('after')
+        item = after['stateLayout']['compilerCaseRevisions'][-1]
+        self.assertEqual(set(item), {'id', 'block', 'client', 'cases', 'editorialIndex',
+                                    'historySha256', 'semanticBefore', 'semanticAfter'})
+        self.assertEqual(item['block'], layout._blocks(before)[self.owner])
+        self.assertEqual(item['client'], {'path': 'main.cpp',
+                                         'source': layout._blocks(after)[self.owner]['initialCode']})
+        self.assertEqual(item['editorialIndex'], len(before['stateLayout']['editorial']))
+        self.assertEqual(item['historySha256'], layout.fingerprint({
+            'lessonId': before['id'], 'locale': 'es', 'editorial': before['stateLayout']['editorial']}))
+        self.assertEqual(after['stateLayout']['editorial'][:-1], before['stateLayout']['editorial'])
+        self.assertEqual(layout.validate(before), layout.validate(after))
+
+    def test_old_api_stays_cases_only_and_an_unrecorded_client_cannot_hide_in_its_projection(self):
+        before, after = self.stage('before'), self.stage('after')
+        client = after['stateLayout']['compilerCaseRevisions'][-1]['client']
+        cases = layout._blocks(after)[self.owner]['outputCheck']['cases']
+        self.reject(lambda: layout.revise_compiler_cases(before, self.owner, cases,
+                    case_semantics=[], client=client))
+        cases_only = layout.revise_compiler_cases(before, self.owner, cases, case_semantics=[])
+        self.assertEqual(layout._blocks(cases_only)[self.owner]['projectFiles'],
+                         layout._blocks(before)[self.owner]['projectFiles'])
+        self.assertNotIn('client', cases_only['stateLayout']['compilerCaseRevisions'][-1])
+        bad = deepcopy(cases_only)
+        layout._compiler_client_replace_source(layout._blocks(bad)[self.owner], 'main.cpp', client['source'])
+        bad['stateLayout']['editorial'][-1]['afterSha256'] = layout.fingerprint(layout._blocks(bad)[self.owner])
+        self.reject(lambda: layout.validate(bad))
+
+    def test_explicit_cases_semantics_real_client_change_and_exact_alias_are_required(self):
+        before, after = self.stage('before'), self.stage('after')
+        item = after['stateLayout']['compilerCaseRevisions'][-1]
+        self.reject(lambda: layout.revise_compiler_client_cases(before, self.owner, item['client'], item['cases']))
+        self.reject(lambda: layout.revise_compiler_client_cases(before, self.owner, item['client'], [], case_semantics=[]))
+        self.reject(lambda: layout.revise_compiler_client_cases(after, self.owner, item['client'], item['cases'], case_semantics=[]))
+        for client in (None, {'path': 'serie.h', 'source': item['client']['source']},
+                       {'path': 'serie.cpp', 'source': item['client']['source']},
+                       {'path': 'main.cpp', 'source': ''}, {'path': 'main.cpp', 'source': 'x\0y'},
+                       {'path': 'main.cpp', 'source': item['client']['source'], 'automaticDraft': True}):
+            with self.subTest(client=client):
+                self.reject(lambda: layout.revise_compiler_client_cases(before, self.owner, client,
+                            item['cases'], case_semantics=[]))
+
+    def test_project_selection_can_be_implicit_but_paths_and_auxiliaries_are_strict(self):
+        original = general_fixtures.synthetic_client_publication()
+        def publication(edit):
+            raw = deepcopy(original)
+            block = layout._blocks(raw)[general_fixtures.OWNER]
+            edit(block)
+            raw.pop('stateLayout')
+            raw.pop('referenceAfter')
+            return layout.prepare_v2(raw, 'es', {'es': raw})
+        before = publication(lambda block: block.pop('sourceFiles'))
+        old = layout._blocks(before)[general_fixtures.OWNER]
+        newer = old['initialCode'].replace('int value{};', 'int value{2};')
+        changed = general_fixtures.client_revised(before, general_fixtures.OWNER, newer,
+                                                 old['outputCheck']['cases'])
+        self.assertNotIn('sourceFiles', layout._blocks(changed)[general_fixtures.OWNER])
+        invalid = [
+            lambda b: b['projectFiles'].append({'path': 'MAIN.cpp', 'initialCode': newer}),
+            lambda b: b['projectFiles'].append({'path': 'con.txt', 'initialCode': ''}),
+            lambda b: b['projectFiles'].append({'path': 'main.cpp/extra.h', 'initialCode': ''}),
+            lambda b: b['projectFiles'][0].__setitem__('path', '../helper.h'),
+            lambda b: b['projectFiles'][0].__setitem__('automaticDraft', True),
+            lambda b: b['projectFiles'][-1].__setitem__('automaticDraft', True),
+            lambda b: b['sourceFiles'].append('main.cpp'),
+            lambda b: b.__setitem__('initialCode', 'int main() {}\n'),
+        ]
+        for edit in invalid:
+            broken = publication(edit)
+            self.reject(lambda: general_fixtures.client_revised(broken, general_fixtures.OWNER, newer,
+                        layout._blocks(broken)[general_fixtures.OWNER]['outputCheck']['cases']))
+
+    def test_single_file_cmake_and_diagnostic_objectives_do_not_enter_the_client_api(self):
+        for before in (general_fixtures.order_fixtures.synthetic_publication(),
+                       general_fixtures.order_fixtures.synthetic_publication(project=True)):
+            old = layout._blocks(before)[general_fixtures.OWNER]
+            self.reject(lambda: general_fixtures.client_revised(before, general_fixtures.OWNER,
+                        old['initialCode'].replace('value{}', 'value{2}'), old['outputCheck']['cases']))
+        before = general_fixtures.synthetic_client_publication()
+        bad = deepcopy(before)
+        layout._blocks(bad)[general_fixtures.OWNER]['compileCheck'] = {'expected': 'failure'}
+        self.reject(lambda: general_fixtures.client_revised(bad, general_fixtures.OWNER, 'int main() {}', []))
+
+    def test_identical_cases_and_returned_source_retain_distinct_authenticated_client_records(self):
+        first, changed, returned = (self.stage(key) for key in ('after', 'changedClient', 'returnedClient'))
+        for document in (changed, returned):
+            self.assertEqual(layout._blocks(document)[self.owner]['outputCheck'],
+                             layout._blocks(first)[self.owner]['outputCheck'])
+        self.assertEqual(layout._blocks(returned)[self.owner], layout._blocks(first)[self.owner])
+        records = returned['stateLayout']['compilerCaseRevisions']
+        self.assertEqual(len({layout.fingerprint(item) for item in records}), 3)
+        self.assertEqual(records[:2], changed['stateLayout']['compilerCaseRevisions'])
+        self.assertIn('returnTo', returned['stateLayout']['editorial'][-1])
+        layout.validate_transition(first, returned)
+
+    def test_return_requires_its_actual_earlier_revision_and_never_erases_the_intermediate_client(self):
+        changed, returned = self.stage('changedClient'), self.stage('returnedClient')
+        source = layout._blocks(returned)[self.owner]['initialCode']
+        cases = layout._blocks(returned)[self.owner]['outputCheck']['cases']
+        self.reject(lambda: general_fixtures.client_revised(changed, self.owner, source, cases))
+        self.reject(lambda: general_fixtures.client_revised(changed, self.owner, source, cases, return_to=0))
+        bad = deepcopy(returned)
+        bad['stateLayout']['compilerCaseRevisions'].pop(1)
+        self.reject(lambda: layout.validate_transition(changed, bad))
+
+    def test_later_cases_only_and_formatting_preserve_the_same_client_epoch_data(self):
+        after, cases, formatted = (self.stage(key) for key in ('after', 'casesOnly', 'formattedClient'))
+        first_record = after['stateLayout']['compilerCaseRevisions'][0]
+        self.assertEqual(cases['stateLayout']['compilerCaseRevisions'][0], first_record)
+        self.assertNotIn('client', cases['stateLayout']['compilerCaseRevisions'][-1])
+        self.assertEqual(formatted['stateLayout']['compilerCaseRevisions'], [first_record])
+        self.assertEqual(len(layout._blocks(cases)[self.owner]['outputCheck']['cases']), 4)
+        self.assertEqual(layout._blocks(cases)[self.owner]['outputCheck']['cases'][0],
+                         layout._blocks(after)[self.owner]['outputCheck']['cases'][0])
+        self.assertEqual(formatted['stateLayout']['sourceFormatRevisions'], after['stateLayout']['sourceFormatRevisions'])
+        layout.validate_transition(after, cases)
+        layout.validate_transition(after, formatted)
+
+    def test_format_archives_created_in_either_client_epoch_stay_raw_and_authenticated(self):
+        documents = {entry['name']: json.loads(self.payloads[entry['file']])
+                     for entry in self.manifest['clientValid']}
+        for name in ('format-before', 'format-after', 'format-then-client'):
+            layout.validate(documents[name])
+        before = general_fixtures.synthetic_client_publication()
+        after = documents['plain']
+        archive = documents['format-after']['stateLayout']['sourceFormatRevisions'][0]['block']
+        self.assertEqual(archive, layout._blocks(after)[general_fixtures.OWNER])
+        self.assertNotEqual(archive['initialCode'], layout._blocks(before)[general_fixtures.OWNER]['initialCode'])
+        self.assertEqual(documents['format-then-client']['stateLayout']['sourceFormatRevisions'][0]['block'], archive)
+        layout.validate_transition(before, documents['format-after'])
+        layout.validate_transition(before, documents['format-then-client'])
+
+    def test_other_retirements_preserve_the_actual_historical_client_sources(self):
+        for entry in self.manifest['clientValid']:
+            if not entry['name'].startswith('retirement-'):
+                continue
+            current = json.loads(self.payloads[entry['file']])
+            layout.validate(current)
+            snapshot = current['stateLayout']['retirementHistory'][0]
+            view = {'pages': snapshot['pages'], 'stateLayout': {'current': snapshot['current']}}
+            source = layout._blocks(view)[general_fixtures.OWNER]['initialCode']
+            self.assertIn('value{}' if entry['name'].endswith('before') else 'value{1}', source)
+        self.reject(lambda: layout.retire(self.stage('after'), [self.owner], reference_after=[]))
+
+    def test_cases_orders_and_client_events_share_one_authenticated_timeline(self):
+        after = self.stage('after')
+        ordered = layout.reorder_compiler_cases(after, self.owner, [1, 0, 2, 3, 4])
+        client = layout._blocks(self.stage('changedClient'))[self.owner]['initialCode']
+        current = general_fixtures.client_revised(ordered, self.owner, client,
+            layout._blocks(ordered)[self.owner]['outputCheck']['cases'])
+        self.assertEqual([kind for kind, _ in layout._compiler_case_events(current, self.owner)],
+                         ['cases', 'order', 'cases'])
+        layout.validate_transition(after, current)
+        self.assertEqual(layout._blocks(layout.align_for_previous_validation(after, current))[self.owner],
+                         layout._blocks(after)[self.owner])
+
+    def test_curricular_alignment_and_origin_projection_restore_each_actual_publication(self):
+        before, after = self.stage('before'), self.stage('after')
+        current = self.stage('returnedClient')
+        for previous in (before, after, self.stage('changedClient')):
+            aligned = layout.align_for_previous_validation(previous, current)
+            self.assertEqual(layout._blocks(aligned)[self.owner], layout._blocks(previous)[self.owner])
+        self.assertEqual(layout.original_projection(before)['pages'], layout.original_projection(current)['pages'])
+        contract.ERRORS.clear()
+        contract.validate_lesson_state_contract(after, 'client-fixture')
+        self.assertEqual(contract.ERRORS, [])
+
+    def test_all_shared_client_negatives_fail_before_source_projection(self):
+        self.assertEqual(len(self.manifest['invalid']), 20)
+        for item in self.manifest['invalid']:
+            with self.subTest(name=item['name']):
+                self.reject(lambda: layout.validate(json.loads(self.payloads[item['file']])))
+
+    def test_an_earlier_client_event_cannot_disappear_behind_identical_returned_bytes(self):
+        before = general_fixtures.synthetic_client_publication()
+        owner = general_fixtures.OWNER
+        block = layout._blocks(before)[owner]
+        cases = block['outputCheck']['cases']
+        source = block['initialCode']
+        first = general_fixtures.client_revised(before, owner, source.replace('value{}', 'value{1}'), cases)
+        earlier = general_fixtures.client_revised(first, owner, source.replace('value{}', 'value{7}'), cases)
+        middle = general_fixtures.client_revised(earlier, owner, source.replace('value{}', 'value{2}'), cases)
+        returned = general_fixtures.client_revised(middle, owner, source.replace('value{}', 'value{7}'), cases,
+                                                  return_to=2)
+        layout.validate_transition(before, returned)
+        self.assertEqual(layout._blocks(earlier)[owner], layout._blocks(returned)[owner])
+        bad = deepcopy(returned)
+        bad['stateLayout']['compilerCaseRevisions'].pop(1)
+        self.reject(lambda: layout.validate(bad))
+
+    def test_cli_separates_client_authoring_from_cases_only_and_never_overwrites(self):
+        from contextlib import redirect_stderr, redirect_stdout
+        import io
+        from unittest.mock import patch
+        before, after = self.stage('before'), self.stage('after')
+        item = after['stateLayout']['compilerCaseRevisions'][0]
+        with tempfile.TemporaryDirectory(prefix='client-case-revision-cli-') as directory:
+            root = Path(directory)
+            source, client, cases, semantics, output = (root / name for name in
+                ('source.json', 'client.json', 'cases.json', 'semantics.json', 'new.json'))
+            for path, value in ((source, before), (client, item['client']),
+                                (cases, item['cases']), (semantics, item['semanticAfter'])):
+                path.write_text(json.dumps(value), encoding='utf-8')
+            original = source.read_bytes()
+            argv = ['stable_state_layout.py', 'revise-compiler-client-cases', str(source),
+                    '--previous', str(source), '--identity', self.owner, '--client', str(client),
+                    '--cases', str(cases), '--case-semantics', str(semantics), '--output', str(output)]
+            with patch.object(sys, 'argv', argv), redirect_stdout(io.StringIO()):
+                layout.main()
+            self.assertEqual(json.loads(output.read_text()), after)
+            saved = output.read_bytes()
+            for action in ('revise-compiler-client-cases', 'revise-compiler-cases'):
+                rejected = list(argv)
+                rejected[1] = action
+                with patch.object(sys, 'argv', rejected), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                    layout.main()
             self.assertEqual(source.read_bytes(), original)
             self.assertEqual(output.read_bytes(), saved)
 

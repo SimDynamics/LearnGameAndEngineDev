@@ -144,7 +144,7 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement, semanticBefore}`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
 | `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
 | `compilerCaseOrderRevisions` | Opcional. Permutaciones autenticadas de casos completos, con archivo anterior, biyección y procedencia editorial. |
-| `compilerCaseRevisions` | Opcional. Sustituciones autenticadas de la lista de casos, con el bloque anterior completo, casos nuevos y semántica anterior/posterior explícita. Mantiene intacto el resto del editor. |
+| `compilerCaseRevisions` | Opcional. Sustituciones autenticadas de los casos, con bloque anterior completo y semántica anterior/posterior explícita. Una revisión de cliente declarada mediante `client` puede cambiar además un archivo compilado existente y su alias; abre un objetivo nuevo. |
 | `mathTextRevisions` | Opcional. Archivo inmutable por propietario para precisar únicamente `/prompt` de un `math_puzzle`: `{id, field, rawJson, semanticBefore}`. Conserva el bloque completo y su descriptor anterior; no altera el contrato de respuesta. |
 
 ### Revisión editorial general de una opción existente
@@ -836,8 +836,8 @@ preferencias. Cada etapa tiene su marcador propio bajo
 `case-revision-adopted/<record_sha256>`. La importación y la reapertura aplican
 las mismas guardas.
 
-Un recibo sólo puede reutilizarse para el **mismo caso completo y el mismo
-programa capturado**: entrada, salidas admitidas, stderr, retorno, objetivo y
+Un recibo sólo puede reutilizarse para el **mismo caso completo, el mismo
+programa capturado y la misma época de cliente**: entrada, salidas admitidas, stderr, retorno, objetivo y
 reglas de comparación deben coincidir. El progreso actual conserva su
 programa si ya lo tiene; si todavía no lo tiene, se toma la versión anterior
 más reciente que tenga un recibo reutilizable. Después sólo pueden sumarse
@@ -862,6 +862,111 @@ programas completos. La prueba Win32 utiliza el editor U4L4 y comprueba su
 historia, su primer caso obligatorio, el borrador, la reapertura y el reinicio;
 sus prerrequisitos de relaciones se evalúan mediante un adaptador aislado de
 prueba, sin atribuir esa comprobación al motor matemático general.
+
+### Revisión explícita del cliente y de sus casos
+
+`revise_compiler_client_cases(document, identity, client, cases,
+case_semantics=..., return_to=None)` prepara una transición de un editor C++
+con archivos de proyecto. `client` es un objeto con exactamente `path` y
+`source`: la ruta de un archivo ya existente y su nuevo código completo.
+`cases` y `case_semantics` son explícitos, incluso cuando los descriptores sean
+`[]`. La API `revise_compiler_cases` conserva su contrato anterior: sigue
+permitiendo únicamente cambios en los casos.
+
+Esta capacidad sirve, por ejemplo, para sustituir un cliente que ejecutaba
+cinco llamadas escritas dentro de `main` por otro que lee una pareja desde
+`std::cin`, mientras conserva las auxiliares que el estudiante debe construir.
+Cada ejecución del nuevo cliente corresponde entonces a una entrada y una
+salida completas. Work redacta el cambio de actividad y sus referencias;
+la herramienta recibe el código y los casos que Work haya decidido utilizar.
+
+El ámbito inicial es un `cpp_compiler` activo, español, con mapa v2 y
+`projectFiles`. La ruta debe seleccionar exactamente uno de sus archivos
+C++ compilados: debe figurar en `sourceFiles` cuando esa lista existe, o en
+la selección implícita de archivos `.cpp`, `.cc`, `.cxx` o `.c++`. Se conservan
+la selección, el orden y las rutas de los archivos. Este contrato no admite
+`cmake` ni `compileCheck`.
+
+El código nuevo debe ser texto no vacío, sin NUL y diferente por bytes del
+código anterior de ese archivo. La lista de casos puede conservar las mismas
+expectativas: el cambio explícito del cliente sigue creando un objetivo
+nuevo. Se aplican las reglas de rutas portables y los límites del proyecto
+nativo: hasta 256 archivos, 16 MiB por archivo y 32 MiB de fuentes en total.
+Cada entrada de `projectFiles` conserva exactamente `path` e `initialCode`.
+Si el bloque ya tiene un `initialCode` superior, debe coincidir exactamente
+con el código previo del archivo seleccionado; la transición actualiza ambos
+campos juntos. Si no lo tiene, conserva su ausencia. El validador curricular
+ordinario mantiene sus requisitos de campos publicados.
+
+El registro usa el mismo archivo acumulativo `compilerCaseRevisions`:
+
+```json
+{
+  "id": "identidad_estable_del_editor",
+  "block": { "...": "bloque previo completo y exacto" },
+  "client": { "path": "main.cpp", "source": "codigo nuevo completo" },
+  "cases": [ { "standardInput": "3 5", "outputs": ["En curso: 2", "En curso: 2\n"] } ],
+  "editorialIndex": 12,
+  "historySha256": "huella real del prefijo editorial anterior",
+  "semanticBefore": [],
+  "semanticAfter": []
+}
+```
+
+El ejemplo muestra la forma del registro; la API obtiene el bloque anterior,
+la arista y las huellas de la publicación real. El sucesor debe ser exactamente
+ese bloque con el archivo cliente, su alias existente y los casos sustituidos.
+Los demás campos permanecen íntegros: auxiliares, cabeceras, receta, comparación,
+entrada inicial y propiedades del editor. La ausencia histórica de
+`initialStandardInput` se conserva; el lector habilita la entrada cuando los
+casos nuevos la requieren. Los descriptores de casos se sustituyen mediante
+la misma comprobación de autoría que utiliza la API de casos.
+
+El CLI correspondiente es `revise-compiler-client-cases`. Recibe `--identity`,
+`--client cliente.json`, `--cases casos.json` y
+`--case-semantics semantica.json`, además de la fuente publicada y un
+`--output` nuevo. `cliente.json` contiene el objeto `path`/`source` anterior.
+Se conserva la elección habitual entre `--previous` y el origen verificado
+con `--locale es --base-ref`. Un retorno al bloque completo anterior necesita
+`--return-to` con su revisión auténtica. La operación no sobrescribe la fuente
+ni un destino existente, y el comando de casos anterior rechaza `--client`.
+
+**Historia de fuente y formato.** La validación comprueba primero el cliente
+contra el código correspondiente a su época. Sin archivo de formato exige
+los mismos bytes; con un `sourceFormatRevisions` autenticado admite sólo la
+equivalencia léxica ya soportada. Después deshace los cambios de cliente y de
+casos, en orden inverso, para comprobar el contrato original. Una diferencia
+de instrucciones no puede desaparecer mediante esa proyección. El archivo
+de formato conserva su bloque completo original, tanto si se creó antes
+como después del cambio de cliente. Las capturas de lectura de una retirada
+ajena conservan el cliente real y el prefijo editorial de su publicación.
+
+**Progreso y borradores.** Cada registro con `client` introduce una época
+autenticada por la huella completa de ese registro. Un retorno a los mismos
+bytes introduce otra época; conserva las intermedias y necesita su prueba
+editorial. Windows conserva los logros, recibos y borradores anteriores en
+sus versiones históricas. El borrador existente sigue disponible para que
+el estudiante realice el cambio de cliente en su editor. El cambio curricular
+no reescribe automáticamente su código.
+
+La acreditación nueva exige una ejecución válida del primer caso de la nueva
+época. Un recibo de una época anterior no acredita ese objetivo, aunque sus
+entradas, salidas o fuentes coincidan. Las revisiones posteriores que sólo
+reordenan o sustituyen casos conservan la época y pueden reutilizar recibos
+auténticos del mismo caso completo y programa capturado. El formato
+compatible también conserva la época. Los demás casos permanecen opcionales;
+las baterías pedagógicas conservan sus contratos separados. Sin `client`,
+las huellas y la conducta de las publicaciones anteriores permanecen iguales.
+
+Las pruebas comparten una sección `clientCases` del generador de fixtures,
+separada de los escenarios que conservan el mismo programa. El piloto toma
+U6L19, `block_0008_0008`, de la publicación completa `9871a393` y conserva
+su agregado, la referencia `series_cinco_referencia_cliente`, sus auxiliares
+y el formato histórico de `serie.h`. El cliente individual procede del
+editor publicado `block_0020_0002` de esa misma lección. Las propuestas de
+QA no modifican los JSON curriculares. Los fixtures distinguen cliente nuevo,
+casos posteriores dentro de una época, otro cliente con los mismos casos,
+retorno explícito, formato y capturas de lectura históricas.
 
 ## Piezas independientes de una línea en Windows
 

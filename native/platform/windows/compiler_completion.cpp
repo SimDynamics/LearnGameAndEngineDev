@@ -331,6 +331,7 @@ curriculum::Block historical_block(const curriculum::Block& block) {
     // Closed archives predate formatting: do not prefer an expanded starter sidecar.
     original.source_format_original_initial_code.reset();
     original.source_format_original_project_files.reset();
+    original.compiler_client_epoch.clear();
     original.compiler_case_order_revisions.clear();
     original.compiler_case_revisions.clear();return original;
 }
@@ -881,7 +882,8 @@ static void prepare_compiler_expansion(state::StateData& data,const curriculum::
         data.preferences["native_windows"][marker]=true;
     }
 }
-// Reuse only an execution of the identical complete case by one program.
+// Reuse only an execution of the identical complete case by one program in
+// the same authenticated client-source epoch.
 // An aggregate receipt never proves any of the isolated inputs it contains.
 static void adopt_compiler_case_stage(state::StateData& data,const curriculum::Lesson& lesson,
         const curriculum::Block& after,const std::vector<curriculum::Block>& previous_versions) {
@@ -891,7 +893,8 @@ static void adopt_compiler_case_stage(state::StateData& data,const curriculum::L
     auto proofs=case_proofs(data,key);proofs.resize(after.output_check->cases.size());
     bool added=false;
     for(auto version=previous_versions.rbegin();version!=previous_versions.rend();++version) {
-        if(!version->output_check||version->output_check->input_comparison!=after.output_check->input_comparison)continue;
+        if(!version->output_check||version->output_check->input_comparison!=after.output_check->input_comparison||
+           version->compiler_client_epoch!=after.compiler_client_epoch)continue;
         const auto old_key=base(lesson,*version);
         if(old_key==key)continue;
         const auto previous_program=state::string_value(data,"native_windows",old_key+"program");
