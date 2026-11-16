@@ -624,6 +624,146 @@ void console_fullscreen_zoom_escape() {
     std::cout<<"PASS readonly and empty/populated output consoles: empty-area fullscreen, persistent zoom, Escape priority, explicit close/reopen and retained text/selection/source history\n";
 }
 
+void console_zoom_bottom_viewport() {
+    for(const int surface:{0,1,2,3})for(const int scenario:{0,1,2}) {
+        if(scenario==2&&surface!=0)continue;
+        const bool fits_after_restore=scenario==1,wrapped=scenario==2;
+        const bool output=surface==1,editable=surface>=2;
+        Fixture fixture([](state::StateData& data,const curriculum::Lesson&) {
+            data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{125};
+            data.preferences["console_bottom_zoom_qa"]["unrelated"]=std::string("conservar");
+        },[&](const curriculum::Lesson&) {
+            if(surface==0)return windows::parse_lesson_json(
+                R"json({"id":"qa_bottom_zoom_code","title":"Código y desplazamiento","pages":[{"blocks":[{"type":"code","language":"cpp","code":"// primera fila\n// segunda fila\n// tercera fila"}]}]})json");
+            if(surface==3)return windows::parse_lesson_json(
+                R"json({"id":"qa_bottom_zoom_cmake","title":"CMake y desplazamiento","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"","projectFiles":[{"path":"CMakeLists.txt","initialCode":"cmake_minimum_required(VERSION 3.25)\nproject(ZoomViewport LANGUAGES CXX)\nadd_executable(zoom_viewport client.cpp)"},{"path":"client.cpp","initialCode":"int main() { return 0; }"}],"cmake":{"target":"zoom_viewport"}}]}]})json");
+            return windows::parse_lesson_json(
+                R"json({"id":"qa_bottom_zoom_cpp","title":"Consola y desplazamiento","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"// primera fila\n// segunda fila\n// tercera fila"}]}]})json");
+        });
+        ShowWindow(fixture.host,SW_SHOWNORMAL);SetActiveWindow(fixture.host);pump(fixture.host);
+        const auto display=fixture.control(0,editable?10:output?14:1);
+        const auto original_source=surface?fixture.text(0,10):std::string{};
+        if(surface==3)require(original_source.starts_with("cmake_minimum_required"),
+            "The project viewport fixture did not open its actual CMakeLists.txt file");
+        const auto layout=[&] {
+            RECT area{};GetClientRect(fixture.view,&area);
+            SendMessageW(fixture.view,WM_SIZE,SIZE_RESTORED,MAKELPARAM(area.right,area.bottom));pump(fixture.host);
+        };
+        if(output){set_rich_text(display,"Primera fila\nSegunda fila\nTercera fila",{},true);layout();}
+        if(wrapped){fixture.click(0,35);require(!(GetWindowLongPtrW(display,GWL_STYLE)&ES_AUTOHSCROLL),
+            "The readonly viewport fixture did not enable wrapping through its real toolbar action");}
+        const auto scale=[&] {
+            int numerator=0,denominator=0;
+            SendMessageW(display,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            return denominator?MulDiv(numerator,100,denominator):100;
+        };
+        struct Geometry {POINT offset{};RECT viewport{};LONG first=0,last_bottom=0,row=0;LRESULT lines=0;};
+        const auto geometry=[&] {
+            Geometry value;value.viewport=rich_edit_viewport(display);
+            SendMessageW(display,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&value.offset));
+            value.lines=SendMessageW(display,EM_GETLINECOUNT,0,0);
+            require(value.lines>1,"The bottom-zoom fixture needs at least two actual native rows");
+            const auto visible=std::clamp<LRESULT>(SendMessageW(display,EM_GETFIRSTVISIBLELINE,0,0),0,value.lines-2);
+            const auto at=SendMessageW(display,EM_LINEINDEX,visible,0);
+            const auto next=SendMessageW(display,EM_LINEINDEX,visible+1,0);
+            const auto last=SendMessageW(display,EM_LINEINDEX,value.lines-1,0);
+            const auto length=SendMessageW(display,EM_LINELENGTH,last,0);
+            POINTL first{},line_start{},line_next{};
+            SendMessageW(display,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+            SendMessageW(display,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&line_start),at);
+            SendMessageW(display,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&line_next),next);
+            value.first=first.y;value.row=line_next.y-line_start.y;
+            require(value.row>0&&at>=0&&next>=0&&last>=0&&length>0,"The bottom-zoom fixture has no measurable native final row");
+            Microsoft::WRL::ComPtr<IRichEditOle> rich;
+            SendMessageW(display,EM_GETOLEINTERFACE,0,reinterpret_cast<LPARAM>(rich.GetAddressOf()));
+            Microsoft::WRL::ComPtr<ITextDocument> document;Microsoft::WRL::ComPtr<ITextRange> range;
+            const auto character=static_cast<LONG>(last+length-1);LONG x=0;
+            require(rich&&SUCCEEDED(rich.As(&document))&&
+                document->Range(character,character,&range)==S_OK&&range&&
+                range->GetPoint(tomStart|tomClientCoord|tomAllowOffClient|TA_BOTTOM|TA_LEFT,&x,&value.last_bottom)==S_OK,
+                "Cannot measure the actual final glyph after a console zoom transition");
+            return value;
+        };
+        const auto describe=[&](std::string_view message,const Geometry& value) {
+            return std::string(message)+": surface="+std::to_string(surface)+", fits="+std::to_string(fits_after_restore)+
+                ", wrapped="+std::to_string(wrapped)+", scale="+std::to_string(scale())+", offset="+std::to_string(value.offset.x)+","+std::to_string(value.offset.y)+
+                ", viewport="+std::to_string(value.viewport.top)+","+std::to_string(value.viewport.bottom)+
+                ", first="+std::to_string(value.first)+", last_bottom="+std::to_string(value.last_bottom)+
+                ", row="+std::to_string(value.row)+", lines="+std::to_string(value.lines);
+        };
+        const auto double_click=[&] {
+            RECT client{};GetClientRect(display,&client);
+            // A wrapped comment can occupy the former blank at mid-height.
+            // Locate trailing space in the current layout before each gesture.
+            for(LONG y=4;y<client.bottom-4;y+=6){const POINT point{client.right-12,y};
+                if(PtInRect(&client,point)&&!rich_text_hit_test(display,point)){
+                    SendMessageW(display,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(point.x,point.y));pump(fixture.host);return;
+                }}
+            throw std::runtime_error("The bottom-zoom fixture has no empty trailing area for its native double click");
+        };
+        double_click();require(fixture.fullscreen()&&scale()==125,"The bottom-zoom fixture did not enter unzoomed fullscreen");
+        const auto sample=geometry();
+        // Size the two documents from the observed native row height and final
+        // viewport. One fits at the base scale but not at double scale; the
+        // other still overflows when Escape restores the original scale.
+        const auto capacity=(sample.viewport.bottom-sample.viewport.top)/sample.row;
+        require(capacity>=8,"The bottom-zoom fixture has an unexpectedly short fullscreen viewport");
+        const auto rows=fits_after_restore?capacity*3/4:capacity*2+1;
+        std::string text;
+        for(LONG row=0;row<rows;++row){if(row)text+='\n';text+=(surface==3?"# fila ":"// fila ")+std::to_string(row)+" conservada";
+            if(wrapped&&row==1)for(int word=0;word<80;++word)text+=" comentario extenso";}
+        if(editable)fixture.replace(0,10,text);
+        else {set_rich_text(display,text,{},true);layout();}
+        const CHARRANGE selection{2,7};SendMessageW(display,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
+        SetFocus(display);pump(fixture.host);POINT origin{};SendMessageW(display,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
+        const auto initial=geometry();
+        require((wrapped?initial.lines>rows:initial.lines==rows)&&((initial.last_bottom<=initial.viewport.bottom)==fits_after_restore),
+            describe("The document does not exercise the intended base-scale overflow condition",initial));
+        const auto raw=fixture.lesson.raw_json;const auto script=reading_script(fixture.view);
+        RECT fullscreen_bounds{};GetWindowRect(display,&fullscreen_bounds);
+        const auto retained=[&] {
+            CHARRANGE current{};SendMessageW(display,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&current));
+            require(fixture.control(0,editable?10:output?14:1)==display&&edit_text(display)==text&&
+                current.cpMin==selection.cpMin&&current.cpMax==selection.cpMax&&GetFocus()==display&&
+                fixture.page()==0&&fixture.lesson.raw_json==raw&&reading_script(fixture.view)==script,
+                "Bottom scrolling and zoom restoration changed the console, selection, focus, lesson or narration");
+            if(output)require(fixture.text(0,10)==original_source,"Output zoom restoration changed the independent source");
+            if(surface)require(fixture.text(0,4).empty(),"Zoom restoration fabricated a compiler verdict");
+        };
+        for(int cycle=0;cycle<2;++cycle) {
+            double_click();require(fixture.fullscreen()&&scale()==250,"The bottom-zoom fixture failed to enlarge its fullscreen console");
+            SendMessageW(display,EM_SCROLL,SB_BOTTOM,0);pump(fixture.host);
+            const auto enlarged=geometry();
+            if(wrapped)require(enlarged.lines>initial.lines,
+                describe("The enlarged wrapped comment did not create additional native visual rows",enlarged));
+            require(enlarged.offset.y>0&&enlarged.last_bottom>=enlarged.viewport.bottom-enlarged.row*2&&
+                enlarged.last_bottom<=enlarged.viewport.bottom+enlarged.row*2,
+                describe("The enlarged console did not reach its actual bottom before Escape",enlarged));
+            retained();
+            require(PostMessageW(GetFocus(),WM_KEYDOWN,VK_ESCAPE,1)!=FALSE,"Cannot deliver Escape to the bottom-scrolled console");
+            pump(fixture.host);
+            const auto restored=geometry();RECT bounds{};GetWindowRect(display,&bounds);
+            require(fixture.fullscreen()&&scale()==125&&EqualRect(&bounds,&fullscreen_bounds),
+                describe("Escape did not restore the scale in the same fullscreen viewport",restored));
+            if(wrapped)require(restored.lines==initial.lines&&!(GetWindowLongPtrW(display,GWL_STYLE)&ES_AUTOHSCROLL),
+                describe("Escape did not restore the actual wrapped row layout",restored));
+            if(fits_after_restore)require(restored.offset.y==0&&SendMessageW(display,EM_GETFIRSTVISIBLELINE,0,0)==0&&
+                    restored.first>=restored.viewport.top-1&&restored.last_bottom<=restored.viewport.bottom+1,
+                    describe("Zoom restoration hid rows even though the complete document fits",restored));
+            else require(restored.offset.y>0&&restored.last_bottom>=restored.viewport.bottom-restored.row*2&&
+                    restored.last_bottom<=restored.viewport.bottom+restored.row*2,
+                    describe("Zoom restoration left a large blank area below the last row",restored));
+            retained();
+        }
+        fixture.escape();require(!fixture.fullscreen()&&scale()==125,"The next Escape did not leave the restored fullscreen console");retained();
+        if(editable){SendMessageW(display,WM_UNDO,0,0);pump(fixture.host);
+            require(edit_text(display)==original_source,"Bottom-zoom restoration damaged the original source Undo history");}
+        require(state::string_value(read_lesson_state(fixture.view),"console_bottom_zoom_qa","unrelated")=="conservar",
+            "Bottom-zoom restoration changed unrelated profile data");
+    }
+    std::cout<<"PASS bottom-scrolled zoom restoration: readonly code, output, C++ and CMake; real final-glyph geometry for documents that still overflow or now fit, plus native wrapped-row reflow; repeated Escape, retained selection/focus/text/state and source Undo\n";
+}
+
 void console_queued_mouse_focus_and_hit_regions() {
     // Exercise the real HWNDs through the thread's Win32 message queue. This
     // covers the complete delivered mouse sequence, focus/capture and the
@@ -914,6 +1054,7 @@ void console_queued_mouse_focus_and_hit_regions() {
 
 void lesson_menu_retains_import_pages_and_settings_with_hooks() {
     console_fullscreen_zoom_escape();
+    console_zoom_bottom_viewport();
     console_queued_mouse_focus_and_hit_regions();
     for (const auto locale : {"es","en","fr"}) {
         Fixture fixture([locale](state::StateData& data,const curriculum::Lesson&) {

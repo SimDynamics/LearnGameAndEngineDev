@@ -1739,6 +1739,26 @@ struct LessonView {
         }else (void)update_answer_scrollbars(answer,16,0,16,false,-1,&pre_measure_scroll);
         if(final_edit)settle_prediction_caret(answer);
     }
+    void restore_console_scroll(HWND item,POINT position,bool vertical_overflow) {
+        if(!vertical_overflow)position.y=0;
+        else {
+            // The old pixel offset can outlive a zoom reduction. RichEdit
+            // only keeps some text visible; it can leave the last row at the
+            // top with almost an entire empty viewport underneath. Measure
+            // again after the final bars/insets, since wrapping can change
+            // when a vertical scrollbar narrows the client area.
+            SendMessageW(item,EM_REQUESTRESIZE,0,0);
+            const auto measured=std::ranges::find_if(rows,[item](const auto& row){
+                return row.cells.size()==1&&row.cells[0]==item;
+            });
+            if(measured!=rows.end()){
+                RECT viewport{};GetClientRect(item,&viewport);
+                const auto maximum=std::max(0L,static_cast<LONG>(measured->requested_height)-viewport.bottom);
+                position.y=std::clamp(position.y,0L,maximum);
+            }
+        }
+        SendMessageW(item,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&position));
+    }
     int update_answer_scrollbars(HWND answer,int top_padding=16,int right_padding=0,int bottom_padding=16,
                                  bool fit_height=false,int left_padding=-1,const POINT* restored_offset=nullptr) {
         const auto style=GetWindowLongPtrW(answer,GWL_STYLE);
@@ -1821,7 +1841,9 @@ struct LessonView {
         // positions, but return a direction with no overflow to its origin.
         if(!horizontal)saved.x=0;
         if(!vertical)saved.y=0;
-        SendMessageW(answer,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
+        if(std::ranges::any_of(controls,[answer](const auto& vm){return vm.console==answer;}))
+            restore_console_scroll(answer,saved,vertical);
+        else SendMessageW(answer,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved));
         return static_cast<int>(bottom)+(horizontal?bar_height:0);
     }
     void toolbar_caption(HWND target,std::string_view caption) {
@@ -3765,7 +3787,7 @@ struct LessonView {
             const bool overflow=fullscreen_block==index&&measured!=rows.end()&&measured->requested_height>viewport.bottom;
             if(!!(GetWindowLongPtrW(source,GWL_STYLE)&WS_VSCROLL)!=overflow)SendMessageW(source,EM_SHOWSCROLLBAR,SB_VERT,overflow);
             if(const auto saved=editor_positions.find(source);saved!=editor_positions.end())
-                SendMessageW(source,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&saved->second));
+                restore_console_scroll(source,saved->second,overflow);
         }
         // Measuring a mathematical composition deliberately does not position
         // its children. Commit its own layout after the final lesson placement;
