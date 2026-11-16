@@ -1,0 +1,1867 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__asumir_propiedad_exclusiva_con_unique_ptr",
+  "title": "Asumir propiedad exclusiva con unique_ptr",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un objeto responsable de otro objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "vector reúne elementos y gestiona su almacenamiento. A veces necesitamos gestionar un único objeto dinámico y acceder a él mediante un puntero. Para expresar quién debe destruirlo y liberar su almacenamiento podemos utilizar std::unique_ptr. Es un objeto de clase que conserva esa responsabilidad sobre el objeto al que apunta (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::unique_ptr<int> expresa la propiedad exclusiva de un int. El tipo entre < y > indica qué tipo de objeto se gestiona, de manera parecida a cómo int identifica los elementos de vector<int>. <memory> proporciona unique_ptr y la función de creación que utilizaremos. No se trata de un int* ordinario al que sólo se le cambió el nombre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando este propietario termina, destruye el objeto que gestiona y libera su almacenamiento. También puede estar vacío: en ese caso no tiene un objeto que destruir. La propiedad exclusiva atribuye esa responsabilidad a un propietario; permite tener accesos prestados que no se encargan de liberar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear el objeto junto con su propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::make_unique<int>(6) crea un int inicializado con seis y proporciona un unique_ptr que se hace responsable de él. En auto propietario = std::make_unique<int>(6);, auto deduce std::unique_ptr<int>. También podemos escribir ese tipo explícitamente. Los argumentos entre paréntesis se utilizan para construir el objeto del tipo indicado entre < y > (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El propietario se inicializa con el resultado de esa creación. No estamos copiando un propietario con nombre que ya existía. Después, *propietario permite usar el int mientras el propietario no esté vacío. No añadimos delete al final: el objeto responsable realiza esa limpieza cuando termina."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::unique_ptr<int> vacio; empieza sin objeto. En cambio, std::make_unique<int>() crea un int y lo inicializa con cero. Tener un objeto cuyo valor es cero y no tener objeto son estados diferentes (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_vacio_frente_a_valor_cero",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa? Las dos primeras comparaciones indican si existe un objeto gestionado.",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> vacio;\n    auto cero = std::make_unique<int>();\n    std::cout << (vacio != nullptr) << ':' << (cero != nullptr) << ':' << *cero;\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vacio no tiene objeto. cero sí gestiona un int, cuyo valor inicial es cero. Sólo se desreferencia el propietario que tiene objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar antes de usar * o ->"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos utilizar if (propietario) para comprobar si tiene objeto, o comparar con nullptr. Esa comprobación consulta la presencia, no el valor del int. Por eso un propietario de un cero también cumple la condición. Las expresiones *propietario y propietario->miembro requieren que exista el objeto correspondiente (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l4_presencia_y_valor",
+          "question": "Un unique_ptr<int> fue creado correctamente para un int con valor cero. ¿Qué permite concluir if (propietario)?",
+          "options": [
+            "Que el int debe tener un valor distinto de cero.",
+            "Que el propietario gestiona un objeto y se puede acceder a ese int mientras siga vivo.",
+            "Que ese int seguirá vivo aunque termine el propietario que lo gestiona."
+          ],
+          "correctIndex": 1,
+          "explanation": "La condición consulta si el puntero gestionado es no nulo. El valor del objeto puede ser cero. Primero se reconoce la presencia y después se consulta o modifica el int. Esa comprobación no prolonga la vida del objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un propietario vacío no es un acceso colgante a un objeto anterior. Es un estado reconocido que no permite desreferenciar. Más adelante, al eliminar o sustituir un objeto, también tendremos que dejar de utilizar los accesos prestados que dependían de su vida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prestar acceso mediante get"
+        },
+        {
+          "type": "paragraph",
+          "text": "propietario.get() devuelve el puntero ordinario almacenado, sin entregar la propiedad ni crear otro objeto. Para unique_ptr<int>, ese resultado tiene tipo int*. Podemos guardarlo en un int* para consultar o modificar el entero, o convertirlo a const int* para prestar sólo lectura a través de ese acceso. Si el propietario está vacío, get() devuelve nullptr (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El código que recibe ese acceso prestado no debe ejecutar delete sobre él ni convertirlo en otro propietario independiente. Su validez depende de que el objeto siga vivo. Copiar ese puntero no prolonga la vida del objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_dos_accesos_prestados",
+          "language": "cpp",
+          "question": "¿Qué muestran el propietario, el segundo acceso y la comprobación final?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(5);\n    int* primero = propietario.get();\n    const int* segundo = propietario.get();\n    *primero = 8;\n    std::cout << *propietario << ':' << *segundo << ':' << (propietario != nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "8:8:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos accesos se refieren al mismo int, que el propietario mantiene vivo. La primera vía cambia ese int a ocho y la segunda observa el cambio. get no vacía al propietario."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puede haber varios accesos prestados mientras un unique_ptr se responsabiliza de liberar el objeto. Ese número de accesos no obliga a compartir la responsabilidad de liberación. En el programa, ambos punteros locales dejan de utilizarse antes de que termine el propietario."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar el valor no copia al propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::unique_ptr<int> copia = propietario; intenta copiar el objeto propietario. Ese tipo no ofrece una operación de copia: la compilación se rechaza. Así se evita que esa copia ordinaria cree dos propietarios que intenten liberar el mismo objeto (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, int copia = *propietario; copia el valor del entero a otro int. Ese dato puede conservarse después de cambiar o terminar el objeto original. Su vida ya no depende de la del objeto del que se leyó el valor."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_copia_del_entero",
+          "language": "cpp",
+          "question": "¿Qué valores muestran la copia del int y el objeto gestionado?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(3);\n    int copia = *propietario;\n    *propietario = 9;\n    std::cout << copia << ':' << *propietario;\n    return 0;\n}\n",
+          "answers": [
+            "3:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia recibió tres como un int independiente. Cambiar el objeto gestionado a nueve no vuelve a escribir en esa copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "La prohibición de copiar el propietario no corrige cualquier uso incorrecto de punteros. Construir deliberadamente otro unique_ptr a partir de propietario.get() puede compilar, pero crea dos responsabilidades independientes sobre el mismo objeto y provoca una doble liberación cuando ambos intentan destruirlo. No se debe hacer. La creación mediante make_unique conserva aquí una relación de propiedad inequívoca."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La posición de const sigue teniendo significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En const std::unique_ptr<int> fijo, el objeto propietario es constante: no podemos hacer que pase a estar vacío ni que se haga responsable de otro int. El int gestionado sigue siendo modificable a través de *fijo. En std::unique_ptr<const int> lectura, el tipo gestionado es const int: no se puede escribir en ese entero a través de ese acceso (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_const_del_propietario_y_del_objeto",
+          "language": "cpp",
+          "question": "¿Qué muestran los dos objetos después de la escritura permitida?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    const std::unique_ptr<int> fijo = std::make_unique<int>(2);\n    std::unique_ptr<const int> lectura = std::make_unique<const int>(5);\n    *fijo = 8;\n    std::cout << *fijo << ':' << *lectura;\n    return 0;\n}\n",
+          "answers": [
+            "8:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "fijo conserva la misma responsabilidad, pero su int puede recibir ocho. lectura permite consultar su int constante con cinco. Se distinguen el propietario y el objeto gestionado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para ofrecer sólo lectura de un int a una función, un const int* prestado expresa esa restricción sobre el objeto. Una referencia const a un unique_ptr<int> protege las operaciones del propietario a través de esa referencia; no convierte su int en constante."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El destructor generado también limpia un miembro unique_ptr"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Bolsa, el miembro marca_ se inicializa mediante make_unique<Marca>('M'). El constructor de Marca recibe la letra M, la guarda en etiqueta_ y después imprime su mensaje. Usaremos esos mensajes para seguir el orden. Bolsa no declara un destructor propio; su destructor generado destruye el miembro unique_ptr y éste destruye la Marca que posee (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_miembro_propietario",
+          "language": "cpp",
+          "question": "Escribe la salida completa de este objeto con un miembro propietario.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Bolsa {\nprivate:\n    std::unique_ptr<Marca> marca_ = std::make_unique<Marca>('M');\n};\n\nint main() {\n    {\n        Bolsa bolsa;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:M\nUso\nDestruir:M\nFuera"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El propietario miembro mantiene la Marca durante Uso. Al salir del bloque, la destrucción de Bolsa destruye su miembro propietario. Éste destruye la Marca antes de que main imprima Fuera."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una clase con un miembro unique_ptr no recibe automáticamente la copia independiente que vimos para una clase con vector. Copiar ese miembro propietario está prohibido, por lo que intentar copiar la clase completa en ese caso también se rechaza al compilar. Las formas de copia dependen de los tipos concretos de los miembros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Terminar el objeto antes de terminar el propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "propietario.reset() sin argumentos termina el objeto gestionado, libera su almacenamiento y deja al propietario vacío. El propietario sigue existiendo y puede consultarse como vacío. Aplicar reset otra vez al propietario vacío no destruye un segundo objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_vaciar_mediante_reset",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen al vaciar y volver a vaciar?",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    auto propietario = std::make_unique<Marca>('A');\n    std::cout << \"Uso:\" << propietario->etiqueta() << '\\n';\n    propietario.reset();\n    std::cout << \"Vacio:\" << (propietario == nullptr) << '\\n';\n    propietario.reset();\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:A\nUso:A\nDestruir:A\nVacio:1\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La Marca se destruye en la primera llamada a reset, antes de imprimir Vacio. La segunda llamada no tiene objeto que destruir. Al terminar el propietario ya vacío tampoco se destruye otra Marca."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cualquier acceso prestado al objeto que se acaba de destruir deja de ser válido. No se debe leer, comparar ni utilizar ese acceso antiguo para decidir si ahora hay objeto. Se consulta el propietario actual. Una variable que guardaba el acceso puede sobrescribirse con nullptr sin leer su valor anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Intercambiar propietarios conserva el objeto que sigue vivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada origen.swap(destino) intercambia la responsabilidad de ambos propietarios. Si destino estaba vacío, pasa a gestionar el objeto que mantenía origen y origen queda vacío. El objeto gestionado no se copia ni se destruye por ese intercambio. Los propietarios usados aquí pueden realizarlo sin lanzar excepciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un acceso prestado al objeto sigue refiriéndose a ese mismo objeto mientras éste permanezca vivo, aunque cambie el propietario responsable. En el programa, prestado continúa válido después del intercambio y durante la consulta. Su validez terminaría si el nuevo propietario destruyera el objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_intercambiar_responsabilidad",
+          "language": "cpp",
+          "question": "¿Qué estados y valores muestran los accesos después del intercambio?",
+          "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto origen = std::make_unique<int>(6);\n    std::unique_ptr<int> destino;\n    const int* prestado = origen.get();\n    origen.swap(destino);\n    std::cout << (origen != nullptr) << ':' << (destino != nullptr)\n              << ':' << *prestado << ':' << (*prestado == *destino);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:6:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "origen queda vacío y destino recibe la propiedad. prestado sigue accediendo al mismo int vivo. No se desreferencia el propietario vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La limpieza también ocurre al propagarse una excepción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un unique_ptr local de duración automática ya se construyó y una excepción abandona su bloque, ese propietario se destruye. En los tipos que usamos aquí, su limpieza destruye el objeto gestionado y libera su almacenamiento antes de entrar en la captura exterior. No hay que añadir un delete dentro del catch (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_excepcion_tras_creacion",
+          "language": "cpp",
+          "question": "¿Qué orden muestran la Marca gestionada y el catch?",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Destruir:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nstruct Fallo {};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Marca>('E');\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Crear:E\nDestruir:E\nCaptura"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La Marca E ya se construyó y tenía un propietario completo. Al propagarse Fallo termina ese propietario, que destruye E antes de Captura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si falla la construcción del objeto que se intentaba crear"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente caso es distinto: el constructor de Intento lanza antes de terminar. La llamada make_unique no llega a proporcionar un propietario terminado al llamador. No se ejecuta ~Intento porque ese objeto tampoco completó su construcción. La expresión de creación con new utilizada por make_unique libera el almacenamiento obtenido para ese intento al fallar su inicialización (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l4_constructor_que_lanza_en_la_creacion",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen cuando el constructor del objeto lanza?",
+          "code": "#include <iostream>\n#include <memory>\n\nstruct Fallo {};\n\nclass Intento {\npublic:\n    Intento(bool fallar) {\n        std::cout << \"Inicio\\n\";\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Listo\\n\";\n    }\n    ~Intento() { std::cout << \"Cierre\\n\"; }\n};\n\nint main() {\n    try {\n        auto propietario = std::make_unique<Intento>(true);\n    } catch (const Fallo&) {\n        std::cout << \"Captura\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Inicio\nCaptura"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo se alcanza Inicio y después Captura. No aparece Listo ni Cierre de Intento. La liberación del almacenamiento del intento fallido no depende de un destructor de unique_ptr que aún no se llegó a construir."
+        },
+        {
+          "type": "paragraph",
+          "text": "También puede fallar la propia solicitud de almacenamiento y lanzar std::bad_alloc antes de construir el objeto. No confundiremos ese caso con una excepción lanzada desde un constructor ni con un fallo que provocamos después de preparar un candidato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un valor antes de vaciar"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l4_prestar_y_vaciar",
+          "question": "Completa primero la función miembro que presta el puntero sin vaciar al propietario y después la que destruye el objeto y deja al propietario vacío. El programa copia el entero antes de terminarlo y deja de usar el acceso prestado.",
+          "template": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto propietario = std::make_unique<int>(4);\n    const int* acceso = propietario.[]();\n    const int copia = *acceso;\n    acceso = nullptr;\n    propietario.[]();\n    std::cout << copia << ':' << (propietario == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "get",
+            "reset"
+          ],
+          "answerAlternatives": [
+            [
+              "get"
+            ],
+            [
+              "reset"
+            ]
+          ],
+          "explanation": "get permite leer el int mientras vive. copia guarda un valor independiente. El acceso se sobrescribe antes de reset y no se consulta después de terminar el int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar una consulta que intenta recibir la propiedad por copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "consultar sólo necesita leer un int existente, pero el inicial declara un parámetro unique_ptr por valor. La llamada con el propietario con nombre intentaría copiarlo y se rechaza al compilar. El programa no llega a ejecutarse hasta corregir ese paso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia el parámetro de consultar para que reciba un puntero ordinario de sólo lectura al entero. Desde la llamada, proporciona ese acceso prestado sin copiar ni vaciar al propietario. Conserva la lectura *dato, el objeto creado, las impresiones y la propiedad en main. El contrato de consultar exige un puntero válido a un int vivo; el llamador ya lo cumple después de la creación correcta. La función no debe destruirlo ni almacenar el acceso para después."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay entrada. La salida requerida es 7:7, sin salto final. La consulta devuelve el valor y después main todavía puede leer el mismo objeto mediante su propietario."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n\nint consultar(std::unique_ptr<int> dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    std::cout << consultar(propietario) << ':' << *propietario;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "7:7"
+                ],
+                "explanation": "La función sólo toma prestado un acceso de lectura. No necesita copiar ni vaciar al propietario, que permanece en main."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: consultar el objeto sin recibir su propiedad"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nint consultar(const int* dato) {\n    return *dato;\n}\n\nint main() {\n    auto propietario = std::make_unique<int>(7);\n    std::cout << consultar(propietario.get()) << ':' << *propietario;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "get devuelve el int* que la llamada puede convertir a const int*. consultar lee el objeto mientras sigue vivo y devuelve un int independiente. Al regresar, main mantiene la propiedad y puede consultar el objeto otra vez. La limpieza ocurrirá cuando termine ese propietario."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: una caja vacía o propietaria de un entero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Caja contiene un miembro std::unique_ptr<int> llamado actual_. Empieza vacío. hay() permite comprobar la presencia; valor() devuelve el entero por valor y requiere que hay() sea true. mostrar y main ya comprueban esa condición antes de llamar, por lo que no se desreferencia un propietario vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar y vaciar ya están implementadas. cambiar sólo acepta valores de cero a nueve si existe un objeto. vaciar usa reset y devuelve true incluso si la caja ya estaba vacía. No modifiques esas funciones ni añadas un destructor propio: el miembro propietario se encarga de la limpieza al terminar Caja."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa bool Caja::reponer(int valor, bool provocarFallo):\nSi valor está fuera de cero a nueve, devuelve false sin cambiar nada.\nDentro de un try, crea un candidato mediante make_unique<int>(valor).\nDespués de completar el candidato, si provocarFallo es true, lanza PreparacionFallida{}, la señal de error declarada en el programa.\nSi no se solicita ese fallo, intercambia actual_ con el candidato y devuelve true.\nCaptura PreparacionFallida y std::bad_alloc para devolver false conservando el estado anterior, tanto si había objeto como si estaba vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de un intercambio correcto, el miembro gestiona el entero nuevo y el candidato recibe el objeto anterior, si existía. El candidato se destruye al abandonar su bloque y limpia ese objeto anterior. Si una excepción ocurre antes del intercambio, el miembro no cambia. No uses get para construir un segundo propietario ni liberes un acceso prestado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con una cantidad de órdenes entre uno y doce. Cada orden contiene operacion y valor:\n1: reponer con ese valor, sin fallo deliberado.\n2: preparar la reposición y provocar el fallo después de crear el candidato.\n3: cambiar el entero existente a ese valor.\n4: vaciar; el campo valor se ignora en esta orden.\nOtra operación: rechazo sin cambios.\nTodos los pasos conservan la misma Caja durante la ejecución. Reponer el mismo valor también prepara un objeto nuevo; con fallo deliberado se rechaza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de cada orden, main guarda por valor el entero anterior si existía, junto a un bool que registra esa presencia. Antes se muestra con X cuando estaba vacío. Actual y Final consultan la caja actual y muestran X si no hay objeto; un int cero se muestra como cero. El entero copiado para Antes no queda invalidado cuando se destruye el objeto del que procedía."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa únicamente el cuerpo provisional de reponer, conservando su validación inicial y las demás partes proporcionadas. No imprimas desde reponer, no cambies los informes ni simules los resultados con textos fijos. Las capturas deben abarcar la construcción del candidato, no sólo lo que ocurre después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar presencia y conservación en dos casos independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila empieza con una caja nueva. Si la fila indica un valor inicial, ya se repuso correctamente ese valor antes de la solicitud. La columna Fallo se refiere al fallo deliberado después de crear el candidato; los valores solicitados son válidos."
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u6l4_rechazo_y_presencia",
+          "schemaVersion": 1,
+          "prompt": "Para cada fila indica el resultado (1 o 0), si al terminar hay objeto (1 o 0), y su valor final. Escribe -1 en el campo valor sólo si no hay objeto: esa convención pertenece a esta respuesta, no al dominio de enteros de Caja.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Estado inicial",
+                "Valor solicitado",
+                "Fallo"
+              ],
+              "rows": [
+                [
+                  "Vacío",
+                  "0",
+                  "false"
+                ],
+                [
+                  "Valor 4",
+                  "8",
+                  "true"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estado",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: hay objeto",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 1: valor final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 2: hay objeto",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 2: valor final",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera reposición crea un int de valor cero: la caja no está vacía. La segunda rechaza antes del intercambio y conserva el objeto anterior con cuatro.",
+            "incorrect": "Distingue un entero cero de no tener objeto. Un fallo posterior a preparar el candidato no sustituye el propietario anterior."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar, consultar y vaciar sin duplicar propietarios"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el editor. Sólo el primer caso correcto es obligatorio para avanzar. Las otras dos entradas son ensayos opcionales separados. La historia obligatoria incluye una caja vacía, cambios del entero, fallos de preparación, un cero válido y liberación explícita mediante la operación vaciar."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa el candidato propietario, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 4\n3 7\n2 8\n1 0\n4 0\n3 6\n2 5\n1 9\n1 10\n3 -1\n2 6\n4 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 4\n3 7\n2 8\n1 0\n4 0\n3 6\n2 5\n1 9\n1 10\n3 -1\n2 6\n4 0\n",
+                "outputs": [
+                  "Inicio:X\nResultado:1;Antes:X;Actual:4\nResultado:1;Antes:4;Actual:7\nResultado:0;Antes:7;Actual:7\nResultado:1;Antes:7;Actual:0\nResultado:1;Antes:0;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:1;Antes:9;Actual:X\nFinal:X"
+                ],
+                "explanation": "Conserva el miembro hasta aceptar la preparación. El candidato propietario limpia su objeto al fallar o el objeto anterior después del intercambio."
+              },
+              {
+                "standardInput": "7\n4 99\n1 0\n2 0\n1 0\n4 -1\n4 0\n3 0\n",
+                "outputs": [
+                  "Inicio:X\nResultado:1;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:0\nResultado:0;Antes:0;Actual:0\nResultado:1;Antes:0;Actual:0\nResultado:1;Antes:0;Actual:X\nResultado:1;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nFinal:X"
+                ],
+                "explanation": "Conserva el miembro hasta aceptar la preparación. El candidato propietario limpia su objeto al fallar o el objeto anterior después del intercambio."
+              },
+              {
+                "standardInput": "7\n1 -2147483648\n2 2147483647\n1 5\n3 2147483647\n9 0\n2 -1\n3 0\n",
+                "outputs": [
+                  "Inicio:X\nResultado:0;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:1;Antes:5;Actual:0\nFinal:0"
+                ],
+                "explanation": "Conserva el miembro hasta aceptar la preparación. El candidato propietario limpia su objeto al fallar o el objeto anterior después del intercambio."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes conserva una copia del valor previo; Actual consulta la caja después de la orden. Un rechazo no cambia la presencia ni el valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n1 4\n3 7\n2 8\n1 0\n4 0\n3 6\n2 5\n1 9\n1 10\n3 -1\n2 6\n4 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:X\nResultado:1;Antes:X;Actual:4\nResultado:1;Antes:4;Actual:7\nResultado:0;Antes:7;Actual:7\nResultado:1;Antes:7;Actual:0\nResultado:1;Antes:0;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:0;Antes:9;Actual:9\nResultado:1;Antes:9;Actual:X\nFinal:X"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: repetición y datos rechazados"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vaciar vacío es un éxito. Reponer cero crea un objeto y no equivale a vaciar. La reposición deliberadamente fallida se rechaza aunque repita el valor actual."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n4 99\n1 0\n2 0\n1 0\n4 -1\n4 0\n3 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:X\nResultado:1;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:0\nResultado:0;Antes:0;Actual:0\nResultado:1;Antes:0;Actual:0\nResultado:1;Antes:0;Actual:X\nResultado:1;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nFinal:X"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los enteros extremos caben en el int de Windows usado en el curso y se rechazan por comparación. Una operación desconocida conserva el estado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n1 -2147483648\n2 2147483647\n1 5\n3 2147483647\n9 0\n2 -1\n3 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:X\nResultado:0;Antes:X;Actual:X\nResultado:0;Antes:X;Actual:X\nResultado:1;Antes:X;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:0;Antes:5;Actual:5\nResultado:1;Antes:5;Actual:0\nFinal:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: un propietario para cada entero que sigue vivo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <new>\n\nstruct PreparacionFallida {};\n\nclass Caja {\npublic:\n    bool hay() const { return actual_ != nullptr; }\n    int valor() const { return *actual_; }\n    bool cambiar(int valor);\n    bool vaciar();\n    bool reponer(int valor, bool provocarFallo);\nprivate:\n    std::unique_ptr<int> actual_;\n};\nbool Caja::cambiar(int valor) {\n    if (!actual_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *actual_ = valor;\n    return true;\n}\n\nbool Caja::vaciar() {\n    actual_.reset();\n    return true;\n}\nbool Caja::reponer(int valor, bool provocarFallo) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        actual_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar(const Caja& caja) {\n    if (caja.hay()) {\n        std::cout << caja.valor();\n    } else {\n        std::cout << 'X';\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Caja caja;\n    std::cout << \"Inicio:\";\n    mostrar(caja);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int valor = 0;\n        if (!(std::cin >> operacion >> valor)) {\n            return 1;\n        }\n        const bool habia = caja.hay();\n        const int anterior = habia ? caja.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 || operacion == 2) {\n            aceptado = caja.reponer(valor, operacion == 2);\n        } else if (operacion == 3) {\n            aceptado = caja.cambiar(valor);\n        } else if (operacion == 4) {\n            aceptado = caja.vaciar();\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        if (habia) {\n            std::cout << anterior;\n        } else {\n            std::cout << 'X';\n        }\n        std::cout << \";Actual:\";\n        mostrar(caja);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(caja);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El candidato obtiene su propio objeto mediante make_unique. Si se provoca el fallo, se destruye al salir del try y el miembro permanece sin cambios. Si la reserva de ese candidato falla con std::bad_alloc, tampoco se ha cambiado el miembro. No es necesario que el catch libere manualmente un puntero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al aceptar, swap intercambia las responsabilidades. El miembro pasa a gestionar el objeto nuevo; el candidato recibe el anterior, si lo había, y lo destruye al terminar su bloque. vaciar destruye el objeto actual mediante reset. Al terminar Caja, su miembro limpia cualquier objeto que todavía conserve."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera historia se crea cuatro y después se cambia ese int a siete. El intento de preparar ocho falla y conserva siete. La siguiente reposición acepta un objeto nuevo cuyo valor es cero. Antes aún puede mostrar el siete copiado antes de la orden, aunque ya haya terminado el objeto anterior. Después de vaciar, cambiar falla porque no hay int que modificar."
+        },
+        {
+          "type": "paragraph",
+          "text": "La caja mantiene un único responsable de liberación para cada objeto gestionado y no conserva punteros prestados entre reposiciones. Copiar el int para un informe sigue permitido; copiar la Caja completa se rechaza porque su miembro unique_ptr no admite esa copia (Stroustrup, 2024). En la siguiente lección aprenderás a entregar la responsabilidad de liberar a otro propietario y a dejar vacío al anterior. Ese cambio se denomina transferencia de propiedad por movimiento."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "b81157ca0a20ad4847c525a9108d210b8ab64b95ca6e3ce1cd79707cd68e5445"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "3286966dde4cac37040c6b4ef99e9eeeadb8a9f84cb22d94412eb68f0dfa242d"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "d6094bc179c09d8a9038f8c95afc45b9f1483f22c000516a5fece9d877d246d1"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "b775e02cb7efb1a9f419105fc284f967521e3967099a7eca6619fd75239a2eba"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "69aab95a763826f91ed74aaf38900d6cb1c80335a941083dc11ee52a76da5835"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "18d1eb8a92818dfc2a91c7825a872f32c88b597cb755cb1491e755934bdf9e45"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "8f4c39b1d5aaecc22d6ba067cf68bfb679300d60423e051cd32d02f44ba48b3d"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "fda2bfd30bd25c83a64fe2ab3ff9b2f326ddbaac4fa72b7827e7d68dc718ee3d"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "fc93d46c28c70ac51dac124bb8a2c0d92527078b19e5d978a7d87a0a6473c54e"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "5362ed1804f56a886dc860fcdc59c74a1676af9105fbb591176a531063b00307"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "b28af40931df3a2f0dc0237c4750bc72f58191a05c587b6eba75cacf42773a3b"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "6848daafb6dfa27195b3393f78f0f3e76d636f2343ed2a778394adb9d43bd708"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "37ffa6c620af15948a51652d555bee45726e0f7d4785db1ffee75c2e2ebd27c0"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "d8d067399c414a2ad273818cda44a45381e0bfdeea751f104eb5101d4c981336"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "ac6a988a0a0c56564e58bd95bec36a3e74b8bbd5f464791bd00ac2fe84ba6105"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "db99be83d9ad400f1c850c4ea470540fbabc6fc998cb110a369ced49316dcea6"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "4cd53d9dc8985f0b82fa05029db7677b89a4d8d89c947de0db01575a155d0f6e"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "2eb57aec91ad519b0631e468f76205a036d889b0540bf353d4f194f2e5646c1c"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "5d221157e586674300b00dfd521ab42f44cff259b786ff4a971c58940c02286e"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0010",
+            "sha256": "4cbfb84d18bf5f1f67d28495e0852dabbe3d5c83f48a6aa741b50bb461725b91"
+          },
+          {
+            "id": "block_0017_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0012",
+            "sha256": "e6e6c6390e3207ea4037c9e7be5e0f745b29bcd137f083141ad63661762821c0"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "012ac625b7307c1b70bd58c2407d14b863a251bcba4ee36a47ee96e6c32ba681"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008",
+          "block_0017_0009",
+          "block_0017_0010",
+          "block_0017_0011",
+          "block_0017_0012"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "57a459d631892aad5099520a426b200cb02cd9fe513e132f11c1e6cc67270321",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "b81157ca0a20ad4847c525a9108d210b8ab64b95ca6e3ce1cd79707cd68e5445"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "3286966dde4cac37040c6b4ef99e9eeeadb8a9f84cb22d94412eb68f0dfa242d"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "d6094bc179c09d8a9038f8c95afc45b9f1483f22c000516a5fece9d877d246d1"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "b775e02cb7efb1a9f419105fc284f967521e3967099a7eca6619fd75239a2eba"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "69aab95a763826f91ed74aaf38900d6cb1c80335a941083dc11ee52a76da5835"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "18d1eb8a92818dfc2a91c7825a872f32c88b597cb755cb1491e755934bdf9e45"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "8f4c39b1d5aaecc22d6ba067cf68bfb679300d60423e051cd32d02f44ba48b3d"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "fda2bfd30bd25c83a64fe2ab3ff9b2f326ddbaac4fa72b7827e7d68dc718ee3d"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "fc93d46c28c70ac51dac124bb8a2c0d92527078b19e5d978a7d87a0a6473c54e"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "5362ed1804f56a886dc860fcdc59c74a1676af9105fbb591176a531063b00307"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "b28af40931df3a2f0dc0237c4750bc72f58191a05c587b6eba75cacf42773a3b"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "6848daafb6dfa27195b3393f78f0f3e76d636f2343ed2a778394adb9d43bd708"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "37ffa6c620af15948a51652d555bee45726e0f7d4785db1ffee75c2e2ebd27c0"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "d8d067399c414a2ad273818cda44a45381e0bfdeea751f104eb5101d4c981336"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "ac6a988a0a0c56564e58bd95bec36a3e74b8bbd5f464791bd00ac2fe84ba6105"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "db99be83d9ad400f1c850c4ea470540fbabc6fc998cb110a369ced49316dcea6"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "4cd53d9dc8985f0b82fa05029db7677b89a4d8d89c947de0db01575a155d0f6e"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "2eb57aec91ad519b0631e468f76205a036d889b0540bf353d4f194f2e5646c1c"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "5d221157e586674300b00dfd521ab42f44cff259b786ff4a971c58940c02286e"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0010",
+                "sha256": "4cbfb84d18bf5f1f67d28495e0852dabbe3d5c83f48a6aa741b50bb461725b91"
+              },
+              {
+                "id": "block_0017_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0012",
+                "sha256": "e6e6c6390e3207ea4037c9e7be5e0f745b29bcd137f083141ad63661762821c0"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "012ac625b7307c1b70bd58c2407d14b863a251bcba4ee36a47ee96e6c32ba681"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

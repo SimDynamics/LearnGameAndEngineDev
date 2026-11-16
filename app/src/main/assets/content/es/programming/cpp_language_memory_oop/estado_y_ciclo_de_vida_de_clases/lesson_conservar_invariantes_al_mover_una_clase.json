@@ -1,0 +1,2128 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__conservar_invariantes_al_mover_una_clase",
+  "title": "Conservar invariantes al mover una clase",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el problema del movimiento por miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al estudiar las operaciones generadas comprobamos que mover cada miembro por separado no basta para mantener cualquier relación entre ellos. Vamos a recuperar ese problema con un propietario y una etiqueta entera. El contrato del siguiente Ejemplo exige etiqueta cero cuando no hay objeto, y una etiqueta de uno a nueve cuando hay objeto. coherente() comprueba esa relación sin leer el int gestionado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejemplo deja que el compilador genere el movimiento. Sigue dos operaciones diferentes: cómo se construye el miembro unique_ptr de destino y cómo se inicializa su miembro int desde el origen. Mover un int no tiene el efecto de poner a cero el entero original. La relación entre los dos miembros necesita una decisión adicional de nuestra clase (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_recuperar_movimiento_por_miembros",
+          "language": "cpp",
+          "question": "Escribe presencia, etiqueta y coherencia de origen, después | y los mismos tres datos de destino.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Ejemplo {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int etiqueta() const { return etiqueta_; }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n    int etiqueta_ = 3;\n};\n\nint main() {\n    Ejemplo origen;\n    Ejemplo destino{std::move(origen)};\n    std::cout << origen.hay() << ':' << origen.etiqueta() << ':'\n              << origen.coherente() << '|' << destino.hay() << ':'\n              << destino.etiqueta() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:3:0|1:3:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El unique_ptr de destino recibe el int y deja vacío al miembro propietario de origen. El miembro etiqueta del destino recibe el entero que guardaba origen, pero ese entero no se reinicia en origen. Por eso origen conserva una etiqueta no nula sin tener objeto, mientras destino sí conserva la relación exigida."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se ha duplicado la propiedad ni se ha destruido antes de tiempo el int transferido. El fallo que detecta coherente es lógico: el estado del origen ya no cumple el contrato elegido. La consulta es definida porque no desreferencia al propietario vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Definir los estados que admite Muestra"
+        },
+        {
+          "type": "paragraph",
+          "text": "La clase Muestra coordinará su movimiento para mantener esa relación. Sus miembros son dato_, un unique_ptr<int>, y etiqueta_, otro int. La etiqueta es un dato que acompaña a la muestra: no cuenta objetos y no es un identificador que deba ser único. Por ejemplo, una Muestra puede guardar valor dos y etiqueta ocho, y otra puede utilizar también esa etiqueta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una Muestra vacía no gestiona int y tiene etiqueta cero. Una Muestra ocupada gestiona un int y tiene etiqueta de uno a nueve. Los valores del int que admite esta interfaz van de cero a nueve: un int con valor cero está presente y puede llevar una etiqueta no nula. La etiqueta cero, en cambio, queda reservada para el estado vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor sin argumentos inicia el propietario vacío y la etiqueta en cero. hay() consulta la presencia y etiqueta() devuelve ese dato. valor() requiere que haya objeto para leerlo. coherente() comprueba que la presencia y la etiqueta corresponden a uno de los dos estados admitidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las operaciones proporcionadas mantienen esos estados:\nponer valida valor y etiqueta, prepara otro int y sustituye el estado sólo al aceptar.\ncambiar comprueba que haya objeto y sólo cambia su valor.\nreetiquetar comprueba que haya objeto y sólo cambia su etiqueta.\nvaciar termina el int, si lo hay, y deja la etiqueta en cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí elegimos prohibir la copia de Muestra mediante = delete y permitir transferencias. Es una interfaz distinta de la Celda copiable de la lección anterior, donde escribimos una clonación del int. Que ambas utilicen unique_ptr no obliga a que ofrezcan la misma política de copia. En las predicciones que utilizan poner suponemos que la preparación inicial del int termina con éxito."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer movimiento y enlazar una referencia no transfieren"
+        },
+        {
+          "type": "paragraph",
+          "text": "En std::move(origen) seguimos refiriéndonos a la misma Muestra, pero ofrecemos ese objeto para que una operación pueda mover desde él. Evaluar esa llamada no ejecuta por sí mismo el movimiento de sus miembros. El programa siguiente vincula Muestra&& acceso con la Muestra existente de main. Esa referencia da otro acceso al mismo objeto, sin construir una Muestra propietaria nueva (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La clase declara un constructor de movimiento, pero declarar la referencia acceso no lo llama. En este programa basta esa declaración, sin incluir la definición del constructor de movimiento, porque no se utiliza. Distingue la existencia de esa función de una instrucción que realmente la utilice para construir otro objeto. La comparación entre &acceso y &origen permite observar qué objeto identifica cada nombre."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_referencia_rvalue_sin_transferencia",
+          "language": "cpp",
+          "question": "¿Qué muestran la presencia, el valor y la etiqueta del origen, seguidos de la comparación entre las direcciones de los dos nombres?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    if (!origen.poner(4, 1)) { return 1; }\n    Muestra&& acceso = std::move(origen);\n    std::cout << origen.hay() << ':' << origen.valor() << ':'\n              << origen.etiqueta() << ':' << (&acceso == &origen);\n    return 0;\n}\n",
+          "answers": [
+            "1:4:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia acceso se vincula al objeto origen. No se construye un nuevo propietario ni se asigna a uno existente. El objeto y sus miembros conservan su estado; las dos direcciones comparadas corresponden a la misma Muestra."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir el constructor que coordina ambos miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestra(Muestra&& otra); declara dentro de public de la clase el constructor de movimiento. Su parámetro enlaza con una Muestra existente ofrecida para mover. En esta firma otra no es const: nuestra implementación necesita cambiar el propietario y la etiqueta del origen. Las copias de Muestra están eliminadas, de modo que una fuente constante no permite esta transferencia (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el acceso otra.dato_ de este constructor, el nombre otra se utiliza como expresión lvalue. El tipo && del parámetro no convierte por sí mismo ese acceso a su miembro en una oferta de movimiento. Para inicializar el propietario de destino por movimiento debemos ofrecer específicamente el miembro propietario de otra mediante std::move. Utilizar directamente ese miembro como origen intentaría copiar el unique_ptr, y su copia está prohibida (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La lista de inicialización prepara primero los miembros del destino. dato_ recibe el propietario transferido. etiqueta_ recibe el dato entero que tenía el origen; esta lectura no cambia por sí sola la etiqueta del origen. Después, el cuerpo coloca la etiqueta del origen en cero. El origen queda vacío porque cedió su propietario, y su etiqueta debe corresponder a ese estado (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La etiqueta que recibe el destino es la que traía el origen, no un valor fijo como uno. Si el origen estaba vacío, su etiqueta ya era cero y el destino debe conservar ese estado vacío. Si tenía objeto, el destino recibe la etiqueta que acompañaba a ese objeto. La relación se exige al terminar la operación; no sustituimos los pasos de preparación por una promesa de que mover cada miembro los coordinará solo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la transferencia y el estado del origen"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l8_completar_constructor_coherente",
+          "question": "Completa los dos huecos. En el primero utiliza std::move sobre el miembro propietario del origen para construir el propietario del destino. En el segundo proporciona el entero que debe quedar como etiqueta de la Muestra vacía. Conserva la lectura de la etiqueta anterior para el destino y no crees otro int.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{[]}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = [];\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    if (!origen.poner(0, 5)) { return 1; }\n    Muestra destino{std::move(origen)};\n    std::cout << origen.hay() << ':' << origen.etiqueta() << '|'\n              << destino.valor() << ':' << destino.etiqueta() << '|'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "std::move(otra.dato_)",
+            "0"
+          ],
+          "answerAlternatives": [
+            [
+              "std::move(otra.dato_)",
+              "std::move((otra.dato_))"
+            ],
+            [
+              "0",
+              "int{}"
+            ]
+          ],
+          "explanation": "El destino construye su unique_ptr por movimiento desde el miembro de otra y conserva la etiqueta que ese origen tenía. La transferencia deja vacío al propietario de otra; el cuerpo pone su etiqueta en cero. Así se coordinan los dos miembros sin clonar el int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir desde una muestra ocupada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora main sí construye un objeto Muestra nuevo desde el origen ofrecido. El constructor coordina los miembros y deja ambos objetos en estados que cumplen su contrato. Sigue por separado el valor del int y la etiqueta: que el valor sea cero no significa que el propietario esté vacío."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_construccion_movimiento_coherente",
+          "language": "cpp",
+          "question": "Escribe presencia y etiqueta del origen, después valor y etiqueta del destino y, al final, las dos comprobaciones de coherencia. Conserva los separadores del programa.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    if (!origen.poner(0, 9)) { return 1; }\n    Muestra destino{std::move(origen)};\n    std::cout << origen.hay() << ':' << origen.etiqueta() << '|'\n              << destino.valor() << ':' << destino.etiqueta() << '|'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:0|0:9|1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La construcción transfiere el int existente con su etiqueta al destino. El valor cero sigue siendo un int presente. El origen conserva su propia Muestra, ahora sin int y con etiqueta cero. coherente comprueba la relación de cada uno de esos objetos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El movimiento no destruye la Muestra origen. Se han cambiado sus miembros de acuerdo con el contrato. Puede consultarse su presencia y su etiqueta, y más adelante puede recibir otro objeto mediante poner. No se debe llamar a valor() mientras esté vacía."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir también desde una muestra vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro constructor acepta una fuente vacía. No intenta inventar un int ni darle una etiqueta de muestra ocupada. El propietario del destino recibe el estado del propietario de origen y la etiqueta se obtiene del dato que ese origen tiene establecido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_construccion_desde_vacio",
+          "language": "cpp",
+          "question": "¿Qué imprimen las presencias, las etiquetas y las dos consultas de coherencia?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    Muestra destino{std::move(origen)};\n    std::cout << origen.hay() << ':' << origen.etiqueta() << ':'\n              << destino.hay() << ':' << destino.etiqueta() << ':'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:0:0:0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La fuente se construye vacía y con etiqueta cero. El constructor de movimiento prepara otro estado vacío, conserva esa etiqueta para el destino y deja el origen en el mismo estado admitido. No se lee el valor de un int inexistente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas operaciones concretas sólo transfieren el propietario habitual de un int y asignan enteros. No necesitan reservar otro int y no lanzan con esos tipos y esas acciones. Esa observación depende de la implementación que acabamos de estudiar; el nombre movimiento no garantiza por sí solo ese comportamiento para cualquier clase (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar debe sustituir un destino ya existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una construcción se prepara una Muestra nueva. En una asignación, el destino ya existe y puede gestionar otro int con su etiqueta. La declaración Muestra& operator=(Muestra&& otra); dentro de public de la clase ofrece esta segunda operación. El tipo de retorno Muestra& indica que se devuelve una referencia a una Muestra existente. Nuestro contrato exige que esa referencia identifique al destino; no debe devolverse una copia ni una referencia a una variable local que va a terminar (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para dos Muestras distintas, la operación tendrá que transferir al miembro propietario del destino el que gestiona otra. La asignación de unique_ptr se encarga de terminar el int anterior del destino, si lo había. Después hay que conservar en el destino la etiqueta que traía el origen y colocar en el origen la etiqueta de estado vacío. La etiqueta original debe leerse antes de reiniciarla (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay una copia independiente del int como en Celda. Se conserva el mismo int transferido y cambia quién lo gestiona. Los accesos prestados que seguían ese int pueden seguir utilizándolo bajo su nuevo propietario mientras el int viva. En cambio, los accesos al int anterior del destino sustituido dejan de servir al terminar ese objeto; no deben utilizarse después para leerlo ni para comprobar identidades."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la fuente distinta está vacía, elegimos que el destino también quede vacío y con etiqueta cero. Su int anterior, si lo había, termina durante la sustitución. No rechazamos esa transferencia por falta de objeto y no escribimos una etiqueta de muestra ocupada. Esta elección forma parte de la interfaz de Muestra."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Definir el automovimiento y conservar la coherencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "La asignación puede recibir la misma Muestra por this y por otra. Eso ocurre al ofrecer un objeto para asignárselo a sí mismo. Comprobar this y &otra permite reconocer esa identidad; dos Muestras distintas pueden tener valores y etiquetas iguales sin ser el mismo objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro contrato exige que el automovimiento conserve el estado completo y la identidad del int, sin reservas ni destrucciones. La comprobación debe preceder a los cambios. No basta con transferir el miembro a sí mismo y poner después la etiqueta de otra a cero: otra identifica en ese caso también al destino, por lo que ese reinicio cambiaría su propia etiqueta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tras tratar el caso de identidad o completar la transferencia entre objetos distintos, la asignación debe devolver *this. El origen distinto sigue siendo una Muestra viva y reutilizable, aunque haya quedado vacía. Conseguir ese estado coherente es responsabilidad de nuestras funciones; no es una garantía universal del lenguaje para cualquier clase a la que se aplique std::move (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l8_origen_vivo_sin_clonar",
+          "question": "Entre Muestras distintas y con un origen que tiene int, el movimiento explicado utiliza transferencia del unique_ptr y asignaciones de la etiqueta. ¿Qué afirmación corresponde a esas acciones?",
+          "options": [
+            "El origen sigue existiendo vacío y coherente; el int transferido sigue vivo bajo el destino sin crear otro int.",
+            "El origen termina al ceder el propietario; para reutilizar esa Muestra hay que reconstruir primero el objeto de clase.",
+            "Se crea otro int con el valor recibido; el origen conserva el anterior aunque su etiqueta pase a cero."
+          ],
+          "correctIndex": 0,
+          "explanation": "Se transfiere la responsabilidad sobre un int existente. No se destruye la Muestra origen ni se clona su int. La actualización expresa de la etiqueta permite que el origen vacío siga cumpliendo el contrato y pueda reutilizarse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: mover el dato y su etiqueta"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor proporciona Muestra y su constructor de movimiento. Completa únicamente el cuerpo de Muestra::operator=(Muestra&& otra). El destino ya existe; puede estar vacío o gestionar un int anterior. Conserva el resto de la clase, el constructor, las funciones auxiliares y main."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cumple este contrato:\nEntre objetos distintos, el destino recibe el mismo int que gestionaba el origen, junto con su etiqueta. El int no se clona ni se sustituye por otro con igual valor.\nEl origen queda vacío y su etiqueta pasa a cero.\nSi el destino tenía un int, ese objeto anterior termina durante la asignación.\nMover desde un origen vacío también se acepta: deja vacío al destino y pone su etiqueta a cero.\nAsignar una Muestra a sí misma conserva su objeto, su valor y su etiqueta, sin destruir ni reservar nada.\nLa asignación devuelve una referencia al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa el movimiento del miembro unique_ptr y las asignaciones enteras necesarias para conservar la etiqueta recibida y restablecer la del origen. Comprueba primero si this y &otra identifican la misma Muestra. No confundas esa identidad con tener etiquetas o valores iguales: dos Muestras distintas pueden guardar los mismos datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo inicial compila, pero todavía no mueve nada. (void)otra; reconoce el parámetro que aún no se utiliza y evita el aviso correspondiente. Sustituye esa instrucción provisional por tu implementación. No modifiques los informes para fingir una transferencia y no añadas reservas para crear otro int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La transferencia utiliza construcción y asignación"
+        },
+        {
+          "type": "paragraph",
+          "text": "transferir recibe referencias a un origen y un destino ya existentes. Cuando son distintos realiza estos pasos:\nConstruye una Muestra intermedia desde std::move(origen). El constructor proporcionado transfiere el propietario y la etiqueta, y deja vacío y con etiqueta cero al origen.\nAsigna esa intermedia al destino mediante std::move(intermedia). Aquí se ejecuta el cuerpo que vas a escribir.\nAl salir de transferir se destruye la intermedia. Debe estar vacía porque ya entregó su objeto al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "El mismo int debe seguir vivo desde el origen hasta el destino final, pasando por la intermedia. No se crea otro int para realizar esos movimientos. El objeto que antes gestionaba el destino, si lo había, termina en la asignación. La intermedia automática no debe conservarlo ni destruir el int que acaba de entregar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si las dos referencias identifican la misma Muestra, transferir llama directamente a su asignación por movimiento y devuelve true. Así también se utiliza la política de automovimiento de la clase. No construye una intermedia en ese caso. El destino debe permanecer igual, tanto ocupado como vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las consultas públicas se utilizan antes y después de cada operación completa. Dentro del movimiento se ejecutan varias instrucciones: primero se transfiere el miembro propietario y después se ajustan las etiquetas. Con los miembros concretos utilizados, esas acciones no reservan memoria ni lanzan; no hay una llamada intermedia que observe el origen antes de restablecer su etiqueta. El objetivo es que ambas Muestras cumplan su relación al completar la operación (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar y ejecutar una historia con dos Muestras"
+        },
+        {
+          "type": "paragraph",
+          "text": "El índice cero identifica primera y el uno, segunda. Al empezar, main crea ambas vacías y llama a poner para preparar primera con valor cuatro y etiqueta uno, y segunda con valor siete y etiqueta dos. Si una preparación falla, termina con código uno. Los casos siguientes suponen que esa preparación tiene éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con una cantidad de órdenes de uno a doce. Cada orden tiene cuatro enteros: operacion, a, b y c. Sus acciones son:\n1 a b c: transferir desde el índice a hacia el índice b; c se lee y se ignora.\n2 a b c: poner en el índice a un int nuevo con valor b y etiqueta c.\n3 a b c: vaciar el índice a; b y c se leen y se ignoran.\n4 a b c: cambiar a b el valor del int del índice a; c se lee y se ignora.\n5 a b c: cambiar a b la etiqueta de la Muestra a; c se lee y se ignora.\nOtra operación o un índice requerido fuera de cero y uno se rechaza sin cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores admitidos del int son de cero a nueve. Las etiquetas de una Muestra ocupada son de uno a nueve. poner comprueba ambos datos antes de preparar el int y conserva el estado anterior si falla la reserva. cambiar y reetiquetar requieren una Muestra ocupada y rechazan los datos fuera de su intervalo. vaciar acepta también una Muestra ya vacía y deja su etiqueta en cero. Estas funciones ya están implementadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Todas las órdenes de una ejecución actúan, por orden, sobre las mismas dos Muestras. Las etiquetas no tienen que ser diferentes entre sí: no identifican de forma única a un objeto. Una cantidad fuera de uno a doce o una entrada incompleta termina el programa con código uno; no se transforma en una orden rechazada del historial."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Interpretar el valor, la etiqueta y la coherencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada estado se escribe como valor/etiqueta. Por ejemplo, 4/1 representa un int de valor cuatro acompañado de la etiqueta uno. X/0 representa una Muestra vacía. 0/9 representa un int presente cuyo valor es cero y cuya etiqueta es nueve. El carácter / sólo separa los dos datos del informe; no representa una división."
+        },
+        {
+          "type": "paragraph",
+          "text": "El informe siempre conserva el orden índice cero, índice uno:\nInicio muestra la preparación anterior a las órdenes.\nResultado vale uno al aceptar y cero al rechazar la orden.\nAntes muestra los dos estados previos a esa orden.\nActual muestra los dos estados después.\nFinal muestra los dos estados al terminar y las consultas Coherentes, una por Muestra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes guarda por separado presencia, valor y etiqueta antes de ejecutar la orden. Son copias de datos para el informe, no préstamos al int que podría terminar. Actual consulta el estado posterior. mostrar no oculta una etiqueta incorrecta: si el propietario está vacío, muestra X y la etiqueta real que conserva el miembro."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera orden del caso obligatorio transfiere desde primera hacia segunda. El int que contenía cuatro pasa por la intermedia y termina bajo segunda con la etiqueta uno. primera queda vacía con etiqueta cero. El int anterior de segunda, cuyo valor era siete, termina; Antes puede seguir mostrando siete y su etiqueta dos porque había guardado ambos datos antes de la transferencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir la etiqueta que queda en cada objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila corresponde a una operación independiente con Muestras ya preparadas. En las dos primeras, los objetos son distintos. En la tercera, origen y destino nombran la misma Muestra. Aplica el contrato de movimiento que vas a implementar; los estados se escriben con el formato valor/etiqueta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l8_estados_y_etiquetas",
+          "prompt": "Escribe por fila si el origen tiene objeto al terminar (1 o 0), su etiqueta final y la etiqueta final del destino. Recuerda que cero como valor del int no significa ausencia de objeto.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Origen antes",
+                "Destino antes",
+                "¿Misma Muestra?"
+              ],
+              "rows": [
+                [
+                  "0/9",
+                  "7/2",
+                  "No"
+                ],
+                [
+                  "X/0",
+                  "4/1",
+                  "No"
+                ],
+                [
+                  "4/1",
+                  "4/1",
+                  "Sí"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: presencia del origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: etiqueta del origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 1: etiqueta del destino",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: presencia del origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 2: etiqueta del origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 2: etiqueta del destino",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 3: presencia del origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 3: etiqueta del origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "i",
+                  "type": "numeric",
+                  "label": "Fila 3: etiqueta del destino",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "i": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En la primera fila se transfiere el int con cero y su etiqueta nueve; el origen queda vacío y con etiqueta cero. En la segunda, el destino reproduce el estado vacío recibido. En la tercera, la comprobación de identidad conserva la misma Muestra ocupada con su etiqueta uno.",
+            "incorrect": "Distingue objetos distintos de automovimiento. Entre distintos, el destino recibe la etiqueta anterior del origen y el origen queda vacío con etiqueta cero. En el automovimiento elegido, no se modifica ninguno de los miembros."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la asignación por movimiento de Muestra"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el cuerpo indicado y compila. Sólo el primer caso correcto es obligatorio para avanzar. Las demás historias se conservan como ensayos opcionales. Además de reproducir el informe, tu implementación debe transferir el mismo objeto sin reservar otro int y mantener la relación entre propietario y etiqueta."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    // Completa el movimiento y la coherencia de ambos estados.\n    (void)otra;\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nbool transferir(Muestra& origen, Muestra& destino) {\n    if (&origen == &destino) {\n        destino = std::move(origen);\n        return true;\n    }\n    Muestra intermedia{std::move(origen)};\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor, int etiqueta) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n    std::cout << '/' << etiqueta;\n}\n\nvoid mostrar(const Muestra& primera, const Muestra& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0,\n                 primera.etiqueta());\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0,\n                 segunda.etiqueta());\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Muestra primera;\n    Muestra segunda;\n    if (!primera.poner(4, 1) || !segunda.poner(7, 2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        int c = 0;\n        if (!(std::cin >> operacion >> a >> b >> c)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        const int etiqueta0 = primera.etiqueta();\n        const int etiqueta1 = segunda.etiqueta();\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Muestra& origen = a == 0 ? primera : segunda;\n            Muestra& destino = b == 0 ? primera : segunda;\n            aceptado = transferir(origen, destino);\n        } else if (indice_valido(a)) {\n            Muestra& muestra = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = muestra.poner(b, c);\n            } else if (operacion == 3) {\n                aceptado = muestra.vaciar();\n            } else if (operacion == 4) {\n                aceptado = muestra.cambiar(b);\n            } else if (operacion == 5) {\n                aceptado = muestra.reetiquetar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0, etiqueta0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1, etiqueta1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    std::cout << \";Coherentes:\" << primera.coherente() << ':'\n              << segunda.coherente();\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 1 0\n2 0 0 9\n1 0 0 0\n1 1 0 0\n5 0 8 0\n1 1 0 0\n2 1 6 3\n1 1 0 0\n4 0 0 0\n5 1 7 0\n1 -1 0 0\n1 0 1 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 1 0\n2 0 0 9\n1 0 0 0\n1 1 0 0\n5 0 8 0\n1 1 0 0\n2 1 6 3\n1 1 0 0\n4 0 0 0\n5 1 7 0\n1 -1 0 0\n1 0 1 0\n",
+                "outputs": [
+                  "Inicio:4/1:7/2\nResultado:1;Antes:4/1:7/2;Actual:X/0:4/1\nResultado:1;Antes:X/0:4/1;Actual:0/9:4/1\nResultado:1;Antes:0/9:4/1;Actual:0/9:4/1\nResultado:1;Antes:0/9:4/1;Actual:4/1:X/0\nResultado:1;Antes:4/1:X/0;Actual:4/8:X/0\nResultado:1;Antes:4/8:X/0;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:X/0:6/3\nResultado:1;Antes:X/0:6/3;Actual:6/3:X/0\nResultado:1;Antes:6/3:X/0;Actual:0/3:X/0\nResultado:0;Antes:0/3:X/0;Actual:0/3:X/0\nResultado:0;Antes:0/3:X/0;Actual:0/3:X/0\nResultado:1;Antes:0/3:X/0;Actual:X/0:0/3\nFinal:X/0:0/3;Coherentes:1:1"
+                ],
+                "explanation": "El destino recibe el propietario y la etiqueta del origen distinto, que termina vacío y con etiqueta cero. La identidad se comprueba antes de modificar los miembros. Mover desde vacío se acepta; la autoasignación conserva el estado y el retorno se refiere al destino."
+              },
+              {
+                "standardInput": "7\n3 0 0 0\n3 1 0 0\n1 0 0 0\n1 0 1 0\n2 0 9 5\n2 1 9 5\n1 1 0 0\n",
+                "outputs": [
+                  "Inicio:4/1:7/2\nResultado:1;Antes:4/1:7/2;Actual:X/0:7/2\nResultado:1;Antes:X/0:7/2;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:9/5:X/0\nResultado:1;Antes:9/5:X/0;Actual:9/5:9/5\nResultado:1;Antes:9/5:9/5;Actual:9/5:X/0\nFinal:9/5:X/0;Coherentes:1:1"
+                ],
+                "explanation": "El destino recibe el propietario y la etiqueta del origen distinto, que termina vacío y con etiqueta cero. La identidad se comprueba antes de modificar los miembros. Mover desde vacío se acepta; la autoasignación conserva el estado y el retorno se refiere al destino."
+              },
+              {
+                "standardInput": "8\n2 0 -1 1\n2 0 3 0\n2 1 10 3\n2 1 2 10\n5 1 0 0\n1 0 2 0\n8 0 1 0\n4 1 9 0\n",
+                "outputs": [
+                  "Inicio:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:1;Antes:4/1:7/2;Actual:4/1:9/2\nFinal:4/1:9/2;Coherentes:1:1"
+                ],
+                "explanation": "El destino recibe el propietario y la etiqueta del origen distinto, que termina vacío y con etiqueta cero. La identidad se comprueba antes de modificar los miembros. Mover desde vacío se acepta; la autoasignación conserva el estado y el retorno se refiere al destino."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La historia usa los dos sentidos de transferencia, la intermedia, cero, cambios de etiqueta, automovimiento, origen vacío, reutilización y rechazos que conservan el estado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n1 0 1 0\n2 0 0 9\n1 0 0 0\n1 1 0 0\n5 0 8 0\n1 1 0 0\n2 1 6 3\n1 1 0 0\n4 0 0 0\n5 1 7 0\n1 -1 0 0\n1 0 1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4/1:7/2\nResultado:1;Antes:4/1:7/2;Actual:X/0:4/1\nResultado:1;Antes:X/0:4/1;Actual:0/9:4/1\nResultado:1;Antes:0/9:4/1;Actual:0/9:4/1\nResultado:1;Antes:0/9:4/1;Actual:4/1:X/0\nResultado:1;Antes:4/1:X/0;Actual:4/8:X/0\nResultado:1;Antes:4/8:X/0;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:X/0:6/3\nResultado:1;Antes:X/0:6/3;Actual:6/3:X/0\nResultado:1;Antes:6/3:X/0;Actual:0/3:X/0\nResultado:0;Antes:0/3:X/0;Actual:0/3:X/0\nResultado:0;Antes:0/3:X/0;Actual:0/3:X/0\nResultado:1;Antes:0/3:X/0;Actual:X/0:0/3\nFinal:X/0:0/3;Coherentes:1:1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: vacío, igualdad de datos y límites"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se prueban el automovimiento vacío y la transferencia entre vacíos. Después dos Muestras diferentes contienen el mismo valor y la misma etiqueta; sigue siendo una transferencia entre objetos distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n3 0 0 0\n3 1 0 0\n1 0 0 0\n1 0 1 0\n2 0 9 5\n2 1 9 5\n1 1 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4/1:7/2\nResultado:1;Antes:4/1:7/2;Actual:X/0:7/2\nResultado:1;Antes:X/0:7/2;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:X/0:X/0\nResultado:1;Antes:X/0:X/0;Actual:9/5:X/0\nResultado:1;Antes:9/5:X/0;Actual:9/5:9/5\nResultado:1;Antes:9/5:9/5;Actual:9/5:X/0\nFinal:9/5:X/0;Coherentes:1:1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores, etiquetas, índices y operación rechazados conservan los dos estados anteriores. El cambio final modifica el valor del int de segunda, manteniendo su etiqueta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n2 0 -1 1\n2 0 3 0\n2 1 10 3\n2 1 2 10\n5 1 0 0\n1 0 2 0\n8 0 1 0\n4 1 9 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:0;Antes:4/1:7/2;Actual:4/1:7/2\nResultado:1;Antes:4/1:7/2;Actual:4/1:9/2\nFinal:4/1:9/2;Coherentes:1:1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: transferir el propietario y ajustar la etiqueta"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    if (this != &otra) {\n        dato_ = std::move(otra.dato_);\n        etiqueta_ = otra.etiqueta_;\n        otra.etiqueta_ = 0;\n    }\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nbool transferir(Muestra& origen, Muestra& destino) {\n    if (&origen == &destino) {\n        destino = std::move(origen);\n        return true;\n    }\n    Muestra intermedia{std::move(origen)};\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor, int etiqueta) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n    std::cout << '/' << etiqueta;\n}\n\nvoid mostrar(const Muestra& primera, const Muestra& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0,\n                 primera.etiqueta());\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0,\n                 segunda.etiqueta());\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Muestra primera;\n    Muestra segunda;\n    if (!primera.poner(4, 1) || !segunda.poner(7, 2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        int c = 0;\n        if (!(std::cin >> operacion >> a >> b >> c)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        const int etiqueta0 = primera.etiqueta();\n        const int etiqueta1 = segunda.etiqueta();\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Muestra& origen = a == 0 ? primera : segunda;\n            Muestra& destino = b == 0 ? primera : segunda;\n            aceptado = transferir(origen, destino);\n        } else if (indice_valido(a)) {\n            Muestra& muestra = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = muestra.poner(b, c);\n            } else if (operacion == 3) {\n                aceptado = muestra.vaciar();\n            } else if (operacion == 4) {\n                aceptado = muestra.cambiar(b);\n            } else if (operacion == 5) {\n                aceptado = muestra.reetiquetar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0, etiqueta0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1, etiqueta1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    std::cout << \";Coherentes:\" << primera.coherente() << ':'\n              << segunda.coherente();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La condición this != &otra limita las modificaciones al caso de dos Muestras distintas. En el automovimiento no entra en el cuerpo del if: conserva el int, la etiqueta y cualquier préstamo válido a ese int. En ambos casos devuelve *this, una referencia al destino existente."
+        },
+        {
+          "type": "paragraph",
+          "text": "dato_ = std::move(otra.dato_); utiliza la asignación por movimiento del miembro propietario. El destino recibe el mismo int que tenía el origen. Si ya gestionaba otro, ese int anterior termina. El miembro del origen queda vacío. A continuación se copia su etiqueta anterior al destino y se pone a cero la etiqueta del origen (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mover el unique_ptr no cambia por sí mismo el miembro entero etiqueta_. Por eso las dos asignaciones de etiquetas son necesarias. Si se pusiera primero a cero la etiqueta del origen y después se copiara, el destino ocupado recibiría una etiqueta cero que incumpliría el contrato. Si se omitiera el reinicio, el origen vacío conservaría una etiqueta de ocupado."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay una liberación manual escrita en Muestra. Su miembro propietario limpia el int anterior al recibir otro por asignación y el que todavía conserve al destruirse. El constructor y la asignación propios mantienen la relación entre los miembros; unique_ptr mantiene la propiedad y la limpieza de su int. Ambas responsabilidades son necesarias en este diseño (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la etiqueta durante una asignación aceptada"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa prepara un origen y un destino ocupados. Guarda en resultado la referencia devuelta por la asignación, y después cambia sólo el valor del int recibido. Observa por separado el valor y la etiqueta: cambiar no sustituye la etiqueta que acompañaba al objeto transferido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_asignar_y_conservar_etiqueta",
+          "language": "cpp",
+          "question": "¿Qué muestran el estado del origen, los datos del destino y las tres comprobaciones finales?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    if (this != &otra) {\n        dato_ = std::move(otra.dato_);\n        etiqueta_ = otra.etiqueta_;\n        otra.etiqueta_ = 0;\n    }\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    if (!origen.poner(6, 7)) { return 1; }\n    Muestra destino;\n    if (!destino.poner(7, 2)) { return 1; }\n    Muestra& resultado = (destino = std::move(origen));\n    destino.cambiar(9);\n    std::cout << origen.hay() << ':' << origen.etiqueta() << '|'\n              << destino.valor() << ':' << destino.etiqueta() << '|'\n              << (&resultado == &destino) << ':' << origen.coherente() << ':'\n              << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:0|9:7|1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El destino recibe el int de valor seis y su etiqueta siete; su int anterior termina. El origen queda vacío con etiqueta cero. Cambiar después el int recibido a nueve no cambia esa etiqueta. El retorno se refiere al destino y ambos estados son coherentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aceptar un origen vacío y terminar el destino anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "El origen siguiente se construye vacío y no recibe un int antes del movimiento. El destino está ocupado. Según el contrato elegido, asignar desde ese origen vacío no se rechaza: termina el int anterior del destino y deja vacíos y con etiqueta cero ambos objetos. Las consultas de presencia y coherencia son válidas en esos estados."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_asignar_desde_vacio",
+          "language": "cpp",
+          "question": "¿Qué imprimen la presencia y etiqueta de cada Muestra, seguidas de sus coherencias?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    if (this != &otra) {\n        dato_ = std::move(otra.dato_);\n        etiqueta_ = otra.etiqueta_;\n        otra.etiqueta_ = 0;\n    }\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    Muestra destino;\n    if (!destino.poner(7, 2)) { return 1; }\n    destino = std::move(origen);\n    std::cout << origen.hay() << ':' << origen.etiqueta() << '|'\n              << destino.hay() << ':' << destino.etiqueta() << '|'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:0|0:0|1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El propietario de destino recibe un propietario vacío y limpia su int anterior. La etiqueta copiada del origen ya es cero y el origen continúa vacío con etiqueta cero. Ninguna consulta intenta desreferenciar un propietario vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un préstamo en el automovimiento elegido"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa guarda un puntero prestado al int y asigna la Muestra a sí misma usando std::move. Nuestra comparación de identidad evita modificar los miembros. Ese int continúa vivo y conserva su dirección; por eso se puede comparar el préstamo con acceso después de esta operación concreta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta observación depende del contrato y de la implementación que acabamos de comprobar. Si otra operación terminara el int, no podríamos conservar su préstamo para observarlo después. El puntero local se pone a nullptr al terminar la comparación; eso no destruye el int ni cambia su propietario."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_automovimiento_identidad",
+          "language": "cpp",
+          "question": "¿Qué imprimen el valor, la etiqueta, la identidad del int, la identidad del retorno y la coherencia?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    if (this != &otra) {\n        dato_ = std::move(otra.dato_);\n        etiqueta_ = otra.etiqueta_;\n        otra.etiqueta_ = 0;\n    }\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra muestra;\n    if (!muestra.poner(4, 1)) { return 1; }\n    const int* prestado = muestra.acceso();\n    Muestra& resultado = (muestra = std::move(muestra));\n    std::cout << muestra.valor() << ':' << muestra.etiqueta() << ':'\n              << (prestado == muestra.acceso()) << ':'\n              << (&resultado == &muestra) << ':' << muestra.coherente();\n    prestado = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "4:1:1:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "this y &otra identifican la misma Muestra. El if no modifica nada y el retorno se refiere al mismo objeto. El int conserva su identidad y su valor; la etiqueta sigue siendo compatible con su presencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reutilizar el origen después de mover"
+        },
+        {
+          "type": "paragraph",
+          "text": "El movimiento no termina la existencia de la Muestra de origen. En el programa se utiliza poner para darle otro int y otra etiqueta después de construir el primer destino. Una segunda transferencia debe transportar esos datos nuevos y limpiar el int anterior del destino."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_reutilizar_origen",
+          "language": "cpp",
+          "question": "¿Qué muestran el estado del origen, los datos finales del destino y las coherencias?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    if (this != &otra) {\n        dato_ = std::move(otra.dato_);\n        etiqueta_ = otra.etiqueta_;\n        otra.etiqueta_ = 0;\n    }\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint main() {\n    Muestra origen;\n    if (!origen.poner(4, 1)) { return 1; }\n    Muestra destino{std::move(origen)};\n    if (!origen.poner(0, 9)) { return 1; }\n    destino = std::move(origen);\n    std::cout << origen.hay() << ':' << origen.etiqueta() << '|'\n              << destino.valor() << ':' << destino.etiqueta() << '|'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:0|0:9|1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor entrega primero el int de valor cuatro y etiqueta uno. El origen vacío recibe después un int de valor cero y etiqueta nueve. La asignación entrega ese nuevo objeto al destino y termina el int anterior de éste. El origen vuelve a quedar vacío y con etiqueta cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un parámetro por movimiento y dejar que se limpie"
+        },
+        {
+          "type": "paragraph",
+          "text": "consumir recibe Muestra por valor: necesita construir un parámetro propio. La llamada le ofrece el origen mediante std::move y utiliza el constructor de movimiento. El parámetro recibe el int y su etiqueta; la Muestra del llamador sigue existiendo en su estado vacío y coherente."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función requiere que el parámetro tenga int, como sucede en esta llamada. Devuelve su valor como un int independiente. Al terminar la instrucción que contiene la llamada, el parámetro ya se ha destruido y su miembro ha limpiado el objeto gestionado. El valor entero devuelto permanece guardado en resultado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l8_parametro_por_movimiento",
+          "language": "cpp",
+          "question": "¿Qué muestran la presencia y etiqueta del origen, el resultado entero y la coherencia del origen?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    Muestra(Muestra&& otra);\n    Muestra& operator=(Muestra&& otra);\n    ~Muestra() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    int etiqueta() const { return etiqueta_; }\n    const int* acceso() const { return dato_.get(); }\n    bool coherente() const {\n        return dato_ ? etiqueta_ >= 1 && etiqueta_ <= 9 : etiqueta_ == 0;\n    }\n    bool poner(int valor, int etiqueta);\n    bool cambiar(int valor);\n    bool reetiquetar(int etiqueta);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_{};\n    int etiqueta_ = 0;\n};\nMuestra::Muestra(Muestra&& otra)\n    : dato_{std::move(otra.dato_)}, etiqueta_{otra.etiqueta_} {\n    otra.etiqueta_ = 0;\n}\nMuestra& Muestra::operator=(Muestra&& otra) {\n    if (this != &otra) {\n        dato_ = std::move(otra.dato_);\n        etiqueta_ = otra.etiqueta_;\n        otra.etiqueta_ = 0;\n    }\n    return *this;\n}\nbool Muestra::poner(int valor, int etiqueta) {\n    if (valor < 0 || valor > 9 || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        etiqueta_ = etiqueta;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Muestra::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Muestra::reetiquetar(int etiqueta) {\n    if (!dato_ || etiqueta < 1 || etiqueta > 9) {\n        return false;\n    }\n    etiqueta_ = etiqueta;\n    return true;\n}\n\nbool Muestra::vaciar() {\n    dato_.reset();\n    etiqueta_ = 0;\n    return true;\n}\n\nint consumir(Muestra parametro) {\n    return parametro.valor();\n}\n\nint main() {\n    Muestra origen;\n    if (!origen.poner(3, 8)) { return 1; }\n    const int resultado = consumir(std::move(origen));\n    std::cout << origen.hay() << ':' << origen.etiqueta() << ':'\n              << resultado << ':' << origen.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:0:3:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se construye el parámetro mediante el movimiento propio. El origen conserva su existencia, pero ya no tiene int y su etiqueta es cero. El entero devuelto vale tres y no depende de que siga vivo el int que gestionó el parámetro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este diseño no necesita copiar Muestra para realizar esas acciones: sus copias continúan prohibidas. Elegir que otra clase sí ofrezca copia independiente, como Celda en la lección anterior, es una decisión distinta. Las operaciones disponibles y sus estados posteriores deben corresponder al contrato de cada clase (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "9f685a51d904c91f019a378d0cf8f529e8f0f2b2593ef861a10242f3aa5a15ea"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "acfd93f9a6cc22ef64d3ba261cba81bfc4039cb5435e7a6f761fcc51f9890a91"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "444d00f002f790150e7b841c2890c31f8ba752dba4eb3ab0b344d687c178f3e6"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "89968a49e01a0acbb0dc2096b2024ba21f7bcd1033d0e9dd9430cccfeb3b3d41"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "90fa1717bad0165fa006aed852f2df43845e7b806de5a0e3c8c53570a3e8a80f"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "12c637acc2f31ab6ec8c28f2c70d8159f8321e0cbf98983e872dc16225468905"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "e2e3936796f27be485c255141fc7a0ba5e54ca4a6301d188d6e1e2e951bd1087"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "5a1fa83a11a03673f6086fc1a4d47d6566a490aa141ab84766426129731388cc"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "f583d165b5ce7fdfd2a5d1af202b801bef6927fcf9febb5204c0f2f0a6c138a7"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0008",
+            "sha256": "71992c7afe4db50ea573e928e93bb02e36c812e5b8442849a1ffa840170b7111"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "76144f3f13a627fd1e9ab4229e66e7e3db7c7b55917ebcf7962f8ee2381a619a"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0006",
+            "sha256": "c6562b598b7868ec471d42fb38ec7402f82c10ecb7d20ae80d4007524f60474e"
+          },
+          {
+            "id": "block_0015_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0010",
+            "sha256": "dd8059d9c90891a2a15b98282a51be751878a7ee5f03be42c37e719684fde7ab"
+          },
+          {
+            "id": "block_0015_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0012",
+            "sha256": "c2c304e214769e4f31eeec0759f675c286cc7ce93612bcd8b2759cd5cda6bda3"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "151d5d7e46de6362aa6f646381fb8bab388aa85159976ac29611eb541a0d6a97"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "dd4f3dc906c7a109b086e40b2111e8c6f895757f8eb6b3f1ff875fb2374b5ac9"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "8ae7113dfe707e0a9575fc25b0c14a41ac5d0f655355287b1b3b00bddbeecde0"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "fb9d312097b5d4b4aa42d8412cf11b1c01cd364068f29322a24a613a142a53a4"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "6d832ac778138e1a0d9239d811cffa1fbcae1eda36a83e0acf573d194a43b0ba"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "9b2921867b78932c297966acfcbc4d50c6ebb55d3d69c770ee03437a8dc28eeb"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007",
+          "block_0014_0008"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005",
+          "block_0015_0006",
+          "block_0015_0007",
+          "block_0015_0008",
+          "block_0015_0009",
+          "block_0015_0010",
+          "block_0015_0011",
+          "block_0015_0012"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "d3a5ce765578705e32e2cb41450e0748aed5163525ef44c6ea1556110e0ecec3",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "9f685a51d904c91f019a378d0cf8f529e8f0f2b2593ef861a10242f3aa5a15ea"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "acfd93f9a6cc22ef64d3ba261cba81bfc4039cb5435e7a6f761fcc51f9890a91"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "444d00f002f790150e7b841c2890c31f8ba752dba4eb3ab0b344d687c178f3e6"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "89968a49e01a0acbb0dc2096b2024ba21f7bcd1033d0e9dd9430cccfeb3b3d41"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "90fa1717bad0165fa006aed852f2df43845e7b806de5a0e3c8c53570a3e8a80f"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "12c637acc2f31ab6ec8c28f2c70d8159f8321e0cbf98983e872dc16225468905"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "e2e3936796f27be485c255141fc7a0ba5e54ca4a6301d188d6e1e2e951bd1087"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "5a1fa83a11a03673f6086fc1a4d47d6566a490aa141ab84766426129731388cc"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "f583d165b5ce7fdfd2a5d1af202b801bef6927fcf9febb5204c0f2f0a6c138a7"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0008",
+                "sha256": "71992c7afe4db50ea573e928e93bb02e36c812e5b8442849a1ffa840170b7111"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "76144f3f13a627fd1e9ab4229e66e7e3db7c7b55917ebcf7962f8ee2381a619a"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0006",
+                "sha256": "c6562b598b7868ec471d42fb38ec7402f82c10ecb7d20ae80d4007524f60474e"
+              },
+              {
+                "id": "block_0015_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0010",
+                "sha256": "dd8059d9c90891a2a15b98282a51be751878a7ee5f03be42c37e719684fde7ab"
+              },
+              {
+                "id": "block_0015_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0012",
+                "sha256": "c2c304e214769e4f31eeec0759f675c286cc7ce93612bcd8b2759cd5cda6bda3"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "151d5d7e46de6362aa6f646381fb8bab388aa85159976ac29611eb541a0d6a97"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "dd4f3dc906c7a109b086e40b2111e8c6f895757f8eb6b3f1ff875fb2374b5ac9"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "8ae7113dfe707e0a9575fc25b0c14a41ac5d0f655355287b1b3b00bddbeecde0"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "fb9d312097b5d4b4aa42d8412cf11b1c01cd364068f29322a24a613a142a53a4"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "6d832ac778138e1a0d9239d811cffa1fbcae1eda36a83e0acf573d194a43b0ba"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "9b2921867b78932c297966acfcbc4d50c6ebb55d3d69c770ee03437a8dc28eeb"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

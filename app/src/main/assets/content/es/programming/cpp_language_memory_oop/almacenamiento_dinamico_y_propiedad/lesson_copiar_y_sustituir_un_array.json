@@ -1,0 +1,1890 @@
+{
+  "id": "cpp_language_memory_oop__almacenamiento_dinamico_y_propiedad__copiar_y_sustituir_un_array",
+  "title": "Copiar datos y sustituir un array sin perder el anterior",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compartir un acceso y conservar datos independientes son objetivos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si copiamos base a otro, ambos punteros permiten utilizar el mismo array. Una escritura mediante otro también se observa mediante base. Eso no crea una copia independiente y no autoriza dos liberaciones del mismo array (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_copiar_solo_el_acceso",
+          "language": "cpp",
+          "question": "¿Qué muestra base[0]:otro[0]?",
+          "code": "#include <iostream>\n\nint main() {\n    int* base = new int[2]{3, 6};\n    int* otro = base;\n    otro[0] = 8;\n    std::cout << base[0] << ':' << otro[0];\n    otro = nullptr;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "8:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La asignación del puntero comparte el acceso. La escritura cambia el mismo int a 8. El programa deja de utilizar otro y libera una sola vez mediante base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para conservar otra versión de los datos necesitamos otro array con sus propios elementos. Reservamos ese array, copiamos cada valor y después modificamos las versiones por separado. La copia de los datos se llama copia profunda; copiar sólo el acceso se suele llamar copia superficial. Primero distinguiremos las acciones concretas y después utilizaremos esos nombres (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear una copia de los elementos"
+        },
+        {
+          "type": "paragraph",
+          "text": "base conserva dos int, inicialmente 3 y 6. copia recibe otro array de dos int y el recorrido guarda los valores originales en sus elementos. Al cambiar copia[0] a nueve, base[0] debe seguir siendo tres. La comparación de punteros se realiza mientras los dos arrays siguen vivos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_datos_independientes",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa si las reservas tienen éxito?",
+          "code": "#include <iostream>\n#include <new>\n\nint main() {\n    int* base = new int[2]{3, 6};\n    int* copia = nullptr;\n    try {\n        copia = new int[2]{};\n    } catch (const std::bad_alloc&) {\n        delete[] base;\n        return 1;\n    }\n    for (int i = 0; i < 2; ++i) {\n        copia[i] = base[i];\n    }\n    copia[0] = 9;\n    std::cout << base[0] << ':' << copia[0] << ':' << base[1] << ':' << copia[1]\n              << ':' << (base != copia);\n    delete[] copia;\n    copia = nullptr;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:9:6:6:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cada array tiene sus propios int. Los primeros valores quedan en 3 y 9; los segundos conservan 6. Los arrays vivos son distintos y después se libera cada uno una vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "El try de este programa cubre la segunda reserva. Si falla con std::bad_alloc, todavía existe el array original y este ejemplo lo libera antes de terminar con error. La excepción no libera automáticamente los arrays que sólo conservamos mediante punteros ordinarios (Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la cantidad requiere decidir qué datos conservar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un array existente no aumenta su cantidad por cambiar un número. Para pasar de dos a cuatro elementos prepararemos otro array. Conservaremos los dos valores anteriores en sus primeras posiciones y daremos un valor a los dos elementos añadidos. El array anterior debe seguir vivo mientras copiamos desde él (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_ampliar_con_prefijo",
+          "language": "cpp",
+          "question": "¿Qué muestra el array que queda al terminar la preparación?",
+          "code": "#include <iostream>\n#include <new>\n\nint main() {\n    int* base = new int[2]{3, 6};\n    int* nuevo = nullptr;\n    try {\n        nuevo = new int[4]{};\n    } catch (const std::bad_alloc&) {\n        delete[] base;\n        return 1;\n    }\n    for (int i = 0; i < 2; ++i) {\n        nuevo[i] = base[i];\n    }\n    for (int i = 2; i < 4; ++i) {\n        nuevo[i] = 8;\n    }\n    delete[] base;\n    base = nuevo;\n    nuevo = nullptr;\n    for (int i = 0; i < 4; ++i) {\n        if (i != 0) {\n            std::cout << ':';\n        }\n        std::cout << base[i];\n    }\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:6:8:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El nuevo array recibe 3 y 6 en el prefijo y 8 en las dos posiciones añadidas. Sólo después se libera el anterior y base pasa a conservar el nuevo inicio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Durante la preparación hay dos arrays vivos. Al terminar de copiar, el nuevo ya contiene todo lo que debe conservar. Entonces se libera el anterior y se actualiza el acceso responsable. Esa asignación de puntero no copia otra vez los int: comunica qué array debe seguir utilizando el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reducir la cantidad conserva sólo el prefijo que cabe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para pasar de cuatro elementos a dos no podemos copiar los cuatro en el destino de dos. Conservaremos los dos primeros y descartaremos los otros cuando se libere el array anterior. El límite de copia es la menor de las dos cantidades."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_reducir_con_prefijo",
+          "language": "cpp",
+          "question": "¿Qué muestra el array de dos elementos?",
+          "code": "#include <iostream>\n#include <new>\n\nint main() {\n    int* base = new int[4]{1, 3, 5, 7};\n    int* nuevo = nullptr;\n    try {\n        nuevo = new int[2]{};\n    } catch (const std::bad_alloc&) {\n        delete[] base;\n        return 1;\n    }\n    for (int i = 0; i < 2; ++i) {\n        nuevo[i] = base[i];\n    }\n    delete[] base;\n    base = nuevo;\n    nuevo = nullptr;\n    for (int i = 0; i < 2; ++i) {\n        if (i != 0) {\n            std::cout << ':';\n        }\n        std::cout << base[i];\n    }\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "1:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos primeros valores, 1 y 3, caben en el nuevo array. No se intenta escribir las posiciones dos y tres de ese destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa se analiza sin ejecutarlo. Copia cuatro int en un destino que sólo tiene dos. Reservar correctamente el destino no hace válidas esas escrituras fuera de sus límites."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int* base = new int[4]{1, 3, 5, 7};\n    int* nuevo = new int[2]{};\n    for (int i = 0; i < 4; ++i) {\n        nuevo[i] = base[i];\n    }\n    delete[] base;\n    delete[] nuevo;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calcular lo conservado y lo añadido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para contar lo conservado, elige la menor de las cantidades anterior y solicitada. Por ejemplo, al pasar de dos a cuatro se conservan dos valores. Para contar lo añadido cuando se crece, resta la cantidad anterior de la solicitada: cuatro menos dos deja dos posiciones nuevas. Al reducir de cuatro a dos se conservan dos valores y no se añade ninguna posición."
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u5l3_prefijo_y_elementos_nuevos",
+          "schemaVersion": 1,
+          "prompt": "Para cada fila indica cuántos valores anteriores permanecen en el resultado y cuántos elementos añadidos necesitan el relleno. Se conserva el prefijo que cabe.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Cantidad anterior",
+                "Cantidad solicitada"
+              ],
+              "rows": [
+                [
+                  "1",
+                  "3"
+                ],
+                [
+                  "3",
+                  "2"
+                ],
+                [
+                  "0",
+                  "4"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "De 1 a 3: conservados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "De 1 a 3: añadidos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "De 3 a 2: conservados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "De 3 a 2: añadidos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "De 0 a 4: conservados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "De 0 a 4: añadidos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se conserva la menor de las dos cantidades. Sólo cuando se crece hay posiciones añadidas; su cantidad es solicitada menos anterior.",
+            "incorrect": "Distingue los valores anteriores que caben de las posiciones que no existían antes. Reducir no añade elementos ni permite copiar fuera del destino."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Provocar un fallo conocido sin consumir la memoria del equipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::bad_alloc identifica el fallo de reserva que ya presentamos. Su tipo se obtiene mediante <new>. Podemos capturarlo con catch (const std::bad_alloc&). En esta forma no damos nombre a la referencia porque sólo necesitamos reconocer el tipo de excepción, sin consultar su mensaje (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int* reservar(int cantidad, bool provocarFallo) {\n    if (provocarFallo) {\n        throw std::bad_alloc{};\n    }\n    return new int[cantidad]{};\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "reservar es una función de prueba proporcionada. Si provocarFallo vale true, ejecuta throw antes de solicitar memoria. Si vale false, utiliza new[] normalmente. El parámetro permite probar el camino de recuperación de forma repetible. Un fallo provocado no significa que el ordenador se haya quedado sin memoria y no sustituye los posibles fallos reales de new[]."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando throw se ejecuta, no se ejecuta el return que contiene new[]. El control busca el catch correspondiente. No se obtiene un nuevo array ni se debe fingir una reserva exitosa. La misma captura por tipo permite tratar un std::bad_alloc lanzado realmente durante la reserva (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un fallo de preparación no debe borrar los datos anteriores"
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_fallo_antes_de_sustituir",
+          "language": "cpp",
+          "question": "¿Qué muestra el catch del programa?",
+          "code": "#include <iostream>\n#include <new>\n\nint* reservar(int cantidad, bool provocarFallo) {\n    if (provocarFallo) {\n        throw std::bad_alloc{};\n    }\n    return new int[cantidad]{};\n}\n\nint main() {\n    int* base = new int[2]{3, 6};\n    int cantidad = 2;\n    int* nuevo = nullptr;\n    try {\n        nuevo = reservar(4, true);\n    } catch (const std::bad_alloc&) {\n        std::cout << \"Fallo:\" << cantidad << ':' << base[0] << ':' << base[1];\n        delete[] base;\n        base = nullptr;\n        return 0;\n    }\n    delete[] nuevo;\n    nuevo = nullptr;\n    delete[] base;\n    base = nullptr;\n    return 1;\n}\n",
+          "answers": [
+            "Fallo:2:3:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función de prueba lanza antes de reservar. base sigue conservando los dos int originales, con 3 y 6. El catch los puede leer porque todavía no se han liberado."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este programa no se ha llegado a una sustitución. El estado anterior sigue existiendo y el ejemplo lo libera al terminar. En una función que devuelve rechazo al llamador, conservaríamos ese estado para que el llamador pudiera continuar utilizándolo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Liberar primero puede perder los datos aunque no haya un acceso inválido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa se puede ejecutar con seguridad, pero incumple el objetivo de conservación. Libera el array anterior y deja su estado vacío antes de pedir el nuevo. El fallo provocado impide completar esa reserva. El catch no lee memoria liberada: muestra precisamente que ya se perdió el array."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_liberacion_demasiado_pronto",
+          "language": "cpp",
+          "question": "¿Qué muestra este programa de orden incorrecto?",
+          "code": "#include <iostream>\n#include <new>\n\nint* reservar(int cantidad, bool provocarFallo) {\n    if (provocarFallo) {\n        throw std::bad_alloc{};\n    }\n    return new int[cantidad]{};\n}\n\nint main() {\n    int* base = new int[2]{3, 6};\n    int cantidad = 2;\n    delete[] base;\n    base = nullptr;\n    cantidad = 0;\n    try {\n        base = reservar(4, true);\n        cantidad = 4;\n    } catch (const std::bad_alloc&) {\n        std::cout << \"Fallo:\" << cantidad << ':' << (base == nullptr);\n        return 0;\n    }\n    delete[] base;\n    base = nullptr;\n    return 1;\n}\n",
+          "answers": [
+            "Fallo:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "cantidad ya fue puesta a cero y base ya es nulo. Capturar la excepción no reconstruye los datos 3 y 6 que se liberaron antes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u5l3_orden_que_conserva",
+          "question": "¿Qué secuencia permite conservar los datos anteriores si falla la nueva reserva?",
+          "options": [
+            "Liberar el anterior, poner su cantidad a cero y después intentar reservar el nuevo.",
+            "Reservar y preparar el nuevo mientras el anterior sigue vivo; liberar el anterior sólo cuando la preparación haya terminado.",
+            "Copiar el puntero anterior y liberar ambas copias al terminar."
+          ],
+          "correctIndex": 1,
+          "explanation": "La conservación depende de mantener el anterior hasta completar la preparación. Un catch por sí solo no corrige un orden que ya perdió los datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La fuente también puede ser una selección del propio array"
+        },
+        {
+          "type": "paragraph",
+          "text": "origen puede seleccionar elementos del array que queremos sustituir. En el siguiente ejemplo selecciona dos elementos interiores del array original. Debemos copiarlos antes de liberar ese array. No hace falta comparar direcciones para decidir si hay una relación: el orden de preparación debe conservar válida cualquier fuente admitida (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u5l3_copiar_desde_subvista_propia",
+          "language": "cpp",
+          "question": "¿Qué muestra el array que sustituye al anterior?",
+          "code": "#include <iostream>\n#include <new>\n#include <span>\n\nint main() {\n    int* base = new int[4]{2, 4, 6, 8};\n    std::span<const int> origen{base + 1, 2};\n    int* nuevo = nullptr;\n    try {\n        nuevo = new int[2]{};\n    } catch (const std::bad_alloc&) {\n        origen = std::span<const int>{};\n        delete[] base;\n        return 1;\n    }\n    for (int i = 0; i < 2; ++i) {\n        nuevo[i] = origen[static_cast<std::size_t>(i)];\n    }\n    origen = std::span<const int>{};\n    delete[] base;\n    base = nuevo;\n    nuevo = nullptr;\n    std::cout << base[0] << ':' << base[1];\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La subvista permanece válida durante la copia al array nuevo. Después se deja de utilizar, se libera el anterior y base pasa al nuevo array de dos elementos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa se analiza sin ejecutarlo. La vista conserva una cantidad, pero sus int ya se han liberado cuando se intenta leer origen[0]."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <span>\n\nint main() {\n    int* base = new int[3]{2, 4, 6};\n    std::span<const int> origen{base + 1, 2};\n    delete[] base;\n    base = nullptr;\n    std::cout << origen[0];\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos accesos al mismo array no son dos propietarios independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una copia independiente se necesitan elementos distintos y una responsabilidad de liberación para cada array. Asignar copia = base y liberar los dos accesos intentaría liberar dos veces la misma reserva. El siguiente programa se analiza sin ejecutarlo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    int* base = new int[2]{3, 6};\n    int* copia = base;\n    delete[] copia;\n    copia = nullptr;\n    delete[] base;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u5l3_reconocer_independencia",
+          "question": "¿Qué permite comprobar que se conservaron dos versiones independientes mientras ambos arrays están vivos?",
+          "options": [
+            "Que ambos punteros tengan el mismo tipo int*.",
+            "Que las dos cantidades sean iguales, aunque sólo se haya copiado el puntero.",
+            "Que cada versión tenga sus propios elementos y cambiar una no cambie la otra; además, cada reserva debe liberarse correctamente."
+          ],
+          "correctIndex": 2,
+          "explanation": "El mismo tipo o la misma cantidad no acreditan una copia de los datos. La modificación independiente y la gestión de dos reservas distintas responden al objetivo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los observadores dependen de si hubo una sustitución real"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una preparación falla, el array anterior no cambia: sus elementos y las vistas admitidas siguen siendo válidos. Si se sustituye el array, los accesos al anterior quedan invalidados. No se deben comparar esos punteros viejos, consultar sus elementos ni reutilizar sus vistas. Las variables que conservaban esos accesos pueden sobrescribirse sin leer sus valores anteriores (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No vaciaremos una vista antes de una operación que puede fallar si queremos conservar también su selección. La función de la práctica no recibe esa vista. El llamador la conserva cuando hay rechazo; después de una sustitución real, la sobrescribe directamente con una vista del array nuevo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u5l3_vista_tras_rechazo",
+          "question": "La vista selecciona un elemento del array anterior y la nueva reserva falla sin modificarlo. ¿Qué debe hacer este contrato?",
+          "options": [
+            "Conservar el array, su cantidad, sus valores y la selección previa, que continúa siendo válida.",
+            "Vaciar siempre la vista antes de intentar reservar, aunque se debiera conservar su selección.",
+            "Reasignar la vista a la nueva cantidad aunque no se haya creado el nuevo array."
+          ],
+          "correctIndex": 0,
+          "explanation": "El rechazo no termina el array anterior. Cambiar la selección antes de saber el resultado perdería una parte del estado que se prometió conservar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mismo tamaño y copia desde otra fuente no son la misma operación"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la práctica, redimensionar a la cantidad actual será un éxito sin cambios: no se reserva, no se copian datos y se conserva la vista previa. En cambio, una operación que pide reemplazar los valores por los de otra fuente no puede saltarse esa copia sólo porque las dos cantidades coincidan. Los valores solicitados podrían ser distintos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u5l3_cantidad_igual",
+          "question": "Un array contiene 3,6 y se solicita redimensionarlo a dos elementos, con relleno válido. ¿Qué corresponde al contrato de esta práctica?",
+          "options": [
+            "Preparar siempre otro array y borrar todas las selecciones, aunque no se soliciten valores diferentes.",
+            "Aceptar sin reservar ni modificar los valores o la vista; el relleno no sustituye los elementos ya existentes.",
+            "Reemplazar ambos valores por el relleno, porque la cantidad no cambia."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se trata de cambiar la cantidad conservando los valores, no de asignar datos desde otra fuente. El éxito sin cambios mantiene válidos sus observadores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el nuevo inicio después de preparar los datos"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u5l3_preparar_y_publicar",
+          "question": "Escribe sólo los nombres de las variables existentes: de qué array se copian los valores, qué array anterior se libera y qué acceso pasa a conservar base.",
+          "template": "#include <iostream>\n#include <new>\n\nint main() {\n    int* base = new int[2]{3, 6};\n    int* nuevo = nullptr;\n    try {\n        nuevo = new int[3]{};\n    } catch (const std::bad_alloc&) {\n        delete [ ] base;\n        return 1;\n    }\n    for (int i = 0; i < 2; ++i) {\n        nuevo[i] = [][i];\n    }\n    delete [ ] [];\n    base = [];\n    nuevo = nullptr;\n    std::cout << base[0] << ':' << base[1] << ':' << base[2];\n    delete [ ] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "base",
+            "base",
+            "nuevo"
+          ],
+          "answerAlternatives": [
+            [
+              "base"
+            ],
+            [
+              "base"
+            ],
+            [
+              "nuevo"
+            ]
+          ],
+          "explanation": "Se lee base mientras sigue vivo, se libera ese array después de preparar nuevo y se asigna nuevo a base. El tercer elemento ya estaba inicializado con cero. No se utiliza el antiguo valor de base después de liberar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar una copia que omitió el primer elemento"
+        },
+        {
+          "type": "paragraph",
+          "text": "copiar debe preparar otro array e incluir todos los elementos de origen. Su contrato en esta reparación recibe una vista válida y no vacía de hasta cuatro int. El inicial es seguro, pero la primera posición del destino conserva su cero de inicialización. Corrige únicamente el inicio del recorrido para copiar también ese primer valor. Conserva la reserva, las demás instrucciones y la limpieza de main. No hay entrada."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <new>\n#include <span>\n\nint* copiar(std::span<const int> origen) {\n    int* resultado = new int[origen.size()]{};\n    for (std::size_t i = 1; i < origen.size(); ++i) {\n        resultado[i] = origen[i];\n    }\n    return resultado;\n}\n\nint main() {\n    int* base = new int[3]{3, 5, 7};\n    int* copia = nullptr;\n    try {\n        copia = copiar(std::span<const int>{base, 3});\n    } catch (const std::bad_alloc&) {\n        delete[] base;\n        return 1;\n    }\n    copia[1] = 9;\n    std::cout << base[0] << ':' << copia[0] << ':' << copia[1] << ':' << (base != copia);\n    delete[] copia;\n    copia = nullptr;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:3:9:1"
+                ],
+                "explanation": "El destino tiene elementos independientes e inicializados. Comprueba qué índice se recorre primero; un cero por inicialización no sustituye el valor que se debía copiar."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: copiar todos los valores antes de utilizarlos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <new>\n#include <span>\n\nint* copiar(std::span<const int> origen) {\n    int* resultado = new int[origen.size()]{};\n    for (std::size_t i = 0; i < origen.size(); ++i) {\n        resultado[i] = origen[i];\n    }\n    return resultado;\n}\n\nint main() {\n    int* base = new int[3]{3, 5, 7};\n    int* copia = nullptr;\n    try {\n        copia = copiar(std::span<const int>{base, 3});\n    } catch (const std::bad_alloc&) {\n        delete[] base;\n        return 1;\n    }\n    copia[1] = 9;\n    std::cout << base[0] << ':' << copia[0] << ':' << copia[1] << ':' << (base != copia);\n    delete[] copia;\n    copia = nullptr;\n    delete[] base;\n    base = nullptr;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El recorrido empieza en cero e incluye todas las posiciones menores que origen.size(). Después main cambia copia[1] a nueve: base[0] y copia[0] conservan tres en objetos distintos, y el primer array no recibe esa escritura. La comparación de punteros ocurre antes de liberar cualquiera de los dos arrays."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: cambiar la cantidad con conservación ante fallos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa bool redimensionar(int*& base, int& cantidad, int nuevaCantidad, int relleno, bool provocarFallo). El estado recibido es coherente: base nulo y cantidad cero, o un array vivo responsable de cantidad int, entre uno y cuatro. Los int existentes están entre cero y nueve. La función no recibe la vista del llamador."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato sigue este orden:\nPrimero rechaza nuevaCantidad fuera de cero a cuatro o relleno fuera de cero a nueve. Devuelve false sin cambiar nada; relleno se valida incluso cuando no se añadirá ningún elemento.\nSi la cantidad solicitada ya es la actual, devuelve true sin reservar ni cambiar nada.\nSi se solicita cero desde un array existente, libera el array y deja base nulo y cantidad cero. Devuelve true.\nEn otro caso, prepara otro array mediante la función reservar proporcionada. Si ésta lanza std::bad_alloc, devuelve false y conserva todo el array anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la reserva tiene éxito, conserva los primeros min(cantidad, nuevaCantidad) valores anteriores y utiliza relleno únicamente para las posiciones añadidas. Aquí min significa elegir la menor de las dos cantidades; no obliga a utilizar una función de biblioteca. No leas base cuando la cantidad anterior sea cero: en ese caso no hay valores que copiar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo después de completar el nuevo array libera el anterior y actualiza base y cantidad. Las copias y asignaciones de int dentro de los límites no lanzan excepciones. Esa propiedad permite terminar esta preparación sin otra operación que pueda lanzar después de la reserva. No apliques esta afirmación sin revisar las operaciones de otros tipos que estudiaremos después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva las comprobaciones, las ramas sin reserva y la llamada a reservar con su captura ya proporcionadas. El inicial libera el candidato y devuelve rechazo porque todavía no preparó la sustitución. Sustituye los comentarios, esa limpieza provisional y el rechazo final por las copias, el relleno y la actualización final de base y cantidad. No cambies reservar ni ignores provocarFallo. No imprimas dentro de la función ni reemplaces las acciones por textos fijos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Órdenes, vistas y estado posterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada orden contiene operacion, a y b. La entrada comienza con una cantidad de órdenes entre uno y doce. El estado inicial es un array con 3,6 y una vista del array completo.\n1: redimensionar a la cantidad a usando b como relleno, sin provocar el fallo.\n2: hacer la misma solicitud con el fallo de prueba activado. Sólo fallará por ese parámetro si el contrato necesita llamar a reservar; solicitar la misma cantidad o vaciar no requiere reservar.\n3: seleccionar desde la posición a una cantidad b del array completo. Una selección inválida conserva la anterior.\n4: escribir a en los elementos seleccionados, si a está entre cero y nueve; b no se utiliza. Si la vista está vacía y a es válido, Estado es Vacio.\nOtra operación: Estado Orden, sin cambiar nada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las solicitudes de cantidad producen Aceptado o Rechazo. main guarda la cantidad anterior antes de llamar. Si la operación se acepta y la cantidad cambió, main reconstruye la vista para el nuevo estado sin consultar sus accesos antiguos; si existía un array anterior, éste ya terminó. Con un array nuevo, selecciona sus elementos completos; con estado vacío, deja la vista vacía. En un rechazo o un éxito sin cambios conserva la selección previa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los informes muestran Cantidad del array completo, Vista como cantidad de elementos seleccionados y Datos con los valores actuales, o X si no hay array. Final:0:0 indica que el programa completó su limpieza y dejó cantidad y vista en cero. Si falla la lectura de una orden, también se descarta la vista y se libera el array antes de terminar con error."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar, conservar y sustituir en una sola historia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el editor. Sólo el primer caso correcto es obligatorio para avanzar; las otras dos entradas son ensayos opcionales. Cada ejecución comienza con el array 3,6 y su vista completa. La primera historia combina fallos provocados, ampliación, reducción, selección, éxito sin cambios y estado vacío."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <span>\n\nint* reservar(int cantidad, bool provocarFallo) {\n    if (provocarFallo) {\n        throw std::bad_alloc{};\n    }\n    return new int[cantidad]{};\n}\n\nbool redimensionar(int*& base, int& cantidad, int nuevaCantidad, int relleno, bool provocarFallo) {\n    if (nuevaCantidad < 0 || nuevaCantidad > 4 || relleno < 0 || relleno > 9) {\n        return false;\n    }\n    if (nuevaCantidad == cantidad) {\n        return true;\n    }\n    if (nuevaCantidad == 0) {\n        delete[] base;\n        base = nullptr;\n        cantidad = 0;\n        return true;\n    }\n    int* nuevo = nullptr;\n    try {\n        nuevo = reservar(nuevaCantidad, provocarFallo);\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n    // Conserva el prefijo, rellena lo añadido y publica sólo al terminar.\n    // Sustituye esta limpieza provisional y el rechazo por la operación completa.\n    delete[] nuevo;\n    nuevo = nullptr;\n    return false;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = new int[2]{3, 6};\n    int cantidad = 2;\n    std::span<int> vista{base, 2};\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            delete[] base;\n            base = nullptr;\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1 || operacion == 2) {\n            const int anterior = cantidad;\n            const bool aceptado = redimensionar(base, cantidad, a, b, operacion == 2);\n            if (aceptado && cantidad != anterior) {\n                vista = std::span<int>{};\n                if (base != nullptr) {\n                    vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                }\n            }\n            estado = aceptado ? \"Aceptado\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 4) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    cantidad = 0;\n    std::cout << \"Final:\" << cantidad << ':' << vista.size() << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "12\n2 4 8\n1 4 8\n3 1 2\n4 9 0\n2 4 0\n1 5 0\n1 2 7\n2 1 0\n1 0 0\n2 0 0\n1 3 5\n2 4 6\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n2 4 8\n1 4 8\n3 1 2\n4 9 0\n2 4 0\n1 5 0\n1 2 7\n2 1 0\n1 0 0\n2 0 0\n1 3 5\n2 4 6\n",
+                "outputs": [
+                  "Estado:Rechazo;Cantidad:2;Vista:2;Datos:3,6\nEstado:Aceptado;Cantidad:4;Vista:4;Datos:3,6,8,8\nEstado:Seleccion;Cantidad:4;Vista:2;Datos:3,6,8,8\nEstado:Cambio;Cantidad:4;Vista:2;Datos:3,9,9,8\nEstado:Aceptado;Cantidad:4;Vista:2;Datos:3,9,9,8\nEstado:Rechazo;Cantidad:4;Vista:2;Datos:3,9,9,8\nEstado:Aceptado;Cantidad:2;Vista:2;Datos:3,9\nEstado:Rechazo;Cantidad:2;Vista:2;Datos:3,9\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nEstado:Aceptado;Cantidad:3;Vista:3;Datos:5,5,5\nEstado:Rechazo;Cantidad:3;Vista:3;Datos:5,5,5\nFinal:0:0\n"
+                ],
+                "explanation": "El rechazo conserva datos, cantidad y vista. Prepara todos los valores del nuevo array antes de liberar el anterior y conserva las ramas sin reserva."
+              },
+              {
+                "standardInput": "8\n1 2 -1\n2 2 9\n1 1 0\n1 4 7\n3 4 0\n2 4 0\n4 9 0\n1 0 8\n",
+                "outputs": [
+                  "Estado:Rechazo;Cantidad:2;Vista:2;Datos:3,6\nEstado:Aceptado;Cantidad:2;Vista:2;Datos:3,6\nEstado:Aceptado;Cantidad:1;Vista:1;Datos:3\nEstado:Aceptado;Cantidad:4;Vista:4;Datos:3,7,7,7\nEstado:Seleccion;Cantidad:4;Vista:0;Datos:3,7,7,7\nEstado:Aceptado;Cantidad:4;Vista:0;Datos:3,7,7,7\nEstado:Vacio;Cantidad:4;Vista:0;Datos:3,7,7,7\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nFinal:0:0\n"
+                ],
+                "explanation": "El rechazo conserva datos, cantidad y vista. Prepara todos los valores del nuevo array antes de liberar el anterior y conserva las ramas sin reserva."
+              },
+              {
+                "standardInput": "8\n3 1 1\n2 3 8\n4 4 0\n1 -2147483648 0\n1 4 2147483647\n1 1 0\n2 0 0\n2 4 0\n",
+                "outputs": [
+                  "Estado:Seleccion;Cantidad:2;Vista:1;Datos:3,6\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:3,6\nEstado:Cambio;Cantidad:2;Vista:1;Datos:3,4\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:3,4\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:3,4\nEstado:Aceptado;Cantidad:1;Vista:1;Datos:3\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nEstado:Rechazo;Cantidad:0;Vista:0;Datos:X\nFinal:0:0\n"
+                ],
+                "explanation": "El rechazo conserva datos, cantidad y vista. Prepara todos los valores del nuevo array antes de liberar el anterior y conserva las ramas sin reserva."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer fallo conserva 3,6. El éxito posterior permite modificar una selección. Un éxito con la misma cantidad mantiene esa selección, y los nuevos fallos conservan los datos ya modificados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n2 4 8\n1 4 8\n3 1 2\n4 9 0\n2 4 0\n1 5 0\n1 2 7\n2 1 0\n1 0 0\n2 0 0\n1 3 5\n2 4 6\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Estado:Rechazo;Cantidad:2;Vista:2;Datos:3,6\nEstado:Aceptado;Cantidad:4;Vista:4;Datos:3,6,8,8\nEstado:Seleccion;Cantidad:4;Vista:2;Datos:3,6,8,8\nEstado:Cambio;Cantidad:4;Vista:2;Datos:3,9,9,8\nEstado:Aceptado;Cantidad:4;Vista:2;Datos:3,9,9,8\nEstado:Rechazo;Cantidad:4;Vista:2;Datos:3,9,9,8\nEstado:Aceptado;Cantidad:2;Vista:2;Datos:3,9\nEstado:Rechazo;Cantidad:2;Vista:2;Datos:3,9\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nEstado:Aceptado;Cantidad:3;Vista:3;Datos:5,5,5\nEstado:Rechazo;Cantidad:3;Vista:3;Datos:5,5,5\nFinal:0:0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: ramas sin reserva y conservación"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El relleno inválido se rechaza incluso con la misma cantidad. Una selección vacía sigue siendo válida después de un éxito sin cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 2 -1\n2 2 9\n1 1 0\n1 4 7\n3 4 0\n2 4 0\n4 9 0\n1 0 8\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Estado:Rechazo;Cantidad:2;Vista:2;Datos:3,6\nEstado:Aceptado;Cantidad:2;Vista:2;Datos:3,6\nEstado:Aceptado;Cantidad:1;Vista:1;Datos:3\nEstado:Aceptado;Cantidad:4;Vista:4;Datos:3,7,7,7\nEstado:Seleccion;Cantidad:4;Vista:0;Datos:3,7,7,7\nEstado:Aceptado;Cantidad:4;Vista:0;Datos:3,7,7,7\nEstado:Vacio;Cantidad:4;Vista:0;Datos:3,7,7,7\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nFinal:0:0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El fallo de reserva conserva una selección interior. Una reducción posterior utiliza los datos modificados, y vaciar no solicita otra reserva aunque el fallo de prueba esté activado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n3 1 1\n2 3 8\n4 4 0\n1 -2147483648 0\n1 4 2147483647\n1 1 0\n2 0 0\n2 4 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Estado:Seleccion;Cantidad:2;Vista:1;Datos:3,6\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:3,6\nEstado:Cambio;Cantidad:2;Vista:1;Datos:3,4\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:3,4\nEstado:Rechazo;Cantidad:2;Vista:1;Datos:3,4\nEstado:Aceptado;Cantidad:1;Vista:1;Datos:3\nEstado:Aceptado;Cantidad:0;Vista:0;Datos:X\nEstado:Rechazo;Cantidad:0;Vista:0;Datos:X\nFinal:0:0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: la preparación antecede a la sustitución"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <span>\n\nint* reservar(int cantidad, bool provocarFallo) {\n    if (provocarFallo) {\n        throw std::bad_alloc{};\n    }\n    return new int[cantidad]{};\n}\n\nbool redimensionar(int*& base, int& cantidad, int nuevaCantidad, int relleno, bool provocarFallo) {\n    if (nuevaCantidad < 0 || nuevaCantidad > 4 || relleno < 0 || relleno > 9) {\n        return false;\n    }\n    if (nuevaCantidad == cantidad) {\n        return true;\n    }\n    if (nuevaCantidad == 0) {\n        delete[] base;\n        base = nullptr;\n        cantidad = 0;\n        return true;\n    }\n    int* nuevo = nullptr;\n    try {\n        nuevo = reservar(nuevaCantidad, provocarFallo);\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n    const int conservados = cantidad < nuevaCantidad ? cantidad : nuevaCantidad;\n    for (int i = 0; i < conservados; ++i) {\n        nuevo[i] = base[i];\n    }\n    for (int i = conservados; i < nuevaCantidad; ++i) {\n        nuevo[i] = relleno;\n    }\n    delete[] base;\n    base = nuevo;\n    nuevo = nullptr;\n    cantidad = nuevaCantidad;\n    return true;\n}\n\nbool seleccionar(std::span<int> total, std::span<int>& vista, int inicio, int cantidad) {\n    if (inicio < 0 || cantidad < 0) {\n        return false;\n    }\n    const auto posicion = static_cast<std::size_t>(inicio);\n    const auto longitud = static_cast<std::size_t>(cantidad);\n    if (posicion > total.size() || longitud > total.size() - posicion) {\n        return false;\n    }\n    vista = total.subspan(posicion, longitud);\n    return true;\n}\n\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) {\n        return 1;\n    }\n    int* base = new int[2]{3, 6};\n    int cantidad = 2;\n    std::span<int> vista{base, 2};\n    for (int i = 0; i < ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            vista = std::span<int>{};\n            delete[] base;\n            base = nullptr;\n            return 1;\n        }\n        const char* estado = \"Orden\";\n        if (operacion == 1 || operacion == 2) {\n            const int anterior = cantidad;\n            const bool aceptado = redimensionar(base, cantidad, a, b, operacion == 2);\n            if (aceptado && cantidad != anterior) {\n                vista = std::span<int>{};\n                if (base != nullptr) {\n                    vista = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n                }\n            }\n            estado = aceptado ? \"Aceptado\" : \"Rechazo\";\n        } else if (operacion == 3) {\n            std::span<int> total;\n            if (base != nullptr) {\n                total = std::span<int>{base, static_cast<std::size_t>(cantidad)};\n            }\n            estado = seleccionar(total, vista, a, b) ? \"Seleccion\" : \"Rechazo\";\n        } else if (operacion == 4) {\n            if (a < 0 || a > 9) {\n                estado = \"Rechazo\";\n            } else {\n                for (int& dato : vista) {\n                    dato = a;\n                }\n                estado = vista.empty() ? \"Vacio\" : \"Cambio\";\n            }\n        }\n        std::cout << \"Estado:\" << estado << \";Cantidad:\" << cantidad\n                  << \";Vista:\" << vista.size() << \";Datos:\";\n        if (base == nullptr) {\n            std::cout << 'X';\n        } else {\n            for (int j = 0; j < cantidad; ++j) {\n                if (j != 0) {\n                    std::cout << ',';\n                }\n                std::cout << base[j];\n            }\n        }\n        std::cout << '\\n';\n    }\n    vista = std::span<int>{};\n    delete[] base;\n    base = nullptr;\n    cantidad = 0;\n    std::cout << \"Final:\" << cantidad << ':' << vista.size() << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La reserva se intenta mientras base y cantidad todavía describen el estado anterior. Si lanza, se devuelve false sin cambiarlo. Si tiene éxito, el primer recorrido conserva el prefijo que cabe y el segundo llena sólo lo añadido. Después se libera el array anterior, si existía, y base y cantidad se actualizan para conservar el nuevo array."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el caso obligatorio, ampliar crea 3,6,8,8. La vista interior modifica los dos valores centrales a nueve. Solicitar de nuevo cuatro no llama a reservar, aunque se active el fallo de prueba; la vista continúa seleccionando esos dos int. Reducir a dos conserva 3,9. El fallo posterior no los borra; vaciar sí termina ese array porque esa operación se aceptó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este acuerdo conserva el estado del array ante un fallo de preparación. Es la idea de completar una operación o conservar lo anterior, relacionada con la garantía fuerte ante excepciones. Aquí se ha delimitado a estos int, sus accesos y sus cantidades; no convierte en automática la limpieza de cualquier trabajo posterior del llamador (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La gestión manual nos permite estudiar las obligaciones. vector ya organiza almacenamiento para una colección. Después aprenderemos a expresar la propiedad y la limpieza en tipos propios, sin repetir recordatorios de liberación en cada recorrido."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "872e6cbc17782ba3ea11b9e4056452d17deb468dccc1cdbd343b82a8142b68d1"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "db6f06c61730a8af08c0ca23d5f8626040b3f2b742e5986d49bdf4c633e1968f"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "993dfb31451fc8dd63736ff56ffea6e229489f3ea78bdbc9a360df76df62a30e"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "62002dd124b24424766b80f89758a6c0805d2e5103bd19a942f8978d476915e9"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "02a2a12f9528a3a3cd8cf86e4ba9b9cbbb15f958f8010830bca8e595b83b2bea"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "2fdb49a82187640dcf3b53419f784b1d0cc9bae76a927efc579d2b8961cc6196"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "68a8776228f9cc1f1d06dbc79d4e058d604efe5da86e70ea56b9ca926c324a1f"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "aca73b078e05ef0769836f2fd7c877d7fde9d3b19b79d956f332040e585da6d0"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "5531999dec61e8cd32aeda09f70482f301b3577061bc85bf7eefdc523a3d8630"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "937c70ffbbe260e454b226ed720359accca0c16f2b82164577f3ed4acf8cfaab"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "9a0c35aca7278445559eb01f1658fc82d069f0cf69e1b58d32360870e5fbc6cf"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "68284c38fe078c8a0673cda36f70e4358e293b53c6b49ca3a79f9f36035bf84d"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "413fe28fa8c51c03a1a16800e8e6def5ad5d7d4c30ba4a430e856f7860bbd430"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "126fb2e05446ff155fcbc4aa2bbab464333900a45e2b55b13327afa2add65afb"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "5a98258dc967be4c89bff75458b3c783c28705ce83121bb61677fe8fe2004eaf"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "a3204bbb414338c30a7172ebec833eceaa2f55f781309b4826170e959c53b27b"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "c5a06264bfa466b8ccae3a5d1a0b051a2491a5a62713f72f7b7767983344e2d6"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "5ac6af74231c7a09d42fde3fa677858b5b651ec8825d628e878ba67294707a42"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "3b05430cad7b9632339c897c6a1afaba0b740dc82cee137ea324803d8faafb08"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "ff266196166bb3a3887a7216cf5d0ef9a2b79bc5f2004ede4c19e571cdfb8242"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "e4fb1259eedce91d75dd2b8b22040c21d2093e54f8bb877a0ca6ba3ea779d6af"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "bbe7e3ac1b23ece3e8703c502f747ee400bb45ab30345fc3592793c415e9a642"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "f1ccc58dbc7280551761d7eaba3ec058bcbcb746dd2c3c70d005c7ce360e63d1"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "210a9de2a6e743fd589b0a3f557bf21bd299a83109af3634582325f42eac44ca"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0010",
+            "sha256": "c246b3e3634fdbcb05ff20e0168f2403be60a19f3ed179e29adbd55cc356cd55"
+          },
+          {
+            "id": "block_0018_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0012",
+            "sha256": "6737bca3ddf978cdfdf5041f250255240736bc4b61a7cc8af6a9e53f586b7813"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "86162521df6f2deb08252500e538fbde61c308eb55a977a07a439453f2a8f707"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008",
+          "block_0018_0009",
+          "block_0018_0010",
+          "block_0018_0011",
+          "block_0018_0012"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004",
+          "block_0019_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "68878bc46b0fe3705cde3ca9f7e99f85075170f66ae0a2aef598948a2c05fd45",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "872e6cbc17782ba3ea11b9e4056452d17deb468dccc1cdbd343b82a8142b68d1"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "db6f06c61730a8af08c0ca23d5f8626040b3f2b742e5986d49bdf4c633e1968f"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "993dfb31451fc8dd63736ff56ffea6e229489f3ea78bdbc9a360df76df62a30e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "62002dd124b24424766b80f89758a6c0805d2e5103bd19a942f8978d476915e9"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "02a2a12f9528a3a3cd8cf86e4ba9b9cbbb15f958f8010830bca8e595b83b2bea"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "2fdb49a82187640dcf3b53419f784b1d0cc9bae76a927efc579d2b8961cc6196"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "68a8776228f9cc1f1d06dbc79d4e058d604efe5da86e70ea56b9ca926c324a1f"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "aca73b078e05ef0769836f2fd7c877d7fde9d3b19b79d956f332040e585da6d0"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "5531999dec61e8cd32aeda09f70482f301b3577061bc85bf7eefdc523a3d8630"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "937c70ffbbe260e454b226ed720359accca0c16f2b82164577f3ed4acf8cfaab"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "9a0c35aca7278445559eb01f1658fc82d069f0cf69e1b58d32360870e5fbc6cf"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "68284c38fe078c8a0673cda36f70e4358e293b53c6b49ca3a79f9f36035bf84d"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "413fe28fa8c51c03a1a16800e8e6def5ad5d7d4c30ba4a430e856f7860bbd430"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "126fb2e05446ff155fcbc4aa2bbab464333900a45e2b55b13327afa2add65afb"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "5a98258dc967be4c89bff75458b3c783c28705ce83121bb61677fe8fe2004eaf"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "a3204bbb414338c30a7172ebec833eceaa2f55f781309b4826170e959c53b27b"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "c5a06264bfa466b8ccae3a5d1a0b051a2491a5a62713f72f7b7767983344e2d6"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "5ac6af74231c7a09d42fde3fa677858b5b651ec8825d628e878ba67294707a42"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "3b05430cad7b9632339c897c6a1afaba0b740dc82cee137ea324803d8faafb08"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "ff266196166bb3a3887a7216cf5d0ef9a2b79bc5f2004ede4c19e571cdfb8242"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "e4fb1259eedce91d75dd2b8b22040c21d2093e54f8bb877a0ca6ba3ea779d6af"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "bbe7e3ac1b23ece3e8703c502f747ee400bb45ab30345fc3592793c415e9a642"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "f1ccc58dbc7280551761d7eaba3ec058bcbcb746dd2c3c70d005c7ce360e63d1"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "210a9de2a6e743fd589b0a3f557bf21bd299a83109af3634582325f42eac44ca"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0010",
+                "sha256": "c246b3e3634fdbcb05ff20e0168f2403be60a19f3ed179e29adbd55cc356cd55"
+              },
+              {
+                "id": "block_0018_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0012",
+                "sha256": "6737bca3ddf978cdfdf5041f250255240736bc4b61a7cc8af6a9e53f586b7813"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "86162521df6f2deb08252500e538fbde61c308eb55a977a07a439453f2a8f707"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

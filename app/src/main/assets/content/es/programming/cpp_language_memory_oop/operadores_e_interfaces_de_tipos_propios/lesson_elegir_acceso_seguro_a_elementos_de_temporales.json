@@ -1,0 +1,2535 @@
+{
+  "id": "cpp_language_memory_oop__operadores_e_interfaces_de_tipos_propios__elegir_acceso_seguro_a_elementos_de_temporales",
+  "title": "Elegir un acceso seguro a elementos de temporales",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir entre prestar el elemento y entregar su valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al devolver una referencia a un elemento de un objeto con nombre, pudimos observar sus cambios mientras ese objeto seguía vivo. También vimos el límite: una referencia obtenida mediante una llamada no mantiene vivo por sí sola el objeto temporal del que procede. Un índice válido y una referencia constante no resuelven ese problema de duración."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora distinguiremos dos formas de utilizar el mismo acceso. Al consultar un objeto mediante una expresión lvalue, ofreceremos una referencia a su elemento. Al utilizar una expresión rvalue, entregaremos un int independiente por valor. Así, el resultado obtenido de un temporal podrá conservarse sin seguir dependiendo de su elemento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta es una política de nuestra clase. El lenguaje permite diseñar otras interfaces, por ejemplo rechazar los accesos rvalue por completo. Para elegir la función según el objeto de la llamada aprenderemos a añadir & o && después de los paréntesis del método (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El signo después de los paréntesis describe el acceso al objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero observa otro método, consultar. Estas cuatro declaraciones pertenecen a la parte pública de Aviso. Todas devuelven int: aquí sólo queremos distinguir las condiciones del objeto por el que se llama, sin mezclar todavía esa elección con un retorno por referencia."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Aviso {\npublic:\n    int consultar() &;\n    int consultar() const &;\n    int consultar() &&;\n    int consultar() const &&;\n};"
+        },
+        {
+          "type": "paragraph",
+          "text": "El & situado después de consultar() permite esta versión sobre un acceso lvalue al objeto. Con const & se admiten accesos lvalue constantes; cuando no haya otra versión rvalue más adecuada, también puede admitirse un acceso rvalue. Comprobaremos esa posibilidad con otro programa. El && final permite una versión para un acceso rvalue; const && conserva además la const del objeto utilizado. Estos signos finales se llaman calificadores de referencia de la función miembro (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distingue las posiciones. En int& obtener() &, el primer & forma parte del tipo de retorno: la función devuelve una referencia a int. El último & describe cómo se puede utilizar el objeto de la llamada. En Aviso&& alias, los signos forman parte del tipo de una variable. El && final de consultar() && no calcula un Y lógico ni ordena mover los miembros del objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas son declaraciones de métodos, no un programa que podamos ejecutar todavía: no hemos definido sus cuerpos. Al añadir calificadores a una pareja de sobrecargas anterior, sustituiremos sus declaraciones y sus definiciones de forma coherente. No conservaremos una versión antigua sin calificador junto a otra nueva con el mismo nombre y parámetros sobre el mismo tipo de objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mirar la expresión utilizada para llamar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperemos las categorías con objetos concretos. Si a es una variable modificable y vista es const Aviso& enlazada con a, el nombre a permite un acceso lvalue modificable; vista permite un acceso lvalue constante. Con las cuatro declaraciones anteriores, a.consultar() utiliza la versión con & y vista.consultar() la versión con const &."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::move(a) ofrece ese mismo objeto como una expresión xvalue, que pertenece a las rvalue. std::move(a).consultar() puede seleccionar la versión &&. std::move(vista) conserva const y puede seleccionar const &&. La conversión no construye otro Aviso ni modifica sus miembros por sí sola. Una expresión que crea un Aviso temporal también es rvalue, aunque no se haya escrito std::move (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por tanto, rvalue no significa necesariamente objeto temporal: std::move(a) sigue refiriéndose al a que permanece vivo. Y tener un nombre declarado con && no hace rvalue cada uso de ese nombre. En una llamada ordinaria alias.consultar(), alias es una expresión lvalue, aunque su declaración fuese Aviso&& alias = std::move(a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El calificador tampoco impone por sí solo el tipo del resultado. Podríamos devolver int, una referencia u otro tipo permitido. En la clase que estudiaremos elegiremos explícitamente qué accesos prestan el elemento y cuáles entregan una copia de su valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar las consultas rvalue de Lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lectura guarda un int privado llamado numero_. Su constructor recibe el número inicial. Su método valor ofrece una referencia al miembro cuando se llama mediante un acceso lvalue. En cambio, sus dos versiones para accesos rvalue devolverán int por valor: leerán numero_ y entregarán ese número como un resultado independiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "El fragmento contiene las dos definiciones para rvalues. En la primera se utiliza un objeto modificable; en la segunda se conserva la const del objeto. El tipo de retorno ya está escrito. Completa únicamente el calificador situado después de los paréntesis o después de const, según corresponda."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u7l5_completar_calificadores_rvalue",
+          "question": "Completa las dos definiciones de valor para que atiendan accesos rvalue. Mantén el retorno int por valor y la const ya escrita en la segunda definición.",
+          "template": "int Lectura::valor() [] { return numero_; }\nint Lectura::valor() const [] { return numero_; }\n",
+          "answers": [
+            "&&",
+            "&&"
+          ],
+          "answerAlternatives": [
+            [
+              "&&"
+            ],
+            [
+              "&&"
+            ]
+          ],
+          "explanation": "Las dos definiciones llevan el calificador &&. La primera atiende el acceso rvalue modificable; la segunda combina const y && para el acceso rvalue constante. El retorno int entrega un número independiente en ambas. Los signos finales seleccionan el objeto admitido; no convierten el retorno en una referencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar la selección de la función y el resultado devuelto"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras versiones devuelven referencias al numero_ del objeto. Una permite escribir; la otra permite leer por una vía constante. Las dos últimas devuelven int, aunque se utilice un objeto constante: copiar su número no necesita modificarlo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el retorno int, return numero_ lee el miembro y establece el valor del resultado. No devuelve una referencia a ese miembro y no lo vacía. Tampoco necesita std::move: transferir una propiedad no es el objetivo de estas funciones. La elección de referencias y valores forma parte de esta interfaz; una consulta constante también puede diseñarse con retorno por valor (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia al miembro y una referencia al resultado son distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente programa, enlace y directa proceden de accesos lvalue al objeto. copia se inicializa desde el int devuelto por un acceso rvalue. Aunque directa y copia se declaren const int&, hay que mirar qué resultado devolvió cada llamada para saber a qué int se refiere cada una."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l5_referencia_al_miembro_y_resultado_independiente",
+          "language": "cpp",
+          "question": "Escribe directa, copia y la consulta final de a, después de la escritura mediante enlace.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{6};\n    const Lectura& vista = a;\n    int& enlace = a.valor();\n    const int& directa = vista.valor();\n    const int& copia = std::move(a).valor();\n    enlace = 20;\n    std::cout << directa << ':' << copia << ':' << a.valor();\n    return 0;\n}\n",
+          "answers": [
+            "20:6:20"
+          ],
+          "outputComparison": "exact",
+          "explanation": "enlace identifica el miembro y lo cambia a veinte. directa se refiere a ese mismo miembro por una vía de lectura, así que observa veinte. La llamada con std::move(a) devolvió por valor el seis que había leído antes: copia mantiene vivo ese int independiente y conserva seis. a sigue existiendo y su consulta final lee veinte."
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia constante que recibe un resultado no selecciona por sí sola la sobrecarga. La selección sigue dependiendo del objeto utilizado en la llamada: su const y si esa expresión es lvalue o rvalue. Después se inicializa la variable que recibe el resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar const al ofrecer el objeto como rvalue"
+        },
+        {
+          "type": "paragraph",
+          "text": "vista es una referencia constante al mismo a modificable. std::move(vista) conserva esa const y utiliza la consulta const &&. Nuestra función puede leer el int del objeto y devolverlo por valor sin quitar const ni modificar el origen."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l5_resultado_independiente_desde_rvalue_constante",
+          "language": "cpp",
+          "question": "Escribe copia y la consulta final mediante vista, después de cambiar a.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{7};\n    const Lectura& vista = a;\n    const int& copia = std::move(vista).valor();\n    a.valor() = 23;\n    std::cout << copia << ':' << vista.valor();\n    return 0;\n}\n",
+          "answers": [
+            "7:23"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta const && entrega una copia del siete inicial. copia se refiere a ese int independiente. El objeto a cambia después a veintitrés mediante su acceso lvalue modificable, y vista observa ese cambio porque sigue refiriéndose a a. La copia del resultado no cambia con él."
+        },
+        {
+          "type": "paragraph",
+          "text": "No estamos intentando mover una propiedad desde un objeto constante. && permite distinguir la expresión por la que se consulta; el cuerpo y el tipo de retorno determinan lo que ocurre después. Aquí sólo se obtiene el valor de un int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un nombre declarado con && permite todavía el acceso lvalue"
+        },
+        {
+          "type": "paragraph",
+          "text": "alias se enlaza con a sin crear otra Lectura. Al escribir alias.valor(), el uso ordinario del nombre alias es lvalue y puede devolver la referencia modificable al miembro. En cambio, std::move(alias).valor() selecciona la consulta rvalue que devuelve int. El tipo de la variable alias no sustituye el análisis de la expresión concreta utilizada en cada llamada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l5_nombre_rvalue_reference_y_dos_accesos",
+          "language": "cpp",
+          "question": "Escribe el valor final de a, el resultado conservado en copia y la comprobación de identidad entre alias y a.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura a{9};\n    Lectura&& alias = std::move(a);\n    int& enlace = alias.valor();\n    const int& copia = std::move(alias).valor();\n    enlace = -3;\n    std::cout << a.valor() << ':' << copia << ':' << (&alias == &a);\n    return 0;\n}\n",
+          "answers": [
+            "-3:9:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "enlace identifica el miembro de a a través del nombre alias y lo cambia a menos tres. La consulta rvalue anterior había devuelto por valor el nueve inicial, que conserva copia. alias y a siguen siendo nombres del mismo objeto, de modo que la comparación de sus direcciones es verdadera."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa utiliza siempre el mismo objeto vivo. Ni enlazar la referencia && ni consultar su valor con std::move ha trasladado el miembro a otro objeto ni ha dejado vacía la Lectura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El temporal de clase y el int resultante tienen vidas distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta variante añade un destructor a Lectura que escribe un rótulo al terminar el objeto. La consulta de la Lectura temporal devuelve int por valor. guardado se enlaza directamente con ese resultado independiente: no con el miembro de la clase. Sigue por separado la vida de la Lectura y la del int al que se enlaza guardado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l5_vida_del_temporal_y_del_int_devuelto",
+          "language": "cpp",
+          "question": "Escribe la salida completa, incluidos el rótulo del destructor y la lectura de guardado.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\n    ~Lectura() { std::cout << \"Fin:\"; }\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    const int& guardado = Lectura{12}.valor();\n    std::cout << guardado;\n    return 0;\n}\n",
+          "answers": [
+            "Fin:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El resultado int se obtiene antes de terminar la instrucción que inicializa guardado. Al finalizar esa instrucción termina la Lectura temporal y su destructor escribe Fin:. El int del resultado se conserva durante la vida de la referencia local guardado. La lectura posterior de guardado sigue siendo válida y escribe doce."
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia constante prolonga aquí la vida del int al que se enlazó desde el resultado por valor. No prolonga la Lectura. Eso difiere del acceso anterior que devolvía una referencia a un miembro del temporal: aquella llamada no creaba este int independiente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resultado por valor no ofrece el miembro para escribir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este rechazo de compilación sin ejecutar el programa. La consulta rvalue de Lectura devuelve int por valor. La asignación escrita después intenta utilizar ese resultado independiente como si ofreciera una referencia modificable al miembro."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Lectura {\npublic:\n    explicit Lectura(int numero) : numero_{numero} {}\n    int& valor() &;\n    const int& valor() const &;\n    int valor() &&;\n    int valor() const &&;\nprivate:\n    int numero_;\n};\nint& Lectura::valor() & { return numero_; }\nconst int& Lectura::valor() const & { return numero_; }\nint Lectura::valor() && { return numero_; }\nint Lectura::valor() const && { return numero_; }\nint main() {\n    Lectura{3}.valor() = 8;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l5_asignacion_al_int_devuelto_por_valor",
+          "question": "¿Por qué no se permite esa asignación?",
+          "options": [
+            "Porque std::move tendría que vaciar primero la Lectura para que cualquier asignación fuese válida.",
+            "Porque devolver int por valor transforma automáticamente el objeto de origen en const.",
+            "Porque esa llamada devuelve un int prvalue, que no puede ser el destino de esa asignación incorporada; no devuelve int& al miembro."
+          ],
+          "correctIndex": 2,
+          "explanation": "La consulta rvalue entrega el número por valor. La asignación incorporada a un int necesita un destino modificable, y ese resultado prvalue no lo proporciona. La Lectura no se ha vuelto constante ni hay que vaciarla. Sus accesos lvalue sí pueden ofrecer int& al miembro según el contrato escrito."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Const & por sí sola todavía admite accesos rvalue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prestamo representa otra política: quiere ofrecer referencias a su miembro. El programa siguiente conserva sólo las versiones & y const &. La primera no admite std::move(a), pero una referencia lvalue a un objeto constante sí puede enlazarse con un rvalue. Por eso la versión const & todavía puede atender la llamada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l5_const_lvalue_ref_no_bloquea_rvalues",
+          "language": "cpp",
+          "question": "Escribe lectura y la consulta final de a después de cambiar su miembro.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\nprivate:\n    int numero_;\n};\nint main() {\n    Prestamo a{8};\n    const int& lectura = std::move(a).valor();\n    a.valor() = 24;\n    std::cout << lectura << ':' << a.valor();\n    return 0;\n}\n",
+          "answers": [
+            "24:24"
+          ],
+          "outputComparison": "exact",
+          "explanation": "std::move(a).valor() utiliza la versión const & que devuelve const int& al miembro de a. No se ha creado una copia independiente del número. Como a permanece vivo, lectura sigue siendo válida y observa veinticuatro tras la escritura. La nueva consulta de a también lee veinticuatro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este ejemplo es seguro porque a sigue vivo durante todas las lecturas. No demuestra que podamos conservar la misma referencia desde un objeto temporal y leerla después de que termine. Const & limita la escritura; por sí sola no impone que la llamada sólo utilice expresiones lvalue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Otra política: rechazar el acceso rvalue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si Prestamo quiere rechazar estos accesos en lugar de devolver una copia, puede declarar eliminadas las dos versiones rvalue. Las funciones eliminadas siguen participando en la selección. Si la llamada selecciona una de ellas, el programa se rechaza: no se ejecuta un cuerpo que decida fallar después (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente es un rechazo de compilación para analizar. No lo ejecutamos. Aunque el llamador quiera guardar un int por valor, primero hay que seleccionar una llamada permitida por la interfaz."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    int valor = Prestamo{3}.valor();\n    return valor;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l5_acceso_rvalue_eliminado_aunque_se_pida_copia",
+          "question": "¿Por qué pedir un int independiente no permite esta llamada de Prestamo?",
+          "options": [
+            "Porque el acceso rvalue selecciona la versión && eliminada; la declaración de la variable que recibiría el resultado no evita ese rechazo.",
+            "Porque toda clase con un método eliminado pierde también su constructor con int.",
+            "Porque devolver una referencia obliga siempre a utilizar una variable int& y nunca permite copiar su número."
+          ],
+          "correctIndex": 0,
+          "explanation": "Prestamo ha elegido prohibir la consulta rvalue mediante = delete. La llamada selecciona esa función y se rechaza antes de obtener un resultado para inicializar valor. Otra interfaz, como Lectura, sí proporciona una función rvalue que devuelve int. Copiar un número no puede utilizarse para saltarse una función eliminada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El rechazo también debe cubrir los rvalues constantes"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::move conserva la const del objeto. Por eso la política de Prestamo declara también una función const && eliminada. Analiza el segundo rechazo de compilación: a permanece vivo, pero se ofrece mediante una expresión rvalue constante que la interfaz ha decidido no admitir."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\n    const int& valor() const && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    const Prestamo a{3};\n    int valor = std::move(a).valor();\n    return valor;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l5_acceso_rvalue_constante_eliminado",
+          "question": "¿Qué explica el rechazo de la llamada con std::move(a)?",
+          "options": [
+            "La llamada intentaría modificar necesariamente el miembro de a, aunque sólo se copiara su número.",
+            "Se conserva const y se selecciona const &&, declarada eliminada; la restricción depende del acceso rvalue, no de que a haya dejado de existir.",
+            "std::move no puede aplicarse a ningún objeto const, sea cual sea la función que reciba el resultado."
+          ],
+          "correctIndex": 1,
+          "explanation": "std::move(a) es un acceso rvalue constante y selecciona la versión const && eliminada. El objeto a todavía existe y no hay una lectura de un objeto destruido: es una prohibición de la interfaz. std::move sí conserva y puede ofrecer la const; Lectura tenía otra política que admitía ese acceso y devolvía int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Eliminar sólo && no cubre la consulta constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa retira únicamente la declaración eliminada const && y conserva la eliminada && sin const. Ahora std::move(vista) no puede utilizar la versión modificable, pero puede utilizar const &. a permanece vivo para observar el resultado sin consultar ningún objeto destruido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l5_falta_el_rechazo_del_rvalue_constante",
+          "language": "cpp",
+          "question": "Escribe lectura y la consulta final mediante vista después de la escritura sobre a.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Prestamo {\npublic:\n    explicit Prestamo(int numero) : numero_{numero} {}\n    int& valor() & { return numero_; }\n    const int& valor() const & { return numero_; }\n    int& valor() && = delete;\nprivate:\n    int numero_;\n};\nint main() {\n    Prestamo a{5};\n    const Prestamo& vista = a;\n    const int& lectura = std::move(vista).valor();\n    a.valor() = 18;\n    std::cout << lectura << ':' << vista.valor();\n    return 0;\n}\n",
+          "answers": [
+            "18:18"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función && eliminada sin const no puede recibir el acceso constante. Como falta const &&, la versión const & atiende la llamada y devuelve una referencia al miembro de a. lectura sigue ese miembro y observa dieciocho después del cambio, igual que la nueva consulta mediante vista."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el diseño de Prestamo, las dos declaraciones eliminadas cubren ambas formas rvalue, constante y modificable. Para Lectura, las dos versiones rvalue permitidas cubren esas mismas formas entregando int por valor. Ninguna de esas políticas viene impuesta por el símbolo && por sí solo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sustituir las declaraciones anteriores de forma coherente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este último rechazo sin ejecutar el programa. Mezcla declara primero valor sin calificador de referencia y después intenta añadir otra versión para el mismo objeto modificable con &&. No son una pareja válida que podamos conservar como dos alternativas separadas: la versión anterior también debe adaptarse al nuevo diseño (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass Mezcla {\npublic:\n    int& valor();\n    int valor() &&;\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l5_mezcla_de_version_anterior_y_calificada",
+          "question": "¿Qué debe hacerse al convertir esta pareja al diseño que distingue lvalues y rvalues?",
+          "options": [
+            "Conservar la versión sin calificador porque su retorno int& la distingue de la que devuelve int.",
+            "Dejar sin calificador la primera declaración y añadir & únicamente en su definición fuera de la clase.",
+            "Reemplazar la versión anterior por la declaración con & correspondiente y mantener coherentes las definiciones y la versión &&."
+          ],
+          "correctIndex": 2,
+          "explanation": "El nuevo diseño distingue el acceso al objeto mediante calificadores de referencia. La versión anterior sin calificador no se conserva como otra sobrecarga sobre el mismo objeto junto a la versión &&. Cambiar sólo el retorno no separa esas declaraciones y tampoco asigna la categoría admitida al objeto de la llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aplicar la distinción al acceso comprobado de Terna"
+        },
+        {
+          "type": "paragraph",
+          "text": "Terna seguirá conteniendo tres int y admitiendo cualquier valor representable por int. Al consultar un objeto mediante un acceso lvalue, conservará las referencias modificable y constante de la práctica anterior. Ahora esas funciones llevarán & y const &, respectivamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los accesos rvalue modificable y constante devolverán int por valor. Tendrán que comprobar el índice antes de leer el array, igual que las otras versiones. Un índice fuera de cero, uno y dos debe lanzar IndiceFuera; devolver una copia no convierte en válido el acceso fuera del array. No se declararán noexcept estos métodos, porque ese error debe poder llegar al llamador."
+        },
+        {
+          "type": "paragraph",
+          "text": "El llamador podrá conservar el número leído de una Terna temporal o de std::move(datos) sin conservar una referencia a su elemento. Consultar de esa forma no cambiará datos. Los accesos lvalue seguirán prestando elementos: sus referencias dependen todavía de que el objeto permanezca vivo y conserve esos elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: conservar la referencia o devolver un entero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retomamos Terna, cuyo array contiene tres int y conserva siempre esos tres elementos. Cambiamos su interfaz de acceso para distinguir la forma de utilizar el objeto. La versión completa del editor ya sustituye las declaraciones anteriores y sus definiciones; no mantiene junto a ellas los operadores sin calificador de referencia de la lección pasada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int& operator[](int indice) &;\nconst int& operator[](int indice) const &;\nint operator[](int indice) &&;\nint operator[](int indice) const &&;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras versiones ya están implementadas. Sobre un acceso lvalue, ofrecen una referencia al elemento del objeto, modificable o constante según ese acceso. Completa únicamente los cuerpos de las otras dos, que reciben el objeto mediante una expresión rvalue y devuelven int por valor. Las declaraciones y main deben permanecer como se proporcionan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada cuerpo nuevo debe cumplir este contrato:\nAdmitir únicamente los índices cero, uno y dos.\nLanzar IndiceFuera antes del acceso al array para cualquier otro índice.\nDevolver el número guardado en el elemento elegido como un int independiente.\nConservar los tres valores de la Terna recibida, también al aceptar la lectura.\nNo conservar punteros ni referencias a sus elementos para formar el resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores pueden ser cualesquiera que quepan en int. No hay que sumarlos, reducirlos ni vaciar el array. Se copia un único int. El calificador && permite que se elija esta función para una expresión rvalue; no obliga a que su cuerpo mueva los datos del objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la función y seguir el dato que recibe el resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta interfaz se consideran dos cosas antes de entrar al cuerpo: si el acceso al objeto es constante y si la expresión que lo presenta es lvalue o rvalue. El retorno de referencia o de valor es la decisión que hemos asociado a cada una de esas cuatro versiones; no cambia por declarar después el resultado como const int&."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila de la tabla empieza de nuevo con Lectura a{11}; const Lectura& vista = a; y Lectura&& alias = std::move(a);. Se inicializa const int& r con la expresión de esa fila. Después se ejecuta a.valor() = 23; y se consulta r. Indica qué versión atendió la llamada inicial y qué número observa r tras esa escritura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Utiliza estos códigos para la versión elegida:\nUno: valor() &, que devuelve int&.\nDos: valor() const &, que devuelve const int&.\nTres: valor() &&, que devuelve int.\nCuatro: valor() const &&, que devuelve int."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u7l5_receptor_y_resultado_independiente",
+          "prompt": "Cada fila es independiente. Inicializa const int& r con la expresión indicada, cambia a.valor() a 23 y escribe el código de la versión elegida (1 a 4) y el valor de r.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Expresión que inicializa r"
+              ],
+              "rows": [
+                [
+                  "a.valor()"
+                ],
+                [
+                  "vista.valor()"
+                ],
+                [
+                  "std::move(a).valor()"
+                ],
+                [
+                  "std::move(vista).valor()"
+                ],
+                [
+                  "alias.valor()"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: versión",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: r final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: versión",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: r final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: versión",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: r final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 4: versión",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 4: r final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "i",
+                  "type": "numeric",
+                  "label": "Fila 5: versión",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "j",
+                  "type": "numeric",
+                  "label": "Fila 5: r final",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "23"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "23"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "i": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "j": {
+                    "type": "numeric",
+                    "expected": "23"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los accesos por a y por el nombre alias eligen &; la referencia conserva el elemento actual. vista elige const & y también ofrece un alias al elemento. Las dos expresiones std::move eligen las versiones rvalue, que devuelven una copia del once. r conserva vivo ese int independiente y no observa el cambio posterior de a.",
+            "incorrect": "Identifica primero la expresión a la izquierda del punto: escribir un nombre declarado && sigue siendo un acceso lvalue; std::move presenta un acceso rvalue y conserva su const, si la tenía. Después mira el retorno de esa versión: una referencia identifica el elemento; int proporciona otro objeto con el número leído."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un resultado después de terminar el temporal"
+        },
+        {
+          "type": "paragraph",
+          "text": "En guardado = Terna{valor, 41, -6}[indice];, el objeto temporal existe mientras se realiza la llamada. El operador comprueba el índice y devuelve un int. Ese número puede asignarse a guardado sin que guardado tenga que conservar la Terna. Al terminar la instrucción se destruye el temporal."
+        },
+        {
+          "type": "paragraph",
+          "text": "main incluye otra forma: const int& independiente = Terna{valor, 41, -6}[indice];. Como la versión elegida devuelve int por valor, independiente no se refiere al int interno de la Terna. Se enlaza al int resultado de la llamada y conserva vivo ese resultado durante su propio ámbito. La Terna temporal termina al acabar la declaración; el int resultado continúa disponible en la instrucción siguiente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No atribuyas esta diferencia a const por sí sola. En la lección anterior, la llamada sobre el temporal devolvía una referencia a su elemento y no conservaba ese elemento después de terminar la Terna. Ahora el retorno int proporciona otro objeto. La referencia constante se enlaza a ese resultado nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comprobación del índice también se mantiene en estas dos lecturas. Si la llamada lanza IndiceFuera, no se obtiene el int resultado y no se sustituye guardado. La creación del temporal y el retorno por valor no autorizan acceder a una posición inválida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada: modificar el objeto y guardar distintas lecturas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza con una cantidad de órdenes de uno a doce. Cada orden tiene tres enteros: op indice valor. main crea datos con diez, veinte y treinta; lectura es un acceso const al mismo objeto. guardado empieza con menos siete y conserva el último int que se haya leído correctamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las operaciones disponibles son:\n1: asignar valor a datos[indice] mediante el acceso lvalue modificable. No cambia guardado.\n2: asignar a guardado el resultado de std::move(datos)[indice]. Usa && y conserva datos.\n3: asignar a guardado el resultado de std::move(lectura)[indice]. Usa const && y conserva datos.\n4: leer Terna{valor, 41, -6}[indice] y asignar su int resultado a guardado.\n5: enlazar una referencia const al int resultado de ese mismo temporal y copiarlo a guardado en la instrucción siguiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "La operación uno utiliza valor como el nuevo número de un elemento. Las operaciones dos y tres no utilizan valor, pero se lee ese tercer entero. Las operaciones cuatro y cinco lo utilizan como el primer elemento de otra Terna temporal, cuyos otros dos elementos son cuarenta y uno y menos seis. Esas Ternas no sustituyen datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Todas las operaciones disponibles requieren un índice de cero a dos. El rechazo se informa como Indice y conserva tanto datos como el guardado anterior. Un op distinto de uno a cinco se informa como Operacion sin iniciar un acceso. Una cantidad de órdenes fuera de uno a doce o una orden incompleta termina main con código uno; no es un rechazo emitido por operator[]."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Informe: distinguir un cambio del objeto de una copia conservada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes y Ahora muestran los tres int del objeto datos, en el orden de sus índices. El método escribir proporcionado consulta directamente esos miembros, sin utilizar los operadores que estás completando. Estado muestra Aceptada, Indice u Operacion. Copia muestra el valor que conserva guardado al terminar cada orden."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una escritura aceptada de la operación uno puede cambiar Ahora sin cambiar Copia. Una lectura aceptada puede cambiar Copia sin cambiar Ahora. Cuando se rechaza el índice, ambos conservan sus estados anteriores. Final reúne el array y la última copia al terminar la historia."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera orden del caso obligatorio lee el elemento uno de datos mediante std::move(datos). Debe guardar veinte y conservar el array con diez, veinte y treinta. La siguiente orden escribe setenta y siete en esa posición; guardado sigue con veinte porque conserva otro int. La lectura constante posterior debe poder obtener el setenta y siete actual."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos cuerpos iniciales devuelven cero sin consultar el índice. Son seguros para compilar y ejecutar el inicial, pero no cumplen la lectura ni los rechazos. Conserva el resto del programa y completa ambos accesos. Sólo el primer caso correcto es obligatorio para avanzar; las otras historias quedan como ensayos opcionales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Implementar las lecturas rvalue sin devolver un elemento prestado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos cuerpos que devuelven int, compila y compara el informe. Prueba que una lectura conserve datos y que una escritura posterior no cambie la copia obtenida antes. Las lecturas de temporales también deben comprobar el índice."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    // Comprueba el índice y devuelve una copia del int elegido.\n    (void)indice;\n    return 0;\n}\n\nint Terna::operator[](int indice) const && {\n    // Mantén la misma comprobación y copia en el acceso rvalue constante.\n    (void)indice;\n    return 0;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n    return 0;\n}\n",
+          "initialStandardInput": "9\n2 1 0\n1 1 77\n3 1 0\n1 1 -4\n4 0 55\n1 0 12\n5 2 0\n2 3 0\n3 -1 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n2 1 0\n1 1 77\n3 1 0\n1 1 -4\n4 0 55\n1 0 12\n5 2 0\n2 3 0\n3 -1 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Copia:20;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:20;Ahora:10:77:30\nAntes:10:77:30;Estado:Aceptada;Copia:77;Ahora:10:77:30\nAntes:10:77:30;Estado:Aceptada;Copia:77;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Copia:55;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Copia:55;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Aceptada;Copia:-6;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Indice;Copia:-6;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Indice;Copia:-6;Ahora:12:-4:30\nFinal:12:-4:30;Copia:-6"
+                ],
+                "explanation": "Comprueba ambos límites antes de consultar datos_. Devuelve el int de la posición elegida por valor, sin modificar los elementos. El acceso rvalue constante necesita la misma selección y el mismo rechazo que el modificable."
+              },
+              {
+                "standardInput": "8\n3 2 0\n1 2 -9\n5 1 99\n5 3 99\n4 -1 22\n2 0 0\n1 0 0\n2 0 0",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Aceptada;Copia:30;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:30;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Indice;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Indice;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:10;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:10;Ahora:0:20:-9\nAntes:0:20:-9;Estado:Aceptada;Copia:0;Ahora:0:20:-9\nFinal:0:20:-9;Copia:0"
+                ],
+                "explanation": "Comprueba ambos límites antes de consultar datos_. Devuelve el int de la posición elegida por valor, sin modificar los elementos. El acceso rvalue constante necesita la misma selección y el mismo rechazo que el modificable."
+              },
+              {
+                "standardInput": "9\n9 0 0\n1 3 8\n2 -1 0\n3 3 0\n4 2 99\n5 0 100\n3 0 0\n1 1 -5\n5 1 3",
+                "outputs": [
+                  "Antes:10:20:30;Estado:Operacion;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:-6;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:100;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:10;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:10;Ahora:10:-5:30\nAntes:10:-5:30;Estado:Aceptada;Copia:41;Ahora:10:-5:30\nFinal:10:-5:30;Copia:41"
+                ],
+                "explanation": "Comprueba ambos límites antes de consultar datos_. Devuelve el int de la posición elegida por valor, sin modificar los elementos. El acceso rvalue constante necesita la misma selección y el mismo rechazo que el modificable."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La historia alterna lecturas de ambos accesos rvalue, escrituras al objeto original y lecturas de Ternas temporales. La última copia permanece cuando se rechazan los dos índices finales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9\n2 1 0\n1 1 77\n3 1 0\n1 1 -4\n4 0 55\n1 0 12\n5 2 0\n2 3 0\n3 -1 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:10:20:30;Estado:Aceptada;Copia:20;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:20;Ahora:10:77:30\nAntes:10:77:30;Estado:Aceptada;Copia:77;Ahora:10:77:30\nAntes:10:77:30;Estado:Aceptada;Copia:77;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Copia:55;Ahora:10:-4:30\nAntes:10:-4:30;Estado:Aceptada;Copia:55;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Aceptada;Copia:-6;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Indice;Copia:-6;Ahora:12:-4:30\nAntes:12:-4:30;Estado:Indice;Copia:-6;Ahora:12:-4:30\nFinal:12:-4:30;Copia:-6"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: las copias no siguen las escrituras"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se conserva una copia mientras se cambia el elemento original. Se leen temporales y se rechazan dos índices; después, cero se copia desde el objeto actual sin alterar su array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n3 2 0\n1 2 -9\n5 1 99\n5 3 99\n4 -1 22\n2 0 0\n1 0 0\n2 0 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:10:20:30;Estado:Aceptada;Copia:30;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:30;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Indice;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Indice;Copia:41;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:10;Ahora:10:20:-9\nAntes:10:20:-9;Estado:Aceptada;Copia:10;Ahora:0:20:-9\nAntes:0:20:-9;Estado:Aceptada;Copia:0;Ahora:0:20:-9\nFinal:0:20:-9;Copia:0"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se rechazan una operación inexistente y tres índices inválidos. Las lecturas posteriores distinguen el elemento dos del temporal, su primer valor suministrado y el objeto datos, que se conserva salvo la escritura declarada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9\n9 0 0\n1 3 8\n2 -1 0\n3 3 0\n4 2 99\n5 0 100\n3 0 0\n1 1 -5\n5 1 3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:10:20:30;Estado:Operacion;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Indice;Copia:-7;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:-6;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:100;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:10;Ahora:10:20:30\nAntes:10:20:30;Estado:Aceptada;Copia:10;Ahora:10:-5:30\nAntes:10:-5:30;Estado:Aceptada;Copia:41;Ahora:10:-5:30\nFinal:10:-5:30;Copia:41"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: el retorno int ofrece un dato independiente"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nstruct IndiceFuera {};\n\nclass Terna {\npublic:\n    Terna() = default;\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    int& operator[](int indice) &;\n    const int& operator[](int indice) const &;\n    int operator[](int indice) &&;\n    int operator[](int indice) const &&;\n    void escribir(std::ostream& salida) const {\n        salida << datos_[0] << ':' << datos_[1] << ':' << datos_[2];\n    }\nprivate:\n    int datos_[3]{10, 20, 30};\n};\nint& Terna::operator[](int indice) & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nconst int& Terna::operator[](int indice) const & {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint Terna::operator[](int indice) const && {\n    if (indice < 0 || indice >= 3) { throw IndiceFuera{}; }\n    return datos_[indice];\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Terna datos;\n    const Terna& lectura = datos;\n    int guardado = -7;\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, indice = 0, valor = 0;\n        if (!(std::cin >> op >> indice >> valor)) { return 1; }\n        std::cout << \"Antes:\";\n        datos.escribir(std::cout);\n        const char* estado = \"Aceptada\";\n        try {\n            if (op == 1) { datos[indice] = valor; }\n            else if (op == 2) { guardado = std::move(datos)[indice]; }\n            else if (op == 3) { guardado = std::move(lectura)[indice]; }\n            else if (op == 4) { guardado = Terna{valor, 41, -6}[indice]; }\n            else if (op == 5) {\n                const int& independiente = Terna{valor, 41, -6}[indice];\n                guardado = independiente;\n            } else { estado = \"Operacion\"; }\n        } catch (const IndiceFuera&) { estado = \"Indice\"; }\n        std::cout << \";Estado:\" << estado << \";Copia:\" << guardado << \";Ahora:\";\n        datos.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    datos.escribir(std::cout);\n    std::cout << \";Copia:\" << guardado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada cuerpo nuevo comprueba los dos límites y después lee datos_[indice]. El tipo declarado de retorno es int, por lo que esa lectura proporciona el número como un resultado por valor. No se devuelve int&, const int& ni una dirección que identifique el elemento de Terna (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las versiones & y const & conservan su acceso por referencia para los receptores lvalue. Las versiones && y const && ofrecen un valor independiente para los receptores rvalue. Mantener las cuatro declaraciones completas evita que el acceso rvalue constante tenga que recurrir a una versión const & que devuelva una referencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aunque el calificador sea &&, el cuerpo no cambia datos_. std::move permite seleccionar esa vía; lo que ocurra después depende de sus instrucciones. Aquí no se transfiere la propiedad de un array, no se vacía el objeto y no se requiere que sus números cambien."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una implementación equivalente puede reutilizar una consulta comprobada ya disponible. Si lo hace, debe conservar las mismas condiciones y el mismo retorno por valor. No debe volver a llamar indefinidamente a su propia versión rvalue, omitir la comprobación ni devolver un número de otra posición."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué protege la nueva interfaz y qué sigue siendo responsabilidad del llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Devolver un int desde la expresión rvalue permite conservar ese número sin mantener viva la Terna temporal. Eso no cambia la propiedad de las referencias que ya se ofrecen desde un objeto lvalue: siguen identificando un elemento de ese objeto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l5_valor_independiente_no_prolonga_todos_los_prestamos",
+          "question": "¿Qué obligación permanece al conservar un int& obtenido mediante datos[indice] de un objeto lvalue?",
+          "options": [
+            "Mantener vivo el objeto que contiene ese elemento durante todos los usos de la referencia.",
+            "Vaciar el array original antes de cada consulta por la referencia.",
+            "Convertir todos los accesos siguientes en std::move para que el elemento siga existiendo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La referencia lvalue sigue siendo un acceso al elemento real. Las otras sobrecargas no prolongan su vida ni transfieren ese elemento a otra parte. Los programas de la práctica mantienen datos vivo durante todas sus órdenes."
+        },
+        {
+          "type": "paragraph",
+          "text": "La política alternativa de eliminar las dos versiones rvalue impide esas llamadas en compilación. También rechaza una lectura inmediata que hubiera copiado un número mientras el temporal estaba vivo. Es una decisión de interfaz más restrictiva; no debe presentarse como la única forma de obtener una lectura segura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar un número es distinto de copiar una dirección"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este diseño devuelve un int. Si otra función devolviera por valor un puntero al elemento interno, estaría copiando la dirección, no el número. Destruir después el objeto que contiene el elemento dejaría ese puntero sin un elemento vivo al que acceder. No ejecutamos un acceso así."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l5_retorno_por_valor_y_dato_referido",
+          "question": "¿Por qué el resultado int de esta práctica puede conservarse sin la Terna temporal?",
+          "options": [
+            "Porque cualquier tipo devuelto por valor conserva automáticamente vivos todos los objetos que pudiera señalar.",
+            "Porque const en el receptor impide que ese receptor se destruya al terminar la instrucción.",
+            "Porque el resultado es otro int con el número leído; no es un acceso al int que pertenecía a la Terna."
+          ],
+          "correctIndex": 2,
+          "explanation": "Se ha conservado el dato numérico en otro int. Una copia de una dirección o de una vista seguiría necesitando que existieran los datos a los que da acceso. Para revisar otro diseño hay que mirar qué representa el resultado, además de ver si se devuelve por valor."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "3bbb566478474486d54c8ab45d1ef3cba8e9c70cf20904eb77db667666751a34"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "ed10506c951f376a757dc26aca2b454d76a558db38dd830457bc566c7064f224"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "027d7a5f50fd8642d93775783d7ae2f2d6a42f744353111f897339351455db1d"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "4648047e2e77aadf7e0dcd3e53be23755d710c3e4c0d9072c24577b875e8332f"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "4cfeef0c3d9ab179c668d5bee98c1f6fbaeb0b290101ee52b7b758381c7ba7c8"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "64078597c3fda2d399c42343ad84181d94092969b5cf189d7efde060b8004dc1"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "83b1465cb9d7843d7d66024cef4fc54566ac8b0e4f2408be9de85c6ae31702c0"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1e6edd2ac06465c4b84cb7888bd0e0a763d42caedf1fad0cf02889a29a182f1b"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "41b2b7d229c108bc0cd33fb2fb3b1a10bd125c88df62601fcfec1d0348bf0a86"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "a5be04996360fb966bfbd3709ce9587640799f59a4ebb519c7efc84a6a4adc72"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "fed38eb1f17df88aa88c880f0e994daee937dd9d984971e0a357d881c2219b1c"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "55fae9512345d5a347e61e5a0c5ca6f583e1512cad79795f4c006f3b7176f8d6"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "6a32c05d676637a07e91612bf0ad8e7b5948faf7395e3a4a9dd7e09c95443cee"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "d258a8e83e2edc6f1eb51d395c32d5ea9b38914162d6077350e7ebbcd8797b2f"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "0b2ed83bad978e3f08866ed178c36c787795701bfce3de11f9ad1a7954e04b20"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "e6802d368c1a315f61623b1011953461c0f79affff3fca70a3547e12ac97520e"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "5ec68ed5bf9445289558d3a37876d22ee0b705a5690b6014be719f0f54a3ed7b"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "adfc98f4f62ef9b4059257191a264b2eac5ee9a0d0caafa97dbf854485114422"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "e7e9d60811c88cacb7e7a3d3ec5ecc5cf09018d640d9bdfa52689dc5aa015468"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "97acee0b0a7376fe7cb23b9d766dea92fc6461874648c67413f155b75f8ebe03"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "9aa6c589fc00a5c3eb41d2c4aa99ab87591cf3e0793ac14d023dae9258454042"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "221440e24940e95d2efc190fede0c2faffd35cbae5ce3df7ec9e467bbc4dddd1"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "6167ff3ae72b642a9c56235ae9c55dcd6f505ce7eb5c311a1d6d9492312b78a2"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0006",
+            "sha256": "07b9c944ebeff922a2a0d238ee0af0be2b41f23e978036db46463f39d4d12ba7"
+          },
+          {
+            "id": "block_0021_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0008",
+            "sha256": "50ecc4106ce492355f2e205d0d1fb352cc1fbef6259bb0ba63e6554024218ff6"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0004",
+            "sha256": "f24a8dd897224c1f6d5393a5e7d08a11b507c6bbff50a66eb7b5c2407f87f97d"
+          },
+          {
+            "id": "block_0022_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0006",
+            "sha256": "889f3b9e6237e33d7eb7525af8eb0c29621bdc766fb453a7eb67fef12b50260a"
+          },
+          {
+            "id": "block_0022_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0010",
+            "sha256": "03cc3cb24080d1709088dfd0cdf9cda90f6760ee3efbdfec6a9b1eaf6381dba1"
+          },
+          {
+            "id": "block_0022_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0012",
+            "sha256": "ec9c7db90a9d65a784cd791e91c6ee59819b26544349ef6e5e0636edd939e50c"
+          }
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          {
+            "id": "block_0023_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0023_0001",
+            "sha256": "d0d75a2213a9a87aca33a0d5ded73cfc8a51cf83f4f12efe106174f211cb5671"
+          },
+          {
+            "id": "block_0023_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          {
+            "id": "block_0024_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0024_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0024_0002",
+            "sha256": "4e6f3afa421dd753299d3e22629e3bc80f30ba9960686e6ab7533adae00b2379"
+          },
+          {
+            "id": "block_0024_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          {
+            "id": "block_0025_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0025_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0025_0002",
+            "sha256": "658408f507a057270fa9b4fb47c4d01a063f53f1b60637eba5a2aef10a376098"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004",
+          "block_0021_0005",
+          "block_0021_0006",
+          "block_0021_0007",
+          "block_0021_0008"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003",
+          "block_0022_0004",
+          "block_0022_0005",
+          "block_0022_0006",
+          "block_0022_0007",
+          "block_0022_0008",
+          "block_0022_0009",
+          "block_0022_0010",
+          "block_0022_0011",
+          "block_0022_0012"
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          "block_0023_0000",
+          "block_0023_0001",
+          "block_0023_0002",
+          "block_0023_0003",
+          "block_0023_0004",
+          "block_0023_0005"
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          "block_0024_0000",
+          "block_0024_0001",
+          "block_0024_0002",
+          "block_0024_0003"
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          "block_0025_0000",
+          "block_0025_0001",
+          "block_0025_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "dfa7e46f8d3d65021d23c88fff6ee1e9f21885b132c22fb84c07b0789bed217b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "3bbb566478474486d54c8ab45d1ef3cba8e9c70cf20904eb77db667666751a34"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "ed10506c951f376a757dc26aca2b454d76a558db38dd830457bc566c7064f224"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "027d7a5f50fd8642d93775783d7ae2f2d6a42f744353111f897339351455db1d"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "4648047e2e77aadf7e0dcd3e53be23755d710c3e4c0d9072c24577b875e8332f"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "4cfeef0c3d9ab179c668d5bee98c1f6fbaeb0b290101ee52b7b758381c7ba7c8"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "64078597c3fda2d399c42343ad84181d94092969b5cf189d7efde060b8004dc1"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "83b1465cb9d7843d7d66024cef4fc54566ac8b0e4f2408be9de85c6ae31702c0"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1e6edd2ac06465c4b84cb7888bd0e0a763d42caedf1fad0cf02889a29a182f1b"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "41b2b7d229c108bc0cd33fb2fb3b1a10bd125c88df62601fcfec1d0348bf0a86"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "a5be04996360fb966bfbd3709ce9587640799f59a4ebb519c7efc84a6a4adc72"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "fed38eb1f17df88aa88c880f0e994daee937dd9d984971e0a357d881c2219b1c"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "55fae9512345d5a347e61e5a0c5ca6f583e1512cad79795f4c006f3b7176f8d6"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "6a32c05d676637a07e91612bf0ad8e7b5948faf7395e3a4a9dd7e09c95443cee"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "d258a8e83e2edc6f1eb51d395c32d5ea9b38914162d6077350e7ebbcd8797b2f"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "0b2ed83bad978e3f08866ed178c36c787795701bfce3de11f9ad1a7954e04b20"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "e6802d368c1a315f61623b1011953461c0f79affff3fca70a3547e12ac97520e"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "5ec68ed5bf9445289558d3a37876d22ee0b705a5690b6014be719f0f54a3ed7b"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "adfc98f4f62ef9b4059257191a264b2eac5ee9a0d0caafa97dbf854485114422"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "e7e9d60811c88cacb7e7a3d3ec5ecc5cf09018d640d9bdfa52689dc5aa015468"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "97acee0b0a7376fe7cb23b9d766dea92fc6461874648c67413f155b75f8ebe03"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "9aa6c589fc00a5c3eb41d2c4aa99ab87591cf3e0793ac14d023dae9258454042"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "221440e24940e95d2efc190fede0c2faffd35cbae5ce3df7ec9e467bbc4dddd1"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "6167ff3ae72b642a9c56235ae9c55dcd6f505ce7eb5c311a1d6d9492312b78a2"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0006",
+                "sha256": "07b9c944ebeff922a2a0d238ee0af0be2b41f23e978036db46463f39d4d12ba7"
+              },
+              {
+                "id": "block_0021_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0008",
+                "sha256": "50ecc4106ce492355f2e205d0d1fb352cc1fbef6259bb0ba63e6554024218ff6"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0004",
+                "sha256": "f24a8dd897224c1f6d5393a5e7d08a11b507c6bbff50a66eb7b5c2407f87f97d"
+              },
+              {
+                "id": "block_0022_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0006",
+                "sha256": "889f3b9e6237e33d7eb7525af8eb0c29621bdc766fb453a7eb67fef12b50260a"
+              },
+              {
+                "id": "block_0022_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0010",
+                "sha256": "03cc3cb24080d1709088dfd0cdf9cda90f6760ee3efbdfec6a9b1eaf6381dba1"
+              },
+              {
+                "id": "block_0022_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0012",
+                "sha256": "ec9c7db90a9d65a784cd791e91c6ee59819b26544349ef6e5e0636edd939e50c"
+              }
+            ]
+          },
+          {
+            "id": "page_0023",
+            "blocks": [
+              {
+                "id": "block_0023_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0023_0001",
+                "sha256": "d0d75a2213a9a87aca33a0d5ded73cfc8a51cf83f4f12efe106174f211cb5671"
+              },
+              {
+                "id": "block_0023_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0024",
+            "blocks": [
+              {
+                "id": "block_0024_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0024_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0024_0002",
+                "sha256": "4e6f3afa421dd753299d3e22629e3bc80f30ba9960686e6ab7533adae00b2379"
+              },
+              {
+                "id": "block_0024_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0025",
+            "blocks": [
+              {
+                "id": "block_0025_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0025_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0025_0002",
+                "sha256": "658408f507a057270fa9b4fb47c4d01a063f53f1b60637eba5a2aef10a376098"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

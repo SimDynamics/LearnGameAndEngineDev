@@ -1,0 +1,2285 @@
+{
+  "id": "cpp_language_memory_oop__operadores_e_interfaces_de_tipos_propios__sumar_cantidades_y_enteros_en_ambos_ordenes",
+  "title": "Sumar cantidades y enteros en ambos órdenes",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sumar valores de dos tipos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora sumábamos dos objetos del mismo tipo. Vamos a admitir también un objeto y un int, tanto con el entero a la derecha como con el entero a la izquierda. Esas dos escrituras necesitan funciones que acepten sus tipos en el orden correspondiente; no basta con saber que intercambiar los sumandos produce el mismo total matemático (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para seguir primero la selección de funciones utilizaremos Puntos. Tiene un único int privado, un constructor explicit desde int, una consulta valor() const y un operator+ miembro que recibe otro Puntos y devuelve un Puntos nuevo. El miembro suma los int de ambos objetos y conserva los operandos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta clase pequeña no comprueba un intervalo numérico. Los ejemplos utilizan valores pequeños cuyas sumas caben en int. Más adelante retomaremos Cantidad, que sí controla su intervalo de cero a mil y distingue los rechazos de sus argumentos y de una suma excesiva. No atribuimos esa validación a Puntos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperamos explicit de Programación 1: podemos pedir directamente Puntos{numero}, pero ese constructor no proporciona una conversión implícita desde int al preparar un argumento que debe ser Puntos. La palabra controla la forma de solicitar la construcción; no comprueba por sí sola el número recibido (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aportar expresamente el objeto que necesita el miembro"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este primer programa sólo existe el operador miembro entre dos Puntos. El objeto base proporciona el operando izquierdo. Puntos{3} construye deliberadamente el objeto del operando derecho. El parámetro const Puntos& puede consultar ese objeto durante la llamada, y el resultado vuelve por valor."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_construccion_explicita_para_el_operando",
+          "language": "cpp",
+          "question": "Escribe el valor de total y el valor que conserva base.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nint main() {\n    const Puntos base{6};\n    Puntos total = base + Puntos{3};\n    std::cout << total.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El segundo operando ya es un Puntos creado directamente desde tres. El miembro recibe los dos objetos, suma seis y tres y devuelve un resultado nuevo. base conserva seis. explicit permite esa construcción directa; no prohíbe utilizar el constructor."
+        },
+        {
+          "type": "paragraph",
+          "text": "El objeto construido para el argumento vive durante esta llamada. El resultado se devuelve por valor, así que total no queda dependiendo de una referencia a ese argumento temporal. Es la distinción entre el argumento consultado y el resultado propio que ya estudiamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un entero no se convierte implícitamente por ser pequeño"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este programa como un rechazo de compilación, sin ejecutarlo. Sigue estando definido únicamente el miembro que recibe const Puntos&. El operando derecho escrito es ahora un int, y se ha retirado la construcción directa del ejemplo anterior."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nint main() {\n    const Puntos base{6};\n    Puntos total = base + 3;\n    return total.valor();\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l3_explicit_y_tipo_del_operando_derecho",
+          "question": "¿Por qué no compila esta expresión base + 3 con las funciones mostradas?",
+          "options": [
+            "El miembro necesita un Puntos a la derecha, pero explicit impide obtenerlo mediante esa conversión implícita desde int.",
+            "El número tres está fuera del intervalo que comprueba el constructor de Puntos.",
+            "base es constante y por eso no puede utilizar ningún operador miembro, aunque termine en const."
+          ],
+          "correctIndex": 0,
+          "explanation": "La forma de la llamada exige un Puntos, pero se entrega un int. El constructor explicit no se utiliza para esa conversión implícita. No se ha llegado a ejecutar su cuerpo ni hay una comprobación de rango en esta clase. El miembro sí tiene const final y admite el objeto base constante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambiar tres por otro int no añade la función que falta ni elimina explicit. En estas firmas, primero hay que resolver la diferencia de tipos. Los posibles controles sobre valores pertenecerían a los cuerpos que llegaran a ejecutarse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Definir la suma con el entero a la derecha"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos conservar explicit y añadir una función libre que reciba directamente const Puntos& e int. Esa función acepta un Puntos como operando izquierdo y un int como derecho. Dentro del cuerpo, adicional será un objeto Puntos local constante construido desde extra. La construcción ya es deliberada; no la está realizando una conversión implícita del argumento (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Puntos operator+(const Puntos& puntos, int extra) {\n    const Puntos adicional{extra};\n    return puntos + adicional;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al entrar, puntos se refiere al objeto y extra contiene el entero. El cuerpo construye adicional y después utiliza ese Puntos como operando derecho del miembro que suma dos Puntos. Ese miembro devuelve otro Puntos por valor. La función libre devuelve ese resultado sin cambiar puntos ni acceder directamente al miembro privado valor_."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos sumas escritas tienen tipos diferentes: la exterior recibe Puntos e int; la que se solicita en su cuerpo recibe dos Puntos. Por eso la del cuerpo utiliza el miembro ya existente, en lugar de volver a pedir la misma función libre con los mismos tipos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La otra orientación no aparece automáticamente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora el programa incluye esa función libre para Puntos + int, pero todavía no define int + Puntos. Analiza el rechazo de compilación sin ejecutar el programa. El símbolo + no intercambia automáticamente los argumentos para buscar una llamada que nos convenga."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    const Puntos adicional{extra};\n    return puntos + adicional;\n}\nint main() {\n    const Puntos base{6};\n    Puntos total = 3 + base;\n    return total.valor();\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l3_falta_la_orientacion_entero_izquierdo",
+          "question": "¿Qué falta para admitir 3 + base conservando las funciones y explicit?",
+          "options": [
+            "Cambiar sólo el valor de base: un resultado pequeño hará que se invierta la llamada.",
+            "Definir una función que acepte el int a la izquierda y el Puntos a la derecha.",
+            "Permitir que cualquier función libre acceda a los miembros privados, aunque eso no cambie sus parámetros."
+          ],
+          "correctIndex": 1,
+          "explanation": "La función libre existente recibe primero Puntos y después int. La nueva expresión presenta esos tipos en el orden contrario. Necesitamos proporcionar esa otra orientación; el valor guardado en base no cambia los tipos escritos ni crea una función adicional."
+        },
+        {
+          "type": "paragraph",
+          "text": "La nueva función puede aprovechar la orientación que ya funciona. Como nuestro modelo suma el mismo número de puntos en ambos órdenes, podemos dirigir la operación a esa suma existente. Lo hacemos escribiendo un cuerpo para la segunda función; el lenguaje no cambia automáticamente el orden de los operandos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la función del entero a la izquierda"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la expresión del retorno. Debe obtener un Puntos nuevo conservando puntos. Puedes utilizar la función libre ya definida para Puntos + int, o construir expresamente el Puntos del entero y utilizarlo como operando derecho del miembro de puntos. No vuelvas a formar la misma solicitud de int + Puntos dentro de su propia implementación."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u7l3_completar_orientacion_inversa",
+          "question": "Completa la suma del int extra y el objeto puntos utilizando la suma ya disponible con el objeto puntos como operando izquierdo. Se admiten su llamada explícita o una construcción directa que aporte el operando derecho al miembro de puntos.",
+          "template": "Puntos operator+(int extra, const Puntos& puntos) {\n    return [];\n}\n",
+          "answers": [
+            "puntos + extra"
+          ],
+          "answerAlternatives": [
+            [
+              "puntos + extra",
+              "puntos+extra",
+              "(puntos + extra)",
+              "operator+(puntos, extra)",
+              "puntos + Puntos{extra}",
+              "puntos.operator+(Puntos{extra})"
+            ]
+          ],
+          "explanation": "puntos + extra utiliza la función libre que recibe Puntos e int. Su cuerpo construye Puntos{extra} y llama al miembro entre dos Puntos. operator+(puntos, extra) solicita la misma función libre. También puede escribirse puntos + Puntos{extra} o la llamada miembro explícita, evitando pedir otra vez la orientación que se está definiendo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir tres formas de sumar con las funciones completas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa ya contiene el miembro entre dos Puntos y las dos funciones libres para los órdenes mixtos. En base + otros, ambos operandos son Puntos y se utiliza el miembro. En base + 5, la función libre recibe Puntos e int. En 2 + base, la otra función libre recibe int y Puntos y utiliza la orientación que ya hemos definido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_tres_combinaciones_de_tipos",
+          "language": "cpp",
+          "question": "Escribe los valores de a, b y c, seguidos del valor final de base.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{7};\n    const Puntos otros{4};\n    Puntos a = base + otros;\n    Puntos b = base + 5;\n    Puntos c = 2 + base;\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "11:12:9:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma entre objetos combina siete y cuatro. La suma con el int derecho añade cinco y la suma con el int izquierdo añade dos. Cada camino devuelve un Puntos nuevo y base conserva siete. Las funciones elegidas corresponden a los tipos y a las posiciones de los operandos mostrados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las funciones libres no necesitan escribir en los datos privados para producir esos resultados. Reutilizan el operador miembro público, que ya define cómo sumar los valores de dos Puntos. Así mantenemos una sola regla de suma entre objetos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer las llamadas explícitas por sus parámetros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos utilizar también los nombres de las funciones. operator+(base, 4) solicita la función libre con Puntos primero. operator+(4, base) solicita la de int primero. En cambio, base.operator+(Puntos{4}) llama directamente al miembro, cuyo parámetro necesita el Puntos construido expresamente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_llamadas_explicitas_a_las_tres_formas",
+          "language": "cpp",
+          "question": "Escribe los valores devueltos por las tres llamadas, en el orden del programa.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{9};\n    Puntos a = operator+(base, 4);\n    Puntos b = operator+(4, base);\n    Puntos c = base.operator+(Puntos{4});\n    std::cout << a.valor() << ':' << b.valor() << ':' << c.valor();\n    return 0;\n}\n",
+          "answers": [
+            "13:13:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos funciones libres llegan al miembro que suma los dos valores. La llamada miembro ya aporta su segundo Puntos mediante una construcción directa. En los tres recorridos se suman nueve y cuatro. Coincidir en el resultado no significa que las tres expresiones nombren inicialmente la misma función."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta interfaz concreta, cambiar el valor de un argumento int conserva la misma firma seleccionada. Después el cuerpo utiliza ese valor para construir el segundo objeto y calcular. No debemos atribuir al número guardado una selección que corresponde a la combinación de tipos de estos operandos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los tipos de los resultados intermedios también importan"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las sumas de una cadena conservan la agrupación hacia la izquierda. En 2 + base + 3, la primera operación agrupada es 2 + base. Devuelve un Puntos, que participa después en una suma con el int tres. En 2 + 3 + base, la primera suma agrupada tiene dos int y es la suma incorporada del lenguaje; su resultado int se combina después con base."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_tipos_intermedios_de_la_cadena",
+          "language": "cpp",
+          "question": "Escribe los valores de los dos resultados y el valor que conserva base.",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    const Puntos base{5};\n    Puntos a = 2 + base + 3;\n    Puntos b = 2 + 3 + base;\n    std::cout << a.valor() << ':' << b.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "10:10:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera cadena obtiene primero un Puntos de valor siete y después añade tres. La segunda suma primero los int dos y tres, y después añade ese cinco al Puntos base. Ambas terminan en diez con estos datos, pero comienzan con operaciones de tipos diferentes. base conserva cinco."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ninguna sobrecarga nuestra redefine 2 + 3: esos operandos son int. Para seguir otra cadena, identifica la agrupación y el tipo que devuelve cada operación antes de buscar qué función puede utilizar la siguiente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El resultado nuevo no es un alias de la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las funciones de suma devuelven Puntos por valor. Por eso total conserva su propio int después de obtenerse el resultado. Reemplazar después base por otro Puntos no convierte ese cambio en una modificación de total. explicit no impide asignar un objeto que ya tiene el tipo adecuado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_resultado_independiente_de_la_base",
+          "language": "cpp",
+          "question": "¿Qué muestran total y base después de sustituir base?",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return puntos + Puntos{extra};\n}\nPuntos operator+(int extra, const Puntos& puntos) {\n    return puntos + extra;\n}\nint main() {\n    Puntos base{8};\n    Puntos total = 3 + base;\n    base = Puntos{2};\n    std::cout << total.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "11:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma inicial produce un resultado de valor once que se guarda en total. Después base recibe el Puntos construido directamente con dos. Son objetos distintos con sus propios int: total conserva once y base pasa a dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "No devolvemos una referencia al Puntos creado sólo para convertir el argumento. La construcción del resultado por valor permite usarlo después de que termine esa llamada. Tampoco necesitamos guardar un puntero a los datos de base para representar el resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función libre sigue respetando la interfaz pública"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este rechazo de compilación, sin ejecutarlo. La función se declara fuera de la clase, pero intenta leer directamente el miembro privado valor_. Recibir un Puntos o llamarse operator+ no le da acceso a ese miembro."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Puntos {\npublic:\n    explicit Puntos(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\n    Puntos operator+(const Puntos& otros) const {\n        return Puntos{valor_ + otros.valor_};\n    }\nprivate:\n    int valor_;\n};\nPuntos operator+(const Puntos& puntos, int extra) {\n    return Puntos{puntos.valor_ + extra};\n}\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l3_privacidad_y_operador_libre",
+          "question": "¿Qué motivo impide aceptar la definición de esa función libre?",
+          "options": [
+            "Una función libre no puede recibir objetos de una clase que tenga algún miembro privado.",
+            "El constructor explicit impide construir cualquier Puntos dentro de una función libre.",
+            "valor_ es privado: esa función debe apoyarse en la interfaz pública en lugar de acceder directamente a él."
+          ],
+          "correctIndex": 2,
+          "explanation": "Una función libre puede recibir Puntos y construir nuevos objetos, pero no accede directamente a su miembro privado valor_. Nuestras funciones correctas utilizan el operador miembro público ya disponible. La restricción se comprueba al compilar la definición; no depende de qué números vaya a sumar main."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta separación permite conservar la representación privada. Para las sumas mixtas no necesitamos volver públicos los datos ni volver a escribir el cálculo de los campos: podemos utilizar la operación que ya ofrece la clase (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar un operando válido antes de comprobar la suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retomaremos ahora Cantidad, con su constructor explicit y su intervalo de cero a mil. Las nuevas funciones libres recibirán el int, solicitarán expresamente la Cantidad que debe representar y utilizarán la suma miembro ya proporcionada. Mantener explicit es compatible con que una función nuestra acepte un int y realice esa construcción deliberadamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay dos comprobaciones con propósitos distintos. El constructor comprueba si el entero recibido puede representar una Cantidad. Si no puede, lanza CantidadInvalida y no se llega a sumar los dos objetos. Si puede, el operador miembro comprueba si la suma de las dos cantidades sigue dentro del intervalo; un exceso se señala con SumaExcesiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un entero negativo se rechaza como argumento aunque al combinarlo directamente con otro número pudiera producir un total dentro del intervalo. No sustituiremos la comprobación de ese operando por una comprobación del total. Los dos órdenes de suma deben conservar la misma distinción entre argumento inválido y suma excesiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "En ambos casos, el rechazo ocurre antes de obtener el resultado por valor. Las sumas deben conservar el objeto recibido. Si el llamador iba a asignar ese resultado a un destino existente, la asignación no se realiza cuando la llamada lanza. La práctica utilizará esos compromisos sin confundir los tipos que acepta una función con los valores que su cuerpo permite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: sumar una Cantidad y un entero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cantidad representa unidades entre cero y mil, incluidos ambos límites. Recuperamos la clase de las dos lecciones anteriores: el constructor explicit Cantidad(int) lanza CantidadInvalida si el dato no pertenece al intervalo; su + miembro obtiene otra Cantidad con la suma de dos objetos, o lanza SumaExcesiva si esa suma supera mil. El código proporcionado conserva también +=, que recibe otra Cantidad y actualiza el destino. No cambiaremos esas operaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade el comportamiento de estas dos funciones libres, cuyas declaraciones y cuerpos iniciales ya están en el editor:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Cantidad operator+(const Cantidad& cantidad, int entero);\nCantidad operator+(int entero, const Cantidad& cantidad);"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera admite cantidad + entero; la segunda admite entero + cantidad. En ambas, el entero representa unidades adicionales. Nuestro contrato admite únicamente un entero de cero a mil. Un entero negativo no pide restar: es un dato rechazado por esta interfaz. No se debe aceptar sólo porque el resultado matemático de la suma quedaría dentro del intervalo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada función debe realizar estas acciones en orden:\nComprobar que el entero permite construir una Cantidad válida. Si no, lanzar CantidadInvalida.\nObtener la suma de esa cantidad y el objeto recibido. Si supera mil, lanzar SumaExcesiva.\nDevolver una Cantidad por valor cuando la suma se admita.\nConservar el objeto que se recibió por referencia, tanto al aceptar como al rechazar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén explicit en el constructor. Conserva los miembros privados; la interfaz pública ya permite construir una cantidad y sumar dos cantidades. No hace falta permitir que estas funciones escriban directamente en unidades_. La función para el orden inverso puede reutilizar la otra, siempre que la llamada cambie realmente al orden ya implementado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar el dato inválido de la suma excesiva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que una Cantidad conserva seiscientas unidades y el entero es menos uno. Aunque la suma matemática daría quinientas noventa y nueve, nuestro contrato rechaza el entero: está fuera de cero a mil. Se lanza CantidadInvalida antes de intentar sumar las dos cantidades. La Cantidad original conserva seiscientas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si esa misma Cantidad recibe un entero de quinientas unidades, el entero sí permite construir una Cantidad. Después se suman seiscientas y quinientas: mil cien supera el límite. En este segundo recorrido se lanza SumaExcesiva. No confundas el dato que no se admite con la suma de dos datos admitidos que no cabe."
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción explícita proporciona la primera comprobación. El + miembro existente proporciona la segunda. Puedes reutilizar esas operaciones en lugar de duplicar sus condiciones. Si prefieres otra implementación, debe admitir y rechazar exactamente los mismos valores, conservar el objeto recibido y distinguir las dos clases de error."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las firmas no cambian según el valor del entero. Con cantidad + 20 y cantidad + (-1), los tipos siguen siendo Cantidad e int. En estos ejemplos se elige la misma función libre; después, su cuerpo admite o rechaza el dato. El compilador no elige un operador distinto para cada número."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la tabla, cada fila empieza de nuevo: c conserva el número indicado, n es un int y destino empieza con cincuenta. Se intenta destino = expresión y se trata cualquiera de los dos errores. Escribe el código del recorrido y el valor que conserva destino:\nCero: la suma se acepta.\nUno: se rechaza n mediante CantidadInvalida.\nDos: se rechaza la suma mediante SumaExcesiva."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u7l3_distinguir_dato_y_suma",
+          "prompt": "Cada fila es independiente. Indica el código del recorrido y el valor final de destino, que empieza con 50 en cada fila.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "c",
+                "n",
+                "Expresión"
+              ],
+              "rows": [
+                [
+                  "700",
+                  "25",
+                  "c + n"
+                ],
+                [
+                  "700",
+                  "300",
+                  "n + c"
+                ],
+                [
+                  "700",
+                  "301",
+                  "c + n"
+                ],
+                [
+                  "400",
+                  "-1",
+                  "n + c"
+                ],
+                [
+                  "0",
+                  "1001",
+                  "c + n"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: código",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: destino final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: código",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: destino final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: código",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: destino final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 4: código",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 4: destino final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "i",
+                  "type": "numeric",
+                  "label": "Fila 5: código",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "j",
+                  "type": "numeric",
+                  "label": "Fila 5: destino final",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "725"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "1000"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "50"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "50"
+                  },
+                  "i": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "j": {
+                    "type": "numeric",
+                    "expected": "50"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los dos primeros enteros se admiten y las sumas caben, incluida la suma exacta de mil. En la tercera fila, el entero es válido pero la suma supera mil. En las dos últimas filas, n está fuera del intervalo. Cuando se lanza un error, la asignación no llega a sustituir los cincuenta del destino.",
+            "incorrect": "Comprueba primero n, sin sumarlo. Si no pertenece a cero a mil, el código es uno. Si pertenece, calcula c más n: superar mil da código dos y caber da cero. El destino sólo cambia cuando se obtiene una Cantidad válida para asignarla."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el destino hasta disponer del resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En destino = origen + entero, el cuerpo de + consulta origen y devuelve una Cantidad nueva. La asignación a destino ocurre después, cuando ya se ha obtenido el resultado. Si se lanza CantidadInvalida o SumaExcesiva, no se obtiene ese resultado y no se realiza la asignación. destino conserva el valor que tenía antes de la expresión (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si destino y origen son nombres del mismo objeto, también se consulta el valor anterior para calcular el resultado. Por ejemplo, con trescientas unidades, a = a + 200 obtiene primero una Cantidad de quinientas y después la asigna a a. Si el entero fuera ochocientos, la suma excesiva impediría la asignación y a seguiría con trescientas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esto no convierte + en una actualización del objeto recibido. La actualización procede del = escrito por el llamador. En const Cantidad c{300}; Cantidad otro = c + 200;, c conserva trescientas y otro se construye con quinientas. La referencia const admite también un objeto que ya fue declarado constante."
+        },
+        {
+          "type": "paragraph",
+          "text": "No añadas noexcept a estas funciones: nuestro contrato permite que las dos clases de error salgan de ellas. Tampoco captures un error para devolver silenciosamente la cantidad anterior; el llamador necesita distinguir una suma aceptada de otra rechazada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada: elegir el orden de los operandos"
+        },
+        {
+          "type": "paragraph",
+          "text": "main mantiene tres objetos en el array valores durante toda la historia:\nÍndice cero, A: empieza con cuatrocientas unidades.\nÍndice uno, B: empieza con cien unidades.\nÍndice dos, Total: empieza con noventa unidades.\nUna orden posterior utiliza los valores que dejaron las anteriores; no se reinician los objetos entre renglones."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza con una cantidad de órdenes entre uno y doce. Cada orden tiene cuatro enteros: op destino origen entero. El significado de op es:\n1: asignar Cantidad{entero} a valores[destino]. Se lee origen, pero esta configuración lo ignora.\n2: asignar valores[origen] + entero a valores[destino].\n3: asignar entero + valores[origen] a valores[destino]."
+        },
+        {
+          "type": "paragraph",
+          "text": "destino y origen son índices, no las cantidades de los objetos. Para las operaciones dos y tres, ambos deben pertenecer a cero, uno o dos. Para la configuración sólo se comprueba destino, porque no consulta ningún origen. main comprueba los índices antes de acceder al array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una operación distinta de uno, dos o tres se informa como Operacion. Un índice necesario inválido se informa como Indice. Cuando esos controles se han superado, CantidadInvalida produce Rango y SumaExcesiva produce Suma. Una orden aceptada produce Aceptada. Si el número de órdenes es inválido o faltan enteros para leer una orden, main termina con código uno; esa entrada incompleta no se clasifica como un error de la suma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Informe: observar el origen y el destino después de cada orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada renglón de salida presenta Antes con los valores anteriores de A, B y Total. Después, Estado indica qué recorrido se realizó. Ahora presenta los valores de esos mismos objetos al terminar la orden, siempre en el orden A, B y Total. Final presenta su último estado al terminar la historia. Los dos puntos separan esos valores; los puntos y coma separan las partes del informe."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera orden del caso obligatorio calcula A + 25 y asigna el resultado a Total. A conserva cuatrocientas unidades, B conserva cien y Total pasa de noventa a cuatrocientas veinticinco. La siguiente orden utiliza el entero a la izquierda, conserva A y sustituye B. Las órdenes posteriores deben utilizar el estado que ya se haya guardado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara también las órdenes rechazadas. El origen debe conservar su valor; el destino debe conservar el que tenía antes de intentar la asignación. Cuando ambos índices identifican el mismo objeto, esa única cantidad sólo cambia si la suma se acepta."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial del editor ya compila, pero sus dos funciones devuelven la cantidad original sin sumar el entero. Completar sólo una orientación no satisface el contrato. Mantén main y las demás operaciones de la clase; modifica únicamente los dos cuerpos libres que están señalados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Implementar las dos sumas mixtas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos cuerpos, compila y compara el informe. Sólo el primer caso correcto es obligatorio para avanzar. Las otras dos historias se ofrecen por separado como ensayos opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    // Valida el entero, realiza la suma y devuelve otra Cantidad.\n    (void)entero;\n    return cantidad;\n}\n\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    // Conserva el mismo contrato con el entero a la izquierda.\n    (void)entero;\n    return cantidad;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n    return 0;\n}\n",
+          "initialStandardInput": "9\n2 2 0 25\n3 1 0 25\n2 0 0 600\n3 2 0 1\n2 2 0 -1\n3 0 1 1001\n1 1 0 0\n3 1 1 1000\n2 2 1 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "9\n2 2 0 25\n3 1 0 25\n2 0 0 600\n3 2 0 1\n2 2 0 -1\n3 0 1 1001\n1 1 0 0\n3 1 1 1000\n2 2 1 0",
+                "outputs": [
+                  "Antes:400:100:90;Estado:Aceptada;Ahora:400:100:425\nAntes:400:100:425;Estado:Aceptada;Ahora:400:425:425\nAntes:400:425:425;Estado:Aceptada;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Suma;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Rango;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Rango;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Aceptada;Ahora:1000:0:425\nAntes:1000:0:425;Estado:Aceptada;Ahora:1000:1000:425\nAntes:1000:1000:425;Estado:Aceptada;Ahora:1000:1000:1000\nFinal:1000:1000:1000"
+                ],
+                "explanation": "Valida primero el entero como una Cantidad. Suma después dos cantidades admitidas y devuelve el resultado por valor. Las dos orientaciones deben conservar el objeto recibido y distinguir Rango de Suma. No cambies main para fabricar el informe."
+              },
+              {
+                "standardInput": "8\n1 0 0 0\n2 2 0 1000\n3 1 0 1000\n2 0 2 0\n3 0 0 1\n2 2 1 1001\n3 2 1 -1\n2 2 0 0",
+                "outputs": [
+                  "Antes:400:100:90;Estado:Aceptada;Ahora:0:100:90\nAntes:0:100:90;Estado:Aceptada;Ahora:0:100:1000\nAntes:0:100:1000;Estado:Aceptada;Ahora:0:1000:1000\nAntes:0:1000:1000;Estado:Aceptada;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Suma;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Rango;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Rango;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Aceptada;Ahora:1000:1000:1000\nFinal:1000:1000:1000"
+                ],
+                "explanation": "Valida primero el entero como una Cantidad. Suma después dos cantidades admitidas y devuelve el resultado por valor. Las dos orientaciones deben conservar el objeto recibido y distinguir Rango de Suma. No cambies main para fabricar el informe."
+              },
+              {
+                "standardInput": "8\n2 3 0 20\n3 2 -1 20\n8 2 0 20\n1 0 99 650\n2 2 0 350\n3 2 0 351\n3 0 0 350\n2 0 0 1",
+                "outputs": [
+                  "Antes:400:100:90;Estado:Indice;Ahora:400:100:90\nAntes:400:100:90;Estado:Indice;Ahora:400:100:90\nAntes:400:100:90;Estado:Operacion;Ahora:400:100:90\nAntes:400:100:90;Estado:Aceptada;Ahora:650:100:90\nAntes:650:100:90;Estado:Aceptada;Ahora:650:100:1000\nAntes:650:100:1000;Estado:Suma;Ahora:650:100:1000\nAntes:650:100:1000;Estado:Aceptada;Ahora:1000:100:1000\nAntes:1000:100:1000;Estado:Suma;Ahora:1000:100:1000\nFinal:1000:100:1000"
+                ],
+                "explanation": "Valida primero el entero como una Cantidad. Suma después dos cantidades admitidas y devuelve el resultado por valor. Las dos orientaciones deben conservar el objeto recibido y distinguir Rango de Suma. No cambies main para fabricar el informe."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La historia usa los dos órdenes, actualiza un destino que también sirve de origen, acepta el límite de mil y conserva el estado ante una suma excesiva o un entero inválido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9\n2 2 0 25\n3 1 0 25\n2 0 0 600\n3 2 0 1\n2 2 0 -1\n3 0 1 1001\n1 1 0 0\n3 1 1 1000\n2 2 1 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:400:100:90;Estado:Aceptada;Ahora:400:100:425\nAntes:400:100:425;Estado:Aceptada;Ahora:400:425:425\nAntes:400:425:425;Estado:Aceptada;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Suma;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Rango;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Rango;Ahora:1000:425:425\nAntes:1000:425:425;Estado:Aceptada;Ahora:1000:0:425\nAntes:1000:0:425;Estado:Aceptada;Ahora:1000:1000:425\nAntes:1000:1000:425;Estado:Aceptada;Ahora:1000:1000:1000\nFinal:1000:1000:1000"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: límites, ceros e índices"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde un origen de cero, las dos orientaciones aceptan mil. Después se utiliza un objeto de mil con un entero cero y se distinguen los rechazos de suma y de dato. El destino de cada rechazo conserva su estado anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 0 0 0\n2 2 0 1000\n3 1 0 1000\n2 0 2 0\n3 0 0 1\n2 2 1 1001\n3 2 1 -1\n2 2 0 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:400:100:90;Estado:Aceptada;Ahora:0:100:90\nAntes:0:100:90;Estado:Aceptada;Ahora:0:100:1000\nAntes:0:100:1000;Estado:Aceptada;Ahora:0:1000:1000\nAntes:0:1000:1000;Estado:Aceptada;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Suma;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Rango;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Rango;Ahora:1000:1000:1000\nAntes:1000:1000:1000;Estado:Aceptada;Ahora:1000:1000:1000\nFinal:1000:1000:1000"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se rechazan un destino inválido, un origen inválido y una operación inexistente. Una configuración ignora su campo origen. Las sumas posteriores contrastan el límite exacto con el exceso de una unidad, también cuando destino y origen son el mismo objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n2 3 0 20\n3 2 -1 20\n8 2 0 20\n1 0 99 650\n2 2 0 350\n3 2 0 351\n3 0 0 350\n2 0 0 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:400:100:90;Estado:Indice;Ahora:400:100:90\nAntes:400:100:90;Estado:Indice;Ahora:400:100:90\nAntes:400:100:90;Estado:Operacion;Ahora:400:100:90\nAntes:400:100:90;Estado:Aceptada;Ahora:650:100:90\nAntes:650:100:90;Estado:Aceptada;Ahora:650:100:1000\nAntes:650:100:1000;Estado:Suma;Ahora:650:100:1000\nAntes:650:100:1000;Estado:Aceptada;Ahora:1000:100:1000\nAntes:1000:100:1000;Estado:Suma;Ahora:1000:100:1000\nFinal:1000:100:1000"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: reutilizar la construcción y la suma disponibles"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Cantidad valores[3]{Cantidad{400}, Cantidad{100}, Cantidad{90}};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, origen = 0, entero = 0;\n        if (!(std::cin >> op >> destino >> origen >> entero)) { return 1; }\n        std::cout << \"Antes:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n        const char* estado = \"Operacion\";\n        if (op >= 1 && op <= 3) {\n            if (destino < 0 || destino > 2 || (op != 1 && (origen < 0 || origen > 2))) {\n                estado = \"Indice\";\n            } else {\n                try {\n                    if (op == 1) { valores[destino] = Cantidad{entero}; }\n                    else if (op == 2) { valores[destino] = valores[origen] + entero; }\n                    else { valores[destino] = entero + valores[origen]; }\n                    estado = \"Aceptada\";\n                } catch (const CantidadInvalida&) { estado = \"Rango\"; }\n                  catch (const SumaExcesiva&) { estado = \"Suma\"; }\n            }\n        }\n        std::cout << \";Estado:\" << estado << \";Ahora:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor() << '\\n';\n    }\n    std::cout << \"Final:\" << valores[0].valor() << ':' << valores[1].valor() << ':' << valores[2].valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En cantidad + Cantidad{entero}, la construcción explícita comprueba el entero. Si el constructor lo rechaza, la llamada al + de dos cantidades no se realiza. Si la construcción termina, ambos operandos son Cantidad y se utiliza el miembro que ya estaba implementado. Ese miembro comprueba la suma y devuelve otra Cantidad, sin cambiar los operandos (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el orden entero + cantidad, return cantidad + entero; llama a la función libre del orden contrario. Ese orden recibe Cantidad e int; no vuelve a llamar a sí misma con int y Cantidad. Así los dos accesos comparten el mismo control del entero y la misma suma. Otra implementación equivalente puede construir explícitamente la Cantidad del entero y usar directamente el miembro."
+        },
+        {
+          "type": "paragraph",
+          "text": "La clase conserva su constructor explicit. No se ha autorizado cualquier conversión implícita de int a Cantidad: se han declarado dos operaciones concretas que reciben int. Dentro de ellas, la construcción con llaves dice expresamente cuándo se pide una Cantidad a partir del número. Su + miembro y su += siguen recibiendo const Cantidad&."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas funciones libres no acceden a unidades_. Utilizan operaciones públicas que ya mantienen el intervalo válido. Pueden coexistir con el + miembro porque no ofrecen aquí las mismas parejas de tipos: el miembro recibe otra Cantidad; las funciones libres reciben un int en uno de los lados. No hemos definido otra función libre con dos parámetros Cantidad que compita por esa misma suma (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer cuál de los dos controles rechazó la operación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los programas siguientes mantienen una fuente constante y otro objeto como destino. El cuerpo que trata el error muestra su clase y después consulta los dos objetos. Sigue la construcción del entero, la posible suma y la asignación, en ese orden."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_entero_negativo_no_es_una_resta",
+          "language": "cpp",
+          "question": "¿Qué error se trata y qué valores conservan destino y base?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = base + (-1); }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Rango:40:800"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Menos uno no permite construir una Cantidad. Se trata CantidadInvalida como Rango; no se llama al miembro que suma dos cantidades ni se asigna el destino. destino conserva cuarenta y base conserva ochocientas unidades."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_entero_admitido_con_suma_excesiva",
+          "language": "cpp",
+          "question": "¿Qué error se trata y qué valores conservan destino y base?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    const Cantidad base{800};\n    Cantidad destino{40};\n    try { destino = 300 + base; }\n    catch (const CantidadInvalida&) { std::cout << \"Rango:\"; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << destino.valor() << ':' << base.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Suma:40:800"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Trescientos sí permite construir una Cantidad. Al sumarla con ochocientas se obtiene mil cien, que el + miembro rechaza mediante SumaExcesiva. destino conserva cuarenta y base conserva ochocientas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resultado intermedio no actualiza la fuente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la diferencia con +=. En (a + 200) + 200, la primera suma crea un resultado por valor. La segunda suma utiliza ese resultado, sin haberlo asignado a a. Si la segunda falla, no hay una primera actualización de a que conservar: a nunca fue el destino de una asignación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l3_cadena_de_sumas_sin_asignacion_intermedia",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa después del rechazo de la segunda suma?",
+          "code": "#include <iostream>\n\nstruct CantidadInvalida {};\nstruct SumaExcesiva {};\n\nclass Cantidad {\npublic:\n    Cantidad() = default;\n    explicit Cantidad(int valor) : unidades_{valor} {\n        if (valor < 0 || valor > 1000) { throw CantidadInvalida{}; }\n    }\n    int valor() const noexcept { return unidades_; }\n    Cantidad operator+(const Cantidad& otra) const;\n    Cantidad& operator+=(const Cantidad& otra);\nprivate:\n    int unidades_ = 0;\n};\nCantidad Cantidad::operator+(const Cantidad& otra) const {\n    const int suma = unidades_ + otra.unidades_;\n    if (suma > 1000) { throw SumaExcesiva{}; }\n    return Cantidad{suma};\n}\nCantidad& Cantidad::operator+=(const Cantidad& otra) {\n    *this = *this + otra;\n    return *this;\n}\nCantidad operator+(const Cantidad& cantidad, int entero) {\n    return cantidad + Cantidad{entero};\n}\nCantidad operator+(int entero, const Cantidad& cantidad) {\n    return cantidad + entero;\n}\nint main() {\n    Cantidad a{700};\n    Cantidad resultado{20};\n    try { resultado = (a + 200) + 200; }\n    catch (const SumaExcesiva&) { std::cout << \"Suma:\"; }\n    std::cout << a.valor() << ':' << resultado.valor();\n    return 0;\n}\n",
+          "answers": [
+            "Suma:700:20"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a conserva setecientas. La primera suma devuelve una Cantidad de novecientas sin cambiar a. La segunda intenta sumar otras doscientas y rechaza mil cien. resultado conserva veinte porque la asignación esperaba que terminara toda la expresión derecha."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l3_operacion_admitida_no_es_conversion_general",
+          "question": "Con las dos funciones libres implementadas, ¿qué explica que c + 20 se admita y que c += 20 siga sin estar disponible para esta clase?",
+          "options": [
+            "Definir + convierte automáticamente cualquier int en Cantidad, pero += ignora ese constructor.",
+            "Se declaró un + específico que recibe int; el += existente sólo recibe Cantidad y el constructor explicit no hace esa conversión implícita.",
+            "El + decide qué tipo recibe según el número; para veinte recibe int y += sólo recibe valores mayores."
+          ],
+          "correctIndex": 1,
+          "explanation": "La nueva función libre ofrece expresamente la pareja Cantidad e int. += es otra operación, con su propia declaración: recibe const Cantidad&. Como el constructor sigue siendo explicit, no se introduce automáticamente una Cantidad para satisfacer ese parámetro. Se podría escribir una construcción explícita al llamar a +=, o diseñar otra sobrecarga si el tipo la necesitara."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "dd3e5c8204bb9aa81fb4ccc13bc41e1aa8d8dcfa011c2b28d2b84a55632ee833"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "086df9bcb1c344f76c37cec56666dc8d8573e0eafabc9b5b9e0edffab994d8a9"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "d29bfc58065bcfb6f0c6b619f53804aad3742f40ed742ad199a677fdc237e5a9"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "6e8c7ce818077de7f572e7bab336c9a261818c407507b1de462f83ec144e90f5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "ca3055cae86a977e9485beb327b3eddb0e7b6a4441797e99d69a2fe51a7a4d32"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "47ee40b438838a04f4872e9b89ea0a25a0c94fae134f88f5f5d26571e0ee398b"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "c0c942e53458e415f3c7736b13d01d406d625e36e3a1f862d801968ca1b4f256"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "a1ee0012040bd6add35790f328db884f460ed1f9acd4e77ce87fb8762731077e"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "e92216ce079a0d67a07de7bffe3f3ca5c85138a292811b082aea6ac296cdd0d1"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "2429c7176b7dfe97466f672072afe17faeb17b7733fa015430b9b5a163d898df"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "a5e6fd3cf9e2d7a047662b2239aecad9196ef5ba4c9caceb320a4b0d37225b69"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "add15b25dd0a269c6d2180b5c37bd0fd8ff1f78198a725a5c5164a9cd672ef08"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "c28617c11054a8003eeceb5fe25de478b510957276fd2d997f35f2f826c72f77"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "0174b8fa03e1d2d76e0c34759f7e02ad5cb382adfdd65f773c3c67de5d6d947e"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "d6cb8bab97ace777f9679f31326daf7d3b33342a69373b5c8199511d5fbbb13d"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "b8e9c5e1ab4a31a40bfa887ff9b1928c411d62085630ed916d5ea7e4daa1f666"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "fddef2f70a259833bffeded52d7f279b18e4ba0c2ae9039e3a47ba71052241d2"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "d97c67427f6052b56ce855b2a4ee48608a3db95246ad9984c07f97d882d95306"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "cb2d621ac1d8157c720d2ae96e5c6f2285582153bac81856e9f709b592e6df79"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "1c16ebc2fb3aea73e9c8c0d5b40670bdaa63b689aaefec8968f62e5fb45c8502"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0010",
+            "sha256": "d14e94f2bd3e2f8990b64bf6ee97ee0e63321675759b5e6bcf7a9c00e9322df6"
+          },
+          {
+            "id": "block_0018_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0012",
+            "sha256": "76cc205cb3bae649b1a1746cc22644ab4192373dac018df41f6b14c87fffcca3"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "b390500b4f40a1a1cdf86529b3c595f73c1792482ea0f704e45c6bfe2e8287b4"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "f73eea2cc11ae2a0bfcf9f7fb48cd86475a331519532b177bb0c7988d4a26aad"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "c9af51786d6b2ee754f88946b2fe9dcdc3a3b84af7ec4d05f4ac5f50197d3467"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "3cf15e9ed0cb1698bc2444b9c40840bbb3a33e94b6921daf197340e413a8e224"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "644b5f080c75d143773bac67c4cfa5d85e7b5b066e8f3a4882c1003125b0d2c2"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005",
+          "block_0012_0006"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008",
+          "block_0018_0009",
+          "block_0018_0010",
+          "block_0018_0011",
+          "block_0018_0012"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004",
+          "block_0019_0005"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "8d98fec684825a4d694faf2d9b0479c1cdab44a09dd7e6dced1a17a36f38857f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "dd3e5c8204bb9aa81fb4ccc13bc41e1aa8d8dcfa011c2b28d2b84a55632ee833"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "086df9bcb1c344f76c37cec56666dc8d8573e0eafabc9b5b9e0edffab994d8a9"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "d29bfc58065bcfb6f0c6b619f53804aad3742f40ed742ad199a677fdc237e5a9"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "6e8c7ce818077de7f572e7bab336c9a261818c407507b1de462f83ec144e90f5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ca3055cae86a977e9485beb327b3eddb0e7b6a4441797e99d69a2fe51a7a4d32"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "47ee40b438838a04f4872e9b89ea0a25a0c94fae134f88f5f5d26571e0ee398b"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "c0c942e53458e415f3c7736b13d01d406d625e36e3a1f862d801968ca1b4f256"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a1ee0012040bd6add35790f328db884f460ed1f9acd4e77ce87fb8762731077e"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "e92216ce079a0d67a07de7bffe3f3ca5c85138a292811b082aea6ac296cdd0d1"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "2429c7176b7dfe97466f672072afe17faeb17b7733fa015430b9b5a163d898df"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "a5e6fd3cf9e2d7a047662b2239aecad9196ef5ba4c9caceb320a4b0d37225b69"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "add15b25dd0a269c6d2180b5c37bd0fd8ff1f78198a725a5c5164a9cd672ef08"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "c28617c11054a8003eeceb5fe25de478b510957276fd2d997f35f2f826c72f77"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "0174b8fa03e1d2d76e0c34759f7e02ad5cb382adfdd65f773c3c67de5d6d947e"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "d6cb8bab97ace777f9679f31326daf7d3b33342a69373b5c8199511d5fbbb13d"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "b8e9c5e1ab4a31a40bfa887ff9b1928c411d62085630ed916d5ea7e4daa1f666"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "fddef2f70a259833bffeded52d7f279b18e4ba0c2ae9039e3a47ba71052241d2"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "d97c67427f6052b56ce855b2a4ee48608a3db95246ad9984c07f97d882d95306"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "cb2d621ac1d8157c720d2ae96e5c6f2285582153bac81856e9f709b592e6df79"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "1c16ebc2fb3aea73e9c8c0d5b40670bdaa63b689aaefec8968f62e5fb45c8502"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0010",
+                "sha256": "d14e94f2bd3e2f8990b64bf6ee97ee0e63321675759b5e6bcf7a9c00e9322df6"
+              },
+              {
+                "id": "block_0018_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0012",
+                "sha256": "76cc205cb3bae649b1a1746cc22644ab4192373dac018df41f6b14c87fffcca3"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "b390500b4f40a1a1cdf86529b3c595f73c1792482ea0f704e45c6bfe2e8287b4"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "f73eea2cc11ae2a0bfcf9f7fb48cd86475a331519532b177bb0c7988d4a26aad"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "c9af51786d6b2ee754f88946b2fe9dcdc3a3b84af7ec4d05f4ac5f50197d3467"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "3cf15e9ed0cb1698bc2444b9c40840bbb3a33e94b6921daf197340e413a8e224"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "644b5f080c75d143773bac67c4cfa5d85e7b5b066e8f3a4882c1003125b0d2c2"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

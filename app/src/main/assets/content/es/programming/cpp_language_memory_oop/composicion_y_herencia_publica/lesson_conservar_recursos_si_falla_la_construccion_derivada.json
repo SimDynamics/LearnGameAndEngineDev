@@ -1,0 +1,2087 @@
+{
+  "id": "cpp_language_memory_oop__composicion_y_herencia_publica__conservar_recursos_si_falla_la_construccion_derivada",
+  "title": "Conservar recursos si falla la construcción derivada",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La base también puede ser una parte ya construida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al estudiar los miembros de una clase vimos que su construcción puede fallar antes de completar el objeto que los contiene. Ahora añadiremos una base: mientras se construye una derivada, su parte base puede haber terminado de prepararse aunque la derivada todavía no esté completa. Esa diferencia decide qué destructores se ejecutan si se lanza una excepción."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los constructores de esta lección, primero se construye la base; después, los miembros propios de la derivada en su orden de declaración; finalmente, se ejecuta el cuerpo del constructor derivado. Cada parte puede terminar de construirse antes de comenzar la siguiente. Llegar al cuerpo derivado no significa que ese cuerpo vaya a terminar correctamente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la preparación se interrumpe, se destruyen las partes cuya construcción sí terminó, en orden inverso al de su preparación. El cuerpo destructor de la clase cuya construcción no terminó no es el encargado de hacer esa limpieza. Esto recupera la misma idea que ya aplicamos a los miembros, pero ahora la base también participa como parte del objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La excepción continúa hasta un catch compatible después de realizar la limpieza que corresponde al recorrido. El catch permite decidir qué hacer con el error; no es necesario escribir allí la destrucción manual de las partes ya preparadas (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un intento de una construcción terminada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Marca nos permitirá observar el recorrido. Su constructor recibe una letra y un número de fallo. Primero imprime Intento seguido de la letra. Si el número de fallo es distinto de cero, lanza Interrupcion. Si continúa, imprime Lista con la letra y llega al final del constructor. Su destructor imprime Fin con esa misma letra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las letras identifican miembros concretos:\nB: propia_, el miembro de Lectura.\nP: primera_, el primer miembro de LecturaPreparada.\nQ: segunda_, el segundo miembro de LecturaPreparada.\nLecturaPreparada deriva públicamente de Lectura. La base se prepara antes de comenzar esos dos miembros propios."
+        },
+        {
+          "type": "paragraph",
+          "text": "CuerpoBase y CuerpoDerivada se imprimen al entrar en los cuerpos correspondientes. BaseLista y DerivadaLista se imprimen cuando esos cuerpos llegan a su última instrucción. FinBase y FinDerivada pertenecen a sus destructores. Uso sólo se alcanza después de completar la declaración de dato. El último Fin, sin una letra, se imprime desde main después del try y el catch."
+        },
+        {
+          "type": "paragraph",
+          "text": "Interrupcion conserva un int llamado etapa. El catch recibe ese error y muestra etapa. modo elige el punto de interrupción: cero no provoca un fallo; uno lanza desde el cuerpo base; dos hace fallar la construcción de segunda_; tres lanza desde el cuerpo derivado. En el inicializador de segunda_, modo == 2 ? 2 : 0 proporciona dos cuando se cumple esa condición y cero en caso contrario."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l7_mensaje_no_completa_constructor",
+          "question": "En una construcción como las de esta lección, un constructor imprime el texto Listo y después lanza una excepción antes de terminar. Sus miembros ya estaban construidos. ¿Qué significa ese mensaje para su destrucción?",
+          "options": [
+            "Como sus miembros ya estaban preparados, debe ejecutarse primero el destructor del objeto completo y luego los de esos miembros.",
+            "El mensaje no completa la construcción. En este caso se limpian sus miembros completados, pero no se ejecuta el cuerpo destructor del objeto que no terminó de construirse.",
+            "Imprimir Listo basta para considerar completo el objeto; la excepción posterior sólo cambia lo que muestra el catch."
+          ],
+          "correctIndex": 1,
+          "explanation": "El texto impreso es una acción del programa. No sustituye la terminación correcta del constructor. Los miembros cuya construcción terminó se limpian al salir por la excepción; el cuerpo destructor del objeto incompleto no se ejecuta en este caso. Por eso hay que seguir las instrucciones y no deducir la construcción completa a partir de un rótulo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Primero seguir una construcción que sí termina"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer programa utiliza modo cero. Marca no interrumpe ninguno de sus intentos y los dos cuerpos constructores terminan correctamente. Observa la base, los miembros propios y el momento en que main puede imprimir Uso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al salir del bloque del try se destruye el objeto completo: se ejecuta el cuerpo destructor derivado, se destruyen sus miembros en sentido inverso y después se destruye la base con su propio miembro. El destructor virtual de Lectura es compatible con ese recorrido; aquí dato es un objeto local de tipo LecturaPreparada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l7_construccion_completa_y_limpieza_normal",
+          "language": "cpp",
+          "question": "Escribe toda la salida del programa, incluidos los rótulos, las letras y los separadores |.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nclass Marca {\npublic:\n    Marca(char letra, int fallo) : letra_{letra} {\n        std::cout << \"Intento\" << letra_ << '|';\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        std::cout << \"Lista\" << letra_ << '|';\n    }\n    ~Marca() { std::cout << \"Fin\" << letra_ << '|'; }\nprivate:\n    char letra_;\n};\nclass Lectura {\npublic:\n    explicit Lectura(int modo) : propia_{'B', 0} {\n        std::cout << \"CuerpoBase|\";\n        if (modo == 1) { throw Interrupcion{1}; }\n        std::cout << \"BaseLista|\";\n    }\n    virtual ~Lectura() { std::cout << \"FinBase|\"; }\nprivate:\n    Marca propia_;\n};\nclass LecturaPreparada : public Lectura {\npublic:\n    explicit LecturaPreparada(int modo)\n        : Lectura{modo}, primera_{'P', 0}, segunda_{'Q', modo == 2 ? 2 : 0} {\n        std::cout << \"CuerpoDerivada|\";\n        if (modo == 3) { throw Interrupcion{3}; }\n        std::cout << \"DerivadaLista|\";\n    }\n    ~LecturaPreparada() override { std::cout << \"FinDerivada|\"; }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\nint main() {\n    try {\n        LecturaPreparada dato{0};\n        std::cout << \"Uso|\";\n    } catch (const Interrupcion& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "IntentoB|ListaB|CuerpoBase|BaseLista|IntentoP|ListaP|IntentoQ|ListaQ|CuerpoDerivada|DerivadaLista|Uso|FinDerivada|FinQ|FinP|FinBase|FinB|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se prepara propia_ con la letra B y termina el constructor base. Después se completan primera_ con P y segunda_ con Q, y termina el cuerpo derivado. Sólo entonces aparece Uso. Al cerrar el try se ejecuta FinDerivada; después se destruyen segunda_ y primera_, que escriben FinQ y FinP. A continuación se ejecuta FinBase y se destruye propia_, que escribe FinB. No se entra en el catch; main añade el último Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si falla el cuerpo base, su miembro ya puede estar preparado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con modo uno, propia_ termina de construirse antes de entrar en el cuerpo de Lectura. Es ese cuerpo el que lanza la excepción. La construcción de la base no termina y todavía no ha comenzado la de los miembros propios de LecturaPreparada."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso no se ejecuta el cuerpo de ~Lectura. Sí se destruye propia_, porque su construcción había terminado. Tampoco se ejecuta ~LecturaPreparada: la construcción derivada no llegó a completarse. Después de esa limpieza continúa la excepción hasta el catch (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l7_fallo_en_cuerpo_base",
+          "language": "cpp",
+          "question": "Escribe la salida completa para modo uno. Distingue el miembro completado del cuerpo base que lanza.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nclass Marca {\npublic:\n    Marca(char letra, int fallo) : letra_{letra} {\n        std::cout << \"Intento\" << letra_ << '|';\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        std::cout << \"Lista\" << letra_ << '|';\n    }\n    ~Marca() { std::cout << \"Fin\" << letra_ << '|'; }\nprivate:\n    char letra_;\n};\nclass Lectura {\npublic:\n    explicit Lectura(int modo) : propia_{'B', 0} {\n        std::cout << \"CuerpoBase|\";\n        if (modo == 1) { throw Interrupcion{1}; }\n        std::cout << \"BaseLista|\";\n    }\n    virtual ~Lectura() { std::cout << \"FinBase|\"; }\nprivate:\n    Marca propia_;\n};\nclass LecturaPreparada : public Lectura {\npublic:\n    explicit LecturaPreparada(int modo)\n        : Lectura{modo}, primera_{'P', 0}, segunda_{'Q', modo == 2 ? 2 : 0} {\n        std::cout << \"CuerpoDerivada|\";\n        if (modo == 3) { throw Interrupcion{3}; }\n        std::cout << \"DerivadaLista|\";\n    }\n    ~LecturaPreparada() override { std::cout << \"FinDerivada|\"; }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\nint main() {\n    try {\n        LecturaPreparada dato{1};\n        std::cout << \"Uso|\";\n    } catch (const Interrupcion& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "IntentoB|ListaB|CuerpoBase|FinB|Captura:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "propia_ imprime IntentoB y ListaB. El cuerpo base imprime CuerpoBase y lanza Interrupcion{1}, por lo que no alcanza BaseLista. Se destruye propia_ y aparece FinB. No hay FinBase, miembros P o Q, ni FinDerivada. Una vez realizada esa limpieza, el catch imprime Captura:1 y main termina con Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si falla un miembro derivado, la base ya puede estar completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con modo dos, Lectura termina de construirse y primera_ también se completa. Después comienza el constructor de segunda_. Ese constructor imprime su intento y lanza antes de llegar a su final. La segunda Marca no queda construida y no se entra en el cuerpo de LecturaPreparada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Se retiran las partes que sí se completaron: primero primera_ y después la base Lectura. Al destruir esa base, se ejecuta su cuerpo destructor y se destruye su miembro propia_. No se ejecuta el destructor de la Marca cuyo constructor falló ni el cuerpo destructor de LecturaPreparada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l7_fallo_en_segundo_miembro_derivado",
+          "language": "cpp",
+          "question": "Escribe la traza completa. Comprueba qué sucede después de intentar preparar el miembro con la letra Q.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nclass Marca {\npublic:\n    Marca(char letra, int fallo) : letra_{letra} {\n        std::cout << \"Intento\" << letra_ << '|';\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        std::cout << \"Lista\" << letra_ << '|';\n    }\n    ~Marca() { std::cout << \"Fin\" << letra_ << '|'; }\nprivate:\n    char letra_;\n};\nclass Lectura {\npublic:\n    explicit Lectura(int modo) : propia_{'B', 0} {\n        std::cout << \"CuerpoBase|\";\n        if (modo == 1) { throw Interrupcion{1}; }\n        std::cout << \"BaseLista|\";\n    }\n    virtual ~Lectura() { std::cout << \"FinBase|\"; }\nprivate:\n    Marca propia_;\n};\nclass LecturaPreparada : public Lectura {\npublic:\n    explicit LecturaPreparada(int modo)\n        : Lectura{modo}, primera_{'P', 0}, segunda_{'Q', modo == 2 ? 2 : 0} {\n        std::cout << \"CuerpoDerivada|\";\n        if (modo == 3) { throw Interrupcion{3}; }\n        std::cout << \"DerivadaLista|\";\n    }\n    ~LecturaPreparada() override { std::cout << \"FinDerivada|\"; }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\nint main() {\n    try {\n        LecturaPreparada dato{2};\n        std::cout << \"Uso|\";\n    } catch (const Interrupcion& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "IntentoB|ListaB|CuerpoBase|BaseLista|IntentoP|ListaP|IntentoQ|FinP|FinBase|FinB|Captura:2|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La base termina y también lo hace primera_. segunda_ imprime IntentoQ, pero lanza antes de ListaQ; por eso no imprime FinQ al limpiar. Se destruye primera_ y aparece FinP. Luego se destruye la base completada: FinBase y FinB. El cuerpo derivado nunca empezó y no aparece FinDerivada. El catch muestra Captura:2 y después main escribe Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si falla el cuerpo derivado, sus miembros ya están preparados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con modo tres, la base y las dos Marca propias de la derivada terminan de construirse. Después se entra en el cuerpo de LecturaPreparada y se lanza desde allí. Esta vez hay más partes preparadas que limpiar, aunque la derivada siga sin haber completado su construcción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Se destruyen segunda_ y primera_ en ese orden y después se destruye la base. El cuerpo de ~LecturaPreparada no se ejecuta. Que el destructor de Lectura sea virtual no obliga a ejecutar el de una derivada que no terminó de construirse: aquí se limpia la parte base que sí se completó (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l7_fallo_en_cuerpo_derivado",
+          "language": "cpp",
+          "question": "Escribe la salida completa para modo tres, distinguiendo el cuerpo destructor derivado de la limpieza de sus miembros.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nclass Marca {\npublic:\n    Marca(char letra, int fallo) : letra_{letra} {\n        std::cout << \"Intento\" << letra_ << '|';\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        std::cout << \"Lista\" << letra_ << '|';\n    }\n    ~Marca() { std::cout << \"Fin\" << letra_ << '|'; }\nprivate:\n    char letra_;\n};\nclass Lectura {\npublic:\n    explicit Lectura(int modo) : propia_{'B', 0} {\n        std::cout << \"CuerpoBase|\";\n        if (modo == 1) { throw Interrupcion{1}; }\n        std::cout << \"BaseLista|\";\n    }\n    virtual ~Lectura() { std::cout << \"FinBase|\"; }\nprivate:\n    Marca propia_;\n};\nclass LecturaPreparada : public Lectura {\npublic:\n    explicit LecturaPreparada(int modo)\n        : Lectura{modo}, primera_{'P', 0}, segunda_{'Q', modo == 2 ? 2 : 0} {\n        std::cout << \"CuerpoDerivada|\";\n        if (modo == 3) { throw Interrupcion{3}; }\n        std::cout << \"DerivadaLista|\";\n    }\n    ~LecturaPreparada() override { std::cout << \"FinDerivada|\"; }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\nint main() {\n    try {\n        LecturaPreparada dato{3};\n        std::cout << \"Uso|\";\n    } catch (const Interrupcion& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "IntentoB|ListaB|CuerpoBase|BaseLista|IntentoP|ListaP|IntentoQ|ListaQ|CuerpoDerivada|FinQ|FinP|FinBase|FinB|Captura:3|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se completan la base, primera_ y segunda_. El cuerpo derivado imprime CuerpoDerivada y lanza antes de DerivadaLista. La limpieza escribe FinQ y FinP y después FinBase y FinB. No aparece FinDerivada porque el constructor derivado no terminó. Sólo después de limpiar esas partes se alcanza Captura:3, y main añade Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar la limpieza de las partes y el almacenamiento del intento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una creación dinámica necesita espacio para el objeto y después debe construirlo en ese espacio. make_unique intenta ambas acciones antes de devolver un propietario del objeto completo. Si la construcción lanza, la fábrica no devuelve ese propietario (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la creación dinámica ordinaria de estos ejemplos, el fallo provoca dos acciones distintas. Se destruyen las partes cuya construcción terminó. Además, el mecanismo de new libera el almacenamiento del intento que quedó sin completar y la excepción continúa. Liberar ese almacenamiento no requiere ejecutar el cuerpo destructor del objeto incompleto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando un miembro completado es a su vez propietario de otro objeto, su destrucción también retira lo que posee. Esa limpieza de recursos sigue el mismo principio de ligar la responsabilidad a un objeto construido que ya usamos con unique_ptr y vector (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las marcas de los constructores y destructores permiten seguir qué partes se completaron y se destruyeron. No son un contador de reservas, liberaciones de almacenamiento o bytes. La ausencia del cuerpo destructor de una clase incompleta no demuestra por sí sola una fuga de almacenamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un propietario exterior no recibe el objeto incompleto"
+        },
+        {
+          "type": "paragraph",
+          "text": "destino se construye vacío antes del try. Dentro se intenta crear una LecturaPreparada en modo tres y entregar el resultado a ese propietario. Para empezar la asignación, primero debe terminar correctamente la creación que produce el resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si esa creación lanza, no hay un resultado que asignar. Se limpia el intento y el control llega al catch. No se entrega a destino un objeto a medio construir para que su destructor intente completarlo o repararlo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l7_creacion_dinamica_interrumpida_sin_resultado",
+          "language": "cpp",
+          "question": "Escribe toda la salida, incluida la consulta final de destino y sus separadores.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nclass Marca {\npublic:\n    Marca(char letra, int fallo) : letra_{letra} {\n        std::cout << \"Intento\" << letra_ << '|';\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        std::cout << \"Lista\" << letra_ << '|';\n    }\n    ~Marca() { std::cout << \"Fin\" << letra_ << '|'; }\nprivate:\n    char letra_;\n};\nclass Lectura {\npublic:\n    explicit Lectura(int modo) : propia_{'B', 0} {\n        std::cout << \"CuerpoBase|\";\n        if (modo == 1) { throw Interrupcion{1}; }\n        std::cout << \"BaseLista|\";\n    }\n    virtual ~Lectura() { std::cout << \"FinBase|\"; }\nprivate:\n    Marca propia_;\n};\nclass LecturaPreparada : public Lectura {\npublic:\n    explicit LecturaPreparada(int modo)\n        : Lectura{modo}, primera_{'P', 0}, segunda_{'Q', modo == 2 ? 2 : 0} {\n        std::cout << \"CuerpoDerivada|\";\n        if (modo == 3) { throw Interrupcion{3}; }\n        std::cout << \"DerivadaLista|\";\n    }\n    ~LecturaPreparada() override { std::cout << \"FinDerivada|\"; }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\nint main() {\n    std::unique_ptr<Lectura> destino;\n    try {\n        destino = std::make_unique<LecturaPreparada>(3);\n        std::cout << \"Uso|\";\n    } catch (const Interrupcion& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Vacio:\" << (destino == nullptr) << \"|Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "IntentoB|ListaB|CuerpoBase|BaseLista|IntentoP|ListaP|IntentoQ|ListaQ|CuerpoDerivada|FinQ|FinP|FinBase|FinB|Captura:3|Vacio:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La preparación avanza como en el fallo del cuerpo derivado: termina la base, se completan las dos Marca y el cuerpo derivado lanza. Se limpian Q, P y la base con B, sin ejecutar FinDerivada. make_unique no devuelve el propietario que se iba a asignar. El catch imprime Captura:3 y destino conserva su estado vacío, por lo que la consulta final escribe Vacio:1 antes de Fin. Terminar ese propietario vacío no produce otra destrucción del intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir un miembro que conserve la responsabilidad de limpieza"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este nuevo ejemplo, Base prepara un Recurso independiente antes de entrar en su cuerpo. El miembro recurso_ debe conservar su propiedad exclusiva. Si el cuerpo base lanza, ese miembro ya completado debe retirar automáticamente el Recurso, aunque no se llegue a ejecutar ~Base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el tipo del miembro con el propietario exclusivo individual estándar que corresponde al objeto creado en su inicializador. No añadas una segunda propiedad ni instrucciones manuales de destrucción."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u8l7_completar_propietario_de_recurso_en_base",
+          "question": "Escribe el tipo completo del miembro recurso_, parametrizado con Recurso y calificado mediante el espacio de nombres std. Completa sólo el tipo.",
+          "template": "struct Fallo {};\nclass Recurso {\npublic:\n    Recurso() { std::cout << \"Recurso+|\"; }\n    ~Recurso() { std::cout << \"Recurso-|\"; }\n};\nclass Base {\npublic:\n    explicit Base(bool fallar) : recurso_{std::make_unique<Recurso>()} {\n        std::cout << \"Base|\";\n        if (fallar) { throw Fallo{}; }\n    }\n    virtual ~Base() { std::cout << \"Base-|\"; }\nprivate:\n    [] recurso_;\n};\nclass Derivada : public Base {\npublic:\n    explicit Derivada(bool fallar) : Base{fallar} { std::cout << \"Derivada|\"; }\n    ~Derivada() override { std::cout << \"Derivada-|\"; }\n};\n",
+          "answers": [
+            "std::unique_ptr<Recurso>"
+          ],
+          "answerAlternatives": [
+            [
+              "std::unique_ptr<Recurso>",
+              "::std::unique_ptr<Recurso>"
+            ]
+          ],
+          "explanation": "El miembro std::unique_ptr<Recurso> recibe el propietario producido por make_unique. Ese miembro termina de inicializarse antes del cuerpo de Base. Si el cuerpo lanza, su destrucción retira el Recurso, aunque el cuerpo de ~Base no se ejecute. El nombre del espacio estándar puede calificarse también desde el espacio global con ::std."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El propietario miembro ya existe cuando empieza el cuerpo base"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fallo {};\nclass Recurso {\npublic:\n    Recurso() { std::cout << \"Recurso+|\"; }\n    ~Recurso() { std::cout << \"Recurso-|\"; }\n};\nclass Base {\npublic:\n    explicit Base(bool fallar) : recurso_{std::make_unique<Recurso>()} {\n        std::cout << \"Base|\";\n        if (fallar) { throw Fallo{}; }\n    }\n    virtual ~Base() { std::cout << \"Base-|\"; }\nprivate:\n    std::unique_ptr<Recurso> recurso_;\n};\nclass Derivada : public Base {\npublic:\n    explicit Derivada(bool fallar) : Base{fallar} { std::cout << \"Derivada|\"; }\n    ~Derivada() override { std::cout << \"Derivada-|\"; }\n};\nint main() {\n    try {\n        Derivada dato{true};\n    } catch (const Fallo&) {\n        std::cout << \"Captura|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero termina de construirse el Recurso y queda bajo el miembro recurso_. Después se entra en el cuerpo de Base, se escribe su marca y se lanza Fallo. No se alcanza el cuerpo constructor derivado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al salir por la excepción se destruye el miembro propietario ya completado. Ese miembro retira el Recurso y se ejecuta ~Recurso. No se ejecutan los cuerpos de ~Base ni ~Derivada porque sus construcciones no terminaron. Después el catch escribe Captura y main escribe Fin (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La limpieza no depende de entrar en el cuerpo destructor de Base. Por eso el recurso se conserva en un miembro propietario desde que se crea, en vez de dejar su liberación pendiente de una instrucción que sólo se alcanzaría al destruir una Base completa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un objeto anterior exige retrasar su sustitución"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora el propietario exterior estaba vacío. También podemos tener un objeto anterior que debe seguir disponible si no logramos preparar el nuevo. La limpieza del intento fallido resuelve la responsabilidad de sus partes, pero no decide por sí sola qué debe pasar con ese objeto anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la estrategia de preparar antes de cambiar: el propietario anterior sigue gestionando su objeto mientras se intenta construir el sustituto. Si la preparación lanza, se limpian las partes del intento y el propietario anterior continúa con el mismo objeto. Sólo cuando la preparación termina se transfiere la propiedad del objeto nuevo y se retira el anterior (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este orden permite conservar el objeto anterior ante un fallo de preparación. No borra los mensajes ni las cuentas que haya dejado el intento: las construcciones y destrucciones realizadas siguen habiendo ocurrido. Tampoco reconstruiría automáticamente un objeto anterior si el programa ya lo hubiera retirado antes de intentar crear el nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los accesos prestados conservan los límites que ya conocemos. Un préstamo al objeto anterior puede seguir utilizándose si el intento falla y ese mismo objeto permanece vivo. Cuando la sustitución tiene éxito y se retira el anterior, no se vuelve a usar su préstamo; un acceso posterior debe obtenerse del objeto que conserva ahora el propietario."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar una sustitución sin retirar antes el destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "destino es un std::unique_ptr<Medida>. Puede gestionar una medida anterior o estar vacío. Vamos a preparar una MedidaIdentificada nueva, que conserva un recurso para el número y otro para su código. Durante esa preparación pueden fallar la base, la preparación del código o el cuerpo del constructor derivado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa sustituir. Primero construye la medida nueva con numero, codigo, modo y el Balance recibido. Sólo después de que su construcción termine correctamente puedes transferir la propiedad a destino y retirar la medida anterior. Si la preparación lanza una excepción, deja que salga de la función sin cambiar el objeto ni la propiedad anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un éxito debe instalar el objeto nuevo, incluso cuando sus dos valores coinciden con los anteriores. No basta con cambiar los valores de la medida existente. Un fallo debe conservar el mismo objeto anterior; si destino estaba vacío, debe seguir vacío. No captures una excepción para fingir que la sustitución tuvo éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva las clases, sus miembros propietarios, constructores, destructores y main. No añadas delete ni llamadas manuales a destructores. La limpieza de una preparación incompleta corresponde a las partes ya construidas y a los propietarios que se han completado. Los destructores proporcionados no lanzan excepciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cómo se preparan los dos recursos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Medida posee numero_ mediante unique_ptr<Recurso>. Ese Recurso conserva el número y una referencia al Balance exterior. Su constructor registra un recurso completo sólo después de superar su comprobación de fallo. Su destructor disminuye recursos_vivos y aumenta recursos_destruidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de Medida prepara su recurso antes de entrar en el cuerpo. Si Modo vale uno, el cuerpo lanza Interrupcion{1}. La base no termina de construirse y no ejecuta su destructor propio, pero el miembro numero_ ya completado limpia el Recurso que posee (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si Modo vale dos, la base ya está completa y se intenta preparar el recurso del código. El constructor de ese Recurso lanza Interrupcion{2} antes de registrarse como completo. make_unique no llega a devolver el propietario con el que se inicializaría codigo_. La base completada se destruye y limpia su recurso; no se ejecuta el destructor de la derivada ni el del Recurso cuyo constructor falló."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si Modo vale tres, los dos recursos y la base ya están preparados. El cuerpo derivado lanza Interrupcion{3}. No termina de construirse la MedidaIdentificada, así que no se ejecuta su destructor propio; se destruye codigo_, después la base y su recurso. Si Modo vale cero, la construcción termina y la sustitución puede completarse (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer las cuentas sin confundir partes y reservas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Balance empieza con todos sus contadores en cero y vive fuera del bloque de los propietarios. recursos_vivos cuenta únicamente los Recurso que terminaron de construirse y todavía no se han destruido. Los contadores _completadas y _completados aumentan al final de cada constructor correspondiente; los acabados en _destruidas y _destruidos aumentan desde sus destructores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una MedidaIdentificada completa aporta una base completada, una derivada completada y dos recursos completados. La base es una parte del objeto derivado, no otra medida independiente. main construye primero la medida anterior en modo cero, por lo que las cuentas empiezan a usarse desde uno, uno y dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas cuentas permiten distinguir qué partes se completaron y qué destructores se ejecutaron. No cuentan llamadas al asignador ni bytes reservados. En el new ordinario que usa make_unique, si un constructor lanza, se libera el almacenamiento del intento mediante el mecanismo correspondiente; esa acción no requiere ejecutar el destructor del objeto incompleto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que destino se conserve no significa borrar todo rastro del intento. Los recursos y partes que sí se completaron durante la preparación dejan sus cuentas de construcción y destrucción en Balance. No reinicies esos contadores para ocultar el fallo: la conservación exigida corresponde al objeto anterior y su propiedad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada y decisiones de la construcción"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene cinco int en este orden:\nAnteriorNumero: número de la medida anterior.\nAnteriorCodigo: código de la medida anterior.\nNumero: número solicitado para el objeto nuevo.\nCodigo: código solicitado para el objeto nuevo.\nModo: cero para éxito, uno para fallo en el cuerpo base, dos para fallo al preparar el código y tres para fallo en el cuerpo derivado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuatro valores de datos pueden ser cualquier int representable. Cero y los negativos son valores normales. Modo sólo admite de cero a tres. Una entrada incompleta, fuera del dominio de int o con otro modo termina main con código uno antes de crear la medida anterior o imprimir el informe."
+        },
+        {
+          "type": "paragraph",
+          "text": "main intenta sustituir una única medida anterior. Captura Interrupcion y conserva su número de etapa para mostrar el rechazo. No necesitas añadir un catch dentro de sustituir. Si la preparación termina correctamente, el llamador muestra Aceptado; si lanza la excepción controlada, muestra Rechazado con su etapa."
+        },
+        {
+          "type": "paragraph",
+          "text": "La medida anterior se construye siempre con modo cero; el modo elegido sólo afecta al intento nuevo. Balance sigue vivo mientras terminan todos sus objetos. Después de cerrar el bloque de destino, main consulta las cuentas, sin volver a acceder a la medida retirada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las siete líneas del informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Resultado: Aceptado o Rechazado: seguido de la etapa que se capturó.\nDestino: informe completo del objeto que conserva el propietario después del intento.\nVivos: recursos que siguen vivos en ese momento; con el main proporcionado deben ser dos.\nCompletados: terna de bases, derivadas y recursos completados.\nDestruidos: terna de bases, derivadas y recursos ya destruidos antes de salir del bloque.\nFinalVivos: recursos vivos después de terminar el destino; debe ser cero.\nFinalDestruidos: terna de destrucciones después de cerrar ese bloque."
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden de todas las ternas es base, derivada y recurso. No todas tienen que aumentar juntas. Por ejemplo, si falla el cuerpo base del intento, su recurso ya existía y se destruye, aunque esa base no llegara a contarse como completada ni se ejecutara su destructor propio."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial no sustituye ni intenta construir el objeto nuevo. Compila y mantiene una propiedad válida, pero main lo interpreta como un retorno normal y muestra Aceptado incluso cuando el modo debía lanzar. Completa la función para que el resultado, el destino y las cuentas correspondan a la construcción real."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el candidato y completar la sustitución"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa sustituir, compila y compara las siete líneas. Sólo el primer caso correcto es obligatorio para avanzar; los cuatro siguientes son ensayos opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nstruct Balance {\n    int recursos_vivos = 0;\n    int bases_completadas = 0;\n    int derivadas_completadas = 0;\n    int recursos_completados = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int recursos_destruidos = 0;\n};\nclass Recurso {\npublic:\n    Recurso(int valor, int fallo, Balance& balance) : valor_{valor}, balance_{balance} {\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        ++balance_.recursos_vivos;\n        ++balance_.recursos_completados;\n    }\n    Recurso(const Recurso&) = delete;\n    Recurso& operator=(const Recurso&) = delete;\n    ~Recurso() noexcept { --balance_.recursos_vivos; ++balance_.recursos_destruidos; }\n    int valor() const noexcept { return valor_; }\nprivate:\n    int valor_;\n    Balance& balance_;\n};\nclass Medida {\npublic:\n    Medida(int numero, int modo, Balance& balance)\n        : numero_{std::make_unique<Recurso>(numero, 0, balance)}, balance_{balance} {\n        if (modo == 1) { throw Interrupcion{1}; }\n        ++balance_.bases_completadas;\n    }\n    virtual ~Medida() noexcept { ++balance_.bases_destruidas; }\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_->valor(); }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero(); }\nprivate:\n    std::unique_ptr<Recurso> numero_;\n    Balance& balance_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, int modo, Balance& balance)\n        : Medida{numero, modo, balance},\n          codigo_{std::make_unique<Recurso>(codigo, modo == 2 ? 2 : 0, balance)}, balance_{balance} {\n        if (modo == 3) { throw Interrupcion{3}; }\n        ++balance_.derivadas_completadas;\n    }\n    ~MedidaIdentificada() noexcept override { ++balance_.derivadas_destruidas; }\n    int codigo() const noexcept { return codigo_->valor(); }\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << codigo();\n    }\nprivate:\n    std::unique_ptr<Recurso> codigo_;\n    Balance& balance_;\n};\nvoid sustituir(std::unique_ptr<Medida>& destino, int numero, int codigo, int modo, Balance& balance) {\n    // Prepara la medida nueva antes de cambiar el propietario recibido.\n    (void)destino;\n    (void)numero;\n    (void)codigo;\n    (void)modo;\n    (void)balance;\n}\nint main() {\n    int anterior_numero = 0, anterior_codigo = 0, numero = 0, codigo = 0, modo = 0;\n    if (!(std::cin >> anterior_numero >> anterior_codigo >> numero >> codigo >> modo) || modo < 0 || modo > 3) { return 1; }\n    Balance balance;\n    {\n        std::unique_ptr<Medida> destino = std::make_unique<MedidaIdentificada>(anterior_numero, anterior_codigo, 0, balance);\n        int etapa = 0;\n        try {\n            sustituir(destino, numero, codigo, modo, balance);\n        } catch (const Interrupcion& error) {\n            etapa = error.etapa;\n        }\n        std::cout << \"Resultado:\";\n        if (etapa == 0) { std::cout << \"Aceptado\\n\"; }\n        else { std::cout << \"Rechazado:\" << etapa << '\\n'; }\n        std::cout << \"Destino:\";\n        if (destino) { destino->escribir(std::cout); }\n        else { std::cout << \"Vacio\"; }\n        std::cout << '\\n' << \"Vivos:\" << balance.recursos_vivos << '\\n'\n                  << \"Completados:\" << balance.bases_completadas << ',' << balance.derivadas_completadas << ',' << balance.recursos_completados << '\\n'\n                  << \"Destruidos:\" << balance.bases_destruidas << ',' << balance.derivadas_destruidas << ',' << balance.recursos_destruidos << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << balance.recursos_vivos << '\\n'\n              << \"FinalDestruidos:\" << balance.bases_destruidas << ',' << balance.derivadas_destruidas << ',' << balance.recursos_destruidos;\n    return 0;\n}\n",
+          "initialStandardInput": "5 9 -4 0 3",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "5 9 -4 0 3",
+                "outputs": [
+                  "Resultado:Rechazado:3\nDestino:Numero:5;Codigo:9\nVivos:2\nCompletados:2,1,4\nDestruidos:1,0,2\nFinalVivos:0\nFinalDestruidos:2,1,4"
+                ],
+                "explanation": "La construcción del candidato debe terminar antes de modificar destino. Un propietario local prepara la derivada completa; después swap transfiere el candidato al destino y deja la medida anterior bajo el propietario local, que la destruye al salir. Si la preparación lanza, destino permanece intacto y los subobjetos completados se limpian automáticamente."
+              },
+              {
+                "standardInput": "0 -3 8 0 1",
+                "outputs": [
+                  "Resultado:Rechazado:1\nDestino:Numero:0;Codigo:-3\nVivos:2\nCompletados:1,1,3\nDestruidos:0,0,1\nFinalVivos:0\nFinalDestruidos:1,1,3"
+                ],
+                "explanation": "La construcción del candidato debe terminar antes de modificar destino. Un propietario local prepara la derivada completa; después swap transfiere el candidato al destino y deja la medida anterior bajo el propietario local, que la destruye al salir. Si la preparación lanza, destino permanece intacto y los subobjetos completados se limpian automáticamente."
+              },
+              {
+                "standardInput": "-7 0 0 -2 2",
+                "outputs": [
+                  "Resultado:Rechazado:2\nDestino:Numero:-7;Codigo:0\nVivos:2\nCompletados:2,1,3\nDestruidos:1,0,1\nFinalVivos:0\nFinalDestruidos:2,1,3"
+                ],
+                "explanation": "La construcción del candidato debe terminar antes de modificar destino. Un propietario local prepara la derivada completa; después swap transfiere el candidato al destino y deja la medida anterior bajo el propietario local, que la destruye al salir. Si la preparación lanza, destino permanece intacto y los subobjetos completados se limpian automáticamente."
+              },
+              {
+                "standardInput": "19 4 -6 10 0",
+                "outputs": [
+                  "Resultado:Aceptado\nDestino:Numero:-6;Codigo:10\nVivos:2\nCompletados:2,2,4\nDestruidos:1,1,2\nFinalVivos:0\nFinalDestruidos:2,2,4"
+                ],
+                "explanation": "La construcción del candidato debe terminar antes de modificar destino. Un propietario local prepara la derivada completa; después swap transfiere el candidato al destino y deja la medida anterior bajo el propietario local, que la destruye al salir. Si la preparación lanza, destino permanece intacto y los subobjetos completados se limpian automáticamente."
+              },
+              {
+                "standardInput": "-11 23 -11 23 0",
+                "outputs": [
+                  "Resultado:Aceptado\nDestino:Numero:-11;Codigo:23\nVivos:2\nCompletados:2,2,4\nDestruidos:1,1,2\nFinalVivos:0\nFinalDestruidos:2,2,4"
+                ],
+                "explanation": "La construcción del candidato debe terminar antes de modificar destino. Un propietario local prepara la derivada completa; después swap transfiere el candidato al destino y deja la medida anterior bajo el propietario local, que la destruye al salir. Si la preparación lanza, destino permanece intacto y los subobjetos completados se limpian automáticamente."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Falla el cuerpo derivado después de preparar ambos recursos. La medida anterior debe conservarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "5 9 -4 0 3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Resultado:Rechazado:3\nDestino:Numero:5;Codigo:9\nVivos:2\nCompletados:2,1,4\nDestruidos:1,0,2\nFinalVivos:0\nFinalDestruidos:2,1,4"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: distintas interrupciones y éxito"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Falla el cuerpo base; el código del intento todavía no se prepara."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 -3 8 0 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Resultado:Rechazado:1\nDestino:Numero:0;Codigo:-3\nVivos:2\nCompletados:1,1,3\nDestruidos:0,0,1\nFinalVivos:0\nFinalDestruidos:1,1,3"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Falla la preparación del recurso del código después de completar la base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-7 0 0 -2 2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Resultado:Rechazado:2\nDestino:Numero:-7;Codigo:0\nVivos:2\nCompletados:2,1,3\nDestruidos:1,0,1\nFinalVivos:0\nFinalDestruidos:2,1,3"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción nueva termina; sustituye el destino y retira el anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "19 4 -6 10 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Resultado:Aceptado\nDestino:Numero:-6;Codigo:10\nVivos:2\nCompletados:2,2,4\nDestruidos:1,1,2\nFinalVivos:0\nFinalDestruidos:2,2,4"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores nuevos coinciden con los anteriores. Aun así se construye otra medida y se retira la anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-11 23 -11 23 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Resultado:Aceptado\nDestino:Numero:-11;Codigo:23\nVivos:2\nCompletados:2,2,4\nDestruidos:1,1,2\nFinalVivos:0\nFinalDestruidos:2,2,4"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: completar la preparación antes de transferir"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Interrupcion { int etapa; };\nstruct Balance {\n    int recursos_vivos = 0;\n    int bases_completadas = 0;\n    int derivadas_completadas = 0;\n    int recursos_completados = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int recursos_destruidos = 0;\n};\nclass Recurso {\npublic:\n    Recurso(int valor, int fallo, Balance& balance) : valor_{valor}, balance_{balance} {\n        if (fallo != 0) { throw Interrupcion{fallo}; }\n        ++balance_.recursos_vivos;\n        ++balance_.recursos_completados;\n    }\n    Recurso(const Recurso&) = delete;\n    Recurso& operator=(const Recurso&) = delete;\n    ~Recurso() noexcept { --balance_.recursos_vivos; ++balance_.recursos_destruidos; }\n    int valor() const noexcept { return valor_; }\nprivate:\n    int valor_;\n    Balance& balance_;\n};\nclass Medida {\npublic:\n    Medida(int numero, int modo, Balance& balance)\n        : numero_{std::make_unique<Recurso>(numero, 0, balance)}, balance_{balance} {\n        if (modo == 1) { throw Interrupcion{1}; }\n        ++balance_.bases_completadas;\n    }\n    virtual ~Medida() noexcept { ++balance_.bases_destruidas; }\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_->valor(); }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero(); }\nprivate:\n    std::unique_ptr<Recurso> numero_;\n    Balance& balance_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, int modo, Balance& balance)\n        : Medida{numero, modo, balance},\n          codigo_{std::make_unique<Recurso>(codigo, modo == 2 ? 2 : 0, balance)}, balance_{balance} {\n        if (modo == 3) { throw Interrupcion{3}; }\n        ++balance_.derivadas_completadas;\n    }\n    ~MedidaIdentificada() noexcept override { ++balance_.derivadas_destruidas; }\n    int codigo() const noexcept { return codigo_->valor(); }\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << codigo();\n    }\nprivate:\n    std::unique_ptr<Recurso> codigo_;\n    Balance& balance_;\n};\nvoid sustituir(std::unique_ptr<Medida>& destino, int numero, int codigo, int modo, Balance& balance) {\n    std::unique_ptr<Medida> candidato = std::make_unique<MedidaIdentificada>(numero, codigo, modo, balance);\n    destino.swap(candidato);\n}\nint main() {\n    int anterior_numero = 0, anterior_codigo = 0, numero = 0, codigo = 0, modo = 0;\n    if (!(std::cin >> anterior_numero >> anterior_codigo >> numero >> codigo >> modo) || modo < 0 || modo > 3) { return 1; }\n    Balance balance;\n    {\n        std::unique_ptr<Medida> destino = std::make_unique<MedidaIdentificada>(anterior_numero, anterior_codigo, 0, balance);\n        int etapa = 0;\n        try {\n            sustituir(destino, numero, codigo, modo, balance);\n        } catch (const Interrupcion& error) {\n            etapa = error.etapa;\n        }\n        std::cout << \"Resultado:\";\n        if (etapa == 0) { std::cout << \"Aceptado\\n\"; }\n        else { std::cout << \"Rechazado:\" << etapa << '\\n'; }\n        std::cout << \"Destino:\";\n        if (destino) { destino->escribir(std::cout); }\n        else { std::cout << \"Vacio\"; }\n        std::cout << '\\n' << \"Vivos:\" << balance.recursos_vivos << '\\n'\n                  << \"Completados:\" << balance.bases_completadas << ',' << balance.derivadas_completadas << ',' << balance.recursos_completados << '\\n'\n                  << \"Destruidos:\" << balance.bases_destruidas << ',' << balance.derivadas_destruidas << ',' << balance.recursos_destruidos << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << balance.recursos_vivos << '\\n'\n              << \"FinalDestruidos:\" << balance.bases_destruidas << ',' << balance.derivadas_destruidas << ',' << balance.recursos_destruidos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "candidato intenta adquirir una MedidaIdentificada completa antes de ejecutar swap. Si make_unique lanza durante la preparación, no se alcanza el intercambio y el destino anterior sigue bajo su propietario. La limpieza de las partes del intento se realiza mientras la excepción sale de la construcción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al aceptar, swap entrega el objeto nuevo a destino y deja el anterior en candidato. Al terminar la función se destruye ese propietario local y retira el objeto anterior una sola vez. Si destino estaba vacío, candidato queda vacío y no tiene un objeto anterior que retirar."
+        },
+        {
+          "type": "paragraph",
+          "text": "También es válida aquí una asignación directa de destino con el resultado de make_unique: primero debe completarse el resultado que se entrega a la asignación del propietario. Si esa preparación lanza, no empieza la asignación. La referencia separa los dos momentos con un nombre para poder seguirlos con claridad."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay un destructor propio de la derivada que arregle una construcción fallida: ese cuerpo sólo corresponde a un objeto que terminó de construirse. Los miembros propietarios y la parte base completada realizan la limpieza que les corresponde. Los registros externos del intento no se deshacen por conservar destino (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el destino no equivale a borrar el historial"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l7_fallo_conserva_objeto_no_cuentas_globales",
+          "question": "Falla el cuerpo de la derivada candidata. El destino conserva el objeto anterior, pero Balance registra dos recursos más completados y destruidos. ¿Es contradictorio?",
+          "options": [
+            "Sí. Conservar el destino exige que ningún objeto del intento haya llegado a construirse.",
+            "No. Los recursos del intento pueden haberse completado y limpiado; el objeto anterior y su propietario se conservan aunque el registro externo muestre esas acciones.",
+            "Sí. Habría que devolver los contadores a sus valores anteriores para acreditar que se limpió el intento."
+          ],
+          "correctIndex": 1,
+          "explanation": "La preparación puede avanzar y después lanzar. Sus recursos completados se destruyen sin reemplazar la medida anterior. Las cuentas describen precisamente esas acciones; reiniciarlas ocultaría información, y no es necesario para conservar el destino."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una excepción no sustituye la decisión de conservar"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l7_vaciar_antes_de_preparar_pierde_destino",
+          "question": "Otra función llama primero a destino.reset() y después intenta make_unique con los datos nuevos. La preparación lanza Interrupcion. ¿Qué ocurre con el contrato?",
+          "options": [
+            "Se cumple, porque lanzar una excepción reconstruye automáticamente el objeto que retiró reset.",
+            "Se cumple siempre que el mensaje de rechazo tenga el mismo número de etapa.",
+            "Se incumple: reset ya retiró el objeto anterior. La limpieza del intento no puede reconstruirlo ni devolverle la propiedad al destino."
+          ],
+          "correctIndex": 2,
+          "explanation": "La limpieza por excepción termina las partes ya construidas del intento. No deshace una destrucción anterior decidida por el programa. Por eso el algoritmo prepara el objeto nuevo antes de tocar destino, y no sólo confía en que exista un catch."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "bdde406b1fca3cffd6da42d0ea2e1fda1da79aca8d20361139cc97ddcafdfc4a"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "8de78422e874e65863eb03ab218e64f6f3f7f1ce17a26e1cf5a71a4cf26f2c3c"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "f85fd29ea5b1d5967d20973a2e4d18778eb53150fca5b7435a8127d2c28389bb"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "854e64804832e6dd4aea3b30ac93f03daa5fcbf77cb2d51b2fec1a77843fc764"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "fdfc88aa5a20ff965b992e9a6ca5fcd710c00a5daed869d0b78bda9fea397047"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "13caaac5b44fcc1b882e25d1a3fc55a5842a5e1f566c9ed644d7ecda093a63d4"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "2fcca8bd9be026d182513b2bccdbbe7adc5d7cd938788312b53763932e99f2b0"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "8e1a427367d24dbe5648747cb466ac921a438660fd5f943dfe4c752e34c3c18e"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "c71abc665f759dae3e4f9351fb1046c8e9dacda953d0da821fb0829285100bf6"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "37241cfa66b7712afda7cc77a9bbc6dd15f95c46afbe2dec342381e3e5303592"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "a1bcedbdeea8ff628767c3c56e7e3c7620106bb421d2edd6441412bee839b16d"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "ce76ad9761dc205c1fa1b601a8fb3f75ed76fbe4ccf40c13ae9efdf2eb627e93"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "2ff45951e714154a9ccf694b4b73ace94c36827382dcbb83cac9efb12763f19f"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0010",
+            "sha256": "8dfab7dfcb51f994cdd837a897721f4e04a44936677a8af594a0cf74a70e36b6"
+          },
+          {
+            "id": "block_0017_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0012",
+            "sha256": "459aca4f45fb9a26ee353fcb9cf1bcf8b329dfc5d973ff316dd6cccce38d5e08"
+          },
+          {
+            "id": "block_0017_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0016",
+            "sha256": "43b34e0f98c701748e7717866d3896c1816e3bd17f744e71d3703f04ce803bc8"
+          },
+          {
+            "id": "block_0017_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0018",
+            "sha256": "17cc091d11d2e6c8b4cd94c0136eb013702b33be03db3c65b67dfe4e080f49dd"
+          },
+          {
+            "id": "block_0017_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0022",
+            "sha256": "1d31b04920940f2a265cf1041a801d197168bcdd06dd25ab5084abd760e9d61e"
+          },
+          {
+            "id": "block_0017_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0024",
+            "sha256": "154e9b18181d6ef86ff736fe292e5081f9e7dad1bde6721be376a2611e62fdd3"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "e708c3269088be07ff626934613f872a259c8b6620a41796bff5e2e5551532a5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "92c77d77030b23a298e7ebb89c989667f4d69b864439cbc72be2f2bd0184a6e8"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "a010cc6c22abb0d8bc775f94a9ae5de3c976ef16bc48869e2abb4526e7deaccc"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008",
+          "block_0017_0009",
+          "block_0017_0010",
+          "block_0017_0011",
+          "block_0017_0012",
+          "block_0017_0013",
+          "block_0017_0014",
+          "block_0017_0015",
+          "block_0017_0016",
+          "block_0017_0017",
+          "block_0017_0018",
+          "block_0017_0019",
+          "block_0017_0020",
+          "block_0017_0021",
+          "block_0017_0022",
+          "block_0017_0023",
+          "block_0017_0024"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "76e93cf98b8c4a74087f021ec621a3e7fac87b30514584e2575edc95cd7fbc2b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "bdde406b1fca3cffd6da42d0ea2e1fda1da79aca8d20361139cc97ddcafdfc4a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "8de78422e874e65863eb03ab218e64f6f3f7f1ce17a26e1cf5a71a4cf26f2c3c"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f85fd29ea5b1d5967d20973a2e4d18778eb53150fca5b7435a8127d2c28389bb"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "854e64804832e6dd4aea3b30ac93f03daa5fcbf77cb2d51b2fec1a77843fc764"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "fdfc88aa5a20ff965b992e9a6ca5fcd710c00a5daed869d0b78bda9fea397047"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "13caaac5b44fcc1b882e25d1a3fc55a5842a5e1f566c9ed644d7ecda093a63d4"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "2fcca8bd9be026d182513b2bccdbbe7adc5d7cd938788312b53763932e99f2b0"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "8e1a427367d24dbe5648747cb466ac921a438660fd5f943dfe4c752e34c3c18e"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "c71abc665f759dae3e4f9351fb1046c8e9dacda953d0da821fb0829285100bf6"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "37241cfa66b7712afda7cc77a9bbc6dd15f95c46afbe2dec342381e3e5303592"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "a1bcedbdeea8ff628767c3c56e7e3c7620106bb421d2edd6441412bee839b16d"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "ce76ad9761dc205c1fa1b601a8fb3f75ed76fbe4ccf40c13ae9efdf2eb627e93"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "2ff45951e714154a9ccf694b4b73ace94c36827382dcbb83cac9efb12763f19f"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0010",
+                "sha256": "8dfab7dfcb51f994cdd837a897721f4e04a44936677a8af594a0cf74a70e36b6"
+              },
+              {
+                "id": "block_0017_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0012",
+                "sha256": "459aca4f45fb9a26ee353fcb9cf1bcf8b329dfc5d973ff316dd6cccce38d5e08"
+              },
+              {
+                "id": "block_0017_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0016",
+                "sha256": "43b34e0f98c701748e7717866d3896c1816e3bd17f744e71d3703f04ce803bc8"
+              },
+              {
+                "id": "block_0017_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0018",
+                "sha256": "17cc091d11d2e6c8b4cd94c0136eb013702b33be03db3c65b67dfe4e080f49dd"
+              },
+              {
+                "id": "block_0017_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0022",
+                "sha256": "1d31b04920940f2a265cf1041a801d197168bcdd06dd25ab5084abd760e9d61e"
+              },
+              {
+                "id": "block_0017_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0024",
+                "sha256": "154e9b18181d6ef86ff736fe292e5081f9e7dad1bde6721be376a2611e62fdd3"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "e708c3269088be07ff626934613f872a259c8b6620a41796bff5e2e5551532a5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "92c77d77030b23a298e7ebb89c989667f4d69b864439cbc72be2f2bd0184a6e8"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "a010cc6c22abb0d8bc775f94a9ae5de3c976ef16bc48869e2abb4526e7deaccc"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

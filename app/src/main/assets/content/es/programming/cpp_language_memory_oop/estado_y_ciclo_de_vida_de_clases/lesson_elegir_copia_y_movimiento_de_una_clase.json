@@ -1,0 +1,2227 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__elegir_copia_y_movimiento_de_una_clase",
+  "title": "Elegir la copia y el movimiento de una clase",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar lo que ocurre al copiar una clase"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya hemos copiado objetos de clases que contienen un vector. Ahora vamos a reconocer las funciones que realizan esas copias y a decidir cuáles debe admitir una clase. Al construir una copia de un objeto interviene un constructor de copia. Al asignar a un objeto que ya existe interviene una función de asignación. Si no escribimos esas funciones, el compilador puede declararlas y definirlas siguiendo las reglas del lenguaje. Cuando hace la declaración sin que nosotros la escribamos, la llamamos declaración implícita (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Lista, el miembro datos_ es un vector<int>. Copiar ese miembro crea otro vector con sus propios elementos int. Por eso cambiar un elemento de una Lista no cambia el elemento de otra Lista copiada. La función generada para la clase utiliza la operación correspondiente del miembro: construye el vector al construir la copia y asigna al vector existente al asignar una Lista (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_copia_implicita_de_miembro_vector",
+          "language": "cpp",
+          "question": "Sigue por separado original, copia y asignada. ¿Qué imprime el programa después de las dos modificaciones?",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = original;\n    Lista asignada;\n    original.cambiar(8);\n    asignada = copia;\n    copia.cambiar(3);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << asignada.primero();\n    return 0;\n}\n",
+          "answers": [
+            "8:3:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia se construyó con los elementos iniciales de original. Después original cambió su primer elemento. asignada recibió mediante asignación el contenido que copia conservaba en ese momento. El cambio posterior de copia no afecta a ninguno de los otros dos vectores."
+        },
+        {
+          "type": "paragraph",
+          "text": "La independencia procede de lo que significa copiar un vector<int>. Una clase con un puntero observador copiaría ese puntero y ambos accesos podrían seguir refiriéndose al mismo objeto. Decir que se copian los miembros no significa que siempre se creen copias de todos los objetos a los que esos miembros permiten acceder (Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer un constructor de copia y una asignación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos líneas siguientes son declaraciones que se escriben dentro de public de la clase Lista; no son un programa independiente. En Lista(const Lista&);, el nombre de la función es el mismo de la clase y no aparece un tipo de retorno. Es un constructor. Su parámetro permite leer otra Lista sin copiarla para entrar en la función y sin modificarla mediante ese parámetro. Esta es la forma de constructor de copia que utilizaremos (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lista(const Lista&);\nLista& operator=(const Lista&);"
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda línea declara una función miembro cuyo nombre es operator=. Se utiliza al escribir una asignación como destino = origen;. destino ya existe; origen aporta el estado que se quiere copiar. El retorno Lista& da acceso al propio destino asignado. Las operaciones de asignación generadas por el compilador devuelven esa referencia; no construyen otro objeto Lista para devolverlo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Lista copia = original;, en cambio, copia se está definiendo e inicializando. Aunque aparezca el signo =, esa instrucción usa construcción por copia. En asignada = copia;, asignada ya existe y se usa asignación. Hay que mirar si se está creando el objeto o cambiando uno existente, no sólo si aparece ese signo (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas anteriores muestran las declaraciones de esas funciones dentro de una clase. Todavía no hemos escrito sus cuerpos. Podemos pedir que el compilador proporcione la operación correspondiente mediante = default, como veremos a continuación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pedir la operación por miembros con = default"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir = default en una de estas funciones pide la definición que proporcionan las reglas del lenguaje. En un constructor de copia, cada miembro se construye desde el miembro correspondiente del origen. No es un cuerpo vacío, ni una orden para devolver todos los miembros a sus valores iniciales. Esos valores iniciales se usan en los contextos de inicialización que les corresponden; no sustituyen lo que debe copiarse desde el origen (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par() = default; declara el constructor que permite construir un Par sin proporcionar argumentos. En este programa utiliza los valores iniciales escritos en los miembros. Par(const Par&) = default; declara otra operación: construir un Par copiando el estado actual de otro Par. La modificación que main haga antes de esa copia importa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_default_copia_estado_actual",
+          "language": "cpp",
+          "question": "¿Qué imprime el programa? Distingue los valores iniciales escritos en la clase del estado que tiene original cuando se copia.",
+          "code": "#include <iostream>\n\nstruct Par {\n    Par() = default;\n    Par(const Par&) = default;\n    int primero = 2;\n    int segundo = 5;\n};\n\nint main() {\n    Par original;\n    original.primero = 8;\n    Par copia = original;\n    std::cout << original.primero << ':' << copia.primero << ':' << copia.segundo;\n    return 0;\n}\n",
+          "answers": [
+            "8:8:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor sin argumentos inicializa original. main cambia después su primer miembro. El constructor de copia copia ambos miembros desde el estado que original tiene en ese momento; no vuelve a aplicar a copia los valores iniciales escritos junto a los miembros."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas declaraciones, default es una palabra clave después de =. No es el nombre de una función que se llame dentro del cuerpo. Usaremos esa misma notación para solicitar las operaciones de asignación y movimiento por miembros (Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y asignación por movimiento de una clase"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lección anterior distinguió ofrecer movimiento con std::move de ejecutar una operación que lo utilice. Esa distinción también se aplica a nuestras clases. Estas son las declaraciones de movimiento que utilizaremos dentro de public de la clase Caja; el fragmento no es un programa independiente. El constructor recibe Caja&& y la asignación recibe Caja&& y devuelve Caja& (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Caja(Caja&&);\nCaja& operator=(Caja&&);"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor prepara una Caja nueva desde el origen ofrecido. La asignación cambia una Caja que ya existe. El parámetro && es una referencia al origen, no otro propietario creado por el mero enlace. La función de movimiento es la que realiza las operaciones sobre los miembros. El tipo Caja& del retorno de la asignación vuelve a referirse al destino, como en la asignación por copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la clase permite que el compilador genere estas operaciones, el movimiento se realiza miembro por miembro. En la Caja siguiente, el miembro propietario es un unique_ptr<int>. Su construcción por movimiento transfiere la responsabilidad sobre el int. No copia el int para crear otro objeto gestionado. El origen de ese unique_ptr queda vacío, como ya estudiamos para ese tipo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_movimiento_implicito_de_miembro_unique",
+          "language": "cpp",
+          "question": "¿Qué muestran la presencia en origen y el valor consultado en destino?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    std::cout << origen.hay() << ':' << destino.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Caja no añade declaraciones que impidan generar el constructor de movimiento. Éste construye el unique_ptr de destino por movimiento desde el miembro de origen. El int sigue vivo bajo el propietario de destino; main no intenta consultar el valor de la Caja vacía."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicializador del miembro dato_ permite crear un int al construir una Caja sin argumentos. El constructor de movimiento generado no utiliza ese inicializador para crear otro int antes de transferir: inicializa el miembro directamente desde el origen. El estado del origen después de mover depende de los tipos de sus miembros y de sus operaciones; no hay una regla que vacíe por igual cualquier clase (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "valor() y cambiar() requieren que la Caja tenga objeto, porque utilizan *dato_. hay() permite comprobarlo sin acceder al int. En los programas preparados sólo se consulta o modifica el valor de Cajas que tienen objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prohibir una operación con = delete"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una clase puede declarar que no admite una operación. Por ejemplo, Caja(const Caja&) = delete; prohíbe construir una Caja por copia mediante esa función. Caja& operator=(const Caja&) = delete; prohíbe la asignación por copia correspondiente. Si una instrucción necesita una de esas funciones eliminadas, el programa se rechaza al compilar. = delete no es la expresión delete que destruye un objeto dinámico: aquí no se ejecuta ninguna liberación (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia de una clase que contiene un unique_ptr tampoco se vuelve posible por escribir = default en su constructor de copia. El compilador tendría que copiar ese miembro, y unique_ptr no permite hacerlo. La operación predeterminada de la clase queda definida como eliminada. = default solicita la operación por miembros; no inventa una copia del int gestionado ni elimina las restricciones del miembro (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "También podemos prohibir la copia por una decisión de interfaz, aunque los miembros sí puedan copiarse. Registro contiene un int, pero declara eliminadas sus operaciones de copia y permite las de movimiento. Sigue qué operación se solicita en su main y qué significa para un miembro int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_copia_prohibida_movimiento_permitido",
+          "language": "cpp",
+          "question": "¿Qué imprime el movimiento permitido de Registro? No confundas prohibir la copia de la clase con borrar el valor de un miembro int.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Registro {\n    Registro() = default;\n    Registro(const Registro&) = delete;\n    Registro& operator=(const Registro&) = delete;\n    Registro(Registro&&) = default;\n    Registro& operator=(Registro&&) = default;\n    int valor = 5;\n};\n\nint main() {\n    Registro origen;\n    Registro destino = std::move(origen);\n    std::cout << origen.valor << ':' << destino.valor;\n    return 0;\n}\n",
+          "answers": [
+            "5:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La inicialización solicita el constructor de movimiento, que está permitido. La operación generada inicializa el miembro int con el valor correspondiente del origen. Ese movimiento de un int no vacía ni pone a cero al entero original. Las declaraciones = delete sólo impedirían las operaciones de copia de Registro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "std::move también puede terminar en una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Declarar un constructor de copia o una asignación por copia influye en las operaciones que el compilador declara automáticamente. En Lista, las declaraciones de copia del programa siguiente impiden que se declaren implícitamente las operaciones de movimiento. Eso no impide usar las operaciones de copia que sí están disponibles (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::move(original) sigue ofreciendo original como una expresión xvalue. No crea por sí mismo un constructor de movimiento. En esta Lista no se ha declarado un constructor de movimiento y el constructor de copia recibe const Lista&. Ese parámetro puede vincularse con el origen ofrecido, de modo que la inicialización utiliza la copia. Para saber qué ha ocurrido hay que revisar las funciones de la clase, además de la expresión que aporta el origen (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_move_sin_constructor_de_movimiento",
+          "language": "cpp",
+          "question": "¿Qué imprime el programa tras modificar original? Determina qué función inicializa copia.",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 6};\n};\n\nint main() {\n    Lista original;\n    Lista copia = std::move(original);\n    original.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n",
+          "answers": [
+            "8:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Lista declara copia y no declara movimiento. La inicialización utiliza Lista(const Lista&), que copia su vector. original conserva su propio vector y su modificación posterior no cambia el vector de copia. Que aparezca std::move no demuestra que se haya llamado a un constructor de movimiento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este caso permite comprobar la copia sin consultar el estado de un vector movido: aquí el vector se ha copiado. No lo conviertas en una predicción de que cualquier vector quedará vacío o conservará exactamente su contenido después de un movimiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un destructor declarado cambia la generación implícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aunque sólo escribamos ~Caja() = default; dentro de public de Caja, hemos declarado el destructor en la clase. El compilador seguirá proporcionando su definición, pero esa declaración impide que declare implícitamente las operaciones de movimiento de Caja. No hace falta escribir un cuerpo propio para producir ese efecto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "~Caja() = default;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si añadimos únicamente esa declaración a la Caja con unique_ptr que vimos antes, la inicialización desde std::move(origen) ya no dispone de su constructor de movimiento implícito. Intentar utilizar la copia tampoco resuelve el problema: el miembro unique_ptr impide copiar Caja. El resultado es un rechazo de compilación, no una transferencia que falla durante la ejecución."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l6_destructor_default_y_movimiento",
+          "question": "Caja contiene un unique_ptr<int> y antes podía construirse por movimiento sin declaraciones propias. Se añade únicamente ~Caja() = default; y deja de compilar la construcción desde std::move(origen). ¿Cuál es la explicación?",
+          "options": [
+            "Declarar el destructor impide también generar el constructor sin argumentos, de modo que ya no puede construirse origen.",
+            "std::move exige un constructor de movimiento con un cuerpo escrito por el autor y nunca permite utilizar uno generado por el compilador.",
+            "El destructor declarado impide generar el movimiento implícito y la copia implícita queda eliminada porque el miembro unique_ptr no se puede copiar."
+          ],
+          "correctIndex": 2,
+          "explanation": "La declaración del destructor altera qué operaciones de movimiento se declaran implícitamente. No impide por sí sola el constructor sin argumentos. std::move puede utilizar un constructor de movimiento generado si éste está disponible. La clase puede declarar explícitamente sus movimientos para volver a permitirlos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso es útil distinguir dos ideas: que el compilador proporcione el cuerpo de una función y que declare esa función sin que nosotros la nombremos. = default pide el cuerpo predeterminado, pero la función escrita así sigue siendo una declaración que hemos añadido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir explícitamente las operaciones de Caja"
+        },
+        {
+          "type": "paragraph",
+          "text": "La Caja siguiente hace visible su decisión: no admite copia y sí admite construcción y asignación por movimiento. Escribe = default en esas dos operaciones de movimiento para que utilicen los movimientos de sus miembros. El destructor también está declarado como predeterminado; no bloquea los movimientos que se han declarado explícitamente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al declarar constructores, como el de copia o el de movimiento, ya no contamos con que se declare automáticamente el constructor sin argumentos. Si queremos seguir escribiendo Caja origen; y los miembros permiten esa inicialización, podemos declararlo con Caja() = default;. Así conservamos esa forma de crear la Caja (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_politica_explicita_caja",
+          "language": "cpp",
+          "question": "Distingue la construcción de destino de la asignación posterior a otra. ¿Qué imprime el programa?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Caja {\npublic:\n    Caja() = default;\n    Caja(const Caja&) = delete;\n    Caja& operator=(const Caja&) = delete;\n    Caja(Caja&&) = default;\n    Caja& operator=(Caja&&) = default;\n    ~Caja() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    void cambiar(int valor) { *dato_ = valor; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Caja origen;\n    Caja destino = std::move(origen);\n    Caja otra;\n    destino.cambiar(7);\n    otra = std::move(destino);\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:0:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "destino se construye por movimiento y recibe el int de origen. otra se construye después sin argumentos y empieza gestionando otro int. La asignación por movimiento a otra termina ese int anterior y transfiere el que gestionaba destino. Los dos orígenes de esas transferencias entre objetos distintos quedan vacíos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las declaraciones del constructor y de la asignación por movimiento son distintas porque hacen trabajos distintos. La asignación tiene que tratar el estado anterior del destino; la construcción no tiene un miembro propietario ya construido cuyo objeto deba sustituirse. Ambas usan las operaciones de unique_ptr en este ejemplo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un miembro que no permite una operación puede impedir también la operación predeterminada de la clase. Escribir = default no garantiza que todas las combinaciones de miembros sean copiables o movibles. Es una petición de las operaciones correspondientes de esos miembros, no una forma de saltarse sus condiciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la limpieza a través de un miembro propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sobre contiene un unique_ptr<Marca>. Al asignar por movimiento entre dos Sobres, se asigna por movimiento ese miembro propietario. El destino deja de gestionar su Marca anterior y recibe la que gestionaba el origen. Cuando se destruye el Sobre que todavía tiene objeto, la destrucción de su miembro unique_ptr se encarga de la Marca. El destructor predeterminado de Sobre no necesita escribir un delete propio (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa imprime desde el constructor y el destructor de Marca, además de consultar el estado de los Sobres. Esas impresiones permiten distinguir la Marca que termina durante la asignación de la que termina al salir del bloque. No se imprimen direcciones ni se consulta un objeto después de destruirlo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_asignacion_default_y_limpieza",
+          "language": "cpp",
+          "question": "Escribe la traza completa, desde la primera creación hasta Fuera.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Marca {\npublic:\n    Marca(char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"Crear:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() { std::cout << \"Destruir:\" << etiqueta_ << '\\n'; }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nclass Sobre {\npublic:\n    Sobre(char etiqueta) : dato_{std::make_unique<Marca>(etiqueta)} {}\n    Sobre(const Sobre&) = delete;\n    Sobre& operator=(const Sobre&) = delete;\n    Sobre(Sobre&&) = default;\n    Sobre& operator=(Sobre&&) = default;\n    ~Sobre() = default;\n    bool hay() const { return dato_ != nullptr; }\n    char etiqueta() const { return dato_->etiqueta(); }\nprivate:\n    std::unique_ptr<Marca> dato_;\n};\n\nint main() {\n    {\n        Sobre origen{'A'};\n        Sobre destino{'B'};\n        destino = std::move(origen);\n        std::cout << \"Estados:\" << origen.hay() << ':' << destino.etiqueta() << '\\n';\n    }\n    std::cout << \"Fuera\";\n    return 0;\n}\n",
+          "answers": [
+            "Crear:A\nCrear:B\nDestruir:B\nEstados:0:A\nDestruir:A\nFuera"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero se crean las Marcas de origen y destino. La asignación al destino destruye su Marca anterior antes de que main imprima Estados. El origen queda sin Marca. Al salir del bloque, el destino destruye el miembro que conserva la Marca transferida, y con él termina esa Marca. Después se imprime Fuera."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir las operaciones sin escribirlas por rutina"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor por defecto, que puede llamarse sin argumentos, los constructores de copia y de movimiento, las dos asignaciones y el destructor forman el conjunto de seis funciones miembro especiales que estamos estudiando. El lenguaje tiene reglas para declararlas y definirlas. Cuando una se declara expresamente, puede cambiar la generación de otras. Por ejemplo, declarar copia impide el movimiento implícito; declarar un movimiento hace que las copias implícitas queden eliminadas si no se declaran también de forma apropiada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Como ayuda para revisar un diseño se habla de regla de cero: recomienda apoyarse en miembros que ya gestionan correctamente sus recursos, evitando escribir operaciones propias sin necesidad. No significa que una clase no pueda tener métodos ni constructores que preparen su estado (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla de tres agrupa destructor, constructor de copia y asignación por copia. La de cinco añade constructor y asignación por movimiento. Son orientaciones para revisar cómo se relacionan esas operaciones cuando se toma control de alguna de ellas; no son condiciones que el compilador obligue a cumplir ni mandatos para escribir siempre todas sus declaraciones (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La Lista inicial con vector no necesita seis declaraciones por costumbre: sus miembros ya permiten las operaciones que quiere ofrecer. La Caja con unique_ptr puede aprovechar el movimiento generado sin copiar; las declaraciones explícitas sirven cuando necesitamos expresar una política o cuando otras declaraciones han impedido la generación deseada. Un puntero observador, por sí solo, tampoco convierte a su clase en responsable de borrar el objeto observado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l6_criterio_operaciones_especiales",
+          "question": "Una clase sólo contiene vector<int> y sus operaciones generadas cumplen el contrato de copia independiente y limpieza. ¿Qué decisión está justificada?",
+          "options": [
+            "Conservar las operaciones generadas mientras cumplan el contrato, y revisar su efecto si se añaden otras declaraciones o miembros.",
+            "Escribir siempre las seis declaraciones porque una clase con recursos no puede utilizar funciones generadas.",
+            "Eliminar la copia para impedir que los dos vectores copiados se encarguen de liberar los mismos elementos int."
+          ],
+          "correctIndex": 0,
+          "explanation": "El vector ya realiza la copia y la limpieza apropiadas para sus elementos int. La clase puede aprovechar esas operaciones. Las reglas orientativas no obligan a escribir seis declaraciones, y copiar el vector no crea dos propietarios de un mismo conjunto de elementos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí hemos usado = default para esas operaciones especiales. C++23 permite también esa notación en ciertas comparaciones, que estudiaremos cuando corresponda; no la presentaremos como exclusiva de estas seis funciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La operación por miembros no repara un invariante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un invariante puede relacionar varios miembros. El contrato elegido para Panel exige que cantidad_ indique uno cuando gestiona el int y cero cuando está vacío. La consulta coherente compara la presencia del propietario con cantidad_ == 1; permite detectar la contradicción que puede aparecer en los estados de este programa. Se consultan datos establecidos y nunca se desreferencia el propietario vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Panel no escribe sus operaciones de movimiento. Sigue por separado el movimiento del miembro unique_ptr y la inicialización del miembro int. Después comprueba si el resultado satisface el contrato conjunto. Que cada operación de miembro esté permitida no demuestra por sí solo que la combinación mantenga el significado que queremos para la clase (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l6_movimiento_por_miembros_e_invariante",
+          "language": "cpp",
+          "question": "¿Qué muestran la presencia, la cantidad y la coherencia del origen, seguidas de la coherencia del destino?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Panel {\npublic:\n    bool hay() const { return dato_ != nullptr; }\n    int cantidad() const { return cantidad_; }\n    bool coherente() const { return hay() == (cantidad_ == 1); }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(6);\n    int cantidad_ = 1;\n};\n\nint main() {\n    Panel origen;\n    Panel destino = std::move(origen);\n    std::cout << origen.hay() << ':' << origen.cantidad() << ':'\n              << origen.coherente() << ':' << destino.coherente();\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El unique_ptr de origen queda vacío al transferirse, pero mover un int conserva en origen el valor que tenía cantidad_. Por eso el origen conserva cantidad_ igual a uno sin gestionar un int, y coherente lo detecta. El destino recibe ambos miembros de forma compatible con el contrato. La consulta es definida: el problema es el invariante lógico, no una lectura de memoria liberada."
+        },
+        {
+          "type": "paragraph",
+          "text": "La responsabilidad sobre el int sigue siendo única y su limpieza continúa siendo automática. Lo que no se ha mantenido es la relación entre ese propietario y el contador del origen. Un diseño puede evitar guardar una cantidad que ya puede calcularse a partir de la presencia del propietario, o proporcionar operaciones que mantengan esa relación. Antes de escribirlas debemos fijar qué estados y acciones acepta la clase; no basta con añadir = default como una reparación universal."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar una política de copia y movimiento"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l6_completar_default_delete",
+          "question": "Completa cada hueco con una sola palabra clave. Hoja debe declarar explícitamente eliminada la construcción por copia y pedir al compilador la construcción y la asignación por movimiento por miembros. Conserva las declaraciones y las transferencias de main; no escribas cuerpos de funciones ni instrucciones de liberación.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nclass Hoja {\npublic:\n    Hoja() = default;\n    Hoja(const Hoja&) = [];\n    Hoja& operator=(const Hoja&) = delete;\n    Hoja(Hoja&&) = [];\n    Hoja& operator=(Hoja&&) = [];\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\n\nint main() {\n    Hoja origen;\n    Hoja destino = std::move(origen);\n    Hoja otra;\n    otra = std::move(destino);\n    std::cout << origen.hay() << ':' << destino.hay() << ':' << otra.valor();\n    return 0;\n}\n",
+          "answers": [
+            "delete",
+            "default",
+            "default"
+          ],
+          "explanation": "delete elimina la construcción por copia. default solicita las dos operaciones de movimiento por miembros. El miembro unique_ptr realiza la transferencia; ninguna de esas palabras es un cuerpo vacío ni una instrucción para copiar el int gestionado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar una copia que debe aceptar una fuente constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa quiere construir copia leyendo original, que es una Lista constante. La copia debe tener elementos independientes para poder cambiar su primer valor sin modificar original. El inicial se rechaza al compilar: el parámetro del constructor de copia escrito en la clase no puede vincularse con esa fuente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Corrige únicamente el tipo de ese parámetro para que permita leer la Lista constante y mantenga la construcción por copia predeterminada. Conserva el constructor sin argumentos, la asignación proporcionada, el miembro vector y todo main. No retires const de original, no conviertas copia en una referencia y no sustituyas la copia por un movimiento."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay entrada. El programa reparado debe imprimir 3:8, sin salto final. Esa salida compara el primer valor del original constante con el de la copia modificada."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:8"
+                ],
+                "explanation": "El tipo del parámetro determina qué objetos pueden servir como fuente. La fuente constante debe poder leerse mediante ese parámetro. La operación predeterminada copia su vector y la modificación posterior afecta sólo al destino."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: permitir la lectura sin modificar la fuente"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <utility>\n\nclass Lista {\npublic:\n    Lista() = default;\n    Lista(const Lista&) = default;\n    Lista& operator=(const Lista&) = default;\n    int primero() const { return datos_[0]; }\n    void cambiar(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{3, 6};\n};\n\nint main() {\n    const Lista original;\n    Lista copia = original;\n    copia.cambiar(8);\n    std::cout << original.primero() << ':' << copia.primero();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lista(const Lista&) permite vincular su parámetro con original, que es constante. La referencia evita construir una copia para entrar en el propio constructor de copia, y const impide modificar el origen por ese parámetro. = default construye el miembro vector desde el vector de original (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia tiene sus propios elementos int. cambiar modifica el primer elemento de ese vector y original conserva su estado. El constructor que recibía Lista& no era una operación inválida por su forma: podía copiar una Lista modificable, pero no aceptaba la fuente constante requerida aquí. La reparación amplía las fuentes admitidas sin cambiar el contrato de independencia (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer qué operación declara cada firma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las firmas siguientes corresponden a una clase llamada Caja. Relaciona cada una con su función. Aquí identificamos el tipo de operación que se declara; escribir = delete en una de ellas impediría utilizarla, pero no cambiaría qué operación es."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l6_firmas_especiales",
+          "prompt": "Relaciona cada firma con la acción que describe. Separa construir un objeto nuevo de asignar a un objeto que ya existe.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "firmas",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "default_ctor",
+                  "label": "Caja()"
+                },
+                {
+                  "id": "copy_ctor",
+                  "label": "Caja(const Caja&)"
+                },
+                {
+                  "id": "move_ctor",
+                  "label": "Caja(Caja&&)"
+                },
+                {
+                  "id": "copy_assign",
+                  "label": "Caja& operator=(const Caja&)"
+                },
+                {
+                  "id": "move_assign",
+                  "label": "Caja& operator=(Caja&&)"
+                },
+                {
+                  "id": "destructor",
+                  "label": "~Caja()"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "asignar_movimiento",
+                  "label": "Asignar por movimiento a un objeto existente."
+                },
+                {
+                  "id": "crear_copia",
+                  "label": "Construir un objeto nuevo por copia."
+                },
+                {
+                  "id": "terminar",
+                  "label": "Realizar la destrucción del objeto."
+                },
+                {
+                  "id": "crear_movimiento",
+                  "label": "Construir un objeto nuevo por movimiento."
+                },
+                {
+                  "id": "crear_sin_fuente",
+                  "label": "Construir sin recibir otro objeto de origen."
+                },
+                {
+                  "id": "asignar_copia",
+                  "label": "Asignar por copia a un objeto existente."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "default_ctor": "crear_sin_fuente",
+                  "copy_ctor": "crear_copia",
+                  "move_ctor": "crear_movimiento",
+                  "copy_assign": "asignar_copia",
+                  "move_assign": "asignar_movimiento",
+                  "destructor": "terminar"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los constructores tienen el nombre de la clase y no declaran un tipo de retorno. operator= se utiliza con un destino existente; las firmas mostradas devuelven una referencia a él. El destructor se identifica por ~.",
+            "incorrect": "Mira primero si la firma nombra Caja, operator= o ~Caja. Después distingue const Caja& de Caja&& en las operaciones que reciben un origen."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: declarar cómo se puede utilizar Ficha"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ficha contiene un miembro unique_ptr<int> llamado dato_. Una ficha creada sin argumentos empieza gestionando un int con valor cuatro. También es válido que una ficha quede vacía después de una transferencia o de llamar a vaciar. hay permite distinguir los dos estados; valor requiere que haya objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "La interfaz proporcionada prohíbe copiar Ficha: conserva su constructor de copia y su asignación por copia con = delete. También contiene ~Ficha() = default;. Esa declaración del destructor se mantiene en esta práctica para trabajar con el control explícito de las operaciones. No significa que todas las clases con RAII necesiten declarar un destructor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade dentro de public las tres definiciones que faltan:\nUn constructor sin argumentos que utilice la inicialización normal de los miembros.\nUn constructor de movimiento que utilice el movimiento por miembros.\nUna asignación por movimiento que utilice la asignación por miembros.\nEn las tres, solicita el comportamiento generado con = default. No escribas cuerpos propios, no retires las prohibiciones de copia y no cambies el destructor proporcionado."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial no compila. El constructor de copia declarado, aunque esté eliminado, impide obtener automáticamente el constructor sin argumentos. Además, las declaraciones proporcionadas impiden generar implícitamente las operaciones de movimiento que necesita entregar. Añadir sólo una de las tres definiciones no resuelve las otras operaciones que utiliza el programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta clase no mantiene un contador separado de su objeto gestionado. La presencia se consulta al miembro propietario. Por eso, al mover ese miembro y dejarlo vacío, las consultas de Ficha continúan interpretando correctamente su estado. No hay que restablecer otro campo que diga que todavía posee un objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una ficha intermedia y después asignar"
+        },
+        {
+          "type": "paragraph",
+          "text": "entregar recibe referencias a dos fichas existentes. Antes de mover, compara sus direcciones y comprueba si el origen tiene objeto. Rechaza si las dos referencias identifican la misma ficha o si el origen está vacío. Ninguna de esas comprobaciones crea otro propietario ni cambia los estados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al aceptar, entregar realiza dos pasos:\nFicha intermedia = std::move(origen); construye una ficha nueva usando el constructor de movimiento. Su miembro pasa a gestionar el mismo int que tenía el origen, y éste queda vacío.\ndestino = std::move(intermedia); utiliza la asignación por movimiento sobre la ficha de destino ya existente. Su miembro recibe ese mismo int; si gestionaba otro, destruye el anterior. La intermedia queda vacía."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al salir de entregar termina la ficha intermedia. Como ya está vacía, no destruye el int que ahora mantiene el destino. Las fichas de origen y destino siguen existiendo. Sus miembros propietarios mantienen la responsabilidad correspondiente a su estado actual."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los movimientos generados inicializan o asignan el miembro desde el miembro de la fuente. No vuelven a ejecutar make_unique<int>(4) para preparar otro int durante el movimiento. Esa creación pertenece a la construcción sin argumentos de una ficha nueva. La diferencia también evita solicitar almacenamiento innecesario en entregar."
+        },
+        {
+          "type": "paragraph",
+          "text": "poner, cambiar y vaciar ya están implementadas. poner prepara un objeto con un valor de cero a nueve y lo intercambia después de crearlo; si falla la reserva, conserva el anterior. cambiar sólo acepta valores de cero a nueve cuando hay objeto, sin sustituirlo por otro. vaciar destruye el objeto actual y acepta también cuando ya estaba vacío. No modifiques estas funciones ni entregar ni main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Usar las operaciones declaradas en una historia"
+        },
+        {
+          "type": "paragraph",
+          "text": "main crea dos fichas sin argumentos. Ambas empiezan con cuatro; después cambia el entero de la segunda a siete. El índice cero identifica la primera y el uno, la segunda. Los índices sólo se utilizan después de comprobar que sean cero o uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza con una cantidad de órdenes de uno a doce. Cada orden contiene tres enteros, operacion, a y b:\n1 a b: entregar desde la ficha de índice a a la de índice b.\n2 a b: poner un objeto nuevo con valor b en la ficha a.\n3 a b: vaciar la ficha a; b se lee y se ignora.\n4 a b: cambiar a b el entero que ya gestiona la ficha a.\nOtra operación o un índice requerido inválido: rechazo sin cambios.\nLas órdenes de una ejecución actúan sobre las mismas dos fichas y se procesan en el orden escrito."
+        },
+        {
+          "type": "paragraph",
+          "text": "El informe conserva el orden de los índices cero y uno. X significa ficha vacía; cero significa un int presente con ese valor. Resultado vale uno al aceptar y cero al rechazar. Antes utiliza dos indicadores de presencia y copias de los enteros previos, tomadas antes de la orden. Actual consulta las fichas después. Final muestra cómo quedan tras la última orden."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera historia empieza entregando desde la primera ficha a la segunda. El int que guardaba cuatro pasa por la ficha intermedia y termina bajo la segunda. El int anterior de la segunda se destruye. Antes todavía puede mostrar su valor siete porque main lo había copiado. La orden siguiente se rechaza porque la primera ficha ya quedó vacía."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade únicamente las tres definiciones especiales dentro de la clase. No sustituyas las transferencias de entregar por copias de enteros ni alteres los textos del informe para imitar las salidas. Dos fichas distintas con enteros iguales siguen siendo objetos diferentes y pueden transferirse según el contrato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar el tipo y utilizarlo sin copiar propietarios"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el editor. Sólo el primer caso correcto es obligatorio para avanzar. Las otras historias se presentan después como ensayos opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    // Añade el constructor sin argumentos y las dos operaciones de movimiento.\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:X:4\nResultado:0;Antes:X:4;Actual:X:4\nResultado:1;Antes:X:4;Actual:0:4\nResultado:1;Antes:0:4;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:1;Antes:X:0;Actual:0:X\nResultado:1;Antes:0:X;Actual:9:X\nResultado:1;Antes:9:X;Actual:X:X\nResultado:0;Antes:X:X;Actual:X:X\nResultado:1;Antes:X:X;Actual:X:6\nResultado:1;Antes:X:6;Actual:6:X\nFinal:6:X"
+                ],
+                "explanation": "La construcción de la intermedia y la asignación al destino son operaciones diferentes de Ficha. Las definiciones generadas se apoyan en las operaciones de su miembro unique_ptr; las copias de la clase permanecen prohibidas."
+              },
+              {
+                "standardInput": "6\n1 1 0\n2 1 7\n1 0 1\n3 0 9\n2 0 0\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:7:X\nResultado:1;Antes:7:X;Actual:7:7\nResultado:1;Antes:7:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:0:7\nResultado:1;Antes:0:7;Actual:7:X\nFinal:7:X"
+                ],
+                "explanation": "La construcción de la intermedia y la asignación al destino son operaciones diferentes de Ficha. Las definiciones generadas se apoyan en las operaciones de su miembro unique_ptr; las copias de la clase permanecen prohibidas."
+              },
+              {
+                "standardInput": "8\n1 0 2\n2 -1 4\n2 0 2147483647\n2 1 -2147483648\n4 0 -1\n3 2 0\n8 0 1\n1 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:1;Antes:4:7;Actual:7:X\nFinal:7:X"
+                ],
+                "explanation": "La construcción de la intermedia y la asignación al destino son operaciones diferentes de Ficha. Las definiciones generadas se apoyan en las operaciones de su miembro unique_ptr; las copias de la clase permanecen prohibidas."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma historia combina construcción y asignación por movimiento, reutilización de fichas vacías, cero válido y rechazos que conservan el estado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n1 0 1\n1 0 1\n2 0 0\n1 0 1\n1 1 1\n1 -1 0\n1 1 0\n4 0 9\n3 0 0\n1 0 1\n2 1 6\n1 1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4:7\nResultado:1;Antes:4:7;Actual:X:4\nResultado:0;Antes:X:4;Actual:X:4\nResultado:1;Antes:X:4;Actual:0:4\nResultado:1;Antes:0:4;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:0;Antes:X:0;Actual:X:0\nResultado:1;Antes:X:0;Actual:0:X\nResultado:1;Antes:0:X;Actual:9:X\nResultado:1;Antes:9:X;Actual:X:X\nResultado:0;Antes:X:X;Actual:X:X\nResultado:1;Antes:X:X;Actual:X:6\nResultado:1;Antes:X:6;Actual:6:X\nFinal:6:X"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: valores iguales y datos rechazados"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos fichas distintas pueden gestionar enteros de valor siete. La entrega se acepta y deja vacío al origen. Vaciar una ficha ya vacía sigue siendo un éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\n1 1 0\n2 1 7\n1 0 1\n3 0 9\n2 0 0\n1 1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4:7\nResultado:1;Antes:4:7;Actual:7:X\nResultado:1;Antes:7:X;Actual:7:7\nResultado:1;Antes:7:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:0:7\nResultado:1;Antes:0:7;Actual:7:X\nFinal:7:X"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores e índices rechazados conservan las fichas. Los enteros extremos caben en el int de Windows usado en el curso y se rechazan por comparación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 0 2\n2 -1 4\n2 0 2147483647\n2 1 -2147483648\n4 0 -1\n3 2 0\n8 0 1\n1 1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:0;Antes:4:7;Actual:4:7\nResultado:1;Antes:4:7;Actual:7:X\nFinal:7:X"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: miembros propietarios y operaciones generadas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\n#include <new>\n\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nclass Ficha {\npublic:\n    Ficha() = default;\n    Ficha(Ficha&&) = default;\n    Ficha& operator=(Ficha&&) = default;\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nbool Ficha::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Ficha::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Ficha::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool entregar(Ficha& origen, Ficha& destino) {\n    if (&origen == &destino || !origen.hay()) {\n        return false;\n    }\n    Ficha intermedia = std::move(origen);\n    destino = std::move(intermedia);\n    return true;\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Ficha& primera, const Ficha& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Ficha primera;\n    Ficha segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            Ficha& origen = a == 0 ? primera : segunda;\n            Ficha& destino = b == 0 ? primera : segunda;\n            aceptado = entregar(origen, destino);\n        } else if (indice_valido(a)) {\n            Ficha& ficha = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = ficha.poner(b);\n            } else if (operacion == 3) {\n                aceptado = ficha.vaciar();\n            } else if (operacion == 4) {\n                aceptado = ficha.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ficha() = default permite crear las fichas iniciales usando su inicializador de miembro. Las otras dos definiciones recuperan explícitamente el constructor y la asignación de movimiento. Las prohibiciones de copia y el destructor declarado se mantienen; escribir = default para los movimientos no habilita esas copias."
+        },
+        {
+          "type": "paragraph",
+          "text": "En entregar, construir intermedia mueve el miembro del origen. Asignar al destino mueve ese miembro otra vez y termina el objeto anterior del destino. Al acabar la función, el destructor generado de la intermedia destruye un propietario vacío. El entero recibido permanece vivo bajo la ficha de destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se escribió un delete manual ni un destructor con lógica propia. El miembro realiza la limpieza. Al diseñar una clase nueva, primero comprueba si los miembros y sus operaciones generadas ya expresan el comportamiento que necesitas. Declarar operaciones innecesarias puede cambiar otras disponibles; repetir siempre estas seis declaraciones no es una regla universal (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí decidimos conservar propiedad exclusiva y prohibir la copia. Más adelante aprenderás otra decisión de diseño: construir una copia independiente del objeto gestionado y conservar el destino si no se puede preparar esa copia. Para conseguirlo habrá que definir el comportamiento de copia correspondiente; = default no lo inventa para un miembro unique_ptr."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "76e7fadb6f0bf4606908123eba76240197ec6d679b818ecf68892d5933db9e56"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "58c062a66b1422a88f9c58951817fb45b60b54347bb2895fd51ada7408b5c578"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "0e973b2766bd52bcfa190908d3cb83e6b5140a7206bec074da4f4350e3d1d594"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "35c3ee566011ce9ebd6f8d88344fe12bd0f37ba2d16f738ecf81d33fbb30af2d"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "d87e5d8d5dbc9dd3c68ed503d9294d86e676f4e4238b363477c78f345e12cf53"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "40a9d9aacaaea2aad630c203571cef66768661915c545519a6ba1e7af514478e"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "820c163b7c17c117a2ab9d77d13dc25ff5c08736f59e8b59d1fc9c6c9239553f"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "9799955ff448ca5b42573148a376d408785d20ed14dc0707e44d4987d3b0ebff"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "279d636c297239b02d4a6f5c51555c7c051ffef343894ab99d835f92e55feabf"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "58048ecef5cb983f4a69fa4bc6318e0da2d5ba52383bd2f79ed1d0f3f04610d8"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "42bd57f4e2df0d4b352789813e8f1f931ae2051a38785a4928a7641e60bae4c4"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "edbf8d0fec10301d0ddd760191591bd90396bebf457f0638c5fc25773b789e45"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "0fb361c38aa735cdcabc1f40450e599009c207c3ff68e3ba78c21bebfbaaf409"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "5c08bed49ffacaa2c1fcd6f598e05a8fd8c5a0eabf00ebc8ce1c78f60820626e"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "b36f5882e8d43c524b1aafe2e69151e0e0d597aaef841964e1355d97d2076db5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "ce3dc816301dc5aaa94e0ab39a4e152cdf0c2f6c8257833c3d29f73dca94aa65"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "931881d7b70c9319059794ab9802aebbf528c5b6fa198bfc20a876ff083b08d6"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "ccf8e01e9c407a4fe818446a4085fa55991e8a9dc23a4979bfa4622675c6dc61"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "7897bc4dad875f2c12a174ea3646aedac9c31d305c18405f1e5b6bae88ffebc5"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "005bb1860765552c3756022c2123e77300495ff9ef88dfc1bb5a2c0e429f4564"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "2bc478c467227198c37646f5201c2846ec39101c2d65c9a017463569d5e8ebaa"
+          },
+          {
+            "id": "block_0019_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0006",
+            "sha256": "caa2af617b4ba27965627acfc774e7346542b534df022a81df1642cdeedb88d6"
+          },
+          {
+            "id": "block_0019_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0010",
+            "sha256": "e3c2274dd6c3e226617a302d009469da3366df024cd8ed0cef3abe4f1abc590e"
+          },
+          {
+            "id": "block_0019_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0012",
+            "sha256": "d4d8cf3e3715459eb86c52f4edf18db69cf7c886637ded49adcb4a3f69c34ae2"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "c17bf9f105169a886c369c8e29f40ea538aaf88518d211a28896b12e281b7df5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004",
+          "block_0019_0005",
+          "block_0019_0006",
+          "block_0019_0007",
+          "block_0019_0008",
+          "block_0019_0009",
+          "block_0019_0010",
+          "block_0019_0011",
+          "block_0019_0012"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004",
+          "block_0020_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "ae47d906f8ac65f3e9670c6d418ffdf04809f28feac8272eac60a61bdd6d3911",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "76e7fadb6f0bf4606908123eba76240197ec6d679b818ecf68892d5933db9e56"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "58c062a66b1422a88f9c58951817fb45b60b54347bb2895fd51ada7408b5c578"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "0e973b2766bd52bcfa190908d3cb83e6b5140a7206bec074da4f4350e3d1d594"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "35c3ee566011ce9ebd6f8d88344fe12bd0f37ba2d16f738ecf81d33fbb30af2d"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "d87e5d8d5dbc9dd3c68ed503d9294d86e676f4e4238b363477c78f345e12cf53"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "40a9d9aacaaea2aad630c203571cef66768661915c545519a6ba1e7af514478e"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "820c163b7c17c117a2ab9d77d13dc25ff5c08736f59e8b59d1fc9c6c9239553f"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "9799955ff448ca5b42573148a376d408785d20ed14dc0707e44d4987d3b0ebff"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "279d636c297239b02d4a6f5c51555c7c051ffef343894ab99d835f92e55feabf"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "58048ecef5cb983f4a69fa4bc6318e0da2d5ba52383bd2f79ed1d0f3f04610d8"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "42bd57f4e2df0d4b352789813e8f1f931ae2051a38785a4928a7641e60bae4c4"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "edbf8d0fec10301d0ddd760191591bd90396bebf457f0638c5fc25773b789e45"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "0fb361c38aa735cdcabc1f40450e599009c207c3ff68e3ba78c21bebfbaaf409"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "5c08bed49ffacaa2c1fcd6f598e05a8fd8c5a0eabf00ebc8ce1c78f60820626e"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "b36f5882e8d43c524b1aafe2e69151e0e0d597aaef841964e1355d97d2076db5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "ce3dc816301dc5aaa94e0ab39a4e152cdf0c2f6c8257833c3d29f73dca94aa65"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "931881d7b70c9319059794ab9802aebbf528c5b6fa198bfc20a876ff083b08d6"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "ccf8e01e9c407a4fe818446a4085fa55991e8a9dc23a4979bfa4622675c6dc61"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "7897bc4dad875f2c12a174ea3646aedac9c31d305c18405f1e5b6bae88ffebc5"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "005bb1860765552c3756022c2123e77300495ff9ef88dfc1bb5a2c0e429f4564"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "2bc478c467227198c37646f5201c2846ec39101c2d65c9a017463569d5e8ebaa"
+              },
+              {
+                "id": "block_0019_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0006",
+                "sha256": "caa2af617b4ba27965627acfc774e7346542b534df022a81df1642cdeedb88d6"
+              },
+              {
+                "id": "block_0019_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0010",
+                "sha256": "e3c2274dd6c3e226617a302d009469da3366df024cd8ed0cef3abe4f1abc590e"
+              },
+              {
+                "id": "block_0019_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0012",
+                "sha256": "d4d8cf3e3715459eb86c52f4edf18db69cf7c886637ded49adcb4a3f69c34ae2"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "c17bf9f105169a886c369c8e29f40ea538aaf88518d211a28896b12e281b7df5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

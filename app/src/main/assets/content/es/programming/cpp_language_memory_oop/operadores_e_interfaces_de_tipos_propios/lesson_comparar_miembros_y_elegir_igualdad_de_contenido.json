@@ -1,0 +1,2224 @@
+{
+  "id": "cpp_language_memory_oop__operadores_e_interfaces_de_tipos_propios__comparar_miembros_y_elegir_igualdad_de_contenido",
+  "title": "Comparar miembros y elegir la igualdad de contenido",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir qué datos deben coincidir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya definimos igualdad mediante una función que comparaba los datos elegidos de un tipo propio. Dos pedidos podían compartir un código y diferir en su cantidad o estado. También distinguimos tener el mismo valor de ser el mismo objeto: una copia puede empezar con datos iguales y seguir siendo otro objeto con sus propios miembros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comparaciones manuales permiten elegir qué forma parte de ese valor. Una función auxiliar puede consultar la interfaz pública y comparar esos datos; un miembro también puede utilizar los miembros privados del otro objeto de su clase, como ya estudiamos (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora pediremos al compilador una igualdad que compare los miembros de ciertos tipos. Después comprobaremos cuándo esa regla coincide con el significado que queremos y cuándo necesitamos escribir otra. Solicitar una implementación con = default no decide por nosotros si la dirección de una reserva, una revisión u otro dato debe participar en el valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solicitar la comparación de los elementos de Terna"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta versión pequeña de Terna muestra sólo el constructor, el array privado de tres int y la comparación que vamos a estudiar. Los tres números forman el valor completo elegido para este modelo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "bool operator==(const Terna&) const = default; declara y solicita una implementación de igualdad. El otro objeto se recibe por referencia constante, sin copiarlo. La const final permite consultar también un receptor constante. El parámetro no necesita un nombre porque no vamos a escribir aquí el cuerpo de la función."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para un == definido con = default, el tipo de retorno declarado debe ser bool. El compilador establece el resultado comparando los miembros y elementos correspondientes. En esta Terna, el array se expande a sus tres elementos: se compara la posición cero con la posición cero, después la uno y después la dos. Una diferencia basta para responder false; si coinciden todas, responde true (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se compara la dirección del array ni se interpreta toda la memoria como una secuencia de bytes. Tampoco se necesita llamar a operator[] para realizar esas comparaciones. = default no es un cuerpo vacío que devuelva un valor fijo: solicita esta operación sobre los miembros del tipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estos programas sólo declararemos ==, con resultado bool. Aun así, la escritura a != b podrá utilizar esa igualdad y negar su resultado. Es una regla de la notación de operadores disponible desde C++20; veremos después por qué no equivale a declarar una función operator!= nueva (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar tres números y comparar dos direcciones son preguntas distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada Terna del programa contiene su propio array. Para == importan los números guardados en las posiciones correspondientes. La última expresión compara las direcciones de dos objetos que permanecen vivos: responde si se trata del mismo objeto, una pregunta diferente de si coinciden sus tres datos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l6_igualdad_generada_sobre_array_y_dos_objetos",
+          "language": "cpp",
+          "question": "Escribe las tres comparaciones de valor y la comparación final de direcciones, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\nint main() {\n    const Terna a{1, 2, 3}, b{1, 2, 3}, c{1, 2, 4};\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c) << ':' << (&a == &b);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b coinciden en las tres posiciones, por lo que su igualdad es verdadera y su desigualdad falsa. c difiere de a en la última posición, así que no tiene el mismo valor completo. a y b son objetos distintos con arrays propios: sus direcciones no son iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "La igualdad de valor no elimina objetos repetidos ni hace que compartan sus elementos. Sólo devuelve una respuesta. En este modelo acepta tres números iguales aunque pertenezcan a dos Ternas diferentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una copia empieza igual y puede dejar de serlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar la Terna copia sus tres int a otro objeto. Eso puede producir valores inicialmente iguales sin compartir el array. El programa conserva la respuesta obtenida antes de sustituir el valor de b y luego vuelve a comparar los objetos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l6_copia_de_terna_y_cambio_de_valor",
+          "language": "cpp",
+          "question": "Escribe antes, la nueva igualdad, la desigualdad y la comparación de a consigo misma.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Terna {\npublic:\n    Terna(int primero, int segundo, int tercero) : datos_{primero, segundo, tercero} {}\n    bool operator==(const Terna&) const = default;\nprivate:\n    int datos_[3];\n};\nint main() {\n    const Terna a{1, 4, 9};\n    Terna b = a;\n    bool antes = (a == b);\n    b = Terna{1, 4, -9};\n    std::cout << antes << ':' << (a == b) << ':' << (a != b) << ':' << (a == a);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia inicial tiene los tres valores de a y antes guarda true. Después b recibe una Terna cuyo tercer número es menos nueve, mientras a conserva nueve en esa posición. La nueva igualdad es false y la desigualdad true. La Terna a conserva los mismos tres números al compararse consigo misma."
+        },
+        {
+          "type": "paragraph",
+          "text": "Solicitar una igualdad predeterminada es independiente de solicitar o permitir la copia del tipo. La comparación consulta dos objetos existentes; no necesita construir uno a partir del otro para decidir si coinciden."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La comparación predeterminada no omite una revisión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Registro guarda un numero y una revision. La revisión es otro int con el que identificamos una versión del dato. En este diseño la comparación solicitada con = default incluye ambos miembros: no basta con que coincida numero."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l6_todos_los_miembros_del_registro_participan",
+          "language": "cpp",
+          "question": "Escribe la igualdad de a y b, su desigualdad y la igualdad de a y c.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Registro {\npublic:\n    Registro(int numero, int revision) : numero_{numero}, revision_{revision} {}\n    bool operator==(const Registro&) const = default;\nprivate:\n    int numero_;\n    int revision_;\n};\nint main() {\n    const Registro a{6, 1}, b{6, 2}, c{6, 1};\n    std::cout << (a == b) << ':' << (a != b) << ':' << (a == c);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b guardan el mismo número, pero sus revisiones son distintas. Como la igualdad predeterminada compara ambos miembros, a == b es false y a != b es true. c coincide con a tanto en número como en revisión, así que esa igualdad es true."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas clases, la operación generada considera todos los datos que pertenecen a cada objeto, en su orden de declaración. No deduce por los nombres que una revisión deba ignorarse. Si otro modelo definiera el valor sólo por numero, habría que expresar ese criterio con una comparación propia (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar una igualdad predeterminada para Sello"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sello tiene un único int privado llamado codigo_. Queremos solicitar una igualdad predeterminada que compare ese miembro. El receptor y el parámetro constante ya están escritos. Completa sólo el tipo de resultado exigido para esta clase de igualdad."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u7l6_resultado_de_igualdad_predeterminada",
+          "question": "Completa el tipo de retorno requerido por el operator== definido con = default. No añadas un cuerpo ni cambies la recepción constante de los objetos.",
+          "template": "class Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    [] operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\n",
+          "answers": [
+            "bool"
+          ],
+          "answerAlternatives": [
+            [
+              "bool"
+            ]
+          ],
+          "explanation": "El retorno declarado es bool. = default solicita comparar el codigo_ de cada Sello y devolver si coinciden. El const Sello& recibe el otro objeto sin copiarlo y la const final permite utilizar un receptor constante. No hay que escribir un return dentro de esta definición predeterminada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir != sin declarar otra función"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente sólo declara el miembro operator== de Sello. La escritura a != b puede utilizar esa igualdad y negar el bool obtenido. Es una regla para resolver la expresión con el operador, no una función adicional que se haya añadido a la clase (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l6_desigualdad_reutiliza_la_igualdad_bool",
+          "language": "cpp",
+          "question": "Escribe las dos desigualdades y la negación de la llamada explícita de igualdad.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{3}, c{5};\n    std::cout << (a != b) << ':' << (a != c) << ':' << (!a.operator==(c));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b guardan el mismo código, por lo que a != b es false. c tiene otro código y a != c es true. La llamada a.operator==(c) también devuelve false y su negación es true. El programa utiliza la misma regla de igualdad sin declarar operator!=."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 se escribía una función != que devolvía la negación de ==. Esa sigue siendo una definición posible. Aquí elegimos no declarar esa segunda función. Esta regla moderna no significa que cualquier operador, como + o +=, haga aparecer automáticamente otros operadores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una llamada explícita necesita una función que exista"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza el rechazo de compilación sin ejecutar el programa. Sello sólo declara operator==. En cambio, main escribe el nombre operator!= como una llamada explícita a un miembro."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    bool operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{5};\n    std::cout << a.operator!=(b);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l6_llamada_explicita_a_desigualdad_no_declarada",
+          "question": "¿Por qué falla esa llamada, aunque la expresión a != b sí estuviera permitida?",
+          "options": [
+            "Porque la regla añadió una función libre operator!=(a, b), y sólo se ha elegido mal entre llamada libre y miembro.",
+            "Porque las llamadas explícitas a operadores siempre requieren que los objetos dejen de ser const.",
+            "Porque no se ha declarado ese miembro; la regla que reutiliza == al escribir a != b no crea una función operator!= para llamarla por su nombre."
+          ],
+          "correctIndex": 2,
+          "explanation": "La clase no contiene operator!= y tampoco se ha declarado una función libre con ese nombre. La notación a != b puede reutilizar y negar == según las reglas de operadores. La llamada explícita a.operator!=(b) busca precisamente esa función y no la encuentra. La const no impide llamar al operator== const que sí existe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El retorno exigido pertenece a la regla de = default"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este rechazo de compilación se ha cambiado a int el retorno de la igualdad predeterminada de Sello. No estamos estudiando qué tipos de resultado podrían elegirse para todas las funciones de comparación escritas a mano: el caso concreto es un operator== definido con = default."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Sello {\npublic:\n    explicit Sello(int codigo) : codigo_{codigo} {}\n    int operator==(const Sello&) const = default;\nprivate:\n    int codigo_;\n};\nint main() {\n    const Sello a{3}, b{3};\n    return a == b;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l6_retorno_no_bool_en_igualdad_predeterminada",
+          "question": "¿Qué regla incumple esta declaración de Sello?",
+          "options": [
+            "Un operator== definido con = default debe declarar bool como tipo de retorno; int no cumple ese requisito.",
+            "El resultado int permite igualdad, pero impide que el receptor de la comparación se declare const.",
+            "Una igualdad sólo puede definirse con = default si se recibe el otro objeto por valor en vez de por const Sello&."
+          ],
+          "correctIndex": 0,
+          "explanation": "La igualdad predeterminada exige un retorno declarado bool. La firma original con const Sello& y const final sí permite comparar estos objetos constantes sin copiarlos. El problema no se corrige cambiando la recepción ni añadiendo instrucciones dentro de = default."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un miembro propietario aporta su propia igualdad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Caja contiene un unique_ptr<int>. Una Caja construida con un número crea su propio int; una Caja sin argumento queda vacía. Su operator== también está definido con = default, por lo que compara el miembro dato_ utilizando la igualdad de unique_ptr."
+        },
+        {
+          "type": "paragraph",
+          "text": "La igualdad de unique_ptr compara los punteros que devuelve get(). No lee automáticamente los enteros señalados. Por eso, antes de interpretar la igualdad de Caja, hay que identificar si sus miembros guardan la misma dirección o son ambos nulos. Los objetos y sus reservas permanecen vivos durante todas las comparaciones del programa (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l6_igualdad_de_miembro_unique_ptr_y_contenido",
+          "language": "cpp",
+          "question": "Escribe las cinco comparaciones en el orden del programa. Distingue el valor de los enteros, las direcciones guardadas y las direcciones de las Cajas.",
+          "code": "#include <iostream>\n#include <memory>\n\nclass Caja {\npublic:\n    Caja() = default;\n    explicit Caja(int numero) : dato_{std::make_unique<int>(numero)} {}\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool operator==(const Caja&) const = default;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nint main() {\n    const Caja a{8}, b{8}, vacia1, vacia2;\n    std::cout << (a == b) << ':' << (a == a) << ':' << (vacia1 == vacia2)\n              << ':' << (&vacia1 == &vacia2) << ':' << (a.acceso() == b.acceso());\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b tienen reservas distintas, aunque ambas guarden ocho; sus unique_ptr no son iguales. a comparada consigo misma sí conserva el mismo puntero. Las dos Cajas vacías tienen punteros nulos, así que sus miembros son iguales, aunque vacia1 y vacia2 sean objetos diferentes. Las direcciones de sus objetos son distintas, y también lo son las dos reservas de a y b."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hemos copiado ningún unique_ptr para comparar. Los dos propietarios se consultan mediante referencias constantes. Que unique_ptr no permita copiar su propiedad no impide utilizar esta operación de igualdad. Tampoco debemos llamar a toda esta comparación identidad de Caja: dos Cajas vacías diferentes han podido resultar iguales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Const en el propietario no sustituye el contrato de lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al comparar dos objetos queremos conservar tanto sus propietarios como los números gestionados. En una clase con un unique_ptr<int>, declarar const la función miembro limita el acceso al propio propietario. No convierte por sí solo el int señalado en un objeto const: esa diferencia ya apareció al distinguir un propietario constante de un propietario de un objeto constante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso una comparación propia de contenido debe limitarse a consultar los enteros. No debe modificarlos aprovechando una vía de acceso indirecta que los tipos todavía permitan. La recepción constante forma parte de la interfaz, pero no demuestra por sí sola que se haya cumplido todo el contrato de no modificar los datos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "También importa conservar las reservas: sustituir un int por otro con el mismo número no sería una consulta que conserva el propietario anterior. En la práctica comprobaremos la presencia, el número y la dirección guardada antes y después de comparar, sin cargar ni vaciar objetos entre esas dos observaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los miembros de otra clase necesitan una igualdad utilizable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este rechazo de compilación sin ejecutar el programa. Semilla guarda un int, pero no declara una igualdad. Lote solicita una igualdad predeterminada y tiene una Semilla como miembro. No basta con que ambas Semillas se hayan construido con el mismo número."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nstruct Semilla { int numero; };\nstruct Lote {\n    Semilla dato;\n    bool operator==(const Lote&) const = default;\n};\nint main() {\n    const Lote a{{7}}, b{{7}};\n    return a == b;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l6_miembro_sin_igualdad_utilizable",
+          "question": "¿Por qué no se puede utilizar la igualdad solicitada para Lote?",
+          "options": [
+            "Porque comparar Lote exige que los dos miembros Semilla pertenezcan al mismo objeto en vez de a dos objetos distintos.",
+            "Porque comparar ese miembro necesita una igualdad utilizable para Semilla; no existe y la igualdad predeterminada de Lote queda eliminada.",
+            "Porque los miembros públicos quedan excluidos de la comparación predeterminada y Lote no tiene un dato privado que comparar."
+          ],
+          "correctIndex": 1,
+          "explanation": "La operación de Lote necesita comparar su miembro dato usando una igualdad de Semilla. Esa operación no se declara automáticamente por el mero hecho de guardar un int. Sin una igualdad utilizable para el miembro, el operator== predeterminado de Lote queda definido como eliminado y no puede usarse en a == b."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un miembro de tipo array se expande a sus elementos para esta comparación; un miembro de otro tipo de clase utiliza la comparación disponible para ese tipo. = default no abre cualquier clase para inventarle por su cuenta otra igualdad que le falte. Debemos proporcionar las operaciones necesarias para los tipos utilizados (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar el contenido requiere decidir también el estado vacío"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el próximo modelo, LecturaOpcional, queremos que el valor esté formado por la presencia o ausencia de una lectura y, cuando exista, por su número. Dos lecturas presentes con el mismo int deben resultar iguales aunque sus reservas sean diferentes. Dos vacías también deben resultar iguales. Una vacía y otra presente deben resultar distintas, incluso si el número presente es cero o menos uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "No utilizaremos un número especial para sustituir esa distinción. Los enteros pueden contener cualquier valor representable por int. Primero hay que identificar si cada propietario tiene un objeto; sólo se puede leer el int cuando existe. La regla de contenido debe comprobar esos estados antes de comparar los números."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta igualdad necesita una implementación propia: comparar directamente los unique_ptr aplicaría la regla de direcciones que vimos en Caja. La función deberá consultar el estado y el contenido sin cambiar los números, sin sustituir reservas y sin transferir ninguna propiedad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Elegir una comparación propia no significa que = default sea incorrecto en cualquier clase con punteros. Si un registro de comprobación necesita detectar un cambio de dirección, comparar ese miembro es precisamente lo que le interesa. El criterio depende de los datos que ese modelo ha decidido observar, igual que Registro incluía su revisión y Terna sus tres números."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: igualdad de una lectura que puede estar vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "LecturaOpcional guarda un unique_ptr<int>. Puede estar vacía o poseer un int. Todos los valores representables por int son admisibles, incluidos cero y menos uno. Un objeto vacío no representa ninguno de esos números: no contiene una lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "El código proporcionado permite cargar un número, vaciar el propietario, consultar su presencia y mostrar el contenido. Completa únicamente bool LecturaOpcional::operator==(const LecturaOpcional& otra) const. El inicial compara los propietarios y, por tanto, sus punteros guardados. Necesitamos otra regla: igualdad del contenido que representa cada lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación debe cumplir estos casos:\nDos lecturas vacías son iguales.\nUna vacía y otra con un número son distintas, aunque ese número sea cero.\nDos lecturas presentes son iguales si los int guardados tienen el mismo valor.\nDos reservas distintas pueden representar lecturas iguales.\nUna lectura es igual a sí misma, esté vacía o presente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba la presencia antes de leer los int. No desreferencies un propietario vacío ni inventes un número que represente la ausencia para compararlo con los datos. Conserva ambos estados, los valores y los punteros guardados. La comparación no necesita reservar memoria, vaciar objetos ni trasladar su propiedad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué const no sustituye el contrato de conservación"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función recibe otra por referencia constante y también lleva const final. No copia los propietarios para compararlos. Esas declaraciones impiden modificar directamente los unique_ptr por esos accesos, pero no convierten en const el int que cada uno posee. Como ya estudiamos, un propietario constante y un objeto poseído constante no significan lo mismo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso conservar los números sigue siendo una obligación del cuerpo que vas a escribir. Una asignación a *dato_ dentro de esta función podría cambiar el int sin cambiar el propietario. Nuestro contrato sólo permite consultar los estados y los valores; el informe comprobará también esos valores antes y después de las comparaciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si cualquiera de los dos objetos está vacío, decide el resultado a partir de la presencia de ambos. Sólo cuando los dos poseen un int puede compararse un número con el otro. No hay que restarlos: basta comparar los valores, lo que también admite los extremos de int sin provocar un desbordamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la igualdad de miembros y la igualdad de contenido"
+        },
+        {
+          "type": "paragraph",
+          "text": "En cada fila de la tabla se crean dos Caja distintas con los estados indicados. Después se crean otras dos LecturaOpcional distintas con esos mismos estados. Todas permanecen vivas durante la comparación. Cuando una pareja contiene dos números, cada objeto tiene su propia reserva: no se comparte ni se duplica la propiedad de un mismo int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe primero el resultado del == predeterminado de Caja, que compara sus unique_ptr como miembros. Después escribe el resultado de la igualdad de contenido exigida a LecturaOpcional. Usa uno para verdadero y cero para falso. Vacio indica ausencia; un número en la tabla indica un int realmente almacenado."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u7l6_comparar_propietario_y_contenido",
+          "prompt": "Cada fila usa objetos distintos y reservas independientes. Indica Caja == por miembros y LecturaOpcional == por contenido, en ese orden (1 verdadero, 0 falso).",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Estado izquierdo",
+                "Estado derecho"
+              ],
+              "rows": [
+                [
+                  "Vacio",
+                  "Vacio"
+                ],
+                [
+                  "Vacio",
+                  "0"
+                ],
+                [
+                  "0",
+                  "Vacio"
+                ],
+                [
+                  "-3",
+                  "-3"
+                ],
+                [
+                  "-2",
+                  "3"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: Caja",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: LecturaOpcional",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: Caja",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: LecturaOpcional",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: Caja",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: LecturaOpcional",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 4: Caja",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 4: LecturaOpcional",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "i",
+                  "type": "numeric",
+                  "label": "Fila 5: Caja",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "j",
+                  "type": "numeric",
+                  "label": "Fila 5: LecturaOpcional",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "i": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "j": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos propietarios vacíos guardan punteros nulos y sus lecturas representan la misma ausencia. Vacío no equivale a un cero almacenado. Los dos menos tres están en reservas distintas: Caja los distingue por los punteros, mientras LecturaOpcional compara los números y los considera iguales. Menos dos y tres son contenidos distintos.",
+            "incorrect": "Separa las dos reglas. Caja utiliza la igualdad de su miembro unique_ptr, que compara los punteros guardados. LecturaOpcional comprueba primero la presencia; sólo si ambas lecturas están presentes compara sus int. No conviertas un vacío en cero ni supongas que dos números iguales están en la misma reserva."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada: cambiar el estado y comparar los mismos dos objetos"
+        },
+        {
+          "type": "paragraph",
+          "text": "main mantiene dos LecturaOpcional, a y b, durante toda la historia. Ambas empiezan con el número ocho, cada una en una reserva distinta. La entrada comienza con una cantidad de órdenes de uno a doce. Cada orden contiene dos enteros: op valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las operaciones disponibles son:\n1: cargar valor en a.\n2: cargar valor en b.\n3: vaciar a; valor se lee, pero no se utiliza.\n4: vaciar b; valor se lee, pero no se utiliza.\n5: observar y comparar sin cambiar previamente los objetos; valor se lee, pero no se utiliza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de cada orden se comparan a y b, también después de cargar o vaciar. Un op no disponible produce Estado:Operacion y no realiza esa carga ni ese vaciado; el informe muestra igualmente la comparación del estado conservado. Las órdenes posteriores utilizan los valores que dejaron las anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cantidad de órdenes fuera de uno a doce o una orden incompleta termina main con código uno. El programa de esta actividad no solicita índices ni interpreta un número como señal de vacío. Las reservas y los vaciados ya están implementados; no los cambies para modificar la comparación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Informe: observar contenido, direcciones y conservación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los campos del informe tienen estas funciones:\nIguales: resultado de a == b.\nDistintos: resultado de a != b, sin proporcionar otro cuerpo manual para !=.\nVuelta: resultado de b == a.\nAutoA y AutoB: resultado de comparar cada objeto consigo mismo.\nMismaDireccion: comparación de los dos punteros guardados.\nConservado: comprobación de que las comparaciones no cambiaron presencia, números ni direcciones.\nA y B: los contenidos actuales; Vacio distingue una ausencia de cualquier int almacenado."
+        },
+        {
+          "type": "paragraph",
+          "text": "main utiliza referencias constantes a los dos objetos para realizar las cinco comparaciones. El programa conserva una Observacion de cada uno justo antes de compararlos y obtiene otra después. Observacion reúne presencia, número y dirección; su igualdad = default compara esos tres miembros. Aquí incluir la dirección es deliberado: queremos comprobar que una consulta no haya sustituido el int poseído por otro de igual valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las observaciones se toman después de atender la orden de carga o vaciado. Por eso Conservado no afirma que la orden haya dejado todo igual: sólo comprueba que las comparaciones posteriores conservaron el estado que recibieron. Las direcciones se comparan mientras los objetos poseídos siguen vivos; no se guardan préstamos de una orden de carga para utilizarlos después de su vaciado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera orden obligatoria sólo observa los dos ochos iniciales. Iguales y Vuelta deben ser verdaderos; Distintos, falso. AutoA y AutoB también deben ser verdaderos. MismaDireccion debe ser falso porque las reservas son distintas. Las comparaciones deben conservar ambos números y direcciones. El inicial del editor todavía falla esa primera igualdad de contenido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Implementar igualdad de contenido con ausencia explícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el cuerpo de ==, compila y compara el informe. Mantén las declaraciones y main. Sólo el primer caso correcto es obligatorio para avanzar; las otras historias aparecen separadas como ensayos opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    // Define la igualdad de contenido, incluyendo ambos estados de presencia.\n    return dato_ == otra.dato_;\n}\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n",
+          "initialStandardInput": "8\n5 0\n2 9\n1 9\n3 0\n4 0\n1 0\n2 0\n5 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n5 0\n2 9\n1 9\n3 0\n4 0\n1 0\n2 0\n5 0",
+                "outputs": [
+                  "Estado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:8;B:8\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:8;B:9\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:9;B:9\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:9\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:Vacio\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nFinalA:0;FinalB:0"
+                ],
+                "explanation": "Distingue presencia y valor antes de desreferenciar. Ambos vacíos se consideran iguales; una ausencia no equivale a un cero almacenado. Los dos números iguales deben admitirse aunque estén en reservas distintas. Compara sin modificar los operandos."
+              },
+              {
+                "standardInput": "8\n3 0\n4 0\n1 -1\n2 0\n2 -1\n1 -2\n3 0\n2 17",
+                "outputs": [
+                  "Estado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:8\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-2;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:17\nFinalA:Vacio;FinalB:17"
+                ],
+                "explanation": "Distingue presencia y valor antes de desreferenciar. Ambos vacíos se consideran iguales; una ausencia no equivale a un cero almacenado. Los dos números iguales deben admitirse aunque estén en reservas distintas. Compara sin modificar los operandos."
+              },
+              {
+                "standardInput": "8\n1 -4\n2 -4\n9 100\n4 0\n1 0\n2 0\n3 0\n4 0",
+                "outputs": [
+                  "Estado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:8\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:-4\nEstado:Operacion;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:-4\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:Vacio\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nFinalA:Vacio;FinalB:Vacio"
+                ],
+                "explanation": "Distingue presencia y valor antes de desreferenciar. Ambos vacíos se consideran iguales; una ausencia no equivale a un cero almacenado. Los dos números iguales deben admitirse aunque estén en reservas distintas. Compara sin modificar los operandos."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La historia compara reservas distintas con el mismo número, cambia los contenidos, vacía ambos objetos y distingue después un cero almacenado de una ausencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n5 0\n2 9\n1 9\n3 0\n4 0\n1 0\n2 0\n5 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Estado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:8;B:8\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:8;B:9\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:9;B:9\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:9\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:Vacio\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nFinalA:0;FinalB:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: números negativos y estados distintos"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se comparan dos vacíos, un menos uno con ausencia y con cero, y después números negativos iguales y distintos. La historia termina con una lectura vacía y otra presente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n3 0\n4 0\n1 -1\n2 0\n2 -1\n1 -2\n3 0\n2 17"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Estado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:8\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-1;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-2;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:-1\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:17\nFinalA:Vacio;FinalB:17"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se observan dos menos cuatro en reservas distintas y una operación inexistente que conserva el estado. Después se contrasta ausencia con cero y se vuelve a dejar vacíos los dos objetos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 -4\n2 -4\n9 100\n4 0\n1 0\n2 0\n3 0\n4 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Estado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:8\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:-4\nEstado:Operacion;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:-4\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:-4;B:Vacio\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:Vacio\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:0;B:0\nEstado:Aceptada;Iguales:0;Distintos:1;Vuelta:0;AutoA:1;AutoB:1;MismaDireccion:0;Conservado:1;A:Vacio;B:0\nEstado:Aceptada;Iguales:1;Distintos:0;Vuelta:1;AutoA:1;AutoB:1;MismaDireccion:1;Conservado:1;A:Vacio;B:Vacio\nFinalA:Vacio;FinalB:Vacio"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: elegir la presencia antes de leer los números"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n\nclass LecturaOpcional {\npublic:\n    LecturaOpcional() = default;\n    explicit LecturaOpcional(int numero) : dato_{std::make_unique<int>(numero)} {}\n    void cargar(int numero) { dato_ = std::make_unique<int>(numero); }\n    void vaciar() noexcept { dato_.reset(); }\n    const int* acceso() const noexcept { return dato_.get(); }\n    bool leer(int& numero) const noexcept {\n        if (!dato_) { return false; }\n        numero = *dato_;\n        return true;\n    }\n    void escribir(std::ostream& salida) const {\n        if (dato_) { salida << *dato_; }\n        else { salida << \"Vacio\"; }\n    }\n    bool operator==(const LecturaOpcional& otra) const;\nprivate:\n    std::unique_ptr<int> dato_{};\n};\nbool LecturaOpcional::operator==(const LecturaOpcional& otra) const {\n    if (!dato_ || !otra.dato_) {\n        return !dato_ && !otra.dato_;\n    }\n    return *dato_ == *otra.dato_;\n}\nstruct Observacion {\n    bool presente;\n    int numero;\n    const int* direccion;\n    bool operator==(const Observacion&) const = default;\n};\n\nObservacion observar(const LecturaOpcional& lectura) {\n    Observacion estado{false, 0, lectura.acceso()};\n    estado.presente = lectura.leer(estado.numero);\n    return estado;\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    LecturaOpcional a{8}, b{8};\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, valor = 0;\n        if (!(std::cin >> op >> valor)) { return 1; }\n        const char* estado = \"Aceptada\";\n        if (op == 1) { a.cargar(valor); }\n        else if (op == 2) { b.cargar(valor); }\n        else if (op == 3) { a.vaciar(); }\n        else if (op == 4) { b.vaciar(); }\n        else if (op != 5) { estado = \"Operacion\"; }\n        const Observacion antesA = observar(a), antesB = observar(b);\n        const LecturaOpcional& izquierda = a;\n        const LecturaOpcional& derecha = b;\n        const bool iguales = (izquierda == derecha);\n        const bool distintos = (izquierda != derecha);\n        const bool vuelta = (derecha == izquierda);\n        const bool propiaA = (izquierda == izquierda);\n        const bool propiaB = (derecha == derecha);\n        const bool mismaDireccion = (a.acceso() == b.acceso());\n        const bool conservado = (antesA == observar(a) && antesB == observar(b));\n        std::cout << \"Estado:\" << estado << \";Iguales:\" << iguales << \";Distintos:\" << distintos\n                  << \";Vuelta:\" << vuelta << \";AutoA:\" << propiaA << \";AutoB:\" << propiaB\n                  << \";MismaDireccion:\" << mismaDireccion << \";Conservado:\" << conservado << \";A:\";\n        a.escribir(std::cout);\n        std::cout << \";B:\";\n        b.escribir(std::cout);\n        std::cout << '\\n';\n    }\n    std::cout << \"FinalA:\";\n    a.escribir(std::cout);\n    std::cout << \";FinalB:\";\n    b.escribir(std::cout);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer if detecta que al menos uno de los propietarios está vacío. En ese recorrido, !dato_ && !otra.dato_ sólo es verdadero cuando ambos están vacíos. No se desreferencia ninguno. Si no entra en esa rama, ambos poseen un int y se comparan sus valores mediante *dato_ == *otra.dato_."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función no compara los punteros como significado de igualdad. Por eso dos reservas distintas con el mismo número pueden ser iguales. Tampoco utiliza un valor especial para representar el vacío. Sólo consulta presencia y contenido; no cambia los int ni transfiere los propietarios (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El == de Observacion tiene otro propósito: detectar cambios físicos y de contenido durante una consulta. Su comparación predeterminada de presencia, número y dirección encaja con ese propósito. La comparación de LecturaOpcional, en cambio, excluye la dirección de su significado de lectura igual. Elegir = default o escribir un cuerpo depende del valor que represente cada tipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con este == que devuelve bool y sin un != correspondiente, las expresiones != de main pueden utilizar la comparación de igualdad y negar su resultado. No hemos declarado por ello una función miembro operator!= para llamarla directamente, ni hemos proporcionado automáticamente operadores de orden como < (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la prueba que descubre una igualdad incorrecta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparar un objeto sólo consigo mismo no basta para comprobar el significado de igualdad que hemos pedido. Una comparación de direcciones también puede aceptar ese caso. Hace falta contrastar objetos distintos y estados que obliguen a distinguir presencia y valor."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l6_pares_que_distinguen_las_reglas",
+          "question": "¿Qué conjunto permite detectar tanto comparar sólo direcciones como tratar un vacío igual que cero?",
+          "options": [
+            "Un objeto comparado consigo mismo varias veces, sin cambiar su estado.",
+            "Dos lecturas presentes con el mismo número en reservas distintas y una pareja formada por un vacío y un cero almacenado.",
+            "Dos lecturas presentes con números distintos, sin consultar otros estados."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las reservas distintas con el mismo número deben compararse como contenido igual; comparar sólo punteros fallaría. El vacío frente al cero debe compararse como distinto; convertir ausencia en cero fallaría. Son diferencias de requisitos, no repeticiones del mismo caso con otros números."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La comparación generada necesita un significado adecuado en cada miembro"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l6_default_no_elige_significado_del_tipo",
+          "question": "¿Qué conviene revisar antes de solicitar == con = default para otro tipo?",
+          "options": [
+            "Qué representa cada miembro, si su propia igualdad está disponible y si comparar todos esos miembros corresponde al valor que queremos representar.",
+            "Sólo que el objeto sea pequeño; el tamaño determina qué miembros deberían ser iguales.",
+            "Sólo que el constructor acepte los datos; cualquier estado válido tiene que ser igual a cualquier otro estado válido."
+          ],
+          "correctIndex": 0,
+          "explanation": "= default sigue las comparaciones de los miembros que participan. Un array de int compara sus elementos; un unique_ptr compara su puntero guardado. La validez de un estado y la igualdad entre dos estados son cuestiones diferentes. El diseño tiene que elegir una regla que corresponda al valor del tipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación de miembros no es una comparación de los bytes de memoria del objeto. Tampoco crea una igualdad que falte en cualquier clase utilizada como miembro. Mantén separados la regla solicitada al compilador, las operaciones que ofrecen los miembros y el significado que necesita el programa."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "32009459832dc781de53834805b5d4f4d3b47ed20e7a66a428d2e39bd0399a5b"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "0a119193d734de87573618a8158149d2ac473a8164592c0e44fd8770fee01574"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "ad613a1c2d38eea6c47681a2a229a5ee1813e7152a78c0bb5d76a0163cc9e913"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "5a78785681c69ead2537fa4fb7c86f7e0190d5e85ce8a444018cad7d5b8377bd"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "6026210c625d934ebd8258070c9134384fc06706d6d6bbe158335a38d734165d"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "5d129a76728f0dfd06ddde0622e4728454ce1a52b99ae9e2d8a2ec4c1b60c940"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "4850d3c9ee8fa65377e162c49b53848556bf7dcaad3fd4dd1cfd7f6ce36f94fd"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "bebda0ba6fa3df7de8e133237bf2354e85eb2772f1fb8ac041f614da6ca85f66"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "3bbceb8b17fee0deb45b2f2f5d3d16436e9a377d3d7bddf1fcd78c9fa5bdab35"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "f25fa70e0d497a4ae7c3ced122ee3cc3e78c12eb1709b434666766675167c51a"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "d40ca380bf5546ef1cfad08a54dc148adc91e237799b4d37d6292338118ed77e"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "94a6d59d7c1c14e05273934d6aea7ce957ccd1861768b4e31fff4bd0902c0a18"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1774059c857b2486dd5687cb2cbb8b73a00432f871dd486e0f696096e86d19fc"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "858ee18fa4ffd394be8611ce762d41bc94207347724a590caabd1f2e751555f5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1f65fae8744522ec33f1fc88a389ed2565f7f6a0a93cbe1130253a4736e7ba15"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "9db5f8853097eca83c8b82b4157702860e5a86720f15e3d7d3616a3c59c12539"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "955eec294a75a1a87aa01da10bdb000b487782e051da8e23cd40925e78933f53"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "e2958393f88bb705a33ad21eab8f6412a71eaf9497f0d91e438aae68e15e7c33"
+          },
+          {
+            "id": "block_0019_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0006",
+            "sha256": "e93f5b6139611beff8ccd095b3f5c59cf2b9dec967144137f0d1372e7f186a08"
+          },
+          {
+            "id": "block_0019_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0010",
+            "sha256": "eb8be4f585f70e0e9b810a60528738c58b4b709eb8e91e2eb45f529513c0a423"
+          },
+          {
+            "id": "block_0019_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0012",
+            "sha256": "64d48d1e1fba0c77e4741e800eee5fd1e2d829499ededc87abbcee1c99d145dd"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "40b7b9d63c0bd486a357a8d592a943930b1ac25c036f4166fca2f5a0ebb387ed"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "4e050ea07242fcdde091f602a3a02a002f6d7ba55ccde3dc337d4debe2a2d121"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "5b3a957449a77e2c978769063ed2ac10eed4f52267ff631d4ddf7bf22038d9dc"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004",
+          "block_0019_0005",
+          "block_0019_0006",
+          "block_0019_0007",
+          "block_0019_0008",
+          "block_0019_0009",
+          "block_0019_0010",
+          "block_0019_0011",
+          "block_0019_0012"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004",
+          "block_0020_0005"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "77a6484db19164a761fad92cc3a701fa5ac0f64354496832e4afe8ab20726fe1",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "32009459832dc781de53834805b5d4f4d3b47ed20e7a66a428d2e39bd0399a5b"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "0a119193d734de87573618a8158149d2ac473a8164592c0e44fd8770fee01574"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "ad613a1c2d38eea6c47681a2a229a5ee1813e7152a78c0bb5d76a0163cc9e913"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "5a78785681c69ead2537fa4fb7c86f7e0190d5e85ce8a444018cad7d5b8377bd"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "6026210c625d934ebd8258070c9134384fc06706d6d6bbe158335a38d734165d"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "5d129a76728f0dfd06ddde0622e4728454ce1a52b99ae9e2d8a2ec4c1b60c940"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "4850d3c9ee8fa65377e162c49b53848556bf7dcaad3fd4dd1cfd7f6ce36f94fd"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "bebda0ba6fa3df7de8e133237bf2354e85eb2772f1fb8ac041f614da6ca85f66"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "3bbceb8b17fee0deb45b2f2f5d3d16436e9a377d3d7bddf1fcd78c9fa5bdab35"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "f25fa70e0d497a4ae7c3ced122ee3cc3e78c12eb1709b434666766675167c51a"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "d40ca380bf5546ef1cfad08a54dc148adc91e237799b4d37d6292338118ed77e"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "94a6d59d7c1c14e05273934d6aea7ce957ccd1861768b4e31fff4bd0902c0a18"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1774059c857b2486dd5687cb2cbb8b73a00432f871dd486e0f696096e86d19fc"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "858ee18fa4ffd394be8611ce762d41bc94207347724a590caabd1f2e751555f5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1f65fae8744522ec33f1fc88a389ed2565f7f6a0a93cbe1130253a4736e7ba15"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "9db5f8853097eca83c8b82b4157702860e5a86720f15e3d7d3616a3c59c12539"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "955eec294a75a1a87aa01da10bdb000b487782e051da8e23cd40925e78933f53"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "e2958393f88bb705a33ad21eab8f6412a71eaf9497f0d91e438aae68e15e7c33"
+              },
+              {
+                "id": "block_0019_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0006",
+                "sha256": "e93f5b6139611beff8ccd095b3f5c59cf2b9dec967144137f0d1372e7f186a08"
+              },
+              {
+                "id": "block_0019_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0010",
+                "sha256": "eb8be4f585f70e0e9b810a60528738c58b4b709eb8e91e2eb45f529513c0a423"
+              },
+              {
+                "id": "block_0019_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0012",
+                "sha256": "64d48d1e1fba0c77e4741e800eee5fd1e2d829499ededc87abbcee1c99d145dd"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "40b7b9d63c0bd486a357a8d592a943930b1ac25c036f4166fca2f5a0ebb387ed"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "4e050ea07242fcdde091f602a3a02a002f6d7ba55ccde3dc337d4debe2a2d121"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "5b3a957449a77e2c978769063ed2ac10eed4f52267ff631d4ddf7bf22038d9dc"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

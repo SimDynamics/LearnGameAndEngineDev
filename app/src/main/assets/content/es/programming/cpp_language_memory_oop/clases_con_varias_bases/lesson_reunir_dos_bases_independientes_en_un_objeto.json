@@ -1,0 +1,1401 @@
+{
+  "id": "cpp_language_memory_oop__clases_con_varias_bases__reunir_dos_bases_independientes_en_un_objeto",
+  "title": "Reunir dos bases independientes en un objeto",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un objeto que ofrece dos interfaces independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "ConNumero conserva un entero que puede consultarse o sustituirse. ConCodigo conserva otro entero, con sus propias funciones. Ninguna de estas clases deriva de la otra y no tienen una clase base común. Las usaremos como dos partes distintas de un mismo registro."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay código que trabaja con ConNumero& y otro que trabaja con const ConCodigo&. Si un registro debe poder utilizarse mediante ambas interfaces, puede declarar ambas como bases públicas. Tener más de una base directa se llama herencia múltiple (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La decisión se refiere a los usos que debe admitir el registro. Que necesite guardar dos enteros no obliga por sí solo a heredar de dos clases: contener miembros seguiría siendo otra opción. Aquí queremos además ofrecer las dos relaciones públicas con tipos que ya utilizan esas funciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar e inicializar cada base"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las bases se separan con una coma. Cada relación lleva su propio acceso: public ConNumero y public ConCodigo. El primer public no se aplica automáticamente a todos los nombres que aparezcan después."
+        },
+        {
+          "type": "paragraph",
+          "text": "RegistroDoble(int numero, int codigo) prepara cada parte con su inicializador: ConNumero{numero} prepara la primera base y ConCodigo{codigo} prepara la segunda. El cuerpo vacío no significa que las bases queden sin construir. Ambas ya deben estar preparadas antes de entrar en él (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se omite un inicializador de base en este constructor, se necesita una forma válida de construir esa base sin argumentos. Analiza la siguiente variante, que conserva las definiciones de las dos bases pero sólo escribe un inicializador. Su rechazo se estudia al compilar; no se ejecuta para intentar averiguar qué código quedó guardado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass Incompleto : public ConNumero, public ConCodigo {\npublic:\n    explicit Incompleto(int numero) : ConNumero{numero} {}\n};\nint main() {\n    Incompleto dato{4};\n    std::cout << dato.numero();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l1_cada_base_necesita_preparacion_valida",
+          "question": "¿Por qué no basta con inicializar ConNumero en Incompleto?",
+          "options": [
+            "Porque una clase con varias bases no puede declarar constructores propios.",
+            "Porque los argumentos entregados a la primera base se distribuyen siempre también a la segunda.",
+            "Porque también debe prepararse ConCodigo y, al omitir su inicializador, no hay un constructor sin argumentos que pueda hacerlo."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada base constituye una parte del objeto que debe construirse. ConNumero recibe el argumento proporcionado, pero eso no prepara ConCodigo. Como esa segunda clase exige un entero y aquí no se le entrega, la definición no es válida. Un constructor propio con inicializadores válidos para ambas bases sí puede preparar el objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos vistas del mismo registro, sin crear copias"
+        },
+        {
+          "type": "paragraph",
+          "text": "RegistroDoble dato tiene una parte ConNumero y una parte ConCodigo. Al enlazar una referencia o convertir un puntero hacia una de esas bases públicas, se obtiene una vista de la parte correspondiente del mismo objeto. No se construye otra instancia de RegistroDoble ni una copia independiente de la base (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa conserva referencias y punteros mientras dato sigue vivo. Una referencia constante a ConCodigo permite observar su código, aunque una vía modificable al mismo objeto cambie ese código después. La llamada cambiar_numero se escribe en su propia instrucción antes de las consultas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l1_referencias_y_punteros_a_dos_bases_del_mismo_objeto",
+          "language": "cpp",
+          "question": "Escribe la salida completa antes y después de modificar las dos partes.",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\nint main() {\n    RegistroDoble dato{3, 8};\n    ConNumero& numero = dato;\n    const ConCodigo& codigo = dato;\n    ConNumero* numero_ptr = &dato;\n    ConCodigo* codigo_ptr = &dato;\n    std::cout << numero.numero() << ':' << codigo.codigo() << '|';\n    cambiar_numero(dato, 5);\n    codigo_ptr->poner_codigo(9);\n    std::cout << dato.numero() << ':' << consultar_codigo(dato) << '|'\n              << numero_ptr->numero() << ':' << codigo.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "3:8|5:9|5:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El registro comienza con número tres y código ocho. cambiar_numero recibe una referencia a su parte ConNumero y guarda cinco. codigo_ptr modifica la parte ConCodigo y guarda nueve. Las consultas mediante dato, el ayudante, numero_ptr y la referencia constante codigo observan esas mismas partes actualizadas. No eran cuatro copias por tener cuatro vistas."
+        },
+        {
+          "type": "paragraph",
+          "text": "El tipo de cada vista determina las operaciones disponibles mediante ella. ConNumero& no ofrece codigo() sólo porque el objeto completo también tenga una parte ConCodigo. Una vista constante tampoco permite modificar la parte observada; de un RegistroDoble const no obtendríamos un ConNumero& modificable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para obtener otra vista de tipo ConCodigo&, se vuelve al objeto dato, cuyo tipo RegistroDoble declara esa base pública. La referencia ConNumero& no se convierte implícitamente por sí sola en una referencia ConCodigo&: esos dos tipos base no tienen entre ellos una relación de derivación. Tener ambas vistas al mismo registro no cambia los tipos de las expresiones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas vistas no poseen el objeto ni tienen que liberarlo. dato es automático y se destruye al salir de su bloque. No conservaremos vistas después de ese momento. Tampoco necesitamos comparar o imprimir direcciones para razonar sobre las partes: no suponemos desplazamientos ni una disposición concreta en memoria."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El acceso de una base no decide el de la otra"
+        },
+        {
+          "type": "paragraph",
+          "text": "RegistroReservado cambia una sola relación: ConNumero sigue siendo una base pública, pero ConCodigo es privada. Desde main puede obtenerse la vista de ConNumero. Para el código, la clase ofrece consultas propias cuyo cuerpo sí puede utilizar su base privada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l1_dos_relaciones_con_accesos_distintos",
+          "language": "cpp",
+          "question": "Escribe las tres consultas del programa: vista pública, consulta propia y ayudante llamado desde dentro.",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nvoid cambiar_numero(ConNumero& dato, int numero) {\n    dato.poner_numero(numero);\n}\nint consultar_codigo(const ConCodigo& dato) {\n    return dato.codigo();\n}\nclass RegistroReservado : public ConNumero, private ConCodigo {\npublic:\n    RegistroReservado(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n    int codigo_visible() const { return ConCodigo::codigo(); }\n    int codigo_por_funcion() const { return consultar_codigo(*this); }\n};\nint main() {\n    RegistroReservado dato{4, 7};\n    const ConNumero& numero = dato;\n    std::cout << numero.numero() << ':' << dato.codigo_visible()\n              << ':' << dato.codigo_por_funcion();\n    return 0;\n}\n",
+          "answers": [
+            "4:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia de main a ConNumero es válida y obtiene cuatro. codigo_visible consulta internamente la base privada y obtiene siete. codigo_por_funcion solicita dentro del método una referencia a ConCodigo para el ayudante, que también obtiene siete. Ninguna de esas consultas vuelve pública la relación con ConCodigo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con estas definiciones, const ConCodigo& codigo = dato; y const ConCodigo* codigo = &dato; se rechazan cuando se solicitan desde main. Se conserva la diferencia ya estudiada entre utilizar una base desde un método autorizado y obtener su vista desde fuera."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l1_public_se_declara_para_cada_base",
+          "question": "Si una clase declarada con class escribe : public ConNumero, ConCodigo, ¿cómo queda la relación con ConCodigo?",
+          "options": [
+            "Privada, porque se omitió el acceso de esa base y class utiliza private por defecto en esa posición.",
+            "Pública, porque public antes de ConNumero se aplica a toda la lista separada por comas.",
+            "Protegida, porque es la segunda base aunque no aparezca la palabra protected."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cada base tiene su propio acceso. En una declaración class, omitirlo para ConCodigo elige una relación privada. Para que ambas sean públicas se escribe public delante de cada una. El acceso de los miembros propios declarados dentro del cuerpo se decide por separado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir las bases antes del miembro y del cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "ConOrden declara primero la base Primera y después Segunda. Su miembro marca_ es de tipo Marca. Las marcas de salida permiten seguir cada paso: N identifica Primera, C identifica Segunda, M identifica el miembro y D identifica el cuerpo de ConOrden. El signo + corresponde al constructor y el signo - al destructor."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas clases se construyen las bases directas en el orden de la declaración de herencia. Después se construyen los miembros por su orden de declaración y, finalmente, se ejecuta el cuerpo del constructor. Cambiar sólo la colocación de los inicializadores no cambia ese orden; conviene escribirlos en el mismo orden para que el código lo muestre claramente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l1_orden_de_dos_bases_miembro_y_cuerpo",
+          "language": "cpp",
+          "question": "Escribe toda la traza, incluidas la consulta de uso y la destrucción al terminar el bloque.",
+          "code": "#include <iostream>\n\nclass Primera {\npublic:\n    explicit Primera(int numero) : numero_{numero} { std::cout << \"N+|\"; }\n    ~Primera() { std::cout << \"N-|\"; }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Segunda {\npublic:\n    explicit Segunda(int codigo) : codigo_{codigo} { std::cout << \"C+|\"; }\n    ~Segunda() { std::cout << \"C-|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"M+|\"; }\n    ~Marca() { std::cout << \"M-|\"; }\n};\nclass ConOrden : public Primera, public Segunda {\npublic:\n    ConOrden(int numero, int codigo)\n        : Primera{numero}, Segunda{codigo}, marca_{} {\n        std::cout << \"D+|\";\n    }\n    ~ConOrden() { std::cout << \"D-|\"; }\nprivate:\n    Marca marca_;\n};\nint main() {\n    {\n        ConOrden dato{4, 7};\n        std::cout << \"Uso:\" << dato.numero() << ',' << dato.codigo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "N+|C+|M+|D+|Uso:4,7|D-|M-|C-|N-|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se completan Primera, Segunda y marca_ antes de ejecutar el cuerpo constructor de ConOrden, de modo que aparecen N+, C+, M+ y D+. main consulta el número cuatro y el código siete. Al salir del bloque empieza el cuerpo de ~ConOrden, que escribe D-. Después se destruyen el miembro, la segunda base y la primera, escribiendo M-, C- y N-. Por último main escribe Fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "La destrucción normal del objeto completo empieza por su cuerpo destructor y continúa con sus partes en orden inverso al de su construcción. No llamamos manualmente a los destructores de las bases ni al del miembro. La salida del bloque de dato inicia automáticamente esa destrucción completa (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar el objeto completo sí crea otras partes independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las vistas anteriores no copiaban el registro. En cambio, RegistroDoble copia{original}; construye otro RegistroDoble. Su copia generada prepara ambas bases a partir de las partes correspondientes de original. Cada registro contiene sus propios enteros."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l1_copia_independiente_de_objeto_con_dos_bases",
+          "language": "cpp",
+          "question": "Escribe número y código de original y después los de copia.",
+          "code": "#include <iostream>\n\nclass ConNumero {\npublic:\n    explicit ConNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner_numero(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass ConCodigo {\npublic:\n    explicit ConCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\n    void poner_codigo(int codigo) { codigo_ = codigo; }\nprivate:\n    int codigo_;\n};\nclass RegistroDoble : public ConNumero, public ConCodigo {\npublic:\n    RegistroDoble(int numero, int codigo)\n        : ConNumero{numero}, ConCodigo{codigo} {}\n};\nint main() {\n    RegistroDoble original{2, 6};\n    RegistroDoble copia{original};\n    original.poner_numero(4);\n    copia.poner_codigo(9);\n    std::cout << original.numero() << ':' << original.codigo()\n              << '|' << copia.numero() << ':' << copia.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "4:6|2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con el número dos y el código seis que tenía original. Después se cambia sólo el número de original a cuatro y sólo el código de copia a nueve. El resultado distingue los dos registros: original conserva código seis y copia conserva número dos. Las referencias a bases del ejemplo anterior observaban el mismo registro; esta declaración de copia creó otro."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los ejemplos, cada base tiene nombres de operaciones distintos y conserva su dato privado. La derivada utiliza esas operaciones y prepara las dos partes; no obtiene acceso directo a sus enteros privados por tener más de una base."
+        },
+        {
+          "type": "paragraph",
+          "text": "El objetivo es que un objeto cumpla las dos interfaces que necesita su usuario. Deben comprobarse por separado sus relaciones de acceso, la preparación de cada parte y la duración de las vistas. La sintaxis de varias bases no demuestra por sí sola que ese diseño sea preferible a contener objetos ni que tenga una ventaja de rendimiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer dos interfaces mediante la misma muestra"
+        },
+        {
+          "type": "paragraph",
+          "text": "ConValor permite consultar un int mediante valor(). ConInforme permite escribir un informe en el flujo recibido. Son dos interfaces abstractas independientes; ninguna deriva de la otra. Sus destructores virtuales conservan el diseño de interfaz ya estudiado, aunque esta práctica utilizará un objeto automático y referencias."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestra debe poder utilizarse desde fuera mediante cualquiera de las dos interfaces. Completa su lista de bases para ofrecer ambas relaciones públicamente. Se admiten los dos órdenes de bases: esta práctica no depende de elegir uno de ellos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuerpos que devuelven cero y escriben Pendiente son provisionales. Permiten preparar y compilar la estructura de la clase, pero todavía no consultan sus datos. En la práctica siguiente los sustituirás por las implementaciones solicitadas; no son la solución del programa."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u10l1_ofrecer_dos_interfaces_publicas",
+          "question": "Completa la lista de bases de Muestra para que una función externa pueda obtener tanto ConValor& como ConInforme& a partir de ese objeto. Declara el acceso de cada base; conserva los cuerpos provisionales.",
+          "template": "class Muestra : [] {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return 0; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\n",
+          "answers": [
+            "public ConValor, public ConInforme"
+          ],
+          "answerAlternatives": [
+            [
+              "public ConValor, public ConInforme",
+              "public ConValor, public ::ConInforme",
+              "public ::ConValor, public ConInforme",
+              "public ::ConValor, public ::ConInforme",
+              "public ConInforme, public ConValor",
+              "public ConInforme, public ::ConValor",
+              "public ::ConInforme, public ConValor",
+              "public ::ConInforme, public ::ConValor"
+            ]
+          ],
+          "explanation": "La lista public ConValor, public ConInforme ofrece las dos relaciones por separado. También se admite el orden inverso. El public de una base no se aplica automáticamente a la siguiente. Muestra proporciona funciones que corresponden a las dos operaciones puras, pero los cuerpos provisionales deben completarse en el editor para que consulten el valor y escriban el informe exigido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir las dos operaciones sobre los datos del objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa del editor recibe tres enteros: código, valor inicial y valor nuevo, en ese orden. Utiliza datos entre menos mil y mil. main ya lee esos datos, construye una Muestra y obtiene dos referencias constantes a ella, una por cada interfaz."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implementa valor() para devolver el valor actual que guarda la Muestra. Implementa escribir para escribir en salida el código, el signo igual y el valor actual, sin espacios ni salto de línea dentro de esa función. Conserva las interfaces, los datos privados, cambiar y main."
+        },
+        {
+          "type": "paragraph",
+          "text": "mostrar utiliza las dos interfaces y añade los rótulos y los saltos de línea. Primero se muestran los datos iniciales. Después main llama a cambiar con el tercer entero y utiliza de nuevo las mismas referencias. El código se conserva y las dos consultas deben reflejar el nuevo valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las referencias son constantes para consultar mediante ellas. Esto no impide cambiar el objeto mediante su nombre dato, que identifica una Muestra modificable. Las vistas se mantienen sobre ese objeto vivo; obtenerlas no crea otras dos muestras."
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código siete se conserva. El valor pasa de tres a menos dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7 3 -2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Valor: 3\nInforme: 7=3\nValor: -2\nInforme: 7=-2\n"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return 0; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << \"Pendiente\";\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n",
+          "initialStandardInput": "7 3 -2\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 3 -2\n",
+                "outputs": [
+                  "Valor: 3\nInforme: 7=3\nValor: -2\nInforme: 7=-2\n"
+                ],
+                "explanation": "valor() debe consultar el estado actual y escribir debe utilizar el flujo recibido, mostrando código=valor. Las dos vistas de main siguen refiriéndose al mismo objeto antes y después de cambiar."
+              },
+              {
+                "standardInput": "0 0 0\n",
+                "outputs": [
+                  "Valor: 0\nInforme: 0=0\nValor: 0\nInforme: 0=0\n"
+                ],
+                "explanation": "valor() debe consultar el estado actual y escribir debe utilizar el flujo recibido, mostrando código=valor. Las dos vistas de main siguen refiriéndose al mismo objeto antes y después de cambiar."
+              },
+              {
+                "standardInput": "-4 -8 5\n",
+                "outputs": [
+                  "Valor: -8\nInforme: -4=-8\nValor: 5\nInforme: -4=5\n"
+                ],
+                "explanation": "valor() debe consultar el estado actual y escribir debe utilizar el flujo recibido, mostrando código=valor. Las dos vistas de main siguen refiriéndose al mismo objeto antes y después de cambiar."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales para variar los datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes utilizar estas entradas en el editor de la práctica. Cada ensayo conserva el mismo formato de tres enteros y sus cuatro líneas de salida."
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código y ambos valores son cero. Una modificación que conserva el mismo dato no debe cambiar el formato ni omitir las consultas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Valor: 0\nInforme: 0=0\nValor: 0\nInforme: 0=0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código negativo permanece fijo mientras el valor cambia de menos ocho a cinco."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-4 -8 5\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Valor: -8\nInforme: -4=-8\nValor: 5\nInforme: -4=5\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: las dos vistas consultan el objeto que sigue vivo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nvoid mostrar(const ConValor& valor, const ConInforme& informe) {\n    std::cout << \"Valor: \" << valor.valor() << '\\n';\n    std::cout << \"Informe: \";\n    informe.escribir(std::cout);\n    std::cout << '\\n';\n}\n\nint main() {\n    int codigo = 0;\n    int inicial = 0;\n    int nuevo = 0;\n    if (!(std::cin >> codigo >> inicial >> nuevo)) {\n        return 1;\n    }\n    Muestra dato{codigo, inicial};\n    const ConValor& vista_valor = dato;\n    const ConInforme& vista_informe = dato;\n    mostrar(vista_valor, vista_informe);\n    dato.cambiar(nuevo);\n    mostrar(vista_valor, vista_informe);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "valor() devuelve valor_. escribir utiliza codigo_ y ese mismo valor_. El parámetro salida determina dónde se escribe el informe; la función no debe sustituirlo por una consola fija. mostrar recibe las interfaces y las utiliza mediante sus operaciones virtuales."
+        },
+        {
+          "type": "paragraph",
+          "text": "vista_valor y vista_informe se obtuvieron desde dato. Cada una se refiere a una parte base diferente y permite llamar a su operación virtual. Las implementaciones de Muestra utilizan sus datos codigo_ y valor_. Después de dato.cambiar(nuevo), esas llamadas siguen trabajando sobre dato y observan su nuevo valor (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden inverso en la lista de estas dos bases también cumple el contrato de la práctica. El lenguaje sí utiliza el orden declarado para preparar y destruir las partes base, pero aquí sus constructores y destructores no escriben marcas ni realizan acciones que cambien el resultado de los informes."
+        },
+        {
+          "type": "paragraph",
+          "text": "main conserva la duración del único objeto automático hasta terminar. Las referencias son vistas para utilizar sus interfaces; no son dos objetos creados dinámicamente ni dos encargos independientes de destruir la muestra."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir una vista de una copia completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa utiliza la implementación completa de Muestra. vista se refiere a original por su interfaz ConValor. En cambio, copia se construye como otra Muestra a partir de original, con sus propios datos. Después se modifica el valor de cada muestra por separado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u10l1_vista_frente_a_copia_con_dos_interfaces",
+          "language": "cpp",
+          "question": "Escribe la salida completa después de cambiar original y copia.",
+          "code": "#include <iostream>\n\nclass ConValor {\npublic:\n    virtual ~ConValor() = default;\n    virtual int valor() const = 0;\n};\n\nclass ConInforme {\npublic:\n    virtual ~ConInforme() = default;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass Muestra : public ConValor, public ConInforme {\npublic:\n    Muestra(int codigo, int valor) : codigo_{codigo}, valor_{valor} {}\n\n    int valor() const override { return valor_; }\n\n    void escribir(std::ostream& salida) const override {\n        salida << codigo_ << '=' << valor_;\n    }\n\n    void cambiar(int nuevo) { valor_ = nuevo; }\n\nprivate:\n    int codigo_;\n    int valor_;\n};\nint main() {\n    Muestra original{2, 4};\n    const ConValor& vista = original;\n    Muestra copia{original};\n    original.cambiar(8);\n    copia.cambiar(6);\n    std::cout << vista.valor() << '|' << copia.valor() << '|';\n    original.escribir(std::cout);\n    std::cout << '|';\n    copia.escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "8|6|2=8|2=6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista sigue sobre original y consulta ocho. copia tiene su propio valor y consulta seis. Los dos códigos se copiaron con el valor dos y no cambian. Por eso original escribe 2=8 y copia escribe 2=6. Las referencias a una base consultan un objeto existente; la construcción de una copia completa de Muestra crea otro objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtener cada vista desde el objeto que ofrece esa relación"
+        },
+        {
+          "type": "paragraph",
+          "text": "ConValor y ConInforme son bases independientes. Que un objeto Muestra pueda usarse como las dos no establece una conversión implícita entre esas bases. Si conservamos el nombre dato de tipo Muestra, podemos obtener cada vista desde dato."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u10l1_dos_bases_no_se_convierten_implicitamente_entre_si",
+          "question": "Con Muestra dato{2,4}; y const ConValor& valor = dato;, se quiere obtener una vista ConInforme conservando las clases actuales. ¿Qué declaración es válida?",
+          "options": [
+            "const ConInforme& informe = dato;",
+            "const ConInforme& informe = valor;",
+            "const ConInforme& informe = valor.valor();"
+          ],
+          "correctIndex": 0,
+          "explanation": "dato tiene tipo Muestra y ofrece públicamente ConInforme, por eso puede obtenerse la vista desde ese objeto. valor tiene tipo de referencia a ConValor; esa base no deriva de ConInforme ni ofrece una conversión implícita hacia ella. valor.valor() devuelve un int, que tampoco es una vista de la interfaz. La operación correcta conserva el mismo objeto vivo y utiliza la relación de base que sí está declarada."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "eee16bb3ee9811f510aacf5a2dc64a173cff93b363cd5a143df38426c5686f1a"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "e4d6b63c7667965e8cb0c6d9e001b89cd4d8077e6b48f6365a8e45f6792281a9"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "e3f4f4d1d844faf4cd671764f584eba49647d1d4c58b1ed0432c8997ca092634"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "a9eb0df07a311198c98067aa982c867e283e3d1bd13e072515385ee47634742a"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "df5db3adf60d216a66097bfa1e2c5783b3749a3c67833d92bd39202e671e4cc4"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "5cb454a0c263c0c265b498ce6ad30e85e8f208804055ae84aea9a51d9bda50bc"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "3acdfeba5aa001d407a3a75fc262b04578f8b9fc264ca2ab648bba10dfde750d"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "e0357bba1612f1505988016977bca23f58a09b1145adc4a4a0712d045c4bf8ec"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "d1ef362dd2301d995611c9bba2f247cade0339911b9fc7c619e035e47178084b"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "143bddcd0e80869cf11bd5a97b281e42bc8513edffa329f924b4dd1310ed196a"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "5d17314ca7e3b48110de473f431298279a5368b7c638c08c564534b5542f0ab7"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "fae4c58161fc05175b3f9c86fbed87b82a4e2b0ede5886a6c282b0d64b421704"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "748f7428e9974354e42323cffcc5edb16b6bb87198678c600812e78bb251029c"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0010",
+            "sha256": "6661950124545b3aca53ca341b776385733d2888fc24364ce5ef5fcf38c2df00"
+          },
+          {
+            "id": "block_0007_0011",
+            "sha256": "1d662ccbf0585d69e221bddeb72702fc39ac479e91833ae3cf7dc4da9aca8e94"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "b5d72d2756eba8a18a800580186263ffab3f4d0883ecdb995d108d2ef255fead"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "dd60691053fcdf3798e3b251a1eb81c363125ce2b4067209edc9032649926ce9"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0011",
+            "sha256": "ba3873c5b1defefbf332a8c47e6847b16246ed6d70b983e9b954d6eb42e42803"
+          },
+          {
+            "id": "block_0008_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0013",
+            "sha256": "01544e3ce4278c9ee5aa0da5019391898bb39680d2a51ec938b784934fcd6c60"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "978c78f98fa17cf9bba7fa820c7066bbcdf0167c971b0d965613f29d5c3a806c"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "b8a07e46db944a65233a44a6be93be28379e43bcfaa5d25ac6f123fde749da32"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "7a79b96ef179a663193134eccfcbd51c3042a22c348073b730aaad409088136b"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009",
+          "block_0007_0010",
+          "block_0007_0011"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008",
+          "block_0008_0009",
+          "block_0008_0010",
+          "block_0008_0011",
+          "block_0008_0012",
+          "block_0008_0013"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "2495addc1a9b7bf8f80edddf5bc2f6cd87ef3dfd460838a9ce5dccdda9c31aef",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "eee16bb3ee9811f510aacf5a2dc64a173cff93b363cd5a143df38426c5686f1a"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "e4d6b63c7667965e8cb0c6d9e001b89cd4d8077e6b48f6365a8e45f6792281a9"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "e3f4f4d1d844faf4cd671764f584eba49647d1d4c58b1ed0432c8997ca092634"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "a9eb0df07a311198c98067aa982c867e283e3d1bd13e072515385ee47634742a"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "df5db3adf60d216a66097bfa1e2c5783b3749a3c67833d92bd39202e671e4cc4"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "5cb454a0c263c0c265b498ce6ad30e85e8f208804055ae84aea9a51d9bda50bc"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "3acdfeba5aa001d407a3a75fc262b04578f8b9fc264ca2ab648bba10dfde750d"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "e0357bba1612f1505988016977bca23f58a09b1145adc4a4a0712d045c4bf8ec"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "d1ef362dd2301d995611c9bba2f247cade0339911b9fc7c619e035e47178084b"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "143bddcd0e80869cf11bd5a97b281e42bc8513edffa329f924b4dd1310ed196a"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "5d17314ca7e3b48110de473f431298279a5368b7c638c08c564534b5542f0ab7"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "fae4c58161fc05175b3f9c86fbed87b82a4e2b0ede5886a6c282b0d64b421704"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "748f7428e9974354e42323cffcc5edb16b6bb87198678c600812e78bb251029c"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0010",
+                "sha256": "6661950124545b3aca53ca341b776385733d2888fc24364ce5ef5fcf38c2df00"
+              },
+              {
+                "id": "block_0007_0011",
+                "sha256": "1d662ccbf0585d69e221bddeb72702fc39ac479e91833ae3cf7dc4da9aca8e94"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "b5d72d2756eba8a18a800580186263ffab3f4d0883ecdb995d108d2ef255fead"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "dd60691053fcdf3798e3b251a1eb81c363125ce2b4067209edc9032649926ce9"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0011",
+                "sha256": "ba3873c5b1defefbf332a8c47e6847b16246ed6d70b983e9b954d6eb42e42803"
+              },
+              {
+                "id": "block_0008_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0013",
+                "sha256": "01544e3ce4278c9ee5aa0da5019391898bb39680d2a51ec938b784934fcd6c60"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "978c78f98fa17cf9bba7fa820c7066bbcdf0167c971b0d965613f29d5c3a806c"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "b8a07e46db944a65233a44a6be93be28379e43bcfaa5d25ac6f123fde749da32"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "7a79b96ef179a663193134eccfcbd51c3042a22c348073b730aaad409088136b"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

@@ -1,0 +1,2454 @@
+{
+  "id": "cpp_language_memory_oop__composicion_y_herencia_publica__distinguir_composicion_y_herencia_publica",
+  "title": "Distinguir composición y herencia pública",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contener un objeto y ofrecerse como un tipo base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya construimos clases con otros objetos como miembros. Una pareja podía contener dos marcas; una serie podía contener un vector que gestionaba sus elementos. Cada miembro formaba parte del objeto completo y se construía antes del cuerpo de su constructor. Recuperaremos esa relación, llamada composición o contención, para contrastarla con otra nueva."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la composición, un objeto contiene un dato de otro tipo y elige cómo ofrecerlo en su interfaz. Por ejemplo, un registro puede contener una lectura junto con un código. Eso no significa que el registro completo pueda utilizarse automáticamente donde se pide una lectura (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la herencia pública definiremos otro tipo que sí permite ese uso. Una lectura identificada tendrá una parte Lectura y añadirá un código. Podremos consultar o modificar su parte Lectura mediante la interfaz de ese tipo, sin crear otra lectura para realizar el acceso. Para comprender esa relación empezaremos por la clase que representa una lectura sencilla (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una Lectura concreta con un número privado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lectura contiene un int privado, valor_. Su constructor exige el número inicial y lo establece mediante la lista de inicializadores. Se admite cualquier valor representable por int. No se reserva cero ni un número negativo para representar una ausencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "valor() devuelve el número por valor y permite la consulta de una Lectura constante. sustituir(nuevo) guarda otro int en ese mismo objeto. Su cuerpo sólo hace una asignación de int, sin una condición de rechazo ni una reserva de memoria. Esas dos funciones constituyen la interfaz que utilizaremos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos construir y utilizar una Lectura por sí sola. Llamarla después clase base describirá su relación con otro tipo: no significa que esta clase sencilla haya dejado de ser utilizable. El acceso privado de valor_ sigue requiriendo las funciones de Lectura para consultarlo o cambiarlo desde fuera."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un Registro contiene su propia Lectura"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "lectura_ es un objeto Lectura que pertenece al Registro; codigo_ es otro miembro. Al construir el registro se prepara primero lectura_ con el número recibido y después codigo_, siguiendo sus declaraciones. Esto recupera el orden de miembros ya estudiado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Registro decide qué operaciones ofrece. Su valor() llama a lectura_.valor() y devuelve el número. Su sustituir llama a la operación del miembro. Esas funciones se han escrito expresamente: contener una Lectura no añade automáticamente sus funciones a la interfaz de Registro (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "obtener_lectura devuelve Lectura por valor. En este modelo, copiar esa Lectura copia su int a otro objeto independiente. Elegimos ese retorno para entregar una copia del estado consultado, no una referencia al miembro interior. Otra interfaz podría ofrecer un acceso por referencia con su contrato de duración; la composición no obliga por sí sola a devolver copias."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una LecturaIdentificada tiene una parte base Lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora elegimos que una LecturaIdentificada pueda utilizarse como Lectura. A Lectura la llamaremos clase base; a LecturaIdentificada, clase derivada. El objeto derivado incluye una parte de tipo Lectura, con su número, y añade su propio codigo_. Esa parte base también es un objeto contenido dentro del objeto completo, pero la relación se declara como herencia (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la cabecera de la clase, después de su nombre, los dos puntos introducen la base. La palabra public delante de Lectura elige herencia pública. Es distinta del rótulo public: dentro del cuerpo de la clase, que señala qué miembros propios se pueden utilizar desde fuera. La relación pública permite utilizar las operaciones públicas de Lectura sobre la lectura identificada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Eso no hace público valor_ ni permite que los miembros de la derivada lo utilicen directamente. El número sigue perteneciendo a la parte privada de Lectura. La derivada trabaja mediante valor(), sustituir() y el constructor de la base. Tampoco hay que declarar otro valor_ en la derivada para repetir ese dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos puntos del constructor introducen su lista de inicializadores: no declaran la relación entre clases, como los de la cabecera. Para construir la parte base, esa lista debe nombrar la clase Lectura y proporcionar el argumento valor entre llaves o paréntesis. Para el dato adicional se utiliza el nombre codigo_ y su argumento codigo. La base se prepara primero; después el miembro adicional; por último se ejecuta el cuerpo del constructor. No se construye esa parte creando una Lectura local dentro del cuerpo (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la relación pública y la construcción de la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "El fragmento declara la LecturaIdentificada y define su constructor. Completa la palabra que permite utilizarla públicamente como Lectura y el inicializador que prepara su parte base con el argumento valor. La inicialización de codigo_ ya está escrita."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u8l1_declarar_base_publica_y_prepararla",
+          "question": "Completa la herencia pública y la inicialización de la parte Lectura con valor. Escribe el nombre de esa clase con su argumento entre llaves o paréntesis; no construyas otro objeto en el cuerpo.",
+          "template": "class LecturaIdentificada : [] Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo)\n        : [], codigo_{codigo} {}\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\n",
+          "answers": [
+            "public",
+            "Lectura{valor}"
+          ],
+          "answerAlternatives": [
+            [
+              "public"
+            ],
+            [
+              "Lectura{valor}",
+              "Lectura(valor)"
+            ]
+          ],
+          "explanation": "public hace pública la relación con Lectura. Lectura{valor}, o Lectura(valor), prepara la parte base en la lista del constructor. Después codigo_{codigo} inicializa el dato propio. El constructor no utiliza directamente valor_, que sigue siendo privado de Lectura, ni crea una lectura local que sustituya esa parte base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La base y el dato propio se inicializan por separado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de Lectura recibe valor y prepara el número de la parte base. codigo_{codigo} inicializa el miembro que declara LecturaIdentificada. El cuerpo vacío indica que no hay instrucciones adicionales después de esas inicializaciones; no que los datos hayan quedado sin preparar."
+        },
+        {
+          "type": "paragraph",
+          "text": "La derivada puede utilizar valor() y sustituir() de la base pública sin repetir sus definiciones. Su codigo() ofrece además el dato nuevo. La referencia a una Lectura que prestaremos después permitirá utilizar la interfaz de la base; no ofrecerá por ese nombre el codigo() adicional."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este modelo, cambiar el número sigue siendo una operación válida para la lectura identificada y conserva su código. Elegir herencia pública debe corresponder a ese contrato de uso como base. Necesitar también un int no bastaría, por sí solo, para justificar la relación entre dos tipos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los datos privados de la base no se vuelven públicos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este rechazo de compilación sin ejecutar el programa. AccesoDirecto deriva públicamente de Lectura e intenta nombrar valor_ desde una función propia. El constructor de la base sí se ha proporcionado; el problema es el acceso al dato privado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass AccesoDirecto : public Lectura {\npublic:\n    explicit AccesoDirecto(int valor) : Lectura{valor} {}\n    int consultar_privado() const noexcept { return valor_; }\n};\nint main() { const AccesoDirecto dato{4}; return dato.consultar_privado(); }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_privado_de_base_no_es_acceso_directo_derivado",
+          "question": "¿Por qué no se permite devolver valor_ desde consultar_privado?",
+          "options": [
+            "Porque la parte Lectura de un objeto derivado no contiene el valor_ que tiene una Lectura construida por separado.",
+            "Porque valor_ sigue siendo privado de Lectura; la función de la derivada debe consultar ese dato mediante la interfaz pública disponible.",
+            "Porque public ya permite escribir el dato privado, pero hay que añadir Lectura:: al nombre para quitar el rechazo."
+          ],
+          "correctIndex": 1,
+          "explanation": "La parte base sí contiene su número. La herencia pública permite utilizar la interfaz pública de Lectura, pero no cambia el acceso privado de valor_. Una función de AccesoDirecto no es una función miembro de Lectura. Consultar mediante valor() respeta la separación; calificar el nombre privado no elimina su restricción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El cuerpo del constructor llega después de preparar la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este otro rechazo falta el inicializador de Lectura. El cuerpo intenta utilizar sustituir(valor), pero para llegar a ese cuerpo la parte base ya tendría que estar construida. Comprueba qué constructor ofrece Lectura."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\n\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo) : codigo_{codigo} {\n    sustituir(valor);\n}\nint main() { const LecturaIdentificada dato{5, 9}; return dato.valor(); }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_base_sin_constructor_invocable_sin_argumentos",
+          "question": "¿Qué impide construir aquí la LecturaIdentificada?",
+          "options": [
+            "Al omitir el inicializador se intenta construir la base sin argumentos, pero Lectura no ofrece un constructor que pueda llamarse así.",
+            "Ningún constructor de una derivada puede utilizar una función pública heredada dentro de su cuerpo.",
+            "sustituir ya inicializa correctamente la base, pero hace falta volver a declarar esa función en LecturaIdentificada para permitir la llamada."
+          ],
+          "correctIndex": 0,
+          "explanation": "La base debe estar preparada antes de entrar al cuerpo. Si no se escribe su inicializador, se intenta su inicialización sin argumentos; el constructor de Lectura que hemos declarado exige un int y no hay uno invocable sin argumentos. La llamada posterior a sustituir no puede reparar esa etapa anterior. Omitir un inicializador de base no es siempre un error: depende de que exista un constructor adecuado sin argumentos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la copia obtenida de un objeto compuesto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Registro tiene su propia Lectura y ha elegido devolverla por valor. En el programa se guarda ese resultado en copia. La escritura posterior se realiza sobre copia; identifica qué objeto recibe realmente esa llamada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l1_composicion_y_copia_del_miembro",
+          "language": "cpp",
+          "question": "Escribe el número del registro, el de copia y el código conservado por el registro.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint main() {\n    Registro registro{8, 12};\n    Lectura copia = registro.obtener_lectura();\n    copia.sustituir(-5);\n    std::cout << registro.valor() << ':' << copia.valor() << ':' << registro.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "8:-5:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "obtener_lectura construye otra Lectura copiando el int del miembro. copia.sustituir cambia sólo ese objeto independiente a menos cinco. El miembro del Registro conserva ocho y su código conserva doce. La función no había devuelto una referencia al objeto interior."
+        },
+        {
+          "type": "paragraph",
+          "text": "No atribuimos ese resultado a una diferencia universal entre contener y derivar. La independencia de copia procede del retorno por valor que hemos escrito. Para revisar otro tipo habría que mirar también qué acceso ofrece su interfaz."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia a la base observa la parte existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "dato es una LecturaIdentificada local. const Lectura& vista = dato; enlaza vista con su parte Lectura. No construye otra Lectura ni sustituye el objeto completo por uno de otro tipo. vista utiliza una vía constante para consultar esa parte del mismo dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "leer recibe const Lectura& y devuelve el número consultado. fijar recibe Lectura& y puede utilizar sustituir para cambiar el número existente. Con la herencia pública simple de este ejemplo, esas funciones pueden recibir también la LecturaIdentificada mediante el acceso a su base, conservando los permisos de const (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l1_referencia_base_y_modificacion_del_derivado",
+          "language": "cpp",
+          "question": "Escribe la lectura inicial y las tres consultas posteriores al cambio mediante fijar.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    LecturaIdentificada dato{7, 31};\n    const Lectura& vista = dato;\n    std::cout << leer(vista) << ':';\n    fijar(dato, -6);\n    std::cout << vista.valor() << ':' << dato.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "7:-6:-6:31"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La lectura inicial obtiene siete. fijar recibe la parte Lectura del mismo dato y cambia su número a menos seis. vista no guardaba una copia: observa menos seis, igual que dato.valor(). El objeto completo conserva su código treinta y uno. La referencia base no ha creado ni destruido otra lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este programa el objeto local dato permanece vivo durante todos los usos de vista. Enlazar esa referencia no cambia el momento en que termina ese objeto local. Seguimos necesitando mantener vivo el objeto que contiene la parte a la que damos acceso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un puntero a la base puede señalar esa misma parte"
+        },
+        {
+          "type": "paragraph",
+          "text": "La relación pública permite también obtener Lectura* a partir de la dirección de una LecturaIdentificada modificable. El resultado señala su parte base. Puede utilizar las operaciones de Lectura mediante ->, sin construir otra lectura ni reservar otro objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l1_puntero_y_referencia_a_la_misma_base",
+          "language": "cpp",
+          "question": "Escribe el número observado, el código y el resultado de comparar el puntero con la dirección de vista.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada dato{2, 17};\n    Lectura* acceso = &dato;\n    const Lectura& vista = dato;\n    acceso->sustituir(9);\n    std::cout << vista.valor() << ':' << dato.codigo() << ':' << (acceso == &vista);\n    return 0;\n}\n",
+          "answers": [
+            "9:17:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "acceso señala la parte Lectura de dato y cambia su número a nueve. vista se refiere a esa misma parte y observa nueve; el código adicional sigue siendo diecisiete. La comparación de punteros resulta verdadera. &vista tiene tipo const Lectura* y acceso puede compararse con ella conservando esa const, sin cambiar la parte señalada."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comprobación relaciona dos accesos compatibles a la misma parte base mientras el objeto sigue vivo. No imprime direcciones numéricas ni supone una disposición física concreta de la base y el código. No necesitamos calcular un desplazamiento ni convertir manualmente las direcciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La conversión a base conserva la const del objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora dato se declara const LecturaIdentificada. Puede consultarse directamente y mediante una referencia o un puntero constantes a su base. Esos accesos no permiten utilizar sustituir sobre esa parte. El objeto completo conserva también su código adicional."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l1_consulta_constante_de_objeto_y_base",
+          "language": "cpp",
+          "question": "Escribe las cuatro consultas del programa, en su orden.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{4, 23};\n    const Lectura& vista = dato;\n    const Lectura* acceso = &dato;\n    std::cout << leer(dato) << ':' << vista.valor() << ':' << acceso->valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "4:4:4:23"
+          ],
+          "outputComparison": "exact",
+          "explanation": "leer recibe un acceso constante a la parte Lectura de dato y obtiene cuatro. vista y acceso consultan esa misma parte y también leen cuatro. dato sigue siendo la LecturaIdentificada completa y su propio codigo() devuelve veintitrés. No se necesita crear una copia para realizar esas consultas."
+        },
+        {
+          "type": "paragraph",
+          "text": "El tipo utilizado para escribir una llamada determina qué interfaz se puede nombrar. Mediante const Lectura& podemos llamar a valor(), pero no a sustituir ni a codigo(). El dato adicional no ha desaparecido del objeto completo: lo consultamos mediante un acceso de tipo LecturaIdentificada adecuado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Herencia pública no permite quitar const"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este rechazo de compilación sin ejecutar el programa. fijar necesita Lectura& para modificar el número. El objeto que se le ofrece es una LecturaIdentificada constante."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const LecturaIdentificada dato{5, 9};\n    fijar(dato, 8);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_referencia_base_modificable_desde_derivada_constante",
+          "question": "¿Por qué la relación pública no permite esa llamada a fijar?",
+          "options": [
+            "Porque una función libre nunca puede recibir la base de un objeto derivado, aunque ambos sean modificables.",
+            "Porque la conversión tiene que copiar primero la base, y el constructor de copia de Lectura está eliminado.",
+            "Porque enlazar Lectura& con esa parte quitaría la const del objeto ofrecido; la relación de herencia no permite ese acceso de escritura."
+          ],
+          "correctIndex": 2,
+          "explanation": "dato es constante y su parte base debe conservar esa limitación. Un const Lectura& permite consultarla; el Lectura& que necesita fijar ofrecería escritura y no puede enlazarse así. La conversión pública no crea una copia ni elimina const. Con un objeto derivado modificable sí habíamos utilizado fijar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una Lectura por sí sola no aporta el código de la derivada"
+        },
+        {
+          "type": "paragraph",
+          "text": "La relación que utilizamos va del objeto derivado a su parte base. El programa siguiente intenta lo contrario: enlazar una referencia a LecturaIdentificada con un objeto construido solamente como Lectura. Analiza el rechazo sin ejecutarlo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    Lectura dato{5};\n    LecturaIdentificada& especial = dato;\n    std::cout << especial.codigo();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_base_aislada_no_es_objeto_derivado",
+          "question": "¿Por qué no se admite la inicialización de especial?",
+          "options": [
+            "Porque dato sólo es una Lectura; no contiene la parte adicional de una LecturaIdentificada y no existe esa conversión implícita a la referencia derivada.",
+            "Porque bastaría cambiar especial a const LecturaIdentificada& para añadir al objeto el código que le falta.",
+            "Porque dato tendría que guardar el mismo número que un código válido para poder utilizarse como la derivada."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una Lectura independiente no se convierte automáticamente en una LecturaIdentificada al enlazar una referencia. No tiene su código adicional. La referencia tampoco agrega miembros ni construye otro objeto. Conservar const no cambia esa relación entre los tipos y el número guardado no determina el tipo del objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contener una Lectura no convierte todo el Registro en una Lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Registro contiene una Lectura, pero la clase no declara herencia ni otra conversión del objeto completo a Lectura. Analiza por qué este programa no puede utilizar registro como argumento de leer."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    const Registro registro{5, 9};\n    std::cout << leer(registro);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_miembro_contenido_sin_conversion_del_objeto_completo",
+          "question": "¿Qué diferencia explica el rechazo de leer(registro)?",
+          "options": [
+            "Que leer prohíbe argumentos constantes, y declarar registro sin const crearía la conversión necesaria.",
+            "Que el objeto completo Registro no tiene la relación pública con Lectura; su miembro puede obtenerse por la interfaz prevista, pero contenerlo no convierte automáticamente al Registro.",
+            "Que compartir el nombre valor() exige que leer reciba el código como argumento para elegir el miembro interior."
+          ],
+          "correctIndex": 1,
+          "explanation": "leer recibe const Lectura&. Registro contiene una Lectura, pero no puede utilizarse directamente como ella con la interfaz escrita. obtener_lectura ofrece expresamente una Lectura por valor que puede consultarse. Quitar const al registro no crea una relación entre los tipos y las coincidencias de nombres no realizan esa conversión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una copia anterior y una consulta nueva pueden observar números distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente programa se conserva una copia obtenida de registro. Después cambia el miembro interior del registro y también se modifica la copia. La llamada final a obtener_lectura entrega otra Lectura por valor, con el estado que tenga el miembro en ese momento."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l1_copia_guardada_y_nueva_lectura_del_compuesto",
+          "language": "cpp",
+          "question": "Escribe la nueva consulta del registro, el número de copia y el código del registro.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Registro {\npublic:\n    Registro(int valor, int codigo) : lectura_{valor}, codigo_{codigo} {}\n    int valor() const noexcept { return lectura_.valor(); }\n    int codigo() const noexcept { return codigo_; }\n    Lectura obtener_lectura() const { return lectura_; }\n    void sustituir(int nuevo) noexcept { lectura_.sustituir(nuevo); }\nprivate:\n    Lectura lectura_;\n    int codigo_;\n};\nint leer(const Lectura& dato) noexcept { return dato.valor(); }\nvoid fijar(Lectura& dato, int nuevo) noexcept { dato.sustituir(nuevo); }\nint main() {\n    Registro registro{10, 7};\n    Lectura copia = registro.obtener_lectura();\n    registro.sustituir(20);\n    fijar(copia, -3);\n    std::cout << leer(registro.obtener_lectura()) << ':' << copia.valor() << ':' << registro.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "20:-3:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "registro sustituye el número de su miembro por veinte. La variable copia es independiente y fijar la cambia a menos tres. La nueva llamada a obtener_lectura devuelve otra Lectura que contiene veinte; leer recibe su acceso constante y puede consultarla durante esa llamada. El código del Registro conserva siete. No se conserva una referencia al resultado temporal después de terminar la instrucción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las funciones de consulta y de modificación conservan sus contratos de referencia, pero el objeto al que se aplican puede ser distinto. Para seguir el resultado identificamos si estamos usando el miembro interior, una copia guardada o la nueva copia devuelta por otra llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y destrucción con una base y un miembro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperamos los mensajes de constructores y destructores para observar ahora otra parte del objeto. Completa tiene una base BaseVisible y un miembro MiembroVisible. Al construirse se prepara primero esa base, después el miembro y finalmente se ejecuta el cuerpo del constructor de Completa. En la destrucción se ejecuta el cuerpo del destructor de Completa, después se destruye el miembro y finalmente la base (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l1_orden_de_base_miembro_y_cuerpos",
+          "language": "cpp",
+          "question": "Escribe todas las líneas de la salida, incluido el texto posterior al bloque interior.",
+          "code": "#include <iostream>\n\nclass BaseVisible {\npublic:\n    BaseVisible() { std::cout << \"Base\\n\"; }\n    ~BaseVisible() { std::cout << \"FinBase\\n\"; }\n};\nclass MiembroVisible {\npublic:\n    MiembroVisible() { std::cout << \"Miembro\\n\"; }\n    ~MiembroVisible() { std::cout << \"FinMiembro\\n\"; }\n};\nclass Completa : public BaseVisible {\npublic:\n    Completa() : BaseVisible{}, miembro_{} { std::cout << \"Derivada\\n\"; }\n    ~Completa() { std::cout << \"FinDerivada\\n\"; }\nprivate:\n    MiembroVisible miembro_;\n};\nint main() {\n    {\n        Completa objeto;\n        std::cout << \"Uso\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Base\nMiembro\nDerivada\nUso\nFinDerivada\nFinMiembro\nFinBase\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La construcción imprime Base, Miembro y Derivada, en ese orden. main imprime Uso. Al salir del bloque se ejecuta el cuerpo del destructor de Completa, que imprime FinDerivada; después se destruye su miembro y aparece FinMiembro; por último se destruye la base y aparece FinBase. main continúa después del bloque y escribe Despues. No se escriben llamadas manuales a esos destructores."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa construye y destruye normalmente un objeto local de tipo Completa. Los mensajes del cuerpo del destructor no significan que sus miembros se destruyan mediante instrucciones que tengamos que añadir allí: el lenguaje realiza las etapas posteriores. Este ejemplo sólo amplía el orden ya estudiado para incluir la parte base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aplicar las dos relaciones sin confundir el acceso con la copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica utilizará Medida como base y MedidaIdentificada como derivada pública. El constructor preparará la parte Medida con el número recibido y el código adicional con su propio argumento. La función fijar recibirá Medida& y utilizará su operación pública para cambiar el número existente."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el mismo programa, Ficha contendrá otra Medida y ofrecerá una copia por valor. Las referencias y el puntero a la base observarán la medida identificada original; modificar la copia obtenida de la ficha no cambiará su miembro interior. Los objetos locales permanecerán vivos durante todos esos usos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas diferencias proceden de las relaciones y los retornos declarados. Compartir un número inicial no convierte dos objetos en uno solo; enlazar una referencia base tampoco crea una copia. Para elegir la operación correcta seguiremos el objeto concreto al que da acceso cada nombre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una medida identificada y utilizar su parte Medida"
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica utiliza otros nombres para aplicar las mismas relaciones. Medida guarda un int y ofrece numero() para leerlo y sustituir(nuevo) para reemplazarlo. Ambos valores pueden ser cualquier int representable. El código identificador también admite cualquier int; cero y los números negativos no son señales especiales."
+        },
+        {
+          "type": "paragraph",
+          "text": "MedidaIdentificada hereda públicamente de Medida y añade un codigo_. El constructor debe preparar la parte Medida con numero y su miembro codigo_ con codigo. No se crea una Medida local en el cuerpo para simular esa inicialización: debe construirse la parte base que pertenece al objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa también fijar(Medida& destino, int nuevo). Esa función recibe un acceso modificable a una Medida existente. Utiliza su operación pública sustituir para guardar nuevo. No crea otra medida y no intenta escribir directamente un miembro privado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ficha está proporcionada: contiene una Medida y un código. obtener_medida devuelve una copia por valor de ese miembro. No ofrece una conversión de Ficha a Medida ni una referencia a su medida interior. No cambies esa interfaz ni main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una entrada, una construcción y dos cambios independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene tres enteros en este orden:\nInicial: número con el que se construyen dato y la medida contenida en ficha.\nCodigo: identificador con el que se construyen ambos objetos.\nNuevo: número que fijar debe guardar cuando se la llama."
+        },
+        {
+          "type": "paragraph",
+          "text": "main construye dato y una Ficha constante. Después enlaza vista, editable y acceso con la parte Medida del mismo dato. vista permite consultar; editable y acceso permiten modificar. No copian dato ni crean otra parte base. Más adelante, al cambiar el número mediante editable, las otras dos vías deben observar el número nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "copia, en cambio, es otro objeto Medida creado con obtener_medida(). La segunda llamada a fijar modifica esa copia. ficha conserva su número y su código porque no se ha devuelto una referencia a su miembro. En esta interfaz, elegir el retorno por valor es lo que produce la independencia; contener un objeto no obliga a devolver copias en cualquier diseño."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una entrada incompleta o un texto que no pueda leerse como los tres int termina main con código uno. Los ensayos son independientes; no hay órdenes ni estados acumulados entre ejecuciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué comprueba cada parte del informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los campos se muestran en este orden:\nAntes y CodigoAntes: datos de la medida identificada antes de llamar a fijar.\nVista, Derivada y Puntero: número consultado después por tres accesos al mismo objeto.\nCodigo: identificador después del cambio de la parte base.\nMismaParte: compara el puntero a Medida con la dirección de la referencia a esa misma parte; debe ser uno.\nFicha y CodigoFicha: datos del objeto que contiene su propia medida.\nCopia: número del objeto independiente que se obtuvo de la ficha."
+        },
+        {
+          "type": "paragraph",
+          "text": "MismaParte no imprime una dirección ni supone que la dirección de todo el objeto derivado tenga una representación numérica concreta. &vista tiene tipo const Medida* y acceso tiene tipo Medida*. Para compararlos se permite añadir const al segundo acceso; ambos señalan la misma parte base. Eso no quita const a vista ni permite modificar a través de ella. No se utiliza ninguno después de terminar el objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial construye la parte base y el código con cero, y su fijar todavía no hace nada. Es un programa que compila con un comportamiento incompleto. Sustituye esas dos definiciones para cumplir los datos y las operaciones descritas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar el constructor y la actualización por referencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa las dos definiciones indicadas y ejecuta el programa. Sólo el primer caso correcto es obligatorio para avanzar. Los demás ensayos se conservan como opciones para variar los datos."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{0}, codigo_{0} {\n    // Inicializa la base y el codigo con los argumentos recibidos.\n    (void)numero;\n    (void)codigo;\n}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    // Utiliza la interfaz publica de Medida para cambiar su numero.\n    (void)destino;\n    (void)nuevo;\n}\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n",
+          "initialStandardInput": "6 41 -8",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 41 -8",
+                "outputs": [
+                  "Antes:6;CodigoAntes:41;Vista:-8;Derivada:-8;Puntero:-8;Codigo:41;MismaParte:1;Ficha:6;CodigoFicha:41;Copia:-8"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "0 -3 12",
+                "outputs": [
+                  "Antes:0;CodigoAntes:-3;Vista:12;Derivada:12;Puntero:12;Codigo:-3;MismaParte:1;Ficha:0;CodigoFicha:-3;Copia:12"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "-7 0 0",
+                "outputs": [
+                  "Antes:-7;CodigoAntes:0;Vista:0;Derivada:0;Puntero:0;Codigo:0;MismaParte:1;Ficha:-7;CodigoFicha:0;Copia:0"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "19 4 19",
+                "outputs": [
+                  "Antes:19;CodigoAntes:4;Vista:19;Derivada:19;Puntero:19;Codigo:4;MismaParte:1;Ficha:19;CodigoFicha:4;Copia:19"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              },
+              {
+                "standardInput": "-11 23 -2",
+                "outputs": [
+                  "Antes:-11;CodigoAntes:23;Vista:-2;Derivada:-2;Puntero:-2;Codigo:23;MismaParte:1;Ficha:-11;CodigoFicha:23;Copia:-2"
+                ],
+                "explanation": "Inicializa Medida con numero y codigo_ con codigo en la lista del constructor. En fijar, llama a destino.sustituir(nuevo). La referencia base observa el mismo objeto derivado; la copia obtenida de Ficha sigue siendo independiente."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El nuevo número es distinto del inicial y del código. Esto permite distinguir el estado de la parte base, el identificador y la ficha que debe conservarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6 41 -8"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:6;CodigoAntes:41;Vista:-8;Derivada:-8;Puntero:-8;Codigo:41;MismaParte:1;Ficha:6;CodigoFicha:41;Copia:-8"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: cero, signos y sustitución por el mismo número"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El número inicial es cero y el código es negativo; ninguno representa ausencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 -3 12"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:0;CodigoAntes:-3;Vista:12;Derivada:12;Puntero:12;Codigo:-3;MismaParte:1;Ficha:0;CodigoFicha:-3;Copia:12"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El número nuevo y el código son cero, con un número inicial negativo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-7 0 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:-7;CodigoAntes:0;Vista:0;Derivada:0;Puntero:0;Codigo:0;MismaParte:1;Ficha:-7;CodigoFicha:0;Copia:0"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guardar el mismo número conserva el resultado. Este caso por sí solo no permite detectar una actualización omitida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "19 4 19"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:19;CodigoAntes:4;Vista:19;Derivada:19;Puntero:19;Codigo:4;MismaParte:1;Ficha:19;CodigoFicha:4;Copia:19"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos números son negativos y distintos; el código positivo debe conservarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-11 23 -2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:-11;CodigoAntes:23;Vista:-2;Derivada:-2;Puntero:-2;Codigo:23;MismaParte:1;Ficha:-11;CodigoFicha:23;Copia:-2"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: construir la base y modificarla por su interfaz"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedidaIdentificada::MedidaIdentificada(int numero, int codigo)\n    : Medida{numero}, codigo_{codigo} {}\nvoid fijar(Medida& destino, int nuevo) noexcept {\n    destino.sustituir(nuevo);\n}\nclass Ficha {\npublic:\n    Ficha(int numero, int codigo) : medida_{numero}, codigo_{codigo} {}\n    int numero() const noexcept { return medida_.numero(); }\n    int codigo() const noexcept { return codigo_; }\n    Medida obtener_medida() const { return medida_; }\nprivate:\n    Medida medida_;\n    int codigo_;\n};\nint main() {\n    int inicial = 0, codigo = 0, nuevo = 0;\n    if (!(std::cin >> inicial >> codigo >> nuevo)) { return 1; }\n    MedidaIdentificada dato{inicial, codigo};\n    const Ficha ficha{inicial, codigo};\n    const Medida& vista = dato;\n    Medida& editable = dato;\n    Medida* acceso = &dato;\n    Medida copia = ficha.obtener_medida();\n    std::cout << \"Antes:\" << vista.numero() << \";CodigoAntes:\" << dato.codigo();\n    fijar(editable, nuevo);\n    fijar(copia, nuevo);\n    std::cout << \";Vista:\" << vista.numero() << \";Derivada:\" << dato.numero()\n              << \";Puntero:\" << acceso->numero() << \";Codigo:\" << dato.codigo()\n              << \";MismaParte:\" << (&vista == acceso) << \";Ficha:\" << ficha.numero()\n              << \";CodigoFicha:\" << ficha.codigo() << \";Copia:\" << copia.numero();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Medida{numero} inicializa la parte base que está dentro de la MedidaIdentificada. codigo_{codigo} prepara el miembro adicional. La base se construye antes que el miembro y antes del cuerpo del constructor. No se accede a numero_, que pertenece al ámbito privado de Medida (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "fijar utiliza destino.sustituir(nuevo). Cuando destino se refiere a la base de dato, esa operación cambia el número de dato y mantiene codigo_. vista y acceso observan ese mismo número. Cuando destino se refiere a copia, modifica otro objeto: la Ficha constante no cambia."
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión permitida por la herencia pública y la copia devuelta por obtener_medida son operaciones distintas. Una ofrece acceso a una parte existente; la otra entrega un valor independiente. Que ambos objetos comenzaran con el mismo número no los convierte en la misma medida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la relación según el contrato"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_relacion_no_solo_reutilizacion",
+          "question": "Un tipo debe contener una lectura como un dato suyo, pero no se ha elegido que pueda utilizarse directamente como una Lectura. ¿Qué decisión corresponde a ese contrato?",
+          "options": [
+            "Derivarlo públicamente de Lectura únicamente para evitar escribir una llamada a un miembro.",
+            "Guardar la lectura como miembro y ofrecer las operaciones o accesos que necesite su interfaz, sin suponer una conversión automática a Lectura.",
+            "Convertir el miembro en público para que el objeto completo se convierta automáticamente en Lectura."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un miembro expresa que el objeto contiene ese dato. La interfaz puede consultar el miembro, devolver una copia o proporcionar otro acceso con un contrato de vida adecuado. Nada de eso crea por sí solo la relación de herencia pública ni la conversión del objeto completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Elegir herencia pública requiere que tenga sentido ofrecer las operaciones públicas de la base sobre el objeto derivado. No basta con que ambos necesiten guardar un int. En el modelo de esta lección, sustituir el número de una lectura identificada mantiene un estado válido y su código adicional."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un acceso a la base conserva sus límites de tipo"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l1_interfaz_visible_por_referencia_base",
+          "question": "vista tiene tipo const Medida& y se refiere a la base de una MedidaIdentificada. ¿Qué explica su alcance?",
+          "options": [
+            "Es otra Medida que se copió al enlazar la referencia y deja de observar los cambios del objeto original.",
+            "Su tipo permite llamar a cualquier función de la derivada, incluido codigo(), porque el objeto completo contiene ese dato.",
+            "Se refiere a la parte base existente y permite las consultas constantes de Medida; no ofrece por ese nombre los miembros adicionales de MedidaIdentificada."
+          ],
+          "correctIndex": 2,
+          "explanation": "La referencia no copia el objeto ni cambia el tipo con el que se escriben las llamadas. const Medida& permite consultar numero(), pero no llamar a sustituir ni a codigo() por esa referencia. El objeto derivado sigue existiendo con su código y puede consultarse mediante su propio acceso adecuado."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los programas utilizamos objetos locales que permanecen vivos durante los préstamos. Al salir del bloque se termina el objeto completo y también sus partes. No hay una reserva dinámica ni una transferencia de propiedad por haber enlazado una referencia o convertido un puntero."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "244a4804882e9de6e2a055ebfd25e88a42b9568ce0c80eff0daf517d2074d084"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "8a7115b7603a5f3c9f83fc1301aa0517f1ec31a46713bff1bbe1d54d00647093"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "4c65385d01a4109b72628c9f5a097cd4b2f144baf32d26eb1e1391489b788f19"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "0fc0a87eefcc4d9667b3a235afbb8adbdd7298b1c47818d9d4a15e9a044adc8d"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "ff818a836002184701c7b0d20cd94feb8ca9707a3993c7d9692cd4809aa772dd"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "44aeb6f711e0bb167b5d58b2fbcc4fbd2dab94d5629e16f9e5f2c0b1f8008868"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "8d788df913977c7b7243f29590cccd10502eb858b0179268137b84527b0e1a00"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "fe8cbdb272448731911671c2468f7349a0cf3138f694cce0a79c410bcdb3a073"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "c85ae03fe3bccb9ec6b151ec2e2961063399d68c10981ce6a1e939ad99d203fa"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "f4fabb77e2a9efb4d084218f7b7f06e5a529e6e04ed596eb2881c5109ef79512"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "7d993f9484f60665c09be24d3cc27f384fcbf05c0893abd3cc8187f8a9c2b86f"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "c97f2c27c80bf7698502dcffe8861f4ab1cd4693a267a224182862ac41138114"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "266151a9929942e4f37632963050b1746947b780e1f7421fe0959b6efbfe5215"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "03fd66c2d8606158882e0774d28deb8cab34f871614d4472ee1453e75d76254a"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "0d82e72bd71e74abdd485c336c0d617e2d107f790f9dcc60c6c9407f62b4ec0e"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "254d2b38e0b3603be9c1e1c329d9ec75d060983b0a1b7654a4839d122b5d984a"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "d3e7d7f9d6b0c12c27f61b66b59a520f9761f54db1f1495aca122e8129fa4702"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "e0fbc542ddafc449ac54801b11f0d0ff9efd21e97107aa56c33762f5ab08bc08"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "6b6ab5977ca7f67855202bbf72e5731e91095de8b5981ca06833281bc0cc47e8"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "936f0a7439ed17c50d5ac273fb8cb965d002c54d5a38a43bdebb7216cfd93fb2"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "e1202756687479a6f1ceee92743ba4ab97d0405843f976a9bea4c2c397e935aa"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0006",
+            "sha256": "9ee49b80b3b48b7c9432fae3d2271ab99e8b395688a5f1bdfd5cfe39504c45d7"
+          },
+          {
+            "id": "block_0021_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0008",
+            "sha256": "d114e2059a982dc20a718ec7cbb2faa2b4c4f90775ee58b9472123bf6bd12572"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0004",
+            "sha256": "896971e2d6e802123aa4056fc999d7843eacb34ded2c847aa2ee059e96f833d2"
+          },
+          {
+            "id": "block_0022_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0006",
+            "sha256": "14f9b7878daceddd0bc3bfdd114bda25acefb8b173ba8d454e4c512844c32ec0"
+          },
+          {
+            "id": "block_0022_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0010",
+            "sha256": "afaeea1918f7b06d8278c02ff7a21a3c1481b59b091ddb198c98a091ddb302d9"
+          },
+          {
+            "id": "block_0022_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0012",
+            "sha256": "fe1264d61fdb463e85c3966e2ed576a241ea2120475ac6c36353111245f76058"
+          },
+          {
+            "id": "block_0022_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0016",
+            "sha256": "d0944e29a3c5d7d5e4d562346429d16c8c39ce365457f2926fdc1dba2b266db7"
+          },
+          {
+            "id": "block_0022_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0018",
+            "sha256": "9560b63bf1924ca550ca1b63de5c4ec194ae764c3db8339a74e518427ee93c89"
+          },
+          {
+            "id": "block_0022_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0022",
+            "sha256": "a47051f4dfa592ed2658ef61599661947e557ae6eafef0c206b4385f9b05494c"
+          },
+          {
+            "id": "block_0022_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0024",
+            "sha256": "1493b93a019c0d334711efb41d57cd7c3476edf64b79e2fbac828f2a2e171bc1"
+          }
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          {
+            "id": "block_0023_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0023_0001",
+            "sha256": "4f5664881b7fe467a2b66100c2f0dc694df234cdf626898e91cf340e07d98521"
+          },
+          {
+            "id": "block_0023_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          {
+            "id": "block_0024_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0024_0001",
+            "sha256": "f56f56e32a6cc0d5197dcdef6d37ba890341dd8bffee7dc8055cfe09cee6fd70"
+          },
+          {
+            "id": "block_0024_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          {
+            "id": "block_0025_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0025_0001",
+            "sha256": "85dfd28def51ac190e92f9548b351658c246994b5378e376f910f9a9fe18eab0"
+          },
+          {
+            "id": "block_0025_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004",
+          "block_0021_0005",
+          "block_0021_0006",
+          "block_0021_0007",
+          "block_0021_0008"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003",
+          "block_0022_0004",
+          "block_0022_0005",
+          "block_0022_0006",
+          "block_0022_0007",
+          "block_0022_0008",
+          "block_0022_0009",
+          "block_0022_0010",
+          "block_0022_0011",
+          "block_0022_0012",
+          "block_0022_0013",
+          "block_0022_0014",
+          "block_0022_0015",
+          "block_0022_0016",
+          "block_0022_0017",
+          "block_0022_0018",
+          "block_0022_0019",
+          "block_0022_0020",
+          "block_0022_0021",
+          "block_0022_0022",
+          "block_0022_0023",
+          "block_0022_0024"
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          "block_0023_0000",
+          "block_0023_0001",
+          "block_0023_0002",
+          "block_0023_0003",
+          "block_0023_0004"
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          "block_0024_0000",
+          "block_0024_0001",
+          "block_0024_0002"
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          "block_0025_0000",
+          "block_0025_0001",
+          "block_0025_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "6b6234400ca96081e48aa6d2f8c29d3cbb38c9137e6c97de1a8a4f3b2be4845c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "244a4804882e9de6e2a055ebfd25e88a42b9568ce0c80eff0daf517d2074d084"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "8a7115b7603a5f3c9f83fc1301aa0517f1ec31a46713bff1bbe1d54d00647093"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "4c65385d01a4109b72628c9f5a097cd4b2f144baf32d26eb1e1391489b788f19"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "0fc0a87eefcc4d9667b3a235afbb8adbdd7298b1c47818d9d4a15e9a044adc8d"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "ff818a836002184701c7b0d20cd94feb8ca9707a3993c7d9692cd4809aa772dd"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "44aeb6f711e0bb167b5d58b2fbcc4fbd2dab94d5629e16f9e5f2c0b1f8008868"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "8d788df913977c7b7243f29590cccd10502eb858b0179268137b84527b0e1a00"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "fe8cbdb272448731911671c2468f7349a0cf3138f694cce0a79c410bcdb3a073"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "c85ae03fe3bccb9ec6b151ec2e2961063399d68c10981ce6a1e939ad99d203fa"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "f4fabb77e2a9efb4d084218f7b7f06e5a529e6e04ed596eb2881c5109ef79512"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "7d993f9484f60665c09be24d3cc27f384fcbf05c0893abd3cc8187f8a9c2b86f"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "c97f2c27c80bf7698502dcffe8861f4ab1cd4693a267a224182862ac41138114"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "266151a9929942e4f37632963050b1746947b780e1f7421fe0959b6efbfe5215"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "03fd66c2d8606158882e0774d28deb8cab34f871614d4472ee1453e75d76254a"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "0d82e72bd71e74abdd485c336c0d617e2d107f790f9dcc60c6c9407f62b4ec0e"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "254d2b38e0b3603be9c1e1c329d9ec75d060983b0a1b7654a4839d122b5d984a"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "d3e7d7f9d6b0c12c27f61b66b59a520f9761f54db1f1495aca122e8129fa4702"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "e0fbc542ddafc449ac54801b11f0d0ff9efd21e97107aa56c33762f5ab08bc08"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "6b6ab5977ca7f67855202bbf72e5731e91095de8b5981ca06833281bc0cc47e8"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "936f0a7439ed17c50d5ac273fb8cb965d002c54d5a38a43bdebb7216cfd93fb2"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "e1202756687479a6f1ceee92743ba4ab97d0405843f976a9bea4c2c397e935aa"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0006",
+                "sha256": "9ee49b80b3b48b7c9432fae3d2271ab99e8b395688a5f1bdfd5cfe39504c45d7"
+              },
+              {
+                "id": "block_0021_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0008",
+                "sha256": "d114e2059a982dc20a718ec7cbb2faa2b4c4f90775ee58b9472123bf6bd12572"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0004",
+                "sha256": "896971e2d6e802123aa4056fc999d7843eacb34ded2c847aa2ee059e96f833d2"
+              },
+              {
+                "id": "block_0022_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0006",
+                "sha256": "14f9b7878daceddd0bc3bfdd114bda25acefb8b173ba8d454e4c512844c32ec0"
+              },
+              {
+                "id": "block_0022_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0010",
+                "sha256": "afaeea1918f7b06d8278c02ff7a21a3c1481b59b091ddb198c98a091ddb302d9"
+              },
+              {
+                "id": "block_0022_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0012",
+                "sha256": "fe1264d61fdb463e85c3966e2ed576a241ea2120475ac6c36353111245f76058"
+              },
+              {
+                "id": "block_0022_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0016",
+                "sha256": "d0944e29a3c5d7d5e4d562346429d16c8c39ce365457f2926fdc1dba2b266db7"
+              },
+              {
+                "id": "block_0022_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0018",
+                "sha256": "9560b63bf1924ca550ca1b63de5c4ec194ae764c3db8339a74e518427ee93c89"
+              },
+              {
+                "id": "block_0022_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0022",
+                "sha256": "a47051f4dfa592ed2658ef61599661947e557ae6eafef0c206b4385f9b05494c"
+              },
+              {
+                "id": "block_0022_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0024",
+                "sha256": "1493b93a019c0d334711efb41d57cd7c3476edf64b79e2fbac828f2a2e171bc1"
+              }
+            ]
+          },
+          {
+            "id": "page_0023",
+            "blocks": [
+              {
+                "id": "block_0023_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0023_0001",
+                "sha256": "4f5664881b7fe467a2b66100c2f0dc694df234cdf626898e91cf340e07d98521"
+              },
+              {
+                "id": "block_0023_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0024",
+            "blocks": [
+              {
+                "id": "block_0024_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0024_0001",
+                "sha256": "f56f56e32a6cc0d5197dcdef6d37ba890341dd8bffee7dc8055cfe09cee6fd70"
+              },
+              {
+                "id": "block_0024_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0025",
+            "blocks": [
+              {
+                "id": "block_0025_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0025_0001",
+                "sha256": "85dfd28def51ac190e92f9548b351658c246994b5378e376f910f9a9fe18eab0"
+              },
+              {
+                "id": "block_0025_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

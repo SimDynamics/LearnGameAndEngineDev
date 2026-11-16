@@ -1,0 +1,1370 @@
+{
+  "id": "cpp_language_memory_oop__construccion_y_reutilizacion_de_clases__elegir_composicion_o_herencia_privada",
+  "title": "Elegir composición o herencia privada",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reutilizar un objeto sin ofrecer todas sus operaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que una clase ya sabe conservar un entero, consultarlo y sustituirlo. Otra clase quiere utilizar ese trabajo, pero debe decidir qué operaciones ofrecer con sus propios nombres. Su interfaz pública es precisamente ese conjunto de operaciones que puede usar quien trabaja desde fuera."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una posibilidad ya conocida es incluir un objeto Dato como miembro. Eso es composición: LecturaConMiembro contiene el miembro dato_. Su constructor prepara ese miembro y sus métodos públicos lo utilizan por su nombre (Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class LecturaConMiembro {\npublic:\n    explicit LecturaConMiembro(int numero) : dato_{numero} {}\n    int valor() const { return dato_.numero(); }\n    void cargar(int numero) { dato_.poner(numero); }\nprivate:\n    Dato dato_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "valor() consulta dato_.numero(); cargar() llama a dato_.poner(numero). Quien usa LecturaConMiembro puede llamar a valor y cargar, pero no accede directamente al miembro privado dato_. Los métodos de Dato no se convierten automáticamente en métodos públicos de LecturaConMiembro. Tampoco una LecturaConMiembro se convierte por contener ese miembro en un Dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo, cargar admite cualquier int porque ése es el contrato elegido. Otra clase podría ofrecer sólo consultas o aceptar cambios bajo otras condiciones. Que exista Dato::poner no obliga a publicar una operación con la misma libertad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una base privada también puede utilizarse desde los métodos propios"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otra posibilidad es escribir LecturaPrivada : private Dato. Aquí Dato no es un miembro llamado dato_, sino la parte base de LecturaPrivada. private después de los dos puntos elige el tipo de relación con esa base; no es una sección private: que declare miembros dentro del cuerpo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class LecturaPrivada : private Dato {\npublic:\n    explicit LecturaPrivada(int numero) : Dato{numero} {}\n    int valor() const { return Dato::numero(); }\n    void cargar(int numero) { Dato::poner(numero); }\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor inicializa la parte base mediante Dato{numero}. Los métodos de LecturaPrivada pueden llamar a las operaciones públicas de esa base. En este caso se escribe Dato::numero() para consultar y Dato::poner(numero) para sustituir el entero. Esas operaciones heredadas no quedan ofrecidas automáticamente como operaciones públicas de LecturaPrivada (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos clases de este programa tienen la misma interfaz elegida: valor y cargar. Se diferencian en cómo guardan y utilizan su Dato, no en las operaciones solicitadas desde main."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l3_dos_formas_de_reutilizar_con_misma_interfaz",
+          "language": "cpp",
+          "question": "Escribe la salida completa antes y después de cargar los nuevos enteros.",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass LecturaConMiembro {\npublic:\n    explicit LecturaConMiembro(int numero) : dato_{numero} {}\n    int valor() const { return dato_.numero(); }\n    void cargar(int numero) { dato_.poner(numero); }\nprivate:\n    Dato dato_;\n};\nclass LecturaPrivada : private Dato {\npublic:\n    explicit LecturaPrivada(int numero) : Dato{numero} {}\n    int valor() const { return Dato::numero(); }\n    void cargar(int numero) { Dato::poner(numero); }\n};\nint main() {\n    LecturaConMiembro a{4};\n    LecturaPrivada b{6};\n    std::cout << a.valor() << ':' << b.valor() << '|';\n    a.cargar(9);\n    b.cargar(-2);\n    std::cout << a.valor() << ':' << b.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:6|9:-2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a contiene un Dato inicializado con cuatro; b contiene como parte base un Dato inicializado con seis. Las primeras consultas obtienen esos valores. cargar guarda nueve en el miembro de a y menos dos en la base de b. Las consultas finales observan esos cambios. Las dos representaciones cumplen aquí la misma interfaz pública."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Desde fuera no hay una conversión implícita a la base privada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con herencia pública ya utilizamos referencias y punteros a la base para acceder a un objeto derivado. En una relación privada, una conversión implícita semejante desde main se rechaza. La restricción depende de dónde se solicita la conversión; no significa que esa parte base haya desaparecido (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con las definiciones anteriores, estas dos declaraciones de vista se analizan por separado como rechazos de compilación. El objeto dato existe y está inicializado; el problema no es su duración ni que la vista añada const."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "LecturaPrivada dato{4};\nconst Dato& vista = dato;"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "LecturaPrivada dato{4};\nconst Dato* vista = &dato;"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l3_conversion_exterior_a_base_privada",
+          "question": "¿Qué explica que main no pueda crear esas vistas implícitamente?",
+          "options": [
+            "El acceso const impide que una referencia o un puntero se refieran a un objeto inicialmente modificable.",
+            "Dato es una base privada de LecturaPrivada y no es accesible para esa conversión desde main.",
+            "Las referencias y los punteros a bases sólo pueden utilizarse con objetos creados mediante new."
+          ],
+          "correctIndex": 1,
+          "explanation": "La conversión intenta obtener una vista de la base privada desde fuera de LecturaPrivada. En ese contexto no está permitida. Añadir const sería compatible con el objeto modificable y los objetos automáticos también pueden tener vistas a una base accesible. Estas restricciones de acceso no impiden que dato se construya y se use mediante su propia interfaz pública."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dentro del método sí puede prestarse la parte base a un ayudante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora hay dos funciones libres que reciben un Dato: numero_de consulta mediante const Dato&, y cambiar_dato modifica mediante Dato&. No necesitan conocer LecturaConAyuda. Su trabajo se expresa con la interfaz pública de Dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llamadas se escriben dentro de métodos de LecturaConAyuda, que deriva privadamente de Dato. En ese contexto se puede convertir *this en la referencia a la base que necesita cada función. desde_puntero utiliza la misma regla para convertir this en const Dato*. No hay una copia de la parte base (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l3_conversion_interna_a_base_para_funciones",
+          "language": "cpp",
+          "question": "Escribe los datos consultados antes y después del cambio realizado por cambiar_dato.",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint numero_de(const Dato& dato) {\n    return dato.numero();\n}\nvoid cambiar_dato(Dato& dato, int nuevo) {\n    dato.poner(nuevo);\n}\nclass LecturaConAyuda : private Dato {\npublic:\n    explicit LecturaConAyuda(int numero) : Dato{numero} {}\n    int valor() const { return numero_de(*this); }\n    void cargar(int numero) { cambiar_dato(*this, numero); }\n    int desde_puntero() const {\n        const Dato* vista = this;\n        return vista->numero();\n    }\n};\nint main() {\n    LecturaConAyuda dato{8};\n    std::cout << dato.valor() << ':' << dato.desde_puntero() << '|';\n    dato.cargar(3);\n    std::cout << dato.valor();\n    return 0;\n}\n",
+          "answers": [
+            "8:8|3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "valor pasa una referencia constante a la base del mismo objeto y obtiene ocho. desde_puntero obtiene también ocho mediante un puntero a esa base. cargar presta la base por referencia modificable a cambiar_dato, que guarda tres. La última consulta observa tres. Estas conversiones se solicitaron dentro de miembros de la derivada, donde la base es accesible."
+        },
+        {
+          "type": "paragraph",
+          "text": "El ayudante recibe un Dato& ya obtenido en un lugar autorizado; por eso puede utilizar sus operaciones públicas. Las referencias de estas llamadas sólo se usan durante ellas y el objeto sigue vivo. La regla no convierte automáticamente una llamada numero_de(dato) escrita en main en válida si dato tiene allí tipo LecturaConAyuda."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los datos privados originales de la base siguen siendo privados"
+        },
+        {
+          "type": "paragraph",
+          "text": "La palabra private en la relación de herencia no concede acceso a todos los datos de Dato. numero_ fue declarado privado por Dato; un método de una derivada no puede leerlo directamente. Debe utilizar una operación accesible, como Dato::numero() (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass AccesoIncorrecto : private Dato {\npublic:\n    explicit AccesoIncorrecto(int numero) : Dato{numero} {}\n    int valor() const { return numero_; }\n};\nint main() {\n    AccesoIncorrecto dato{4};\n    std::cout << dato.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l3_herencia_privada_no_concede_datos_privados",
+          "question": "¿Qué cambio permite implementar valor() sin cambiar la privacidad de numero_?",
+          "options": [
+            "Devolver Dato::numero(), que consulta el dato mediante la función pública de la base.",
+            "Repetir private antes de Dato en la relación de herencia para obtener acceso al int.",
+            "Quitar const de valor(), porque la privacidad sólo impide lecturas desde métodos const."
+          ],
+          "correctIndex": 0,
+          "explanation": "Dato::numero() es una operación pública de Dato y puede utilizarse desde este método derivado. La relación privada no autoriza a nombrar numero_ directamente y quitar const no cambia esa falta de acceso. El miembro sigue perteneciendo a Dato y su clase sigue controlando cómo se consulta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Del mismo modo, main no puede llamar a dato.poner(...) cuando dato es una LecturaPrivada de las primeras páginas. cargar sí es una operación pública de esa clase y puede utilizar poner dentro de su cuerpo. La existencia de una operación interna y la decisión de ofrecerla públicamente son cuestiones distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer una operación de la base mediante using"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si interesa conservar el mismo nombre de una operación de la base, puede escribirse un using en la sección pública de la derivada. Consulta ofrece así Dato::numero, pero no ofrece poner. El using nombra la función sin escribir su tipo de resultado, sus parámetros ni una llamada (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l3_using_publico_de_funcion_en_base_privada",
+          "language": "cpp",
+          "question": "Escribe la salida de este programa con una operación base ofrecida públicamente.",
+          "code": "#include <iostream>\n\nclass Dato {\npublic:\n    explicit Dato(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void poner(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Consulta : private Dato {\npublic:\n    explicit Consulta(int numero) : Dato{numero} {}\n    using Dato::numero;\n};\nint main() {\n    Consulta dato{-3};\n    std::cout << dato.numero();\n    return 0;\n}\n",
+          "answers": [
+            "-3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor de Consulta prepara su Dato con menos tres. El using público permite que main invoque dato.numero(), que consulta ese entero. Sólo se ha ofrecido esa operación; no se ha convertido la relación privada en una relación pública."
+        },
+        {
+          "type": "paragraph",
+          "text": "El acceso de este using de una función ordinaria sí importa para ofrecerla desde fuera. Es distinto del caso especial de constructores heredados, en el que comprobamos el acceso del constructor base y no el del using."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco se hace pública la conversión a la base. Aunque dato.numero() sea válido, con Consulta dato{4}; la declaración const Dato& vista = dato; escrita en main se sigue rechazando. Ofrecer un método concreto no equivale a ofrecer toda la interfaz de Dato mediante una vista a su base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una operación protegida puede justificar una derivación interna"
+        },
+        {
+          "type": "paragraph",
+          "text": "EstadoBase ofrece una consulta pública y una operación volver_a_cero declarada en protected. Una operación protegida puede utilizarse desde miembros de la base y desde los miembros derivados correspondientes, pero no queda disponible para cualquier usuario que contenga un EstadoBase como miembro (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "PanelPrivado necesita reutilizar esa operación al implementar su reiniciar público. La herencia privada le da acceso a ella sin ofrecer EstadoBase como base pública. El int valor_ sigue siendo privado de EstadoBase: PanelPrivado no lo escribe directamente (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l3_operacion_protegida_utilizada_por_derivada_privada",
+          "language": "cpp",
+          "question": "Escribe las lecturas de panel antes y después de reiniciar.",
+          "code": "#include <iostream>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int valor) : valor_{valor} {}\n    int valor() const { return valor_; }\nprotected:\n    void volver_a_cero() { valor_ = 0; }\nprivate:\n    int valor_;\n};\nclass PanelPrivado : private EstadoBase {\npublic:\n    explicit PanelPrivado(int valor) : EstadoBase{valor} {}\n    int lectura() const { return EstadoBase::valor(); }\n    void reiniciar() { EstadoBase::volver_a_cero(); }\n};\nint main() {\n    PanelPrivado panel{7};\n    std::cout << panel.lectura() << '|';\n    panel.reiniciar();\n    std::cout << panel.lectura();\n    return 0;\n}\n",
+          "answers": [
+            "7|0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La parte EstadoBase comienza con siete. lectura lo consulta a través de la función pública de la base. reiniciar llama desde un miembro derivado a la operación protegida volver_a_cero, que guarda cero en valor_. La última lectura observa ese cero. main no necesitó acceso a esa operación protegida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si PanelConMiembro sólo contuviera un EstadoBase llamado estado_, la instrucción estado_.volver_a_cero(); de su método no estaría autorizada. Contener un objeto no convierte a la clase contenedora en una derivada de ese objeto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l3_contener_no_otorga_acceso_protegido",
+          "question": "¿Qué razón concreta permite a PanelPrivado usar volver_a_cero, frente al PanelConMiembro descrito?",
+          "options": [
+            "El int se convierte en un dato público cuando se declara una base privada.",
+            "La composición impide llamar a cualquier método del miembro, aunque sea público.",
+            "PanelPrivado es una derivada de EstadoBase y puede usar esa operación protegida desde su método; contener un EstadoBase no concede ese acceso."
+          ],
+          "correctIndex": 2,
+          "explanation": "La operación protegida está disponible en el contexto derivado de PanelPrivado. El simple contenedor sólo puede utilizar las operaciones de EstadoBase que sean accesibles para él, como su consulta pública. Esto justifica esta derivación concreta; no demuestra que la herencia privada sea preferible para cualquier objeto contenido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la relación según las operaciones que necesita el usuario"
+        },
+        {
+          "type": "paragraph",
+          "text": "La composición identifica explícitamente los objetos utilizados mediante sus nombres de miembro y permite elegir qué operaciones propias los usan. La herencia privada también permite reutilizar una base sin ofrecerla públicamente; puede ser útil cuando se necesita utilizar una operación protegida desde una clase derivada, como en el ejemplo anterior (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el usuario debe poder utilizar normalmente el objeto mediante una referencia o un puntero a Base, la herencia pública expresa esa relación de interfaz. Si el objeto sólo utiliza un Dato para cumplir otro contrato, no basta con querer reutilizar su código para ofrecer toda la interfaz base. Primero se decide qué usos y modificaciones deben estar permitidos (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La interfaz que escribimos también puede abrir un acceso deliberado. Por ejemplo, un método público Dato& acceso() que devuelve *this desde una derivada privada podría ofrecer la base al llamador. Éste ya tendría un Dato& y podría llamar a poner mientras el objeto siga vivo. No es una conversión implícita solicitada desde main: es otro contrato público que entrega la referencia desde un método autorizado. Por eso private no sustituye la revisión de lo que devuelve cada operación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l3_contrato_antes_de_elegir_reutilizacion",
+          "question": "Una nueva clase debe ofrecer sólo consultas y no debe entregar un acceso que permita cambiar su Dato interno. ¿Qué decisión respeta ese requisito?",
+          "options": [
+            "Heredar públicamente de Dato basta: el nombre de la nueva clase hará que poner deje de ser utilizable.",
+            "Elegir una representación interna y ofrecer consultas que devuelvan int, sin publicar poner ni entregar un Dato& modificable.",
+            "Devolver un Dato& desde una derivada privada es siempre de sólo lectura porque la relación es privada."
+          ],
+          "correctIndex": 1,
+          "explanation": "La interfaz puede devolver el entero consultado por valor sin ofrecer la operación que lo cambia ni una referencia modificable al Dato. Heredar públicamente mantendría disponible la interfaz pública de Dato. Entregar un Dato& modificable permitiría usar sus operaciones públicas aunque esa referencia se hubiese obtenido desde una derivada privada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos ejemplos permiten razonar sobre las operaciones admitidas y los contextos de acceso. No miden tiempos ni tamaños y no justifican promesas de rendimiento para una representación frente a la otra. La elección debe conservar el contrato y apoyarse en necesidades concretas, no en utilizar herencia por costumbre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un máximo mediante dos implementaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Valor guarda un int y permite leerlo o sustituirlo por cualquier otro int. No conserva un máximo: fijar puede aumentar el número o reducirlo. Esa clase será la pieza que reutilizaremos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta práctica construiremos MaximoConMiembro y MaximoConBase y después llamaremos a observar(int) y maximo(), sin reasignar esos objetos. En esas secuencias deben conservar el mayor número entre el valor inicial y todas las observaciones posteriores. Ninguna clase debe ofrecer desde main la operación fijar de Valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejemplo del contrato: si se comienza con cuatro y después se observa dos, el máximo sigue siendo cuatro. Si a continuación se observa nueve, el máximo pasa a nueve. Una nueva observación de nueve lo conserva. Todos los valores admitidos son int, incluidos cero y números negativos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera clase contiene un miembro dato_ de tipo Valor. La segunda debe utilizar Valor como base privada. Sus constructores y consultas ya están escritos. En observar, la comparación ya decide si el dato nuevo es mayor; completa la llamada que guarda ese dato dentro del if de cada clase."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u9l3_construir_dos_impl_sin_exponer_setter",
+          "question": "Completa las dos llamadas que guardan valor cuando supera el máximo actual. Completa también la declaración de MaximoConBase para que Valor sea su base privada. Conserva la interfaz pública observar/maximo y el resto del código.",
+          "template": "class MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            []\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : [] Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            []\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\n",
+          "answers": [
+            "dato_.fijar(valor);",
+            "private",
+            "Valor::fijar(valor);"
+          ],
+          "answerAlternatives": [
+            [
+              "dato_.fijar(valor);",
+              "this->dato_.fijar(valor);",
+              "(*this).dato_.fijar(valor);"
+            ],
+            [
+              "private"
+            ],
+            [
+              "Valor::fijar(valor);",
+              "fijar(valor);",
+              "this->fijar(valor);",
+              "::Valor::fijar(valor);",
+              "(*this).fijar(valor);",
+              "this->Valor::fijar(valor);"
+            ]
+          ],
+          "explanation": "En la composición, dato_.fijar(valor) cambia el objeto miembro. Con private Valor, la función de la clase derivada puede utilizar la interfaz de su base, por ejemplo mediante Valor::fijar(valor). La comparación evita reemplazar el máximo por un dato menor o igual. fijar no queda disponible como operación pública de MaximoConBase y dato_ sigue siendo privado en la otra clase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: cambiar la forma de reutilizar, conservar el contrato"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConMiembro a{2};\n    MaximoConBase b{2};\n    a.observar(1);\n    b.observar(1);\n    a.observar(7);\n    b.observar(7);\n    std::cout << a.maximo() << '|' << b.maximo();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos objetos comienzan con dos. La observación de uno no cambia ese dato porque no es mayor. La observación de siete sí entra en cada if y utiliza fijar para sustituir el dato guardado. Las consultas finales escriben el mismo resultado."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7|7"
+        },
+        {
+          "type": "paragraph",
+          "text": "MaximoConMiembro inicializa su miembro por el nombre dato_ y llama a sus funciones con dato_. MaximoConBase inicializa la parte base mediante el nombre Valor y utiliza sus funciones desde la propia clase derivada. La construcción y la llamada se refieren al objeto miembro en un caso y a la parte base en el otro (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos versiones pueden ofrecer la misma interfaz de observar y consultar el máximo. Coincidir en esta salida no convierte sus estructuras en iguales ni demuestra que una sea más rápida. En este ejemplo la composición expresa directamente que guardamos un Valor; la herencia privada se estudia como una alternativa que debemos saber distinguir y utilizar por una razón de diseño concreta (Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar números negativos y una observación repetida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa utiliza las mismas clases y modifica sólo main. El valor inicial también participa en el máximo; no se sustituye automáticamente por cero. Sigue las comparaciones, incluidos los casos donde el dato recibido coincide con el que ya estaba guardado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l3_maximos_con_negativos_y_repeticiones",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Cada pareja compara el máximo del objeto con miembro y el del objeto con base privada.",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConMiembro a{-5};\n    MaximoConBase b{-5};\n    a.observar(-9);\n    b.observar(-9);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo() << '|';\n    a.observar(3);\n    b.observar(3);\n    std::cout << a.maximo() << ':' << b.maximo();\n    return 0;\n}\n",
+          "answers": [
+            "-5:-5|3:3|3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambos comienzan con -5. Observar -9 no entra en el if, por eso la primera pareja conserva -5. Observar 3 sí sustituye -5 y produce la segunda pareja 3:3. Volver a observar 3 no cumple la comparación estricta de mayor y conserva el dato. Los objetos aceptan negativos y no necesitan hacer ninguna suma para mantener el máximo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La copia conserva sus propios datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "MaximoConBase no declara operaciones de copia propias. Su copia generada prepara su parte Valor a partir de la parte correspondiente del objeto de origen. Que esa base sea privada no impide esta copia de MaximoConBase desde otro MaximoConBase: es una operación de la propia clase (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia crea otro objeto con el máximo que tenía el origen en ese momento. A partir de ahí, cada objeto sigue su propia serie de observaciones. Una asignación como destino = origen sería otra operación: reemplazaría el estado de destino por el de origen, en vez de añadir una observación. Las secuencias de esta práctica construyen y observan sin hacer esa asignación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l3_copiar_maximo_con_base_privada",
+          "language": "cpp",
+          "question": "Escribe los máximos finales de original y copia, separados por |.",
+          "code": "#include <iostream>\n\nclass Valor {\npublic:\n    explicit Valor(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass MaximoConMiembro {\npublic:\n    explicit MaximoConMiembro(int inicial) : dato_{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > dato_.leer()) {\n            dato_.fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return dato_.leer(); }\n\nprivate:\n    Valor dato_;\n};\n\nclass MaximoConBase : private Valor {\npublic:\n    explicit MaximoConBase(int inicial) : Valor{inicial} {}\n\n    void observar(int valor) noexcept {\n        if (valor > Valor::leer()) {\n            Valor::fijar(valor);\n        }\n    }\n\n    int maximo() const noexcept { return Valor::leer(); }\n};\nint main() {\n    MaximoConBase original{4};\n    MaximoConBase copia{original};\n    original.observar(8);\n    copia.observar(6);\n    std::cout << original.maximo() << '|' << copia.maximo();\n    return 0;\n}\n",
+          "answers": [
+            "8|6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con el cuatro que tenía original cuando se construyó la copia. Después original observa ocho y copia observa seis. Cada uno guarda su propio int en su propia parte Valor, así que las dos actualizaciones son independientes y el resultado es 8|6. Esto no requiere convertir desde main el objeto completo en una referencia a Valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué no queremos ofrecer la sustitución arbitraria"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que cambiamos sólo private por public en la base de MaximoConBase. main podría entonces llamar directamente a fijar, porque Valor ofrece esa función como pública. El siguiente fragmento sería válido con esa variante pública, pero contradice el contrato de conservar el máximo observado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "MaximoConBase dato{7};\ndato.fijar(1);\nstd::cout << dato.maximo();"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de fijar uno, maximo devolvería uno aunque ya se había recibido siete al construir el objeto. El problema sería una interfaz que ofrece una operación incompatible con su contrato. En la versión de esta práctica, con la base privada, esa llamada externa se rechaza al compilar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l3_no_abrir_mutador_que_rompe_maximo",
+          "question": "Otra propuesta conserva la base privada, pero añade public: using Valor::fijar;. ¿Mantiene la interfaz exigida por MaximoConBase?",
+          "options": [
+            "Sí. Cualquier using dentro de una clase derivada se ignora al comprobar el acceso de sus funciones ordinarias.",
+            "No. Ese using ofrece fijar públicamente y permite reducir el dato sin pasar por observar, aunque la conversión externa a Valor siga siendo inaccesible.",
+            "Sí. La comparación de observar se ejecutará automáticamente antes de cualquier llamada a fijar."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un using público de una función miembro ordinaria puede ofrecer esa operación heredada. En este caso permitiría saltarse la comparación de observar y sustituir el dato por uno menor. No convierte la base en pública, pero sí cambia la interfaz de la derivada. La excepción de acceso de los constructores heredados no se aplica a este using de fijar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la relación antes de elegir la sintaxis"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l3_preferir_composicion_para_valor_interno",
+          "question": "El componente real necesita guardar un Valor interno y ofrecer sólo observar y maximo. No necesita acceder a operaciones protegidas ni cambiar funciones virtuales de Valor. ¿Qué elección expresa directamente esa necesidad?",
+          "options": [
+            "Utilizar composición y mantener el miembro privado, ofreciendo las operaciones del componente mediante sus propias funciones.",
+            "Utilizar herencia pública y confiar en que, por haber definido observar, cualquier llamada a fijar pasará primero por la comparación de observar.",
+            "Utilizar herencia privada afirmando que siempre ocupa menos memoria y siempre se ejecuta más rápido que un miembro."
+          ],
+          "correctIndex": 0,
+          "explanation": "La composición permite nombrar la pieza interna y decidir qué acciones ofrece la clase que la contiene. En este caso no necesitamos las facultades específicas de una derivada, por lo que añadir esa relación no aporta una necesidad demostrada. Si otro diseño requiere acceder a una operación protegida o sobrescribir una función virtual, habrá que estudiar esa necesidad y sus reglas; no se deduce una ventaja de tamaño o velocidad sólo por elegir una palabra de acceso."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "531d969f30256e16222dc6a8f4e87cd6f609a8dca9dfba52d92a0c59c66f0375"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "423eeddbd22f8d4e7787876a92328cb8a6edb884fbc47d6665c59c0f81f53e5e"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "5d466af319e33d6e42f975e1feb20333bd77e139d8eb57447d68bf05921040a2"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "0934b1f85ea19248236e3b9168fb89b6250203d8736b9b6aec6e02ab78f7a118"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "58fdb598d46461e98561aa2281853ef1340993113d1e8da3bbdc91f8c5805bab"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "43342dadca6de8e068d94a605af5fe922d6288808ac7225977a4a5a0e316878d"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "83188c8c9147ace905a7adf10e0f0f8159d4e37e1877db33ca9f90029c10b737"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "ecd8bce590009a93502a8c0804b57d2606124ca524859d3bae2165d8cdab7acd"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "db524348e8d3f729bcddcd329920ecc0774d75d6355c022a4a90e50515c98d97"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "0e2bf0bbd9b29df4f5c00e27b0277e3952e3b8a35100bc59268167821614a39a"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1b302631cd0d09a20441cda81ccd4b9cdf391514354d93c2a111b1ec28f6ac59"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "e615c78c044d0951635c2763f30ac0bd49de470f06db1ced234e84ddda932194"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "130462cd050bb4c8f5eedabb29e4737fe3c130c667135631812b20081d461c40"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1e42a254feda463f36c094cc2883488ebe3a4d7d9d5be6412291aababac2e473"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "70c2f07f2a79c683463cd5b7df99a367c948860e680fb1c753962379b1e41ef1"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "3e61ac0268d073d7c8c42e2445399232e046667a4d2c279eaf5a77314dc41fd1"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "d516730220161094be056eeba2da3af552b6f9a5c67b00d85d6200a5972f98ba"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "8cebce22ebf018d1a81c69c643d13790a04388d815770bc5fb981425d601f9cb"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "ba078daecea0c0567de1366458c59c314f02b4b7db22b9a324226f1d99ce2833"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "f4b136912b808c979b0e0eca863bdf0d214b30d21dcbf3a281eacba7affcb8ff"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "918c5ab3f5ed6c080075fe934c01fcaba4c9dc444471a71ad2408ced92501cf1"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "221557877e0f96a5e3d24738be15450d290044a9e0616ab5330494bb5798b2ba"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "99d7787502d795e3665b11b277a2b2fad6a38683dcb71b5165bbde2ca28e2e9c"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "44442149ebb9982a8e7d058bbb242e235cd34d466b38db25911628e4e481cc6b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "531d969f30256e16222dc6a8f4e87cd6f609a8dca9dfba52d92a0c59c66f0375"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "423eeddbd22f8d4e7787876a92328cb8a6edb884fbc47d6665c59c0f81f53e5e"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "5d466af319e33d6e42f975e1feb20333bd77e139d8eb57447d68bf05921040a2"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "0934b1f85ea19248236e3b9168fb89b6250203d8736b9b6aec6e02ab78f7a118"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "58fdb598d46461e98561aa2281853ef1340993113d1e8da3bbdc91f8c5805bab"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "43342dadca6de8e068d94a605af5fe922d6288808ac7225977a4a5a0e316878d"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "83188c8c9147ace905a7adf10e0f0f8159d4e37e1877db33ca9f90029c10b737"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "ecd8bce590009a93502a8c0804b57d2606124ca524859d3bae2165d8cdab7acd"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "db524348e8d3f729bcddcd329920ecc0774d75d6355c022a4a90e50515c98d97"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "0e2bf0bbd9b29df4f5c00e27b0277e3952e3b8a35100bc59268167821614a39a"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1b302631cd0d09a20441cda81ccd4b9cdf391514354d93c2a111b1ec28f6ac59"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "e615c78c044d0951635c2763f30ac0bd49de470f06db1ced234e84ddda932194"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "130462cd050bb4c8f5eedabb29e4737fe3c130c667135631812b20081d461c40"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1e42a254feda463f36c094cc2883488ebe3a4d7d9d5be6412291aababac2e473"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "70c2f07f2a79c683463cd5b7df99a367c948860e680fb1c753962379b1e41ef1"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "3e61ac0268d073d7c8c42e2445399232e046667a4d2c279eaf5a77314dc41fd1"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "d516730220161094be056eeba2da3af552b6f9a5c67b00d85d6200a5972f98ba"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "8cebce22ebf018d1a81c69c643d13790a04388d815770bc5fb981425d601f9cb"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "ba078daecea0c0567de1366458c59c314f02b4b7db22b9a324226f1d99ce2833"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "f4b136912b808c979b0e0eca863bdf0d214b30d21dcbf3a281eacba7affcb8ff"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "918c5ab3f5ed6c080075fe934c01fcaba4c9dc444471a71ad2408ced92501cf1"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "221557877e0f96a5e3d24738be15450d290044a9e0616ab5330494bb5798b2ba"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "99d7787502d795e3665b11b277a2b2fad6a38683dcb71b5165bbde2ca28e2e9c"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

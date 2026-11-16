@@ -1,0 +1,1829 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__confiar_propiedad_y_limpieza_a_un_miembro_vector",
+  "title": "Confiar la propiedad y la limpieza a un miembro vector",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quién se hace responsable del almacenamiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al usar new[] guardaste un acceso al array y tuviste que conservar la responsabilidad de liberarlo mediante delete[]. Terminar una variable puntero no libera automáticamente ese array. En cambio, un vector reúne sus elementos y la gestión del almacenamiento necesario para conservarlos (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La memoria reservada es un recurso: algo que se obtiene para trabajar y que después debe liberarse. El objeto que se responsabiliza de liberarlo es su propietario. Con std::vector<int>, esa responsabilidad corresponde al vector, no al código que sólo consulta sus elementos. Cuando se destruye el vector, destruye sus elementos y libera el almacenamiento obtenido (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso un vector local de duración automática se limpia al salir de su bloque, también mediante return o al propagarse una excepción que abandone ese bloque. Seguimos dependiendo de que el objeto exista y termine según las reglas estudiadas; no añadiremos llamadas manuales a su destructor ni delete sobre sus elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un miembro vector utiliza la limpieza que acabas de estudiar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una clase puede declarar std::vector<int> datos_; como miembro por valor. El vector se construye antes del cuerpo del constructor de la clase que lo contiene. Al terminar el objeto completo, el destructor correspondiente destruye sus miembros, incluido ese vector. El vector se encarga entonces de sus propios elementos y almacenamiento (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta organización no necesita un destructor propio que repita la liberación del vector. Tampoco necesita que escribamos un new[] y un delete[] por cada salida. La clase puede ofrecer operaciones con significado, mientras su miembro vector mantiene la responsabilidad de almacenamiento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l3_propietario_y_consulta",
+          "question": "Una clase contiene un vector por valor y ofrece una consulta que devuelve un int. ¿Cuándo se libera el almacenamiento de ese vector?",
+          "options": [
+            "Sólo si escribimos un destructor propio en la clase que lo contiene; el generado no destruye el vector.",
+            "Cuando se destruye el objeto que lo contiene, mediante el destructor de su miembro vector.",
+            "Al terminar la consulta, aunque el objeto que contiene el vector siga vivo y conserve sus datos."
+          ],
+          "correctIndex": 1,
+          "explanation": "El vector conserva la responsabilidad de su almacenamiento durante su vida. El destructor correspondiente del objeto que lo contiene destruye sus miembros, aunque no hayamos escrito un cuerpo propio para ese destructor. Terminar una consulta no destruye el objeto consultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar nombre a la técnica después de reconocer sus pasos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso hay tres pasos concretos:\nEl constructor del vector prepara sus elementos y obtiene el almacenamiento que necesite.\nEl objeto conserva la responsabilidad mientras se utilizan esos elementos.\nSu destructor destruye los elementos y libera ese almacenamiento.\nNo se convierte una dirección prestada en propietario sólo por guardarla en otra variable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Relacionar la adquisición de un recurso con la inicialización de un objeto que se responsabiliza de liberarlo se conoce como RAII. Las siglas proceden de Resource Acquisition Is Initialization: la adquisición del recurso es inicialización. La limpieza queda ligada al final de ese objeto responsable. Aquí lo aplicamos mediante un vector conocido, sin programar todavía un nuevo propietario de memoria manual (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No es una promesa de que cualquier operación nunca falle ni de que todos sus cambios se deshagan. Si falla una preparación, todavía debemos razonar qué objetos se completaron, cuáles se destruyen y qué datos anteriores queremos conservar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cantidad y valor repetido no son una lista de dos valores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperamos dos formas de construir un vector. std::vector<int> datos(4, 5); solicita cuatro elementos, cada uno con valor cinco. std::vector<int> datos{4, 5}; proporciona una lista con dos valores: cuatro y cinco. Los delimitadores participan en qué forma de construcción se selecciona; no se pueden intercambiar suponiendo que siempre hacen lo mismo (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_cantidad_o_lista",
+          "language": "cpp",
+          "question": "¿Qué muestra cada vector? Escribe las dos líneas completas.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> repetidos(3, 7);\n    std::vector<int> lista{3, 7};\n    std::cout << repetidos.size() << ':' << repetidos[0] << ':' << repetidos[2] << '\\n';\n    std::cout << lista.size() << ':' << lista[0] << ':' << lista[1];\n    return 0;\n}\n",
+          "answers": [
+            "3:7:7\n2:3:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "repetidos tiene tres elementos iguales a siete. lista tiene dos elementos, con tres y siete. Las lecturas del programa se mantienen dentro de la cantidad de cada vector."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un vector de cantidad cero también es válido: no contiene elementos que podamos leer. No se debe concluir que toda construcción de un vector vacío realiza una reserva. La cantidad de elementos y los detalles del almacenamiento no son el mismo dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una copia de la clase copia también el valor de su miembro vector"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Medidas copia = original;, el compilador copia el miembro vector como parte de crear el nuevo objeto. El vector de copia contiene sus propios elementos. Cambiar un elemento del original no cambia el correspondiente de la copia. No hemos copiado sólo un puntero al mismo array (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, const Medidas& vista = original; permite observar el objeto original sin copiarlo. El acceso constante no congela los cambios que se hagan mediante otra vía permitida. En este ejemplo la clase siempre conserva dos elementos y utiliza únicamente los valores indicados."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_copia_y_observacion",
+          "language": "cpp",
+          "question": "¿Qué se consulta desde original, copia y vista después del cambio?",
+          "code": "#include <iostream>\n#include <vector>\n\nclass Medidas {\npublic:\n    int primero() const { return datos_[0]; }\n    void cambiar_primero(int valor) { datos_[0] = valor; }\nprivate:\n    std::vector<int> datos_{2, 4};\n};\n\nint main() {\n    Medidas original;\n    Medidas copia = original;\n    const Medidas& vista = original;\n    original.cambiar_primero(9);\n    std::cout << original.primero() << ':' << copia.primero() << ':' << vista.primero();\n    return 0;\n}\n",
+          "answers": [
+            "9:2:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "original cambia a nueve. copia conserva su primer elemento con dos. vista se refiere a original y observa nueve. Cada vector propietario se limpiará cuando termine el objeto que lo contiene."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Medidas podemos aprovechar la copia independiente y la destrucción de su miembro vector, sin escribir operaciones especiales sólo para repetirlas. No se debe aplicar esa conclusión a un miembro int* que únicamente guarda una dirección. La forma de copiar depende del tipo concreto del miembro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Limpiar un recurso no revierte otros cambios"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este programa, datos es un vector local del try. Se guarda un resultado en suma, que fue declarada fuera de ese bloque. Después se lanza Fallo{}. El vector se destruye al abandonar el try, pero la asignación anterior a suma no se deshace por ello (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_limpieza_sin_reversion",
+          "language": "cpp",
+          "question": "¿Qué valor muestra el catch?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    int suma = 0;\n    try {\n        std::vector<int> datos{2, 4};\n        suma = datos[0] + datos[1];\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << suma;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La suma se calculó antes de lanzar. La limpieza del vector no restaura el valor anterior de la variable exterior. El catch puede consultar suma, que sigue existiendo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por tanto, hay dos preguntas distintas: si se liberan los recursos que deben terminar, y si los datos visibles conservan su valor anterior cuando falla una operación. La segunda necesita una organización que evite escribir antes de completar la preparación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Intercambiar el contenido mediante swap"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos vectores siguientes tienen contenidos distintos. La llamada a.swap(b) intercambia esos contenidos: después, a contiene lo que tenía b y b contiene lo que tenía a. No crea una tercera copia de cada elemento. Para los std::vector<int> usados aquí, el intercambio de sus contenidos no lanza excepciones (Stroustrup, 2024; ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_intercambio_de_vectores",
+          "language": "cpp",
+          "question": "¿Qué contiene cada vector después de swap?",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> a{1, 3};\n    std::vector<int> b{8};\n    a.swap(b);\n    std::cout << a.size() << ':' << a[0] << '\\n';\n    std::cout << b.size() << ':' << b[0] << ':' << b[1];\n    return 0;\n}\n",
+          "answers": [
+            "1:8\n2:1:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a pasa a tener un elemento con ocho. b pasa a tener los dos elementos uno y tres. Cada vector queda encargado del contenido que recibió."
+        },
+        {
+          "type": "paragraph",
+          "text": "swap se llama sobre un vector y recibe el otro como argumento. Los dos deben ser modificables para intercambiar sus contenidos. Esta operación no es lo mismo que a = b: una copia deja a ambos con valores iguales, mientras el intercambio conserva ambos contenidos y cambia qué vector los mantiene."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El candidato puede llevarse los datos anteriores al terminar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos preparar otro vector dentro de un bloque. Mientras lo preparamos, datos conserva sus valores anteriores. Tras un intercambio, datos conserva el contenido nuevo y candidato conserva el anterior. Al terminar el bloque del candidato, su destructor libera precisamente el contenido anterior que recibió. El contenido nuevo continúa bajo responsabilidad de datos (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_responsabilidad_despues_de_swap",
+          "language": "cpp",
+          "question": "¿Qué muestran candidato dentro del bloque y datos después?",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    {\n        std::vector<int> candidato(3, 7);\n        datos.swap(candidato);\n        std::cout << \"Anterior:\" << candidato[0] << ':' << candidato[1] << '\\n';\n    }\n    std::cout << \"Nuevo:\" << datos.size() << ':' << datos[0] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "Anterior:2:4\nNuevo:3:7:7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "candidato consulta dos y cuatro después del intercambio. Al salir de su bloque se destruye ese vector. datos sigue vivo con tres elementos de valor siete; no perdió el contenido recibido."
+        },
+        {
+          "type": "paragraph",
+          "text": "La limpieza no depende de escribir delete[] junto al return. Depende de que cada contenido tenga un objeto responsable y de dejar que ese objeto termine. No se deben liberar manualmente los elementos que ahora administra el vector."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "RAII no arregla una escritura hecha demasiado pronto"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa limpia sus vectores, pero modifica datos antes de una preparación que puede fallar. Observa la primera escritura del try y el momento en que se lanza la excepción. No se ha prometido una reversión automática."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_modificacion_antes_del_fallo",
+          "language": "cpp",
+          "question": "¿Qué valores conserva datos en esta organización?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        datos[0] = 9;\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "9:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera posición ya recibió nueve antes del fallo. Destruir candidato no modifica por sí solo el otro vector. No hay fuga por olvidar una liberación, pero tampoco se conservaron los valores anteriores tres y seis."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l3_preparar_sin_cambiar",
+          "question": "La operación debe reemplazar todos los valores o conservar el contenido anterior al rechazar. ¿Qué secuencia corresponde?",
+          "options": [
+            "Modificar el miembro y después construir el candidato; su destructor recuperará los valores anteriores.",
+            "Preparar el candidato y escribir en el miembro aunque todavía falte una comprobación que pueda fallar.",
+            "Preparar y comprobar el candidato sin cambiar el miembro; intercambiar sólo cuando ya se puede aceptar."
+          ],
+          "correctIndex": 2,
+          "explanation": "La preparación ocurre sobre otro objeto responsable. Antes de intercambiar, un rechazo conserva el miembro; después del intercambio, el candidato se encarga del contenido anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un fallo antes del intercambio conserva el contenido anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí se prepara otro vector y se provoca una excepción antes de intercambiar. datos no recibe escrituras durante ese intento. El fallo permite estudiar una preparación interrumpida sin agotar la memoria del equipo. No demuestra que haya fallado una reserva real."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_fallo_antes_del_intercambio",
+          "language": "cpp",
+          "question": "¿Qué valores muestra el vector que se quería reemplazar?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nint main() {\n    std::vector<int> datos{3, 6};\n    try {\n        std::vector<int> candidato(3, 7);\n        throw Fallo{};\n    } catch (const Fallo&) {\n        std::cout << datos[0] << ':' << datos[1];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "datos conserva tres y seis porque no se modificó. candidato se destruye al abandonar el try por la excepción. El catch no necesita liberar sus elementos manualmente."
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción real de un vector también puede fallar al solicitar almacenamiento. En la práctica pondremos la construcción del candidato dentro del try. Una captura de std::bad_alloc permitirá devolver rechazo si esa reserva falla, sin haber cambiado el miembro. El fallo deliberado y un fallo real de reserva son caminos distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El vector miembro se limpia aunque no termine el objeto completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preparado construye su miembro datos_ antes de entrar en su cuerpo. El fallo sale después de completar ese vector, pero antes de completar Preparado. Se aplica la regla estudiada: se destruye el miembro completado, sin ejecutar el cuerpo de ~Preparado. El vector libera sus elementos y almacenamiento aunque no aparezca una impresión propia de cierre (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l3_fallo_del_constructor_con_vector",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen en la ejecución?",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Fallo {};\n\nclass Preparado {\npublic:\n    Preparado(bool fallar) : datos_(3, 7) {\n        std::cout << \"Cuerpo:\" << datos_.size() << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n    }\n    ~Preparado() { std::cout << \"Cierre\\n\"; }\nprivate:\n    std::vector<int> datos_;\n};\n\nint main() {\n    try {\n        Preparado objeto{true};\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Cuerpo:3\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se imprime Cuerpo y sale una excepción. No se imprime Cierre del objeto completo, pero el vector miembro ya construido se destruye. Los mensajes muestran el camino de ejecución; no son por sí solos una medición de memoria liberada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar el intercambio"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l3_escribir_swap",
+          "question": "Completa el nombre de la función miembro que intercambia ambos contenidos. Después del intercambio, cada vector debe conservar el contenido anterior del otro.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 2};\n    std::vector<int> candidato(3, 8);\n    datos.[](candidato);\n    std::cout << datos.size() << ':' << datos[0] << ':' << candidato.size()\n              << ':' << candidato[0];\n    return 0;\n}\n",
+          "answers": [
+            "swap"
+          ],
+          "answerAlternatives": [
+            [
+              "swap"
+            ]
+          ],
+          "explanation": "datos recibe los tres ochos y candidato recibe uno y dos. Las cantidades y los primeros elementos corresponden a los contenidos intercambiados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar una lista usada como cantidad y valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestras debe conservar cantidad elementos, todos con el valor recibido. En esta reparación sus argumentos cumplen cantidad entre uno y cuatro y valor entre cero y nueve. El inicial utiliza una lista con esos dos enteros y por eso construye dos elementos. Cambia únicamente la inicialización de datos_ para solicitar la cantidad indicada y el valor repetido; conserva las funciones y main."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay entrada. main solicita tres elementos de valor siete. La salida requerida es 3:7:7:7, sin salto final. El inicial muestra 2:3:7. No añadas un destructor ni liberes elementos manualmente; datos_ ya es un vector propietario."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <vector>\n\nclass Muestras {\npublic:\n    Muestras(int cantidad, int valor) : datos_{cantidad, valor} {}\n    void mostrar() const {\n        std::cout << datos_.size();\n        for (int valor : datos_) {\n            std::cout << ':' << valor;\n        }\n    }\nprivate:\n    std::vector<int> datos_;\n};\n\nint main() {\n    const Muestras muestras{3, 7};\n    muestras.mostrar();\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:7:7:7"
+                ],
+                "explanation": "Distingue la lista de valores de la forma que recibe cantidad y valor. La cantidad admitida se puede convertir a std::size_t después de respetar el contrato de esta reparación."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: construir los elementos que pide el contrato"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <vector>\n\nclass Muestras {\npublic:\n    Muestras(int cantidad, int valor) : datos_(static_cast<std::size_t>(cantidad), valor) {}\n    void mostrar() const {\n        std::cout << datos_.size();\n        for (int valor : datos_) {\n            std::cout << ':' << valor;\n        }\n    }\nprivate:\n    std::vector<int> datos_;\n};\n\nint main() {\n    const Muestras muestras{3, 7};\n    muestras.mostrar();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La inicialización con paréntesis recibe la cantidad y el valor repetido. static_cast<std::size_t> expresa la conversión de la cantidad conocida como válida y no negativa. No cambia una cantidad negativa en una solicitud aceptable: el contrato ya limita los argumentos de este ejemplo. En la construcción siguiente sí habrá que validar datos recibidos en tiempo de ejecución antes de convertirlos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: reemplazar sin perder lo anterior al fallar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Serie ya contiene el miembro privado vector con los valores tres y seis. Sus consultas devuelven la cantidad y cada int por valor. valor(posicion) requiere una posición menor que cantidad(); el código proporcionado sólo la utiliza con ese límite comprobado. cambiar ya está implementada y rechaza índices o valores inválidos antes de escribir. No cambies esas funciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa bool Serie::reemplazar(int cantidad, int valor, bool provocarFallo). PreparacionFallida es el tipo de señal de error declarado en el programa para provocar un fallo conocido. El acuerdo es:\nRechaza cantidad fuera de cero a cuatro o valor fuera de cero a nueve. Devuelve false sin cambiar datos_. Valida ambos argumentos incluso cuando la cantidad sea cero.\nPrepara un vector candidato con cantidad copias de valor. Antes de convertir cantidad al tipo de tamaño, debe estar validada.\nDespués de completar el candidato, si provocarFallo es true, lanza PreparacionFallida{}. Este fallo siempre se provoca en ese punto, incluso para cantidad cero.\nSi la preparación no falla, intercambia el miembro con el candidato y devuelve true."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pon la construcción del candidato dentro de un try. Captura PreparacionFallida y std::bad_alloc para devolver false sin cambiar el miembro. <new> proporciona std::bad_alloc. El candidato local se destruye al abandonar su bloque, tanto al lanzar como al retornar. No escribas delete, delete[] ni llamadas manuales a destructores. No cambies datos_ antes del intercambio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta operación reemplaza todos los valores; no conserva un prefijo. Solicitar la misma cantidad también reemplaza sus valores. Por ejemplo, sustituir tres y seis por dos copias de cinco debe dejar cinco y cinco. Solicitar cero sin fallo deja el miembro vacío; no significa que valor deje de validarse. Un vector vacío no tiene elementos para leer."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con una cantidad de órdenes entre uno y doce. Cada orden tiene operacion, a y b:\n1: cambiar el elemento de índice a al valor b.\n2: reemplazar por a copias de b, sin fallo deliberado.\n3: preparar ese mismo reemplazo y provocar el fallo después de preparar el candidato.\nOtra operación: rechazo sin cambios.\nTodos los pasos usan el mismo objeto Serie durante esa ejecución. No deben crear una serie nueva en cada orden."
+        },
+        {
+          "type": "paragraph",
+          "text": "main conserva al principio una copia const llamada foto. Esa copia tiene su propio vector y debe mantener tres y seis durante toda la historia. Los informes consultan el objeto actual después de cada orden; Foto consulta la copia inicial al terminar. Cantidad cero se muestra como 0:X y no se intenta leer su primera posición. Cada informe termina con salto, salvo la línea Foto final."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sustituye el cuerpo provisional indicado del editor por tu preparación, intercambio y tratamiento de fallos. Conserva la validación inicial proporcionada y las demás partes del programa. No imprimas desde reemplazar ni sustituyas las consultas por textos fijos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aplicar el contrato a valores y fallos concretos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila siguiente empieza con una serie nueva de valores tres y seis. El resultado lógico indica aceptación. La suma final se calcula sobre los elementos que quedaron; para una serie vacía, la suma es cero."
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u6l3_resultado_y_conservacion",
+          "schemaVersion": 1,
+          "prompt": "Aplica el contrato de reemplazar a cada fila independiente. Indica 1 si se acepta o 0 si se rechaza, y la suma de los elementos finales.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Cantidad solicitada",
+                "Valor repetido",
+                "Provocar fallo"
+              ],
+              "rows": [
+                [
+                  "2",
+                  "8",
+                  "false"
+                ],
+                [
+                  "0",
+                  "9",
+                  "false"
+                ],
+                [
+                  "0",
+                  "9",
+                  "true"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: suma final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: suma final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: suma final",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "16"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El mismo tamaño también reemplaza: quedan ocho y ocho. Vaciar se acepta sin fallo. Con el fallo de prueba, incluso la preparación vacía se rechaza y conserva tres y seis.",
+            "incorrect": "Separa cantidad igual de valores iguales. El fallo ocurre después de preparar el candidato y antes de intercambiar, también cuando se pidió cero."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar otro contenido y decidir cuándo sustituir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el editor. Sólo el primer caso correcto es obligatorio para avanzar. La historia combina cambios de elementos, reemplazo del mismo tamaño, fallo con candidato vacío, rechazo y reemplazo aceptado. Los dos casos posteriores son ensayos opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    // Completa la preparación local, el fallo de prueba, el intercambio y las capturas.\n    (void)provocarFallo;\n    return false;\n}\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 9\n3 3 7\n2 2 8\n3 0 4\n2 0 4\n1 0 5\n2 3 2\n1 2 9\n2 5 1\n2 3 10\n3 4 6\n2 1 7\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 9\n3 3 7\n2 2 8\n3 0 4\n2 0 4\n1 0 5\n2 3 2\n1 2 9\n2 5 1\n2 3 10\n3 4 6\n2 1 7\n",
+                "outputs": [
+                  "Inicio:2:3,6\nResultado:1;Datos:2:9,6\nResultado:0;Datos:2:9,6\nResultado:1;Datos:2:8,8\nResultado:0;Datos:2:8,8\nResultado:1;Datos:0:X\nResultado:0;Datos:0:X\nResultado:1;Datos:3:2,2,2\nResultado:1;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:1;Datos:1:7\nFoto:2:3,6"
+                ],
+                "explanation": "Valida antes de preparar, conserva el miembro hasta swap y deja que el candidato se limpie al terminar. La foto inicial permanece independiente."
+              },
+              {
+                "standardInput": "7\n2 0 10\n3 0 9\n2 0 9\n3 0 9\n2 4 1\n2 4 1\n3 2 2\n",
+                "outputs": [
+                  "Inicio:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:1;Datos:0:X\nResultado:0;Datos:0:X\nResultado:1;Datos:4:1,1,1,1\nResultado:1;Datos:4:1,1,1,1\nResultado:0;Datos:4:1,1,1,1\nFoto:2:3,6"
+                ],
+                "explanation": "Valida antes de preparar, conserva el miembro hasta swap y deja que el candidato se limpie al terminar. La foto inicial permanece independiente."
+              },
+              {
+                "standardInput": "7\n2 -2147483648 1\n2 2147483647 1\n2 1 -2147483648\n1 -2147483648 2\n1 2147483647 2\n2 1 9\n1 0 0\n",
+                "outputs": [
+                  "Inicio:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:1;Datos:1:9\nResultado:1;Datos:1:0\nFoto:2:3,6"
+                ],
+                "explanation": "Valida antes de preparar, conserva el miembro hasta swap y deja que el candidato se limpie al terminar. La foto inicial permanece independiente."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los fallos conservan el último contenido aceptado. Reemplazar con la misma cantidad sí cambia todos sus valores, mientras la copia inicial conserva tres y seis."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n1 0 9\n3 3 7\n2 2 8\n3 0 4\n2 0 4\n1 0 5\n2 3 2\n1 2 9\n2 5 1\n2 3 10\n3 4 6\n2 1 7\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:2:3,6\nResultado:1;Datos:2:9,6\nResultado:0;Datos:2:9,6\nResultado:1;Datos:2:8,8\nResultado:0;Datos:2:8,8\nResultado:1;Datos:0:X\nResultado:0;Datos:0:X\nResultado:1;Datos:3:2,2,2\nResultado:1;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:0;Datos:3:2,2,9\nResultado:1;Datos:1:7\nFoto:2:3,6"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: vacío, repetición y límites"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El valor se valida también al pedir cero. Un fallo con candidato vacío conserva el miembro, y repetir una sustitución válida sigue siendo un éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n2 0 10\n3 0 9\n2 0 9\n3 0 9\n2 4 1\n2 4 1\n3 2 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:1;Datos:0:X\nResultado:0;Datos:0:X\nResultado:1;Datos:4:1,1,1,1\nResultado:1;Datos:4:1,1,1,1\nResultado:0;Datos:4:1,1,1,1\nFoto:2:3,6"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las cantidades extremas caben en el int de Windows usado por el curso. Se rechazan por comparación antes de convertirlas o indexar; después se aplican solicitudes normales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7\n2 -2147483648 1\n2 2147483647 1\n2 1 -2147483648\n1 -2147483648 2\n1 2147483647 2\n2 1 9\n1 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:0;Datos:2:3,6\nResultado:1;Datos:1:9\nResultado:1;Datos:1:0\nFoto:2:3,6"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: cada contenido conserva un responsable"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <new>\n#include <vector>\n\nstruct PreparacionFallida {};\n\nclass Serie {\npublic:\n    std::size_t cantidad() const { return datos_.size(); }\n    int valor(std::size_t posicion) const { return datos_[posicion]; }\n    bool cambiar(int posicion, int valor);\n    bool reemplazar(int cantidad, int valor, bool provocarFallo);\nprivate:\n    std::vector<int> datos_{3, 6};\n};\nbool Serie::cambiar(int posicion, int valor) {\n    if (posicion < 0 || static_cast<std::size_t>(posicion) >= datos_.size()\n        || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[static_cast<std::size_t>(posicion)] = valor;\n    return true;\n}\nbool Serie::reemplazar(int cantidad, int valor, bool provocarFallo) {\n    if (cantidad < 0 || cantidad > 4 || valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        std::vector<int> candidato(static_cast<std::size_t>(cantidad), valor);\n        if (provocarFallo) {\n            throw PreparacionFallida{};\n        }\n        datos_.swap(candidato);\n        return true;\n    } catch (const PreparacionFallida&) {\n        return false;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar(const Serie& serie) {\n    std::cout << serie.cantidad() << ':';\n    if (serie.cantidad() == 0) {\n        std::cout << 'X';\n    } else {\n        for (std::size_t i = 0; i < serie.cantidad(); ++i) {\n            if (i != 0) {\n                std::cout << ',';\n            }\n            std::cout << serie.valor(i);\n        }\n    }\n}\nint main() {\n    int cantidadOrdenes = 0;\n    if (!(std::cin >> cantidadOrdenes) || cantidadOrdenes < 1 || cantidadOrdenes > 12) {\n        return 1;\n    }\n    Serie serie;\n    const Serie foto = serie;\n    std::cout << \"Inicio:\";\n    mostrar(serie);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidadOrdenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = serie.cambiar(a, b);\n        } else if (operacion == 2 || operacion == 3) {\n            aceptado = serie.reemplazar(a, b, operacion == 3);\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Datos:\";\n        mostrar(serie);\n        std::cout << '\\n';\n    }\n    std::cout << \"Foto:\";\n    mostrar(foto);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La validación inicial evita preparar cantidades o valores no admitidos. La construcción del candidato está dentro del try. Si lanza std::bad_alloc, no se llega al intercambio. Si se solicita el fallo deliberado, el candidato ya completado se destruye durante la propagación; el miembro sigue conservando sus datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un éxito, swap intercambia los contenidos. datos_ recibe las copias solicitadas y candidato recibe el contenido anterior. Al ejecutar return true, candidato se destruye y libera ese contenido anterior. El nuevo contenido sigue bajo responsabilidad del vector miembro. La clase Serie no necesita un destructor propio para repetir ese trabajo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera historia, el cambio inicial deja nueve y seis. El fallo posterior los conserva. El reemplazo de igual cantidad deja ocho y ocho. Preparar cero con fallo conserva esos ochos; pedir cero sin fallo sí deja la serie vacía. Más tarde se modifican los valores nuevos y los rechazos conservan la última versión. La foto inicial termina todavía con tres y seis."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta organización combina dos responsabilidades: RAII mantiene la limpieza de los recursos y preparar antes de intercambiar conserva el estado del miembro cuando se rechaza la operación. No significa que toda función con un vector deshaga automáticamente sus cambios ni que las impresiones permitan medir una liberación de memoria (Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "c39b3e7e3506e84985b6d2fe3721775f3f9548930eec9edef6ca9a82440ff3c8"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "a6d71d861e56383a353c36f060872e005407a01563c10f0bd005bba6e1e21966"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "752b01982be847f5ff34e5225b66bfea51c612256aa1640036bfee948c4e92e1"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "a595ec10b9567db41247d9fae3e234550be4d89fee18bcf6c8a34aecdfe8ae96"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "db46d84008ce7bc4aa4a4756e48dedcbac24474170e0239999999c1c3dc0a1e3"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "98ea51a28c56293273ecbafc361317f9c4bc29dce07c813a1da48c632e8a0a04"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "9de4293c3e90e3799bb6dff1b298de16f941dba3fc0f4238e32e4720400e8fa4"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "d9f4b6cfd0b7551d12961eaa4e10ed79cde06311721f069f1b89a60a2b8575b5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1aa6e40ab3455fb6f244b82b595a5c724291a100a2f39c027949b6da50658a32"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "6646162a34700f665e8f55e6bd7dd5c0e56e6663dda72da21610d0eed3ee7ea5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "8d9e1eee90a7317befc312edd954b571f48ff7a2c22752324175359fa244c1b9"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "3974e8b73fba7c0f915fa8e15ca5fd889f01a2b1bb4f828c3fd2a70341ddb814"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "627dfe8fb53a66802691845287d49cc26e9b5a01bc72ce69176593837a084ee2"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "fb6a198c960e91311125daa0d0740f316f83a53361036b101a62c416bda8d5a9"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "64dd1b3fa1737823cd6fc73472ab1d8413596b16f8eeeddb3086ccab9f96b1d9"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "4ed74eb2ca4b9e9ac196023570bc61e544cc1b9e467c3b1a8cff52fe41fba384"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "0b08b7c208035963caffbdf559d9a982677498481b406bd5d624a97f6d2b12e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "fe8ee0d33c42f1d76d1aebcd755248862af7a3d1f1d79eaa8567bed88422d47a"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "c1d3ab88f9499687440612502995b3ac0ec5bdbb1027f825db910a13e7e3bce6"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0010",
+            "sha256": "764c96a7e297d5c8c970a1ef1c82b383a084b8f9d37ffa4891555ca4ef3f338d"
+          },
+          {
+            "id": "block_0017_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0012",
+            "sha256": "27145fd4eefdf422949de2de0a46a7dcd6c5179889428497370ae6af8ba38370"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1721d82f0a5dea94ebd7c2b76e5d56f38553371f12280f782ff7098c54382883"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008",
+          "block_0017_0009",
+          "block_0017_0010",
+          "block_0017_0011",
+          "block_0017_0012"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "d01775cc6506be91b0de74a0c9818586186da6461c1e165ac51cee362ac064ff",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "c39b3e7e3506e84985b6d2fe3721775f3f9548930eec9edef6ca9a82440ff3c8"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "a6d71d861e56383a353c36f060872e005407a01563c10f0bd005bba6e1e21966"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "752b01982be847f5ff34e5225b66bfea51c612256aa1640036bfee948c4e92e1"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "a595ec10b9567db41247d9fae3e234550be4d89fee18bcf6c8a34aecdfe8ae96"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "db46d84008ce7bc4aa4a4756e48dedcbac24474170e0239999999c1c3dc0a1e3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "98ea51a28c56293273ecbafc361317f9c4bc29dce07c813a1da48c632e8a0a04"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "9de4293c3e90e3799bb6dff1b298de16f941dba3fc0f4238e32e4720400e8fa4"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "d9f4b6cfd0b7551d12961eaa4e10ed79cde06311721f069f1b89a60a2b8575b5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1aa6e40ab3455fb6f244b82b595a5c724291a100a2f39c027949b6da50658a32"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "6646162a34700f665e8f55e6bd7dd5c0e56e6663dda72da21610d0eed3ee7ea5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "8d9e1eee90a7317befc312edd954b571f48ff7a2c22752324175359fa244c1b9"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "3974e8b73fba7c0f915fa8e15ca5fd889f01a2b1bb4f828c3fd2a70341ddb814"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "627dfe8fb53a66802691845287d49cc26e9b5a01bc72ce69176593837a084ee2"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "fb6a198c960e91311125daa0d0740f316f83a53361036b101a62c416bda8d5a9"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "64dd1b3fa1737823cd6fc73472ab1d8413596b16f8eeeddb3086ccab9f96b1d9"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "4ed74eb2ca4b9e9ac196023570bc61e544cc1b9e467c3b1a8cff52fe41fba384"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "0b08b7c208035963caffbdf559d9a982677498481b406bd5d624a97f6d2b12e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "fe8ee0d33c42f1d76d1aebcd755248862af7a3d1f1d79eaa8567bed88422d47a"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "c1d3ab88f9499687440612502995b3ac0ec5bdbb1027f825db910a13e7e3bce6"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0010",
+                "sha256": "764c96a7e297d5c8c970a1ef1c82b383a084b8f9d37ffa4891555ca4ef3f338d"
+              },
+              {
+                "id": "block_0017_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0012",
+                "sha256": "27145fd4eefdf422949de2de0a46a7dcd6c5179889428497370ae6af8ba38370"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1721d82f0a5dea94ebd7c2b76e5d56f38553371f12280f782ff7098c54382883"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

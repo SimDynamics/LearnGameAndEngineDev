@@ -1,0 +1,2075 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__seguir_construccion_y_destruccion_de_miembros",
+  "title": "Seguir la construcción y destrucción de los miembros",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los miembros se preparan antes de entrar en el cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 inicializaste miembros mediante una lista como : x_{x}, y_{y}. Los miembros se inicializan en el orden de sus declaraciones; después se ejecuta el cuerpo del constructor. Ese orden también se aplica cuando un miembro tiene un tipo de clase, no sólo cuando guarda un int (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un objeto puede contener otros objetos como miembros. Si Pareja declara Marca primera_; y después Marca segunda_;, cada miembro es un objeto Marca contenido dentro de la pareja. Lo llamamos subobjeto para distinguirlo del objeto completo Pareja. No es un puntero ni una reserva dinámica separada: aquí ambos miembros forman parte de la propia pareja."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para construir la pareja hay que construir primero primera_ y después segunda_. La lista de inicializadores indica qué argumentos recibe cada constructor. El cuerpo de Pareja empieza cuando ambos terminaron de construirse. Estudiaremos también qué sucede si una de esas etapas lanza una excepción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función especial para el final del objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al terminar un objeto de tipo clase se utiliza otra función miembro especial: su destructor. Para Marca, su nombre se escribe ~Marca. No tiene tipo de retorno, ni siquiera void, y no recibe argumentos. En la declaración ~Marca();, el signo ~ forma parte de ese nombre especial (Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente tipo imprime mensajes para hacer visibles sus etapas. Su constructor inicializa etiqueta_ antes de utilizarla. Inicio anuncia que entró en el cuerpo; Lista anuncia que llegó a su final normal. Si fallar es true, lanza Fallo{} antes de Lista. El tipo Fallo es una señal de excepción, como las que ya utilizaste para rechazar una construcción."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "struct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo de ~Marca imprime Fin y consulta una etiqueta que pertenece al objeto que se está destruyendo. Esa impresión sirve para estudiar el orden; no es una liberación de memoria ni una tarea que deban realizar todos los destructores. Este tipo no reserva memoria dinámica. Los ejemplos no provocan excepciones desde los destructores."
+        },
+        {
+          "type": "paragraph",
+          "text": "El parámetro fallar tiene un valor por defecto: si se escribe Marca marca{'A'}, se utiliza false. Con Marca marca{'A', true}, se solicita el fallo de prueba. La etiqueta se inicializa en ambos intentos antes de imprimirla. Inicio, por sí solo, no prueba que el constructor haya terminado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Salir del bloque destruye el objeto local"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para un objeto local de duración automática, salir del bloque termina su uso y ejecuta su destructor. No hace falta una llamada manual a ~Marca. La condición const impide cambiar el objeto durante su uso, pero no evita su destrucción normal al salir del bloque (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_bloque_y_const",
+          "language": "cpp",
+          "question": "Escribe las líneas que muestra este programa, incluida la última sin salto final.",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    std::cout << \"Antes\\n\";\n    {\n        const Marca marca{'A'};\n        std::cout << \"Uso:\" << marca.etiqueta() << '\\n';\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Antes\nInicio:A\nLista:A\nUso:A\nFin:A\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La marca se construye dentro de las llaves interiores. Su destructor se ejecuta al salir de ellas, antes de la última impresión de main. Ser constante no prolonga su duración."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un cuerpo de destructor precede a los destructores de sus miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Pareja, la lista construye primera_ con A y segunda_ con B. Después el cuerpo de Pareja imprime Cuerpo. Su destructor imprime Cierre consultando ambos miembros. Durante ese cuerpo todavía puede utilizar esas consultas; después se destruyen los miembros en el orden inverso al de su construcción (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una pareja construida correctamente, el final tiene tres etapas:\nSe ejecuta el cuerpo de ~Pareja.\nSe destruye segunda_, el último miembro de clase que se construyó.\nSe destruye primera_.\nNo hay que escribir esas dos últimas llamadas dentro de ~Pareja: el lenguaje ya las realiza."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_miembros_y_cuerpo",
+          "language": "cpp",
+          "question": "¿Qué traza produce el caso que termina normalmente?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nUso\nCierre:AB\nFin:B\nFin:A\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Los dos miembros terminan su construcción antes del cuerpo de Pareja. Al salir del try, ~Pareja consulta ambos y después se destruyen B y A. No se entra en catch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La declaración fija el orden, no el aspecto de la lista"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se declarara segunda_ antes de primera_, también se construiría antes, aunque el texto de la lista de inicializadores se escribiera al revés. Mover sólo los elementos de esa lista no cambia el orden real. Conviene escribir la lista siguiendo las declaraciones para facilitar la lectura (Prata, 2012)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l2_orden_real",
+          "question": "Una clase declara Marca a_; y después Marca b_;. Su constructor recibe los datos necesarios para ambas. ¿Qué orden corresponde a su destrucción normal?",
+          "options": [
+            "Primero se destruye a_, después b_ y al final se ejecuta el cuerpo del destructor de la clase.",
+            "Primero se ejecuta el cuerpo del destructor de la clase; después se destruyen b_ y a_.",
+            "El orden lo decide la posición de a_ y b_ en la lista de inicializadores, aunque sus declaraciones no cambien."
+          ],
+          "correctIndex": 1,
+          "explanation": "El cuerpo del destructor precede a la destrucción de sus miembros. Para estos miembros, la declaración fija la construcción y su inverso fija la destrucción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Omitir un destructor propio no omite los de los miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una clase no necesita que escribamos un destructor únicamente para destruir sus miembros de tipo clase. Si no declaramos uno propio, C++ proporciona el destructor correspondiente. En esta Pareja, sin un cuerpo de destructor escrito por nosotros, los dos Marca también se destruyen al terminar la pareja (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_destructor_generado",
+          "language": "cpp",
+          "question": "Escribe la salida completa de esta versión sin ~Pareja escrito.",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{0};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nUso\nFin:B\nFin:A\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "No existe la impresión personalizada Cierre, pero sí se ejecutan los destructores de los miembros B y A. Omitir un destructor propio no convierte esos miembros en objetos que deban terminarse a mano."
+        },
+        {
+          "type": "paragraph",
+          "text": "El destructor generado no adivina qué reserva dinámica debería liberar un puntero. Destruir un miembro que es puntero y destruir un miembro que es un objeto de clase son acciones distintas. Recuperaremos esa diferencia después de estudiar los fallos de construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando falla el primer miembro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una excepción sale del constructor de primera_, ese miembro no termina de construirse. No se intenta construir segunda_ ni se entra en el cuerpo de Pareja. Tampoco se ejecuta ~Pareja: la construcción completa de esa pareja no terminó (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_falla_primero",
+          "language": "cpp",
+          "question": "¿Qué mensajes aparecen cuando falla el primer miembro?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{1};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Sólo se alcanza Inicio de A. Su constructor lanza antes de Lista, por lo que no se ejecuta ~Marca para A. No hay miembros Marca anteriores completados que destruir; el catch recibe la excepción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que el carácter etiqueta_ ya esté inicializado no convierte al objeto Marca completo en uno construido correctamente. Aquí interesa distinguir que terminó la inicialización de ese miembro de que terminó el constructor de Marca."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando falla el segundo miembro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora primera_ sí ha terminado de construirse antes de que comience segunda_. Si el constructor de segunda_ lanza, se destruye primera_ durante la propagación de la excepción. No se ejecuta el destructor de segunda_ ni el de la pareja incompleta. Esta limpieza sucede antes de entrar en el catch de main (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_falla_segundo",
+          "language": "cpp",
+          "question": "¿Qué traza muestra este segundo intento de construcción?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{2};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nFin:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "A alcanzó Lista y por eso se destruye. B sólo alcanzó Inicio; no ejecuta su destructor. El cuerpo de Pareja no empezó y su destructor no se llama."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando los miembros se construyen y falla el cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo de Pareja empieza después de completar sus dos miembros. Si una excepción sale de ese cuerpo, también se interrumpe la construcción de la pareja completa. Se destruyen segunda_ y primera_, que sí se habían construido, pero no se ejecuta el cuerpo de ~Pareja (Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_falla_cuerpo",
+          "language": "cpp",
+          "question": "¿Qué sucede si el fallo sale del cuerpo de Pareja?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nFin:B\nFin:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "A y B llegaron a Lista. Se imprime Cuerpo y después se lanza. B y A se destruyen antes de Captura, sin la línea Cierre propia de ~Pareja."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l2_objeto_incompleto",
+          "question": "El cuerpo del constructor de una clase lanza y la excepción sale de él. Sus dos miembros Marca ya terminaron de construirse. En los constructores usados aquí, ¿qué limpieza corresponde?",
+          "options": [
+            "Ejecutar primero el cuerpo del destructor de la clase completa y después los dos miembros.",
+            "No ejecutar ningún destructor, porque no se completó la clase que los contiene.",
+            "Destruir los miembros completados en orden inverso, sin ejecutar el destructor de la clase completa."
+          ],
+          "correctIndex": 2,
+          "explanation": "La finalización de los miembros y la finalización del objeto completo se distinguen. Los miembros sí se limpian, aunque el objeto completo no haya terminado su construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar las construcciones completadas antes de una captura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para estas filas usa la misma Pareja, con sus dos miembros Marca y sin otros objetos locales de tipo Marca. Cuenta Lista, que indica una construcción de Marca completada, y Fin, que indica su destructor. No cuentes Inicio como una construcción completada."
+        },
+        {
+          "type": "math_puzzle",
+          "id": "p3_u6l2_completados_y_destruidos",
+          "schemaVersion": 1,
+          "prompt": "En cada intento indica cuántos miembros Marca terminan de construirse y cuántos destructores de esos miembros se ejecutan antes de Captura.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Punto del fallo"
+              ],
+              "rows": [
+                [
+                  "Constructor del primer miembro"
+                ],
+                [
+                  "Constructor del segundo miembro"
+                ],
+                [
+                  "Cuerpo de Pareja, tras ambos miembros"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conteos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: completados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: destruidos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: completados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: destruidos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: completados",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: destruidos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se destruyen exactamente los miembros Marca que completaron su construcción: ninguno, uno o los dos, según el punto del fallo.",
+            "incorrect": "Separa entrar en un constructor de terminarlo. El miembro que lanza no ejecuta su destructor; los anteriores completados sí."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los locales del cuerpo también se limpian"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro del cuerpo podemos crear otro objeto local de duración automática. Ese objeto no es un miembro de la pareja: su declaración está dentro del bloque de la función. Si termina de construirse y después se lanza una excepción, también se destruye al abandonar ese bloque (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_local_del_cuerpo",
+          "language": "cpp",
+          "question": "Sigue el objeto local del cuerpo y después los miembros. ¿Qué se muestra?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Pareja {\npublic:\n    Pareja(int modo) : primera_{'A', modo == 1}, segunda_{'B', modo == 2} {\n        std::cout << \"Cuerpo\\n\";\n        if (modo == 3) {\n            Marca temporal{'T'};\n            throw Fallo{};\n        }\n    }\n    ~Pareja() {\n        std::cout << \"Cierre:\" << primera_.etiqueta() << segunda_.etiqueta() << '\\n';\n    }\nprivate:\n    Marca primera_;\n    Marca segunda_;\n};\n\nint main() {\n    try {\n        Pareja pareja{3};\n        std::cout << \"Uso\\n\";\n    } catch (const Fallo&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:A\nLista:A\nInicio:B\nLista:B\nCuerpo\nInicio:T\nLista:T\nFin:T\nFin:B\nFin:A\nCaptura\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "T termina de construirse dentro del cuerpo y se destruye al salir de ese bloque por la excepción. Después se destruyen B y A. La pareja no completó su constructor, por lo que no se imprime Cierre."
+        },
+        {
+          "type": "paragraph",
+          "text": "No estamos revirtiendo las líneas que ya se imprimieron ni cualquier cambio exterior hecho antes de lanzar. La limpieza de objetos completados y la conservación de todos los efectos anteriores son asuntos distintos. Aquí los mensajes previos permanecen en la consola."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un return también termina los locales de su bloque"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salir de una función mediante return termina los objetos locales de duración automática que ya completaron su construcción y se abandonan. Sus destructores se ejecutan antes de continuar en el llamador. Los locales static que ya estudiaste tienen otra duración: no se destruyen cada vez que retorna la función. No se necesita provocar una excepción para obtener la limpieza normal de los automáticos (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_salida_mediante_return",
+          "language": "cpp",
+          "question": "¿En qué orden aparecen los mensajes de paso y de main?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nvoid paso() {\n    Marca local{'R'};\n    std::cout << \"AntesReturn\\n\";\n    return;\n}\n\nint main() {\n    paso();\n    std::cout << \"Vuelta\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:R\nLista:R\nAntesReturn\nFin:R\nVuelta"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función imprime AntesReturn y termina su local R antes de regresar. La impresión Vuelta pertenece a main y ocurre después. No hay copia ni retorno de un objeto Marca."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un puntero local no termina por sí solo el objeto al que apunta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un puntero guarda una dirección; terminar esa variable puntero no destruye el objeto dinámico al que señala. El ejemplo conserva el acceso en responsable antes de que termine acceso. El Marca dinámico sigue vivo y sólo termina cuando se ejecuta delete responsable. Entonces se llama a su destructor y se libera su almacenamiento (Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l2_puntero_y_objeto_dinamico",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa y cuándo aparece Fin?",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    Marca* responsable = nullptr;\n    {\n        Marca* acceso = new Marca{'D'};\n        responsable = acceso;\n    }\n    std::cout << \"Sigue:\" << responsable->etiqueta() << '\\n';\n    delete responsable;\n    responsable = nullptr;\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio:D\nLista:D\nSigue:D\nFin:D\nDespues"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cerrar el bloque del puntero acceso no destruye el Marca dinámico. responsable permite consultarlo todavía. delete ejecuta su destructor; después sólo se sobrescribe responsable con nullptr, sin usar su valor anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por esa misma razón, un miembro int* no se convierte en propietario con limpieza automática sólo por estar dentro de una clase. El destructor generado termina ese miembro puntero, pero no decide ejecutar delete sobre lo que señala. Un miembro vector, en cambio, es un objeto de clase que administra sus propios elementos. La siguiente lección aprovechará estas diferencias para expresar la propiedad y la limpieza."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l2_llamada_manual",
+          "question": "Un objeto Marca local ya terminó de construirse y debe vivir hasta el final de su bloque. ¿Cómo se obtiene su destrucción normal?",
+          "options": [
+            "Se deja terminar el bloque; no se añade una llamada explícita a su destructor.",
+            "Se llama antes a ~Marca para adelantar la limpieza y se deja que el bloque lo destruya otra vez.",
+            "Se usa delete sobre la dirección del local, aunque no se haya creado mediante new."
+          ],
+          "correctIndex": 0,
+          "explanation": "El final del bloque ya realiza la destrucción. Las otras propuestas añaden una destrucción o liberación que no corresponde al ciclo de vida del local."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar los nombres de las dos funciones especiales"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l2_nombres_especiales",
+          "question": "Completa los nombres del constructor y del destructor del tipo declarado. El signo ~ del destructor ya está escrito; no añadas un tipo de retorno.",
+          "template": "#include <iostream>\n\nclass Aviso {\npublic:\n    [](char etiqueta) : etiqueta_{etiqueta} {\n        std::cout << \"C:\" << etiqueta_ << '\\n';\n    }\n    ~[]() {\n        std::cout << \"D:\" << etiqueta_ << '\\n';\n    }\nprivate:\n    char etiqueta_;\n};\n\nint main() {\n    Aviso aviso{'Z'};\n    return 0;\n}\n",
+          "answers": [
+            "Aviso",
+            "Aviso"
+          ],
+          "answerAlternatives": [
+            [
+              "Aviso"
+            ],
+            [
+              "Aviso"
+            ]
+          ],
+          "explanation": "Ambos nombres se forman con el nombre de la clase. El destructor añade el ~ ya presente en la plantilla y no recibe argumentos. La etiqueta se inicializa antes de las impresiones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar el orden de los miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kit debe construir primero su miembro izquierda_ con la etiqueta A y después derecha_ con B. El inicial declara los miembros al revés, aunque el nombre izquierda_ sugiera otra cosa. Reorganiza las declaraciones y la lista de inicializadores para que ambas reflejen el orden solicitado. Conserva los nombres, las etiquetas, Marca y los cuerpos que imprimen Kit y CierreKit; no imites sus mensajes con impresiones adicionales."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay entrada. La salida requerida aparece a continuación. Cada línea termina con salto excepto Despues. Cambiar únicamente el orden de la lista no cambia el orden de construcción de los miembros."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:A\nLista:A\nInicio:B\nLista:B\nKit\nCierreKit\nFin:B\nFin:A\nDespues"
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Kit {\npublic:\n    Kit() : derecha_{'B'}, izquierda_{'A'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca derecha_;\n    Marca izquierda_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "initialStandardInput": "",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Inicio:A\nLista:A\nInicio:B\nLista:B\nKit\nCierreKit\nFin:B\nFin:A\nDespues"
+                ],
+                "explanation": "El orden lo fijan las declaraciones de los miembros. La lista debe mostrar la misma secuencia; los destructores de los miembros se llaman automáticamente en el orden inverso."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: declaraciones y lista cuentan la misma secuencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Fallo {};\n\nclass Marca {\npublic:\n    Marca(char etiqueta, bool fallar = false) : etiqueta_{etiqueta} {\n        std::cout << \"Inicio:\" << etiqueta_ << '\\n';\n        if (fallar) {\n            throw Fallo{};\n        }\n        std::cout << \"Lista:\" << etiqueta_ << '\\n';\n    }\n    ~Marca() {\n        std::cout << \"Fin:\" << etiqueta_ << '\\n';\n    }\n    char etiqueta() const { return etiqueta_; }\nprivate:\n    char etiqueta_;\n};\nclass Kit {\npublic:\n    Kit() : izquierda_{'A'}, derecha_{'B'} {\n        std::cout << \"Kit\\n\";\n    }\n    ~Kit() {\n        std::cout << \"CierreKit\\n\";\n    }\nprivate:\n    Marca izquierda_;\n    Marca derecha_;\n};\n\nint main() {\n    {\n        Kit kit;\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "izquierda_ se declara antes que derecha_, por lo que A se prepara antes que B. El cuerpo del constructor imprime Kit una vez que ambos están listos. Al terminar el bloque se imprime CierreKit desde el cuerpo del destructor; después se destruyen B y A. No hay llamadas manuales a sus destructores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: una sesión con tres miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa las definiciones de Sesion::Sesion y Sesion::~Sesion en el editor. Parte, las declaraciones de Sesion y main están proporcionados. Cada Parte imprime Intento al entrar en su constructor, puede lanzar Interrupcion antes de terminar y sólo imprime Lista si alcanza el final. Su destructor imprime Fin. No cambies esa clase ni añadas impresiones que simulen su construcción o destrucción."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene id y modo. main exige id entre uno y nueve y modo entre cero y cuatro antes de intentar la sesión. Sólo hay un intento de construcción por ejecución. Los miembros están declarados en este orden:\nid_, entero con el identificador recibido.\nlectura_, Parte con ese id y etiqueta L.\ncalculo_, Parte con ese id y etiqueta C.\ninforme_, Parte con ese id y etiqueta I."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lista de inicializadores, pasa true al parámetro fallar sólo en estos casos:\nmodo uno: al construir lectura_.\nmodo dos: al construir calculo_.\nmodo tres: al construir informe_.\nEn modo cero o cuatro, ninguna Parte debe fallar. No sustituyas un fallo por valores de otro modo ni captures la excepción dentro de Sesion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se alcanza el cuerpo del constructor de Sesion, imprime Cuerpo: seguido de id_ y un salto. En modo cuatro, lanza Interrupcion{} después de esa línea. En los otros modos que alcancen el cuerpo, deja que termine normalmente. Su destructor imprime sólo Cierre: seguido de id_ y un salto; no llama manualmente a los destructores de los miembros."
+        },
+        {
+          "type": "paragraph",
+          "text": "main imprime Uso:id sólo cuando la construcción completa terminó. Al salir del bloque, la sesión se destruye. Si una excepción llega a su catch, imprime Captura. Siempre que se complete ese tratamiento, termina mostrando Despues, sin salto final. Las demás líneas sí llevan salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial prepara las tres Parte sin fallos, pero todavía no imprime el cuerpo ni el cierre de la sesión y no respeta los modos de fallo. Sustituye los predicados false y completa los dos cuerpos indicados. Mantén la inicialización, el orden de declaraciones y los informes de main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y utilizar la sesión antes de su cierre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el editor. Sólo el primer caso correcto es obligatorio para avanzar. Su modo cero construye y utiliza la sesión completa. Los otros cuatro casos son ensayos opcionales independientes, cada uno con su propia entrada y salida."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', false}, calculo_{id, 'C', false},\n      informe_{id, 'I', false} {\n    // Completa los predicados de los inicializadores y el cuerpo.\n    (void)modo;\n}\n\nSesion::~Sesion() {\n    // Escribe sólo la línea de cierre; los miembros se destruyen automáticamente.\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "initialStandardInput": "2 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 0\n",
+                "outputs": [
+                  "Intento:2:L\nLista:2:L\nIntento:2:C\nLista:2:C\nIntento:2:I\nLista:2:I\nCuerpo:2\nUso:2\nCierre:2\nFin:2:I\nFin:2:C\nFin:2:L\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "3 1\n",
+                "outputs": [
+                  "Intento:3:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "4 2\n",
+                "outputs": [
+                  "Intento:4:L\nLista:4:L\nIntento:4:C\nFin:4:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "5 3\n",
+                "outputs": [
+                  "Intento:5:L\nLista:5:L\nIntento:5:C\nLista:5:C\nIntento:5:I\nFin:5:C\nFin:5:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              },
+              {
+                "standardInput": "6 4\n",
+                "outputs": [
+                  "Intento:6:L\nLista:6:L\nIntento:6:C\nLista:6:C\nIntento:6:I\nLista:6:I\nCuerpo:6\nFin:6:I\nFin:6:C\nFin:6:L\nCaptura\nDespues"
+                ],
+                "explanation": "Inicializa cada miembro antes del cuerpo y activa el fallo en la etapa solicitada. La destrucción automática ya termina los miembros completados; el destructor propio sólo imprime el cierre de una sesión construida."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se construyen lectura, cálculo e informe; después aparecen el cuerpo, el uso y el cierre. Los miembros terminan en el orden inverso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Intento:2:L\nLista:2:L\nIntento:2:C\nLista:2:C\nIntento:2:I\nLista:2:I\nCuerpo:2\nUso:2\nCierre:2\nFin:2:I\nFin:2:C\nFin:2:L\nDespues"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: construcción interrumpida"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer miembro no termina. No se construyen los siguientes ni aparece el cuerpo de Sesion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "3 1\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Intento:3:L\nCaptura\nDespues"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El segundo miembro falla: sólo lectura_ llegó a completarse y se destruye antes de Captura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4 2\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Intento:4:L\nLista:4:L\nIntento:4:C\nFin:4:L\nCaptura\nDespues"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El tercer miembro falla: cálculo y lectura se destruyen en ese orden, sin cierre de Sesion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "5 3\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Intento:5:L\nLista:5:L\nIntento:5:C\nLista:5:C\nIntento:5:I\nFin:5:C\nFin:5:L\nCaptura\nDespues"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los tres miembros terminaron, pero la excepción sale del cuerpo de Sesion. Se destruyen los tres; no aparece Uso ni Cierre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6 4\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Intento:6:L\nLista:6:L\nIntento:6:C\nLista:6:C\nIntento:6:I\nLista:6:I\nCuerpo:6\nFin:6:I\nFin:6:C\nFin:6:L\nCaptura\nDespues"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: cada etapa conserva su responsabilidad"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Interrupcion {};\n\nclass Parte {\npublic:\n    Parte(int id, char etapa, bool fallar) : id_{id}, etapa_{etapa} {\n        std::cout << \"Intento:\" << id_ << ':' << etapa_ << '\\n';\n        if (fallar) {\n            throw Interrupcion{};\n        }\n        std::cout << \"Lista:\" << id_ << ':' << etapa_ << '\\n';\n    }\n    ~Parte() {\n        std::cout << \"Fin:\" << id_ << ':' << etapa_ << '\\n';\n    }\nprivate:\n    int id_;\n    char etapa_;\n};\nclass Sesion {\npublic:\n    Sesion(int id, int modo);\n    ~Sesion();\n    int identificador() const { return id_; }\nprivate:\n    int id_;\n    Parte lectura_;\n    Parte calculo_;\n    Parte informe_;\n};\nSesion::Sesion(int id, int modo)\n    : id_{id}, lectura_{id, 'L', modo == 1}, calculo_{id, 'C', modo == 2},\n      informe_{id, 'I', modo == 3} {\n    std::cout << \"Cuerpo:\" << id_ << '\\n';\n    if (modo == 4) {\n        throw Interrupcion{};\n    }\n}\n\nSesion::~Sesion() {\n    std::cout << \"Cierre:\" << id_ << '\\n';\n}\n\nint main() {\n    int id = 0;\n    int modo = 0;\n    if (!(std::cin >> id >> modo) || id < 1 || id > 9 || modo < 0 || modo > 4) {\n        return 1;\n    }\n    try {\n        Sesion sesion{id, modo};\n        std::cout << \"Uso:\" << sesion.identificador() << '\\n';\n    } catch (const Interrupcion&) {\n        std::cout << \"Captura\\n\";\n    }\n    std::cout << \"Despues\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo cero, los tres miembros se completan antes del cuerpo de Sesion. Después de Uso, el cuerpo de ~Sesion imprime el cierre y el lenguaje termina informe_, calculo_ y lectura_. El destructor propio no necesita reproducir esa secuencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los modos uno a tres, el miembro que lanza no completa su construcción. Sólo se destruyen los anteriores completados. En modo cuatro sí se completaron los tres miembros, pero no terminó el constructor de Sesion. Por eso todos ellos se destruyen y aun así no se ejecuta ~Sesion. La captura de main ocurre después de esa limpieza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para seguir estos constructores, separa lo que ocurrió en cada etapa: qué miembros terminaron, si se alcanzó el cuerpo y si el constructor completo terminó normalmente. La palabra Inicio o Intento sólo indica que se entró en un constructor; Lista identifica que ese constructor de miembro llegó al final. Esa diferencia permite interpretar los fallos sin adivinar qué objetos deben destruirse."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida hace visible la construcción y la destrucción; no deshace mensajes previos ni demuestra por sí sola que cualquier recurso se libere. Ya podemos distinguir la vida de un miembro de clase de la de un simple puntero. El siguiente paso será utilizar objetos que se hagan responsables de la limpieza de lo que adquieren (Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "a57ab3ea3b4efa30519bfa9a979c2fb84169ff2e78623a678a77ec296ed5659f"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "b6def10f5c5cbb737f9f43784abdde96e9a3481da628bbe50f000e76076e271e"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "ba02479a694e6f1c684385eac0247869863d901ef9b64ca4d35a189603321c88"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "8799e8b7e266bb51b9b7a9ec70b696ab3751b3adc1aad9ae88541e061247098a"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1a50dc06153a404af3dc48c13199eb036246f69a12c47cec528a9e43686ebe3c"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "a7b287f45769fbc7562a980b8de5f37fa6faa5216a228f1880fad71bafcc4e95"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "875e43a3a2ab0db20fd27d4c6ca5882fcda24682a7e8cc869101318ba82ed1da"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "7ee431011671fb297e63cecf4fc08209ae841061b22b9691a06d4fe68bede996"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "c99d0192c216c5465c41dc034a1863dcba3c0a29c492792c54233f3156800b3a"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "0b46b996b49a80a95e9d6e5255a75b68d7d3a087c0f2e6046f37d7f99b969b8a"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "43853d252840da341f8c7dba4b97b4fc13fdd56668676dcf4327461f0d32a569"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "f6bb0708e602e22e0b4fc5852f5703f9d5b63c6c37891e246dd2de35288a8ca6"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "3d7c69798ba722359be379123e705c5ed9a21f04cda2233b41e4ad904f07d48a"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "0ddf8d20a3d5540cfaf75ea1ba418716608a57e831bd1a5e5abf714fc4ba8b67"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "08bf13bfc79185e7dd68d4209696f0f24a0ec673be1e3ad9068499e82bbf440d"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "67716f6b830f17d8813f6f9d034f0fd50dbbd108bb73f21b74864b2c35474a3d"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "2d9791551b4e98b77dc69158515e63ba06ef485bde6d1bd18f03a958702d7d52"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "a07a7a9f3c189547bc3df629710062f9594516a0d190178762b7f2408198dbb8"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "5c74be6b1a9e44b36244167949bcf71da47c5f9e6a921248c0ff16d1a10303b1"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "6a6f830991bf4a96263f09f486f5f969e82d7d1903779b26a4df45324227fd18"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "7958ffca915f0590289374312d673fd4bb9c93ea1c8a064ff24fa3f4ef1acdbf"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "2789aadd35ef4000126b8d1ff053ef60f7075a26c977b51db60c9b0d1aff7db4"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "d0d8ed5e32e6cafb80a63d9bc4742e351202b2cbe86fefa90d31a094f46dd757"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0010",
+            "sha256": "e965365ced035391835667cd524b9f2c5cecbc1a1ca22b91146d7329c039ab1d"
+          },
+          {
+            "id": "block_0018_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0012",
+            "sha256": "969c3fcbc96bbbd9f749fcb0dcbe581235cffe6dd03a08c177fd0e93fb394c06"
+          },
+          {
+            "id": "block_0018_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0016",
+            "sha256": "7dd8e83d7b6871fba6eccda39a018847c612043fd8cd4cc4385ae795dacb6730"
+          },
+          {
+            "id": "block_0018_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0018",
+            "sha256": "ca0d6bb123d6d6c8ec88e6128682c714f38688c9f1202c3b1b1d47bc9d04b541"
+          },
+          {
+            "id": "block_0018_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0022",
+            "sha256": "686932f64708ff58bd0c4282de347bf4c207d73703282d286286efebf1d202a3"
+          },
+          {
+            "id": "block_0018_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0024",
+            "sha256": "73f273b42f22455f0252b1fccf9e3acc2fa41f6c295dea4de92175e72edb1c05"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "3ee8d00acb77785e57433bb785ed5a55edef50ae771bec42768207197798b396"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008",
+          "block_0018_0009",
+          "block_0018_0010",
+          "block_0018_0011",
+          "block_0018_0012",
+          "block_0018_0013",
+          "block_0018_0014",
+          "block_0018_0015",
+          "block_0018_0016",
+          "block_0018_0017",
+          "block_0018_0018",
+          "block_0018_0019",
+          "block_0018_0020",
+          "block_0018_0021",
+          "block_0018_0022",
+          "block_0018_0023",
+          "block_0018_0024"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004",
+          "block_0019_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "6f49012f92e72c59447c27afb951c395a56abc7f77ec89f2ddaedd878a66989c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "a57ab3ea3b4efa30519bfa9a979c2fb84169ff2e78623a678a77ec296ed5659f"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "b6def10f5c5cbb737f9f43784abdde96e9a3481da628bbe50f000e76076e271e"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "ba02479a694e6f1c684385eac0247869863d901ef9b64ca4d35a189603321c88"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "8799e8b7e266bb51b9b7a9ec70b696ab3751b3adc1aad9ae88541e061247098a"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1a50dc06153a404af3dc48c13199eb036246f69a12c47cec528a9e43686ebe3c"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a7b287f45769fbc7562a980b8de5f37fa6faa5216a228f1880fad71bafcc4e95"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "875e43a3a2ab0db20fd27d4c6ca5882fcda24682a7e8cc869101318ba82ed1da"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "7ee431011671fb297e63cecf4fc08209ae841061b22b9691a06d4fe68bede996"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "c99d0192c216c5465c41dc034a1863dcba3c0a29c492792c54233f3156800b3a"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "0b46b996b49a80a95e9d6e5255a75b68d7d3a087c0f2e6046f37d7f99b969b8a"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "43853d252840da341f8c7dba4b97b4fc13fdd56668676dcf4327461f0d32a569"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "f6bb0708e602e22e0b4fc5852f5703f9d5b63c6c37891e246dd2de35288a8ca6"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "3d7c69798ba722359be379123e705c5ed9a21f04cda2233b41e4ad904f07d48a"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "0ddf8d20a3d5540cfaf75ea1ba418716608a57e831bd1a5e5abf714fc4ba8b67"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "08bf13bfc79185e7dd68d4209696f0f24a0ec673be1e3ad9068499e82bbf440d"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "67716f6b830f17d8813f6f9d034f0fd50dbbd108bb73f21b74864b2c35474a3d"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "2d9791551b4e98b77dc69158515e63ba06ef485bde6d1bd18f03a958702d7d52"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "a07a7a9f3c189547bc3df629710062f9594516a0d190178762b7f2408198dbb8"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "5c74be6b1a9e44b36244167949bcf71da47c5f9e6a921248c0ff16d1a10303b1"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "6a6f830991bf4a96263f09f486f5f969e82d7d1903779b26a4df45324227fd18"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "7958ffca915f0590289374312d673fd4bb9c93ea1c8a064ff24fa3f4ef1acdbf"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "2789aadd35ef4000126b8d1ff053ef60f7075a26c977b51db60c9b0d1aff7db4"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "d0d8ed5e32e6cafb80a63d9bc4742e351202b2cbe86fefa90d31a094f46dd757"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0010",
+                "sha256": "e965365ced035391835667cd524b9f2c5cecbc1a1ca22b91146d7329c039ab1d"
+              },
+              {
+                "id": "block_0018_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0012",
+                "sha256": "969c3fcbc96bbbd9f749fcb0dcbe581235cffe6dd03a08c177fd0e93fb394c06"
+              },
+              {
+                "id": "block_0018_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0016",
+                "sha256": "7dd8e83d7b6871fba6eccda39a018847c612043fd8cd4cc4385ae795dacb6730"
+              },
+              {
+                "id": "block_0018_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0018",
+                "sha256": "ca0d6bb123d6d6c8ec88e6128682c714f38688c9f1202c3b1b1d47bc9d04b541"
+              },
+              {
+                "id": "block_0018_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0022",
+                "sha256": "686932f64708ff58bd0c4282de347bf4c207d73703282d286286efebf1d202a3"
+              },
+              {
+                "id": "block_0018_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0024",
+                "sha256": "73f273b42f22455f0252b1fccf9e3acc2fa41f6c295dea4de92175e72edb1c05"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "3ee8d00acb77785e57433bb785ed5a55edef50ae771bec42768207197798b396"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

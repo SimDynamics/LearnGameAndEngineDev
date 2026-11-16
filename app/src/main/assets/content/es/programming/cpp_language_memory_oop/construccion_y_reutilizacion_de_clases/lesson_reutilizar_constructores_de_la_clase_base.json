@@ -1,0 +1,1324 @@
+{
+  "id": "cpp_language_memory_oop__construccion_y_reutilizacion_de_clases__reutilizar_constructores_de_la_clase_base",
+  "title": "Reutilizar constructores de la clase base",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer en la derivada las formas de construcción de la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una clase derivada puede necesitar las mismas entradas que ya acepta su base. ValorBase recibe un número, o un número y un canal. Si ValorConMarca sólo añade una marca con un valor inicial fijo, repetir un constructor por cada entrada de ValorBase añade código que realiza una preparación ya disponible."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La declaración using ValorBase::ValorBase; permite considerar esos constructores de la base al construir un ValorConMarca. Esta posibilidad se llama heredar constructores. Se sigue creando un objeto ValorConMarca: su parte ValorBase se prepara mediante el constructor seleccionado y su miembro marca_ se prepara según la declaración de ese miembro (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El nombre repetido tras :: es el nombre de la base. La declaración termina con punto y coma; no contiene argumentos ni un cuerpo propio. Es distinta de using ValorBase::numero;, que haría disponible una función miembro ordinaria. También es distinta de la delegación: allí un constructor selecciona otro de su misma clase en la lista de inicializadores; aquí se ofrecen rutas de construcción procedentes de la base."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "marca_{8} es el inicializador escrito junto al miembro. Ese dato no se obtiene de los argumentos del constructor base. Así, la clase derivada deja establecido cómo preparar su propia marca cuando se utiliza una ruta heredada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los argumentos preparan la base y el miembro conserva su inicializador"
+        },
+        {
+          "type": "paragraph",
+          "text": "En ValorConMarca a{4}, un argumento entero permite seleccionar ValorBase(int). En ValorConMarca b{7, 2}, los dos argumentos permiten seleccionar ValorBase(int, int). Cada objeto tiene además su propio miembro marca_."
+        },
+        {
+          "type": "paragraph",
+          "text": "La ruta heredada no incorpora un cuerpo adicional de ValorConMarca que se ejecute después. Al terminar de preparar la parte base y los miembros de esta derivada, queda terminada la construcción del objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l2_dos_rutas_heredadas_con_marca_inicializada",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Cada grupo muestra número, canal y marca de un objeto.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
+          "answers": [
+            "4:0:8|7:2:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a utiliza el constructor base de un entero: guarda cuatro como número y elige cero como canal. b utiliza el de dos enteros: guarda siete y dos. En ambos objetos, marca_ se prepara con el ocho de su inicializador de miembro. Los argumentos de b no se distribuyen entre la base y la marca de la derivada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La base se completa antes de preparar los miembros de la derivada"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente ejemplo añade un miembro sello_ de tipo Sello. Su inicializador {} llama al constructor sin argumentos de Sello. Ese constructor establece codigo_ y escribe Sello. El constructor de BaseConTraza establece numero_ y escribe Base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al usar el constructor heredado, primero se construye la parte BaseConTraza; después se construye sello_. El cuerpo del constructor base no puede utilizar un miembro de la derivada que todavía no se ha construido. Aquí numero_ ya se ha inicializado y ese cuerpo sólo escribe su marca de salida (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l2_base_antes_de_miembro_en_constructor_heredado",
+          "language": "cpp",
+          "question": "Escribe la traza de construcción y los dos datos consultados al final.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseConTraza {\npublic:\n    explicit BaseConTraza(int numero) : numero_{numero} {\n        std::cout << \"Base|\";\n    }\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Sello {\npublic:\n    Sello() : codigo_{9} { std::cout << \"Sello|\"; }\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass ConSello : public BaseConTraza {\npublic:\n    using BaseConTraza::BaseConTraza;\n    int sello() const { return sello_.codigo(); }\nprivate:\n    Sello sello_{};\n};\nint main() {\n    ConSello dato{6};\n    std::cout << dato.numero() << ':' << dato.sello();\n    return 0;\n}\n",
+          "answers": [
+            "Base|Sello|6:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "BaseConTraza recibe seis y completa primero su cuerpo, que escribe Base. Después se construye sello_: su constructor establece el código con nueve y luego escribe Sello. Cuando la declaración de dato ha terminado, main puede consultar tanto el número de la base como el código del miembro."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hubo un constructor de ConSello escrito por nosotros con otro cuerpo. La construcción heredada sí prepara el objeto completo: utilizar el constructor base no deja sin construir el miembro sello_."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una ruta propia puede sustituir a la heredada correspondiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "La derivada puede mantener using ValorBase::ValorBase; y declarar además sus propios constructores. En esta variante añade ValorConMarca(int), que recibe la misma clase de entrada que la ruta base de un entero. Para esa entrada se utiliza el constructor propio; la ruta heredada de dos enteros sigue disponible (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor propio prepara su base con dos argumentos y proporciona también un inicializador explícito para marca_. Ese inicializador se usa en su lugar: no se ejecuta primero el inicializador de miembro y después se vuelve a inicializar la marca. Propio es la marca de salida de ese único cuerpo adicional."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l2_constructor_propio_y_ruta_heredada_restante",
+          "language": "cpp",
+          "question": "Escribe la salida completa de esta variante, distinguiendo qué ruta utiliza cada objeto.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    explicit ValorConMarca(int numero) : ValorBase{numero, 3}, marca_{5} {\n        std::cout << \"Propio|\";\n    }\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca a{4};\n    ValorConMarca b{7, 2};\n    std::cout << a.numero() << ':' << a.canal() << ':' << a.marca()\n              << '|' << b.numero() << ':' << b.canal() << ':' << b.marca();\n    return 0;\n}\n",
+          "answers": [
+            "Propio|4:3:5|7:2:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a utiliza ValorConMarca(int): prepara la base con cuatro y tres, prepara marca_ con cinco y escribe Propio. b sigue utilizando la ruta heredada de dos enteros y el inicializador de miembro que establece ocho. El cuerpo propio no se añade automáticamente a las otras rutas heredadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si toda forma de construcción necesita una comprobación o una acción adicional propia de la derivada, hay que diseñar sus rutas para que realmente la realicen. Añadir un cuerpo a un solo constructor no hace que las demás rutas heredadas pasen por ese cuerpo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El acceso se comprueba en el constructor de la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "protected permite usar el constructor desde la propia clase y desde una derivada en los contextos correspondientes; no lo ofrece como constructor público para una llamada desde main. En el siguiente programa, poner el using en public no cambia el acceso protegido que tiene BaseRestringida(int) (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseRestringida {\nprotected:\n    explicit BaseRestringida(int numero) : numero_{numero} {}\npublic:\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass Restringida : public BaseRestringida {\npublic:\n    using BaseRestringida::BaseRestringida;\n};\nint main() {\n    Restringida dato{6};\n    std::cout << dato.numero();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l2_using_publico_no_hace_publico_constructor_protegido",
+          "question": "Este programa se rechaza al compilar. ¿Qué explica el rechazo de Restringida dato{6}?",
+          "options": [
+            "La herencia pública sólo permite heredar constructores sin argumentos.",
+            "El using hace público el constructor, pero main debería pasar además un objeto BaseRestringida.",
+            "La llamada debe respetar el acceso protegido del constructor base; el public del using no lo convierte en público."
+          ],
+          "correctIndex": 2,
+          "explanation": "El constructor recibe correctamente un entero. El problema es el acceso desde main: BaseRestringida(int) es protegido. Al heredar constructores, se comprueba el acceso del constructor base seleccionado y se ignora el acceso del propio using. Una ruta propia pública de la derivada podría inicializar su base protegida si ése fuera el diseño elegido."
+        },
+        {
+          "type": "paragraph",
+          "text": "También se cumple la contraparte: colocar el using en una sección privada no vuelve privado un constructor base que era público. Este programa sí puede construir ConUsingPrivado desde main. Esta regla sobre el acceso corresponde a constructores heredados; no hay que trasladarla sin más al using de una función miembro ordinaria (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ConUsingPrivado : public ValorBase {\n    using ValorBase::ValorBase;\npublic:\n    int marca() const { return marca_; }\nprivate:\n    int marca_{6};\n};\nint main() {\n    ConUsingPrivado dato{3};\n    std::cout << dato.numero() << ':' << dato.canal() << ':' << dato.marca();\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Heredar una ruta no quita su explicit"
+        },
+        {
+          "type": "paragraph",
+          "text": "ValorBase(int) se declaró explicit. Eso permite construir expresamente un objeto con el entero, pero no utilizar ese constructor para convertir implícitamente un entero en ese objeto mediante una declaración como ValorConMarca dato = 5;. Heredar esa ruta conserva su carácter explícito (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorConMarca dato = 5;\n    std::cout << dato.numero();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l2_explicit_se_conserva_al_heredar_constructor",
+          "question": "¿Qué cambio permite construir dato conservando la ruta explicit que ya ofrece esta clase?",
+          "options": [
+            "Escribir ValorConMarca dato{5}; para solicitar directamente esa construcción.",
+            "Dejar dato = 5 y mover el using de public a private.",
+            "Declarar dato como const para que explicit ya no se aplique."
+          ],
+          "correctIndex": 0,
+          "explanation": "ValorConMarca dato{5}; solicita directamente construir el objeto con ese entero y puede utilizar el constructor explícito heredado. La posición pública o privada del using no quita explicit. Añadir const al objeto tampoco autoriza una conversión que ese constructor no permite implícitamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción por defecto, copia y movimiento siguen sus propias reglas"
+        },
+        {
+          "type": "paragraph",
+          "text": "using PiezaBase::PiezaBase; no significa que todos los constructores especiales de Pieza estén garantizados. Su construcción sin argumentos, su copia y su movimiento se determinan por las reglas habituales de la propia clase y de sus partes. El using por sí solo no suprime la declaración implícita de esas operaciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, vuelve a las primeras definiciones de ValorBase y ValorConMarca. ValorBase admite uno o dos enteros, pero no tiene un constructor invocable sin argumentos. La siguiente declaración se rechaza: la construcción sin argumentos de ValorConMarca necesitaría preparar también su base, y no hay una ruta válida para hacerlo sin proporcionar esos enteros. Escribir el using no aporta por sí solo esa preparación (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "ValorConMarca dato;"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta Pieza concreta, PiezaBase sí puede construirse sin argumentos y ambos enteros tienen inicializadores de miembro. Por eso se puede crear inicial sin argumentos. La copia y el movimiento generados preparan la base y el miembro marca_ desde la Pieza de origen, en lugar de volver a elegir el inicializador de marca_."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l2_operaciones_propias_de_derivada_con_using",
+          "language": "cpp",
+          "question": "Escribe los cuatro grupos: inicial, copia, movida y origen después del movimiento.",
+          "code": "#include <iostream>\n#include <utility>\n\nclass PiezaBase {\npublic:\n    PiezaBase() = default;\n    explicit PiezaBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_{0};\n};\nclass Pieza : public PiezaBase {\npublic:\n    using PiezaBase::PiezaBase;\n    int marca() const { return marca_; }\n    void marcar(int marca) { marca_ = marca; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    Pieza inicial;\n    Pieza origen{5};\n    origen.marcar(12);\n    Pieza copia{origen};\n    origen.cambiar(7);\n    Pieza movida{std::move(origen)};\n    std::cout << inicial.numero() << ':' << inicial.marca()\n              << '|' << copia.numero() << ':' << copia.marca()\n              << '|' << movida.numero() << ':' << movida.marca()\n              << '|' << origen.numero() << ':' << origen.marca();\n    return 0;\n}\n",
+          "answers": [
+            "0:8|5:12|7:12|7:12"
+          ],
+          "outputComparison": "exact",
+          "explanation": "inicial obtiene el número cero de PiezaBase y la marca ocho de Pieza. copia recibe el número cinco y la marca doce que tenía origen al copiarlo. Cambiar después el número de origen a siete no modifica copia. El movimiento generado mueve las partes que aquí sólo contienen int: esos enteros se copian y no se vacía el origen. movida y origen conservan siete y doce. Que unique_ptr quede vacío al transferir su propiedad no es una regla universal para todo tipo movido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar una Pieza desde otra Pieza tampoco equivale a construirla desde una PiezaBase sola. La base no contiene la marca adicional que forma parte de Pieza. Una ruta que construya una derivada a partir de una base tendría que formar parte del diseño de esa derivada; el using de constructores no añade automáticamente esa conversión."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass ValorBase {\npublic:\n    explicit ValorBase(int numero) : numero_{numero}, canal_{0} {}\n    ValorBase(int numero, int canal) : numero_{numero}, canal_{canal} {}\n    int numero() const { return numero_; }\n    int canal() const { return canal_; }\nprivate:\n    int numero_;\n    int canal_;\n};\nclass ValorConMarca : public ValorBase {\npublic:\n    using ValorBase::ValorBase;\n    int marca() const { return marca_; }\nprivate:\n    int marca_{8};\n};\nint main() {\n    ValorBase origen{3};\n    ValorConMarca destino{origen};\n    std::cout << destino.numero();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l2_una_base_no_es_fuente_automatica_para_derivada",
+          "question": "¿Por qué esta otra clase no puede construir ValorConMarca destino{origen} a partir de un ValorBase?",
+          "options": [
+            "Porque una base sólo se puede copiar si todos sus miembros son públicos.",
+            "Porque using ValorBase::ValorBase no aporta un constructor de ValorConMarca que reciba por sí solo un ValorBase.",
+            "Porque todas las clases que heredan constructores pierden su constructor de copia."
+          ],
+          "correctIndex": 1,
+          "explanation": "ValorBase ofrece aquí entradas de uno o dos enteros. El using no convierte su operación de copia en una ruta para completar automáticamente un ValorConMarca a partir de un ValorBase. Esto no impide copiar un ValorConMarca desde otro ValorConMarca cuando sus propias operaciones lo permiten, ni exige que los datos privados de la base sean públicos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una ruta heredada necesita poder preparar los demás miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los argumentos destinados al constructor base no se entregan automáticamente a los miembros adicionales. Si un miembro tiene un inicializador junto a su declaración, se utiliza ese inicializador. Si no lo tiene, debe poder prepararse según la inicialización por defecto que le corresponda. Un miembro de clase sin constructor utilizable sin argumentos puede hacer que la ruta heredada se rechace (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "NecesitaCodigo sólo tiene el constructor que hemos declarado con un int y no tiene uno invocable sin argumentos. ConCodigo no escribe un inicializador para codigo_. El entero que recibe ConCodigo dato{4} corresponde al constructor de BaseNumero; no se reutiliza automáticamente para construir codigo_."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <utility>\n\nclass BaseNumero {\npublic:\n    explicit BaseNumero(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\nprivate:\n    int numero_;\n};\nclass NecesitaCodigo {\npublic:\n    explicit NecesitaCodigo(int codigo) : codigo_{codigo} {}\n    int codigo() const { return codigo_; }\nprivate:\n    int codigo_;\n};\nclass ConCodigo : public BaseNumero {\npublic:\n    using BaseNumero::BaseNumero;\n    int codigo() const { return codigo_.codigo(); }\nprivate:\n    NecesitaCodigo codigo_;\n};\nint main() {\n    ConCodigo dato{4};\n    std::cout << dato.numero() << ':' << dato.codigo();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l2_miembro_sin_ruta_de_inicializacion",
+          "question": "Se quiere que toda construcción mediante la ruta heredada establezca el código inicial con nueve. ¿Qué cambio cumple ese objetivo?",
+          "options": [
+            "Añadir otro using que nombre NecesitaCodigo::NecesitaCodigo, aunque NecesitaCodigo sea un miembro y no una base.",
+            "Conservar el programa: los argumentos del constructor base se entregan también a todos los miembros que los necesiten.",
+            "Dar al miembro su inicializador: NecesitaCodigo codigo_{9};."
+          ],
+          "correctIndex": 2,
+          "explanation": "codigo_{9} especifica cómo preparar el miembro y permite usar su constructor de un entero cuando se construye ConCodigo mediante la ruta heredada. El argumento cuatro sigue preparando únicamente BaseNumero. NecesitaCodigo no es una base directa de ConCodigo, así que no se puede ofrecer su constructor mediante un using de constructores heredados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con un int sin inicializador el problema podría ser distinto: una construcción podría aceptarse sin establecer su valor. No leeríamos ese dato para intentar averiguar qué recibió. En nuestros modelos, todos los enteros y todos los miembros de clase se preparan antes de consultarse. La pregunta de diseño es siempre la misma: qué constructor prepara la base y cómo se prepara cada miembro que añade la derivada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar accesos heredados con una etiqueta propia"
+        },
+        {
+          "type": "paragraph",
+          "text": "LecturaBase conserva dos datos enteros, un código y un valor, con estas condiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "El código debe estar entre cero y nueve, incluidos ambos extremos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El valor puede ser cualquier int."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de un argumento elige código cero. El de dos recibe código y valor y comprueba el código. La delegación dentro de LecturaBase mantiene esa comprobación en un solo cuerpo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "LecturaEtiquetada agrega una cadena etiqueta_. Debe permitir las dos formas de construcción ya ofrecidas por la base. Cuando se utiliza cualquiera de ellas, la etiqueta comienza como general. Ese texto es el valor inicial establecido en la declaración del miembro."
+        },
+        {
+          "type": "paragraph",
+          "text": "También se ofrece una forma adicional: recibir un valor y una etiqueta elegida por quien llama. Esta ruta necesita un constructor propio porque recibe un dato que la base no conserva. Debe preparar la base a partir del valor, con código cero, y construir etiqueta_ con la cadena recibida. Si la etiqueta está vacía, el cuerpo ya escrito rechaza la construcción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la declaración using que permite las rutas heredadas y el inicializador de la parte base en el constructor propio. Conserva el resto del código. El uso de std::move permite construir el miembro con el contenido del parámetro etiqueta; no cambia la selección del constructor de la base."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u9l2_heredar_rutas_y_preparar_dato_adicional",
+          "question": "Completa los dos huecos: hereda las formas de construcción de LecturaBase y, en el constructor propio de valor y etiqueta, inicializa esa parte base mediante el constructor que recibe sólo el valor.",
+          "template": "class LecturaEtiquetada : public LecturaBase {\npublic:\n    using [];\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : [], etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\n",
+          "answers": [
+            "LecturaBase::LecturaBase",
+            "LecturaBase{valor}"
+          ],
+          "answerAlternatives": [
+            [
+              "LecturaBase::LecturaBase",
+              "::LecturaBase::LecturaBase"
+            ],
+            [
+              "LecturaBase{valor}",
+              "LecturaBase(valor)",
+              "::LecturaBase{valor}",
+              "::LecturaBase(valor)"
+            ]
+          ],
+          "explanation": "using LecturaBase::LecturaBase permite seleccionar las rutas de uno y de dos enteros para construir LecturaEtiquetada. En el constructor propio, LecturaBase{valor} inicializa la parte base y el otro inicializador construye directamente etiqueta_ con el parámetro. El constructor de un entero de la base delega dentro de su propia clase y elige código cero. Heredar constructores y delegar son mecanismos distintos que aquí se combinan."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: preparar cada parte donde corresponde"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada dato{4, \"sensor\"};\n    dato.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "dato se construye con un entero y una cadena de texto. Esta combinación selecciona el constructor propio de LecturaEtiquetada. Primero se prepara LecturaBase con el valor cuatro y el código cero. Después se construye etiqueta_ a partir del parámetro que contiene sensor. Por último se comprueba que la etiqueta no esté vacía y la construcción termina correctamente."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0,4,sensor\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicializador etiqueta_{std::move(etiqueta)} sustituye al inicializador de miembro para esta construcción. No se crea primero una cadena general para cambiarla después. En las rutas heredadas, que no proporcionan un inicializador propio para ese miembro, sí se usa general (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo de LecturaBase comprueba el código de su propia parte. La comprobación adicional de la etiqueta se encuentra en el constructor propio de la derivada. No se añade ese cuerpo automáticamente a las rutas heredadas: éstas ya comienzan con la etiqueta general, que satisface la regla de no estar vacía."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el constructor a partir de los argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa utiliza la clase completa de la referencia. Las tres declaraciones proporcionan argumentos diferentes. Sigue qué ruta corresponde a cada declaración y qué inicializador proporciona la etiqueta, sin suponer que heredar una ruta ejecuta también el cuerpo del constructor propio."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l2_tres_rutas_con_dos_inicializaciones_de_etiqueta",
+          "language": "cpp",
+          "question": "Escribe las tres líneas de salida. En cada línea conserva código, valor y etiqueta separados por comas.",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada simple{9};\n    LecturaEtiquetada codificada{2, 9};\n    LecturaEtiquetada nombrada{9, \"mesa\"};\n    simple.escribir(std::cout);\n    std::cout << '\\n';\n    codificada.escribir(std::cout);\n    std::cout << '\\n';\n    nombrada.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "0,9,general\n2,9,general\n0,9,mesa\n"
+          ],
+          "outputComparison": "exact",
+          "explanation": "simple recibe un único entero, así que usa la ruta heredada de un argumento: código cero, valor nueve y etiqueta general. codificada recibe dos enteros, así que usa la ruta heredada de dos argumentos: código dos, valor nueve y etiqueta general. nombrada recibe un entero y una cadena, por lo que usa el constructor propio: código cero, valor nueve y etiqueta mesa. Las dos rutas heredadas no ejecutan el cuerpo del constructor propio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rechazar una etiqueta sin cambiar otra lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string{} construye aquí una cadena vacía. El siguiente programa intenta usarla como etiqueta en el constructor propio, dentro de un try con un catch compatible. anterior se construyó antes del intento y sigue existiendo después de ese catch."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l2_recuperar_tras_rechazar_etiqueta",
+          "language": "cpp",
+          "question": "Escribe la salida completa después del intento con etiqueta vacía y la consulta de anterior.",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <string>\n#include <utility>\n\nclass LecturaBase {\npublic:\n    explicit LecturaBase(int valor) : LecturaBase{0, valor} {}\n\n    LecturaBase(int codigo, int valor) : codigo_{codigo}, valor_{valor} {\n        if (codigo_ < 0 || codigo_ > 9) {\n            throw std::invalid_argument(\"codigo\");\n        }\n    }\n\n    int codigo() const noexcept { return codigo_; }\n    int valor() const noexcept { return valor_; }\n\nprivate:\n    const int codigo_;\n    const int valor_;\n};\n\nclass LecturaEtiquetada : public LecturaBase {\npublic:\n    using LecturaBase::LecturaBase;\n\n    LecturaEtiquetada(int valor, std::string etiqueta)\n        : LecturaBase{valor}, etiqueta_{std::move(etiqueta)} {\n        if (etiqueta_.empty()) {\n            throw std::invalid_argument(\"etiqueta\");\n        }\n    }\n\n    void escribir(std::ostream& salida) const {\n        salida << codigo() << ',' << valor() << ',' << etiqueta_;\n    }\n\nprivate:\n    std::string etiqueta_{\"general\"};\n};\nint main() {\n    LecturaEtiquetada anterior{3, 7};\n    try {\n        LecturaEtiquetada intento{4, std::string{}};\n        intento.escribir(std::cout);\n        std::cout << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazada\\n\";\n    }\n    anterior.escribir(std::cout);\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Rechazada\n3,7,general\n"
+          ],
+          "outputComparison": "exact",
+          "explanation": "anterior usa la ruta heredada de dos enteros y conserva código tres, valor siete y etiqueta general. intento selecciona el constructor propio: prepara su base y su cadena vacía, pero lanza al comprobar la etiqueta. No se alcanza intento.escribir. El catch muestra Rechazada. Después se consulta anterior, cuyos miembros no participaron en la construcción fallida y conservan sus datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El fallo de intento ocurre en el cuerpo de su constructor propio, después de preparar la base y la cadena miembro. La limpieza de esas partes sigue la regla de construcción ordinaria ya estudiada. Este constructor inicializa una parte base y un miembro: no es un constructor que delegue en otro LecturaEtiquetada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar las rutas heredadas cuando cambia la interfaz"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l2_no_ofrecer_rutas_que_omiten_dato_exigido",
+          "question": "Una nueva versión exige que, al crear una lectura a partir de enteros, se proporcione también una etiqueta. Las copias y los movimientos conservan sus reglas anteriores. Ya no se admite elegir general automáticamente en las rutas de enteros. ¿Qué debe revisarse?",
+          "options": [
+            "Mantener las rutas heredadas sin cambios, porque pasarán automáticamente por el constructor propio que recibe la etiqueta.",
+            "Eliminar el inicializador general y seguir heredando las mismas rutas: una cadena vacía demuestra que quien llama proporcionó su etiqueta.",
+            "Retirar las rutas heredadas que no reciben etiqueta y ofrecer constructores propios que pidan ese dato y lo comprueben."
+          ],
+          "correctIndex": 2,
+          "explanation": "Las rutas heredadas de uno y dos enteros no reciben una etiqueta. Tampoco llaman al constructor propio de la derivada. Si crear una lectura a partir de enteros requiere además una etiqueta, sus constructores deben pedir ese argumento en lugar de ofrecer accesos que lo omitan. Quitar el valor inicial no hace aparecer un argumento ausente. Las operaciones de copia y movimiento no son las rutas de enteros que estamos cambiando."
+        },
+        {
+          "type": "paragraph",
+          "text": "Heredar constructores resulta útil cuando la preparación de la parte base y los valores iniciales de las partes adicionales cumplen las reglas de la derivada. En esta clase definimos un constructor propio para la ruta que recibe la etiqueta: allí proporcionamos su inicializador y comprobamos el texto recibido. La reducción de código repetido debe conservar las condiciones que exige cada objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "7d6cf5589bd6534a7114b1c60828b033882e8a429204c84c3d7c3b25ae57482d"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "d13fc96c1094b49752913aebc76d261ea1a349c8b0270f12875d579e75146d53"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "24b5d93cfbed961234ea8208d0610bd7baf252cce1f4788d062ec96cf16c84ce"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "d167c75af2717bd6803df5d5613a2ebc261f2509a585304416595b6ca01888cf"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "a6b78d667d13a71277deb93f524c3bd21eed6141c73216fe452528d9ea128df7"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "ea5b248391976fd6ca6320a584ca3a3685667bca4e1d2a6a9145e0424b2a8802"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "7b67371c931cc3e27f3be8084878733e072d301aecf3081e5adafbd62feac7f3"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "33df771311e8f3323e16f20840e8be24d95beea1399293cfa728fcf0c8795d89"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "ead91de4c7bc83d43161d05d50ae9483f2c8b2ee8e353f3012cefe54d08f44d6"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "0f1da103b377c1966e5c4caa1dde64ed97fe2be17501635af3837cd77be997ee"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "65771f8e0f357f5795cebc89669df47f04eb7e3dc68bfed712855be9b85294e6"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "ce8ffeda92e521309ad25abedc1faf7f2870942c6fa9db401f04e291f7a8bf77"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "4f5c7070838742250b4cdf693733d9a03782c046c48aaf0933adb7bd032e1eac"
+          },
+          {
+            "id": "block_0006_0008",
+            "sha256": "b9d95bdc09e91ff35b4857f57705d37eee1b8aac331dc48e3cdbf8b009c89e19"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "533ff4d7534bb1ab7eb0876473f13aed79816acd8fbd0a465063563f71f41269"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "a841b6db72f3dcfb7c7ab4e451a2194c08e838af59c85d9efc77aadc43ebf083"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "59e667d318e0f31e261461ae3a82f4978b86fc5c4be7e687df3238c6f00c9f95"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0009",
+            "sha256": "e61e42d3bc58c2adab43678192c722689eec018e3df123a00926b5fffcc4292d"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "335279a1d9a3bfddcd29738f5c6b80ed5a870ebd2ea84c385507507cf87f9869"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "159aa2b6713e24bf2d79b9cc248f6b8ac51bf51c1de24b2f85d2f6853383dc5f"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "006618c4389006a8b15a81ac30a7206da8f74541fbc530a658b51969b76791f7"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "f9014d08c92ad3537a934d96ddd9d1843c9f7a24323f6169bbb22599b1202d08"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "0ecd709fd7d5c610fa492615a840093e120f2549496ae123753d946125c892cd"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0006",
+          "block_0006_0007",
+          "block_0006_0008"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008",
+          "block_0008_0009"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "44348a936f55d8d45b2135692ea9c8a48b34fe6c0fc8f80e740250cf5d8831cd",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "7d6cf5589bd6534a7114b1c60828b033882e8a429204c84c3d7c3b25ae57482d"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "d13fc96c1094b49752913aebc76d261ea1a349c8b0270f12875d579e75146d53"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "24b5d93cfbed961234ea8208d0610bd7baf252cce1f4788d062ec96cf16c84ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "d167c75af2717bd6803df5d5613a2ebc261f2509a585304416595b6ca01888cf"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "a6b78d667d13a71277deb93f524c3bd21eed6141c73216fe452528d9ea128df7"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "ea5b248391976fd6ca6320a584ca3a3685667bca4e1d2a6a9145e0424b2a8802"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "7b67371c931cc3e27f3be8084878733e072d301aecf3081e5adafbd62feac7f3"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "33df771311e8f3323e16f20840e8be24d95beea1399293cfa728fcf0c8795d89"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "ead91de4c7bc83d43161d05d50ae9483f2c8b2ee8e353f3012cefe54d08f44d6"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "0f1da103b377c1966e5c4caa1dde64ed97fe2be17501635af3837cd77be997ee"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "65771f8e0f357f5795cebc89669df47f04eb7e3dc68bfed712855be9b85294e6"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "ce8ffeda92e521309ad25abedc1faf7f2870942c6fa9db401f04e291f7a8bf77"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "4f5c7070838742250b4cdf693733d9a03782c046c48aaf0933adb7bd032e1eac"
+              },
+              {
+                "id": "block_0006_0008",
+                "sha256": "b9d95bdc09e91ff35b4857f57705d37eee1b8aac331dc48e3cdbf8b009c89e19"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "533ff4d7534bb1ab7eb0876473f13aed79816acd8fbd0a465063563f71f41269"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "a841b6db72f3dcfb7c7ab4e451a2194c08e838af59c85d9efc77aadc43ebf083"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "59e667d318e0f31e261461ae3a82f4978b86fc5c4be7e687df3238c6f00c9f95"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0009",
+                "sha256": "e61e42d3bc58c2adab43678192c722689eec018e3df123a00926b5fffcc4292d"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "335279a1d9a3bfddcd29738f5c6b80ed5a870ebd2ea84c385507507cf87f9869"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "159aa2b6713e24bf2d79b9cc248f6b8ac51bf51c1de24b2f85d2f6853383dc5f"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "006618c4389006a8b15a81ac30a7206da8f74541fbc530a658b51969b76791f7"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "f9014d08c92ad3537a934d96ddd9d1843c9f7a24323f6169bbb22599b1202d08"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "0ecd709fd7d5c610fa492615a840093e120f2549496ae123753d946125c892cd"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
