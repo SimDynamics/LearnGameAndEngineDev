@@ -765,6 +765,133 @@ void cmake_link_profile_regression(lgaed::windows::CppRunRequest request,
         "four rapid library repairs, unchanged consumer and no-op reuse; equal COFF seconds="
         <<same_second<<"/4\n";
 }
+void cmake_materialized_source_regression(const lgaed::curriculum::Lesson& lesson,
+        const lgaed::curriculum::Block& owner,lgaed::windows::CppRunRequest original) {
+    using namespace lgaed;using namespace windows;
+    const auto& repair=*owner.cmake_graph_check->expression_repair;
+    original.project_key+="/materialized-provenance";
+    original.request_id+=30000;++original.revision;
+    original.action=CppRunRequest::Action::compile_run;
+    original.cmake_initial_observation_prerequisite.clear();
+    repair_file(original,repair.path)=repair.original_source;
+    // The same CMake preserves the initial defect but silently repairs a later
+    // submitted `false`. File API still names the original source and library.
+    repair_file(original,"CMakeLists.txt")+=R"cmake(
+file(WRITE "${CMAKE_BINARY_DIR}/apply_generated.cmake" [=[
+file(READ "${QA_SOURCE}" body)
+string(REPLACE "return false;" "return dato >= 0 && dato <= 20;" body "${body}")
+file(WRITE "${QA_SOURCE}" "${body}")
+]=])
+add_custom_target(preparar_cantidad
+  COMMAND "${CMAKE_COMMAND}" "-DQA_SOURCE=${CMAKE_CURRENT_SOURCE_DIR}/cantidad.cpp"
+    -P "${CMAKE_BINARY_DIR}/apply_generated.cmake"
+  VERBATIM)
+add_dependencies(cantidades preparar_cantidad)
+)cmake";
+    const auto first=run_cpp(original);
+    check(first.error_utf8.empty()&&first.compilation.succeeded()&&
+        first.execution.exit_code==1,"The provenance fixture lost its real original defect");
+    state::StateData saved;state::prepare_lesson_state(saved,lesson);
+    const auto draft_key=curriculum::draft_key("programming",lesson,owner);
+    state::Draft draft;draft.source="// conservar borrador personal\r\n";draft.input="personal";
+    state::put_draft(saved,draft_key,draft);
+    check(record_compiler_cmake_initial_observation(saved,lesson,owner,original,first),
+        "A real unchanged source with an additional custom target lost its initial observation");
+    const auto workspace=inspect_cpp_project(original).workspace;
+    const auto prior_run=snapshot_files(first.run_directory);
+    const auto retained=workspace/L"retained-provenance-file.txt";
+    write(retained,"conservar archivo ajeno a la caché\r\n");
+    const auto retained_file=std::pair{read(retained),std::filesystem::last_write_time(retained)};
+    auto candidate=original;++candidate.request_id;++candidate.revision;
+    replace_repair_text(repair_file(candidate,repair.path),repair.expression,"false");
+    auto correct=repair.original_source;
+    replace_repair_text(correct,repair.expression,"dato >= 0 && dato <= 20");
+    candidate.cmake_initial_observation_prerequisite=
+        compiler_cmake_initial_observation_prerequisite(saved,lesson,owner,candidate);
+    check(!candidate.cmake_initial_observation_prerequisite.empty(),
+        "The same CMake/source contract did not retain its original observation");
+    const auto observed=state::encode(saved);
+    const auto reject_changed=[&](const CppRunRequest& request,const CppRunResult& result,
+            std::string_view phase) {
+        const auto availability=inspect_cpp_project(request);
+        check(result.error_utf8.find("no coincide con el código del editor")!=std::string::npos&&
+            result.error_utf8.find(repair.path)!=std::string::npos&&
+            result.error_utf8.find(phase)!=std::string::npos&&
+            !result.execution.succeeded()&&!result.execution.exit_code&&
+            !availability.configured&&!availability.built&&
+            !record_compiler_cmake_initial_observation(saved,lesson,owner,request,result)&&
+            !record_compiler_puzzle_case(saved,lesson,owner,request,
+                capture_cpp_execution(request,result),"Fuente sustituido durante CMake")&&
+            state::encode(saved)==observed,
+            "CMake credited, retained availability for or executed a source different from the request");
+    };
+    const auto rejected=run_cpp(candidate);
+    reject_changed(candidate,rejected,"construcción");
+    check(read(workspace/L"p/cantidad.cpp")==correct&&
+        repair_file(candidate,repair.path).find("return false;")!=std::string::npos,
+        "The custom target did not reproduce the concrete source/request discrepancy");
+    // Separate Build must not cache the substituted image for a later Execute.
+    auto configure=candidate;++configure.request_id;configure.action=CppRunRequest::Action::configure;
+    const auto configured=run_cpp(configure);
+    check(configured.error_utf8.empty()&&configured.configuration.succeeded(),
+        "Reconfiguring the preserved candidate unexpectedly failed");
+    auto build_request=candidate;build_request.request_id=configure.request_id+1;
+    build_request.action=CppRunRequest::Action::build;
+    const auto changed_build=run_cpp(build_request);
+    reject_changed(build_request,changed_build,"construcción");
+    auto execute=build_request;++execute.request_id;execute.action=CppRunRequest::Action::execute;
+    const auto refused=run_cpp(execute);
+    check(!refused.error_utf8.empty()&&!refused.execution.succeeded()&&
+        !refused.execution.exit_code&&!inspect_cpp_project(execute).built&&
+        state::encode(saved)==observed,
+        "Execute reused a build rejected for changing a materialized source");
+    // Adopting the actual correct expression is a new, authentic attempt. It
+    // keeps the earlier observation and does not require deleting the cache.
+    auto recovered=candidate;recovered.request_id=execute.request_id+1;++recovered.revision;
+    repair_file(recovered,repair.path)=correct;
+    recovered.cmake_initial_observation_prerequisite=
+        compiler_cmake_initial_observation_prerequisite(saved,lesson,owner,recovered);
+    const auto recovery=run_cpp(recovered);ran(recovery,"materialized source/authentic recovery");
+    check(recovery.configuration.succeeded()&&
+        record_compiler_puzzle_case(saved,lesson,owner,recovered,
+            capture_cpp_execution(recovered,recovery),"Fuente auténtico conservado")&&
+        compiler_puzzle_completed(saved,lesson,owner)&&compiler_puzzle_case_count(saved,lesson,owner)==1,
+        "An authentic repair did not recover after generated availability was invalidated");
+    const auto earned=state::encode(saved),cache=read(workspace/L"state.json");
+    auto altered_source=correct;
+    replace_repair_text(altered_source,"dato <= 20","dato <= 21");
+    write(workspace/L"p/cantidad.cpp",altered_source);
+    check(!inspect_cpp_project(recovered).built&&read(workspace/L"state.json")==cache,
+        "Read-only availability accepted an altered source or rewrote generated state");
+    auto reuse=recovered;++reuse.request_id;reuse.action=CppRunRequest::Action::execute;
+    const auto altered=run_cpp(reuse);
+    check(altered.error_utf8.find("reutilización")!=std::string::npos&&
+        altered.error_utf8.find(repair.path)!=std::string::npos&&
+        !altered.execution.succeeded()&&!altered.execution.exit_code&&
+        !inspect_cpp_project(reuse).configured&&state::encode(saved)==earned,
+        "Execute accepted altered materialized bytes or damaged an earlier achievement");
+    // Configuration itself must not silently replace one of the same four
+    // submitted files, even before any build starts.
+    auto configure_change=candidate;configure_change.project_key+="/configure-change";
+    configure_change.request_id=reuse.request_id+1;
+    configure_change.action=CppRunRequest::Action::configure;
+    repair_file(configure_change,"CMakeLists.txt")+=
+        "\nfile(WRITE \"${CMAKE_CURRENT_SOURCE_DIR}/cantidad.cpp\" [=["+correct+"]=])\n";
+    const auto changed_configuration=run_cpp(configure_change);
+    check(changed_configuration.error_utf8.find("configuración")!=std::string::npos&&
+        changed_configuration.error_utf8.find(repair.path)!=std::string::npos&&
+        changed_configuration.compilation.status==CppPhaseStatus::not_started&&
+        !inspect_cpp_project(configure_change).configured&&
+        state::encode(saved)==earned,
+        "Configuration silently replaced a submitted source or altered learner state");
+    const auto restored=state::get_draft(saved,draft_key,"","");
+    check(snapshot_files(first.run_directory)==prior_run&&
+        std::pair{read(retained),std::filesystem::last_write_time(retained)}==retained_file&&
+        restored.has_saved&&restored.source==draft.source&&restored.input==draft.input,
+        "Source provenance rejection changed an earlier run, retained file or personal draft");
+    std::cout<<"PASS materialized CMake source provenance: custom-target replacement rejected, "
+        "Build/Execute cache invalidated, authentic repair restored, read-only inspection and history retained\n";
+}
 }
 int main(int argc,char** argv){using namespace lgaed;using namespace windows;try{
     const bool cpp23_only=argc==2&&std::string_view(argv[1])=="--cpp23";
@@ -2944,6 +3071,7 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     verify_cmake_initial_observation(warning_lessons,warning_observation,"block_0002_0004",
         warning_initial,faulty_warning_run,warning_repair,corrected_warning_run,
         &warning_build,&built_warning);
+    cmake_materialized_source_regression(warning_observation,warning_observation_owner,warning_initial);
     // PUBLIC is a valid target-owned declaration: the library receives the
     // options itself and may also propagate them to its consumers.
     auto public_warning=warning_request;
@@ -3762,3 +3890,4 @@ set_target_properties(lotes PROPERTIES CXX_EXTENSIONS OFF)
     }
     qa.finish();std::cout<<"PASS real pinned native CMake configure/build/File API targets/execute, unchanged reuse, fresh per-executable checks, stale/tampered rejection and repair, source/options invalidation, library distinction, safe paths and multi-file MSVC\n";return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
+

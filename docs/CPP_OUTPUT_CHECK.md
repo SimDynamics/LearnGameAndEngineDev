@@ -1460,6 +1460,28 @@ datos y resultados de cada caso y las referencias posteriores. Esta capacidad
 no demuestra equivalencia general entre programas C++ ni realiza por sí misma
 la integración curricular.
 
+### Actualizar una receta conservando el proyecto publicado
+
+La modalidad `recipe` de `stateLayout.compilerCaseRevisions` permite revisar
+un archivo CMake existente sin cambiar los programas ni los casos. Se prepara
+mediante `revise_compiler_cmake_recipe`; su esquema y las guardas están en
+`docs/curriculum/STABLE_LESSON_STATE.md`. Es una alternativa explícita a
+`client`, no una autorización para editar silenciosamente un bloque protegido.
+
+Esto permite adoptar avisos adecuados para MSVC en editores cuyo contrato
+exige conservar CMake, como la ampliación de batería de U3L10
+`block_0006_0011`. El cargador conserva cada receta histórica y crea un
+objetivo nuevo para la revisión. También admite el objetivo declarado en
+`compilerOpenBatteryChecks`, sin añadir `outputCheck` al bloque original.
+La reconstrucción de antes y después mantiene ese contrato raíz completo.
+
+Los borradores no se sustituyen al cargar la lección. Los logros anteriores
+siguen disponibles en su historia, pero no acreditan la receta nueva, ni un
+retorno posterior a sus mismos bytes. La primera ejecución correcta exigida
+por el objetivo actual sigue siendo suficiente. Las pruebas nativas utilizan
+ahora una transición autenticada de la receta en ambos cargadores; no
+necesitan cambiar a mano el modelo después de cargarlo.
+
 ## Actividad integrada
 
 En `programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`,
@@ -2271,6 +2293,17 @@ todos los archivos no CMake sean los originales del propietario efectivo,
 incluida la expresión todavía defectuosa. Los archivos CMake se contrastan
 mediante el grafo y las opciones reales del proyecto.
 
+El ejecutor coteja también los archivos materializados con la solicitud al
+terminar la configuración y la construcción, y antes de ejecutar o reutilizar
+el programa. Si una orden CMake cambia una fuente proporcionada por el editor,
+el resultado no acredita esa solicitud: se informa del archivo y de la fase
+y se invalida únicamente la disponibilidad de la caché generada. Los archivos,
+borradores y recibos previos se conservan. Una nueva configuración y construcción
+con los bytes realmente presentados permite continuar sin borrar el proyecto.
+Los archivos generados adicionales siguen admitidos. Esta comprobación detecta
+las discrepancias presentes en esos momentos; no constituye aislamiento de
+órdenes CMake arbitrarias que alteren y restauren archivos dentro de una fase.
+
 El perfil CMake de Windows conserva la compilación incremental de Ninja y
 utiliza `/INCREMENTAL:NO` al enlazar los programas. Mantiene la información
 de depuración y evita reutilizar el estado interno de un enlace anterior
@@ -2530,3 +2563,4 @@ Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,
 avisos del compilador, cronología de reconstrucciones y prácticas abiertas
 necesitan sus propias comprobaciones. No deducirlas de este grafo.
+

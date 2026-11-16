@@ -1351,7 +1351,7 @@ def _compiler_client_source(block: dict, path: str) -> str:
 
 
 def _compiler_client_replace_source(block: dict, path: str, source: str) -> None:
-    """Replace the validated client, preserving CMake's independent initialCode."""
+    """Replace the validated source, preserving CMake's independent initialCode."""
     if "projectFiles" not in block:
         require(path == "main.cpp" and "initialCode" in block,
                 "A single-source client must retain its virtual main.cpp")
@@ -1364,26 +1364,74 @@ def _compiler_client_replace_source(block: dict, path: str, source: str) -> None
         block["initialCode"] = source
 
 
+def _compiler_recipe_project_index(block: dict, path: str) -> int:
+    """Select one existing recipe while retaining native CMake project limits."""
+    require(type(block) is dict and "cmake" in block
+            and type(block.get("projectFiles")) is list,
+            "A recipe revision requires an existing CMake project")
+    # Reuse the unchanged client validator for paths, byte limits, aliases and
+    # configuration. Its public API still accepts only a selected C++ source.
+    files = block["projectFiles"]
+    cpp_path = next((entry.get("path") for entry in files if type(entry) is dict
+                    and type(entry.get("path")) is str
+                    and entry["path"].rsplit(".", 1)[-1].lower() in {"cpp", "cc", "cxx", "c++"}), "")
+    _compiler_client_project_index(block, cpp_path)
+    require(any(entry["path"] == "CMakeLists.txt" for entry in files),
+            "A recipe revision must retain the root CMakeLists.txt")
+    require(type(path) is str and (path.rsplit("/", 1)[-1] == "CMakeLists.txt"
+                                  or path.endswith(".cmake")),
+            "A recipe revision must select an existing CMakeLists.txt or .cmake file")
+    matches = [index for index, entry in enumerate(files) if entry["path"] == path]
+    require(len(matches) == 1, "A recipe revision must retain its exact existing recipe path")
+    return matches[0]
+
+
+def _compiler_case_source_revision(item: dict) -> dict | None:
+    """Return either authenticated source mode without conflating their APIs."""
+    return item.get("client", item.get("recipe"))
+
+
 def _compiler_case_has_client(document: dict, identity: str) -> bool:
-    return any("client" in item for item in _compiler_case_revision_records(document, identity))
+    """Whether source epochs exist; retained helper name also covers recipes."""
+    return any("client" in item or "recipe" in item
+               for item in _compiler_case_revision_records(document, identity))
 
 
 def _compiler_case_revision_after(item: dict) -> dict:
     before = item["block"]
-    _validate_compiler_case_payload(before)
+    require(type(before) is dict, "A compiler revision requires its complete predecessor block")
+    require(not ("client" in item and "recipe" in item),
+            "A compiler revision cannot replace a client and a recipe together")
+    recipe = "recipe" in item
+    if not recipe or "outputCheck" in before:
+        _validate_compiler_case_payload(before)
+    if recipe:
+        require(fingerprint(item["cases"]) == fingerprint(before.get("outputCheck", {}).get("cases"))
+                and fingerprint(item["semanticBefore"]) == fingerprint(item["semanticAfter"]),
+                "A recipe revision must preserve the exact cases and their semantics")
+        if "outputCheck" not in before:
+            require(item["cases"] is None and item["semanticBefore"] == [],
+                    "An unevaluated recipe must preserve absent cases and empty case semantics")
+        else:
+            candidate = deepcopy(before)
+            candidate["outputCheck"]["cases"] = deepcopy(item["cases"])
+            _validate_compiler_case_payload(candidate)
     result = deepcopy(before)
-    if "client" in item:
-        client = item["client"]
-        require(type(client) is dict and set(client) == {"path", "source"},
-                "A client revision needs only its existing path and explicit source")
-        _compiler_client_project_index(before, client["path"])
-        require(type(client["source"]) is str and client["source"] and "\0" not in client["source"]
-                and client["source"] != _compiler_client_source(before, client["path"]),
-                "A client revision must explicitly change its nonempty source")
-        _compiler_client_replace_source(result, client["path"], client["source"])
-        _compiler_client_project_index(result, client["path"])
-    result["outputCheck"]["cases"] = deepcopy(item["cases"])
-    _validate_compiler_case_payload(result)
+    if "client" in item or recipe:
+        source = _compiler_case_source_revision(item)
+        require(type(source) is dict and set(source) == {"path", "source"},
+                "A source revision needs only its existing path and explicit source")
+        select = _compiler_recipe_project_index if recipe else _compiler_client_project_index
+        select(before, source["path"])
+        require(type(source["source"]) is str and source["source"] and "\0" not in source["source"]
+                and source["source"] != _compiler_client_source(before, source["path"]),
+                "A source revision must explicitly change its nonempty source")
+        _compiler_client_replace_source(result, source["path"], source["source"])
+        select(result, source["path"])
+    if not recipe:
+        result["outputCheck"]["cases"] = deepcopy(item["cases"])
+    if "outputCheck" in result:
+        _validate_compiler_case_payload(result)
     require(fingerprint(result) != fingerprint(before), "A case revision must change its declared cases")
     return result
 
@@ -1426,21 +1474,22 @@ def _compiler_case_order_projection(document: dict, identity: str, block: dict, 
                 and state_fingerprint(block) == state_fingerprint(original)):
             return block
         raise LayoutError("Compiler case ordering changed a case, channel, comparison mode or program")
-    if any("client" in item for _, item in events):
+    if any("client" in item or "recipe" in item for _, item in events):
         try:
             if any(entry["id"] == identity for entry in document["stateLayout"].get("sourceFormatRevisions", [])):
                 code_format.require_source_lexical(expected, block)
             else:
                 require(code_format.code_slots(expected) == code_format.code_slots(block),
-                        "A compiler client changed outside its authenticated source epoch")
+                        "A compiler source changed outside its authenticated source epoch")
         except code_format.SourceFormatError as exc:
-            raise LayoutError(f"Unsafe compiler client source for {identity}: {exc}") from exc
+            raise LayoutError(f"Unsafe compiler source for {identity}: {exc}") from exc
     result = deepcopy(block)
     for kind, item in reversed(events[:epoch]):
         if kind == "cases":
-            result["outputCheck"]["cases"] = deepcopy(item["block"]["outputCheck"]["cases"])
-            if "client" in item:
-                path = item["client"]["path"]
+            if "recipe" not in item:
+                result["outputCheck"]["cases"] = deepcopy(item["block"]["outputCheck"]["cases"])
+            if "client" in item or "recipe" in item:
+                path = _compiler_case_source_revision(item)["path"]
                 source = _compiler_client_source(item["block"], path)
                 _compiler_client_replace_source(result, path, source)
         else:
@@ -1482,12 +1531,17 @@ def _validate_compiler_case_order_revisions(document: dict, storage: dict, diges
     for kind, item in events:
         fields = {"id", "block", "editorialIndex", "historySha256", "semanticBefore"}
         fields |= {"order"} if kind == "order" else {"cases", "semanticAfter"}
-        allowed = fields | {"client"} if kind == "cases" else fields
+        allowed = fields | {"client", "recipe"} if kind == "cases" else fields
         require(fields <= set(item) <= allowed,
                 "A compiler case revision needs its exact owner, predecessor, edge, cases and semantics")
         identity = _identity(item["id"])
         require(identity in storage and identity in active,
                 "A compiler case revision must retain its existing active owner")
+        if "recipe" in item and "outputCheck" not in item["block"]:
+            root_objectives = document.get("compilerOpenBatteryChecks")
+            require(type(root_objectives) is list and any(type(record) is dict
+                        and record.get("activity") == identity for record in root_objectives),
+                    "An unevaluated recipe revision requires its authenticated root open-battery objective")
         index = item["editorialIndex"]
         require(0 <= index < len(editorial), "Compiler case history names an unknown editorial edge")
         after = _compiler_case_event_after(kind, item)
@@ -1506,7 +1560,7 @@ def _validate_compiler_case_order_revisions(document: dict, storage: dict, diges
             _validate_compiler_case_semantics(item["semanticAfter"], identity, after)
         groups.setdefault(identity, []).append((kind, item))
     for identity, own in groups.items():
-        client_history = any("client" in item for _, item in own)
+        client_history = any("client" in item or "recipe" in item for _, item in own)
         baseline = _compiler_case_order_contract(document, identity, own[0][1]["block"],
             editorial_prefix=own[0][1]["editorialIndex"] if client_history else None)
         require(state_fingerprint(baseline) == digests[identity],
@@ -1527,7 +1581,7 @@ def _validate_compiler_case_order_revisions(document: dict, storage: dict, diges
             projected = _compiler_case_order_contract(document, identity, block, editorial_prefix=prefix)
             require(state_fingerprint(projected) == state_fingerprint(baseline),
                     "Compiler case ordering changed a case, channel, comparison mode or program")
-            if any(kind == "cases" for kind, _ in own):
+            if "outputCheck" in block and any(kind == "cases" for kind, _ in own):
                 _validate_compiler_case_payload(block)
     return {identity: [item for _, item in own] for identity, own in groups.items()}
 
@@ -1537,9 +1591,11 @@ def _compiler_case_order_realign(previous: dict, current: dict, identity: str, b
     result = _compiler_case_order_projection(current, identity, block)
     for kind, item in _compiler_case_events(previous, identity):
         if kind == "cases":
-            result["outputCheck"]["cases"] = deepcopy(item["cases"])
-            if "client" in item:
-                _compiler_client_replace_source(result, item["client"]["path"], item["client"]["source"])
+            if "recipe" not in item:
+                result["outputCheck"]["cases"] = deepcopy(item["cases"])
+            if "client" in item or "recipe" in item:
+                source = _compiler_case_source_revision(item)
+                _compiler_client_replace_source(result, source["path"], source["source"])
         else:
             cases = result["outputCheck"]["cases"]
             require(len(cases) == len(item["order"]), "Compiler case counts changed during alignment")
@@ -1600,7 +1656,7 @@ def _validate_compiler_case_order_transition(previous: dict, current: dict) -> s
                 expected_overlay["fields"] = [next(moved) if field.get("block") == identity and
                     field.get("path", "").startswith("/outputCheck/cases/") else field
                     for field in expected_overlay.get("fields", [])]
-        else:
+        elif "recipe" not in item:
             expected_overlay = _compiler_case_replace_fields(expected_overlay, identity, item["semanticAfter"])
     retired_before = prior_meta.get("retired", [])
     retiring = {item["id"] for item in meta.get("retired", [])[len(retired_before):]}
@@ -1638,9 +1694,24 @@ def revise_compiler_client_cases(document: dict, identity: str, client: dict, ca
                                       case_semantics=case_semantics, return_to=return_to)
 
 
+def revise_compiler_cmake_recipe(document: dict, identity: str, recipe: dict, *,
+                                 return_to: int | None = None) -> dict:
+    """Authenticate one CMake file without changing cases, marks or other files.
+
+    Absent outputCheck stays absent. Root-generated objectives are activated by
+    their existing loader; this revision neither creates one nor edits a draft.
+    """
+    validate(document)
+    original = _blocks(document).get(identity)
+    require(type(original) is dict, "A recipe revision requires an active existing owner")
+    return _revise_compiler_case_record(document, identity,
+        original.get("outputCheck", {}).get("cases"), recipe=recipe,
+        case_semantics=_compiler_case_order_fields(document, identity), return_to=return_to)
+
+
 def _revise_compiler_case_record(document: dict, identity: str, cases, *,
                                  case_semantics, return_to: int | None,
-                                 client=_UNSET_COMPILER_CASES) -> dict:
+                                 client=_UNSET_COMPILER_CASES, recipe=_UNSET_COMPILER_CASES) -> dict:
     require(case_semantics is not _UNSET_COMPILER_CASES,
             "A general compiler case revision requires explicit case_semantics, including []")
     validate(document)
@@ -1660,17 +1731,20 @@ def _revise_compiler_case_record(document: dict, identity: str, cases, *,
               "semanticAfter": deepcopy(case_semantics)}
     if client is not _UNSET_COMPILER_CASES:
         record["client"] = deepcopy(client)
+    if recipe is not _UNSET_COMPILER_CASES:
+        record["recipe"] = deepcopy(recipe)
     changed = _compiler_case_revision_after(record)
     _validate_compiler_case_semantics(record["semanticAfter"], identity, changed)
     result = deepcopy(document)
     target = _blocks(result)[identity]
     target.clear()
     target.update(changed)
-    overlay = _compiler_case_replace_fields(result.get(text_semantics.ROOT_FIELD), identity, case_semantics)
-    if overlay is None:
-        result.pop(text_semantics.ROOT_FIELD, None)
-    else:
-        result[text_semantics.ROOT_FIELD] = overlay
+    if recipe is _UNSET_COMPILER_CASES:
+        overlay = _compiler_case_replace_fields(result.get(text_semantics.ROOT_FIELD), identity, case_semantics)
+        if overlay is None:
+            result.pop(text_semantics.ROOT_FIELD, None)
+        else:
+            result[text_semantics.ROOT_FIELD] = overlay
     proof = {"id": identity, "beforeSha256": fingerprint(original), "afterSha256": fingerprint(changed)}
     prior = [edge for edge in meta["editorial"] if edge["id"] == identity]
     nodes = ([prior[0]["beforeSha256"]] + [edge["afterSha256"] for edge in prior]) if prior else []
@@ -1697,11 +1771,11 @@ def _compiler_case_format_origin(document: dict, identity: str, archive: dict) -
 
 
 def _compiler_case_format_changed(document: dict, identity: str, archive: dict) -> bool:
-    """Find a genuine source format inside the archive's authenticated client epoch.
+    """Find a genuine format inside the archive's authenticated source epoch.
 
-    A later client replacement may remove that formatting from the active
+    A later client or recipe replacement may remove that format from the active
     source. Its complete predecessor still records the end of the earlier
-    epoch. Cases are normalized independently; client bytes remain visible.
+    epoch. Cases are normalized independently; source bytes remain visible.
     """
     events = _compiler_case_events(document, identity)
     case_edges = {item["editorialIndex"] for _, item in events}
@@ -1709,7 +1783,7 @@ def _compiler_case_format_changed(document: dict, identity: str, archive: dict) 
     for index, proof in enumerate(document["stateLayout"]["editorial"]):
         if proof["id"] != identity or proof["beforeSha256"] != signature or index in case_edges:
             continue
-        following = next((item for _, item in events if "client" in item
+        following = next((item for _, item in events if ("client" in item or "recipe" in item)
                           and item["editorialIndex"] > index), None)
         target = following["block"] if following is not None else _all_blocks(document)[identity]
         prefix = following["editorialIndex"] if following is not None else len(document["stateLayout"]["editorial"])
@@ -1728,7 +1802,7 @@ def _compiler_case_format_changed(document: dict, identity: str, archive: dict) 
 def _compiler_case_order_contract(document: dict, identity: str, block: dict, *,
                                   editorial_prefix: int | None = None) -> dict:
     result = _compiler_case_order_projection(document, identity, block, editorial_prefix=editorial_prefix)
-    if _compiler_case_events(document, identity):
+    if _compiler_case_events(document, identity) and "outputCheck" in result:
         require(all(type(case) is dict and ("exitCode" not in case or type(case["exitCode"]) is int)
                     for case in result["outputCheck"]["cases"]),
                 "Compiler case exit codes must preserve their integer type")
@@ -5682,9 +5756,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                     events = _compiler_case_events(current, identity)
                     epoch = _compiler_case_epoch(current, identity, predecessor, events)
                     for _, item in events[:epoch]:
-                        if "client" in item:
+                        if "client" in item or "recipe" in item:
+                            source = _compiler_case_source_revision(item)
                             _compiler_client_replace_source(expected_source,
-                                item["client"]["path"], item["client"]["source"])
+                                source["path"], source["source"])
                     require(code_format.code_slots(expected_source) == code_format.code_slots(predecessor),
                             "An intermediate client cannot format its source before archiving")
                 else:
@@ -6325,7 +6400,7 @@ def published_family(source: Path, locale: str, base_ref: str) -> tuple[dict, di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "revise-compiler-client-cases", "reorder-compiler-cases", "check", "check-tree"))
+    parser.add_argument("action", choices=("prepare", "reorder", "refine-order-lines", "revise-choice-option", "revise-choice-editorial", "revise-ordinary-editorial", "revise-math-prompt-editorial", "revise-compiler-cases", "revise-compiler-client-cases", "revise-compiler-cmake-recipe", "reorder-compiler-cases", "check", "check-tree"))
     parser.add_argument("source", type=Path, help="Lesson JSON; repository directory for check-tree")
     parser.add_argument("--plan", type=Path, help="JSON list of stable page/block IDs in display order")
     parser.add_argument("--output", type=Path, help="New path; never overwrite a Work/Codex file")
@@ -6338,6 +6413,7 @@ def main() -> None:
     parser.add_argument("--case-order", type=Path, help="JSON permutation: new case index to previous case index")
     parser.add_argument("--cases", type=Path, help="Explicit replacement outputCheck case list")
     parser.add_argument("--client", type=Path, help='Explicit client JSON object: {"path":"main.cpp","source":"..."}')
+    parser.add_argument("--recipe", type=Path, help='Explicit existing CMake recipe JSON object: {"path":"CMakeLists.txt","source":"..."}')
     parser.add_argument("--case-semantics", type=Path, help="Explicit replacement case descriptors, including []")
     parser.add_argument("--option-index", type=int, help="Index of the existing multiple-choice option to clarify")
     parser.add_argument("--replacement", help="Exact revised nonblank choice or math prompt text")
@@ -6358,13 +6434,15 @@ def main() -> None:
                 "Replacement text belongs to a choice or mathematical prompt revision")
         require(args.action == "revise-math-prompt-editorial" or args.semantic_spans is None,
                 "Semantic spans belong only to revise-math-prompt-editorial")
-        require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases", "revise-compiler-cases", "revise-compiler-client-cases"}
+        require(args.action in {"revise-math-prompt-editorial", "reorder-compiler-cases", "revise-compiler-cases", "revise-compiler-client-cases", "revise-compiler-cmake-recipe"}
                 or args.return_to is None, "Return-to belongs to a supported authenticated editorial return")
         require(args.action in {"revise-compiler-cases", "revise-compiler-client-cases"}
                 or (args.cases is None and args.case_semantics is None),
                 "Replacement cases and their semantics belong only to explicit case revisions")
         require(args.action == "revise-compiler-client-cases" or args.client is None,
                 "An explicit client belongs only to revise-compiler-client-cases")
+        require(args.action == "revise-compiler-cmake-recipe" or args.recipe is None,
+                "An explicit recipe belongs only to revise-compiler-cmake-recipe")
         require(args.action == "reorder-compiler-cases" or args.case_order is None,
                 "Case order belongs only to reorder-compiler-cases")
         require(args.action == "revise-ordinary-editorial" or args.editorial_fields is None,
@@ -6449,6 +6527,13 @@ def main() -> None:
                     "reorder-compiler-cases requires --identity and --case-order without move/addition plans")
             baseline = prepare_v2(source, locale, family, previous) if family is not None else source
             result = reorder_compiler_cases(baseline, args.identity, load(args.case_order), return_to=args.return_to)
+        elif args.action == "revise-compiler-cmake-recipe":
+            require(args.identity is not None and args.recipe is not None
+                    and args.plan is None and args.additions is None,
+                    "revise-compiler-cmake-recipe requires --identity and --recipe without a move/addition plan")
+            baseline = prepare_v2(source, locale, family, previous) if family is not None else source
+            result = revise_compiler_cmake_recipe(baseline, args.identity, load(args.recipe),
+                                                  return_to=args.return_to)
         elif args.action == "revise-compiler-client-cases":
             require(args.identity is not None and args.client is not None
                     and args.cases is not None and args.case_semantics is not None
@@ -6489,4 +6574,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 

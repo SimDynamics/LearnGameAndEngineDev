@@ -1,5 +1,6 @@
 #include "core/compiler_flow.hpp"
 #include "core/adjustment_project_check.hpp"
+#include "core/compile_check_test_fixture.hpp"
 #include "core/lesson.hpp"
 #include "core/lesson_state.hpp"
 #include "core/open_battery_check.hpp"
@@ -118,11 +119,9 @@ bool same_json(const winrt::Windows::Data::Json::IJsonValue& left,
     }
     return false;
 }
-std::string portable_warning_fixture(std::string source) {
-    // This QA-only projection changes the three warning-option statements.
-    // It does not certify an editorial CMake migration and never writes the
-    // published asset. All component, interface, client and test bytes remain
-    // authentic; both branches retain their original target relationships.
+std::string portable_warning_recipe(std::string source) {
+    // Authored source for the in-memory editorial transition below. The
+    // component, interface, client, checker and target relationships stay exact.
     if(source.find("if(MSVC)")!=source.npos)return source;
     for(const auto target:{"ajustes","consultar_ajustes","comprobar_ajustes"}) {
         const auto old="target_compile_options("+std::string(target)+
@@ -132,6 +131,95 @@ std::string portable_warning_fixture(std::string source) {
         replace_once(source,old,replacement);
     }
     return source;
+}
+std::string recipe_revision_json(const Lesson& previous,std::string_view source) {
+    const auto position=stable_block_position(previous,activity);
+    require(position.has_value(),"A recipe review lost its original mapped owner");
+    auto document=JsonObject::Parse(winrt::to_hstring(previous.raw_json));
+    const auto layout=document.GetNamedObject(L"stateLayout");
+    const auto block=document.GetNamedArray(L"pages").
+        GetObjectAt(static_cast<std::uint32_t>(position->page)).
+        GetNamedArray(L"blocks").GetObjectAt(static_cast<std::uint32_t>(position->block));
+    const auto archived=JsonObject::Parse(block.Stringify());
+    const auto editorial=layout.GetNamedArray(L"editorial");
+    const auto fingerprint=[](const auto& value) {
+        return test::compile_check_test_fingerprint(value);
+    };
+    JsonObject prefix;
+    prefix.Insert(L"lessonId",document.GetNamedValue(L"id"));
+    prefix.Insert(L"locale",layout.GetNamedValue(L"locale"));
+    prefix.Insert(L"editorial",JsonArray::Parse(editorial.Stringify()));
+    const auto history=fingerprint(prefix);
+    JsonArray semantics;
+    if(document.HasKey(L"textSemantics"))
+        for(const auto& value:document.GetNamedObject(L"textSemantics").GetNamedArray(L"fields")) {
+            const auto field=value.GetObject();
+            if(field.GetNamedString(L"block")==winrt::to_hstring(activity)&&
+                    winrt::to_string(field.GetNamedString(L"path")).starts_with("/outputCheck/cases/"))
+                semantics.Append(JsonObject::Parse(field.Stringify()));
+        }
+    JsonObject record,recipe;
+    record.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(activity)));
+    record.Insert(L"block",archived);
+    if(archived.HasKey(L"outputCheck"))
+        record.Insert(L"cases",archived.GetNamedObject(L"outputCheck").GetNamedValue(L"cases"));
+    else record.Insert(L"cases",JsonValue::Parse(L"null"));
+    record.Insert(L"editorialIndex",JsonValue::CreateNumberValue(editorial.Size()));
+    record.Insert(L"historySha256",JsonValue::CreateStringValue(winrt::to_hstring(history)));
+    record.Insert(L"semanticBefore",semantics);
+    record.Insert(L"semanticAfter",JsonArray::Parse(semantics.Stringify()));
+    recipe.Insert(L"path",JsonValue::CreateStringValue(L"CMakeLists.txt"));
+    recipe.Insert(L"source",JsonValue::CreateStringValue(winrt::to_hstring(source)));
+    record.Insert(L"recipe",recipe);
+    bool replaced=false;
+    for(const auto& value:block.GetNamedArray(L"projectFiles")) {
+        const auto item=value.GetObject();
+        if(item.GetNamedString(L"path")==L"CMakeLists.txt") {
+            require(!replaced&&item.GetNamedString(L"initialCode")!=winrt::to_hstring(source),
+                "A recipe review must replace exactly one existing source");
+            item.Insert(L"initialCode",JsonValue::CreateStringValue(winrt::to_hstring(source)));
+            replaced=true;
+        }
+    }
+    require(replaced,"A recipe review cannot invent a CMake file");
+    JsonObject proof;
+    proof.Insert(L"id",JsonValue::CreateStringValue(winrt::to_hstring(activity)));
+    proof.Insert(L"beforeSha256",JsonValue::CreateStringValue(winrt::to_hstring(fingerprint(archived))));
+    const auto after=fingerprint(block);
+    proof.Insert(L"afterSha256",JsonValue::CreateStringValue(winrt::to_hstring(after)));
+    std::vector<std::string> nodes;
+    for(const auto& value:editorial) {
+        const auto edge=value.GetObject();
+        if(edge.GetNamedString(L"id")!=winrt::to_hstring(activity))continue;
+        if(nodes.empty())nodes.push_back(winrt::to_string(edge.GetNamedString(L"beforeSha256")));
+        nodes.push_back(winrt::to_string(edge.GetNamedString(L"afterSha256")));
+    }
+    for(std::size_t i=0;i+1<nodes.size();++i)if(nodes[i]==after) {
+        JsonObject returned;
+        returned.Insert(L"revision",JsonValue::CreateNumberValue(static_cast<double>(i)));
+        returned.Insert(L"historySha256",JsonValue::CreateStringValue(winrt::to_hstring(history)));
+        returned.Insert(L"previousBlock",JsonObject::Parse(archived.Stringify()));
+        proof.Insert(L"returnTo",returned);
+        break;
+    }
+    auto records=layout.HasKey(L"compilerCaseRevisions")
+        ?layout.GetNamedArray(L"compilerCaseRevisions"):JsonArray{};
+    records.Append(record);
+    layout.Insert(L"compilerCaseRevisions",records);
+    editorial.Append(proof);
+    return winrt::to_string(document.Stringify());
+}
+void rejected_recipe(const JsonObject& invalid,std::string_view message) {
+    const auto source=winrt::to_string(invalid.Stringify());
+    for(const bool progress_only:{false,true}) {
+        bool rejected=false;
+        try {
+            if(progress_only)(void)parse_lesson_progress_metadata(source,"es");
+            else (void)parse_lesson_json(source,"es");
+        }catch(const std::exception&) {rejected=true;}
+        catch(const winrt::hresult_error&) {rejected=true;}
+        require(rejected,message);
+    }
 }
 std::string extended_driver(const Block& block,std::string_view call) {
     auto source=file(block.project_files,test_path);
@@ -240,6 +328,75 @@ void completion(const state::StateData& data,const Lesson& lesson,bool expected)
     require(compiler_requires_completion(block)&&
             compiler_completion_snapshot(lesson,solved).at(block.stable_id)==expected,
         "The open battery lost its mandatory completion gate");
+}
+void verify_recipe_return(const Lesson& earned_lesson,const state::StateData& earned,
+        const std::filesystem::path& profile) {
+    const auto& credited=owner(earned_lesson);
+    require(compiler_puzzle_completed(earned,earned_lesson,credited)&&
+            compiler_puzzle_case_count(earned,earned_lesson,credited)==1,
+        "Recipe history QA requires a real earned first-case receipt");
+    const auto original_recipe=file(credited.project_files,"CMakeLists.txt");
+    const auto changed_text=recipe_revision_json(earned_lesson,
+        original_recipe+"\n# QA: exercise an explicit later recipe publication.\n");
+    const auto changed=parse_lesson_json(changed_text,"es");
+    const auto returned_text=recipe_revision_json(changed,original_recipe);
+    const auto returned=parse_lesson_json(returned_text,"es");
+    const auto& identical=owner(returned);
+    require(identical.project_files==credited.project_files&&
+            identical.initial_code==credited.initial_code&&
+            identical.compiler_client_epoch!=credited.compiler_client_epoch&&
+            reference_objective_frame(returned,identical)!=
+                reference_objective_frame(earned_lesson,credited),
+        "Returning to identical recipe bytes collapsed two authenticated source epochs");
+    const auto layout=JsonObject::Parse(winrt::to_hstring(returned.raw_json)).GetNamedObject(L"stateLayout");
+    const auto edges=layout.GetNamedArray(L"editorial");
+    require(edges.GetObjectAt(edges.Size()-1).HasKey(L"returnTo"),
+        "The recipe return did not archive its explicit earlier editorial node");
+    const auto invalid_return=JsonObject::Parse(winrt::to_hstring(returned.raw_json));
+    const auto invalid_edges=invalid_return.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    invalid_edges.GetObjectAt(invalid_edges.Size()-1).Remove(L"returnTo");
+    rejected_recipe(invalid_return,"A recipe return without its explicit earlier revision was accepted");
+    auto migrated=earned;
+    for(const auto* version:{&changed,&returned}) {
+        const auto compact=parse_lesson_progress_metadata(version->raw_json,"es");
+        const auto before=migrated;
+        state::prepare_lesson_state(migrated,*version);
+        for(const auto* model:{version,&compact}) {
+            const auto& current=owner(*model);
+            require(!compiler_puzzle_completed(migrated,*model,current)&&
+                    compiler_puzzle_case_count(migrated,*model,current)==0&&
+                    !compiler_puzzle_success_feedback(migrated,*model,current)&&
+                    compiler_puzzle_completed(migrated,earned_lesson,credited)&&
+                    compiler_puzzle_case_count(migrated,earned_lesson,credited)==1,
+                "A new or returned recipe borrowed a real receipt from an earlier source epoch");
+            completion(migrated,*model,false);
+            validate_compiler_puzzle_state(migrated,*model,current);
+            state::validate_lesson_state(migrated,*model);
+        }
+        for(const auto* domain:{"native_windows","cpp_lesson_drafts","qa"}) {
+            const auto existing=before.preferences.find(domain);
+            if(existing==before.preferences.end())continue;
+            for(const auto& [key,value]:existing->second) {
+                const auto stored=state::find(migrated,domain,key);
+                require(stored&&*stored==value,
+                    "A recipe publication overwrote a historical receipt, saved draft or unrelated value");
+            }
+        }
+        const auto adopted=migrated;
+        state::prepare_lesson_state(migrated,*version);
+        require(migrated==adopted,"Replaying a recipe publication changed history or revived old credit");
+    }
+    state::StateStore storage(profile);
+    (void)storage.load();storage.save(migrated);
+    state::StateStore reopened_storage(profile);
+    const auto reopened=reopened_storage.load();
+    require(reopened==migrated&&compiler_puzzle_completed(reopened,earned_lesson,credited)&&
+            compiler_puzzle_case_count(reopened,earned_lesson,credited)==1,
+        "Physical reopening changed the real receipt or recipe publication history");
+    completion(reopened,returned,false);
+    completion(reopened,parse_lesson_progress_metadata(returned.raw_json,"es"),false);
+    std::cout << "PASS real recipe receipt retained across a new publication and identical-byte return: "
+                 "distinct epochs, no borrowed first case, unchanged drafts and physical reopening\n";
 }
 
 constexpr std::string_view builder_activity="block_0002_0003";
@@ -379,7 +536,9 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
             before.cmake->target=="consultar_ajustes"&&before.standard_input&&
             file(before.project_files,"CMakeLists.txt").empty(),
         "The authentic open constructor or its initial client target changed");
-    auto document=JsonObject::Parse(winrt::to_hstring(original_text));
+    // The constructor is a new root objective on the already reviewed
+    // publication. Retain the earlier recipe journal and its earned receipt.
+    auto document=JsonObject::Parse(winrt::to_hstring(previous_lesson.raw_json));
     append_builder_declaration(document,L"compilerCmakeGraphChecks",builder_graph);
     append_builder_declaration(document,L"compilerOpenBatteryChecks",builder_declaration);
     const auto reviewed=winrt::to_string(document.Stringify());
@@ -433,7 +592,7 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
     for(const auto* model:{&lesson,&progress}) {
         const auto& current=owner(*model,builder_activity);
         require(model->pages.size()==original.pages.size()&&
-                model->state_layout.raw_json==original.state_layout.raw_json&&
+                model->state_layout.raw_json==previous_lesson.state_layout.raw_json&&
                 model->state_layout.signatures==original.state_layout.signatures&&
                 model->state_layout.lineage==original.state_layout.lineage&&
                 current.project_files==before.project_files&&current.initial_code==before.initial_code&&
@@ -449,7 +608,7 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
 
     auto data=previous_data;
     const auto draft_identity=draft_key("programming",lesson,block);
-    state::prepare_lesson_state(data,original);
+    state::prepare_lesson_state(data,previous_lesson);
     state::Draft draft;
     draft.source=before.initial_code;draft.input=*before.standard_input;
     draft.selection_start=5;draft.selection_end=12;draft.has_saved=true;
@@ -482,7 +641,7 @@ void verify_adjustment_constructor(const std::filesystem::path& fixture_path,
 
     auto files=before.project_files;
     file(files,"CMakeLists.txt")=
-        portable_warning_fixture(file(reference.project_files,"CMakeLists.txt"));
+        portable_warning_recipe(file(reference.project_files,"CMakeLists.txt"));
     file(files,"src/ajuste.cpp")=builder_library;
     file(files,"app/consulta.cpp")=file(reference.project_files,"app/consulta.cpp");
     file(files,test_path)=builder_checker;
@@ -770,10 +929,11 @@ int main(int argc,char** argv) {
         require(position.has_value(),"The authentic owner lost its stable map address");
         auto document=JsonObject::Parse(winrt::to_hstring(original_text));
         const auto original_document=JsonObject::Parse(winrt::to_hstring(original_text));
-        auto projected_files=before.project_files;
-        file(projected_files,"CMakeLists.txt")=
-            portable_warning_fixture(file(before.project_files,"CMakeLists.txt"));
-        const bool warning_projection_changed=projected_files!=before.project_files;
+        auto revised_files=before.project_files;
+        auto revised_recipe=portable_warning_recipe(file(before.project_files,"CMakeLists.txt"));
+        if(revised_recipe==file(before.project_files,"CMakeLists.txt"))
+            revised_recipe+="\n# QA: retain the already portable warning profile.\n";
+        file(revised_files,"CMakeLists.txt")=revised_recipe;
         auto declarations=document.HasKey(L"compilerOpenBatteryChecks")
             ?document.GetNamedArray(L"compilerOpenBatteryChecks"):JsonArray{};
         const auto desired=JsonObject::Parse(winrt::to_hstring(declaration));
@@ -835,9 +995,9 @@ int main(int argc,char** argv) {
                 reference_objective_frame(published_lesson,published_block)==
                     reference_objective_frame(published_progress,published_restored),
             "The new goal changed source, initial input, target, identity or full/progress evidence");
-        if(warning_projection_changed) {
-            // An edited curricular recipe still needs real editorial provenance.
-            // Do not rewrite its map or let an unrelated loader error pass.
+        {
+            // An edited curricular recipe is rejected until its exact source
+            // transition and complete editorial history are supplied.
             auto incompatible=JsonObject::Parse(winrt::to_hstring(reviewed));
             const auto edited=incompatible.GetNamedArray(L"pages").
                 GetObjectAt(static_cast<std::uint32_t>(position->page)).
@@ -846,36 +1006,70 @@ int main(int argc,char** argv) {
                 const auto item=value.GetObject();
                 if(item.GetNamedString(L"path")==L"CMakeLists.txt")
                     item.Insert(L"initialCode",JsonValue::CreateStringValue(
-                        winrt::to_hstring(file(projected_files,"CMakeLists.txt"))));
+                        winrt::to_hstring(revised_recipe)));
             }
-            const auto incompatible_text=winrt::to_string(incompatible.Stringify());
-            for(const bool progress_only:{false,true}) {
-                std::string rejection;
-                try {
-                    if(progress_only)(void)parse_lesson_progress_metadata(incompatible_text,"es");
-                    else (void)parse_lesson_json(incompatible_text,"es");
-                }catch(const std::exception& error) { rejection=error.what(); }
-                require(rejection=="Curriculum: State-bearing block changed without a compatible map",
-                    "An unauthenticated CMake edit did not hit the exact state-map guard: "+rejection);
-            }
+            rejected_recipe(incompatible,"An unauthenticated CMake edit passed a native loader");
         }
-        // Execute against explicit QA copies only after both authentic models
-        // passed their loaders. This projection is not an editorial transition.
-        auto lesson=published_lesson;
-        auto progress=published_progress;
-        for(auto* qa_model:{&lesson,&progress}) {
-            auto& qa_block=qa_model->pages.at(position->page).blocks.at(position->block);
-            require(qa_block.stable_id==activity,"The QA projection changed its mapped owner");
-            file(qa_block.project_files,"CMakeLists.txt")=file(projected_files,"CMakeLists.txt");
+        const auto revised_text=recipe_revision_json(published_lesson,revised_recipe);
+        const auto lesson=parse_lesson_json(revised_text,"es");
+        const auto progress=parse_lesson_progress_metadata(revised_text,"es");
+        for(const bool remove_history:{false,true}) {
+            auto invalid=JsonObject::Parse(winrt::to_hstring(revised_text));
+            const auto layout=invalid.GetNamedObject(L"stateLayout");
+            const auto records=layout.GetNamedArray(L"compilerCaseRevisions");
+            if(remove_history) {
+                records.RemoveAtEnd();
+                if(!records.Size())layout.Remove(L"compilerCaseRevisions");
+            }else records.GetObjectAt(records.Size()-1).Insert(L"historySha256",
+                JsonValue::CreateStringValue(winrt::to_hstring(std::string(64,'0'))));
+            rejected_recipe(invalid,"A missing or altered recipe history passed a native loader");
         }
         const auto& block=owner(lesson);
         const auto& restored=owner(progress);
-        require(block.project_files==projected_files&&restored.project_files==projected_files&&
-                block.raw_json==published_block.raw_json&&restored.raw_json==published_restored.raw_json&&
+        require(block.project_files==revised_files&&restored.project_files==revised_files&&
+                block.raw_json!=published_block.raw_json&&
+                !JsonObject::Parse(winrt::to_hstring(block.raw_json)).HasKey(L"outputCheck")&&
+                block.initial_code==published_block.initial_code&&
+                restored.initial_code==published_restored.initial_code&&
+                block.standard_input==before.standard_input&&restored.standard_input==before.standard_input&&
+                block.cmake==before.cmake&&restored.cmake==before.cmake&&
+                block.open_battery_probe==published_block.open_battery_probe&&
+                restored.open_battery_probe==published_restored.open_battery_probe&&
+                block.output_check&&block.output_check->open_battery_check&&
+                restored.output_check&&restored.output_check->open_battery_check&&
+                block.output_check->cases.size()==1&&restored.output_check->cases.size()==1&&
+                block.output_check->cases.front().standard_input.empty()&&
+                restored.output_check->cases.front().standard_input.empty()&&
                 reference_objective_frame(lesson,block)==reference_objective_frame(progress,restored)&&
-                (reference_objective_frame(lesson,block)!=
-                    reference_objective_frame(published_lesson,published_block))==warning_projection_changed,
-            "The QA projection lost its source boundary or reused the published objective identity");
+                reference_objective_frame(lesson,block)!=reference_objective_frame(published_lesson,published_block),
+            "The authenticated recipe lost its independent root goal, source boundary or objective epoch");
+        for(const auto* model:{&lesson,&progress}) {
+            const auto& current=owner(*model);
+            require(model->state_layout.signatures==original.state_layout.signatures&&
+                    model->state_layout.lineage==original.state_layout.lineage&&
+                    current.stable_id==before.stable_id&&current.address.page==before.address.page&&
+                    current.address.block==before.address.block&&
+                    exercise_key(*model,current)==exercise_key(original,before)&&
+                    draft_key("programming",*model,current)==draft_key("programming",original,before)&&
+                    current.compiler_case_revisions.size()==published_block.compiler_case_revisions.size()+1,
+                "A recipe transition changed a historical identity or lost its append-only journal");
+            const auto& revision=current.compiler_case_revisions.back();
+            require(revision.client_revision&&revision.client_revision->cmake_recipe&&
+                    revision.preserves_root_output_check&&
+                    revision.revised_client_epoch==revision.record_sha256&&
+                    current.compiler_client_epoch==revision.revised_client_epoch&&
+                    current.compiler_client_epoch!=published_block.compiler_client_epoch,
+                "The recipe did not receive its own authenticated source epoch");
+            const auto archived=compiler_case_revision_previous_block(current,revision);
+            const auto after=compiler_case_revision_after_block(current,revision);
+            require(archived.project_files==before.project_files&&
+                    archived.output_check&&archived.output_check->open_battery_check&&
+                    archived.output_check->cases.size()==1&&
+                    reference_objective_frame(*model,archived)==
+                        reference_objective_frame(published_lesson,published_block)&&
+                    reference_objective_frame(*model,after)==reference_objective_frame(*model,current),
+                "Recipe reconstruction changed the historical root objective or its real case count");
+        }
         auto former_input_contract=block;
         former_input_contract.output_check->cases.front().standard_input=*before.standard_input;
         require(reference_objective_frame(lesson,former_input_contract)!=
@@ -956,8 +1150,7 @@ int main(int argc,char** argv) {
         auto repaired_library=file(previous_files,"src/ajuste.cpp");
         replace_once(repaired_library,"ajuste = valor - superior;","ajuste = superior - valor;");
         file(previous_files,"src/ajuste.cpp")=std::move(repaired_library);
-        file(previous_files,"CMakeLists.txt")=
-            portable_warning_fixture(file(previous.project_files,"CMakeLists.txt"));
+        file(previous_files,"CMakeLists.txt")=revised_recipe;
         require(previous_files==initial.project_files,
             "The extension's starting project no longer supplies the preceding legitimate repair");
         auto prerequisite=initial;
@@ -1027,11 +1220,14 @@ int main(int argc,char** argv) {
         require(record_compiler_puzzle_case(data,lesson,block,first,first_capture,"checked extension"),
             "The real configure/build/execute sequence did not earn a sealed receipt");
         completion(data,lesson,true);
+        require(compiler_puzzle_case_count(data,lesson,block)==1&&
+                compiler_puzzle_case_count(data,progress,restored)==1,
+            "The recipe review required another visible case or lost its first-case count");
         const auto earned=data;
-        if(warning_projection_changed)
-            require(!compiler_puzzle_completed(earned,published_lesson,published_block)&&
-                    !compiler_puzzle_completed(earned,published_progress,published_restored),
-                "The QA receipt credited the unmodified published CMake objective");
+        require(!compiler_puzzle_completed(earned,published_lesson,published_block)&&
+                !compiler_puzzle_completed(earned,published_progress,published_restored),
+            "The recipe receipt credited the earlier published CMake objective");
+        verify_recipe_return(lesson,earned,environment.paths.root/L"recipe-return");
         std::cout << "PASS actual configure build execute, 25 private phases and first-case completion\n";
 
         auto old_input=first;
@@ -1088,10 +1284,9 @@ int main(int argc,char** argv) {
         const auto reopened=reopened_storage.load();
         require(reopened==earned,"Physical reopening changed the sealed receipt or saved drafts");
         completion(reopened,progress,true);
-        if(warning_projection_changed)
-            require(!compiler_puzzle_completed(reopened,published_lesson,published_block)&&
-                    !compiler_puzzle_completed(reopened,published_progress,published_restored),
-                "Reopening promoted the QA receipt to the unmodified published objective");
+        require(!compiler_puzzle_completed(reopened,published_lesson,published_block)&&
+                !compiler_puzzle_completed(reopened,published_progress,published_restored),
+            "Reopening promoted the recipe receipt to the earlier published objective");
         validate_compiler_puzzle_state(reopened,progress,restored);
         state::validate_lesson_state(reopened,progress);
         auto tampered=reopened;
@@ -1123,4 +1318,5 @@ int main(int argc,char** argv) {
         return 1;
     }
 }
+
 

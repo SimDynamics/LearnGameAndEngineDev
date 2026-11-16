@@ -192,7 +192,8 @@ struct CompilerCaseOrderRevision {
     // this authenticated predecessor, never an authored or stored field.
     std::optional<CmakeGraphRequirement> previous_cmake_graph_check;
 };
-// A separately authored client adaptation changes one existing compiled file.
+// A separately authored source adaptation changes one existing compiled file
+// or one CMake recipe. The two authored modalities are mutually exclusive.
 // The loader derives its complete after-source and formatting provenance; no
 // draft is rewritten when a lesson adopts this publication.
 struct CompilerClientRevision {
@@ -200,6 +201,7 @@ struct CompilerClientRevision {
     CppProjectFiles revised_project_files;
     std::optional<std::string> revised_source_format_initial_code;
     std::optional<CppProjectFiles> revised_source_format_project_files;
+    bool cmake_recipe = false;
 };
 // Ordinary replacements change only outputCheck.cases. The explicit client
 // modality also owns a source epoch, distinct from every earlier execution.
@@ -215,6 +217,9 @@ struct CompilerCaseRevision {
     std::map<std::string,TextSemantics> previous_case_text_semantics, revised_case_text_semantics;
     std::string previous_client_epoch, revised_client_epoch;
     std::optional<CompilerClientRevision> client_revision;
+    // A recipe can revise an editor whose objective is attached at the lesson
+    // root. Its raw archive has no outputCheck to replace that runtime goal.
+    bool preserves_root_output_check = false;
     // A client review may change a protected source. Each endpoint must keep
     // the graph hashes derived from its own complete authenticated project.
     std::optional<CmakeGraphRequirement> previous_cmake_graph_check;
@@ -515,3 +520,4 @@ struct OutputEvaluation {
     const OutputCheck&, const FreshExecution&, std::uint64_t current_revision);
 
 } // namespace lgaed::curriculum
+

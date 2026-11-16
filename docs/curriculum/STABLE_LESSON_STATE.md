@@ -144,7 +144,7 @@ opcionales `retired`, `retirementHistory`, `orderRefinements`,
 | `choiceRevisions` | Opcional. Archivo acumulativo de ocho revisiones cerradas españolas con `{id, block}` y de revisiones editoriales compatibles con `{id, block, optionIndex, replacement, semanticBefore}`. En ambos casos `block` conserva el bloque completo anterior; U11L14 token mantiene su revisión cerrada atómica de opción y explicación. No permite alterar arbitrariamente los contratos de respuesta. |
 | `compilerRevisions` | Opcional. Archivo acumulativo de las diez ampliaciones españolas de comprobación autorizadas, con `{id, block}` y el editor publicado anterior íntegro. Las nueve baterías programadas U11L8/L10/L11/L12/L13/L14/L15/L16, incluidos ambos editores U11L15, incluyen obligatoriamente `references: [{id, block}]` con su referencia completa anterior. Sólo el segundo editor U11L15 admite además el inicial ampliado exacto. No permite cambiar otros programas o esperados. |
 | `compilerCaseOrderRevisions` | Opcional. Permutaciones autenticadas de casos completos, con archivo anterior, biyección y procedencia editorial. |
-| `compilerCaseRevisions` | Opcional. Sustituciones autenticadas de los casos, con bloque anterior completo y semántica anterior/posterior explícita. Una revisión de cliente declarada mediante `client` puede cambiar además un archivo compilado existente y su alias; abre un objetivo nuevo. |
+| `compilerCaseRevisions` | Opcional. Sustituciones autenticadas de los casos, con bloque anterior completo y semántica anterior/posterior explícita. `client` puede cambiar además un archivo compilado existente y su alias. La modalidad excluyente `recipe` cambia sólo un archivo CMake existente y conserva los casos. Ambas abren un objetivo nuevo. |
 | `mathTextRevisions` | Opcional. Archivo inmutable por propietario para precisar únicamente `/prompt` de un `math_puzzle`: `{id, field, rawJson, semanticBefore}`. Conserva el bloque completo y su descriptor anterior; no altera el contrato de respuesta. |
 
 ### Revisión editorial general de una opción existente
@@ -1007,6 +1007,66 @@ demuestra qué llamadas ejecutó un programa: la conservación distingue el
 recibo de una época anterior de una comprobación nueva y no atribuye a la
 comparación de salida una instrumentación de llamadas que no realiza.
 
+### Revisión compatible de una receta CMake
+
+`revise_compiler_cmake_recipe(documento, identidad, recipe, return_to=None)`
+prepara una revisión explícita de un archivo CMake existente. `recipe` contiene
+exactamente `path` y `source`, con la ruta relativa y el texto completo nuevo.
+Admite `CMakeLists.txt` en la raíz o en un subdirectorio y archivos con extensión
+`.cmake`, respetando las mayúsculas, rutas y límites del proyecto original.
+No añade ni renombra archivos. El texto debe ser no vacío, distinto del anterior
+y no contener NUL. El propietario debe ser un editor CMake español con mapa v2;
+los diagnósticos intencionales de compilación no pertenecen a esta operación.
+
+La revisión conserva todos los demás archivos, el `initialCode` independiente,
+la entrada inicial, los objetivos y opciones de `cmake`, los casos completos,
+sus reglas de comparación y sus marcas semánticas. Puede actualizar, por ejemplo,
+una receta que transmitía opciones GCC para declarar las opciones correspondientes
+al compilador real. La autoría debe comprobar lo que hace la receta nueva;
+la transición autentica el cambio, sin demostrar equivalencia entre recetas.
+
+El registro se incorpora a `stateLayout.compilerCaseRevisions` con `recipe`
+en lugar de `client`. Conserva `block` completo, `editorialIndex`,
+`historySha256`, `cases`, `semanticBefore` y `semanticAfter`, además de la
+prueba editorial del antes y el después. Las dos modalidades son excluyentes.
+Si el bloque declara `outputCheck`, `cases` debe ser exactamente su lista
+anterior y ambos campos semánticos deben coincidir. No se puede aprovechar
+una revisión de receta para cambiar una respuesta esperada o un programa C++.
+Las revisiones separadas de cliente o de casos pueden encadenarse después,
+manteniendo su propia procedencia.
+
+Un editor cuyo objetivo procede de `compilerOpenBatteryChecks` puede carecer
+de `outputCheck` en el bloque publicado. En ese caso se conserva esa ausencia:
+el registro declara `cases: null`, `semanticBefore: []` y `semanticAfter: []`.
+El contrato raíz debe pertenecer al mismo propietario y producir su objetivo
+real. Un laboratorio sin ese objetivo no puede usar esta modalidad. Windows
+mantiene la comprobación raíz al reconstruir cada versión histórica; no la
+sustituye por una lista vacía ni inserta un `outputCheck` nuevo en el currículo.
+
+El helper obtiene los casos y la semántica de la publicación actual, sin
+pedir copias al autor. El comando `revise-compiler-cmake-recipe` recibe
+`--identity`, `--recipe receta.json` y un `--output` nuevo, con la misma fuente
+publicada verificada que los otros comandos. `receta.json` contiene el objeto
+`path`/`source`. Un retorno a un bloque anterior requiere `--return-to` con
+su revisión auténtica. No se aceptan `--client`, `--cases` ni
+`--case-semantics` en este comando.
+
+La receta nueva crea una época de ejecución propia. Conserva los recibos
+anteriores con su alcance histórico, incluso si una revisión posterior
+recupera exactamente la receta antigua. No modifica el borrador guardado ni
+le atribuye la nueva receta: el alumno conserva sus archivos y puede adaptar
+el CMake en el mismo editor. Un editor sin borrador utiliza la publicación
+nueva. Sólo la primera comprobación correcta requerida por el objetivo actual
+permite avanzar; los demás ensayos conservan su carácter opcional.
+
+La QA de U3L10 `block_0006_0011` utiliza esta transición sobre una copia en
+memoria de su publicación original. Carga tanto el modelo completo como el
+de progreso, adapta los avisos de su receta y ejecuta la ampliación real de
+la batería. También contrasta edición sin procedencia, historia alterada,
+reapertura y retorno a la misma receta sin heredar un logro de otra época.
+No modifica el JSON curricular ni convierte las pruebas del mecanismo en
+la integración editorial que corresponde a Work.
+
 ## Piezas independientes de una línea en Windows
 
 `refine_order_lines(documento_v2, identidad_estable)` prepara la presentación
@@ -1731,3 +1791,4 @@ completo antes de reutilizar audio o posición. Una pronunciación distinta no
 hereda desplazamiento ni escucha de la anterior. La validación de estas marcas
 acredita estructura, límites y fuentes; no sustituye la revisión de significado
 de Work ni la observación visual y escucha durante el estudio del usuario.
+
