@@ -1,0 +1,2188 @@
+{
+  "id": "cpp_language_memory_oop__composicion_y_herencia_publica__copiar_y_asignar_la_parte_base",
+  "title": "Copiar y asignar la parte base",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir entre otra lectura y un acceso a la lectura existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una LecturaIdentificada contiene una parte base Lectura y añade su código. Ya utilizamos una referencia a Lectura para consultar o cambiar esa parte del objeto existente. Ahora distinguiremos ese préstamo de construir otra Lectura con el número que tenía la original."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperamos las mismas clases: valor_ pertenece a Lectura y codigo_ pertenece a LecturaIdentificada. Los dos datos admiten cualquier int representable y son independientes: cambiar el número no exige cambiar el código. La interfaz de Lectura permite consultar o sustituir el número; codigo() es una operación adicional de la derivada."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor que recibe un int no es el constructor de copia. En estas clases también están disponibles las operaciones de copia predeterminadas: permiten construir una Lectura desde otra Lectura y copiar el int que contiene. Una referencia constante a Lectura puede enlazarse con la parte base de una LecturaIdentificada; por eso esa parte también puede proporcionar el estado para construir la copia (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La copia base no se lleva el código del objeto original"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "LecturaIdentificada original{10, 6};\nLectura copia = original;\nconst Lectura& vista = original;\noriginal.sustituir(15);"
+        },
+        {
+          "type": "paragraph",
+          "text": "copia es un objeto nuevo de tipo Lectura. Para inicializarlo se copia el número de la parte Lectura de original. El resultado tiene su propio int; no recibe un codigo_ porque ese miembro no forma parte de Lectura. vista, en cambio, se enlaza con la parte Lectura que ya está dentro de original: no construye otro objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de sustituir el número de original por quince, copia conserva diez y vista observa quince. original conserva su código seis. No se ha quitado ni destruido el código de la fuente: se ha elegido un tipo de copia que sólo representa la información de la base."
+        },
+        {
+          "type": "paragraph",
+          "text": "A copiar sólo la parte base desde un objeto derivado se le llama slicing, o recorte del objeto. El nombre describe qué información llega al objeto nuevo; no significa que el original quede recortado. Una instantánea de sólo el número puede ser útil. Si necesitamos conservar también el código, una Lectura sola no representa la copia completa que buscamos (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar una copia independiente y una vista constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este main las clases anteriores ya están disponibles. El primer hueco debe declarar un objeto de tipo base por valor, independiente de dato. El segundo debe declarar una referencia constante a su parte base, para consultar el número que siga teniendo dato. No cambies los nombres ni las instrucciones posteriores."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u8l2_copia_base_y_referencia_constante",
+          "question": "Escribe el tipo base por valor para copia y el tipo referencia constante a esa base para vista. Utiliza los nombres de las clases anteriores; en el segundo hueco incluye const y &.",
+          "template": "int main() {\n    LecturaIdentificada dato{5, 18};\n    [] copia = dato;\n    [] vista = dato;\n    dato.sustituir(-9);\n    std::cout << copia.valor() << ':' << vista.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "Lectura",
+            "const Lectura&"
+          ],
+          "answerAlternatives": [
+            [
+              "Lectura"
+            ],
+            [
+              "const Lectura&",
+              "const Lectura &",
+              "Lectura const&"
+            ]
+          ],
+          "explanation": "Lectura declara otra lectura cuyo int se copia al inicializarla. const Lectura& enlaza una vía de consulta con la parte base existente de dato. Al cambiar dato a menos nueve, copia conserva cinco, vista observa menos nueve y el código de dato conserva dieciocho. La fuente mantiene su parte adicional."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir dos cambios sobre objetos diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa cambia primero el objeto derivado y después su copia base. Identifica el objeto que recibe cada sustituir. La referencia vista sigue enlazada con el objeto original durante todas las consultas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_copia_base_frente_a_referencia",
+          "language": "cpp",
+          "question": "Escribe los números consultados mediante vista, copia y dato, seguidos del código de dato, separados por dos puntos.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada dato{8, 21};\n    const Lectura& vista = dato;\n    Lectura copia = dato;\n    dato.sustituir(-4);\n    copia.sustituir(12);\n    std::cout << vista.valor() << ':' << copia.valor() << ':' << dato.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "-4:12:-4:21"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista observa el número de dato, que cambia de ocho a menos cuatro. copia recibió ocho al construirse y después su propia llamada lo sustituye por doce. Por eso vista y dato muestran menos cuatro, mientras copia muestra doce. El código veintiuno pertenece al objeto derivado y no se ha modificado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La independencia no procede de haber escrito const: copia ni siquiera es constante. Procede de construir otro objeto por valor. const en vista limita las operaciones permitidas por esa referencia, pero no convierte el préstamo en una copia ni impide cambiar dato mediante otra vía válida, como dato.sustituir(...)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo de la copia determina su interfaz"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este programa rechazado al compilar. La construcción de copia sí es válida. El problema aparece después, cuando se intenta utilizar el código adicional mediante un objeto cuyo tipo es Lectura."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    const LecturaIdentificada origen{5, 12};\n    Lectura copia = origen;\n    std::cout << copia.codigo();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l2_copia_base_no_ofrece_codigo_derivado",
+          "question": "¿Por qué no se permite copia.codigo() en este programa?",
+          "options": [
+            "Porque copiar la parte base ha eliminado codigo_ del origen y ya no queda un código que consultar.",
+            "Porque copia es una Lectura y ese tipo no ofrece codigo(); la fuente derivada sí conserva su código.",
+            "Porque codigo() requiere un objeto modificable y la fuente utilizada para copiar era constante."
+          ],
+          "correctIndex": 1,
+          "explanation": "Lectura copia = origen construye una Lectura con el número de la base. No construye una LecturaIdentificada oculta dentro de copia ni agrega su interfaz. El origen sigue siendo una LecturaIdentificada constante que conserva su código y puede consultarlo mediante su propio codigo()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recibir la base por valor o por referencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar_copia recibe Lectura por valor. Al llamarla con una LecturaIdentificada se construye un parámetro Lectura a partir de su parte base. La función sustituye el número de ese parámetro independiente. cambiar_original recibe Lectura&: esa referencia se enlaza con la parte base del argumento y permite modificarla directamente (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_parametro_base_valor_y_referencia",
+          "language": "cpp",
+          "question": "Escribe el número que imprime cambiar_copia, el número del objeto original tras esa llamada, su número tras cambiar_original y su código.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nvoid cambiar_copia(Lectura dato, int nuevo) {\n    dato.sustituir(nuevo);\n    std::cout << dato.valor() << ':';\n}\nvoid cambiar_original(Lectura& dato, int nuevo) { dato.sustituir(nuevo); }\nint main() {\n    LecturaIdentificada dato{7, 30};\n    cambiar_copia(dato, 11);\n    std::cout << dato.valor() << ':';\n    cambiar_original(dato, -2);\n    std::cout << dato.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "11:7:-2:30"
+          ],
+          "outputComparison": "exact",
+          "explanation": "cambiar_copia cambia su Lectura local a once y la imprime. El dato original conserva siete. Después cambiar_original recibe una referencia a la base del mismo dato y guarda menos dos en ella. El código treinta no interviene en ninguna de las dos operaciones y se conserva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos funciones aceptan el mismo argumento derivado, pero su forma de recibirlo cambia dónde se escribe. El parámetro por valor no conserva el código adicional como un dato propio. El parámetro por referencia no crea otra base y tampoco ofrece codigo() mediante el nombre de tipo Lectura&."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Devolver por valor fija qué información sale de la función"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lectura instantanea(const Lectura& origen) { return origen; }\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "instantanea recibe const Lectura& para consultar una base existente y devuelve Lectura por valor. return origen inicializa el resultado Lectura copiando el número del objeto referido. Si origen identifica la base de una LecturaIdentificada, el resultado sigue siendo una Lectura independiente. No devuelve la referencia que recibió (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "auto copia = instantanea(dato); deduce el tipo del resultado de la llamada: Lectura. auto no recupera por su cuenta el tipo derivado del argumento ni añade su código. copia es otro objeto con su propio número; terminar la llamada no elimina esa copia."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_resultado_base_por_valor",
+          "language": "cpp",
+          "question": "Escribe el número final de copia, el número final de dato y el código de dato, en el orden del programa.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nLectura instantanea(const Lectura& origen) { return origen; }\nint main() {\n    LecturaIdentificada dato{6, 15};\n    auto copia = instantanea(dato);\n    dato.sustituir(20);\n    copia.sustituir(-1);\n    std::cout << copia.valor() << ':' << dato.valor() << ':' << dato.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "-1:20:15"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada entrega una Lectura con el número seis. Después dato cambia a veinte y copia cambia de manera independiente a menos uno. El resultado es menos uno, veinte y quince: el código de la fuente no se ha copiado a la Lectura ni se ha alterado en el original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar mediante una referencia cambia una base ya existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la construcción Lectura copia = origen; se preparaba un objeto nuevo. En cambio, después de Lectura& parte = destino;, el objeto al que se refiere parte ya existe dentro de destino. La instrucción parte = origen; utiliza la asignación de Lectura para copiar el número de la base de origen a esa base existente (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia no cambia de objeto al asignar. Tampoco cambia el tipo completo de destino ni se sustituye su código por el del origen. El destino de esta asignación se utiliza como Lectura, y esa operación sólo se ocupa del estado de Lectura."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_asignacion_mediante_referencia_base",
+          "language": "cpp",
+          "question": "Escribe el número y código de destino, el número y código de origen y, después de sustituir mediante parte, los dos números finales.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada destino{2, 70}, origen{9, 50};\n    Lectura& parte = destino;\n    parte = origen;\n    std::cout << destino.valor() << ':' << destino.codigo() << ':' << origen.valor() << ':' << origen.codigo() << ':';\n    parte.sustituir(-3);\n    std::cout << destino.valor() << ':' << origen.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9:70:9:50:-3:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "parte se refiere a la base de destino. La asignación copia el nueve de la base de origen, pero destino conserva su código setenta; origen conserva nueve y cincuenta. La llamada parte.sustituir guarda después menos tres en destino. origen sigue teniendo nueve: la referencia no se había reenlazado con él."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los int de estas clases son datos independientes, de modo que conservar el código del destino después de sustituir su número sigue siendo un estado válido. En otro diseño habría que comprobar qué relaciones deben mantener sus datos antes de ofrecer una modificación de la base por separado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos referencias base pueden identificar la misma parte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un destino modificable y una fuente de lectura no garantizan que sean objetos diferentes. El programa siguiente enlaza las dos referencias con la parte Lectura del mismo dato y realiza una asignación entre ellas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_autoasignacion_de_la_parte_base",
+          "language": "cpp",
+          "question": "Escribe el número, el código y la comparación de las direcciones de las dos referencias base.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    LecturaIdentificada dato{3, 24};\n    Lectura& destino = dato;\n    const Lectura& origen = dato;\n    destino = origen;\n    std::cout << dato.valor() << ':' << dato.codigo() << ':' << (&destino == &origen);\n    return 0;\n}\n",
+          "answers": [
+            "3:24:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las dos referencias identifican la misma parte Lectura. Copiar su int a ese mismo int conserva tres. El código veinticuatro no forma parte de la asignación base y tampoco cambia. La comparación da uno porque las dos referencias siguen enlazadas con ese mismo objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta asignación concreta sólo copia un int a sí mismo; no hay memoria que liberar ni una reserva que sustituir. Por eso conserva el estado sin una guarda especial. La conclusión corresponde a esta operación de Lectura, no a una autorización para omitir el análisis de autoasignación en cualquier clase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar la derivada completa incluye sus dos partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el destino nuevo es LecturaIdentificada, la copia predeterminada de ese tipo prepara su base Lectura a partir de la base de la fuente y copia también codigo_. Si una LecturaIdentificada existente recibe la asignación predeterminada de otra, se asignan primero su base y después su miembro propio. Estas clases tienen disponibles las operaciones necesarias para ambas partes (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hace falta un constructor de Lectura invocable sin argumentos para esa copia: su base se construye copiando la base de origen. Eso es distinto de omitir el inicializador de base al escribir un constructor ordinario que tendría que prepararla sin argumentos. El constructor de copia predeterminado sabe qué parte correspondiente debe utilizar."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_copia_y_asignacion_de_derivada_completa",
+          "language": "cpp",
+          "question": "Escribe las parejas número:código de copia, destino y origen, en ese orden.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    const LecturaIdentificada origen{4, 13};\n    LecturaIdentificada copia = origen;\n    copia.sustituir(-5);\n    LecturaIdentificada destino{8, 90};\n    destino = origen;\n    std::cout << copia.valor() << ':' << copia.codigo() << ':' << destino.valor() << ':' << destino.codigo()\n              << ':' << origen.valor() << ':' << origen.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "-5:13:4:13:4:13"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia se construye con las dos partes de origen: número cuatro y código trece. Sólo su número se cambia después a menos cinco. destino recibe mediante asignación las dos partes de origen, por lo que queda cuatro y trece. origen conserva cuatro y trece durante todas las operaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las copias contienen int independientes. Compartir los mismos valores no convierte sus partes base en el mismo objeto. Cambiar la copia completa tampoco escribe en la fuente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un cuerpo manual no añade por sí solo la asignación de la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Parcial declara una asignación propia. Su cuerpo copia codigo_ y devuelve *this, pero no asigna el estado de Lectura. El programa está bien formado y utiliza int inicializados; el defecto aparece al compararlo con el objetivo de copiar ambas partes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l2_asignacion_manual_que_omite_la_base",
+          "language": "cpp",
+          "question": "Escribe el número y código de destino después de la asignación, seguidos del número y código de origen.",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass Parcial : public Lectura {\npublic:\n    Parcial(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    Parcial(const Parcial&) = default;\n    Parcial& operator=(const Parcial& otra) noexcept {\n        codigo_ = otra.codigo_;\n        return *this;\n    }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nint main() {\n    Parcial destino{2, 5};\n    const Parcial origen{7, 8};\n    destino = origen;\n    std::cout << destino.valor() << ':' << destino.codigo() << ':' << origen.valor() << ':' << origen.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "2:8:7:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El cuerpo sólo asigna codigo_: destino cambia su código de cinco a ocho y conserva su número dos. origen mantiene siete y ocho. return *this devuelve el destino existente, pero devolverlo no copia el número omitido. Para un contrato de copia completa falta asignar también la parte Lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "La implementación predeterminada se encarga de las bases y los miembros. Cuando escribimos el cuerpo de operator= debemos realizar las operaciones que necesita nuestro contrato: no se ejecuta automáticamente una asignación base adicional antes de ese cuerpo. Devolver una referencia correcta tampoco compensa una parte del estado que no hemos copiado (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una copia completa manual de estas clases necesitamos acceder a la parte base del destino y a la de la fuente, asignar esa base, asignar el miembro adicional y devolver el destino. Podemos utilizar sus interfaces y referencias compatibles; no hay que volver público el int privado de la base. Si la copia predeterminada ya expresa todo el contrato, pedirla mediante = default es otra elección válida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una base no proporciona por sí sola todos los datos de una derivada"
+        },
+        {
+          "type": "paragraph",
+          "text": "La compatibilidad pública permite utilizar la parte base de una derivada donde se pide Lectura. No significa que una Lectura aislada aporte el código necesario para asignar una LecturaIdentificada completa. Analiza este rechazo de compilación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    const Lectura origen{5};\n    LecturaIdentificada destino{1, 10};\n    destino = origen;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l2_base_no_define_asignacion_completa_a_derivada",
+          "question": "¿Por qué destino = origen no es una asignación disponible aquí?",
+          "options": [
+            "Porque la LecturaIdentificada no ofrece una asignación desde una Lectura sola; su copia completa espera otra LecturaIdentificada.",
+            "Porque una fuente constante nunca puede utilizarse para asignar datos a un destino modificable.",
+            "Porque la herencia pública sólo permite consultar la parte base y nunca modificarla mediante una referencia válida."
+          ],
+          "correctIndex": 0,
+          "explanation": "El destino se utiliza con el tipo LecturaIdentificada. La asignación completa disponible recibe ese tipo, y una Lectura no aporta una LecturaIdentificada. Que exista una asignación de Lectura no crea automáticamente una sobrecarga de la derivada que reciba sólo la base. Asignar expresamente a su parte base sería una operación diferente, que conservaría el código del destino."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar desde una fuente constante no permite cambiar un destino constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia lee la fuente y escribe en un destino. Que la fuente se acepte mediante una referencia constante no da permiso para modificar un objeto destino declarado const. Este último programa sólo se analiza como rechazo de compilación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    void sustituir(int nuevo) noexcept { valor_ = nuevo; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo);\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nLecturaIdentificada::LecturaIdentificada(int valor, int codigo)\n    : Lectura{valor}, codigo_{codigo} {}\nint main() {\n    const Lectura destino{2};\n    const LecturaIdentificada origen{7, 4};\n    destino = origen;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l2_asignacion_no_modifica_destino_constante",
+          "question": "¿Qué impide la instrucción destino = origen en este caso?",
+          "options": [
+            "El origen derivado conserva un código adicional, y eso impide construir o asignar cualquier copia de su base.",
+            "La copia implícita de Lectura exige modificar también la fuente, pero origen está declarado const.",
+            "destino es una Lectura constante; la asignación necesitaría escribir en su número y no puede hacerse sobre ese objeto."
+          ],
+          "correctIndex": 2,
+          "explanation": "destino ya existe como Lectura constante. La asignación de Lectura cambia el estado de su destino y no puede utilizarse sobre ese objeto const. Leer la base de una fuente constante sí es compatible con la copia: podríamos construir con ella otra Lectura, sin alterar la fuente ni el destino constante existente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: capturar la base y asignar el registro completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Medida guarda un numero privado de tipo int. MedidaIdentificada hereda públicamente de Medida y añade un codigo_. Ambos datos admiten cualquier int representable; no se utilizan valores especiales para representar ausencia. El constructor de MedidaIdentificada y su constructor de copia predeterminado ya están proporcionados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa capturar_base(const Medida& origen). Su resultado es una Medida por valor, independiente, cuyo número debe coincidir con el de origen en el momento de la llamada. La referencia recibida sólo permite consultar. El resultado no debe cambiar más tarde cuando cambie el número del registro original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa también la asignación de copia de MedidaIdentificada. Después de destino = fuente, el destino debe contener tanto el número de la parte Medida de fuente como su código adicional. fuente debe conservar ambos datos. El resultado de la asignación debe referirse al mismo destino, sin crear otro MedidaIdentificada para devolverlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Admite que fuente sea el propio destino: la autoasignación debe conservar sus dos int y devolver ese mismo objeto. Puedes escribir una implementación manual que asigne la base y el código o solicitar la asignación predeterminada si expresa todo ese contrato. Conserva las firmas, Medida, los constructores, mostrar y main. No añadas impresiones para sustituir las operaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una entrada y los objetos que se construyen con ella"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene cinco int, en este orden:\nnumero_origen: número inicial de la parte base de origen.\ncodigo_origen: código adicional de origen.\nnumero_destino: número inicial de la parte base de destino.\ncodigo_destino: código adicional de destino.\nnuevo: número con el que después se modificará sólo la fuente."
+        },
+        {
+          "type": "paragraph",
+          "text": "main crea dos MedidaIdentificada, origen y destino. fuente es una referencia constante al origen; vista_destino es una referencia constante a la parte Medida del destino. Esas referencias observan sus objetos existentes. copia es, en cambio, otra Medida creada con el resultado de capturar_base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después se asigna fuente a destino y se guarda una referencia al objeto devuelto por la asignación. A continuación se cambia sólo el número de origen. El destino ya copiado y copia deben conservar el número anterior, mientras el código del origen sigue siendo el inicial. Por último se asigna el destino a sí mismo mediante la referencia propio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los objetos permanecen vivos durante todas las consultas y comparaciones de direcciones. Cada ensayo comienza de nuevo. Si no se consiguen leer los cinco int, el programa termina con código uno antes de construir o mostrar estos objetos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir los cinco renglones del informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada renglón corresponde a una etapa:\nInicioOrigen e InicioDestino: los dos registros antes de asignar.\nCopiaBase y Distinta: número de la copia independiente y comprobación de que no es la parte base original.\nAsignada, Origen y Retorno: estado después de asignar, conservación de la fuente y referencia devuelta al destino.\nModificadaFuente, Destino, VistaDestino y CopiaBase: estado después de modificar sólo el origen.\nAutoasignada y Retorno: conservación de las dos partes del destino al asignarse a sí mismo y retorno del mismo objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las parejas entre paréntesis se muestran como (numero,codigo). Una Medida sola no tiene codigo(): por eso CopiaBase muestra únicamente su número. Distinta y Retorno valen uno cuando se cumplen las identidades descritas; no son direcciones impresas como números."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial devuelve una captura con cero y deja la asignación sin cambios. Es un programa que compila, pero todavía no cumple el contrato. El primer ensayo utiliza números y códigos distintos para descubrir si se ha dejado sin copiar alguna parte. Un ensayo donde ya coincidían todos esos datos puede no detectar el mismo defecto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la captura y la asignación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifica las dos definiciones indicadas y ejecuta. Sólo el primer caso correcto es obligatorio para avanzar. Los demás ensayos permiten variar los estados y están separados como opciones."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    MedidaIdentificada(const MedidaIdentificada&) = default;\n    MedidaIdentificada& operator=(const MedidaIdentificada& otro) noexcept;\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedida capturar_base(const Medida& origen) {\n    // Devuelve una Medida independiente con el numero de origen.\n    (void)origen;\n    return Medida{0};\n}\nMedidaIdentificada& MedidaIdentificada::operator=(const MedidaIdentificada& otro) noexcept {\n    // Asigna ambas partes y devuelve una referencia a este destino.\n    (void)otro;\n    return *this;\n}\nvoid mostrar(const MedidaIdentificada& dato) {\n    std::cout << '(' << dato.numero() << ',' << dato.codigo() << ')';\n}\nint main() {\n    int numero_origen = 0, codigo_origen = 0, numero_destino = 0, codigo_destino = 0, nuevo = 0;\n    if (!(std::cin >> numero_origen >> codigo_origen >> numero_destino >> codigo_destino >> nuevo)) {\n        return 1;\n    }\n    MedidaIdentificada origen{numero_origen, codigo_origen}, destino{numero_destino, codigo_destino};\n    const MedidaIdentificada& fuente = origen;\n    const Medida& vista_destino = destino;\n    Medida copia = capturar_base(fuente);\n    const Medida* base_origen = &origen;\n    std::cout << \"InicioOrigen:\";\n    mostrar(origen);\n    std::cout << \";InicioDestino:\";\n    mostrar(destino);\n    std::cout << \"\\nCopiaBase:\" << copia.numero() << \";Distinta:\" << (&copia != base_origen) << '\\n';\n    MedidaIdentificada& retorno = (destino = fuente);\n    std::cout << \"Asignada:\";\n    mostrar(destino);\n    std::cout << \";Origen:\";\n    mostrar(origen);\n    std::cout << \";Retorno:\" << (&retorno == &destino) << '\\n';\n    origen.sustituir(nuevo);\n    std::cout << \"ModificadaFuente:\";\n    mostrar(origen);\n    std::cout << \";Destino:\";\n    mostrar(destino);\n    std::cout << \";VistaDestino:\" << vista_destino.numero() << \";CopiaBase:\" << copia.numero() << '\\n';\n    const MedidaIdentificada& propio = destino;\n    MedidaIdentificada& auto_retorno = (destino = propio);\n    std::cout << \"Autoasignada:\";\n    mostrar(destino);\n    std::cout << \";Retorno:\" << (&auto_retorno == &destino);\n    return 0;\n}\n",
+          "initialStandardInput": "4 18 -2 90 -9",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 18 -2 90 -9",
+                "outputs": [
+                  "InicioOrigen:(4,18);InicioDestino:(-2,90)\nCopiaBase:4;Distinta:1\nAsignada:(4,18);Origen:(4,18);Retorno:1\nModificadaFuente:(-9,18);Destino:(4,18);VistaDestino:4;CopiaBase:4\nAutoasignada:(4,18);Retorno:1"
+                ],
+                "explanation": "La captura devuelve una Medida por valor con el número de origen. La asignación completa actualiza base y codigo_, conserva fuente y devuelve *this. Una asignación predeterminada compatible también debe copiar ambas partes. Revisa el estado antes y después de cambiar sólo el origen."
+              },
+              {
+                "standardInput": "0 -3 7 8 5",
+                "outputs": [
+                  "InicioOrigen:(0,-3);InicioDestino:(7,8)\nCopiaBase:0;Distinta:1\nAsignada:(0,-3);Origen:(0,-3);Retorno:1\nModificadaFuente:(5,-3);Destino:(0,-3);VistaDestino:0;CopiaBase:0\nAutoasignada:(0,-3);Retorno:1"
+                ],
+                "explanation": "La captura devuelve una Medida por valor con el número de origen. La asignación completa actualiza base y codigo_, conserva fuente y devuelve *this. Una asignación predeterminada compatible también debe copiar ambas partes. Revisa el estado antes y después de cambiar sólo el origen."
+              },
+              {
+                "standardInput": "-7 0 0 0 0",
+                "outputs": [
+                  "InicioOrigen:(-7,0);InicioDestino:(0,0)\nCopiaBase:-7;Distinta:1\nAsignada:(-7,0);Origen:(-7,0);Retorno:1\nModificadaFuente:(0,0);Destino:(-7,0);VistaDestino:-7;CopiaBase:-7\nAutoasignada:(-7,0);Retorno:1"
+                ],
+                "explanation": "La captura devuelve una Medida por valor con el número de origen. La asignación completa actualiza base y codigo_, conserva fuente y devuelve *this. Una asignación predeterminada compatible también debe copiar ambas partes. Revisa el estado antes y después de cambiar sólo el origen."
+              },
+              {
+                "standardInput": "12 6 12 6 12",
+                "outputs": [
+                  "InicioOrigen:(12,6);InicioDestino:(12,6)\nCopiaBase:12;Distinta:1\nAsignada:(12,6);Origen:(12,6);Retorno:1\nModificadaFuente:(12,6);Destino:(12,6);VistaDestino:12;CopiaBase:12\nAutoasignada:(12,6);Retorno:1"
+                ],
+                "explanation": "La captura devuelve una Medida por valor con el número de origen. La asignación completa actualiza base y codigo_, conserva fuente y devuelve *this. Una asignación predeterminada compatible también debe copiar ambas partes. Revisa el estado antes y después de cambiar sólo el origen."
+              },
+              {
+                "standardInput": "-11 23 -5 40 -2",
+                "outputs": [
+                  "InicioOrigen:(-11,23);InicioDestino:(-5,40)\nCopiaBase:-11;Distinta:1\nAsignada:(-11,23);Origen:(-11,23);Retorno:1\nModificadaFuente:(-2,23);Destino:(-11,23);VistaDestino:-11;CopiaBase:-11\nAutoasignada:(-11,23);Retorno:1"
+                ],
+                "explanation": "La captura devuelve una Medida por valor con el número de origen. La asignación completa actualiza base y codigo_, conserva fuente y devuelve *this. Una asignación predeterminada compatible también debe copiar ambas partes. Revisa el estado antes y después de cambiar sólo el origen."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos partes iniciales difieren; después cambia sólo el número de la fuente. El destino, su vista y la captura independiente deben observar los valores que les corresponden."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4 18 -2 90 -9"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "InicioOrigen:(4,18);InicioDestino:(-2,90)\nCopiaBase:4;Distinta:1\nAsignada:(4,18);Origen:(4,18);Retorno:1\nModificadaFuente:(-9,18);Destino:(4,18);VistaDestino:4;CopiaBase:4\nAutoasignada:(4,18);Retorno:1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: ceros, signos y estados ya coincidentes"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fuente empieza con cero y un código negativo; después se cambia su número."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 -3 7 8 5"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "InicioOrigen:(0,-3);InicioDestino:(7,8)\nCopiaBase:0;Distinta:1\nAsignada:(0,-3);Origen:(0,-3);Retorno:1\nModificadaFuente:(5,-3);Destino:(0,-3);VistaDestino:0;CopiaBase:0\nAutoasignada:(0,-3);Retorno:1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código de la fuente y los dos datos iniciales del destino son cero, pero el número de la fuente es negativo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-7 0 0 0 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "InicioOrigen:(-7,0);InicioDestino:(0,0)\nCopiaBase:-7;Distinta:1\nAsignada:(-7,0);Origen:(-7,0);Retorno:1\nModificadaFuente:(0,0);Destino:(-7,0);VistaDestino:-7;CopiaBase:-7\nAutoasignada:(-7,0);Retorno:1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los registros empiezan iguales y la modificación conserva el número. Este caso aislado puede ocultar operaciones omitidas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12 6 12 6 12"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "InicioOrigen:(12,6);InicioDestino:(12,6)\nCopiaBase:12;Distinta:1\nAsignada:(12,6);Origen:(12,6);Retorno:1\nModificadaFuente:(12,6);Destino:(12,6);VistaDestino:12;CopiaBase:12\nAutoasignada:(12,6);Retorno:1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Números negativos distintos y códigos positivos permiten observar cada cambio sin usar cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-11 23 -5 40 -2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "InicioOrigen:(-11,23);InicioDestino:(-5,40)\nCopiaBase:-11;Distinta:1\nAsignada:(-11,23);Origen:(-11,23);Retorno:1\nModificadaFuente:(-2,23);Destino:(-11,23);VistaDestino:-11;CopiaBase:-11\nAutoasignada:(-11,23);Retorno:1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia manual: asignar la base y después el miembro propio"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Medida {\npublic:\n    explicit Medida(int numero) : numero_{numero} {}\n    int numero() const noexcept { return numero_; }\n    void sustituir(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo) : Medida{numero}, codigo_{codigo} {}\n    MedidaIdentificada(const MedidaIdentificada&) = default;\n    MedidaIdentificada& operator=(const MedidaIdentificada& otro) noexcept;\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n};\nMedida capturar_base(const Medida& origen) { return origen; }\nMedidaIdentificada& MedidaIdentificada::operator=(const MedidaIdentificada& otro) noexcept {\n    Medida& destino_base = *this;\n    const Medida& origen_base = otro;\n    destino_base = origen_base;\n    codigo_ = otro.codigo_;\n    return *this;\n}\nvoid mostrar(const MedidaIdentificada& dato) {\n    std::cout << '(' << dato.numero() << ',' << dato.codigo() << ')';\n}\nint main() {\n    int numero_origen = 0, codigo_origen = 0, numero_destino = 0, codigo_destino = 0, nuevo = 0;\n    if (!(std::cin >> numero_origen >> codigo_origen >> numero_destino >> codigo_destino >> nuevo)) {\n        return 1;\n    }\n    MedidaIdentificada origen{numero_origen, codigo_origen}, destino{numero_destino, codigo_destino};\n    const MedidaIdentificada& fuente = origen;\n    const Medida& vista_destino = destino;\n    Medida copia = capturar_base(fuente);\n    const Medida* base_origen = &origen;\n    std::cout << \"InicioOrigen:\";\n    mostrar(origen);\n    std::cout << \";InicioDestino:\";\n    mostrar(destino);\n    std::cout << \"\\nCopiaBase:\" << copia.numero() << \";Distinta:\" << (&copia != base_origen) << '\\n';\n    MedidaIdentificada& retorno = (destino = fuente);\n    std::cout << \"Asignada:\";\n    mostrar(destino);\n    std::cout << \";Origen:\";\n    mostrar(origen);\n    std::cout << \";Retorno:\" << (&retorno == &destino) << '\\n';\n    origen.sustituir(nuevo);\n    std::cout << \"ModificadaFuente:\";\n    mostrar(origen);\n    std::cout << \";Destino:\";\n    mostrar(destino);\n    std::cout << \";VistaDestino:\" << vista_destino.numero() << \";CopiaBase:\" << copia.numero() << '\\n';\n    const MedidaIdentificada& propio = destino;\n    MedidaIdentificada& auto_retorno = (destino = propio);\n    std::cout << \"Autoasignada:\";\n    mostrar(destino);\n    std::cout << \";Retorno:\" << (&auto_retorno == &destino);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "capturar_base devuelve origen con un resultado declarado Medida. Se construye un valor Medida a partir del objeto recibido por referencia constante. Si esa referencia se enlazó a la parte base de un MedidaIdentificada, se copia su número; el resultado no recibe codigo_ y el MedidaIdentificada original no lo pierde."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de operator=, destino_base se enlaza con la parte Medida de *this y origen_base con la de otro. La asignación destino_base = origen_base utiliza la operación de Medida y cambia únicamente esa parte del destino. Después codigo_ = otro.codigo_ asigna el miembro adicional. El return *this devuelve el MedidaIdentificada existente por referencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando otro es el propio destino, las dos referencias base señalan la misma Medida. Asignar ese int a sí mismo conserva su valor; la asignación del código hace lo mismo. No hay reservas que sustituir en este modelo, por lo que no hace falta una condición especial para evitar la autoasignación. Esa conclusión corresponde a estas operaciones concretas, no a cualquier clase con recursos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo manual no recibe una asignación automática adicional de sus bases. Escribir sólo la línea del código dejaría el número anterior. En cambio, la implementación predeterminada sí recorre las bases y los miembros que debe asignar (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Otra solución válida: solicitar la asignación predeterminada"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "MedidaIdentificada& MedidaIdentificada::operator=(const MedidaIdentificada& otro) noexcept = default;\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta definición puede sustituir al cuerpo manual de MedidaIdentificada::operator= sin cambiar la captura ni main. Con = default se solicita la asignación de las partes: primero la base Medida y después codigo_. Como ambos estados contienen int copiables y su significado coincide con esa copia, se cumple el contrato de este MedidaIdentificada (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El retorno declarado es MedidaIdentificada&, por lo que los dos usos de Retorno siguen observando el destino. Los ensayos de esta actividad aceptan esa solución y otras implementaciones que conserven el mismo comportamiento requerido. No hay que reservar memoria ni añadir un constructor que reciba otra Medida para conseguirlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la operación por los datos que necesitamos conservar"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l2_datos_necesarios_y_tipo_de_resultado",
+          "question": "Necesitas una copia independiente que conserve número y código de un MedidaIdentificada. ¿Qué opción corresponde?",
+          "options": [
+            "Una Medida por valor, porque la copia de su número agrega automáticamente los miembros de la clase original.",
+            "Una referencia constante a Medida, porque cualquier referencia crea una copia independiente del objeto completo.",
+            "Otro MedidaIdentificada construido mediante su copia completa, porque incluye la parte Medida y el código adicional."
+          ],
+          "correctIndex": 2,
+          "explanation": "Una copia de MedidaIdentificada puede conservar las dos partes. Una Medida por valor representa sólo su número; la referencia a Medida observa una parte existente y no crea otro MedidaIdentificada. Ninguna de esas dos operaciones borra el código del objeto original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Obtener una instantánea con sólo el número puede ser un objetivo válido. Lo que hay que comprobar es si el tipo de resultado conserva la información que esa tarea necesita. La copia parcial no debe presentarse como una copia completa ni como un daño causado al objeto fuente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El destino de una asignación por referencia ya está elegido"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l2_referencia_no_se_reenlaza_al_asignar",
+          "question": "Medida& parte = destino; ya se ejecutó. Después se escribe parte = origen;. ¿Qué ocurre en estas clases?",
+          "options": [
+            "Se asigna al objeto Medida que parte ya identifica; la referencia sigue enlazada a la base de destino y su código adicional se conserva.",
+            "parte abandona destino y queda enlazada al origen completo, incluido su código.",
+            "Se destruye destino y se construye otro MedidaIdentificada que sustituye al original con todas las partes de origen."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una referencia no se cambia de destino mediante asignación. La expresión usa operator= de Medida sobre su objeto ya existente y copia el número de la base de origen. No asigna el código adicional ni destruye el objeto completo. Una asignación mediante MedidaIdentificada ofrecería otro contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción de un objeto nuevo, la asignación de uno existente y el enlace de una referencia tienen funciones distintas. Antes de seguir una operación, identifica el tipo con el que está escrito su destino y si ese destino es un objeto nuevo o uno que ya estaba vivo."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "60740919fc314a595886d76e43cfadbdc0acd4426e118cedf0dcb194db50a496"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "64e052148551e88dceadad025ad83b414f332323d50d2f6588769c727ce890a9"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "7f98f0751511e240fbd2a4ed4ac9e22d5e0eb92ff3de3540947dd04e93b9aceb"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "ef5de78a06b89139c62cee5e59a5fdb3323c276d7392670ebc441d5323598a4d"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "a18971d00c0a17f61a39d60d64ca1834defc7aa00af060175aa4f43ac5513397"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "8f7d86dd70e881df6d503a527aef2191548af8b0070c78f0f2634b752560ca07"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "9eb4f926112c6fe1cd0df70c5266b02e8d8e85ec81eba72af4e0f4de8424b1a8"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "8c4314b52a09762a395b928cd1c777737167008d8d070154e3f10739a4dda8e8"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "fac19197f94821f571d4f0412659fd385e8483c0aea9aed1290126ee07c6856a"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "874bffa8eac70cfa2034fa0cf09187bc010dd411cd7fcb88c1754a265536e3c2"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "3586c5163679ab3454c714fd65027128b070c3bb17c2f9650881d1780de22a6f"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "3c91bbfc9bf00ff6883c5016219b92c093c37300f375d67bc78aa4823ce721c1"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "f2a7e284a9d6fe772056ecff90840a53795e5b4094e902206f131f3cbdfa3543"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "3c232c3a19a3b64df0178004abae3547524c3cb22aae9f1a41bdd7aaea314d5c"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "878b7a37fa99c8b90834e753db81c898939b0bf106b0c7f37146300b66d34b23"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "cdb235996eb05c50e4828dc9b3cd63e5b0cae53e250c8c81402cc2533e5189fe"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "421d426b92adab33118e8ac24d93a4bfbc197f1fa60c703de73a0f5e661f37b4"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "8471e0d96097856ec699ef3de04bb5aa39568cc0120dfe20dac92d4cc0e5d414"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "77c20a2a52500897541be30ed921c725d81ade3279da62fa0b02362b3361ad5b"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "e6a683e60a9130d19e76fd61ef68f1c9f8c9ce1ff42e7d40a4780d3a5c19f57c"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "97ca679703a3535e54a243034cb12d9e7d210eb83afcdcce8a77f6b50c0f655b"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "cb90f107301de76d88917ea9d78cc8eba560700d5635ec9c782755f279604f13"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0010",
+            "sha256": "9effe70d92fa06bd9844de6214b6defa4beb6fa2013ea4b0179286de1534fbab"
+          },
+          {
+            "id": "block_0017_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0012",
+            "sha256": "8ad77f0760ceac1043e4537d0c5cc8d17bebf2f753c04116c3a1d282fdb802c1"
+          },
+          {
+            "id": "block_0017_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0016",
+            "sha256": "b26aade6ce04803fcf2121bb79525e9946b43c8f46deb93ec43fef223c495777"
+          },
+          {
+            "id": "block_0017_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0018",
+            "sha256": "2149b2f910456a31c102abfbe13999382de501311db6c962b97a7d8944b3ee1c"
+          },
+          {
+            "id": "block_0017_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0022",
+            "sha256": "99115cfda8ddb5d36b472421c20a442be8b3e901e9ed8e0cd99cd1ec937c942b"
+          },
+          {
+            "id": "block_0017_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0024",
+            "sha256": "cbead506b83fd28abd9ab20120729055945e77fc30809efd8622750b97a742dc"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "900803bb24094448d849620d4e9e49108565c74dfc235eca327dc03cee549bdc"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "9485841b4a0e96a383dd5b13e47748131499377f6a5b06d682c1bc4b5a79be21"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "97089bd15d0618f32e9b0432a290a17325a68c86b161c40a085686875e778307"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "b1ecf04363cac3103624a66c76e8ff19abb90a3c52f4f4a63a14dfbfc538e86a"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008",
+          "block_0017_0009",
+          "block_0017_0010",
+          "block_0017_0011",
+          "block_0017_0012",
+          "block_0017_0013",
+          "block_0017_0014",
+          "block_0017_0015",
+          "block_0017_0016",
+          "block_0017_0017",
+          "block_0017_0018",
+          "block_0017_0019",
+          "block_0017_0020",
+          "block_0017_0021",
+          "block_0017_0022",
+          "block_0017_0023",
+          "block_0017_0024"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "b22047862a4257fe0b5bce4797cd25e975ded3f56c6a711ff3334ad6c91cbc57",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "60740919fc314a595886d76e43cfadbdc0acd4426e118cedf0dcb194db50a496"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "64e052148551e88dceadad025ad83b414f332323d50d2f6588769c727ce890a9"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "7f98f0751511e240fbd2a4ed4ac9e22d5e0eb92ff3de3540947dd04e93b9aceb"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "ef5de78a06b89139c62cee5e59a5fdb3323c276d7392670ebc441d5323598a4d"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "a18971d00c0a17f61a39d60d64ca1834defc7aa00af060175aa4f43ac5513397"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "8f7d86dd70e881df6d503a527aef2191548af8b0070c78f0f2634b752560ca07"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "9eb4f926112c6fe1cd0df70c5266b02e8d8e85ec81eba72af4e0f4de8424b1a8"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "8c4314b52a09762a395b928cd1c777737167008d8d070154e3f10739a4dda8e8"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "fac19197f94821f571d4f0412659fd385e8483c0aea9aed1290126ee07c6856a"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "874bffa8eac70cfa2034fa0cf09187bc010dd411cd7fcb88c1754a265536e3c2"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "3586c5163679ab3454c714fd65027128b070c3bb17c2f9650881d1780de22a6f"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "3c91bbfc9bf00ff6883c5016219b92c093c37300f375d67bc78aa4823ce721c1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "f2a7e284a9d6fe772056ecff90840a53795e5b4094e902206f131f3cbdfa3543"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "3c232c3a19a3b64df0178004abae3547524c3cb22aae9f1a41bdd7aaea314d5c"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "878b7a37fa99c8b90834e753db81c898939b0bf106b0c7f37146300b66d34b23"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "cdb235996eb05c50e4828dc9b3cd63e5b0cae53e250c8c81402cc2533e5189fe"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "421d426b92adab33118e8ac24d93a4bfbc197f1fa60c703de73a0f5e661f37b4"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "8471e0d96097856ec699ef3de04bb5aa39568cc0120dfe20dac92d4cc0e5d414"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "77c20a2a52500897541be30ed921c725d81ade3279da62fa0b02362b3361ad5b"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "e6a683e60a9130d19e76fd61ef68f1c9f8c9ce1ff42e7d40a4780d3a5c19f57c"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "97ca679703a3535e54a243034cb12d9e7d210eb83afcdcce8a77f6b50c0f655b"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "cb90f107301de76d88917ea9d78cc8eba560700d5635ec9c782755f279604f13"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0010",
+                "sha256": "9effe70d92fa06bd9844de6214b6defa4beb6fa2013ea4b0179286de1534fbab"
+              },
+              {
+                "id": "block_0017_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0012",
+                "sha256": "8ad77f0760ceac1043e4537d0c5cc8d17bebf2f753c04116c3a1d282fdb802c1"
+              },
+              {
+                "id": "block_0017_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0016",
+                "sha256": "b26aade6ce04803fcf2121bb79525e9946b43c8f46deb93ec43fef223c495777"
+              },
+              {
+                "id": "block_0017_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0018",
+                "sha256": "2149b2f910456a31c102abfbe13999382de501311db6c962b97a7d8944b3ee1c"
+              },
+              {
+                "id": "block_0017_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0022",
+                "sha256": "99115cfda8ddb5d36b472421c20a442be8b3e901e9ed8e0cd99cd1ec937c942b"
+              },
+              {
+                "id": "block_0017_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0024",
+                "sha256": "cbead506b83fd28abd9ab20120729055945e77fc30809efd8622750b97a742dc"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "900803bb24094448d849620d4e9e49108565c74dfc235eca327dc03cee549bdc"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "9485841b4a0e96a383dd5b13e47748131499377f6a5b06d682c1bc4b5a79be21"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "97089bd15d0618f32e9b0432a290a17325a68c86b161c40a085686875e778307"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "b1ecf04363cac3103624a66c76e8ff19abb90a3c52f4f4a63a14dfbfc538e86a"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

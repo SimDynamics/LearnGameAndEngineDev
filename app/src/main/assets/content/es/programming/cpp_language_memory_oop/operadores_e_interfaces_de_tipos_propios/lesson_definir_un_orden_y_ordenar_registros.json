@@ -1,0 +1,2865 @@
+{
+  "id": "cpp_language_memory_oop__operadores_e_interfaces_de_tipos_propios__definir_un_orden_y_ordenar_registros",
+  "title": "Definir un orden y ordenar registros",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Definir cuándo un registro va antes que otro"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Programación 1 ordenamos vectores de números y cadenas con std::sort. Para una cadena, el primer carácter diferente decidía el orden; cuando una era un prefijo completo de la otra, se situaba primero la más corta. También dejamos pendiente cómo ordenar registros con varios datos: antes había que elegir su comparación."
+        },
+        {
+          "type": "paragraph",
+          "text": "La igualdad ya responde si dos valores coinciden según el modelo. La pregunta a < b es distinta: responde si a debe quedar antes que b en el orden elegido. No pregunta si los objetos tienen direcciones distintas ni si uno apareció antes en la entrada. Vamos a definirla para registros que contienen dos enteros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la sobrecarga de std::sort que recibe sólo el comienzo y el final del rango, el algoritmo utiliza el orden ofrecido por los valores. Un operator< propio puede proporcionar esa comparación. Su resultado debe expresar un criterio coherente; el algoritmo no elige por nosotros qué campo tiene prioridad (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar prioridad al primer campo diferente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Par guarda primero_ y segundo_, ambos int. Elegimos ordenar por primero_ de menor a mayor. Sólo cuando coincida ese primer campo utilizaremos segundo_. La interfaz siguiente declara la comparación sin mostrar todavía su cuerpo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Par&) const = default;\n    bool operator<(const Par& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "operator< recibe el otro Par mediante const Par& y también lleva const final. La comparación consulta ambos objetos sin copiarlos ni cambiar sus dos números. Devuelve bool: verdadero si el receptor debe ir antes que el otro y falso si no debe ir antes. Falso no significa necesariamente que deba ir después: también puede haber un empate."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, (6, -2) debe ir antes que (9, -30). Decide el primer campo: seis es menor que nueve y los segundos números no pueden cambiar esa decisión. Entre (7, 1) y (7, 5), el primer campo coincide y se comparan uno y cinco. Si coinciden los dos campos, ninguna pareja debe ir antes que la otra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta forma de ordenar por el primer dato diferente se llama orden lexicográfico. Recupera la idea usada con cadenas, aplicada ahora a una lista fija de campos. No significa sumar los campos ni exigir que todos sean menores a la vez: cada campo posterior sólo decide si los anteriores han empatado (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la decisión y el desempate"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer recorrido de la función ya devuelve cuál de los primeros campos es menor. Debe utilizarse cuando esos campos sean distintos. Si coinciden, la ejecución tiene que llegar a la comparación del segundo campo. Completa esas dos expresiones sin cambiar los recorridos del fragmento."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u7l7_completar_orden_del_par",
+          "question": "En el primer hueco, comprueba mediante != que los primeros campos sean distintos. En el segundo, compara los segundos campos: el del receptor debe ser menor que el de otro. Usa las referencias a miembros ya mostradas, con la comparación directa o sus operandos invertidos de forma equivalente; sin paréntesis adicionales, llamadas auxiliares ni otras operaciones.",
+          "template": "class Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Par&) const = default;\n    bool operator<(const Par& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\n\nbool Par::operator<(const Par& otro) const {\n    if ([]) {\n        return primero_ < otro.primero_;\n    }\n    return [];\n}\n",
+          "answers": [
+            "primero_ != otro.primero_",
+            "segundo_ < otro.segundo_"
+          ],
+          "answerAlternatives": [
+            [
+              "primero_ != otro.primero_",
+              "otro.primero_ != primero_"
+            ],
+            [
+              "segundo_ < otro.segundo_",
+              "otro.segundo_ > segundo_"
+            ]
+          ],
+          "explanation": "La condición con != detecta que decide el primer campo. Su return ya devuelve primero_ < otro.primero_. Si no hay diferencia, se llega a segundo_ < otro.segundo_. Invertir los operandos de != conserva su resultado; en la segunda comparación, otro.segundo_ > segundo_ expresa el mismo orden. Con ambos campos iguales, el último < devuelve false."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La primera diferencia termina la comparación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool Par::operator<(const Par& otro) const {\n    if (primero_ != otro.primero_) {\n        return primero_ < otro.primero_;\n    }\n    return segundo_ < otro.segundo_;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer return termina la función, sea verdadero o falso su resultado. Cuando los primeros campos son distintos, no se consulta el segundo para buscar otra oportunidad de aceptar. Sólo si los primeros coinciden se alcanza el último return. Sigue esas dos posibilidades en las comparaciones del programa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_comparaciones_por_primer_campo_y_desempate",
+          "language": "cpp",
+          "question": "Escribe las cuatro comparaciones, en el orden del programa.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Par&) const = default;\n    bool operator<(const Par& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\nbool Par::operator<(const Par& otro) const {\n    if (primero_ != otro.primero_) {\n        return primero_ < otro.primero_;\n    }\n    return segundo_ < otro.segundo_;\n}\nint main() {\n    const Par a{2, 9}, b{3, -4}, c{2, 12};\n    std::cout << (a < b) << ':' << (b < a) << ':' << (a < c) << ':' << (a < a);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a va antes que b porque su primer campo es menor, aunque su segundo sea mayor. La comparación inversa es falsa. a y c comparten el primer campo, por lo que decide nueve frente a doce y a va antes. Comparar a consigo misma termina comparando dos segundos campos iguales y devuelve false."
+        },
+        {
+          "type": "paragraph",
+          "text": "Se ha elegido una consulta de los valores: la comparación no intercambia los objetos ni los ordena por sí sola. Un resultado verdadero expresa que el primero debe preceder al segundo; será std::sort quien reorganice los elementos cuando utilicemos después ese criterio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar el empate en las dos direcciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una comparación a < b falsa todavía no distingue entre ir después y empatar. Para identificar el empate del orden comprobamos ambas direcciones: !(a < b) && !(b < a). Es decir, a no va antes que b y b tampoco va antes que a. Cuando ocurre, diremos que los valores son equivalentes para ese orden (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_equivalencia_del_orden_y_igualdad_del_par",
+          "language": "cpp",
+          "question": "Escribe el empate y la igualdad de a con b; después, el empate y la igualdad de a con c.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Par&) const = default;\n    bool operator<(const Par& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\nbool Par::operator<(const Par& otro) const {\n    if (primero_ != otro.primero_) {\n        return primero_ < otro.primero_;\n    }\n    return segundo_ < otro.segundo_;\n}\nint main() {\n    const Par a{4, 6}, b{4, 6}, c{4, 7};\n    std::cout << (!(a < b) && !(b < a)) << ':' << (a == b) << ':'\n              << (!(a < c) && !(c < a)) << ':' << (a == c);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b coinciden en los dos campos: ninguna dirección de < es verdadera y == también es verdadero. a y c sólo coinciden en el primero. El segundo campo coloca a antes que c, de modo que no hay empate y tampoco igualdad completa."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Par utilizamos los mismos dos campos para el orden y para ==. Por eso, en este modelo el empate del orden coincide con la igualdad completa. Debemos comprobar esa relación en cada diseño; no viene impuesta para todos los tipos que pueda ordenar la biblioteca."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una prioridad más general puede empatar valores distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prioridad conserva los dos enteros y una igualdad que compara ambos. Sin embargo, su operator< sólo utiliza el primero. El segundo dato no participa en ese criterio de orden. No es la misma política que Par, aunque la interfaz y los nombres de sus campos sean parecidos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_empate_de_prioridad_distinto_de_igualdad",
+          "language": "cpp",
+          "question": "Escribe las dos direcciones de <, el empate, la igualdad completa y la última comparación.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Prioridad {\npublic:\n    Prioridad(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Prioridad&) const = default;\n    bool operator<(const Prioridad& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\n\nbool Prioridad::operator<(const Prioridad& otro) const {\n    return primero_ < otro.primero_;\n}\nint main() {\n    const Prioridad a{3, 8}, b{3, 2}, c{4, -9};\n    std::cout << (a < b) << ':' << (b < a) << ':'\n              << (!(a < b) && !(b < a)) << ':' << (a == b) << ':' << (a < c);\n    return 0;\n}\n",
+          "answers": [
+            "0:0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a y b tienen el mismo primer campo, así que ninguna dirección de < es verdadera y empatan para ese orden. Sus segundos campos difieren, por lo que == es falso. El primer campo de c es mayor y a va antes que c. Empatar para un criterio no ha convertido los dos valores completos en iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ordenar sólo por un campo puede ser una decisión válida. Si se ordenaran elementos equivalentes que conservaran otros datos diferentes, std::sort no promete mantener entre ellos el orden de llegada. Aquí observamos directamente las comparaciones; no inventamos una salida concreta de ordenación para esos datos empatados (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué coherencia necesita una comparación para ordenar"
+        },
+        {
+          "type": "paragraph",
+          "text": "El algoritmo puede realizar muchas comparaciones para decidir dónde colocar los elementos. Su criterio debe responder de forma coherente sobre los valores, sin modificarlos. Si los datos comparados no cambian, no debe alternar arbitrariamente la respuesta para esa misma pareja. Las funciones de estos ejemplos se limitan a consultar los números (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La coherencia incluye estas relaciones:\nNingún valor va estrictamente antes que sí mismo.\nSi a va antes que b, b no puede ir antes que a.\nSi a va antes que b y b antes que c, a también debe ir antes que c.\nSi a empata con b y b empata con c, a también debe empatar con c."
+        },
+        {
+          "type": "paragraph",
+          "text": "La tercera relación conecta tres comparaciones. Por ejemplo, (6, 2) va antes que (6, 5), y (6, 5) va antes que (9, 0). La misma regla debe colocar (6, 2) antes que (9, 0). Conservar esa conexión se llama transitividad. También se exige transitividad para los empates: no podemos empatar un valor con otro y luego con un tercero, pero considerar distintos para el orden los dos extremos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La combinación de estas condiciones se conoce como orden estricto débil. Estricto excluye colocar un valor antes que sí mismo. Permitir empates no obliga a que los objetos tengan idénticos todos sus datos, como mostró Prioridad. La biblioteca necesita que tanto la relación de precedencia como la equivalencia resultante sean transitivas (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora analizaremos tres funciones que incumplen alguna condición. Sus programas sólo hacen llamadas directas con enteros y muestran los resultados. No utilizaremos esas funciones defectuosas para ordenar: cumplir el requisito del algoritmo debe establecerse antes de llamar a std::sort."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Menor o igual no expresa ir estrictamente antes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función antes utiliza <=. Para analizarla basta seguir sus llamadas, sin utilizar un algoritmo de ordenación. Comprueba especialmente qué responde al recibir dos valores iguales."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_comparacion_no_estricta_y_valores_iguales",
+          "language": "cpp",
+          "question": "Escribe los tres resultados de antes.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nbool antes(int a, int b) { return a <= b; }\nint main() {\n    std::cout << antes(5, 5) << ':' << antes(5, 8) << ':' << antes(8, 5);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cinco es menor o igual que cinco, así que la primera llamada devuelve true: el valor queda antes que sí mismo según esa función. Eso incumple la condición estricta. Las otras dos llamadas reflejan que cinco es menor que ocho y que ocho no es menor o igual que cinco. Aceptar valores repetidos no requiere que la comparación estricta los sitúe antes de sí mismos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un vector puede conservar dos apariciones del mismo valor aunque su < sea falso en las dos direcciones. La ordenación reorganiza los elementos, no exige convertir los empates en comparaciones verdaderas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un ciclo rompe la conexión entre tres comparaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta función establece varias precedencias mediante condiciones explícitas. Sigue únicamente las llamadas escritas. Después contrasta sus respuestas con la regla que conecta a, b y c: si el primero va antes que el segundo y éste antes que el tercero, debe conservarse la precedencia entre el primero y el tercero."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_precedencias_que_forman_un_ciclo",
+          "language": "cpp",
+          "question": "Escribe los tres resultados del programa, sin ordenar ninguna colección con antes.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nbool antes(int a, int b) {\n    return (a == 0 && b == 1) || (a == 1 && b == 2) || (a == 2 && b == 0);\n}\nint main() {\n    std::cout << antes(0, 1) << ':' << antes(1, 2) << ':' << antes(0, 2);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La función declara que cero va antes que uno y que uno va antes que dos. Sin embargo, no declara que cero vaya antes que dos: devuelve false en esa llamada, mientras su regla permite que dos vaya antes que cero. Se forma un ciclo y falla la transitividad de la precedencia. Que ninguna de estas llamadas compare un valor consigo mismo no basta para validar el criterio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas respuestas proceden de llamadas directas bien definidas. No nos permiten atribuir un resultado de ordenación a un algoritmo cuyo requisito de comparación no se cumple. El defecto está en la relación solicitada, no en elegir una implementación concreta de std::sort."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "También deben ser coherentes los empates"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función empate comprueba que antes sea falsa en las dos direcciones. El programa siguiente permite una única precedencia mediante antes. No presenta un ciclo como el anterior, pero todavía hay que revisar si los empates conectan de forma coherente a tres valores."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_empates_que_no_son_transitivos",
+          "language": "cpp",
+          "question": "Escribe los tres resultados de empate, en el orden de las llamadas.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nbool antes(int a, int b) { return a == 0 && b == 2; }\nbool empate(int a, int b) { return !antes(a, b) && !antes(b, a); }\nint main() {\n    std::cout << empate(0, 1) << ':' << empate(1, 2) << ':' << empate(0, 2);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cero y uno empatan porque antes es falsa en ambas direcciones. Lo mismo ocurre con uno y dos. Sin embargo, cero no empata con dos: antes(0, 2) es verdadera. Así, los dos primeros empates no se conservan entre los extremos. Esta función no proporciona el orden estricto débil exigido para ordenar, aunque no coloque un valor antes de sí mismo ni forme el ciclo del ejemplo anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisar sólo una condición deja pasar errores. El criterio lexicográfico de Par evita estas contradicciones utilizando siempre el mismo orden de los int y dando prioridad al primer campo diferente; no elige una condición distinta según qué pareja queremos aceptar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué la regla de Par conserva esas relaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos justificar la comparación leyendo sus dos recorridos, sin limitarnos a los números de los ensayos. Al comparar un Par consigo mismo, los primeros campos coinciden y se llega al último return. Los segundos también coinciden, así que < devuelve false. Entre dos pares, el primer campo diferente se compara con el < de int: si el campo de a es menor, el de b no puede ser menor al invertir los operandos. Si coinciden ambos campos, ninguna dirección es verdadera."
+        },
+        {
+          "type": "paragraph",
+          "text": "Supongamos ahora que a < b y b < c han dado true. Por la regla de la función, el primer número de a es menor o igual que el de b; y el primero de b es menor o igual que el de c. Si el primero de a es estrictamente menor que el de b, o el primero de b es estrictamente menor que el de c, el primero de a es menor que el de c. Esa primera diferencia hace que a < c devuelva true sin consultar los segundos números."
+        },
+        {
+          "type": "paragraph",
+          "text": "Queda la posibilidad de que los tres primeros números coincidan. Entonces a < b sólo pudo dar true porque el segundo número de a era menor que el de b. Por la misma razón, el segundo de b es menor que el de c. El orden de los enteros conserva esa relación entre los extremos: el segundo de a es menor que el de c. También en este recorrido a < c devuelve true. Así se conserva la transitividad de la precedencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por último, dos Par empatan exactamente cuando coinciden sus dos campos. Si a empata con b y b con c, el primer número de los tres es el mismo y el segundo también. Por tanto, a y c tampoco presentan una diferencia y empatan. Eso justifica la transitividad de la equivalencia. La regla utiliza únicamente comparaciones de int, sin calcular diferencias que pudieran salir de su rango."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ordenar registros con la comparación ya establecida"
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada std::sort(datos.begin(), datos.end()) utiliza el rango completo del vector. begin() señala el comienzo y end() la posición posterior al último elemento, que no se lee como si fuera un registro. Recuperamos esta llamada de Programación 1; lo nuevo es que los elementos son Par y su < proporciona el criterio."
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada cambia el orden de los elementos de datos. No crea automáticamente una copia ni elimina repeticiones. Para interpretar su salida, agrupa primero por el primer número y ordena por el segundo dentro de cada empate del primero. Aquí el operador proporcionado cumple ese criterio para todos los int (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_ordenacion_del_vector_de_pares",
+          "language": "cpp",
+          "question": "Escribe todos los pares en el orden final, conservando el formato sin espacios que utiliza mostrar.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Par&) const = default;\n    bool operator<(const Par& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\nbool Par::operator<(const Par& otro) const {\n    if (primero_ != otro.primero_) {\n        return primero_ < otro.primero_;\n    }\n    return segundo_ < otro.segundo_;\n}\nvoid mostrar(const std::vector<Par>& datos) {\n    for (const Par& dato : datos) {\n        std::cout << '(' << dato.primero() << ',' << dato.segundo() << ')';\n    }\n}\nint main() {\n    std::vector<Par> datos{{2, 7}, {1, 9}, {2, 3}, {1, 4}};\n    std::sort(datos.begin(), datos.end());\n    mostrar(datos);\n    return 0;\n}\n",
+          "answers": [
+            "(1,4)(1,9)(2,3)(2,7)"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Primero aparecen los pares cuyo primer número es uno. Entre ellos, cuatro precede a nueve. Después aparecen los que empiezan por dos, con tres antes que siete. mostrar consulta los dos miembros de cada registro completo; no se ordenó una columna dejando la otra desasociada."
+        },
+        {
+          "type": "paragraph",
+          "text": "No necesitamos un tercer argumento para esta llamada: ya hemos definido el < de los elementos. Tampoco necesitamos calcular cuántas comparaciones realiza internamente ni atribuirles un orden fijo. El contrato de la comparación debe mantenerse durante todo el algoritmo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar enteros no requiere restarlos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para decidir si un entero es menor que otro basta utilizar su comparación. Calcular primero una diferencia puede producir un resultado que no cabe en int, aunque los dos operandos sí quepan. En C++, un resultado aritmético con signo fuera de su rango no nos proporciona una comparación segura: su comportamiento es indefinido. No ejecutamos esa resta para averiguar qué número produce (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa obtiene los extremos de int mediante numeric_limits, ya estudiado. Para enteros, min() devuelve el menor valor representable y max() el mayor. Los objetos sólo contienen esos int; su < los compara directamente, sin restas ni negaciones."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u7l7_orden_lexicografico_con_extremos_de_int",
+          "language": "cpp",
+          "question": "Escribe las tres comparaciones de los pares formados con los extremos de int.",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    int primero() const noexcept { return primero_; }\n    int segundo() const noexcept { return segundo_; }\n    bool operator==(const Par&) const = default;\n    bool operator<(const Par& otro) const;\nprivate:\n    int primero_;\n    int segundo_;\n};\nbool Par::operator<(const Par& otro) const {\n    if (primero_ != otro.primero_) {\n        return primero_ < otro.primero_;\n    }\n    return segundo_ < otro.segundo_;\n}\nint main() {\n    const int menor = std::numeric_limits<int>::min();\n    const int mayor = std::numeric_limits<int>::max();\n    const Par a{menor, mayor}, b{mayor, menor}, c{menor, menor};\n    std::cout << (a < b) << ':' << (b < a) << ':' << (c < a);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a tiene como primer campo el mínimo de int y b el máximo: a va antes que b y la vuelta es falsa. c y a comparten el mínimo en el primer campo. En el segundo, c tiene el mínimo y a el máximo, por lo que c va antes que a. Ninguna comparación necesita calcular la distancia entre los extremos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco basta con probar unos pocos valores pequeños para justificar una resta sobre cualquier int. El diseño de la comparación debe evitar la operación que podría salir del rango. Comparar directamente conserva la misma regla para negativos, cero, positivos y extremos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la comparación y después utilizarla para ordenar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera práctica utilizará Clave, con grupo y numero. El criterio será grupo de menor a mayor y, sólo cuando coincida, numero de menor a mayor. Su igualdad compara ambos campos. Construirás la comparación y observarás llamadas directas en las dos direcciones, los empates y la conservación de los objetos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda práctica proporcionará esa comparación ya correcta. Entonces construirás una función que reciba un vector por referencia constante, prepare otro vector con los mismos registros, ordene el nuevo y lo devuelva por valor. El original conservará su secuencia y la copia conservará todos los elementos, incluidas las repeticiones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Separar estas dos tareas permite comprobar una comparación todavía incompleta sin utilizarla como requisito de un algoritmo de ordenación. Después podremos verificar la integración con std::sort usando un criterio conocido. Ninguno de los pasos necesita cambiar la igualdad ni restar los campos enteros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar comparaciones sin cambiar los datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Clave identifica un registro mediante dos int: grupo y numero. Para este modelo ambos números pueden tomar cualquier valor representable por int. Se ordena primero por grupo de menor a mayor. Si los grupos coinciden, se ordena por numero de menor a mayor. Dos claves idénticas no van antes una de otra. == ya compara los dos miembros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, (1, 20) va antes de (3, -8): el primer dato diferente es grupo y uno es menor que tres. El veinte no puede cambiar esa decisión. Entre (4, -2) y (4, 6) decide numero, porque los dos grupos son cuatro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa únicamente el cuerpo de Clave::operator<. Recibe el otro objeto por referencia constante y también consulta un receptor constante. No cambies los números, no hagas restas y no modifiques las declaraciones ni main. Este editor compara pares directamente; no llama a std::sort con una comparación que todavía estás construyendo."
+        },
+        {
+          "type": "paragraph",
+          "text": "main lee cuatro enteros: grupo de a, numero de a, grupo de b y numero de b. Una entrada incompleta termina con código uno. No hay una secuencia de órdenes ni un estado heredado de otro ensayo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer el informe de las dos direcciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los campos significan:\nAntes: a < b.\nVuelta: b < a.\nIguales: a == b, con ambos miembros.\nEmpate: ninguna de las dos claves va antes que la otra.\nAutoA y AutoB: cada clave comparada consigo misma mediante <; ambos resultados deben ser falsos.\nConservado: las claves mantienen los números que tenían antes de compararlas.\nA y B: los dos números actuales de cada objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer ensayo utiliza el mismo grupo y números diferentes. Antes y Vuelta se obtienen por separado: una comparación falsa en una dirección no significa por sí sola que haya empate. Para afirmar el empate, también debe ser falsa la comparación en la otra dirección."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo inicial devuelve siempre false. Permite compilar y observar las diferencias, pero no expresa el orden solicitado. La igualdad predeterminada es una comprobación independiente de ese cuerpo y permite ver que los datos se conservan."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el orden de Clave"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la comparación, compila y ejecuta. Sólo el primer caso correcto es obligatorio; los restantes se ofrecen como ensayos opcionales con su entrada y su salida separadas."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Clave {\npublic:\n    Clave(int grupo, int numero) : grupo_{grupo}, numero_{numero} {}\n    int grupo() const noexcept { return grupo_; }\n    int numero() const noexcept { return numero_; }\n    bool operator==(const Clave&) const = default;\n    bool operator<(const Clave& otra) const;\nprivate:\n    int grupo_;\n    int numero_;\n};\nbool Clave::operator<(const Clave& otra) const {\n    // Compara grupo primero y numero cuando los grupos coincidan.\n    (void)otra;\n    return false;\n}\nvoid mostrar(const Clave& clave) {\n    std::cout << '(' << clave.grupo() << ',' << clave.numero() << ')';\n}\nint main() {\n    int ga = 0, na = 0, gb = 0, nb = 0;\n    if (!(std::cin >> ga >> na >> gb >> nb)) { return 1; }\n    const Clave a{ga, na}, b{gb, nb};\n    const Clave antes_a = a, antes_b = b;\n    const bool ab = a < b;\n    const bool ba = b < a;\n    const bool iguales = a == b;\n    const bool empate = !ab && !ba;\n    const bool auto_a = a < a;\n    const bool auto_b = b < b;\n    const bool conservado = a == antes_a && b == antes_b;\n    std::cout << \"Antes:\" << ab << \";Vuelta:\" << ba << \";Iguales:\" << iguales\n              << \";Empate:\" << empate << \";AutoA:\" << auto_a << \";AutoB:\" << auto_b\n              << \";Conservado:\" << conservado << \";A:\";\n    mostrar(a);\n    std::cout << \";B:\";\n    mostrar(b);\n    return 0;\n}\n",
+          "initialStandardInput": "2 9 2 4",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 9 2 4",
+                "outputs": [
+                  "Antes:0;Vuelta:1;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(2,9);B:(2,4)"
+                ],
+                "explanation": "Decide por grupo si los grupos difieren y por numero si coinciden. Compara con <, sin restar ni cambiar datos. Para dos claves idénticas ambas direcciones deben dar falso."
+              },
+              {
+                "standardInput": "1 20 3 -8",
+                "outputs": [
+                  "Antes:1;Vuelta:0;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(1,20);B:(3,-8)"
+                ],
+                "explanation": "Decide por grupo si los grupos difieren y por numero si coinciden. Compara con <, sin restar ni cambiar datos. Para dos claves idénticas ambas direcciones deben dar falso."
+              },
+              {
+                "standardInput": "3 -8 1 20",
+                "outputs": [
+                  "Antes:0;Vuelta:1;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(3,-8);B:(1,20)"
+                ],
+                "explanation": "Decide por grupo si los grupos difieren y por numero si coinciden. Compara con <, sin restar ni cambiar datos. Para dos claves idénticas ambas direcciones deben dar falso."
+              },
+              {
+                "standardInput": "-2 -6 -2 -6",
+                "outputs": [
+                  "Antes:0;Vuelta:0;Iguales:1;Empate:1;AutoA:0;AutoB:0;Conservado:1;A:(-2,-6);B:(-2,-6)"
+                ],
+                "explanation": "Decide por grupo si los grupos difieren y por numero si coinciden. Compara con <, sin restar ni cambiar datos. Para dos claves idénticas ambas direcciones deben dar falso."
+              },
+              {
+                "standardInput": "-4 0 -4 3",
+                "outputs": [
+                  "Antes:1;Vuelta:0;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(-4,0);B:(-4,3)"
+                ],
+                "explanation": "Decide por grupo si los grupos difieren y por numero si coinciden. Compara con <, sin restar ni cambiar datos. Para dos claves idénticas ambas direcciones deben dar falso."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se compara el mismo grupo con números en orden descendente. La vuelta debe reconocer cuál va antes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2 9 2 4"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:0;Vuelta:1;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(2,9);B:(2,4)"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: primer campo, igualdad y números negativos"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El grupo menor decide aunque su numero sea mayor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "1 20 3 -8"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:1;Vuelta:0;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(1,20);B:(3,-8)"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se invierte el par anterior para comprobar la dirección opuesta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "3 -8 1 20"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:0;Vuelta:1;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(3,-8);B:(1,20)"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las claves iguales empatan y ninguna va antes que sí misma."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-2 -6 -2 -6"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:0;Vuelta:0;Iguales:1;Empate:1;AutoA:0;AutoB:0;Conservado:1;A:(-2,-6);B:(-2,-6)"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los grupos negativos iguales obligan a decidir por el segundo dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-4 0 -4 3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:1;Vuelta:0;Iguales:0;Empate:0;AutoA:0;AutoB:0;Conservado:1;A:(-4,0);B:(-4,3)"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: el primer dato diferente toma la decisión"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Clave {\npublic:\n    Clave(int grupo, int numero) : grupo_{grupo}, numero_{numero} {}\n    int grupo() const noexcept { return grupo_; }\n    int numero() const noexcept { return numero_; }\n    bool operator==(const Clave&) const = default;\n    bool operator<(const Clave& otra) const;\nprivate:\n    int grupo_;\n    int numero_;\n};\nbool Clave::operator<(const Clave& otra) const {\n    if (grupo_ != otra.grupo_) {\n        return grupo_ < otra.grupo_;\n    }\n    return numero_ < otra.numero_;\n}\nvoid mostrar(const Clave& clave) {\n    std::cout << '(' << clave.grupo() << ',' << clave.numero() << ')';\n}\nint main() {\n    int ga = 0, na = 0, gb = 0, nb = 0;\n    if (!(std::cin >> ga >> na >> gb >> nb)) { return 1; }\n    const Clave a{ga, na}, b{gb, nb};\n    const Clave antes_a = a, antes_b = b;\n    const bool ab = a < b;\n    const bool ba = b < a;\n    const bool iguales = a == b;\n    const bool empate = !ab && !ba;\n    const bool auto_a = a < a;\n    const bool auto_b = b < b;\n    const bool conservado = a == antes_a && b == antes_b;\n    std::cout << \"Antes:\" << ab << \";Vuelta:\" << ba << \";Iguales:\" << iguales\n              << \";Empate:\" << empate << \";AutoA:\" << auto_a << \";AutoB:\" << auto_b\n              << \";Conservado:\" << conservado << \";A:\";\n    mostrar(a);\n    std::cout << \";B:\";\n    mostrar(b);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si grupo_ difiere de otra.grupo_, el primer return devuelve cuál es menor y termina la comparación. numero_ no participa en ese recorrido. Si los grupos coinciden, se llega al último return y decide numero_. Cuando también los números coinciden, < devuelve false."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función no resta los miembros ni necesita calcular cuánto se separan. Compara directamente los int, así que también admite sus valores mínimo y máximo. No cambia los operandos. Esta misma regla se puede escribir con otras condiciones que respeten las dos prioridades y los empates."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta Clave la equivalencia al ordenar coincide con ==: ambas requieren que coincidan grupo y numero. Eso es una decisión del modelo; no una exigencia universal de std::sort. Una regla que ordene sólo por grupo podría empatar claves con números distintos y seguir siendo un orden válido (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ordenar una copia con una comparación ya definida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora la clase Clave y su comparación correcta se proporcionan completas. El objetivo nuevo de la práctica es integrarlas con un vector: recibir una colección por referencia constante, crear una copia independiente, ordenar esa copia y devolverla. Esta función se llama ordenar_copia. Recupera el procedimiento que usamos para conservar una colección antes de ordenarla."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza por cantidad, de cero a ocho. A continuación hay cantidad parejas grupo numero, una por clave. Cero representa una colección vacía y no necesita parejas. Una cantidad fuera de ese intervalo o una pareja incompleta termina main con código uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "main muestra Original, Ordenados y Cantidad. Original debe conservar todos los registros y su orden de entrada. Ordenados debe contener esos mismos registros, incluidas las repeticiones, ordenados primero por grupo y después por numero. Cantidad cuenta los elementos del vector devuelto, no los grupos distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifica sólo ordenar_copia. Conserva Clave::operator< tal como está escrita en este editor. Una vez que la comparación cumple el criterio, std::sort puede utilizarla para ordenar el rango. No uses una comparación defectuosa para experimentar con el algoritmo; los defectos de comparación se analizan mediante llamadas directas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y devolver la colección ordenada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la función y comprueba que el informe conserve Original mientras Ordenados cambia. Sólo el primer caso correcto es obligatorio para avanzar."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Clave {\npublic:\n    Clave(int grupo, int numero) : grupo_{grupo}, numero_{numero} {}\n    int grupo() const noexcept { return grupo_; }\n    int numero() const noexcept { return numero_; }\n    bool operator==(const Clave&) const = default;\n    bool operator<(const Clave& otra) const;\nprivate:\n    int grupo_;\n    int numero_;\n};\nbool Clave::operator<(const Clave& otra) const {\n    if (grupo_ != otra.grupo_) {\n        return grupo_ < otra.grupo_;\n    }\n    return numero_ < otra.numero_;\n}\nvoid mostrar(const Clave& clave) {\n    std::cout << '(' << clave.grupo() << ',' << clave.numero() << ')';\n}\nvoid mostrar(const std::vector<Clave>& datos) {\n    std::cout << '[';\n    for (const Clave& dato : datos) { mostrar(dato); }\n    std::cout << ']';\n}\nstd::vector<Clave> ordenar_copia(const std::vector<Clave>& original) {\n    // Ordena una copia y devuelve ese vector; conserva original.\n    return original;\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) { return 1; }\n    std::vector<Clave> datos;\n    for (int i = 0; i < cantidad; ++i) {\n        int grupo = 0, numero = 0;\n        if (!(std::cin >> grupo >> numero)) { return 1; }\n        datos.push_back(Clave{grupo, numero});\n    }\n    const std::vector<Clave> original = datos;\n    const std::vector<Clave> ordenados = ordenar_copia(original);\n    std::cout << \"Original:\";\n    mostrar(original);\n    std::cout << \";Ordenados:\";\n    mostrar(ordenados);\n    std::cout << \";Cantidad:\" << ordenados.size();\n    return 0;\n}\n",
+          "initialStandardInput": "5\n2 8\n1 9\n2 3\n1 9\n-1 5",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "5\n2 8\n1 9\n2 3\n1 9\n-1 5",
+                "outputs": [
+                  "Original:[(2,8)(1,9)(2,3)(1,9)(-1,5)];Ordenados:[(-1,5)(1,9)(1,9)(2,3)(2,8)];Cantidad:5"
+                ],
+                "explanation": "Copia original en un vector local, ordena todo el rango de ese vector con std::sort y devuelve el vector. Conserva los registros repetidos y no ordenes el vector recibido."
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Original:[];Ordenados:[];Cantidad:0"
+                ],
+                "explanation": "Copia original en un vector local, ordena todo el rango de ese vector con std::sort y devuelve el vector. Conserva los registros repetidos y no ordenes el vector recibido."
+              },
+              {
+                "standardInput": "1\n4 -3",
+                "outputs": [
+                  "Original:[(4,-3)];Ordenados:[(4,-3)];Cantidad:1"
+                ],
+                "explanation": "Copia original en un vector local, ordena todo el rango de ese vector con std::sort y devuelve el vector. Conserva los registros repetidos y no ordenes el vector recibido."
+              },
+              {
+                "standardInput": "4\n2 7\n2 -1\n2 -1\n2 0",
+                "outputs": [
+                  "Original:[(2,7)(2,-1)(2,-1)(2,0)];Ordenados:[(2,-1)(2,-1)(2,0)(2,7)];Cantidad:4"
+                ],
+                "explanation": "Copia original en un vector local, ordena todo el rango de ese vector con std::sort y devuelve el vector. Conserva los registros repetidos y no ordenes el vector recibido."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El conjunto mezcla grupos y números y contiene dos claves iguales. El duplicado debe conservar sus dos apariciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "5\n2 8\n1 9\n2 3\n1 9\n-1 5"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:[(2,8)(1,9)(2,3)(1,9)(-1,5)];Ordenados:[(-1,5)(1,9)(1,9)(2,3)(2,8)];Cantidad:5"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: cero elementos, uno y un grupo repetido"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El rango vacío es válido: la copia y el original siguen vacíos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:[];Ordenados:[];Cantidad:0"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un solo registro ya está ordenado y se conserva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "1\n4 -3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:[(4,-3)];Ordenados:[(4,-3)];Cantidad:1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un grupo único obliga a ordenar por numero y conservar números repetidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4\n2 7\n2 -1\n2 -1\n2 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:[(2,7)(2,-1)(2,-1)(2,0)];Ordenados:[(2,-1)(2,-1)(2,0)(2,7)];Cantidad:4"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: copiar, ordenar el rango y devolver el valor"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <algorithm>\n#include <vector>\n#include <limits>\n\nclass Clave {\npublic:\n    Clave(int grupo, int numero) : grupo_{grupo}, numero_{numero} {}\n    int grupo() const noexcept { return grupo_; }\n    int numero() const noexcept { return numero_; }\n    bool operator==(const Clave&) const = default;\n    bool operator<(const Clave& otra) const;\nprivate:\n    int grupo_;\n    int numero_;\n};\nbool Clave::operator<(const Clave& otra) const {\n    if (grupo_ != otra.grupo_) {\n        return grupo_ < otra.grupo_;\n    }\n    return numero_ < otra.numero_;\n}\nvoid mostrar(const Clave& clave) {\n    std::cout << '(' << clave.grupo() << ',' << clave.numero() << ')';\n}\nvoid mostrar(const std::vector<Clave>& datos) {\n    std::cout << '[';\n    for (const Clave& dato : datos) { mostrar(dato); }\n    std::cout << ']';\n}\nstd::vector<Clave> ordenar_copia(const std::vector<Clave>& original) {\n    std::vector<Clave> resultado = original;\n    std::sort(resultado.begin(), resultado.end());\n    return resultado;\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 0 || cantidad > 8) { return 1; }\n    std::vector<Clave> datos;\n    for (int i = 0; i < cantidad; ++i) {\n        int grupo = 0, numero = 0;\n        if (!(std::cin >> grupo >> numero)) { return 1; }\n        datos.push_back(Clave{grupo, numero});\n    }\n    const std::vector<Clave> original = datos;\n    const std::vector<Clave> ordenados = ordenar_copia(original);\n    std::cout << \"Original:\";\n    mostrar(original);\n    std::cout << \";Ordenados:\";\n    mostrar(ordenados);\n    std::cout << \";Cantidad:\" << ordenados.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "resultado se construye copiando el vector original. Cada Clave contiene dos int que se copian al nuevo elemento. La función llama a std::sort sobre resultado.begin() y resultado.end(): el rango incluye todos sus elementos, pero no incluye end(). Después devuelve resultado por valor. No devuelve una referencia a un vector local destruido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con esta sobrecarga de dos argumentos, la ordenación utiliza el orden de los valores. El < de Clave proporciona ese orden. No se necesita añadir aquí un tercer argumento ni cambiar el comparador después de empezar. std::sort reorganiza los elementos de la copia; no elimina duplicados ni promete conservar el orden relativo entre valores equivalentes distinguibles (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta clase, dos valores equivalentes contienen los mismos dos números. Por ello sus dos apariciones son indistinguibles en el informe, aunque el vector conserve dos elementos. Si otra clase empatara por un solo campo, no podríamos deducir el orden final de sus otros datos a partir de esa promesa de ordenación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el criterio con otros pares"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utiliza el < de Clave y el == que compara todos sus miembros. Cada fila empieza con los valores indicados; no se cambia ningún dato. Escribe uno para verdadero y cero para falso. Empate al ordenar significa que ninguna dirección de < es verdadera."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u7l7_relaciones_de_tres_pares",
+          "prompt": "Completa las cuatro respuestas de cada fila: antes, vuelta, empate e igualdad (1 verdadero, 0 falso).",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Clave a",
+                "Clave b"
+              ],
+              "rows": [
+                [
+                  "(2, 5)",
+                  "(1, 90)"
+                ],
+                [
+                  "(-1, 7)",
+                  "(-1, 7)"
+                ],
+                [
+                  "(3, -8)",
+                  "(3, 0)"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "r0_ab",
+                  "type": "numeric",
+                  "label": "Fila 1: a < b",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r0_ba",
+                  "type": "numeric",
+                  "label": "Fila 1: b < a",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r0_eqv",
+                  "type": "numeric",
+                  "label": "Fila 1: Empate al ordenar",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r0_eq",
+                  "type": "numeric",
+                  "label": "Fila 1: a == b",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r1_ab",
+                  "type": "numeric",
+                  "label": "Fila 2: a < b",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r1_ba",
+                  "type": "numeric",
+                  "label": "Fila 2: b < a",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r1_eqv",
+                  "type": "numeric",
+                  "label": "Fila 2: Empate al ordenar",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r1_eq",
+                  "type": "numeric",
+                  "label": "Fila 2: a == b",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r2_ab",
+                  "type": "numeric",
+                  "label": "Fila 3: a < b",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r2_ba",
+                  "type": "numeric",
+                  "label": "Fila 3: b < a",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r2_eqv",
+                  "type": "numeric",
+                  "label": "Fila 3: Empate al ordenar",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r2_eq",
+                  "type": "numeric",
+                  "label": "Fila 3: a == b",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "r0_ab": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r0_ba": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "r0_eqv": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r0_eq": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r1_ab": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r1_ba": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r1_eqv": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "r1_eq": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "r2_ab": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "r2_ba": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r2_eqv": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "r2_eq": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si difiere grupo, el segundo número no cambia la decisión. Con los dos miembros iguales, ambas direcciones de < son falsas y == es verdadero. Con grupo igual y numero diferente, decide el segundo campo y no hay empate.",
+            "incorrect": "Compara primero los grupos y sólo si coinciden compara los números. Para decidir el empate comprueba las dos direcciones; para == comprueba los dos miembros. Una comparación falsa en una dirección no basta para afirmar igualdad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un resultado ordenado de una regla válida"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u7l7_prueba_no_sustituye_contrato",
+          "question": "Una comparación coincide con el resultado esperado para tres pares. ¿Qué podemos afirmar?",
+          "options": [
+            "Que ya cumple el orden solicitado para cualquier int y puede emplearse sin revisar su definición.",
+            "Que esos tres resultados coinciden; además debemos razonar sobre la regla y comprobar pares iguales, prioridades, empates y límites pertinentes.",
+            "Que debe devolver verdadero al comparar un objeto consigo mismo para aceptar registros repetidos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los ejemplos ayudan a descubrir fallos, pero no demuestran por sí solos las propiedades sobre todos los int. La definición lexicográfica decide siempre por el primer campo diferente y usa el orden de int sin restas. Esa estructura permite justificar su regla; los duplicados no necesitan una comparación verdadera consigo mismos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una implementación de < tampoco crea automáticamente todos los demás operadores relacionales. En esta lección se declararon explícitamente < y ==. Para preguntar si b va antes que a usamos b < a. No asumimos que a > b o a <= b estén disponibles sólo por haber escrito aquel miembro (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "a755dc87e6111448d23c93e76c9a6bb8865877189664aeb118df0ee3c94acfae"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "89cfd99926e7ec0b33da289ef2a7dc7e370607143474e65fd500b2916fe787e1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "c6e94ed10a1adcc2bbbe24cfa45117097fbd78e18ef417448d9d28ed531670ff"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "b3aa1fcf300807d3b4a1d39e08a06effc50a301f03b2d10bdc887750069ff9f2"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "d68ba4dbc11ad7e60938152c4a278b9856e3385ae816fa2a1040b0bd621fa25f"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "0262c2bba66a4c02a6f8e3ca9cfea5f8d738ae4182d8279488f0c55a622b9618"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "a03284b226e92864809b3b7cec462b9c88085a8e57a34cac6b60e4eade3a00bb"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1db78065f8a00542d8160423a92efc901f9e9e3e673c8507133866b91e536d35"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "de3022359b595deb180252ea957f5e6c19341d682ed396b6f4f6a2637245a4ce"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "3665b25643b1382e3579cf1eb69b9178fc1df84f16f1a5def605d6210c0f1a70"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "631df39a9d02e689a72fc44745138e2e628ad52f4236f6522fa63eec76b99cfb"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "3bfa94327523e649856d02ffa28725e60ae3442474df486b55b136729106aec6"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "395bcad2d64c7c3d0b87330c6102da0d53f461355ee65a7750ebc35516f0b4cc"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "9ec7f6fd1db9458ff9878815a102a640da4779e52bf8306cc1c7f39df6500853"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "517e7652924544e3751601f5673118377414a1dbdd16f87904fc83d9eea60d4c"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "ea7cb2ff3e97279853ffa15dabf469333d8bbd6303d289ae437dcedf103e843f"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0010",
+            "sha256": "ef5c662f0c4cb44f8b458cad80d8fc9ace1133c36e4e028ce23a2bd6ca16cee6"
+          },
+          {
+            "id": "block_0017_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0012",
+            "sha256": "d6ab2b2753649eeae8af08b3cff9bb43d86927015fff93292f645d0a5f25411b"
+          },
+          {
+            "id": "block_0017_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0016",
+            "sha256": "a5d72ece759815a0b6b81e65a7afc5fbe7b5aa06f4fd42c72d66a6362ea2810f"
+          },
+          {
+            "id": "block_0017_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0018",
+            "sha256": "363de5a1496535ebf6427c8a53434e813484ebc188caf9ec51303ada1f52fd08"
+          },
+          {
+            "id": "block_0017_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0022",
+            "sha256": "fbbde8111d7b35c8d17056f3bc26001cf24282be8285da3cc71a07ceaf3b7ff2"
+          },
+          {
+            "id": "block_0017_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0024",
+            "sha256": "2f9f5aba093d70e803fc4138b94e68d1927f4e9d7171396596545b30d5dc1963"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "4c6c0f92a3c722c6ae349bdaa3b78d96b3e7d6e4f401c45a614222aa4c0de4a5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "87f4f2a042f623a4a824e12639dbbfe44c9a4d0c3f01d677b1a94a7f8918f72b"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0006",
+            "sha256": "8095676be75894a8a1aa370997a6b616a81aadfe7a13c2a31e0fa85af701d1de"
+          },
+          {
+            "id": "block_0020_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0008",
+            "sha256": "ce76aa2330d1f6efd4ee2bb5b629f660b726f892f1755679530541f5180d81cd"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "d2e10dcda0b78e4d18fc7291c421d86a23b70ede1bcf48b93d055145013a6477"
+          },
+          {
+            "id": "block_0021_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0006",
+            "sha256": "27c1fc0d3bacaf40fbd756d85cb5c653d00bcb0f4b2ef73d72907d4bc686a63b"
+          },
+          {
+            "id": "block_0021_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0010",
+            "sha256": "dc60314885e25dfd55d150eb3c60683d33dce35e7a15a960b7ffd10f1c4cbdf8"
+          },
+          {
+            "id": "block_0021_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0012",
+            "sha256": "f9a748132f46f68db8c192c9dd5a0fa3afbd42c2c6ecad5ec04d24b27c313703"
+          },
+          {
+            "id": "block_0021_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0016",
+            "sha256": "638e73ea7d5718c0bba49d67dda435302685e1a231d2a9065e8f9b1ad4348934"
+          },
+          {
+            "id": "block_0021_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0018",
+            "sha256": "e3e9abfd3d22dc83a207a6181cfee30a35b3426174d748ae66136c67f85eef1c"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "5e5c702954a498c4e033c2f9f1f3cbbafa70826eb9bd4aad2058b76fd65c462d"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          {
+            "id": "block_0023_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0023_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0002",
+            "sha256": "ee85ad38c25f9cf87bddf83f8f2b10938f0bdf39e7d71097e38ef1b0d76b17d1"
+          }
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          {
+            "id": "block_0024_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0024_0001",
+            "sha256": "13389be8681a280167f8a87bc2bfad68e75c549f9f4984748d62c81868f1616c"
+          },
+          {
+            "id": "block_0024_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008",
+          "block_0017_0009",
+          "block_0017_0010",
+          "block_0017_0011",
+          "block_0017_0012",
+          "block_0017_0013",
+          "block_0017_0014",
+          "block_0017_0015",
+          "block_0017_0016",
+          "block_0017_0017",
+          "block_0017_0018",
+          "block_0017_0019",
+          "block_0017_0020",
+          "block_0017_0021",
+          "block_0017_0022",
+          "block_0017_0023",
+          "block_0017_0024"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004",
+          "block_0020_0005",
+          "block_0020_0006",
+          "block_0020_0007",
+          "block_0020_0008"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004",
+          "block_0021_0005",
+          "block_0021_0006",
+          "block_0021_0007",
+          "block_0021_0008",
+          "block_0021_0009",
+          "block_0021_0010",
+          "block_0021_0011",
+          "block_0021_0012",
+          "block_0021_0013",
+          "block_0021_0014",
+          "block_0021_0015",
+          "block_0021_0016",
+          "block_0021_0017",
+          "block_0021_0018"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003",
+          "block_0022_0004"
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          "block_0023_0000",
+          "block_0023_0001",
+          "block_0023_0002"
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          "block_0024_0000",
+          "block_0024_0001",
+          "block_0024_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "528cde43f7dc6f71bc16737a1905c62b3c722591ddd489257949c538cbbf7cfd",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "a755dc87e6111448d23c93e76c9a6bb8865877189664aeb118df0ee3c94acfae"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "89cfd99926e7ec0b33da289ef2a7dc7e370607143474e65fd500b2916fe787e1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "c6e94ed10a1adcc2bbbe24cfa45117097fbd78e18ef417448d9d28ed531670ff"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "b3aa1fcf300807d3b4a1d39e08a06effc50a301f03b2d10bdc887750069ff9f2"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "d68ba4dbc11ad7e60938152c4a278b9856e3385ae816fa2a1040b0bd621fa25f"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "0262c2bba66a4c02a6f8e3ca9cfea5f8d738ae4182d8279488f0c55a622b9618"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "a03284b226e92864809b3b7cec462b9c88085a8e57a34cac6b60e4eade3a00bb"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1db78065f8a00542d8160423a92efc901f9e9e3e673c8507133866b91e536d35"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "de3022359b595deb180252ea957f5e6c19341d682ed396b6f4f6a2637245a4ce"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "3665b25643b1382e3579cf1eb69b9178fc1df84f16f1a5def605d6210c0f1a70"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "631df39a9d02e689a72fc44745138e2e628ad52f4236f6522fa63eec76b99cfb"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "3bfa94327523e649856d02ffa28725e60ae3442474df486b55b136729106aec6"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "395bcad2d64c7c3d0b87330c6102da0d53f461355ee65a7750ebc35516f0b4cc"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "9ec7f6fd1db9458ff9878815a102a640da4779e52bf8306cc1c7f39df6500853"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "517e7652924544e3751601f5673118377414a1dbdd16f87904fc83d9eea60d4c"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "ea7cb2ff3e97279853ffa15dabf469333d8bbd6303d289ae437dcedf103e843f"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0010",
+                "sha256": "ef5c662f0c4cb44f8b458cad80d8fc9ace1133c36e4e028ce23a2bd6ca16cee6"
+              },
+              {
+                "id": "block_0017_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0012",
+                "sha256": "d6ab2b2753649eeae8af08b3cff9bb43d86927015fff93292f645d0a5f25411b"
+              },
+              {
+                "id": "block_0017_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0016",
+                "sha256": "a5d72ece759815a0b6b81e65a7afc5fbe7b5aa06f4fd42c72d66a6362ea2810f"
+              },
+              {
+                "id": "block_0017_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0018",
+                "sha256": "363de5a1496535ebf6427c8a53434e813484ebc188caf9ec51303ada1f52fd08"
+              },
+              {
+                "id": "block_0017_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0022",
+                "sha256": "fbbde8111d7b35c8d17056f3bc26001cf24282be8285da3cc71a07ceaf3b7ff2"
+              },
+              {
+                "id": "block_0017_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0024",
+                "sha256": "2f9f5aba093d70e803fc4138b94e68d1927f4e9d7171396596545b30d5dc1963"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "4c6c0f92a3c722c6ae349bdaa3b78d96b3e7d6e4f401c45a614222aa4c0de4a5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "87f4f2a042f623a4a824e12639dbbfe44c9a4d0c3f01d677b1a94a7f8918f72b"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0006",
+                "sha256": "8095676be75894a8a1aa370997a6b616a81aadfe7a13c2a31e0fa85af701d1de"
+              },
+              {
+                "id": "block_0020_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0008",
+                "sha256": "ce76aa2330d1f6efd4ee2bb5b629f660b726f892f1755679530541f5180d81cd"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "d2e10dcda0b78e4d18fc7291c421d86a23b70ede1bcf48b93d055145013a6477"
+              },
+              {
+                "id": "block_0021_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0006",
+                "sha256": "27c1fc0d3bacaf40fbd756d85cb5c653d00bcb0f4b2ef73d72907d4bc686a63b"
+              },
+              {
+                "id": "block_0021_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0010",
+                "sha256": "dc60314885e25dfd55d150eb3c60683d33dce35e7a15a960b7ffd10f1c4cbdf8"
+              },
+              {
+                "id": "block_0021_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0012",
+                "sha256": "f9a748132f46f68db8c192c9dd5a0fa3afbd42c2c6ecad5ec04d24b27c313703"
+              },
+              {
+                "id": "block_0021_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0016",
+                "sha256": "638e73ea7d5718c0bba49d67dda435302685e1a231d2a9065e8f9b1ad4348934"
+              },
+              {
+                "id": "block_0021_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0018",
+                "sha256": "e3e9abfd3d22dc83a207a6181cfee30a35b3426174d748ae66136c67f85eef1c"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "5e5c702954a498c4e033c2f9f1f3cbbafa70826eb9bd4aad2058b76fd65c462d"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0023",
+            "blocks": [
+              {
+                "id": "block_0023_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0023_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0002",
+                "sha256": "ee85ad38c25f9cf87bddf83f8f2b10938f0bdf39e7d71097e38ef1b0d76b17d1"
+              }
+            ]
+          },
+          {
+            "id": "page_0024",
+            "blocks": [
+              {
+                "id": "block_0024_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0024_0001",
+                "sha256": "13389be8681a280167f8a87bc2bfad68e75c549f9f4984748d62c81868f1616c"
+              },
+              {
+                "id": "block_0024_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

@@ -1,0 +1,2542 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__copiar_y_mover_arrays_sin_desajustar_la_cantidad",
+  "title": "Copiar y mover arrays sin desajustar su cantidad",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar los elementos o transferir el array"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lote reunía un propietario de array y su cantidad, pero había eliminado la copia y el movimiento. Tramo recupera esa representación y añade las cuatro operaciones que vamos a distinguir: construir una copia, asignar una copia a un objeto existente, construir mediante movimiento y asignar mediante movimiento. El miembro propietario sigue siendo std::unique_ptr<int[]>; la copia independiente será una operación de nuestra clase, no una copia del unique_ptr (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tramo conserva cantidades de cero a cuatro y valores de elementos de cero a nueve. Su estado vacío tiene cantidad_ igual a cero y datos_ nulo. Si la cantidad es positiva, datos_ gestiona exactamente esa cantidad de int. El constructor sin argumentos comienza vacío. Esa relación debe cumplirse al terminar cada operación aceptada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una copia de un tramo no vacío debe tener otro array con los mismos valores. Así, cambiar un elemento de la copia no cambia el original. Un movimiento entre objetos distintos debe transferir el array existente y dejar vacío el origen. Ambos resultados necesitan coordinar el propietario y cantidad_ (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las declaraciones siguientes van dentro de public de Tramo. Los constructores preparan un objeto nuevo. Las funciones operator= reciben un destino que ya existe; su tipo de retorno Tramo& permite devolver una referencia. El contrato de nuestras asignaciones exige devolver el propio destino mediante return *this."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Tramo(const Tramo& otra);\nTramo& operator=(const Tramo& otra);\nTramo(Tramo&& otra) noexcept;\nTramo& operator=(Tramo&& otra) noexcept;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las consultas y las funciones configurar, leer, escribir, vaciar y sumar se proporcionan con el comportamiento ya estudiado. En las predicciones que crean arrays suponemos que esas reservas terminan con éxito. Más adelante distinguiremos ese camino de un fallo de reserva."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar una copia desde un origen que sigue intacto"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de copia recibe const Tramo& otra. El nuevo objeto comienza con datos_ vacío y cantidad_ en cero mediante la lista de inicialización. Si el origen está vacío, esos dos valores ya representan la copia correcta y no se solicita un array de longitud cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el origen tiene elementos, primero se crea otro array con su misma cantidad. El nuevo unique_ptr queda guardado en datos_. Después se recorre cada índice del origen: se lee su int y se guarda ese valor en el elemento del mismo índice del array nuevo. Por último se establece la cantidad del destino. La reserva crea otro almacenamiento; el recorrido copia sus datos (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fuente conserva su array y sus valores. La referencia const impide reasignar sus miembros por esa vía, pero no convierte en const los int que gestiona su unique_ptr<int[]>. El cuerpo del constructor debe limitarse a leerlos porque ése es nuestro contrato de copia; const por sí sola no demuestra esa conservación (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se puede obtener esta copia escribiendo una asignación entre los dos miembros unique_ptr: esa copia está eliminada. Tampoco se debe construir otro propietario desde el resultado de get(), porque los dos acabarían intentando liberar el mismo array. Necesitamos crear el array independiente antes de copiar los valores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar el recorrido del constructor de copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "El fragmento pertenece al cuerpo del constructor, después de comprobar que otra no está vacía y de crear en datos_ un array nuevo con su cantidad de elementos. Completa la lectura del elemento de origen y la cantidad que debe conservar el nuevo Tramo. Utiliza directamente los miembros de otra y el índice i que ya aparecen en el recorrido."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l11_completar_copia_elementos",
+          "question": "Completa ambos huecos para copiar cada int en la misma posición y conservar la cantidad del origen. No copies el propietario ni obtengas un puntero mediante get().",
+          "template": "for (int i = 0; i < otra.cantidad_; ++i) {\n    datos_[i] = [];\n}\ncantidad_ = [];\n",
+          "answers": [
+            "otra.datos_[i]",
+            "otra.cantidad_"
+          ],
+          "answerAlternatives": [
+            [
+              "otra.datos_[i]"
+            ],
+            [
+              "otra.cantidad_"
+            ]
+          ],
+          "explanation": "otra.datos_[i] lee el elemento de índice i del origen. La asignación lo guarda en datos_[i], que pertenece al array nuevo. Al terminar el recorrido, otra.cantidad_ proporciona la cantidad que describe esos elementos. El origen conserva su array y el nuevo objeto gestiona otro independiente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la copia sin cambiar el original"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente incluye el constructor de copia completo. Tramo b{a} crea un objeto nuevo; no asigna sobre un b anterior. Después se escribe en un elemento de b y se muestran los dos tramos. Sigue tanto la cantidad como los valores de cada array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre las funciones proporcionadas aparece intercambiar. datos_.swap cambia qué array gestiona cada propietario. std::swap(cantidad_, otra.cantidad_) intercambia los valores de esos dos int; std::swap está disponible mediante <utility>, igual que std::move. Usaremos ese intercambio conjunto al preparar la asignación; no copia los elementos de los arrays (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_copia_nueva_independiente",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa para a y para b después de modificar b?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    Tramo a;\n    if (!a.configurar(3)) { return 1; }\n    a.escribir(0, 2); a.escribir(2, 5);\n    Tramo b{a};\n    b.escribir(0, 9);\n    mostrar(a); std::cout << ':'; mostrar(b);\n    return 0;\n}\n",
+          "answers": [
+            "3[2,0,5]:3[9,0,5]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor reserva para b otro array y copia en él cada elemento de a. Los dos conservan la misma cantidad. La escritura posterior modifica sólo el primer elemento del array de b; el array de a sigue con los valores anteriores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar el estado vacío también es una copia válida"
+        },
+        {
+          "type": "paragraph",
+          "text": "No todos los tramos contienen elementos. El constructor sin argumentos crea el estado vacío acordado. Copiarlo debe producir otro Tramo vacío, sin rechazar la operación ni solicitar un array sólo para representar esa ausencia de elementos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_copia_de_tramo_vacio",
+          "language": "cpp",
+          "question": "Escribe las dos cantidades y las dos comprobaciones de puntero nulo, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    Tramo a;\n    Tramo b{a};\n    std::cout << a.cantidad() << ':' << b.cantidad() << ':'\n              << (a.acceso() == nullptr) << ':' << (b.acceso() == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "0:0:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La cantidad del origen es cero. El constructor de copia mantiene la inicialización vacía del destino y no entra en la rama que reserva y copia. Los dos objetos existen, aunque ninguno gestiona un array. Esa representación nula es la política de Tramo; no procede de llamar a make_unique<int[]>(0)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la reserva de una copia no vacía lanza std::bad_alloc, el nuevo Tramo no termina de construirse. Sus miembros ya construidos se limpian según las reglas de construcción que estudiamos. El objeto de origen sigue existiendo y conserva su estado. No confundas un constructor que no completa el objeto con una asignación que debe conservar un destino anterior (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir mediante movimiento requiere coordinar dos miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tramo&& otra permite recibir un origen modificable ofrecido para movimiento. En el acceso a otra.datos_ dentro del constructor, otra es una variable con nombre: escribir ese miembro sin std::move no solicita transferirlo. std::move(otra.datos_) permite ofrecer el propietario a su constructor de movimiento; la expresión por sí sola no mueve el array (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La lista de inicialización prepara primero datos_, porque se declara antes que cantidad_. El propietario nuevo recibe el array y el propietario del origen queda nulo. A continuación se copia el int cantidad_ del origen. Mover el unique_ptr no ha cambiado ese int, por lo que todavía conserva la cantidad que necesitamos. El cuerpo del constructor pone después en cero la cantidad del origen (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al terminar, el destino describe el array transferido y el origen vuelve a cumplir su estado vacío: propietario nulo y cantidad cero. El objeto de origen sigue vivo y se puede volver a configurar. No se reconstruye el array ni se recorren sus int para transferir la propiedad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este origen vacío es una garantía de nuestra implementación de Tramo y del movimiento de unique_ptr. No deducimos que cualquier clase quede vacía después de un movimiento. El movimiento generado por miembros tampoco bastaría aquí: transferiría datos_ pero no pondría a cero el int del origen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la transferencia y el estado del origen"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l11_completar_constructor_movimiento",
+          "question": "Completa el constructor: ofrece el miembro propietario de otra mediante std::move y deja su cantidad acorde con el propietario vacío. Conserva la copia de cantidad que ya aparece en la lista de inicialización.",
+          "template": "Tramo::Tramo(Tramo&& otra) noexcept\n    : datos_{[]}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = [];\n}\n",
+          "answers": [
+            "std::move(otra.datos_)",
+            "0"
+          ],
+          "answerAlternatives": [
+            [
+              "std::move(otra.datos_)"
+            ],
+            [
+              "0"
+            ]
+          ],
+          "explanation": "std::move(otra.datos_) permite construir datos_ transfiriendo el propietario del array. cantidad_{otra.cantidad_} conserva en el destino la cantidad anterior del origen. Por último, asignar cero a otra.cantidad_ completa el estado vacío del origen. No se reserva otro array ni se copian sus elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir el mismo array después de la transferencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora el programa incluye el constructor de movimiento completo. La construcción de b utiliza std::move(a), y las consultas posteriores respetan el estado en que queda cada objeto. mostrar sólo recorre los índices menores que la cantidad conservada en el Tramo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_construccion_por_movimiento_de_array",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa para a, para b y para la comprobación final de a.acceso()?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    Tramo a;\n    if (!a.configurar(2)) { return 1; }\n    a.escribir(1, 6);\n    Tramo b{std::move(a)};\n    mostrar(a); std::cout << ':'; mostrar(b);\n    std::cout << ':' << (a.acceso() == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "0[]:2[0,6]:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "b recibe el array que gestionaba a, con sus valores y su cantidad. El propietario de a queda nulo y el cuerpo del constructor pone también a cero su cantidad. mostrar(a) no intenta acceder a ningún elemento de ese estado vacío. La comprobación final consulta el préstamo nulo del origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un préstamo obtenido antes del movimiento al array transferido seguiría identificando sus elementos mientras ese mismo array continúe vivo, ahora bajo el propietario del destino. Mover el propietario no prolonga por sí solo la vida del array: si el destino lo sustituye o lo libera, ese préstamo deja de servir. No hay que utilizar préstamos al array anterior de un destino después de que una sustitución lo haya destruido (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer un origen constante no permite vaciarlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::move conserva const. Si lectura es const Tramo&, std::move(lectura) sigue ofreciendo un Tramo constante. No puede enlazarse con el parámetro Tramo&& de nuestro constructor de movimiento, porque éste necesita modificar el origen. Sí puede utilizarse el constructor de copia que recibe const Tramo& (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_std_move_de_tramo_constante",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa después de construir b desde std::move(lectura) y escribir en b?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    Tramo a;\n    if (!a.configurar(1)) { return 1; }\n    a.escribir(0, 7);\n    const Tramo& lectura = a;\n    Tramo b{std::move(lectura)};\n    b.escribir(0, 2);\n    mostrar(a); std::cout << ':'; mostrar(b);\n    return 0;\n}\n",
+          "answers": [
+            "1[7]:1[2]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El origen ofrecido mediante lectura es constante. En esta clase está disponible el constructor de copia con const Tramo&, y se selecciona para crear b. Ese constructor crea otro array. Cambiar después b no cambia a, y a conserva su cantidad y sus datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con el miembro unique_ptr aislado, intentar copiar desde un propietario constante no obtiene una copia independiente: su copia está eliminada. Aquí funciona porque Tramo define expresamente cómo crear otro array. La escritura de std::move no promete por sí sola que una llamada vaya a transferir la propiedad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar una copia sin perder el destino si falla la reserva"
+        },
+        {
+          "type": "paragraph",
+          "text": "En destino = origen, destino ya puede gestionar un array. La asignación de copia debe sustituir su estado, pero una reserva fallida no debe destruir sus datos anteriores. Utilizaremos el constructor de copia para preparar primero un objeto Tramo candidato independiente del origen. En el código, ese objeto se llamará candidata (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mientras se construye esa candidata no se cambia ningún miembro del destino. Si termina de construirse, intercambiar cambia los dos miembros del destino con los de la candidata. El destino recibe el array nuevo junto con su cantidad. La candidata recibe el array anterior junto con la cantidad que lo describía. Al salir de la asignación, su destructor limpia ese array anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función proporcionada siguiente realiza el intercambio de propietarios y el de cantidades. Para estos unique_ptr con liberación predeterminada y estos int, esos intercambios no propagan excepciones. Cambiar sólo datos_ dejaría cada cantidad asociada al array equivocado cuando los tamaños fueran distintos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la reserva de la candidata falla, no se llega al intercambio. El destino conserva su propietario, su cantidad y sus valores; el origen también se conserva. Ésta es la garantía fuerte que buscamos para el estado de estos objetos: un fallo deja ese estado como estaba. No restauramos datos después de borrarlos; evitamos cambiarlos antes de completar la preparación (Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir identidad, igualdad de valores y origen vacío"
+        },
+        {
+          "type": "paragraph",
+          "text": "La autocopia aparece cuando origen y destino son el mismo objeto, incluso si se accede mediante nombres distintos. this y &otra permiten comprobar esa identidad antes de reservar. En Tramo elegimos que la autocopia devuelva el destino sin reservar, sustituir el array ni cambiar sus valores. Comparar sólo cantidades o elementos no identifica al mismo objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para objetos distintos con origen no vacío, nuestra política exige crear otro array independiente incluso cuando las cantidades y los valores ya coincidan. Es la estrategia de candidata elegida para esta clase. Reutilizar almacenamiento puede ser válido en otros contratos; aquí queremos practicar esta preparación y su conservación ante fallos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el origen distinto está vacío, copiarlo también es un éxito. La candidata se construye vacía, sin reservar. Tras el intercambio, el destino queda vacío y la candidata se ocupa de limpiar su array anterior. No se devuelve un rechazo por la ausencia de elementos en el origen."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l11_fallo_al_preparar_copia_de_array",
+          "question": "Dos Tramos distintos contienen origen = [6, 1] y destino = [9]. La reserva del array de la candidata lanza std::bad_alloc antes del intercambio. El llamador captura esa excepción. ¿Qué estado debe observar?",
+          "options": [
+            "El origen conserva [6, 1], pero el destino queda vacío porque debe liberar su array antes de intentar copiar.",
+            "El origen conserva [6, 1] y el destino conserva [9], con sus cantidades y propietarios anteriores.",
+            "El destino conserva [9], pero el origen queda vacío porque se ofreció como argumento al constructor de copia."
+          ],
+          "correctIndex": 1,
+          "explanation": "La candidata se prepara antes de tocar el destino. Al fallar su reserva, no ocurre el intercambio. El constructor de copia sólo consulta el origen, así que tampoco lo vacía. La excepción comunica el fallo; la conservación procede del orden de las acciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar mediante movimiento a un destino existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "La asignación de movimiento tiene otro trabajo: el destino ya existe y debe recibir el array del origen sin crear una copia. Primero se comprueba si ambos nombres identifican el mismo Tramo. Elegimos que el automovimiento conserve todo el estado, igual que la autocopia. Esa política debe aplicarse antes de transferir o poner a cero la cantidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si son objetos distintos, se transfiere el miembro propietario al destino. La asignación de unique_ptr libera el array anterior del destino y deja nulo el propietario del origen. Después se conserva en el destino la cantidad que todavía guarda el origen y se pone en cero la cantidad de éste. Al terminar, los dos objetos vuelven a cumplir su relación entre propietario y cantidad (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el origen distinto está vacío, transferir su estado vacía el destino: su array anterior se libera y su cantidad final debe ser cero. Si el destino estaba vacío y el origen no, el destino recibe el array existente. Ninguno de estos caminos necesita reservar otro array."
+        },
+        {
+          "type": "paragraph",
+          "text": "La asignación debe devolver el propio destino por referencia. El origen sigue existiendo y puede volver a configurarse. Un acceso prestado al array que acaba de liberar el destino ya no se utiliza ni se compara para comprobar el resultado; se consultan los objetos vivos mediante su interfaz."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar qué operaciones pueden propagar una excepción"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia no vacía reserva otro array y puede propagar std::bad_alloc. Por eso los dos miembros de copia de Tramo no prometen noexcept. Los movimientos concretos transfieren un unique_ptr de int con su liberación predeterminada y coordinan int, sin reservar. Los declaramos noexcept porque esas acciones no propagan excepciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El operador noexcept consulta cada expresión sin ejecutarla. Las cuatro consultas siguientes no construyen copias, no transfieren arrays ni asignan sobre b. Para esas consultas bastan las declaraciones de las operaciones; los programas anteriores ya mostraron los constructores que sí ejecutaban."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_consultar_copias_y_movimientos",
+          "language": "cpp",
+          "question": "Escribe los cuatro resultados de noexcept, en el orden de construcción por copia, construcción por movimiento, asignación de copia y asignación de movimiento.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nint main() {\n    Tramo a, b;\n    std::cout << noexcept(Tramo{a}) << ':'\n              << noexcept(Tramo{std::move(a)}) << ':'\n              << noexcept(b = a) << ':'\n              << noexcept(b = std::move(a));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las expresiones con a como fuente ordinaria seleccionan las operaciones de copia, que tienen una declaración potencialmente lanzadora. Las expresiones que ofrecen a mediante std::move seleccionan nuestros movimientos declarados noexcept. El operador sólo consulta esas promesas: no ejecuta ninguna operación ni garantiza que cualquier copia real vaya a fallar."
+        },
+        {
+          "type": "paragraph",
+          "text": "La garantía fuerte de la asignación de copia y la promesa noexcept del movimiento son compromisos diferentes. La primera conserva el estado cuando falla una reserva que sí puede lanzar. La segunda impide que una excepción salga del movimiento. Escribir noexcept no sustituye la implementación correcta ni repara automáticamente una cantidad incoherente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relacionar el trabajo realizado con el resultado necesario"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una copia no vacía de Tramo se reserva un array y el recorrido lee y escribe tantos int como indique la cantidad. Si se aumenta esa cantidad, el recorrido debe realizar más copias de elementos. El movimiento transfiere el propietario y coordina las cantidades sin recorrer los elementos. Esa diferencia describe las acciones del código; no es una medición de cuánto tarda cada programa (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al asignar sobre un destino ocupado también hay que limpiar su array anterior. El movimiento evita duplicar los elementos del origen, pero no elimina la responsabilidad de esa limpieza. El destructor de unique_ptr<int[]> sigue encargándose de liberar cada array cuando termina su propietario."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l11_elegir_copia_o_transferencia_del_array",
+          "question": "Después de obtener un segundo Tramo, el programa necesita modificar sus elementos y seguir utilizando los valores originales del primero. ¿Qué operación cumple ese objetivo?",
+          "options": [
+            "Transferir el propietario y copiar sólo cantidad_ al origen, para que ambos sigan consultando el mismo array.",
+            "Construir un segundo propietario desde acceso(), porque ese préstamo ya ofrece una copia de los elementos.",
+            "Crear una copia independiente de Tramo, que reserve otro array y copie sus elementos."
+          ],
+          "correctIndex": 2,
+          "explanation": "La copia independiente conserva el array del origen y prepara otro para el segundo Tramo. Un movimiento entre objetos distintos deja vacío el origen según nuestra política. Obtener acceso() sólo presta un puntero; no duplica elementos ni autoriza a dar el mismo array a otro propietario."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la construcción siguiente completarás las dos asignaciones. Los constructores ya están proporcionados y practicados. La copia debe preparar la candidata antes de sustituir; el movimiento debe coordinar ambos objetos y respetar el automovimiento. Las consultas del programa permiten observar cantidades y valores sin acceder a elementos de estados vacíos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: dos formas de sustituir un tramo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La clase Tramo utiliza los mismos límites que Lote en la lección anterior: de cero a cuatro elementos, con valores de cero a nueve. Cantidad cero corresponde a propietario vacío. Para una cantidad positiva hay un array de esa cantidad. Ahora Tramo también permite crear copias independientes y entregar su array mediante movimiento."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el editor están proporcionados los dos constructores que acabas de practicar, el destructor por defecto y las funciones configurar, leer, escribir, vaciar, sumar e intercambiar. Completa únicamente los dos operadores de asignación. La asignación trabaja sobre un destino que ya existe; sus datos anteriores también deben terminar correctamente si se sustituyen."
+        },
+        {
+          "type": "paragraph",
+          "text": "intercambiar cambia los propietarios de los dos tramos y también sus cantidades. Su primera instrucción es datos_.swap(otra.datos_); y la segunda es std::swap(cantidad_, otra.cantidad_);. Ambas operaciones se utilizan aquí con tipos que no necesitan reservar memoria ni lanzar excepciones. Tras completar el intercambio, cada cantidad acompaña al array que le corresponde (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "No construyas otro propietario desde acceso() o get(), ni añadas delete manual. El propietario de array ya se encarga de delete[]. Conserva las declaraciones, los miembros, las funciones proporcionadas y main. No cambies las impresiones para imitar las salidas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrato de la asignación por copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "El parámetro const Tramo& otra identifica el origen. La referencia devuelta debe identificar el destino, es decir, *this. El destino ya puede contener elementos y el origen puede estar vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para objetos distintos, la copia debe cumplir lo siguiente:\nConservar la cantidad, los valores y el array del origen.\nPreparar otro Tramo con una copia independiente de los elementos del origen.\nCuando el origen tenga elementos, crear otro array aunque el destino ya tenga la misma cantidad y los mismos valores.\nConservar el destino anterior hasta que esa preparación termine.\nDespués de prepararla, sustituir juntos el propietario y la cantidad del destino.\nLiberar una sola vez el array anterior del destino.\nSi el origen está vacío, dejar vacío el destino, sin solicitar otro array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la reserva del array candidato lanza std::bad_alloc, la asignación debe dejar salir esa excepción sin cambiar el destino ni el origen. main la captura y muestra que la orden fue rechazada. No captures el error para devolver una referencia como si la copia se hubiera realizado. El constructor de copia proporcionado ya prepara una copia independiente; decide cómo utilizarlo antes de modificar los miembros del destino (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si this y &otra identifican el mismo Tramo, nuestra política es devolver el propio objeto sin reservar, liberar ni cambiar su array. Esto es autocopia. Por ejemplo, si referencia es un alias de tramo, tramo = referencia; conserva exactamente ese tramo. Esta política pertenece al contrato de nuestra clase; no afirmamos que todo tipo tenga que implementarla igual."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l11_preparar_antes_de_sustituir",
+          "question": "El destino contiene dos valores que deben conservarse si falla la reserva. ¿Qué procedimiento cumple ese requisito?",
+          "options": [
+            "Vaciar primero el destino y después intentar construir la copia.",
+            "Cambiar primero la cantidad del destino y restaurarla sólo si falla la impresión.",
+            "Preparar una copia bajo otro propietario y sustituir el estado del destino sólo después del éxito.",
+            "Tomar el puntero prestado del origen y hacer que ambos tramos lo liberen."
+          ],
+          "correctIndex": 2,
+          "explanation": "Mientras se prepara la copia, el destino todavía conserva su array anterior. Si la preparación falla, ese array y su cantidad no se han cambiado. Si termina, un intercambio del estado completo permite entregar la copia al destino y dejar el array anterior bajo la limpieza de la candidata."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrato de la asignación por movimiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "El parámetro Tramo&& otra permite recibir un origen del que se solicita el movimiento. Dentro del cuerpo, otra tiene nombre: para mover su miembro propietario se utiliza std::move(otra.datos_). La llamada entrega ese miembro a la operación de movimiento de unique_ptr; escribir std::move no crea por sí solo un array (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para objetos distintos, el movimiento debe cumplir lo siguiente:\nLiberar una sola vez el array anterior del destino.\nEntregar al destino el mismo array que pertenecía al origen, sin reservar otro ni copiar sus elementos.\nGuardar en el destino la cantidad que tenía el origen.\nDejar al origen con propietario vacío y cantidad cero.\nAceptar también un origen vacío: el destino queda vacío.\nDevolver una referencia al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el origen y el destino son el mismo objeto, nuestra política de automovimiento es conservar su array, su cantidad y sus valores. Debe cumplirse también al recibir el objeto a través de un alias. No basta con dejar un propietario válido si la cantidad ya no describe sus elementos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén noexcept en este operador. Para estos miembros concretos, mover unique_ptr<int[]> con su mecanismo de liberación por defecto, liberar el array de int anterior y asignar los enteros no necesita reservar memoria ni dejar salir una excepción. La copia, en cambio, puede necesitar una reserva y no lleva esa promesa. Esta diferencia depende de las operaciones que hemos elegido y de sus tipos, no sólo de llamar a una función «movimiento» (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir las cantidades de ambos objetos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila empieza por separado con el estado que indica la tabla. A es el tramo de origen en las dos primeras filas; B es el destino. En la tercera, A recibe la copia del B vacío. En la última sólo hay un objeto B y las dos posiciones de la pregunta se refieren al mismo objeto. Utiliza el contrato anterior para seguir los dos estados."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l11_cantidades_tras_asignar",
+          "prompt": "Escribe por fila la cantidad final del destino y la cantidad final del origen. Las filas son independientes. En B = std::move(B), destino y origen son el mismo objeto.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Estado inicial",
+                "Operación",
+                "Destino",
+                "Origen"
+              ],
+              "rows": [
+                [
+                  "A:3 elementos; B:1 elemento",
+                  "B = A",
+                  "B",
+                  "A"
+                ],
+                [
+                  "A:3 elementos; B:1 elemento",
+                  "B = std::move(A)",
+                  "B",
+                  "A"
+                ],
+                [
+                  "A:3 elementos; B:vacío",
+                  "A = B",
+                  "A",
+                  "B"
+                ],
+                [
+                  "B:1 elemento",
+                  "B = std::move(B)",
+                  "B",
+                  "B"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: destino",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: destino",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: destino",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: origen",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 4: destino",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 4: origen",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La copia de A deja tres elementos en ambos objetos, cada uno con su array. Mover A a B deja tres en B y cero en A. Copiar el B vacío vacía A. El automovimiento conserva el único elemento de B por la política elegida.",
+            "incorrect": "Identifica primero si los dos nombres representan objetos distintos. La copia conserva el origen; el movimiento entre objetos distintos lo vacía. Copiar un origen vacío deja vacío el destino. Nuestra política de automovimiento conserva el mismo objeto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada de la práctica: elegir destino y origen"
+        },
+        {
+          "type": "paragraph",
+          "text": "main prepara dos tramos dentro de un array de objetos llamado tramos. tramos[0], al que el informe llama A, contiene tres valores: uno, cero y cuatro. tramos[1], llamado B, contiene un valor: ocho. Si alguna configuración inicial falla, main termina con código uno antes del informe."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza con una cantidad de órdenes de uno a doce. Cada orden tiene cuatro enteros: op destino a b. El destino cero elige A; el destino uno elige B. Un destino distinto se rechaza antes de acceder al array de objetos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las operaciones son las siguientes:\n1 destino origen b: copiar del tramo indicado por origen, que debe ser cero o uno; b se ignora.\n2 destino origen b: mover desde el tramo indicado por origen, que debe ser cero o uno; b se ignora.\n3 destino indice valor: escribir el valor en ese índice del destino.\n4 destino cantidad b: configurar el destino con esa cantidad; b se ignora.\n5 destino a b: vaciar el destino; a y b se ignoran.\nCualquier otra operación se rechaza sin cambiar los tramos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Todas las órdenes de una entrada actúan sobre los mismos dos objetos. Copiar o mover entre ellos modifica el estado que verá la orden siguiente. configurar y escribir ya comprueban sus límites. Una orden rechazada conserva ambos tramos. Una entrada incompleta o una cantidad de órdenes inválida termina main con código uno; no representa una operación rechazada de Tramo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Informe: qué cambió y qué permaneció igual"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un estado como 3[1,0,4] indica cantidad tres y esos tres valores en orden de índice. El estado 0[] representa un tramo vacío. Antes se imprime antes de ejecutar la orden; Ahora se imprime después. Aceptado vale uno al aceptar y cero al rechazar. La última línea Sumas muestra la suma actual de A y después la de B."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, la orden 1 1 0 0 copia A en B. A conserva sus tres valores y B pasa de un elemento a tres. Si la orden siguiente es 3 1 0 9, se cambia sólo el elemento de índice cero de B. A sigue empezando por uno. Esta segunda orden permite comprobar que modificar la copia no modifica el origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "La orden 2 0 1 0 mueve B a A. Después A contiene los valores que tenía B y B queda vacío. main invoca directamente el operador entre esos dos objetos; no destruye un intermediario para esconder el estado del origen. Una orden posterior puede volver a configurar B y utilizarlo normalmente."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial del editor compila, pero los dos operadores provisionales sólo devuelven *this. Por eso no cambian los estados como exige la práctica. Las conversiones a void evitan avisos por parámetros todavía sin usar; retíralas al completar cada cuerpo. mostrar obtiene los valores mediante leer y no modifica los tramos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Implementar copia y movimiento con el mismo contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos operadores de asignación y compila. Sólo el primer caso correcto es obligatorio para avanzar. Los otros dos casos se conservan como ensayos opcionales en la página siguiente."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    // Completa la copia independiente conservando el destino ante un fallo.\n    (void)otra;\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    // Transfiere el array y coordina la cantidad de ambos objetos.\n    (void)otra;\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0;\n        if (!(std::cin >> op >> destino >> a >> b)) { return 1; }\n        std::cout << \"Antes:A=\";\n        mostrar(tramos[0]);\n        std::cout << \";B=\";\n        mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                try {\n                    actual = tramos[a];\n                    aceptado = true;\n                } catch (const std::bad_alloc&) {\n                    aceptado = false;\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                actual = std::move(tramos[a]);\n                aceptado = true;\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            } else if (op == 5) {\n                aceptado = actual.vaciar();\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]);\n        std::cout << \";B=\";\n        mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n",
+          "initialStandardInput": "10\n1 1 0 0\n3 1 0 9\n2 0 1 0\n1 0 0 0\n2 0 0 0\n1 0 1 0\n4 1 2 0\n3 1 1 6\n2 0 1 0\n2 0 1 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "10\n1 1 0 0\n3 1 0 9\n2 0 1 0\n1 0 0 0\n2 0 0 0\n1 0 1 0\n4 1 2 0\n3 1 1 6\n2 0 1 0\n2 0 1 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,0,4]\nAntes:A=3[1,0,4];B=3[1,0,4];Aceptado:1;Ahora:A=3[1,0,4];B=3[9,0,4]\nAntes:A=3[1,0,4];B=3[9,0,4];Aceptado:1;Ahora:A=3[9,0,4];B=0[]\nAntes:A=3[9,0,4];B=0[];Aceptado:1;Ahora:A=3[9,0,4];B=0[]\nAntes:A=3[9,0,4];B=0[];Aceptado:1;Ahora:A=3[9,0,4];B=0[]\nAntes:A=3[9,0,4];B=0[];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=0[];B=2[0,0]\nAntes:A=0[];B=2[0,0];Aceptado:1;Ahora:A=0[];B=2[0,6]\nAntes:A=0[];B=2[0,6];Aceptado:1;Ahora:A=2[0,6];B=0[]\nAntes:A=2[0,6];B=0[];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+                ],
+                "explanation": "En copia, prepara la candidata antes de cambiar el destino y conserva el origen. En movimiento, entrega el propietario, guarda la cantidad y vacía el origen. Distingue las asignaciones entre objetos distintos de las asignaciones a sí mismo."
+              },
+              {
+                "standardInput": "6\n1 1 0 0\n3 0 2 7\n1 1 0 0\n5 0 0 0\n1 1 0 0\n1 0 0 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,0,4]\nAntes:A=3[1,0,4];B=3[1,0,4];Aceptado:1;Ahora:A=3[1,0,7];B=3[1,0,4]\nAntes:A=3[1,0,7];B=3[1,0,4];Aceptado:1;Ahora:A=3[1,0,7];B=3[1,0,7]\nAntes:A=3[1,0,7];B=3[1,0,7];Aceptado:1;Ahora:A=0[];B=3[1,0,7]\nAntes:A=0[];B=3[1,0,7];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+                ],
+                "explanation": "En copia, prepara la candidata antes de cambiar el destino y conserva el origen. En movimiento, entrega el propietario, guarda la cantidad y vacía el origen. Distingue las asignaciones entre objetos distintos de las asignaciones a sí mismo."
+              },
+              {
+                "standardInput": "8\n2 1 0 0\n3 0 0 6\n4 0 4 0\n3 0 3 9\n1 1 0 0\n2 0 1 0\n1 2 0 0\n2 0 -1 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=0[];B=3[1,0,4]\nAntes:A=0[];B=3[1,0,4];Aceptado:0;Ahora:A=0[];B=3[1,0,4]\nAntes:A=0[];B=3[1,0,4];Aceptado:1;Ahora:A=4[0,0,0,0];B=3[1,0,4]\nAntes:A=4[0,0,0,0];B=3[1,0,4];Aceptado:1;Ahora:A=4[0,0,0,9];B=3[1,0,4]\nAntes:A=4[0,0,0,9];B=3[1,0,4];Aceptado:1;Ahora:A=4[0,0,0,9];B=4[0,0,0,9]\nAntes:A=4[0,0,0,9];B=4[0,0,0,9];Aceptado:1;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:0;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:0;Ahora:A=4[0,0,0,9];B=0[]\nSumas:9:0"
+                ],
+                "explanation": "En copia, prepara la candidata antes de cambiar el destino y conserva el origen. En movimiento, entrega el propietario, guarda la cantidad y vacía el origen. Distingue las asignaciones entre objetos distintos de las asignaciones a sí mismo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una historia de los mismos dos tramos: copiar, modificar la copia, mover, asignar a sí mismo, copiar un origen vacío, volver a configurar el origen y mover de nuevo. La última transferencia parte de un origen ya vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "10\n1 1 0 0\n3 1 0 9\n2 0 1 0\n1 0 0 0\n2 0 0 0\n1 0 1 0\n4 1 2 0\n3 1 1 6\n2 0 1 0\n2 0 1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,0,4]\nAntes:A=3[1,0,4];B=3[1,0,4];Aceptado:1;Ahora:A=3[1,0,4];B=3[9,0,4]\nAntes:A=3[1,0,4];B=3[9,0,4];Aceptado:1;Ahora:A=3[9,0,4];B=0[]\nAntes:A=3[9,0,4];B=0[];Aceptado:1;Ahora:A=3[9,0,4];B=0[]\nAntes:A=3[9,0,4];B=0[];Aceptado:1;Ahora:A=3[9,0,4];B=0[]\nAntes:A=3[9,0,4];B=0[];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=0[];B=2[0,0]\nAntes:A=0[];B=2[0,0];Aceptado:1;Ahora:A=0[];B=2[0,6]\nAntes:A=0[];B=2[0,6];Aceptado:1;Ahora:A=2[0,6];B=0[]\nAntes:A=2[0,6];B=0[];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: repetir, vaciar y rechazar"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repite la copia después de cambiar un elemento del origen. Después vacía el origen y copia ese estado vacío. La autocopia final conserva el estado vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\n1 1 0 0\n3 0 2 7\n1 1 0 0\n5 0 0 0\n1 1 0 0\n1 0 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,0,4]\nAntes:A=3[1,0,4];B=3[1,0,4];Aceptado:1;Ahora:A=3[1,0,7];B=3[1,0,4]\nAntes:A=3[1,0,7];B=3[1,0,4];Aceptado:1;Ahora:A=3[1,0,7];B=3[1,0,7]\nAntes:A=3[1,0,7];B=3[1,0,7];Aceptado:1;Ahora:A=0[];B=3[1,0,7]\nAntes:A=0[];B=3[1,0,7];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El origen movido rechaza una escritura porque está vacío. Vuelve a configurarlo, utiliza el último índice válido y combina copia y movimiento. Los identificadores de tramo inválidos se rechazan antes de acceder al array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n2 1 0 0\n3 0 0 6\n4 0 4 0\n3 0 3 9\n1 1 0 0\n2 0 1 0\n1 2 0 0\n2 0 -1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=0[];B=3[1,0,4]\nAntes:A=0[];B=3[1,0,4];Aceptado:0;Ahora:A=0[];B=3[1,0,4]\nAntes:A=0[];B=3[1,0,4];Aceptado:1;Ahora:A=4[0,0,0,0];B=3[1,0,4]\nAntes:A=4[0,0,0,0];B=3[1,0,4];Aceptado:1;Ahora:A=4[0,0,0,9];B=3[1,0,4]\nAntes:A=4[0,0,0,9];B=3[1,0,4];Aceptado:1;Ahora:A=4[0,0,0,9];B=4[0,0,0,9]\nAntes:A=4[0,0,0,9];B=4[0,0,0,9];Aceptado:1;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:0;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:0;Ahora:A=4[0,0,0,9];B=0[]\nSumas:9:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: preparar la copia y entregar el movimiento"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0;\n        if (!(std::cin >> op >> destino >> a >> b)) { return 1; }\n        std::cout << \"Antes:A=\";\n        mostrar(tramos[0]);\n        std::cout << \";B=\";\n        mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                try {\n                    actual = tramos[a];\n                    aceptado = true;\n                } catch (const std::bad_alloc&) {\n                    aceptado = false;\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                actual = std::move(tramos[a]);\n                aceptado = true;\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            } else if (op == 5) {\n                aceptado = actual.vaciar();\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]);\n        std::cout << \";B=\";\n        mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La asignación por copia comprueba primero si los objetos son distintos. Construye candidata con el constructor de copia. Mientras se prepara ese objeto, el destino conserva su array y su cantidad. Si la reserva falla, la excepción sale sin haber sustituido esos miembros. Si termina, intercambiar entrega al destino el estado de la candidata y deja su estado anterior bajo la candidata. Su destructor lo libera al salir de este bloque (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el intercambio se cambian los propietarios y después las cantidades. No se llama a funciones que observen un estado a medio cambiar y ninguna de esas dos instrucciones lanza en este ejemplo. Al terminar, ambos tramos conservan la relación entre su cantidad y su propietario. Si la candidata estaba vacía, el destino recibe el estado vacío y su array anterior queda igualmente bajo la limpieza de la candidata."
+        },
+        {
+          "type": "paragraph",
+          "text": "La asignación por movimiento comprueba también la identidad de los objetos. La asignación del miembro propietario termina el array anterior del destino y recibe el del origen. Después se copia la cantidad del origen y se coloca en cero la cantidad del origen. El propietario del origen ya ha quedado vacío por el movimiento de unique_ptr. No se crea un array nuevo (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ambos operadores devuelven *this. Ese retorno ofrece una referencia al objeto destino, no una copia adicional del tramo. Las comprobaciones de identidad hacen que la autocopia y el automovimiento conserven el estado y eviten trabajo innecesario, según la política que se pidió en esta práctica."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar y después mover esa copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este programa b se construye copiando a. Después c se construye moviendo b. Al final se modifica un elemento de c. Sigue a, b y c por separado: la copia inicial crea un array independiente y el movimiento posterior transfiere precisamente el array de esa copia."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_copiar_y_mover_la_copia",
+          "language": "cpp",
+          "question": "¿Qué muestran a:b:c después de las tres operaciones?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    Tramo a;\n    if (!a.configurar(2)) { return 1; }\n    a.escribir(0, 3); a.escribir(1, 8);\n    Tramo b{a};\n    Tramo c{std::move(b)};\n    c.escribir(1, 1);\n    mostrar(a); std::cout << ':'; mostrar(b); std::cout << ':'; mostrar(c);\n    return 0;\n}\n",
+          "answers": [
+            "2[3,8]:0[]:2[3,1]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "a conserva su array con tres y ocho. b creó inicialmente otro array con esos valores y después lo entregó a c, por lo que quedó vacío. Cambiar el segundo elemento de c a uno sólo cambia el array que recibió c."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un alias puede volver a identificar el mismo objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia alias no crea otro Tramo. Identifica a. Por eso las dos asignaciones del programa tienen el mismo objeto como origen y destino, aunque la expresión de la derecha utilice otro nombre. La comparación this != &otra debe reconocer esa situación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l11_autocopia_y_automovimiento",
+          "language": "cpp",
+          "question": "¿Qué estado conserva a tras la copia y el movimiento desde su alias?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    Tramo a;\n    if (!a.configurar(1)) { return 1; }\n    a.escribir(0, 5);\n    Tramo& alias = a;\n    a = alias;\n    a = std::move(alias);\n    mostrar(a);\n    return 0;\n}\n",
+          "answers": [
+            "1[5]"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambos parámetros se refieren a a. Las comprobaciones de identidad evitan sustituir o vaciar su propietario. El elemento conserva cinco. std::move(alias) permite seleccionar la asignación por movimiento; la política de ese operador decide conservar el mismo objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta salida comprueba el valor final. El contrato pide además no reservar ni liberar en estas dos asignaciones. Para comprobar esa parte se necesita observar las operaciones de almacenamiento; una impresión por sí sola no demuestra que no se haya creado y destruido otro array."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué demuestra el fallo de una reserva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que el origen contiene cuatro y siete, y el destino contiene nueve. La copia necesita preparar un array para cuatro y siete. Si la reserva no se consigue, no existe una copia preparada que pueda sustituir al destino. La asignación debe dejar el origen con cuatro y siete y el destino con nueve, y dejar salir bad_alloc para que el llamador pueda tratarla. No intentes provocar este fallo agotando la memoria de tu equipo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l11_fallo_conservar_ambos",
+          "question": "¿Qué observación distinguiría conservar el destino anterior de vaciarlo antes de intentar la copia?",
+          "options": [
+            "Después de tratar bad_alloc, comprobar que el origen conserva sus dos valores y que el destino conserva su elemento nueve y su array anterior.",
+            "Comprobar únicamente que la copia correcta habría mostrado cuatro y siete.",
+            "Comprobar únicamente que el programa capturó alguna excepción.",
+            "Volver a configurar el destino con nueve antes de mirar su estado."
+          ],
+          "correctIndex": 0,
+          "explanation": "Observar ambos estados inmediatamente después del fallo permite detectar una pérdida del destino. Volver a configurarlo antes ocultaría lo ocurrido durante la copia. Para verificar también la identidad del array se compara sólo mientras ese array anterior sigue vivo; no se utiliza un préstamo después de liberarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El movimiento de esta clase no reserva otro array ni recorre sus elementos para copiarlos. Eso reduce el trabajo de transferir una serie grande. No significa que sustituir un destino sea siempre gratis: todavía hay que terminar el recurso anterior que gestionaba. Aquí contiene int; para elementos con otro destructor, su limpieza tendría que estudiarse también. Cuando un miembro como vector ya expresa la propiedad, la copia y el movimiento que necesitas, sigue siendo preferible aprovecharlo en vez de escribir gestión manual sin una razón (Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "5da3c11697cc849b50a31cd627c310baa0db6b70e93a4dcb400456f63d0e9465"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "37f9a652b48d02559b2fe8dddb024b709a7ed86afa5f3774a64d0eb008a37bdb"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "a8d10b0dfa2b9ff919aee5def9f31876324c8c8d9b97488e34a4db64750ad69e"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "54ac2a2530c4ff6d99832a64a8d2912ca136f2ea7c872dd83d8ed596dd0adb30"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "5d6afc76d55f3a8e22e5b4c75f10113c0352246a5a51674f7ff0b7a58187c2d3"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "9ef1bb82595ed67b93ba4e57fdf4883e0f38f7a759e50eef27b2bf64f89a3737"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "9d077fabc9f79ceaa446a4bce01f6dc7800492cbe16b1488ce89f1b3858e2c05"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "55f2269cb143af135d770936dc110e6749aa58ae470c0f6fb76632d8d608cce2"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "ac0f0610a22d21b3f39314a4f0c783596080b8e5b183830ec64c7327b0afe870"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "03f82ee736ae8a1928e88514c58b27e3c637d6a5b0fb9309397b777de302733b"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "d512284fcbd835275001e49b3c663e5ba6eecd5b4c394681c8c7b807b1a823b3"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "55f2269cb143af135d770936dc110e6749aa58ae470c0f6fb76632d8d608cce2"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "997f6bbf9c566bed492b0faac45bd4167f81e1a0ca0ce2b9e4f5e94e3fae9c96"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "7c6967f5a91498c6adbe5976479af218e74eab52ebad6de70faf4991a729c35e"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "833666b99bfcf386b2d2bab80c927a0bac574fc56b6c365e1c4cf4574683fa60"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0006",
+            "sha256": "de4cd217cfd86c593e1c6d516ed0761ef187ca68a87562367078d6b1ffb60d86"
+          },
+          {
+            "id": "block_0020_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0008",
+            "sha256": "b036eac93623798d4e027e7a3d81dd7fbb95d0d4524391178c106479def70ac9"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "e9cdd75937b6422bacb597c6cc711f37e3451d49357fbcce0af84fd959d1d819"
+          },
+          {
+            "id": "block_0021_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0006",
+            "sha256": "f5bcde5947a4a8159f10a2b43acf149e596236d1ee037b9e5d7fa12965bbacff"
+          },
+          {
+            "id": "block_0021_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0010",
+            "sha256": "04b1b46191cd1632aac88611a1dc371e9584e118a8b49a756f13a1673ee7402a"
+          },
+          {
+            "id": "block_0021_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0012",
+            "sha256": "dfa84ecfd0a505cca9da8170399304f1ed985006b4963b5adcc87c91bf54705a"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "0a06e41b0b07d7e72e7c89a5a96d8b8a1901f03bebe46e4a4962479f0d5fe8c1"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          {
+            "id": "block_0023_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0023_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0002",
+            "sha256": "0fd6e63272fb1b24eeecff0505af221e8736c22bc797b9284ce1eeec5ffaaf69"
+          }
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          {
+            "id": "block_0024_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0024_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0024_0002",
+            "sha256": "95c34893004617963a684ec7c30b290b2cefc9814e2ce9dce2c20f76df04f50e"
+          },
+          {
+            "id": "block_0024_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          {
+            "id": "block_0025_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0025_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0025_0002",
+            "sha256": "dd6cf7c03d16d45a47c7ba8ceb82a07f77b9e842c22f0aec5d4b0c88df58db80"
+          },
+          {
+            "id": "block_0025_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004",
+          "block_0020_0005",
+          "block_0020_0006",
+          "block_0020_0007",
+          "block_0020_0008"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004",
+          "block_0021_0005",
+          "block_0021_0006",
+          "block_0021_0007",
+          "block_0021_0008",
+          "block_0021_0009",
+          "block_0021_0010",
+          "block_0021_0011",
+          "block_0021_0012"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003",
+          "block_0022_0004",
+          "block_0022_0005"
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          "block_0023_0000",
+          "block_0023_0001",
+          "block_0023_0002"
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          "block_0024_0000",
+          "block_0024_0001",
+          "block_0024_0002",
+          "block_0024_0003"
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          "block_0025_0000",
+          "block_0025_0001",
+          "block_0025_0002",
+          "block_0025_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "fa18c9baa2974a41298f75927ea4700c2a88d631f1895e9752ab85d99d8b7892",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "5da3c11697cc849b50a31cd627c310baa0db6b70e93a4dcb400456f63d0e9465"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "37f9a652b48d02559b2fe8dddb024b709a7ed86afa5f3774a64d0eb008a37bdb"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "a8d10b0dfa2b9ff919aee5def9f31876324c8c8d9b97488e34a4db64750ad69e"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "54ac2a2530c4ff6d99832a64a8d2912ca136f2ea7c872dd83d8ed596dd0adb30"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "5d6afc76d55f3a8e22e5b4c75f10113c0352246a5a51674f7ff0b7a58187c2d3"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "9ef1bb82595ed67b93ba4e57fdf4883e0f38f7a759e50eef27b2bf64f89a3737"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "9d077fabc9f79ceaa446a4bce01f6dc7800492cbe16b1488ce89f1b3858e2c05"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "55f2269cb143af135d770936dc110e6749aa58ae470c0f6fb76632d8d608cce2"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "ac0f0610a22d21b3f39314a4f0c783596080b8e5b183830ec64c7327b0afe870"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "03f82ee736ae8a1928e88514c58b27e3c637d6a5b0fb9309397b777de302733b"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "d512284fcbd835275001e49b3c663e5ba6eecd5b4c394681c8c7b807b1a823b3"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "55f2269cb143af135d770936dc110e6749aa58ae470c0f6fb76632d8d608cce2"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "997f6bbf9c566bed492b0faac45bd4167f81e1a0ca0ce2b9e4f5e94e3fae9c96"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "7c6967f5a91498c6adbe5976479af218e74eab52ebad6de70faf4991a729c35e"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "833666b99bfcf386b2d2bab80c927a0bac574fc56b6c365e1c4cf4574683fa60"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0006",
+                "sha256": "de4cd217cfd86c593e1c6d516ed0761ef187ca68a87562367078d6b1ffb60d86"
+              },
+              {
+                "id": "block_0020_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0008",
+                "sha256": "b036eac93623798d4e027e7a3d81dd7fbb95d0d4524391178c106479def70ac9"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "e9cdd75937b6422bacb597c6cc711f37e3451d49357fbcce0af84fd959d1d819"
+              },
+              {
+                "id": "block_0021_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0006",
+                "sha256": "f5bcde5947a4a8159f10a2b43acf149e596236d1ee037b9e5d7fa12965bbacff"
+              },
+              {
+                "id": "block_0021_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0010",
+                "sha256": "04b1b46191cd1632aac88611a1dc371e9584e118a8b49a756f13a1673ee7402a"
+              },
+              {
+                "id": "block_0021_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0012",
+                "sha256": "dfa84ecfd0a505cca9da8170399304f1ed985006b4963b5adcc87c91bf54705a"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "0a06e41b0b07d7e72e7c89a5a96d8b8a1901f03bebe46e4a4962479f0d5fe8c1"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0023",
+            "blocks": [
+              {
+                "id": "block_0023_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0023_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0002",
+                "sha256": "0fd6e63272fb1b24eeecff0505af221e8736c22bc797b9284ce1eeec5ffaaf69"
+              }
+            ]
+          },
+          {
+            "id": "page_0024",
+            "blocks": [
+              {
+                "id": "block_0024_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0024_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0024_0002",
+                "sha256": "95c34893004617963a684ec7c30b290b2cefc9814e2ce9dce2c20f76df04f50e"
+              },
+              {
+                "id": "block_0024_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0025",
+            "blocks": [
+              {
+                "id": "block_0025_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0025_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0025_0002",
+                "sha256": "dd6cf7c03d16d45a47c7ba8ceb82a07f77b9e842c22f0aec5d4b0c88df58db80"
+              },
+              {
+                "id": "block_0025_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

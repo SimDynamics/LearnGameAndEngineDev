@@ -1,0 +1,2527 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__recibir_y_devolver_objetos_propietarios",
+  "title": "Recibir y devolver objetos propietarios",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la propiedad cuando interviene una función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabemos construir y asignar copias independientes, y transferir la propiedad mediante movimiento. Ahora seguiremos esas operaciones al entrar en una función y al devolver un objeto por valor. La forma del parámetro indica si la función recibe otro objeto o un alias; su cuerpo determina qué hace con él. Escribir std::move al llamar no sustituye ese análisis (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los ejemplos pequeños utilizan Paquete, propietario de un único int. Su constructor desde int crea ese entero. El constructor de copia crea otro int si el origen no está vacío; el constructor de movimiento por defecto transfiere su único miembro unique_ptr. Aquí no hay una cantidad separada que tengamos que reiniciar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "valor() lee el int gestionado y devuelve -1 cuando el propietario está vacío. Los valores guardados en estos ejemplos son no negativos, por lo que ese -1 nos permite reconocer el vacío en sus salidas. La clase admite otros int en general: no utilizaremos esa señal como una prueba universal de ausencia. fijar cambia el int si existe y no hace nada si el paquete está vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cada predicción suponemos que las reservas de los ejemplos terminan con éxito. Consultaremos los estados y los valores que sí están determinados; no pediremos contar movimientos que el lenguaje permite omitir. Las funciones que construiremos después volverán a utilizar Tramo sin cambiar su implementación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia const consulta el mismo propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "observar recibe const Paquete&. No construye otro Paquete: dato se refiere al objeto recibido. La función sólo utiliza valor(), así que consulta ese objeto sin cambiarlo. El contrato de lectura lo cumple su cuerpo; const en el propietario no volvería constante por sí solo el int gestionado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda llamada ofrece el mismo original mediante std::move. Eso permite tratar la expresión como una oferta de movimiento, pero el parámetro sigue siendo una referencia const. Enlazar esa referencia no transfiere el miembro unique_ptr a otro propietario."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_consulta_por_referencia_const",
+          "language": "cpp",
+          "question": "Escribe los dos valores consultados y el valor final de original, en el orden de la impresión.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint observar(const Paquete& dato) noexcept { return dato.valor(); }\nint main() {\n    Paquete original{4};\n    int a = observar(original);\n    int b = observar(std::move(original));\n    std::cout << a << ':' << b << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:4:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Ambas llamadas enlazan dato con el mismo Paquete original. observar sólo consulta su int. No se construye otro Paquete ni se mueve su miembro propietario, aunque una llamada utilice std::move. El original conserva el dato que ya tenía."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El parámetro por valor tiene su propio propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar recibe Paquete recibido por valor. Hay que construir ese parámetro antes de ejecutar el cuerpo. Al pasar original sin std::move se utiliza su constructor de copia: recibido obtiene otro int. Al ofrecer std::move(original), se utiliza el constructor de movimiento y el parámetro recibe el int existente. Cambiar el parámetro no es lo mismo que cambiar un alias al original (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_parametro_por_valor_copia_y_movimiento",
+          "language": "cpp",
+          "question": "Escribe la línea posterior a cada llamada: primero el resultado de cambiar y después el estado observado en original.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint cambiar(Paquete recibido) noexcept {\n    recibido.fijar(8);\n    return recibido.valor();\n}\nint main() {\n    Paquete original{4};\n    int a = cambiar(original);\n    std::cout << a << ':' << original.valor() << '\\n';\n    int b = cambiar(std::move(original));\n    std::cout << b << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "8:4\n8:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada construye una copia independiente; la escritura del cuerpo afecta al int de recibido y original conserva el suyo. La segunda transfiere el propietario antes de entrar en cambiar. El cuerpo modifica el int recibido, mientras original ya está vacío. Al terminar la expresión de esa llamada, el parámetro ya se ha destruido y su propietario ha limpiado el int recibido."
+        },
+        {
+          "type": "paragraph",
+          "text": "No fijamos la destrucción del parámetro exactamente en la instrucción return: el lenguaje permite que su vida termine al volver de la función o al finalizar la expresión completa que contiene la llamada. En las instrucciones de estos ejemplos, al llegar al punto y coma esa limpieza ya se ha completado. El int devuelto por cambiar es un valor independiente del int que gestionaba el parámetro (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una copia puede fallar antes de entrar en el cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aunque cambiar está declarada noexcept, construir su parámetro desde un Paquete existente puede necesitar una reserva. Esa construcción ocurre antes de entrar en cambiar. Si el constructor de copia lanza std::bad_alloc, el cuerpo no empieza y un tratamiento de excepciones alrededor de la llamada puede recibir ese fallo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La promesa noexcept se aplica a las excepciones que pudieran salir de la función una vez que se ejecuta su cuerpo. No convierte la preparación de todos sus argumentos en operaciones que no lanzan. Esta distinción ya aparecía cuando un argumento de una función noexcept fallaba durante su cálculo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l12_copia_de_parametro_antes_de_noexcept",
+          "question": "Se llama a cambiar(original), donde original contiene un int. La reserva del constructor de copia del parámetro lanza bad_alloc. ¿Qué sucede?",
+          "options": [
+            "El cuerpo empieza y debe devolver el valor de original, porque noexcept impide que falle la construcción del parámetro.",
+            "Se invoca terminate necesariamente: noexcept también cubre cualquier excepción al preparar los argumentos antes de entrar.",
+            "El cuerpo no empieza; el fallo de la construcción del parámetro puede tratarse desde el llamador."
+          ],
+          "correctIndex": 2,
+          "explanation": "La copia debe completar el parámetro antes de entrar en cambiar. Si su reserva falla, no se ejecuta la escritura del cuerpo. La excepción se produce al preparar la llamada, fuera de la ejecución de esa función noexcept; el llamador puede capturarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un parámetro && puede limitarse a observar"
+        },
+        {
+          "type": "paragraph",
+          "text": "ver_oferta recibe Paquete&&. En esta llamada, ofrecido es un alias al Paquete original: no hay una construcción por valor del parámetro. Se ofrece original con std::move para que pueda enlazarse a esa referencia, pero la función sólo consulta valor(). No crea otro propietario ni transfiere el miembro (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_referencia_de_oferta_sin_consumo",
+          "language": "cpp",
+          "question": "¿Qué muestran el valor visto por la función y el valor que conserva original?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint ver_oferta(Paquete&& ofrecido) noexcept { return ofrecido.valor(); }\nint main() {\n    Paquete original{6};\n    int visto = ver_oferta(std::move(original));\n    std::cout << visto << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "6:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El parámetro es una referencia al original. El cuerpo sólo lee el int del mismo objeto. std::move en la llamada permite enlazar la referencia, pero aquí no se realiza ninguna construcción ni asignación que consuma ese propietario."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para esta firma necesitamos un origen modificable ofrecido para movimiento. Un Paquete ordinario con nombre no se entrega a Paquete&& sin esa oferta, y ofrecer un Paquete const no elimina su const. Que una interfaz permita consumir un objeto no demuestra que su implementación vaya a hacerlo en todas las llamadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El nombre del parámetro en una construcción ordinaria"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de cambiar_copia, ofrecido tiene nombre y permite identificar el objeto del llamador. En la construcción Paquete copia{ofrecido}, ese uso ordinario del nombre es una expresión lvalue: se construye una copia. El tipo Paquete&& de la declaración del parámetro no transforma todos sus usos en movimientos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_copia_desde_parametro_con_nombre",
+          "language": "cpp",
+          "question": "¿Qué muestran el resultado de cambiar la copia local y el dato que conserva original?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nint cambiar_copia(Paquete&& ofrecido) {\n    Paquete copia{ofrecido};\n    copia.fijar(9);\n    return copia.valor();\n}\nint main() {\n    Paquete original{3};\n    int cambiado = cambiar_copia(std::move(original));\n    std::cout << cambiado << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "9:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia se construye desde el nombre ofrecido sin solicitar un movimiento en esa construcción. Interviene el constructor de copia, que prepara otro int. La escritura modifica ese int independiente y original conserva el suyo. El parámetro de referencia no añade otro propietario."
+        },
+        {
+          "type": "paragraph",
+          "text": "La precisión «en esta construcción ordinaria» es importante. Al estudiar return veremos un contexto distinto de C++23: un nombre local o un parámetro que cumpla sus condiciones puede tratarse como una expresión apta para movimiento, sin escribir std::move. No extenderemos una regla de un contexto al otro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rechazar después de recibir por valor no devuelve la propiedad"
+        },
+        {
+          "type": "paragraph",
+          "text": "aceptar_cero recibe un Paquete por valor y sólo acepta cuando su int vale cero. El programa ofrece un original no vacío mediante std::move. Primero se construye el parámetro transfiriendo ese propietario; después el cuerpo decide si acepta el valor. El resultado bool de esa decisión no restaura el estado anterior del llamador."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_rechazo_tras_recibir_por_valor",
+          "language": "cpp",
+          "question": "Escribe el bool devuelto por aceptar_cero y el valor que muestra después original.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nbool aceptar_cero(Paquete recibido) noexcept { return recibido.valor() == 0; }\nint main() {\n    Paquete original{4};\n    bool aceptado = aceptar_cero(std::move(original));\n    std::cout << aceptado << ':' << original.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:-1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El dato recibido no cumple la condición de aceptación. Sin embargo, el movimiento que construyó el parámetro ya había dejado vacío a original antes de entrar en el cuerpo. Devolver false no transfiere el propietario de vuelta. Cuando se limpia el parámetro se libera el int que había recibido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una función debe rechazar sin consumir el origen, ese compromiso afecta a cuándo se hace la transferencia. Recibir una referencia && permite comprobar las condiciones antes de ejecutar una operación que mueva el propietario. La referencia por sí sola no vacía el objeto. También hay que conservar los demás objetos si así lo exige el contrato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear directamente el objeto que se devuelve"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperemos tres formas de expresión con ejemplos concretos. El nombre de un objeto en un uso ordinario, como original al consultar su valor, es una lvalue. std::move(original) es una xvalue: sigue identificando ese objeto y permite ofrecerlo para movimiento. Una expresión como Fija{valor} es una prvalue: proporciona el resultado con el que se inicializará el objeto de destino (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una función devuelve Fija por valor y su return utiliza una prvalue Fija, esa expresión construye directamente el objeto resultado. Desde C++17 no hace falta crear primero otro Fija separado y copiarlo o moverlo al resultado. Inicializar un Fija nuevo con la llamada que devuelve ese mismo tipo sigue esa construcción directa; no es una copia que el compilador pueda elegir realizar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Fija conserva un int y tiene eliminados tanto el constructor de copia como el de movimiento. El programa puede utilizar este retorno porque no necesita esas operaciones. Su destructor sigue siendo público y utilizable: el objeto que sí se construye debe poder terminar correctamente."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_resultado_directo_del_mismo_tipo",
+          "language": "cpp",
+          "question": "El programa es válido en C++23. ¿Qué valor conserva el objeto lista construido por crear()?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Fija {\npublic:\n    explicit Fija(int valor) : valor_{valor} {}\n    Fija(const Fija&) = delete;\n    Fija(Fija&&) = delete;\n    ~Fija() = default;\n    int valor() const noexcept { return valor_; }\nprivate:\n    int valor_;\n};\nFija crear() { return Fija{7}; }\nint main() {\n    Fija lista = crear();\n    std::cout << lista.valor();\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "return Fija{7} construye el resultado de tipo Fija, que inicializa directamente lista. No se necesita copiar ni mover otro Fija intermedio; por eso eliminar esas dos operaciones no impide este programa. El constructor desde int establece el valor que después consulta lista.valor()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Devolver un objeto local con nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay otra forma de preparar un resultado: crear un objeto local, realizar las acciones necesarias sobre él y devolverlo por valor. En preparar utilizaremos un Paquete local de duración automática declarado dentro del cuerpo. La función devuelve Paquete por valor y return utiliza el nombre de ese objeto. En este caso, el lenguaje permite construir el local directamente como resultado de la llamada. Ese permiso no incluye los parámetros de la función. Esta posibilidad se conoce como NRVO, una forma de elisión de copia o movimiento (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí la omisión está permitida, pero no garantizada como en el retorno de una prvalue del mismo tipo. Para nuestro Paquete local modificable, si no se aplica NRVO, el resultado se construye por movimiento. En C++23, utilizar directamente ese nombre local en return cumple las condiciones para tratarlo como una xvalue en ese contexto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Se escribe return seguido del nombre del local. No se añade std::move para forzar la transferencia: la expresión std::move(local) ya no es el nombre local que permite ese NRVO. Las dos alternativas correctas —construcción directa del local como resultado o movimiento desde el local— deben producir el valor que la interfaz promete (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se aplica NRVO, no existen dos objetos separados que después haya que contar. Si se realiza el movimiento, el resultado recibe el int y el propietario del local queda vacío antes de terminar. Por eso observaremos el valor del resultado y no fijaremos una cantidad de llamadas a constructores o destructores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar el retorno del resultado local"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l12_devolver_resultado_local",
+          "question": "Completa return con el nombre del Paquete local preparado. No utilices std::move ni otra conversión: conserva la forma que permite NRVO y el movimiento implícito cuando corresponde.",
+          "template": "Paquete preparar(int valor) {\n    Paquete resultado{valor};\n    return [];\n}\n",
+          "answers": [
+            "resultado"
+          ],
+          "answerAlternatives": [
+            [
+              "resultado",
+              "(resultado)"
+            ]
+          ],
+          "explanation": "Se devuelve resultado por valor utilizando su nombre. NRVO permite construir ese objeto directamente como resultado de la llamada. Si no se aplica, este Paquete modificable puede transferir su propietario mediante el constructor de movimiento. Los paréntesis alrededor del nombre también se admiten; no hace falta std::move."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El objeto devuelto conserva el dato preparado"
+        },
+        {
+          "type": "paragraph",
+          "text": "preparar crea un Paquete local con el valor recibido y lo devuelve utilizando su nombre. listo es el objeto nuevo del llamador que recibe ese resultado por valor. La salida siguiente tiene que ser la misma tanto si se aplica NRVO como si se utiliza el movimiento permitido para este Paquete."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_retorno_de_local_con_nombre",
+          "language": "cpp",
+          "question": "¿Qué valor muestra listo después de completar preparar?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete preparar(int valor) {\n    Paquete resultado{valor};\n    return resultado;\n}\nint main() {\n    Paquete listo = preparar(7);\n    std::cout << listo.valor();\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El resultado conserva el int preparado a partir del argumento valor. Si se aplica NRVO, el local se construye directamente como ese resultado. En el otro camino, el movimiento entrega su propietario al resultado. listo sigue siendo un propietario válido después de terminar preparar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Devolver el objeto por valor no devuelve una referencia a un local que ya terminó. Se inicializa el objeto resultado antes de que se limpien los locales que deban terminar al abandonar la función. Si el local se movió, su propietario vacío no libera el int que ya recibió el resultado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Devolver el parámetro recibido por valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "devolver recibe su propio Paquete por valor y después devuelve ese parámetro por valor. Son dos momentos distintos: primero se construye recibido al preparar la llamada; después se inicializa el resultado desde él. Un parámetro está excluido de NRVO. En C++23, su nombre utilizado directamente en return es apto para movimiento y se trata como una xvalue en este caso (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al llamar con un original ordinario, la copia que construye el parámetro permite conservar el int original. Al llamar con std::move(original), esa construcción inicial ya puede transferir el int del llamador. El return posterior entrega el propietario del parámetro al resultado en los dos caminos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_retorno_de_parametro_por_valor",
+          "language": "cpp",
+          "question": "Escribe los valores finales de original, copia y transferido, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver(Paquete recibido) { return recibido; }\nint main() {\n    Paquete original{5};\n    Paquete copia = devolver(original);\n    Paquete transferido = devolver(std::move(original));\n    copia.fijar(2);\n    std::cout << original.valor() << ':' << copia.valor() << ':' << transferido.valor();\n    return 0;\n}\n",
+          "answers": [
+            "-1:2:5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera llamada copia original al parámetro y devuelve ese propietario independiente. La segunda mueve desde original al parámetro y después devuelve el propietario recibido. La modificación posterior de copia afecta sólo a su int. No se utiliza NRVO para el parámetro ni se necesita escribir std::move en su return."
+        },
+        {
+          "type": "paragraph",
+          "text": "El objeto resultado es distinto del parámetro por valor. El propietario del parámetro ya quedó vacío al moverlo. Su limpieza ocurre al retornar o, según la implementación, al terminar la expresión completa de la llamada; no destruye el int que ahora gestiona el objeto resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Return puede consumir un parámetro de referencia &&"
+        },
+        {
+          "type": "paragraph",
+          "text": "devolver_oferta recibe Paquete&& ofrecido. Enlazar ese parámetro sigue sin construir otro propietario: se refiere al objeto del llamador. Lo nuevo está en su return por valor. En C++23, el nombre de este parámetro de referencia rvalue cumple las condiciones de movimiento implícito al utilizarlo directamente en return (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_retorno_desde_referencia_de_oferta",
+          "language": "cpp",
+          "question": "¿Qué muestran original y recibido después de devolver_oferta?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete devolver_oferta(Paquete&& ofrecido) { return ofrecido; }\nint main() {\n    Paquete original{8};\n    Paquete recibido = devolver_oferta(std::move(original));\n    std::cout << original.valor() << ':' << recibido.valor();\n    return 0;\n}\n",
+          "answers": [
+            "-1:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada enlaza ofrecido con original. Después, return ofrecido inicializa el resultado por movimiento desde ese mismo objeto. Su int pasa a recibido y original queda vacío. La transferencia ocurre al construir el resultado, no por el simple enlace del parámetro."
+        },
+        {
+          "type": "paragraph",
+          "text": "No contradice la construcción Paquete copia{ofrecido} que estudiamos antes: allí el nombre se utilizaba en una construcción ordinaria y era una lvalue. Aquí es el operando directo de return y se aplica la regla concreta de C++23. Cambiar sólo la forma de recibir un objeto no explica por sí solo cómo terminará su propiedad; también hay que seguir las instrucciones del cuerpo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Devolver por valor desde una referencia de lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "El parámetro const Paquete& original de duplicar es una referencia lvalue de lectura. Su nombre no cumple la condición anterior para devolver un parámetro de referencia rvalue mediante movimiento implícito. El resultado por valor se construye usando el constructor de copia que recibe const Paquete& (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l12_resultado_copiado_desde_lectura",
+          "language": "cpp",
+          "question": "¿Qué muestran original y copia después de modificar copia?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Paquete {\npublic:\n    explicit Paquete(int valor) : dato_{std::make_unique<int>(valor)} {}\n    Paquete(const Paquete& otra) : dato_{} {\n        if (otra.dato_) { dato_ = std::make_unique<int>(*otra.dato_); }\n    }\n    Paquete(Paquete&&) noexcept = default;\n    ~Paquete() = default;\n    int valor() const noexcept { return dato_ ? *dato_ : -1; }\n    void fijar(int valor) noexcept { if (dato_) { *dato_ = valor; } }\nprivate:\n    std::unique_ptr<int> dato_;\n};\nPaquete duplicar(const Paquete& original) { return original; }\nint main() {\n    Paquete original{6};\n    Paquete copia = duplicar(original);\n    copia.fijar(1);\n    std::cout << original.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "6:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "duplicar devuelve un Paquete nuevo por valor. Al construirse desde el parámetro const Paquete&, se utiliza la copia independiente y original conserva su int. La escritura posterior sólo cambia el int de copia. Devolver por valor no obliga a consumir un objeto que se recibió por referencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco un parámetro Paquete& modificable se convierte en un origen de movimiento sólo por escribir su nombre en return. No es un objeto local por valor ni una referencia rvalue. Elegir una interfaz de copia o de consumo exige respetar esa diferencia y el contrato del llamador."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resultado propietario y una referencia a un local tienen vidas distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un Paquete devuelto por valor puede conservar su int después de terminar la función: el objeto resultado gestiona ese int. Una función que devuelve const Paquete& ofrece una referencia, no otro propietario. Si esa referencia identifica un objeto local de duración automática del cuerpo, ese local termina al salir de la función y la referencia deja de servir (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza el fragmento siguiente sin ejecutarlo ni utilizar su referencia devuelta. Aunque la referencia lleve const, return no prolonga la vida del Paquete local. Su propietario se destruye y limpia su int al terminar el local."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "const Paquete& incorrecta() {\n    Paquete local{4};\n    return local;\n}"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l12_vida_de_referencia_a_propietario_local",
+          "question": "¿Qué ocurre con el Paquete local y la referencia devuelta cuando termina incorrecta?",
+          "options": [
+            "Se refiere al Paquete local, que termina al salir de la función; const no prolonga su vida en este retorno.",
+            "La referencia const prolonga la vida del Paquete local hasta que el llamador deje de utilizar la referencia devuelta.",
+            "return local construye siempre otro Paquete por movimiento en C++23, aunque el tipo devuelto sea una referencia; ese objeto conserva el int."
+          ],
+          "correctIndex": 0,
+          "explanation": "El tipo de retorno es una referencia. No se construye otro Paquete propietario como resultado por valor. Al terminar el local, su destructor limpia el int que gestionaba. La referencia devuelta ya no identifica un objeto vivo; añadir const no convierte ese retorno en una extensión de vida."
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica retomará estas diferencias con Tramo. Una función preparará un resultado independiente por valor. La otra recibirá una referencia && y tendrá que decidir si acepta antes de consumir el origen. Mantendremos separados el enlace de una referencia, la construcción de otro propietario y la transferencia que realiza el cuerpo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: devolver una copia o aceptar una transferencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperamos Tramo, la clase de la lección anterior. Tiene un propietario unique_ptr<int[]> y una cantidad de cero a cuatro. Cantidad cero significa propietario vacío. Sus elementos admiten valores de cero a nueve. Sus cuatro operaciones de copia y movimiento ya están implementadas, igual que configurar, leer, escribir, vaciar y sumar. No tendrás que reconstruir esas funciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa dos funciones externas con estos propósitos:\ncopia_modificada recibe un Tramo por referencia const, prepara otro con un cambio en un elemento y devuelve ese objeto por valor.\ntomar_si_cabe recibe un destino y un origen ofrecido mediante &&, comprueba una condición y sólo entonces decide si entrega el array al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva la clase, las firmas y main. No cambies los informes para imitar las salidas ni construyas propietarios desde préstamos. Estas funciones deben aprovechar las operaciones de Tramo que ya se han comprobado. La diferencia que practicamos ahora está en cómo reciben los objetos y en qué hacen antes de devolver o transferir el resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrato: preparar otro tramo con un elemento cambiado"
+        },
+        {
+          "type": "paragraph",
+          "text": "copia_modificada recibe const Tramo& origen, un índice y un valor. main comprueba antes de llamarla que ese índice existe en origen y que el valor está entre cero y nueve. Ésas son sus precondiciones. No se llama a esta función para modificar un tramo vacío, porque no tiene un índice que pueda cumplir esa condición."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para toda llamada que cumple esas precondiciones, la función debe hacer lo siguiente:\nCrear una copia independiente de origen, con la misma cantidad y todos sus valores.\nCambiar en esa copia únicamente el elemento del índice indicado.\nDevolver la copia modificada por valor.\nConservar el array, la cantidad y los valores del origen durante la llamada.\nDejar salir bad_alloc si no se puede preparar la copia, sin cambiar el origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia debe ser independiente incluso si el valor pedido ya coincide con el que había en ese elemento. No se devuelve una referencia al objeto local ni un puntero a sus elementos. El resultado de la función debe seguir siendo propietario válido cuando el llamador lo reciba y lo utilice después de la llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes preparar un Tramo local con su constructor de copia, aplicar escribir sobre ese objeto y devolverlo por su nombre. Ese retorno permite la construcción directa del resultado mediante NRVO cuando se aplica; si no se aplica, Tramo dispone de movimiento. No hace falta escribir std::move en ese retorno para que el resultado sea propietario de sus datos (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "main asigna el resultado al destino sólo cuando la llamada termina con éxito. Si la preparación de la copia falla, la asignación todavía no se ha ejecutado y el destino conserva su estado anterior. La captura del error permite mostrar un rechazo; no reconstruye por sí sola datos que la función hubiera destruido antes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrato: comprobar el límite antes de consumir la oferta"
+        },
+        {
+          "type": "paragraph",
+          "text": "tomar_si_cabe recibe Tramo& destino, Tramo&& origen e int limite. Recibir origen mediante && no construye otro Tramo ni mueve todavía su array. El parámetro se refiere al objeto que el llamador ofreció. Esto permite observar su cantidad antes de decidir si se acepta la transferencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función debe rechazar estas situaciones:\nlimite es negativo.\nlimite es mayor que cuatro.\nLa cantidad del origen es mayor que limite.\nEn cualquiera de esos casos devuelve false sin reservar, liberar ni modificar ninguno de los dos tramos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el límite está entre cero y cuatro y el origen cabe, la función debe aceptar:\nUtiliza la asignación por movimiento para entregar el estado del origen al destino.\nNo reserva otro array ni copia los elementos.\nSi son objetos distintos, el origen queda vacío y el destino recibe el array y la cantidad que tenía el origen.\nSi el origen estaba vacío, también se acepta y el destino queda vacío.\nSi ambos parámetros identifican el mismo objeto, la política de automovimiento ya implementada conserva ese objeto.\nDevuelve true."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva noexcept: las comprobaciones son comparaciones de enteros y la transferencia utiliza la asignación por movimiento de Tramo, que ya promete no propagar excepciones. No vacíes el origen para averiguar después si cumple el límite. No recibas un parámetro por valor para intentar conseguir la misma conservación al rechazar: una construcción por movimiento de ese parámetro podría haber vaciado el origen antes del cuerpo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l12_rechazo_antes_de_transferir",
+          "question": "El origen tiene tres elementos y el límite recibido es dos. La llamada utiliza std::move(origen). ¿Qué debe ocurrir con este contrato?",
+          "options": [
+            "El enlace del parámetro ya ha vaciado el origen, aunque se devuelva false.",
+            "Se rechaza y ambos tramos conservan su estado, porque todavía no se ha ejecutado una operación de movimiento.",
+            "Se transfieren dos elementos y se conserva el tercero en el origen."
+          ],
+          "correctIndex": 1,
+          "explanation": "std::move permite ofrecer el objeto a la referencia &&. Ese enlace no ejecuta el constructor ni el operador de movimiento. La función puede consultar la cantidad tres, compararla con dos y devolver false antes de cambiar los propietarios."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar lo que queda en el llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila empieza por separado con original como un Paquete de valor cuatro. cambiar recibe su parámetro por valor, lo pone en ocho y devuelve ese entero. ver_oferta recibe && y sólo consulta el valor. devolver_oferta recibe && y devuelve un Paquete por valor usando return ofrecido;. Es el caso de retorno de un parámetro que acabamos de estudiar en C++23."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l12_estado_llamador_y_resultado",
+          "prompt": "Escribe por fila el valor final de original y el resultado obtenido. En la última fila escribe el valor guardado por el Paquete devuelto. Menos uno representa un Paquete vacío.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Parámetro",
+                "Llamada",
+                "Resultado consultado"
+              ],
+              "rows": [
+                [
+                  "Por valor",
+                  "cambiar(original)",
+                  "int devuelto"
+                ],
+                [
+                  "Por valor",
+                  "cambiar(std::move(original))",
+                  "int devuelto"
+                ],
+                [
+                  "Paquete&&",
+                  "ver_oferta(std::move(original))",
+                  "int devuelto"
+                ],
+                [
+                  "Paquete&&",
+                  "devolver_oferta(std::move(original))",
+                  "valor del Paquete devuelto"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: original",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: original",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: original",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: resultado",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 4: original",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 4: resultado",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera llamada modifica una copia y conserva el cuatro original. La segunda construye el parámetro por movimiento y deja vacío original antes de poner ocho en el parámetro. La tercera sólo consulta mediante el alias. La cuarta construye el resultado por movimiento desde el objeto ofrecido y lo deja vacío.",
+            "incorrect": "Separa la construcción del parámetro de las instrucciones del cuerpo. Por valor desde un nombre se copia; por valor desde std::move se mueve. Un parámetro && sólo enlaza, pero el retorno por valor de ese parámetro sí puede seleccionar el movimiento."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada de la práctica: una historia de dos tramos"
+        },
+        {
+          "type": "paragraph",
+          "text": "main prepara tramos[0], llamado A, con tres elementos: uno, cero y cuatro. Prepara tramos[1], llamado B, con un elemento: ocho. Ambos objetos permanecen vivos durante la historia. Una preparación inicial fallida termina main con código uno antes de imprimir el informe."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza con una cantidad de órdenes de uno a doce. Cada orden contiene cinco enteros: op destino a b c. El destino cero elige A y el uno elige B. Las operaciones tienen este significado:\n1 destino origen indice valor: obtener de origen una copia con ese elemento cambiado y asignar el resultado al destino.\n2 destino origen limite c: intentar la transferencia si cabe en ese límite; c se lee y se ignora.\n3 destino indice valor c: escribir en el destino; c se lee y se ignora.\n4 destino cantidad b c: configurar el destino; b y c se leen y se ignoran.\nCualquier otra operación se rechaza sin cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los identificadores de tramo se comprueban antes de utilizar tramos[identificador]. Para la operación uno también se comprueban el índice y el valor antes de llamar a copia_modificada. Para la operación dos, main ofrece el origen mediante std::move, pero la función es la responsable de comprobar el límite antes de transferir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las órdenes se aplican sucesivamente a los mismos dos objetos. Un rechazo conserva ambos y permite continuar con la orden siguiente. Una cantidad de órdenes inválida o una entrada incompleta termina main con código uno; no representa una operación rechazada de las funciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer la conservación y la sustitución en el informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "El estado 3[1,7,4] significa cantidad tres y esos tres valores en orden de índice. El estado 0[] representa un tramo vacío. Antes se imprime antes de ejecutar la orden y Ahora después. Aceptado vale uno al aceptar y cero al rechazar. Al final, Sumas muestra primero la suma de A y después la de B."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera orden del caso obligatorio es 1 1 0 1 7. Toma A como origen, prepara una copia y cambia su índice uno a siete. Después se asigna ese resultado a B. A debe seguir conteniendo uno, cero y cuatro. B debe contener uno, siete y cuatro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después se intenta pasar B a A con límite dos. B tiene tres elementos, por lo que se rechaza conservando los dos tramos. Repetir la transferencia con límite tres permite entregar el array de B a A y dejar B vacío. No basta con imprimir el rechazo: el origen debe seguir disponible para esa siguiente orden."
+        },
+        {
+          "type": "paragraph",
+          "text": "También se puede pedir que A reciba una copia modificada del propio A. Durante copia_modificada el origen se conserva. Después, al asignar el resultado, main sí sustituye A por la copia modificada. Son dos momentos distintos: conservar el argumento durante la llamada no impide que el llamador reemplace ese mismo objeto con el resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial compila, pero copia_modificada todavía devuelve un Tramo vacío y tomar_si_cabe siempre rechaza. Completa esos cuerpos y retira las conversiones a void de los parámetros que vayas utilizando. Conserva mostrar y las funciones proporcionadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir las dos funciones con sus contratos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos cuerpos y compila. Sólo el primer caso correcto es obligatorio para avanzar. Los otros casos quedan separados como ensayos opcionales en la página siguiente."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    // El llamador ya comprobó que indice y valor son válidos.\n    (void)origen;\n    (void)indice;\n    (void)valor;\n    return Tramo{};\n}\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    // Comprueba el límite antes de decidir si consumes el origen ofrecido.\n    (void)destino;\n    (void)origen;\n    (void)limite;\n    return false;\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n",
+          "initialStandardInput": "8\n1 1 0 1 7\n2 0 1 2 0\n2 0 1 3 0\n1 1 0 2 9\n1 0 0 0 6\n1 1 0 3 5\n2 1 0 4 0\n2 1 0 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n1 1 0 1 7\n2 0 1 2 0\n2 0 1 3 0\n1 1 0 2 9\n1 0 0 0 6\n1 1 0 3 5\n2 1 0 4 0\n2 1 0 0 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,7,4]\nAntes:A=3[1,0,4];B=3[1,7,4];Aceptado:0;Ahora:A=3[1,0,4];B=3[1,7,4]\nAntes:A=3[1,0,4];B=3[1,7,4];Aceptado:1;Ahora:A=3[1,7,4];B=0[]\nAntes:A=3[1,7,4];B=0[];Aceptado:1;Ahora:A=3[1,7,4];B=3[1,7,9]\nAntes:A=3[1,7,4];B=3[1,7,9];Aceptado:1;Ahora:A=3[6,7,4];B=3[1,7,9]\nAntes:A=3[6,7,4];B=3[1,7,9];Aceptado:0;Ahora:A=3[6,7,4];B=3[1,7,9]\nAntes:A=3[6,7,4];B=3[1,7,9];Aceptado:1;Ahora:A=0[];B=3[6,7,4]\nAntes:A=0[];B=3[6,7,4];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+                ],
+                "explanation": "La copia modificada necesita otro Tramo y debe conservar el origen durante la llamada. Para tomar el array, comprueba antes el límite y sólo al aceptar ejecuta la asignación por movimiento. Vincular && no consume por sí solo el origen."
+              },
+              {
+                "standardInput": "9\n2 0 0 3 0\n2 1 0 -1 0\n2 1 0 5 0\n1 1 0 0 0\n3 0 0 9 0\n2 1 0 3 0\n4 0 2 0 0\n3 0 1 8 0\n1 1 0 1 4\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:0;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:0;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[0,0,4]\nAntes:A=3[1,0,4];B=3[0,0,4];Aceptado:1;Ahora:A=3[9,0,4];B=3[0,0,4]\nAntes:A=3[9,0,4];B=3[0,0,4];Aceptado:1;Ahora:A=0[];B=3[9,0,4]\nAntes:A=0[];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,0];B=3[9,0,4]\nAntes:A=2[0,0];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,8];B=3[9,0,4]\nAntes:A=2[0,8];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,8];B=2[0,4]\nSumas:8:4"
+                ],
+                "explanation": "La copia modificada necesita otro Tramo y debe conservar el origen durante la llamada. Para tomar el array, comprueba antes el límite y sólo al aceptar ejecuta la asignación por movimiento. Vincular && no consume por sí solo el origen."
+              },
+              {
+                "standardInput": "8\n4 0 0 0 0\n1 1 0 0 5\n2 1 0 0 0\n4 0 4 0 0\n3 0 3 9 0\n1 1 0 3 0\n2 0 1 4 0\n2 1 1 3 0\n",
+                "outputs": [
+                  "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=0[];B=1[8]\nAntes:A=0[];B=1[8];Aceptado:0;Ahora:A=0[];B=1[8]\nAntes:A=0[];B=1[8];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nAntes:A=4[0,0,0,0];B=0[];Aceptado:1;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:1;Ahora:A=4[0,0,0,9];B=4[0,0,0,0]\nAntes:A=4[0,0,0,9];B=4[0,0,0,0];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nAntes:A=4[0,0,0,0];B=0[];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nSumas:0:0"
+                ],
+                "explanation": "La copia modificada necesita otro Tramo y debe conservar el origen durante la llamada. Para tomar el array, comprueba antes el límite y sólo al aceptar ejecuta la asignación por movimiento. Vincular && no consume por sí solo el origen."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "La historia combina copia modificada, un límite insuficiente, transferencia aceptada, otra copia, sustitución desde el mismo objeto, índice rechazado y transferencia desde un origen ya vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 1 0 1 7\n2 0 1 2 0\n2 0 1 3 0\n1 1 0 2 9\n1 0 0 0 6\n1 1 0 3 5\n2 1 0 4 0\n2 1 0 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[1,7,4]\nAntes:A=3[1,0,4];B=3[1,7,4];Aceptado:0;Ahora:A=3[1,0,4];B=3[1,7,4]\nAntes:A=3[1,0,4];B=3[1,7,4];Aceptado:1;Ahora:A=3[1,7,4];B=0[]\nAntes:A=3[1,7,4];B=0[];Aceptado:1;Ahora:A=3[1,7,4];B=3[1,7,9]\nAntes:A=3[1,7,4];B=3[1,7,9];Aceptado:1;Ahora:A=3[6,7,4];B=3[1,7,9]\nAntes:A=3[6,7,4];B=3[1,7,9];Aceptado:0;Ahora:A=3[6,7,4];B=3[1,7,9]\nAntes:A=3[6,7,4];B=3[1,7,9];Aceptado:1;Ahora:A=0[];B=3[6,7,4]\nAntes:A=0[];B=3[6,7,4];Aceptado:1;Ahora:A=0[];B=0[]\nSumas:0:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: identidad, reutilización y límites"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La transferencia a sí mismo conserva A. Los límites negativo y mayor que cuatro se rechazan. Después se modifica A, se transfiere y se vuelve a preparar el origen para otra copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "9\n2 0 0 3 0\n2 1 0 -1 0\n2 1 0 5 0\n1 1 0 0 0\n3 0 0 9 0\n2 1 0 3 0\n4 0 2 0 0\n3 0 1 8 0\n1 1 0 1 4\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:0;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:0;Ahora:A=3[1,0,4];B=1[8]\nAntes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=3[1,0,4];B=3[0,0,4]\nAntes:A=3[1,0,4];B=3[0,0,4];Aceptado:1;Ahora:A=3[9,0,4];B=3[0,0,4]\nAntes:A=3[9,0,4];B=3[0,0,4];Aceptado:1;Ahora:A=0[];B=3[9,0,4]\nAntes:A=0[];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,0];B=3[9,0,4]\nAntes:A=2[0,0];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,8];B=3[9,0,4]\nAntes:A=2[0,8];B=3[9,0,4];Aceptado:1;Ahora:A=2[0,8];B=2[0,4]\nSumas:8:4"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "No se llama a copia_modificada sobre un origen vacío. La transferencia de ese origen sí se acepta. Después se utiliza la cantidad máxima, el último índice y un valor cero presente. El automovimiento final se acepta porque B ya está vacío: su cantidad cero no excede el límite tres."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n4 0 0 0 0\n1 1 0 0 5\n2 1 0 0 0\n4 0 4 0 0\n3 0 3 9 0\n1 1 0 3 0\n2 0 1 4 0\n2 1 1 3 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Antes:A=3[1,0,4];B=1[8];Aceptado:1;Ahora:A=0[];B=1[8]\nAntes:A=0[];B=1[8];Aceptado:0;Ahora:A=0[];B=1[8]\nAntes:A=0[];B=1[8];Aceptado:1;Ahora:A=0[];B=0[]\nAntes:A=0[];B=0[];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nAntes:A=4[0,0,0,0];B=0[];Aceptado:1;Ahora:A=4[0,0,0,9];B=0[]\nAntes:A=4[0,0,0,9];B=0[];Aceptado:1;Ahora:A=4[0,0,0,9];B=4[0,0,0,0]\nAntes:A=4[0,0,0,9];B=4[0,0,0,0];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nAntes:A=4[0,0,0,0];B=0[];Aceptado:1;Ahora:A=4[0,0,0,0];B=0[]\nSumas:0:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: resultado por valor y consumo después de comprobar"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Tramo {\npublic:\n    Tramo() = default;\n    Tramo(const Tramo& otra);\n    Tramo& operator=(const Tramo& otra);\n    Tramo(Tramo&& otra) noexcept;\n    Tramo& operator=(Tramo&& otra) noexcept;\n    ~Tramo() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\n    void intercambiar(Tramo& otra) noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nTramo::Tramo(const Tramo& otra) : datos_{}, cantidad_{0} {\n    if (otra.cantidad_ != 0) {\n        datos_ = std::make_unique<int[]>(otra.cantidad_);\n        for (int i = 0; i < otra.cantidad_; ++i) {\n            datos_[i] = otra.datos_[i];\n        }\n        cantidad_ = otra.cantidad_;\n    }\n}\nTramo::Tramo(Tramo&& otra) noexcept\n    : datos_{std::move(otra.datos_)}, cantidad_{otra.cantidad_} {\n    otra.cantidad_ = 0;\n}\nTramo& Tramo::operator=(const Tramo& otra) {\n    if (this != &otra) {\n        Tramo candidata{otra};\n        intercambiar(candidata);\n    }\n    return *this;\n}\nTramo& Tramo::operator=(Tramo&& otra) noexcept {\n    if (this != &otra) {\n        datos_ = std::move(otra.datos_);\n        cantidad_ = otra.cantidad_;\n        otra.cantidad_ = 0;\n    }\n    return *this;\n}\nbool Tramo::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Tramo::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Tramo::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Tramo::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Tramo::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nvoid Tramo::intercambiar(Tramo& otra) noexcept {\n    datos_.swap(otra.datos_);\n    std::swap(cantidad_, otra.cantidad_);\n}\nTramo copia_modificada(const Tramo& origen, int indice, int valor) {\n    Tramo resultado{origen};\n    resultado.escribir(indice, valor);\n    return resultado;\n}\nbool tomar_si_cabe(Tramo& destino, Tramo&& origen, int limite) noexcept {\n    if (limite < 0 || limite > 4 || origen.cantidad() > limite) {\n        return false;\n    }\n    destino = std::move(origen);\n    return true;\n}\nvoid mostrar(const Tramo& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int ordenes = 0;\n    if (!(std::cin >> ordenes) || ordenes < 1 || ordenes > 12) { return 1; }\n    Tramo tramos[2];\n    if (!tramos[0].configurar(3) || !tramos[1].configurar(1)) { return 1; }\n    tramos[0].escribir(0, 1);\n    tramos[0].escribir(2, 4);\n    tramos[1].escribir(0, 8);\n    for (int i = 0; i < ordenes; ++i) {\n        int op = 0, destino = 0, a = 0, b = 0, c = 0;\n        if (!(std::cin >> op >> destino >> a >> b >> c)) { return 1; }\n        std::cout << \"Antes:A=\"; mostrar(tramos[0]);\n        std::cout << \";B=\"; mostrar(tramos[1]);\n        bool aceptado = false;\n        if (destino >= 0 && destino < 2) {\n            Tramo& actual = tramos[destino];\n            if (op == 1 && a >= 0 && a < 2) {\n                const Tramo& origen = tramos[a];\n                if (b >= 0 && b < origen.cantidad() && c >= 0 && c <= 9) {\n                    try {\n                        actual = copia_modificada(origen, b, c);\n                        aceptado = true;\n                    } catch (const std::bad_alloc&) {\n                        aceptado = false;\n                    }\n                }\n            } else if (op == 2 && a >= 0 && a < 2) {\n                aceptado = tomar_si_cabe(actual, std::move(tramos[a]), b);\n            } else if (op == 3) {\n                aceptado = actual.escribir(a, b);\n            } else if (op == 4) {\n                aceptado = actual.configurar(a);\n            }\n        }\n        std::cout << \";Aceptado:\" << aceptado << \";Ahora:A=\";\n        mostrar(tramos[0]); std::cout << \";B=\"; mostrar(tramos[1]);\n        std::cout << '\\n';\n    }\n    std::cout << \"Sumas:\" << tramos[0].sumar() << ':' << tramos[1].sumar();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "copia_modificada construye resultado con el constructor de copia de Tramo. Éste prepara otro array antes de copiar los valores. escribir cambia únicamente el elemento indicado, que main ya había comprobado. return resultado; devuelve el Tramo por valor. El compilador puede aplicar NRVO; si no lo aplica, el movimiento disponible entrega el array al resultado. En ambos casos el llamador recibe un propietario válido, sin depender de una referencia a un local que ya terminó (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al ejecutar actual = copia_modificada(...), primero se obtiene el resultado de la llamada. Sólo después se ejecuta la asignación por movimiento sobre actual. Si la copia lanza bad_alloc antes de devolver, esa asignación no llega a ejecutarse. Esto conserva el destino anterior, incluso cuando actual y el origen de la copia identifican el mismo Tramo."
+        },
+        {
+          "type": "paragraph",
+          "text": "tomar_si_cabe comprueba el intervalo del límite y la cantidad del origen. Si rechaza, sale sin ejecutar destino = std::move(origen);. Si acepta, esa asignación entrega el array y coordina las cantidades conforme al contrato de Tramo. El caso de identidad lo resuelve su operador de movimiento. No se necesita construir un parámetro propietario para decidir si se acepta."
+        },
+        {
+          "type": "paragraph",
+          "text": "La firma expresa parte del acuerdo, pero el cuerpo tiene que cumplirlo. const& permite consultar sin crear una copia al enlazar el argumento; && permite ofrecer un objeto modificable sin consumirlo automáticamente; un retorno Tramo entrega un objeto por valor. Las operaciones que se ejecuten dentro y alrededor de la llamada deciden qué datos se copian, transfieren o conservan."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la interfaz según lo que necesita el llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa quiere preguntar si una serie cabe antes de entregarla. Si se recibe un objeto por valor desde std::move, su parámetro ya puede haberse construido por movimiento cuando comienza la comprobación. Ese diseño no cumple por sí solo la conservación del origen al rechazar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l12_interfaz_para_rechazar_sin_consumir",
+          "question": "El origen debe conservar su array si no cabe; al aceptar debe entregarlo al destino sin copiar los elementos. ¿Qué decisión cumple ese objetivo?",
+          "options": [
+            "Recibir por valor y devolver false al comprobar que no cabe, suponiendo que eso restaura el argumento.",
+            "Mover primero al destino, comprobar después y confiar en que noexcept deshaga un rechazo.",
+            "Recibir una referencia al origen ofrecido, comprobar sin consumir y ejecutar la transferencia únicamente al aceptar."
+          ],
+          "correctIndex": 2,
+          "explanation": "El enlace de una referencia && no construye un nuevo propietario. La comprobación puede ocurrir antes de la asignación de movimiento. Recibir por valor puede consumir antes del cuerpo; devolver false no realiza automáticamente la operación inversa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una función sólo necesita una suma o una consulta de la serie, recibir const Tramo& evita pedir una copia completa al entrar. Si necesita trabajar sobre un objeto propio y acepta recibir una copia o una transferencia, recibir Tramo por valor puede ser adecuado. La firma se elige por esas necesidades, no por añadir && a todas las funciones (Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar los datos sin fijar un recuento de movimientos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La corrección de copia_modificada se puede comprobar observando el resultado devuelto y el origen conservado. No necesita que la consola imprima un número fijo de constructores. Con un local nombrado, aplicar NRVO o utilizar el movimiento disponible puede producir el mismo resultado correcto (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para este contrato deben cumplirse estas observaciones:\nEl resultado conserva la cantidad del origen.\nSólo cambia el elemento indicado.\nEscribir después en el resultado no cambia el origen.\nAl fallar la preparación, el origen y el destino anterior siguen intactos.\nEl propietario devuelto permite usar sus datos después de finalizar la llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para tomar_si_cabe, observa también los dos tramos inmediatamente después del rechazo. Si vuelves a configurarlos antes de mirarlos, podrías ocultar una transferencia que ocurrió antes de comprobar el límite. Al aceptar entre objetos distintos, el destino debe recibir el array existente y el origen debe quedar vacío. Una impresión comprueba los valores; la identidad del array y la ausencia de reservas requieren observar además esas operaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas funciones preparan una interfaz con dos compromisos distintos: obtener otro resultado sin cambiar el origen o entregar un resultado existente después de aceptar sus condiciones. La duración, la propiedad y el manejo de fallos forman parte de ese acuerdo, aunque dos versiones impriman los mismos números."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "37775bf589dfd7a1066ef9e413a5420a508487e57b47bb7191956b77e2700cc0"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "f6a5b4c8e6cacaaf4a06bd36c468c27df259c745ce324e806b00095d5efccc47"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "dcc08898379c847128776155a36cd80ef8267a9aac19ef7fc47f2e62c5621539"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "b81e0ab47e946e1158d51ea9fc68839ab169942f1f4b2bd4424132379d002183"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "8812d3e2d43b9bf504d11085ef1507ff542b58d35fe45a776d6f4f9739fffce4"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "f4f99fa3bcef2587159aa12b06e2e16b864af49c8bf542b8c40ccea3642f184a"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "609e8c9caa35fe0d6e4cc736f2a4ba9fe6484400444ba966a88884654ee8c51c"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "c1c8a964f629dd080bdec471a4d0b0b95bf9f47f1ae53a90737dc99ec29f3e09"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "873c6a0d704dca23cd4a288b2a3e3d6233447fe33e4011379eb27c48690aa273"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "02a473540d56266a23b71de68b6b389a7b8f591073147847a4e390e73cba8d8b"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "81565ae959449e99716bf37e0f3f4467df11f411da3dfa4df6fea974ebb5b243"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "891cdf15938d3a5a5278923fba56425dd3ca4004a4d88e78cd5e88e7804b6839"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "57205969dc55cd77b8bb9200a99250771c78a637d5cc23c9fccb883077ee4a64"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "44a9ecc922bcf7d6ed311711c561c794131a999b127dd46144200c423da83156"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "60c1a29e4976648d6529e13894c4c8d76610a768caa8cceed831ad7f8183413f"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "a7643541afa9077b8713008fdc3f19985c1a7e6d6319909a9c440805f1d39d61"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "6e3c243cbec92d34128351a0fa46a1459ff1bd2701241d38426b3f21d2a15d93"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "7bfa689f74220329b2d9fdc40d0a2914baa76e03cbce5a051e6fbbe75a1e5400"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0006",
+            "sha256": "d287fa7f584a26e3fb9df214feba7360a34f3944c925abbb4843cc860e8c828b"
+          },
+          {
+            "id": "block_0021_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0008",
+            "sha256": "a1669ea4eaa9f4816c9723dc407d3534f49c0041f50c48aed73c2b02d1260a60"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0004",
+            "sha256": "64500c6f5fed83554fbd8379a4e474f4caf59ef2f1eae3b7ef7f288c72b5ae65"
+          },
+          {
+            "id": "block_0022_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0006",
+            "sha256": "a038fbef7ad0942f9c65736173fb49810ed9ac7f42eb8f2e4cee4f1a3558fd2e"
+          },
+          {
+            "id": "block_0022_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0010",
+            "sha256": "4ef385e451e724bf6fce5e8242e22a84edc0f7ffa9529c3ca91648cd6805eb8f"
+          },
+          {
+            "id": "block_0022_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0012",
+            "sha256": "39b02b8d5f26525f2047b43687e53f01995a129dfbdefb0f02953d3d86077652"
+          }
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          {
+            "id": "block_0023_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0023_0001",
+            "sha256": "27960213ad5727290bbd3a4c332cdb097b087484eadba0b69218e0ad346d8e6c"
+          },
+          {
+            "id": "block_0023_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0023_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          {
+            "id": "block_0024_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0024_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0024_0002",
+            "sha256": "3b769e6804dd3c515a5d282eff25000f7cab0a5e65a9a0b302657bca7a98b86a"
+          },
+          {
+            "id": "block_0024_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          {
+            "id": "block_0025_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0025_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0025_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0025_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0025_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004",
+          "block_0020_0005"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004",
+          "block_0021_0005",
+          "block_0021_0006",
+          "block_0021_0007",
+          "block_0021_0008"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003",
+          "block_0022_0004",
+          "block_0022_0005",
+          "block_0022_0006",
+          "block_0022_0007",
+          "block_0022_0008",
+          "block_0022_0009",
+          "block_0022_0010",
+          "block_0022_0011",
+          "block_0022_0012"
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          "block_0023_0000",
+          "block_0023_0001",
+          "block_0023_0002",
+          "block_0023_0003",
+          "block_0023_0004",
+          "block_0023_0005"
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          "block_0024_0000",
+          "block_0024_0001",
+          "block_0024_0002",
+          "block_0024_0003"
+        ]
+      },
+      {
+        "id": "page_0025",
+        "blocks": [
+          "block_0025_0000",
+          "block_0025_0001",
+          "block_0025_0002",
+          "block_0025_0003",
+          "block_0025_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "57504d41dc7b4efc0021eb01ab716159661cf7a0e49fc7fb2137e7d52124073b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "37775bf589dfd7a1066ef9e413a5420a508487e57b47bb7191956b77e2700cc0"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "f6a5b4c8e6cacaaf4a06bd36c468c27df259c745ce324e806b00095d5efccc47"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "dcc08898379c847128776155a36cd80ef8267a9aac19ef7fc47f2e62c5621539"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "b81e0ab47e946e1158d51ea9fc68839ab169942f1f4b2bd4424132379d002183"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "8812d3e2d43b9bf504d11085ef1507ff542b58d35fe45a776d6f4f9739fffce4"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "f4f99fa3bcef2587159aa12b06e2e16b864af49c8bf542b8c40ccea3642f184a"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "609e8c9caa35fe0d6e4cc736f2a4ba9fe6484400444ba966a88884654ee8c51c"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "c1c8a964f629dd080bdec471a4d0b0b95bf9f47f1ae53a90737dc99ec29f3e09"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "873c6a0d704dca23cd4a288b2a3e3d6233447fe33e4011379eb27c48690aa273"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "02a473540d56266a23b71de68b6b389a7b8f591073147847a4e390e73cba8d8b"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "81565ae959449e99716bf37e0f3f4467df11f411da3dfa4df6fea974ebb5b243"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "891cdf15938d3a5a5278923fba56425dd3ca4004a4d88e78cd5e88e7804b6839"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "57205969dc55cd77b8bb9200a99250771c78a637d5cc23c9fccb883077ee4a64"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "44a9ecc922bcf7d6ed311711c561c794131a999b127dd46144200c423da83156"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "60c1a29e4976648d6529e13894c4c8d76610a768caa8cceed831ad7f8183413f"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "a7643541afa9077b8713008fdc3f19985c1a7e6d6319909a9c440805f1d39d61"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "6e3c243cbec92d34128351a0fa46a1459ff1bd2701241d38426b3f21d2a15d93"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "7bfa689f74220329b2d9fdc40d0a2914baa76e03cbce5a051e6fbbe75a1e5400"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0006",
+                "sha256": "d287fa7f584a26e3fb9df214feba7360a34f3944c925abbb4843cc860e8c828b"
+              },
+              {
+                "id": "block_0021_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0008",
+                "sha256": "a1669ea4eaa9f4816c9723dc407d3534f49c0041f50c48aed73c2b02d1260a60"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0004",
+                "sha256": "64500c6f5fed83554fbd8379a4e474f4caf59ef2f1eae3b7ef7f288c72b5ae65"
+              },
+              {
+                "id": "block_0022_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0006",
+                "sha256": "a038fbef7ad0942f9c65736173fb49810ed9ac7f42eb8f2e4cee4f1a3558fd2e"
+              },
+              {
+                "id": "block_0022_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0010",
+                "sha256": "4ef385e451e724bf6fce5e8242e22a84edc0f7ffa9529c3ca91648cd6805eb8f"
+              },
+              {
+                "id": "block_0022_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0012",
+                "sha256": "39b02b8d5f26525f2047b43687e53f01995a129dfbdefb0f02953d3d86077652"
+              }
+            ]
+          },
+          {
+            "id": "page_0023",
+            "blocks": [
+              {
+                "id": "block_0023_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0023_0001",
+                "sha256": "27960213ad5727290bbd3a4c332cdb097b087484eadba0b69218e0ad346d8e6c"
+              },
+              {
+                "id": "block_0023_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0023_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0024",
+            "blocks": [
+              {
+                "id": "block_0024_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0024_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0024_0002",
+                "sha256": "3b769e6804dd3c515a5d282eff25000f7cab0a5e65a9a0b302657bca7a98b86a"
+              },
+              {
+                "id": "block_0024_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0025",
+            "blocks": [
+              {
+                "id": "block_0025_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0025_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0025_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0025_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0025_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

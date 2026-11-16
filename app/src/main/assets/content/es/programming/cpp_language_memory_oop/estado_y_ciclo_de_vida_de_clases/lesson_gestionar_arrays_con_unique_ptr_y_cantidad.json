@@ -1,0 +1,2232 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__gestionar_arrays_con_unique_ptr_y_cantidad",
+  "title": "Gestionar arrays con unique_ptr y su cantidad",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un propietario para todo un array"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora utilizamos unique_ptr<int> para gestionar un solo int. Para gestionar un array dinámico de int utilizaremos la forma std::unique_ptr<int[]>. Los corchetes indican que el propietario se encarga de un array. No significan que el array esté vacío ni escriben su cantidad de elementos en el tipo (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fábrica std::make_unique<int[]>(cantidad) crea el array y devuelve su propietario. Dentro de los signos < y > se escribe int[], el tipo de elementos y la forma de array. La cantidad se entrega después como argumento, entre paréntesis, y puede decidirse durante la ejecución. Por ejemplo, dentro de una función podemos escribir este fragmento (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int cantidad = 4;\nstd::unique_ptr<int[]> datos = std::make_unique<int[]>(cantidad);"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos es el objeto propietario. El array que gestiona contiene la cantidad de int solicitada. La biblioteca <memory> proporciona tanto unique_ptr como make_unique. auto también puede deducir ese tipo desde el resultado de la fábrica. En las predicciones siguientes suponemos que las creaciones de arrays terminan con éxito."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cantidad, índices y valores iniciales son datos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En make_unique<int[]>(cantidad), cada int creado recibe inicialmente el valor cero. Esto permite leer los elementos válidos antes de escribir otros valores en ellos. No es la misma inicialización que un new int[cantidad] sin inicializador, cuyos int no reciben por esa instrucción un valor que podamos leer (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se crean cuatro elementos, sus índices son cero, uno, dos y tres. La cantidad es cuatro, pero ese cuatro no es un índice válido. Con una cantidad positiva n, los índices válidos van de cero a n menos uno. Si n es cero, no hay ningún índice válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "El acceso datos[indice] permite leer o escribir el elemento indicado. La forma de unique_ptr para arrays no ofrece una comprobación de límites en la que podamos apoyarnos ni una excepción out_of_range para corregir un índice inválido. Debemos validar el índice antes del acceso. Tampoco ofrece size(): necesitamos conservar la cantidad por separado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conviene recibir cantidades e índices como enteros con signo para rechazar los negativos antes de convertirlos al tipo sin signo que utilice la operación. La validación incluye también el límite superior acordado. Un propietario válido se encarga de liberar su array; no demuestra por sí solo que un índice recibido sea correcto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la forma de propietario que crea la fábrica"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l10_completar_tipo_array",
+          "question": "Completa el hueco con el tipo que permite crear un array de int cuya cantidad se entrega como argumento. Conserva la cantidad y los accesos preparados. Se deben crear tres elementos inicializados a cero, no un único int con valor tres.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<[]>(3);\n    datos[2] = 6;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "int[]"
+          ],
+          "answerAlternatives": [
+            [
+              "int[]",
+              "int []",
+              "signed int[]"
+            ]
+          ],
+          "explanation": "int[] selecciona la creación de un array de int, y el argumento tres determina su cantidad. Los elementos comienzan en cero. Después sólo se escribe en el elemento de índice dos. Usar int sin los corchetes solicitaría un objeto individual, no este array."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar la inicialización y cambiar un elemento"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa conserva la cantidad en una variable y utiliza sólo índices que pertenecen al array creado. La primera impresión lee el estado inicial. Después se escribe en un elemento y se vuelven a consultar los tres. La escritura no cambia la cantidad ni modifica los otros elementos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_array_inicializado_y_escritura",
+          "language": "cpp",
+          "question": "Escribe la primera línea y la línea posterior al cambio del elemento.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const int cantidad = 3;\n    auto datos = std::make_unique<int[]>(cantidad);\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2] << '\\n';\n    datos[1] = 7;\n    std::cout << datos[0] << ':' << datos[1] << ':' << datos[2];\n    return 0;\n}\n",
+          "answers": [
+            "0:0:0\n0:7:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La fábrica inicializa los tres int a cero. La asignación posterior sustituye únicamente el valor del elemento de índice uno. El propietario sigue gestionando el mismo array de tres elementos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La forma para arrays ofrece el acceso con corchetes. No ofrece los operadores * y -> que utilizábamos con el propietario de un objeto individual. Para leer el primer elemento, después de comprobar que existe, utilizamos datos[0] (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtener un acceso prestado sin duplicar la propiedad"
+        },
+        {
+          "type": "paragraph",
+          "text": "get() devuelve el puntero almacenado. En este caso es un int* que podemos utilizar como acceso prestado al array mientras éste siga vivo. Ese puntero no lleva una cantidad consultable; el programa tiene que conocer cuántos elementos hay y respetar esos límites. Obtenerlo no construye otro propietario (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el ejemplo se han creado dos elementos y el acceso prestado sólo utiliza un índice de ese intervalo. La escritura a través del puntero modifica un elemento del mismo array que gestiona datos. Al terminar la observación se vacía la variable puntero prestado; esa asignación no destruye el array."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_prestamo_de_array",
+          "language": "cpp",
+          "question": "¿Qué valores muestra el propietario después de escribir mediante prestado?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto datos = std::make_unique<int[]>(2);\n    datos[0] = 3;\n    datos[1] = 5;\n    int* prestado = datos.get();\n    prestado[1] = 8;\n    std::cout << datos[0] << ':' << datos[1];\n    prestado = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "prestado identifica el mismo array que datos. Escribir en su elemento de índice uno cambia ese elemento compartido por ambos accesos, sin crear una copia independiente del array. datos conserva la responsabilidad de limpieza."
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay que aplicar delete[] a ese préstamo ni utilizarlo para construir otro propietario del mismo array. La limpieza corresponde al unique_ptr original. Si éste sustituye o destruye el array, los préstamos anteriores dejan de servir. Un span construido desde el préstamo y la cantidad seguiría siendo una vista y tampoco prolongaría la vida del array."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un propietario constante no vuelve constantes sus elementos"
+        },
+        {
+          "type": "paragraph",
+          "text": "const aplicado al objeto unique_ptr impide cambiar ese propietario por esa vía. No convierte los int del array en const int. Su acceso con corchetes sigue permitiendo escribir en los elementos cuando el tipo de elemento es int y los índices son válidos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_propietario_array_constante",
+          "language": "cpp",
+          "question": "¿Qué muestra el programa tras las dos escrituras permitidas en el array?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    const auto datos = std::make_unique<int[]>(2);\n    datos[0] = 4;\n    datos[1] = 6;\n    std::cout << datos[0] << ':' << datos[1];\n    return 0;\n}\n",
+          "answers": [
+            "4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El propietario es constante, pero los elementos creados tienen tipo int. Las dos escrituras cambian esos elementos sin reasignar el propietario. La posición de const determina qué objeto queda protegido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para ofrecer lectura de los elementos sin escritura por un acceso, podemos utilizar const en ese acceso: por ejemplo, const int* como préstamo o span<const int> con la cantidad adecuada. Es distinto de limitarse a declarar constante el objeto propietario. En ambos casos debemos conservar las condiciones de vida y de índices."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el mismo array a otro propietario"
+        },
+        {
+          "type": "paragraph",
+          "text": "unique_ptr<int[]> no permite copiarse para obtener dos propietarios del mismo array. Sí permite la construcción por movimiento: el destino recibe la responsabilidad sobre ese array y el propietario de origen queda vacío. No se crea otro array ni se copian sus elementos para realizar esa transferencia (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_movimiento_de_propietario_array",
+          "language": "cpp",
+          "question": "¿Qué muestran la comprobación del propietario original y los dos elementos consultados desde el destino?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint main() {\n    auto origen = std::make_unique<int[]>(2);\n    origen[0] = 3;\n    origen[1] = 8;\n    auto destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << destino[0] << ':' << destino[1];\n    return 0;\n}\n",
+          "answers": [
+            "1:3:8"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El destino recibe el array existente con sus dos valores. El propietario original queda vacío y no se utiliza para acceder a los elementos. La transferencia afecta al objeto propietario, sin duplicar el array."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si conservamos la cantidad en otra variable, mover el unique_ptr no cambia ni transfiere por sí mismo esa variable. Hay que mantener su relación con el propietario correspondiente. Es la misma necesidad de coordinar miembros que estudiamos con la etiqueta de Muestra; un movimiento generado no pone automáticamente a cero una cantidad externa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Limpiar todos los elementos una sola vez"
+        },
+        {
+          "type": "paragraph",
+          "text": "La forma de unique_ptr para arrays utiliza delete[] en su limpieza predeterminada. Eso termina los elementos y libera el almacenamiento del array sin que tengamos que escribir una liberación manual. Si sus elementos son objetos de una clase, interviene el destructor de cada elemento (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Marca tiene un destructor que aumenta el contador terminados. El programa crea un array de tres Marcas, consulta el contador y llama a reset() sobre el propietario. Después sale del bloque en el que vive ese propietario. Sigue qué objetos terminan en cada momento; no confundas el propietario con sus elementos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_limpieza_de_elementos_array",
+          "language": "cpp",
+          "question": "Escribe el contador antes de reset, después de reset y después de salir del bloque.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nint terminados = 0;\n\nstruct Marca {\n    ~Marca() { ++terminados; }\n};\n\nint main() {\n    {\n        auto marcas = std::make_unique<Marca[]>(3);\n        std::cout << terminados << ':';\n        marcas.reset();\n        std::cout << terminados << ':';\n    }\n    std::cout << terminados;\n    return 0;\n}\n",
+          "answers": [
+            "0:3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "reset termina las tres Marcas y deja vacío al propietario. Al salir del bloque se destruye ese propietario ya vacío; no se vuelven a destruir los elementos. Cada destructor de Marca aumenta una sola vez el contador."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar cero elementos de propietario nulo"
+        },
+        {
+          "type": "paragraph",
+          "text": "make_unique<int[]>(0) solicita un array sin elementos. No equivale a construir un unique_ptr vacío con nullptr. Con la reserva normal utilizada por esta fábrica, una creación exitosa conserva un puntero no nulo, aunque no haya ningún elemento que podamos leer. La petición también puede fallar; pedir cantidad cero no promete que no intervenga una reserva (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión del propietario a bool comprueba si su puntero es nulo; no comprueba que haya un primer elemento. La cantidad es la que determina si existen índices válidos. Si es cero, no se utiliza ni siquiera el índice cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l10_cero_elementos_y_fabrica",
+          "question": "Se completa con éxito make_unique<int[]>(0). ¿Qué conclusión permite decidir si puede utilizarse el índice cero?",
+          "options": [
+            "La fábrica convierte automáticamente esa cantidad en un propietario nulo; basta comprobar el propietario para decidir cualquier acceso.",
+            "La inicialización a cero prepara un primer int aunque se hayan solicitado cero elementos, por lo que se puede leerlo.",
+            "No hay ningún índice válido: la cantidad es cero, aunque la creación conserve un puntero no nulo."
+          ],
+          "correctIndex": 2,
+          "explanation": "La cantidad cero significa que no se ha creado ningún elemento int. Un propietario con puntero no nulo no demuestra la existencia de un primer elemento. El acceso debe validarse con la cantidad, no sólo con la presencia del puntero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lote mantiene juntos el propietario y su cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la práctica utilizaremos Lote, una clase con dos miembros privados: datos_, de tipo unique_ptr<int[]>, y cantidad_, un int. Su interfaz admite cantidades de cero a cuatro y valores de elementos de cero a nueve. El constructor sin argumentos empieza con cantidad cero y propietario nulo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta clase elige una representación concreta del vacío: cuando se pide cantidad cero, libera el array anterior y deja datos_ nulo sin llamar a make_unique para cero. Esa relación entre cantidad cero y propietario nulo es una política de Lote; no es un comportamiento que atribuyamos a make_unique<int[]>(0)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lote declara eliminadas tanto la copia como el movimiento. Aquí nos centramos en configurar y consultar el mismo objeto. No obtenemos una copia profunda automática de sus elementos, ni dejamos que un movimiento por miembros transfiera el propietario conservando una cantidad incoherente en el origen. Diseñar esas operaciones sería otra decisión de interfaz."
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad() devuelve la cantidad conservada. acceso() devuelve un préstamo de sólo lectura, sin transferir la propiedad ni acompañarlo de un tamaño nuevo. Las funciones ya proporcionadas permiten escribir un elemento validado, vaciar el lote y sumar sus valores. Las dos funciones que construiremos son configurar y leer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurar prepara un array nuevo antes de sustituir"
+        },
+        {
+          "type": "paragraph",
+          "text": "configurar recibe una cantidad con signo. Su declaración se escribe dentro de public de Lote, como en el fragmento siguiente. Primero debe rechazar cantidades fuera de cero a cuatro sin cambiar el lote. La cantidad cero utiliza la política de vaciado de Lote. Para una cantidad positiva aceptada se prepara un array candidato nuevo con todos sus int inicialmente en cero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool configurar(int cantidad) noexcept;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Elegimos que esa preparación ocurra también cuando la nueva cantidad coincide con la actual. Configurar no significa conservar el prefijo ni mantener las escrituras anteriores: debe comenzar otro array inicializado a cero. Los límites de esta interfaz y esa decisión forman parte de la práctica."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mientras se prepara el candidato, el propietario y la cantidad anteriores siguen describiendo el lote existente. Sólo después de que termine la creación se intercambian los propietarios y se actualiza la cantidad. El candidato pasa a gestionar el array anterior para su limpieza al salir. Si la reserva lanza std::bad_alloc, el tratamiento debe devolver false sin cambiar los dos miembros (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función está declarada noexcept y comunica aceptación o rechazo mediante bool. Puede realizar una reserva porque trata su fallo dentro, antes de salir de la función. Esa promesa no conserva el estado por sí misma: la conservación procede de preparar antes de sustituir, como ya practicamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer valida el índice antes de escribir la salida"
+        },
+        {
+          "type": "paragraph",
+          "text": "La declaración de leer también se escribe dentro de public de Lote. Recibe un índice con signo y una referencia resultado a una variable del llamador. Si el índice es negativo o alcanza o supera cantidad_, debe devolver false antes de acceder al array y sin cambiar esa variable. En un Lote de cantidad cero no hay ningún índice que pueda aceptarse."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool leer(int indice, int& resultado) const noexcept;"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el índice es válido, se lee el elemento y se copia su valor en resultado. Después se devuelve true. Son dos resultados distintos: el bool informa de si se pudo leer, y la referencia permite guardar el entero obtenido en la variable exterior. Un cero leído es un dato válido, no una señal de ausencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "La declaración termina en const noexcept. Esa const se aplica al Lote sobre el que se llama la función, no a la variable exterior recibida mediante int&. resultado no es un miembro de Lote: escribir en él es compatible con que la función sea const. La promesa noexcept se refiere a la propagación de excepciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Además, como vimos con el propietario constante, const no convierte en constantes los int gestionados por unique_ptr<int[]>. Nuestra implementación de leer debe limitarse a consultar esos elementos y conservar el Lote porque así lo exige su contrato. No podemos utilizar sólo la palabra const como prueba de que el cuerpo no cambia ningún dato alcanzable (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el propietario sin confundirlo con un contenedor"
+        },
+        {
+          "type": "paragraph",
+          "text": "unique_ptr<int[]> aporta propiedad exclusiva y limpieza del array. No aporta por sí solo consulta de tamaño, crecimiento, copia independiente de los elementos ni comprobación de índices. Cambiar una variable cantidad tampoco cambia el array que ya se creó. Lote necesita una interfaz y validaciones propias para mantener juntos esos datos (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l10_propietario_array_y_vector",
+          "question": "Una tarea necesita conservar el tamaño de una colección y realizar las copias independientes ya estudiadas con vector<int>. ¿Qué decisión está justificada?",
+          "options": [
+            "vector<int> sigue siendo una alternativa adecuada; un propietario de array no incorpora automáticamente esas operaciones de colección.",
+            "unique_ptr<int[]> ya incorpora el tamaño y copia los elementos porque los corchetes forman parte de su tipo.",
+            "vector<int> exige fijar la cantidad de elementos en el código; si se decide al ejecutar, hay que utilizar unique_ptr<int[]>."
+          ],
+          "correctIndex": 0,
+          "explanation": "El vector conserva su cantidad y ofrece operaciones de colección conocidas. El propietario de array cubre otra responsabilidad: la propiedad y la limpieza. Podemos construir una interfaz sobre él cuando haga falta, pero no obtiene por ello todas las operaciones del vector ni permite sobrepasar los índices válidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La práctica usa Lote para reunir creación, cantidad, validación, limpieza y conservación ante fallos. Aprender ese mecanismo no convierte al propietario de array en una opción superior para cualquier secuencia. Elegimos el tipo y la interfaz según las operaciones que necesitamos, conservando las alternativas que ya sabemos utilizar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: conservar el array y su cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa dos cuerpos de Lote en el editor: configurar y leer. La clase empieza vacía, con cantidad cero y propietario vacío. Conserva los miembros, las declaraciones, las funciones proporcionadas y main. Las copias y los movimientos de Lote están prohibidos en esta práctica; el programa trabaja con el mismo objeto durante toda la historia."
+        },
+        {
+          "type": "paragraph",
+          "text": "configurar recibe una cantidad y debe cumplir este contrato:\nRechaza cantidades fuera de cero a cuatro, sin cambiar el array, sus valores ni la cantidad anterior.\nAcepta cero dejando vacío el propietario y poniendo la cantidad en cero, sin solicitar un array nuevo. Puedes utilizar vaciar, que ya está implementada.\nPara una cantidad positiva admitida, prepara otro array de esa cantidad mediante make_unique<int[]>; sus elementos comienzan en cero.\nSólo cuando esa preparación termina, sustituye el propietario anterior y guarda la cantidad nueva. También prepara otro array si la cantidad coincide con la anterior.\nSi la reserva lanza std::bad_alloc, captura el error y devuelve false conservando el estado anterior.\nDevuelve true al completar una configuración aceptada."
+        },
+        {
+          "type": "paragraph",
+          "text": "La candidata local debe ser propietaria del array que se está preparando. Hasta que termine esa creación, el array anterior debe permanecer bajo datos_. Después puedes intercambiar ambos propietarios y guardar la cantidad. Al terminar la candidata se libera el array anterior. No liberes el anterior antes de saber si la preparación ha tenido éxito."
+        },
+        {
+          "type": "paragraph",
+          "text": "leer recibe un índice y una referencia a un entero del llamador:\nRechaza un índice negativo o mayor o igual que cantidad_, sin acceder al array ni modificar ese entero.\nPara un índice válido, copia en resultado el elemento correspondiente y devuelve true.\nEn un lote vacío todos los índices se rechazan.\nLa función es const porque conserva el estado de Lote; la variable externa resultado puede recibir el valor leído."
+        },
+        {
+          "type": "paragraph",
+          "text": "No añadas un delete manual, no crees otro propietario a partir de get y no cambies los informes para imitar las salidas. Mantén las declaraciones noexcept: la reserva se trata dentro de configurar y leer comprueba sus condiciones antes de utilizar el índice."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir una lectura sin perder el dato anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para esta tabla, Lote ya contiene tres elementos: cuatro, cero y cinco, en ese orden. Cada fila empieza por separado con resultado igual a ocho. Aplica el contrato de leer; no ejecutes un acceso fuera del intervalo para averiguar qué ocurriría."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l10_lecturas_y_salida_conservada",
+          "prompt": "Escribe por fila el resultado de leer (1 o 0) y el valor final de la variable resultado. Cada llamada empieza con esa variable igual a 8.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Índice solicitado",
+                "Cantidad",
+                "Valores por índice"
+              ],
+              "rows": [
+                [
+                  "-1",
+                  "3",
+                  "0→4; 1→0; 2→5"
+                ],
+                [
+                  "1",
+                  "3",
+                  "0→4; 1→0; 2→5"
+                ],
+                [
+                  "2",
+                  "3",
+                  "0→4; 1→0; 2→5"
+                ],
+                [
+                  "3",
+                  "3",
+                  "0→4; 1→0; 2→5"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lecturas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: aceptación",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: resultado final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 2: aceptación",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: resultado final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 3: aceptación",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 3: resultado final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 4: aceptación",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 4: resultado final",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los índices negativo y tres se rechazan conservando el ocho anterior. El índice uno lee un cero presente; el dos lee el último elemento, cuyo valor es cinco. La cantidad tres permite los índices cero, uno y dos.",
+            "incorrect": "Compara el índice con cero y con la cantidad antes de leer. Si se rechaza, resultado debe conservar su valor anterior. Si se acepta, recibe el elemento del índice solicitado; leer cero es un éxito cuando ese elemento existe."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Utilizar las operaciones del lote"
+        },
+        {
+          "type": "paragraph",
+          "text": "main crea un Lote vacío y llama a configurar con cantidad dos. Si esa preparación no se acepta, termina con código uno antes de imprimir el informe. Por eso el inicial compila, pero todavía no produce el resultado solicitado: su configurar provisional devuelve false. Después de completar esa función, también tendrás que completar leer para que el informe obtenga correctamente los valores."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada empieza con una cantidad de órdenes de uno a doce. Cada orden contiene tres enteros, operacion, a y b:\n1 a b: configurar con cantidad a; b se lee y se ignora.\n2 a b: escribir b en el índice a.\n3 a b: leer el índice a; b se lee y se ignora.\n4 a b: vaciar; ambos datos adicionales se leen y se ignoran.\nCualquier otra operación se rechaza sin cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "escribir ya está implementada: comprueba el índice y acepta valores de cero a nueve. vaciar libera el array actual, coloca cantidad_ en cero y acepta también si el lote ya estaba vacío. sumar recorre únicamente los elementos que indica cantidad_. Con un máximo de cuatro valores de cero a nueve, la suma está entre cero y treinta y seis."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las órdenes actúan sucesivamente sobre el mismo Lote. Cada configuración positiva aceptada comienza otro array con todos sus valores en cero, incluso si repite la cantidad anterior. Los datos rechazados mantienen el estado anterior y permiten seguir con las órdenes posteriores. La cantidad de órdenes inválida o una entrada incompleta termina main con código uno; no se convierte en una orden rechazada del lote."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer el informe antes y después de cada orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un estado como 2[0,7] significa que hay dos elementos: cero en el índice cero y siete en el índice uno. El estado 0[] significa que el Lote está vacío. Los corchetes forman parte del informe; no representan una nueva declaración ni una instrucción que se ejecute."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada línea de una orden muestra estos datos:\nAntes contiene el estado anterior.\nResultado vale uno al aceptar y cero al rechazar.\nActual contiene el estado posterior.\nLeido contiene el entero obtenido por la operación de lectura; en las demás operaciones conserva el valor inicial menos uno.\nInicio muestra la preparación con dos ceros y Final muestra el último estado y su suma."
+        },
+        {
+          "type": "paragraph",
+          "text": "main imprime Antes antes de ejecutar la operación. No copia Lote ni guarda un puntero que después necesite observar. mostrar recorre sus índices y utiliza leer para obtener cada valor. En una referencia correcta, esas lecturas se aceptan porque sus índices van de cero a cantidad menos uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para cada orden, la variable leido empieza en menos uno. Así una lectura rechazada conserva ese menos uno y una lectura válida de un elemento cuyo valor es cero muestra cero. Son situaciones diferentes: el valor leído no sustituye al indicador de aceptación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las conversiones provisionales a void reconocen parámetros todavía sin usar para evitar avisos. Retíralas al completar los dos cuerpos. No modifiques mostrar para compensar una lectura incorrecta ni sumar para ocultar una cantidad que no corresponde al array."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurar el array y comprobar cada lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos cuerpos y compila. Sólo el primer caso correcto es obligatorio para avanzar. Los demás se mantienen como ensayos opcionales en la página siguiente."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    // Completa las condiciones y la preparación del array candidato.\n    (void)cantidad;\n    return false;\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    // Comprueba el índice antes de leer; conserva resultado al rechazar.\n    (void)indice;\n    (void)resultado;\n    return false;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n",
+          "initialStandardInput": "12\n2 1 7\n3 1 0\n1 4 0\n2 3 9\n3 4 0\n1 -1 0\n1 4 0\n2 0 0\n1 0 0\n3 0 0\n1 1 0\n3 0 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n2 1 7\n3 1 0\n1 4 0\n2 3 9\n3 4 0\n1 -1 0\n1 4 0\n2 0 0\n1 0 0\n3 0 0\n1 1 0\n3 0 0\n",
+                "outputs": [
+                  "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:2[0,7];Leido:-1\nAntes:2[0,7];Resultado:1;Actual:2[0,7];Leido:7\nAntes:2[0,7];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:0;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:0;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:0[];Leido:-1\nAntes:0[];Resultado:0;Actual:0[];Leido:-1\nAntes:0[];Resultado:1;Actual:1[0];Leido:-1\nAntes:1[0];Resultado:1;Actual:1[0];Leido:0\nFinal:1[0];Suma:0"
+                ],
+                "explanation": "Comprueba la cantidad antes de reservar. Prepara la candidata antes de sustituir el array anterior y actualiza la cantidad al aceptar. En leer, comprueba ambos límites antes de acceder; al rechazar conserva la variable de salida."
+              },
+              {
+                "standardInput": "8\n1 3 0\n2 0 4\n2 2 5\n3 -1 0\n1 5 0\n2 1 10\n4 0 0\n4 0 0\n",
+                "outputs": [
+                  "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:3[0,0,0];Leido:-1\nAntes:3[0,0,0];Resultado:1;Actual:3[4,0,0];Leido:-1\nAntes:3[4,0,0];Resultado:1;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:1;Actual:0[];Leido:-1\nAntes:0[];Resultado:1;Actual:0[];Leido:-1\nFinal:0[];Suma:0"
+                ],
+                "explanation": "Comprueba la cantidad antes de reservar. Prepara la candidata antes de sustituir el array anterior y actualiza la cantidad al aceptar. En leer, comprueba ambos límites antes de acceder; al rechazar conserva la variable de salida."
+              },
+              {
+                "standardInput": "6\n2 0 6\n2 1 8\n3 1 0\n1 2147483647 0\n2 -2147483648 9\n3 -2147483648 0\n",
+                "outputs": [
+                  "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:2[6,0];Leido:-1\nAntes:2[6,0];Resultado:1;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:1;Actual:2[6,8];Leido:8\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nFinal:2[6,8];Suma:14"
+                ],
+                "explanation": "Comprueba la cantidad antes de reservar. Prepara la candidata antes de sustituir el array anterior y actualiza la cantidad al aceptar. En leer, comprueba ambos límites antes de acceder; al rechazar conserva la variable de salida."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una historia del mismo lote: escritura y lectura, cantidad máxima, último índice existente, índice posterior al final, cantidad negativa, nueva configuración de igual tamaño, cero presente y vaciado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n2 1 7\n3 1 0\n1 4 0\n2 3 9\n3 4 0\n1 -1 0\n1 4 0\n2 0 0\n1 0 0\n3 0 0\n1 1 0\n3 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:2[0,7];Leido:-1\nAntes:2[0,7];Resultado:1;Actual:2[0,7];Leido:7\nAntes:2[0,7];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:0;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:0;Actual:4[0,0,0,9];Leido:-1\nAntes:4[0,0,0,9];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:4[0,0,0,0];Leido:-1\nAntes:4[0,0,0,0];Resultado:1;Actual:0[];Leido:-1\nAntes:0[];Resultado:0;Actual:0[];Leido:-1\nAntes:0[];Resultado:1;Actual:1[0];Leido:-1\nAntes:1[0];Resultado:1;Actual:1[0];Leido:0\nFinal:1[0];Suma:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: rechazos que conservan los valores"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos valores escritos siguen disponibles después de rechazar un índice negativo, una cantidad excesiva y un valor fuera del intervalo. Vaciar dos veces se acepta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 3 0\n2 0 4\n2 2 5\n3 -1 0\n1 5 0\n2 1 10\n4 0 0\n4 0 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:3[0,0,0];Leido:-1\nAntes:3[0,0,0];Resultado:1;Actual:3[4,0,0];Leido:-1\nAntes:3[4,0,0];Resultado:1;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:0;Actual:3[4,0,5];Leido:-1\nAntes:3[4,0,5];Resultado:1;Actual:0[];Leido:-1\nAntes:0[];Resultado:1;Actual:0[];Leido:-1\nFinal:0[];Suma:0"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los enteros extremos se rechazan mediante comparaciones antes de reservar o indexar. Una lectura válida obtiene ocho y la suma final conserva los dos valores seis y ocho."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\n2 0 6\n2 1 8\n3 1 0\n1 2147483647 0\n2 -2147483648 9\n3 -2147483648 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:2[0,0]\nAntes:2[0,0];Resultado:1;Actual:2[6,0];Leido:-1\nAntes:2[6,0];Resultado:1;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:1;Actual:2[6,8];Leido:8\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nAntes:2[6,8];Resultado:0;Actual:2[6,8];Leido:-1\nFinal:2[6,8];Suma:14"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: el propietario y la cantidad cambian juntos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\nint main() {\n    int cantidad_ordenes = 0;\n    if (!(std::cin >> cantidad_ordenes) || cantidad_ordenes < 1 || cantidad_ordenes > 12) {\n        return 1;\n    }\n    Lote lote;\n    if (!lote.configurar(2)) {\n        return 1;\n    }\n    std::cout << \"Inicio:\";\n    mostrar(lote);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad_ordenes; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        std::cout << \"Antes:\";\n        mostrar(lote);\n        int leido = -1;\n        bool aceptado = false;\n        if (operacion == 1) {\n            aceptado = lote.configurar(a);\n        } else if (operacion == 2) {\n            aceptado = lote.escribir(a, b);\n        } else if (operacion == 3) {\n            aceptado = lote.leer(a, leido);\n        } else if (operacion == 4) {\n            aceptado = lote.vaciar();\n        }\n        std::cout << \";Resultado:\" << aceptado << \";Actual:\";\n        mostrar(lote);\n        std::cout << \";Leido:\" << leido << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "configurar comprueba primero el intervalo de cantidades. Para cero utiliza vaciar, que deja el propietario vacío y la cantidad en cero. Para un valor positivo, make_unique<int[]>(cantidad) prepara un array cuyos int comienzan en cero. Si esa reserva falla, todavía no se han cambiado los miembros de Lote (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de preparar candidata, datos_.swap(candidata); entrega el array nuevo al miembro y pone el anterior bajo la candidata. Se guarda entonces la cantidad nueva. Al terminar la función, la candidata libera el array anterior mediante su limpieza automática. La captura de bad_alloc permite devolver false sin perder el estado anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "leer rechaza antes de utilizar datos_[indice]. Esto incluye cualquier índice de un Lote vacío. Si el índice está dentro del intervalo, copia el elemento en la variable externa resultado y devuelve true. Si se rechaza, no se ejecuta esa asignación y la variable externa conserva lo que tuviera antes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos responsabilidades se complementan: unique_ptr<int[]> se encarga de la propiedad y de la liberación mediante delete[], mientras Lote mantiene la cantidad y comprueba sus propios índices. La presencia de un propietario no demuestra por sí sola que cualquier índice sea válido (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una lectura rechazada conserva cualquier valor de salida"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa prepara la variable leido con menos ocho, en vez del menos uno que utiliza main en la historia. Una función que siempre escribiera menos uno al rechazar podría imitar aquella historia y seguir incumpliendo el contrato. Aquí distinguimos conservar el valor que ya había de escribir un supuesto valor de error."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_lectura_rechazada_conservar_salida",
+          "language": "cpp",
+          "question": "¿Qué muestran las dos aceptaciones y el valor de leido después de cada llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    lote.escribir(0, 7);\n    int leido = -8;\n    const bool primera = lote.leer(-1, leido);\n    std::cout << primera << ':' << leido << ':';\n    const bool segunda = lote.leer(1, leido);\n    std::cout << segunda << ':' << leido;\n    return 0;\n}\n",
+          "answers": [
+            "0:-8:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El índice negativo se rechaza antes de acceder y conserva el menos ocho. El índice uno sí existe y su elemento sigue siendo cero; la lectura devuelve true y escribe ese cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurar de nuevo una cantidad que ya tenía el lote"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este contrato prepara otro array inicializado a cero cada vez que se acepta una cantidad positiva. En el programa se escriben dos valores y después se repite la cantidad anterior. Sigue la creación y la sustitución del array para determinar los valores que se muestran al final."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_repetir_cantidad_crear_array_nuevo",
+          "language": "cpp",
+          "question": "¿Qué muestra el estado completo y su suma después de repetir la configuración?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\nvoid mostrar(const Lote& lote) {\n    std::cout << lote.cantidad() << '[';\n    for (int i = 0; i < lote.cantidad(); ++i) {\n        int valor = -1;\n        lote.leer(i, valor);\n        if (i != 0) {\n            std::cout << ',';\n        }\n        std::cout << valor;\n    }\n    std::cout << ']';\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(3)) { return 1; }\n    lote.escribir(0, 4);\n    lote.escribir(2, 7);\n    if (!lote.configurar(3)) { return 1; }\n    mostrar(lote);\n    std::cout << \";Suma:\" << lote.sumar();\n    return 0;\n}\n",
+          "answers": [
+            "3[0,0,0];Suma:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Repetir la cantidad tres prepara otro array con sus tres int a cero. La sustitución termina el array que contenía cuatro y siete. La cantidad se conserva numéricamente, pero la operación ha creado otro array y su suma es cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La clase elige su representación del estado vacío"
+        },
+        {
+          "type": "paragraph",
+          "text": "configurar con cero utiliza vaciar. No llama a make_unique para pedir un array de longitud cero. De ese modo, en Lote cantidad cero corresponde siempre a propietario vacío. Esta relación la mantiene la clase; no se deduce de que la fábrica transforme cualquier longitud cero en nullptr."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l10_configurar_cero_sin_array",
+          "language": "cpp",
+          "question": "¿Qué imprimen la aceptación, la cantidad y la comparación del acceso con nullptr?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Lote {\npublic:\n    Lote() = default;\n    Lote(const Lote&) = delete;\n    Lote& operator=(const Lote&) = delete;\n    Lote(Lote&&) = delete;\n    Lote& operator=(Lote&&) = delete;\n    ~Lote() = default;\n    int cantidad() const noexcept { return cantidad_; }\n    const int* acceso() const noexcept { return datos_.get(); }\n    bool configurar(int cantidad) noexcept;\n    bool leer(int indice, int& resultado) const noexcept;\n    bool escribir(int indice, int valor) noexcept;\n    bool vaciar() noexcept;\n    int sumar() const noexcept;\nprivate:\n    std::unique_ptr<int[]> datos_{};\n    int cantidad_ = 0;\n};\nbool Lote::configurar(int cantidad) noexcept {\n    if (cantidad < 0 || cantidad > 4) {\n        return false;\n    }\n    if (cantidad == 0) {\n        return vaciar();\n    }\n    try {\n        auto candidata = std::make_unique<int[]>(cantidad);\n        datos_.swap(candidata);\n        cantidad_ = cantidad;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nbool Lote::leer(int indice, int& resultado) const noexcept {\n    if (indice < 0 || indice >= cantidad_) {\n        return false;\n    }\n    resultado = datos_[indice];\n    return true;\n}\nbool Lote::escribir(int indice, int valor) noexcept {\n    if (indice < 0 || indice >= cantidad_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    datos_[indice] = valor;\n    return true;\n}\n\nbool Lote::vaciar() noexcept {\n    datos_.reset();\n    cantidad_ = 0;\n    return true;\n}\n\nint Lote::sumar() const noexcept {\n    int suma = 0;\n    for (int i = 0; i < cantidad_; ++i) {\n        suma += datos_[i];\n    }\n    return suma;\n}\n\nint main() {\n    Lote lote;\n    if (!lote.configurar(2)) { return 1; }\n    const bool listo = lote.configurar(0);\n    std::cout << listo << ':' << lote.cantidad() << ':'\n              << (lote.acceso() == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "configurar acepta cero y llama a vaciar. Termina el array anterior, deja el miembro propietario vacío y coloca la cantidad en cero. La consulta de acceso se realiza sobre el estado actual y no utiliza un préstamo al array que ya terminó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un array creado para una cantidad no cambia su longitud por cambiar un entero externo. Para las necesidades de un contenedor con tamaño, incorporación de elementos y operaciones de secuencia, vector continúa ofreciendo una interfaz más completa. Aquí estudiamos las responsabilidades que tiene que mantener una clase cuando elige un propietario de array como miembro (Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "3a301a54f398ffe1c8fb9b3893032a4c4605df3348aa2b0588099e4d68f0b65e"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "e1a29f4720f909e9cdd94c63deace0715bde467208714288fda04727afd6523c"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "00b46f78f3ccac97cfb370ef593a743249c64aeea21a2723922ad868983125f0"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "e4229d2ff0eb2266b893a1fe84b83aa8e984f0b420a9a7d7dcd793e454ad7268"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "5922682a6444a3db45a983b6ad4f674aaf04728126de50226cd6d91bd50c4a8b"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1c9fb8c6ba3f8e3ea0041efd22cd1d36aa4484688e6a12b621e72e656bfefbfe"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "42f94905455cbb2ea203bea95c9cce27ce8809f57ddd8bfe63e207221d932a06"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "6db3c428d2a45def1aabd3bebe3437d72390bd33e95a68e23ec96f1700b653b2"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "132033aae22fbb24079c686456c245d5b6891e0542e6ee9e3bf67f852d6952df"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "9d925def0a5c69d470de5f96559eee1dd7c1ed992cc4b3c753f70537bbee98b6"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "6a85618326c871ffdd922ed2bfebbe75d1b83f7f696bca44f312d467dafda3f4"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "a946043b7d17f4208182d148e91d17288e416338510f7580cd56e0285d80bfe3"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "4412aeebdd24ef830f6e99ddfebc237f211e13e36aa6816a68f4c373a8090118"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0006",
+            "sha256": "65fdbd4ca9f5e0d3579d444202fe1ee66b43631be8857d1e1b3ff1e586c2999c"
+          },
+          {
+            "id": "block_0017_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0008",
+            "sha256": "0fe10a11fac23414c957241d991aea8e56cc4baa9abac8bd8fcc337635e9dbec"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "c27e143ff8be9f5ed95aeeac1849a546eb1a11dc849590f8394a83d72fe61fe9"
+          },
+          {
+            "id": "block_0018_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0006",
+            "sha256": "61b9d688df23aaf9c58341fd7653ee020c511a4d7cb7f27eed4c644cdf6ef3c8"
+          },
+          {
+            "id": "block_0018_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0010",
+            "sha256": "b799e7fc9b59d2b544cf0e35348b0ab21cc69367500bd76360a5a5c436c90fd1"
+          },
+          {
+            "id": "block_0018_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0012",
+            "sha256": "6b601e3e23c55998d9fa65013eecacfd9b0f71a59befa57d8fdac0e60e7e4416"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "ff92a07ff3766daa0962e52323c3bf7e424166090134d679dc01839ee4697776"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "69f86f9dbd79bd31c066109d94c11d8a1b3014867fac4166475e64f083bfde73"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "54b077d17109b9e1e1d234d07e878ea9c55ec8aa725c713fba3b60bb6feb9de1"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "8617c13fd9207513a24be84bed0cb6a63e1b386cc8492cf2d812af1fa16cdf6d"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004",
+          "block_0010_0005"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005",
+          "block_0017_0006",
+          "block_0017_0007",
+          "block_0017_0008"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004",
+          "block_0018_0005",
+          "block_0018_0006",
+          "block_0018_0007",
+          "block_0018_0008",
+          "block_0018_0009",
+          "block_0018_0010",
+          "block_0018_0011",
+          "block_0018_0012"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003",
+          "block_0019_0004",
+          "block_0019_0005"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "9b732d88a9c7c7614a0adf2d80f00a25ff95bfaf53b7a91e727bc1a3894c9ce1",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "3a301a54f398ffe1c8fb9b3893032a4c4605df3348aa2b0588099e4d68f0b65e"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "e1a29f4720f909e9cdd94c63deace0715bde467208714288fda04727afd6523c"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "00b46f78f3ccac97cfb370ef593a743249c64aeea21a2723922ad868983125f0"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "e4229d2ff0eb2266b893a1fe84b83aa8e984f0b420a9a7d7dcd793e454ad7268"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5922682a6444a3db45a983b6ad4f674aaf04728126de50226cd6d91bd50c4a8b"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1c9fb8c6ba3f8e3ea0041efd22cd1d36aa4484688e6a12b621e72e656bfefbfe"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "42f94905455cbb2ea203bea95c9cce27ce8809f57ddd8bfe63e207221d932a06"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "6db3c428d2a45def1aabd3bebe3437d72390bd33e95a68e23ec96f1700b653b2"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "132033aae22fbb24079c686456c245d5b6891e0542e6ee9e3bf67f852d6952df"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "9d925def0a5c69d470de5f96559eee1dd7c1ed992cc4b3c753f70537bbee98b6"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "6a85618326c871ffdd922ed2bfebbe75d1b83f7f696bca44f312d467dafda3f4"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "a946043b7d17f4208182d148e91d17288e416338510f7580cd56e0285d80bfe3"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "4412aeebdd24ef830f6e99ddfebc237f211e13e36aa6816a68f4c373a8090118"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0006",
+                "sha256": "65fdbd4ca9f5e0d3579d444202fe1ee66b43631be8857d1e1b3ff1e586c2999c"
+              },
+              {
+                "id": "block_0017_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0008",
+                "sha256": "0fe10a11fac23414c957241d991aea8e56cc4baa9abac8bd8fcc337635e9dbec"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "c27e143ff8be9f5ed95aeeac1849a546eb1a11dc849590f8394a83d72fe61fe9"
+              },
+              {
+                "id": "block_0018_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0006",
+                "sha256": "61b9d688df23aaf9c58341fd7653ee020c511a4d7cb7f27eed4c644cdf6ef3c8"
+              },
+              {
+                "id": "block_0018_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0010",
+                "sha256": "b799e7fc9b59d2b544cf0e35348b0ab21cc69367500bd76360a5a5c436c90fd1"
+              },
+              {
+                "id": "block_0018_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0012",
+                "sha256": "6b601e3e23c55998d9fa65013eecacfd9b0f71a59befa57d8fdac0e60e7e4416"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "ff92a07ff3766daa0962e52323c3bf7e424166090134d679dc01839ee4697776"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "69f86f9dbd79bd31c066109d94c11d8a1b3014867fac4166475e64f083bfde73"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "54b077d17109b9e1e1d234d07e878ea9c55ec8aa725c713fba3b60bb6feb9de1"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "8617c13fd9207513a24be84bed0cb6a63e1b386cc8492cf2d812af1fa16cdf6d"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

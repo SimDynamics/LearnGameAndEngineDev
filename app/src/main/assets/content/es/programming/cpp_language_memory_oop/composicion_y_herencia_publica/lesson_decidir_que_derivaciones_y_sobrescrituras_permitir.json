@@ -1,0 +1,1053 @@
+{
+  "id": "cpp_language_memory_oop__composicion_y_herencia_publica__decidir_que_derivaciones_y_sobrescrituras_permitir",
+  "title": "Decidir qué derivaciones y sobrescrituras permitir",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir qué extensiones admite una clase"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al añadir una clase derivada con más datos, heredar clonar no garantiza que se copien esos datos nuevos. El cuerpo heredado puede seguir construyendo la clase padre. Mantener abierta esa extensión exige revisar cómo participa la nueva clase en las operaciones y contratos de la jerarquía."
+        },
+        {
+          "type": "paragraph",
+          "text": "También podemos decidir que una clase concreta no admita nuevas derivadas. Por ejemplo, si el diseño ofrece un conjunto cerrado de variantes y no quiere aceptar otras a partir de una de ellas, necesita expresar ese límite. La marca final permite que el compilador rechace una derivación que lo incumpla (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay dos decisiones distintas. final después del nombre de una clase impide derivar de esa clase. final en la declaración de una función virtual impide que otra derivada vuelva a sobrescribir esa función, sin cerrar necesariamente el resto de la clase. Vamos a seguir ambas por separado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cerrar una clase no es la única respuesta al problema de la clonación. Si se quieren nuevas variantes, se puede mantener la derivación y exigir que cada una conserve sus propios datos al implementar las operaciones correspondientes. El límite debe responder al contrato elegido, no añadirse a toda clase por costumbre (Stroustrup & Sutter, 2026)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una clase final puede tener una base y objetos modificables"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la declaración class NumeroCerrado final : public NumeroBase, final aparece después del nombre NumeroCerrado y antes de los dos puntos de la herencia. NumeroCerrado sí deriva de NumeroBase; lo que prohíbe es que otra clase derive después de NumeroCerrado. No hacen falta funciones virtuales para aplicar final a una clase (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa utiliza únicamente objetos locales vivos y un préstamo a su base. NumeroBase tiene un int, una consulta y una función que lo cambia. La copia generada de NumeroCerrado está disponible en este ejemplo y copia ese dato. final no elimina por sí solo esa operación ni vuelve constantes los objetos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l11_clase_final_permite_objetos_copias_y_cambios",
+          "language": "cpp",
+          "question": "Escribe la salida de las dos consultas, con el separador |.",
+          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\nint main() {\n    NumeroCerrado original{4};\n    NumeroCerrado copia{original};\n    original.cambiar(8);\n    const NumeroBase& vista = original;\n    std::cout << vista.numero() << '|' << copia.numero();\n    return 0;\n}\n",
+          "answers": [
+            "8|4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La copia recibe el número cuatro que tenía original al construirse. Después cambiar asigna ocho únicamente al dato de original. vista consulta ese objeto como NumeroBase y obtiene ocho; copia conserva cuatro. La marca final no impide la herencia ya declarada, la construcción, esta copia ni el cambio permitido por la interfaz."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El límite de clase se comprueba al intentar derivar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este nuevo programa intenta utilizar NumeroCerrado como base de NumeroConMarca. Es un rechazo de compilación; no se le atribuye una salida de ejecución. El hecho de que NumeroConMarca no añada todavía miembros ni sobrescrituras no elimina el límite."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass NumeroBase {\npublic:\n    explicit NumeroBase(int numero) : numero_{numero} {}\n    int numero() const { return numero_; }\n    void cambiar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass NumeroCerrado final : public NumeroBase {\npublic:\n    explicit NumeroCerrado(int numero) : NumeroBase{numero} {}\n};\nclass NumeroConMarca : public NumeroCerrado {\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l11_final_de_clase_prohibe_nueva_derivacion",
+          "question": "¿Qué impide aceptar la declaración de NumeroConMarca?",
+          "options": [
+            "NumeroCerrado está marcada final, así que no puede aparecer como base de otra clase.",
+            "NumeroConMarca sólo necesita copiar el int de NumeroCerrado en vez de heredarlo; final prohíbe copiar cualquier objeto.",
+            "Falta repetir public en el cuerpo de NumeroConMarca para volver pública la herencia que ya se declaró."
+          ],
+          "correctIndex": 0,
+          "explanation": "El impedimento está en la relación entre clases: se intenta derivar de una clase final. No depende de los miembros añadidos ni se corrige con otra etiqueta de acceso en el cuerpo. La copia de objetos es una operación diferente y el programa válido anterior ya mostró que final no la elimina automáticamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cerrar una función virtual sin cerrar toda la clase"
+        },
+        {
+          "type": "paragraph",
+          "text": "Operacion ofrece dos funciones virtuales, numero y codigo. NumeroReservado sobrescribe ambas, pero marca final únicamente numero. Esa implementación seguirá disponible al acceder mediante Operacion, y una clase posterior no podrá sustituirla por otra sobrescritura (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas funciones, final se escribe después del const situado tras los paréntesis y antes del cuerpo. No se escribe después del cuerpo ni como una asignación. NumeroReservado no está marcada como clase final, así que OperacionExtendida puede derivar de ella y sobrescribir la otra operación, codigo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l11_funcion_final_y_otra_operacion_extensible",
+          "language": "cpp",
+          "question": "Escribe la salida de las llamadas mediante vista.",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nint main() {\n    OperacionExtendida dato;\n    const Operacion& vista = dato;\n    std::cout << vista.numero() << '|' << vista.codigo();\n    return 0;\n}\n",
+          "answers": [
+            "7|9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada a numero utiliza la implementación final de NumeroReservado y devuelve siete. La llamada a codigo utiliza la nueva sobrescritura de OperacionExtendida y devuelve nueve. Que una función sea final no obliga a cerrar toda su clase ni impide sobrescribir otras operaciones que sigan permitiéndolo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quitar override no permite saltarse el límite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función que corresponde a una virtual base la sobrescribe aunque se omita la marca override. Esa relación ya dependía del nombre y de los tipos, no de escribir esa marca. Por eso el siguiente intento sigue sobrescribiendo numero y se rechaza porque esa operación era final (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nclass SustitucionInvalida : public NumeroReservado {\npublic:\n    int numero() const { return 11; }\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En NumeroReservado basta escribir final para indicar el límite de la operación que sobrescribe. Las guías de estilo recomiendan distinguir las intenciones con virtual al introducir una operación, override al sobrescribirla y final al cerrar la sobrescritura. Es una recomendación de claridad: el lenguaje también permite la combinación override final o final override en una sobrescritura válida (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup & Sutter, 2026)."
+        },
+        {
+          "type": "paragraph",
+          "text": "final en una función requiere que ésta sea virtual. No convierte automáticamente una función ordinaria en virtual. Auxiliar no tiene una base que aporte esa operación ni declara numero como virtual; analiza por separado este otro rechazo (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Auxiliar {\npublic:\n    int numero() const final { return 1; }\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l11_final_no_convierte_funcion_ordinaria_en_virtual",
+          "question": "¿Qué explica el rechazo de Auxiliar?",
+          "options": [
+            "Bastaría añadir override: esa marca convertiría la función en virtual aunque no hubiera una virtual base.",
+            "numero no es virtual en esta clase. La marca final no basta para convertirla en una operación virtual.",
+            "El cuerpo debe sustituirse por = 0 para que cualquier función final pueda tener una implementación."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los especificadores de esta clase de función se aplican a funciones virtuales. numero no fue declarada virtual ni sobrescribe una virtual base. Añadir override no repara la declaración, pues no hay una virtual base correspondiente; tampoco basta con cambiar su cuerpo por una declaración pura. En los ejemplos válidos, numero de NumeroReservado ya era virtual al sobrescribir Operacion::numero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una sobrecarga diferente no sustituye la operación final"
+        },
+        {
+          "type": "paragraph",
+          "text": "final impide una sobrescritura de la operación correspondiente, no cualquier uso de su nombre. ConAlternativa añade numero(int), mientras la operación cerrada recibe cero argumentos y es const. Son funciones diferentes. La nueva devuelve el entero recibido y no reemplaza la consulta virtual sin argumentos."
+        },
+        {
+          "type": "paragraph",
+          "text": "using NumeroReservado::numero recupera la función heredada para las llamadas mediante ConAlternativa. Así pueden utilizarse las dos formas sin que la declaración nueva oculte el nombre base. Recuperamos la diferencia entre ocultar un nombre y sobrescribir una función virtual (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l11_sobrecarga_con_otro_parametro_no_sobrescribe_final",
+          "language": "cpp",
+          "question": "Escribe toda la salida de las tres consultas.",
+          "code": "#include <iostream>\n\nclass Operacion {\npublic:\n    virtual ~Operacion() = default;\n    virtual int numero() const { return 2; }\n    virtual int codigo() const { return 4; }\n};\nclass NumeroReservado : public Operacion {\npublic:\n    int numero() const final { return 7; }\n    int codigo() const override { return 8; }\n};\nclass OperacionExtendida : public NumeroReservado {\npublic:\n    int codigo() const override { return 9; }\n};\nclass ConAlternativa : public NumeroReservado {\npublic:\n    using NumeroReservado::numero;\n    int numero(int alternativa) const { return alternativa; }\n};\nint main() {\n    ConAlternativa dato;\n    const Operacion& vista = dato;\n    std::cout << dato.numero() << '|' << dato.numero(12) << '|'\n              << vista.numero();\n    return 0;\n}\n",
+          "answers": [
+            "7|12|7"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato.numero() utiliza la consulta heredada final y devuelve siete. dato.numero(12) utiliza la sobrecarga que recibe un int y devuelve doce. La llamada sin argumentos mediante vista sigue utilizando la operación virtual final y devuelve siete. Añadir la sobrecarga no sustituyó esa operación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambiar el const después de los paréntesis también puede dar una función que no corresponde a la operación base que se quería sobrescribir. No es una manera de reemplazar la implementación cerrada; puede producir otra función y ocultación de nombres. Cuando la intención sea sobrescribir, override permite comprobar que el nombre y los tipos realmente corresponden."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el límite que realmente exige el contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una clase debe admitir variantes nuevas, marcarla final impediría precisamente esa extensión. Si sólo una operación debe conservarse mientras otras pueden variar, cerrar toda la clase sería una restricción más amplia que cerrar esa función. Antes de decidir, identifica qué clase se quiere utilizar como base y qué operación se quiere poder sustituir."
+        },
+        {
+          "type": "paragraph",
+          "text": "C.139 recomienda usar final en clases con moderación porque puede impedir extensiones útiles. Eso no invalida un límite justificado por el modelo: significa que hay que explicarlo y comprobar que coincide con el contrato. Tampoco atribuimos una mejora de velocidad al añadir final sin una medición que la respalde (Stroustrup & Sutter, 2026)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una salida correcta muestra qué hicieron las llamadas del programa ejecutado. No demuestra por sí sola que el compilador vaya a impedir una derivación o una sobrescritura futura. Para razonar sobre ese requisito se examina dónde aparece final y qué declaración nueva se está intentando aceptar o rechazar. Las actividades siguientes aplicarán esos límites a otro conjunto de clases."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos decisiones distintas dentro de la misma familia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Informe define dos operaciones virtuales. id() consulta el identificador de esta familia de informes; escribir proporciona el texto concreto. En esta práctica la especificación exige que las clases derivadas de InformeEstable mantengan su implementación de id(), que devuelve siete. Pueden cambiar escribir para presentar otro texto."
+        },
+        {
+          "type": "paragraph",
+          "text": "InformeEstable debe seguir admitiendo nuevas clases derivadas, como InformeExtendido. No queremos cerrar toda esa clase por haber fijado una de sus operaciones. InformeExtendido cambia únicamente escribir; las llamadas a id() conservan la implementación estable."
+        },
+        {
+          "type": "paragraph",
+          "text": "InformeCerrado es una versión que esta especificación publica sin permitir más clases derivadas de ella. Sí deriva de InformeEstable y sigue siendo utilizable como Informe. Esa decisión se aplica a su declaración de clase, no sólo a una de sus funciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos huecos del código. En el primero impide sobrescribir id(). En el segundo impide derivar de InformeCerrado. Conserva el resto de las declaraciones y los cuerpos. El identificador siete pertenece a este contrato; final por sí solo no obliga a una función cualquiera a devolver siempre la misma cantidad."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u8l11_cerrar_operacion_y_clase_con_alcances_distintos",
+          "question": "Completa cada declaración para cumplir las dos restricciones del enunciado: conservar la implementación de id() en las derivadas de InformeEstable e impedir nuevas derivadas de InformeCerrado. Las demás operaciones deben seguir siendo utilizables.",
+          "template": "class Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const [] { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado [] : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\n",
+          "answers": [
+            "final",
+            "final"
+          ],
+          "answerAlternatives": [
+            [
+              "final",
+              "override final",
+              "final override"
+            ],
+            [
+              "final"
+            ]
+          ],
+          "explanation": "id() sobrescribe una operación virtual de Informe y final impide otra sobrescritura en sus derivadas. La clase InformeEstable sigue abierta, por eso InformeExtendido puede cambiar escribir. final después del nombre InformeCerrado impide utilizar esa clase como base de una nueva derivada, sin impedir que herede de InformeEstable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: conservar una operación y permitir que otra cambie"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\nvoid presentar(const Informe& dato) {\n    std::cout << dato.id() << ':';\n    dato.escribir(std::cout);\n}\nint main() {\n    InformeExtendido extendido;\n    InformeCerrado cerrado;\n    presentar(extendido);\n    std::cout << '|';\n    presentar(cerrado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer final pertenece a id(). No cambia esa operación en una función ordinaria: sigue siendo virtual y mantiene la implementación de InformeEstable para esta cadena de derivación. escribir sigue admitiendo sobrescrituras y selecciona el texto de cada objeto concreto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El segundo final pertenece a la clase InformeCerrado. Se puede construir su objeto y consultarlo mediante Informe, pero no utilizar InformeCerrado como base. InformeExtendido e InformeEstable no llevan esa marca de clase y siguen admitiendo derivadas (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "presentar recibe una referencia a un objeto que ya existe. Primero muestra su id y después llama a escribir. El programa escribe la salida siguiente."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "7:Extendido|7:Cerrado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las declaraciones override final y final override también son válidas para id() aquí: solicitan la comprobación de sobrescritura y prohíben una nueva. La referencia usa sólo final. La convención de emplear una sola de estas marcas busca legibilidad; no convierte las otras dos formas en errores del lenguaje (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup & Sutter, 2026)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Omitir override no permite cambiar una función cerrada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otro deriva ahora de InformeEstable e intenta declarar int id() const con un cuerpo distinto. Aunque no escriba override, la declaración corresponde a la misma operación virtual. El programa siguiente debe ser rechazado al compilar; no tiene una salida que debamos predecir."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Informe {\npublic:\n    virtual ~Informe() = default;\n    virtual int id() const = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n};\nclass InformeEstable : public Informe {\npublic:\n    int id() const final { return 7; }\n    void escribir(std::ostream& salida) const override { salida << \"Estable\"; }\n};\nclass InformeExtendido : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Extendido\"; }\n};\nclass InformeCerrado final : public InformeEstable {\npublic:\n    void escribir(std::ostream& salida) const override { salida << \"Cerrado\"; }\n};\nclass Otro : public InformeEstable {\npublic:\n    int id() const { return 9; }\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l11_quitar_override_no_evade_final",
+          "question": "¿Por qué no consigue Otro reemplazar la consulta id()?",
+          "options": [
+            "Porque faltó repetir virtual. Al añadir esa palabra podría sobrescribir una función final.",
+            "Porque id() sigue sobrescribiendo la operación aunque no se escriba override, y esa operación ya está marcada final en InformeEstable.",
+            "Porque una función sin override nunca puede tener el mismo nombre que una función de la base."
+          ],
+          "correctIndex": 1,
+          "explanation": "La relación de sobrescritura depende de las declaraciones correspondientes, no de escribir la palabra override. La implementación heredada de id() está cerrada a nuevas sobrescrituras. Añadir virtual o quitar override no elimina esa restricción. Las otras operaciones que sigan abiertas pueden sobrescribirse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar una restricción exige probar el cambio que prohíbe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una versión del primer programa omite las dos marcas final y conserva todos los cuerpos. Puede imprimir exactamente el mismo texto. Esa ejecución no intentó derivar de InformeCerrado ni sobrescribir id(), por lo que no muestra la diferencia entre permitir y prohibir esas extensiones."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l11_salida_no_demuestra_restricciones_de_extension",
+          "question": "¿Qué comprobación permite distinguir las restricciones pedidas por esta práctica?",
+          "options": [
+            "Compilar intentos de derivar de InformeCerrado y sobrescribir id(), esperando sus rechazos, y conservar un ejemplo válido que derive de InformeExtendido y cambie escribir.",
+            "Ejecutar varias veces el programa y comparar sus informes; si coinciden, se han probado también los cambios de clase prohibidos.",
+            "Comprobar sólo que ambos informes muestran siete; ese valor demuestra que no pueden añadirse otras clases."
+          ],
+          "correctIndex": 0,
+          "explanation": "El objetivo es una regla comprobada al compilar. Los intentos prohibidos deben rechazarse; una derivada admitida que cambia otra operación debe seguir siendo válida. La salida de los objetos existentes puede coincidir con la de un programa sin final, y una medición aislada tampoco acredita sus declaraciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La decisión depende del contrato que queremos ofrecer"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l11_no_cerrar_jerarquia_que_debe_extenderse",
+          "question": "Otro proyecto necesita que sus usuarios creen nuevas variantes a partir de InformeExtendido. Sus operaciones y las pruebas de cada variante forman parte de la interfaz de extensión. ¿Qué decisión corresponde a ese requisito?",
+          "options": [
+            "Marcar InformeExtendido final para obligar a que las nuevas variantes compartan el código de la base.",
+            "Marcar todas sus funciones final y afirmar que así cualquier derivada podrá cambiar esas mismas operaciones.",
+            "Mantener permitida la derivación de InformeExtendido y definir qué operaciones deben conservarse o pueden cambiar. Cerrar toda la clase contradiría este requisito."
+          ],
+          "correctIndex": 2,
+          "explanation": "final es una decisión de diseño que debe responder a una restricción real. Si la interfaz requiere nuevas variantes derivadas, cerrar la clase elimina precisamente esa posibilidad. Las operaciones concretas que deban conservarse se analizan por separado; no se presupone que todas deban cerrarse ni que final garantice una mejora de rendimiento."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "069c321280804dce376a99ac1717d68e5757827c7c93f4afb96753e36fa371aa"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "6810f3360e1a3b2437aa8f228804d8a05256b781e12df74c375aa58e98ae790e"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "f5e1bf49d280e16b0e64960a6455bc727a04b5c3abef8e3f7c849d205cdbc5fc"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "8ef0b13be9210e68518bc80120c725f98d8bc967ba99789167756b31c544e634"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "348819d594ad973bd0b9b45c0d902ffeadc14bece9a7e2470069375bbb7f5884"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "f83aa2035ee693598206054f736e2b9488bd30e36d4b859e4428ad905c15553d"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "9ca86bb41cfca1edfc46128d51cfcdb04205c25254218739a43422c156a3a995"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "22288d3611d3767620f8439715a8d0c86c6b3510ee07da18ea21f2ae1147ccda"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "df62c25f3ae882a05ed9ce6e29e3af3db8f111ca902c643b55fdeee9cd278b48"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "39baaff03ddf9c15158942a6a8037e814d698e1d4c3caba288b268ca1b3de3f4"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1c1bfe0e5e2c333b93b72b815c54982c74ceaa64d1f8bde7adaa8ae2455bd259"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "c00f5f30d1938adc1779d7007e1c8b0ae617ecda5b840072ff75453773cbdf5b"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1217547e4a1f140b87ef9c30d2cf8b4d5c8147dd5f915d9910f6ea1b1c529021"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "083a4a4f392e9c4d07abfff079be7bad97d2d5c310cd505a7b51742d3057baa0"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "72f7d196f32b7dd51f3d75e64b49fc56565755b28e5b74d2c944493ff009567f"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "a13b35eca8002161a0389c2910938c825a656aeda21316ff97cd931e7d79783d",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "069c321280804dce376a99ac1717d68e5757827c7c93f4afb96753e36fa371aa"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "6810f3360e1a3b2437aa8f228804d8a05256b781e12df74c375aa58e98ae790e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "f5e1bf49d280e16b0e64960a6455bc727a04b5c3abef8e3f7c849d205cdbc5fc"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "8ef0b13be9210e68518bc80120c725f98d8bc967ba99789167756b31c544e634"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "348819d594ad973bd0b9b45c0d902ffeadc14bece9a7e2470069375bbb7f5884"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "f83aa2035ee693598206054f736e2b9488bd30e36d4b859e4428ad905c15553d"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "9ca86bb41cfca1edfc46128d51cfcdb04205c25254218739a43422c156a3a995"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "22288d3611d3767620f8439715a8d0c86c6b3510ee07da18ea21f2ae1147ccda"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "df62c25f3ae882a05ed9ce6e29e3af3db8f111ca902c643b55fdeee9cd278b48"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "39baaff03ddf9c15158942a6a8037e814d698e1d4c3caba288b268ca1b3de3f4"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1c1bfe0e5e2c333b93b72b815c54982c74ceaa64d1f8bde7adaa8ae2455bd259"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "c00f5f30d1938adc1779d7007e1c8b0ae617ecda5b840072ff75453773cbdf5b"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1217547e4a1f140b87ef9c30d2cf8b4d5c8147dd5f915d9910f6ea1b1c529021"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "083a4a4f392e9c4d07abfff079be7bad97d2d5c310cd505a7b51742d3057baa0"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "72f7d196f32b7dd51f3d75e64b49fc56565755b28e5b74d2c944493ff009567f"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

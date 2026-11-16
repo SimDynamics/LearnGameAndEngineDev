@@ -1,0 +1,2417 @@
+{
+  "id": "cpp_language_memory_oop__composicion_y_herencia_publica__destruir_una_derivada_mediante_la_base",
+  "title": "Destruir una derivada mediante la base",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Destruir una derivada local ya recorre sus partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un objeto local de duración automática construido como LecturaIdentificada se destruye al salir de su bloque. Primero se ejecuta el cuerpo de su destructor; después se destruyen sus miembros y su parte base. Recuperaremos ese orden antes de cambiar la forma de gestionar el objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El miembro marca_, de tipo Marca, permite observar la continuación automática de la limpieza: su destructor escribe M|. El destructor de LecturaIdentificada escribe D| y el de Lectura escribe B|. En este primer programa escribir es virtual, pero el destructor de Lectura no lo es. dato es un objeto local completo; no se utiliza delete sobre él."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_destruccion_automatica_sin_destructor_virtual",
+          "language": "cpp",
+          "question": "Escribe la salida completa: el informe, las marcas de destrucción y el texto posterior al bloque.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        const LecturaIdentificada dato{7, 21};\n        const Lectura& vista = dato;\n        vista.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:7;Codigo:21|D|M|B|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La referencia permite obtener el informe Numero:7;Codigo:21. Al salir del bloque se destruye dato como LecturaIdentificada: su cuerpo escribe D|, el miembro Marca escribe M| y la parte Lectura escribe B|. Después se imprime Fin. Esa destrucción automática del objeto derivado no necesitaba seleccionar su destructor mediante un delete de tipo base."
+        },
+        {
+          "type": "paragraph",
+          "text": "No escribimos una llamada manual al destructor del miembro ni al de la base. La continuación de la destrucción realiza esas operaciones una vez y en su orden. La referencia vista tampoco es propietaria del objeto ni se encarga de destruirlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Borrar una derivada mediante la base exige otro contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón ahora las clases del programa anterior: Lectura tiene una escribir virtual, pero su destructor sigue sin ser virtual. El fragmento siguiente sólo se analiza; no debe ejecutarse. Crea un objeto derivado dinámico y pretende destruirlo mediante un puntero Lectura*."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lectura* acceso = new LecturaIdentificada{3, 9};\ndelete acceso;"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_borrado_base_sin_destructor_virtual_no_tiene_traza_valida",
+          "question": "¿Qué puede afirmarse sobre ese delete con estas clases?",
+          "options": [
+            "Tiene comportamiento indefinido: no se debe predecir una salida ni aceptar que sólo se omita una parte de la limpieza.",
+            "Es correcto porque cualquier función virtual de Lectura convierte también su destructor en virtual.",
+            "Sólo es incorrecto si la derivada reserva memoria propia; con miembros sencillos siempre se permite."
+          ],
+          "correctIndex": 0,
+          "explanation": "En el borrado de un objeto individual que estamos utilizando, el objeto completo es LecturaIdentificada y se borra mediante Lectura*. La base necesita un destructor virtual. Sin él, este caso tiene comportamiento indefinido, aunque el programa pueda compilar y aunque la derivada no gestione una reserva adicional. No corresponde atribuirle una traza de sólo B|. escribir virtual no hace virtual otra función distinta."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla se aplica aquí a delete sobre un objeto individual creado con new, utilizando los mecanismos de borrado ordinarios de estos ejemplos. El problema no es tener un puntero base por sí solo, sino destruir mediante él un objeto de un tipo derivado sin cumplir ese contrato (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ofrecer un destructor público y virtual"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sección public de Lectura declara ahora virtual ~Lectura(). Esto permite que el borrado mediante Lectura* empiece por el destructor que corresponde al objeto completo. Después continúa la destrucción automática de sus miembros y su base. La parte base también debe quedar destruida; virtual no significa elegir la derivada y omitir la base (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada destructor se escribe con ~ y el nombre de su propia clase. Por eso la derivada declara ~LecturaIdentificada() override, no ~Lectura(). Los destructores participan en esta correspondencia aunque sus nombres de clase sean distintos. override comprueba que el destructor base sea virtual; no hay que hacer coincidir literalmente ambos nombres (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Public permite utilizar ese destructor desde el contexto del borrado. Virtual permite iniciar correctamente la destrucción del objeto derivado a través de la base. Son dos condiciones diferentes. La consulta escribir conserva además su propio carácter virtual, independiente del destructor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Otra función virtual no hace virtual al destructor"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este programa Lectura conserva escribir virtual, pero su destructor no lleva virtual. La derivada intenta declarar su destructor con override. Analiza el rechazo de compilación; no se realiza ningún borrado dinámico para demostrar el problema."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    const LecturaIdentificada dato{3, 9};\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_override_del_destructor_necesita_destructor_virtual",
+          "question": "¿Por qué se rechaza override en ~LecturaIdentificada?",
+          "options": [
+            "Porque los destructores se llaman con nombres de clase diferentes y nunca pueden sobrescribirse.",
+            "Porque el destructor de Lectura no es virtual, aunque escribir sí lo sea; la comprobación de override corresponde al destructor.",
+            "Porque override sólo es válido cuando un main contiene delete, y este main construye un objeto local."
+          ],
+          "correctIndex": 1,
+          "explanation": "La marca override pide comprobar que el destructor derivado sobrescriba un destructor virtual de la base. La virtualidad de escribir no cumple esa condición. La diferencia entre los nombres ~Lectura y ~LecturaIdentificada es normal, y la declaración se comprueba aunque no haya ningún delete en main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir un borrado correcto mediante Lectura*"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa sí utiliza las clases con destructor público y virtual de la base. new construye una LecturaIdentificada y acceso señala su parte Lectura. El puntero permite consultar el informe y después destruir ese objeto completo mediante delete."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_borrado_individual_con_destructor_virtual",
+          "language": "cpp",
+          "question": "Escribe el informe, las marcas de destrucción y la comparación final con nullptr, en el orden del programa.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    Lectura* acceso = new LecturaIdentificada{8, 5};\n    acceso->escribir(std::cout);\n    std::cout << '|';\n    delete acceso;\n    acceso = nullptr;\n    std::cout << (acceso == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:8;Codigo:5|D|M|B|1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta virtual muestra Numero:8;Codigo:5. delete acceso inicia el destructor de LecturaIdentificada, cuyo cuerpo escribe D|. Después se destruye Marca y escribe M|; por último la base escribe B|. La instrucción posterior guarda nullptr en la variable acceso y la comparación de ese valor nuevo da uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "delete destruye el objeto y libera su almacenamiento. No asigna automáticamente nullptr a la variable puntero. Aquí la instrucción siguiente lo hace expresamente; no se consulta el valor anterior después del borrado. Tampoco se destruye una parte base por separado ni se vuelve a borrar el objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este contrato corresponde a un objeto individual. Un array de LecturaIdentificada no puede tratarse como un array de Lectura para borrarlo con delete[]; un destructor base virtual no hace válido ese borrado (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este ejemplo muestra la mecánica del borrado. Para conservar la responsabilidad de limpieza durante el uso normal de un programa recuperaremos el propietario unique_ptr, ya estudiado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un propietario de base puede gestionar un objeto derivado"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::make_unique<LecturaIdentificada>(...) construye una derivada y entrega un propietario de ese tipo. Puede inicializar un std::unique_ptr<Lectura> mediante la conversión de propiedad que admite esta herencia pública. El objeto gestionado sigue siendo una LecturaIdentificada; no se construye una copia Lectura ni se pierde el código (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando termina ese propietario, su limpieza predeterminada utiliza delete sobre el puntero Lectura* que conserva. Por eso la base sigue necesitando el destructor público y virtual. El propietario asegura que se solicite la limpieza, mientras el diseño de la base permite que esa limpieza destruya correctamente el objeto completo (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_propietario_base_y_salida_del_bloque",
+          "language": "cpp",
+          "question": "Escribe la salida completa, incluido el informe y la limpieza al terminar el bloque interior.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(-3, 9);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:-3;Codigo:9|D|M|B|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "dato gestiona la LecturaIdentificada creada con número menos tres y código nueve. Su consulta obtiene el informe completo. Al terminar el bloque se destruye el propietario, que elimina el objeto mediante Lectura*. El destructor virtual permite la secuencia D|M|B|. Después main imprime Fin, sin necesitar un delete manual."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La conversión de propietario no corrige una base mal diseñada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a suponer las clases iniciales, con escribir virtual pero ~Lectura no virtual. Esta declaración es sólo un fragmento para analizar, no para ejecutar. La conversión entre propietarios puede ser aceptada al compilar, pero al finalizar dato tendrá que destruir el objeto que gestiona."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "std::unique_ptr<Lectura> dato =\n    std::make_unique<LecturaIdentificada>(3, 9);"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_propietario_no_suple_destructor_virtual_ausente",
+          "question": "¿Por qué no basta unique_ptr<Lectura> para hacer correcto este caso?",
+          "options": [
+            "Porque la conversión entre propietarios copia sólo la base y destruye inmediatamente el código adicional.",
+            "Porque el propietario requiere llamar manualmente al destructor derivado antes de que él elimine el resto mediante la base.",
+            "Porque su limpieza predeterminada acaba usando delete sobre Lectura*, y falta el destructor virtual necesario para borrar esa derivada."
+          ],
+          "correctIndex": 2,
+          "explanation": "La conversión puede transferir la propiedad sin copiar el objeto. Eso no comprueba por sí solo que el borrado mediante la base tenga el diseño adecuado. Al destruir el objeto mediante la limpieza predeterminada de unique_ptr<Lectura>, se ejecuta delete sobre el puntero de tipo Lectura*. Con el destructor base no virtual, el caso descrito tiene comportamiento indefinido. Llamar manualmente al destructor derivado no repara ese contrato: el propietario debe poder destruir el objeto completo una sola vez. No se predice una salida ni se ejecuta para comprobar qué imprime."
+        },
+        {
+          "type": "paragraph",
+          "text": "En las versiones correctas que seguimos utilizando, Lectura sí ofrece el destructor público y virtual. Esa condición permite conectar la propiedad exclusiva ya aprendida con el uso de un objeto mediante su interfaz base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el propietario conserva el objeto completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora origen tiene tipo unique_ptr<LecturaIdentificada> y destino tiene tipo unique_ptr<Lectura>. std::move permite transferir la propiedad a destino mediante la conversión compatible. El objeto derivado no se copia ni se traslada a otro objeto: continúa gestionado por el nuevo propietario. origen queda vacío (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_mover_propietario_derivado_a_propietario_base",
+          "language": "cpp",
+          "question": "Escribe las comparaciones iniciales de los propietarios, el informe, las marcas de reset y la comparación final.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    auto origen = std::make_unique<LecturaIdentificada>(4, 7);\n    std::unique_ptr<Lectura> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino->escribir(std::cout);\n    std::cout << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "1:1|Numero:4;Codigo:7|D|M|B|1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La transferencia deja origen vacío y destino ocupado: las dos comparaciones dan uno. destino consulta el mismo objeto con número cuatro y código siete. Su reset destruye la derivada, luego Marca y después la base, con D|M|B|. destino queda vacío y su comparación final da uno. El propietario origen ya no posee otro objeto que deba destruirse después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mover el propietario no es mover sus datos int ni construir otro objeto base por valor. Cambia quién tiene la responsabilidad de destrucción y qué interfaz ofrece su tipo de acceso. La consulta sigue siendo virtual sobre el objeto derivado vivo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vaciar un propietario ocupado y volver a vaciarlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "reset() ya permitía retirar un objeto gestionado y dejar vacío su unique_ptr. Con un propietario base y destructor virtual se conserva ese mismo acuerdo. Después del primer reset no podemos utilizar referencias o punteros prestados al objeto destruido; los ejemplos no conservan ningún préstamo para usarlo después."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_reset_ocupado_y_reset_vacio",
+          "language": "cpp",
+          "question": "Escribe las marcas de limpieza y los textos posteriores a cada reset, respetando los separadores.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() { std::cout << \"B|\"; }\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(2, 3);\n    dato.reset();\n    std::cout << \"Vacio:\" << (dato == nullptr) << '|';\n    dato.reset();\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "D|M|B|Vacio:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El primer reset encuentra un objeto y provoca D|M|B|. El propietario queda vacío, así que Vacio: va seguido de uno. El segundo reset no gestiona ningún objeto que destruir y no repite las marcas. Después se imprime Fin. La destrucción posterior del propietario vacío tampoco añade otra limpieza del objeto anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "La limpieza automática evita tener que combinar un delete sobre get() con el propietario que todavía gestiona ese mismo objeto. Aquí se usa reset para retirarlo o se deja que el propio propietario se destruya al salir de su bloque; no se superponen ambas responsabilidades."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un destructor virtual puede ser predeterminado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un destructor no necesita instrucciones propias para participar en la destrucción virtual. Podemos declararlo virtual y solicitar su implementación con = default. Ese destructor continúa destruyendo los miembros y la base que correspondan. Si un miembro es unique_ptr, su destructor limpia el objeto que gestiona (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la actividad, PanelConDato tiene un único propietario de un int. No necesita escribir un delete en su destructor: la limpieza del miembro dato_ ya realiza esa tarea. Lo que falta es declarar correctamente la posibilidad de destruir la derivada mediante Panel y comprobar esa correspondencia en el destructor derivado."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u8l5_destructor_virtual_default_y_override",
+          "question": "Completa las dos palabras: la que hace virtual el destructor de Panel y la que comprueba que el destructor de PanelConDato lo sobrescribe. Conserva = default; no añadas cuerpos ni borrados manuales.",
+          "template": "class Panel {\npublic:\n    [] ~Panel() = default;\n};\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() [] = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n",
+          "answers": [
+            "virtual",
+            "override"
+          ],
+          "answerAlternatives": [
+            [
+              "virtual"
+            ],
+            [
+              "override"
+            ]
+          ],
+          "explanation": "virtual ~Panel() = default ofrece el destructor público y virtual de la base sin exigir instrucciones propias. ~PanelConDato() override = default comprueba la correspondencia y conserva la limpieza automática de dato_. Al destruir la derivada, el miembro unique_ptr destruye su int; no se necesita otro delete dentro de la clase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La limpieza de los miembros sigue existiendo sin un cuerpo escrito"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Panel {\npublic:\n    virtual ~Panel() = default;\n};\nclass PanelConDato : public Panel {\npublic:\n    explicit PanelConDato(int valor) : dato_{std::make_unique<int>(valor)} {}\n    ~PanelConDato() override = default;\n    int valor() const noexcept { return *dato_; }\nprivate:\n    std::unique_ptr<int> dato_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos declaraciones predeterminadas son definiciones de sus destructores. La ausencia de un cuerpo escrito por nosotros no significa que se omita la limpieza de dato_. Tampoco convierte = default en una llamada manual al destructor base: la continuación de la destrucción se encarga de las partes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    auto origen = std::make_unique<PanelConDato>(14);\n    std::cout << origen->valor() << '|';\n    std::unique_ptr<Panel> destino = std::move(origen);\n    std::cout << (origen == nullptr) << ':' << (destino != nullptr) << '|';\n    destino.reset();\n    std::cout << (destino == nullptr);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de transferir la propiedad, origen permite consultar el int catorce. Después origen queda vacío y destino gestiona el mismo PanelConDato mediante Panel. reset destruye ese objeto completo y el miembro dato_ libera su int. La comparación final observa el propietario ya vacío. No se vuelve a consultar el objeto destruido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La falta de una marca impresa no significa que falte el destructor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa vuelve a Lectura y LecturaIdentificada, pero sus dos destructores se han definido con = default. Ya no contienen instrucciones para imprimir B| ni D|. Marca conserva su destructor que imprime M|: sigue formando parte de la derivada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_destructor_virtual_predeterminado_y_miembro",
+          "language": "cpp",
+          "question": "Escribe el informe y la salida que realmente producen los destructores de esta versión, seguida de Fin.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    virtual ~Lectura() = default;\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() override = default;\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(6, 10);\n        dato->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:6;Codigo:10|M|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El informe virtual contiene número seis y código diez. Al destruir el propietario se destruye correctamente la LecturaIdentificada. Su destructor predeterminado no imprime D|, pero sí continúa con sus miembros; Marca imprime M|. El destructor predeterminado de Lectura no imprime B|. Finalmente se imprime Fin. Las marcas ausentes corresponden a instrucciones retiradas, no a partes que se hayan dejado sin destruir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Otra elección: impedir el borrado desde la interfaz base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora hemos permitido destruir objetos derivados mediante Lectura*. Otra interfaz puede ofrecer sólo un acceso a la base y no permitir ese borrado desde fuera. Para entender esa alternativa veremos un destructor base no virtual colocado en la sección protected."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso, protected permite que la destrucción de LecturaIdentificada continúe con el destructor de su parte Lectura, pero no permite que main lo utilice mediante delete sobre un puntero Lectura*. El borrado externo mediante el tipo base queda rechazado al compilar. Es un control de acceso al destructor, distinto de hacerlo virtual (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Declarar una Lectura de duración automática directamente en main tampoco sería válido: al salir de ese bloque habría que utilizar su destructor protegido. Una LecturaIdentificada automática con destructor público sí permite completar la destrucción de su parte base desde el destructor derivado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este diseño no es el que utilizamos para unique_ptr<Lectura> con su limpieza predeterminada. Allí necesitamos que el destructor base sea público y virtual para aceptar esa forma de propiedad y destrucción. La elección debe corresponder al uso que ofrece la interfaz."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La derivada local todavía puede destruir su base protegida"
+        },
+        {
+          "type": "paragraph",
+          "text": "LecturaIdentificada ofrece su destructor público. Al terminar su objeto local, ese destructor puede completar la destrucción de la base cuyo destructor es protected. El programa siguiente no intenta borrar el objeto mediante Lectura*."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l5_derivada_automatica_con_destructor_base_protegido",
+          "language": "cpp",
+          "question": "Escribe el informe, las marcas al salir del bloque y el texto final.",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    {\n        const LecturaIdentificada dato{5, 12};\n        dato.escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Numero:5;Codigo:12|D|M|B|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto local se consulta como LecturaIdentificada y muestra número cinco y código doce. Al salir de su bloque, el destructor público de la derivada escribe D|, el miembro escribe M| y la continuación puede utilizar el destructor protegido de Lectura, que escribe B|. Después aparece Fin. No se ha pedido a main que acceda directamente al destructor base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El borrado externo por la base protegida se rechaza"
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este diagnóstico de compilación con las clases del diseño protegido. La conversión del puntero derivado a Lectura* es válida. El rechazo aparece al intentar utilizar desde main el destructor protegido de Lectura. No se ejecuta el programa."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    Lectura* acceso = new LecturaIdentificada{3, 9};\n    delete acceso;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_destructor_protegido_impide_delete_base_externo",
+          "question": "¿Qué impide aceptar delete acceso en este main?",
+          "options": [
+            "Una clase con destructor protegido no puede tener objetos derivados de duración automática.",
+            "Toda conversión a Lectura* está prohibida cuando el destructor base no es público.",
+            "El destructor de Lectura es protected y main no tiene permiso para utilizarlo mediante ese borrado base."
+          ],
+          "correctIndex": 2,
+          "explanation": "El acceso al destructor se comprueba en el contexto del borrado. main no puede utilizar el destructor protegido de Lectura. Esto impide esa operación mediante la base antes de ejecutar el programa. No prohíbe las conversiones válidas para consultar la base ni la destrucción automática de la derivada mediante su destructor público."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El propietario predeterminado también debe poder acceder al destructor"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este último rechazo se intenta gestionar la derivada con unique_ptr<Lectura>, conservando el destructor protegido no virtual de la base. La limpieza predeterminada de ese propietario necesita utilizar delete sobre Lectura*, y no tiene permiso para acceder a ese destructor."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nclass Marca {\npublic:\n    ~Marca() { std::cout << \"M|\"; }\n};\nclass Lectura {\npublic:\n    explicit Lectura(int valor) : valor_{valor} {}\n    int valor() const noexcept { return valor_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << valor_; }\nprotected:\n    ~Lectura() { std::cout << \"B|\"; }\nprivate:\n    int valor_;\n};\nclass LecturaIdentificada : public Lectura {\npublic:\n    LecturaIdentificada(int valor, int codigo) : Lectura{valor}, codigo_{codigo} {}\n    ~LecturaIdentificada() { std::cout << \"D|\"; }\n    void escribir(std::ostream& salida) const override {\n        Lectura::escribir(salida);\n        salida << \";Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n    Marca marca_;\n};\nint main() {\n    std::unique_ptr<Lectura> dato = std::make_unique<LecturaIdentificada>(3, 9);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_destructor_protegido_no_admite_default_delete_base",
+          "question": "¿Por qué esta declaración no proporciona un propietario base utilizable?",
+          "options": [
+            "Porque la limpieza predeterminada de unique_ptr<Lectura> necesita un destructor base accesible; protected impide ese acceso desde su operación de borrado.",
+            "Porque todo unique_ptr prohíbe la conversión desde un propietario cuyo tipo de objeto sea una clase derivada.",
+            "Porque el destructor público de la derivada entra en conflicto con el destructor protegido de la base."
+          ],
+          "correctIndex": 0,
+          "explanation": "El propietario no adquiere permisos especiales sobre el destructor protegido. Su limpieza predeterminada necesita poder realizar el borrado con Lectura*, por lo que se rechaza este diseño. El destructor público derivado no entra en conflicto con el protegido de la base: permite completar la destrucción de una derivada válida. Para los propietarios base que utilizamos en los programas correctos, la interfaz ofrece un destructor público y virtual. La propiedad exclusiva no sustituye las condiciones de acceso y destrucción del tipo que gestiona."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y retirar una medida mediante su interfaz base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una MedidaIdentificada conserva un número en su parte Medida y posee una Ficha con el código. Su miembro std::unique_ptr<Ficha> se encarga de destruir esa ficha. Queremos crear el objeto derivado, conservarlo en un propietario std::unique_ptr<Medida>, consultar su informe y comprobar que su destrucción completa también termina la ficha."
+        },
+        {
+          "type": "paragraph",
+          "text": "El destructor de Medida ya es público y virtual en el código inicial. Conserva esa declaración y el override del destructor derivado. Así, tanto el inicial como las construcciones que completarás tienen una ruta de destrucción compatible mediante el propietario base. No añadas delete ni llames directamente a los destructores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa tres cuerpos:\ncrear_medida: construye una MedidaIdentificada con numero, codigo y el ciclo recibido; devuelve la propiedad como std::unique_ptr<Medida>.\nMedida::~Medida: resta uno a bases_vivas y suma uno a bases_destruidas en ciclo_.\nMedidaIdentificada::~MedidaIdentificada: resta uno a derivadas_vivas y suma uno a derivadas_destruidas en balance_."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esos cambios de contadores registran las acciones, pero no destruyen la ficha por sí mismos. Al terminar el cuerpo del destructor derivado, se destruyen sus miembros; el propietario ficha_ destruye la Ficha. El destructor de Ficha ya está proporcionado: disminuye fichas_vivas y aumenta fichas_destruidas. Después termina la parte Medida (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer los contadores sin confundir parte base y objeto adicional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ciclo contiene seis contadores que empiezan en cero. Los tres acabados en _vivas cuentan las bases, derivadas y fichas que han empezado su existencia y todavía no han terminado. Los otros tres cuentan las destrucciones ya registradas. Una MedidaIdentificada completa aporta una parte Medida, una derivada y una Ficha: los tres contadores de elementos vivos valen uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se han creado dos medidas independientes por contar la base y la derivada: una MedidaIdentificada contiene su parte Medida. La Ficha sí es otro objeto, que pertenece exclusivamente al miembro ficha_. Cada constructor aumenta el contador que le corresponde, y cada destructor debe compensarlo una sola vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "ciclo se define fuera del bloque de los propietarios. Las referencias ciclo_ y balance_ observan ese mismo registro; no son sus propietarias. ciclo permanece vivo mientras los constructores y destructores lo usan y también cuando main muestra el resultado final. Los tipos no se copian: sus declaraciones con = delete evitan crear copias que este registro no está diseñado para contar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los destructores proporcionados se declaran noexcept. Sus acciones de registro son sumas y restas pequeñas de int; este programa construye una única medida y una única ficha por ensayo. No escriben en la consola ni reservan memoria. El informe se obtiene antes de comenzar la destrucción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada y recorrido de la propiedad"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada contiene tres int en este orden:\nNumero: número que conservará la medida.\nCodigo: valor de su ficha.\nRetiro: uno para destruir con reset antes de salir del bloque; cero para dejar que lo haga el propietario al salir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Numero y Codigo pueden ser cualquier int representable, incluidos cero y los negativos. Retiro sólo admite cero o uno. Una entrada incompleta, fuera del dominio de int o con otro valor de Retiro termina main con código uno, sin crear medidas ni mostrar informes."
+        },
+        {
+          "type": "paragraph",
+          "text": "crear_medida devuelve un propietario no vacío. Dentro de un bloque menor, vista se enlaza como const Medida& con el objeto y solicita escribir sobre el flujo informe. Al cerrar ese bloque sólo termina el acceso vista: la medida sigue perteneciendo a origen. La referencia no debe usarse como propietaria ni conservarse después de destruir el objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después std::move transfiere la propiedad de origen a destino. No copia la medida ni termina su ficha. origen queda vacío y destino conserva el objeto. Si Retiro vale uno, reset lo destruye en ese momento. Si vale cero, destino lo destruye al terminar el bloque. En ambos recorridos los propietarios vacíos no vuelven a destruirlo al salir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué muestra cada línea"
+        },
+        {
+          "type": "paragraph",
+          "text": "Informe: contiene Numero: y el número, seguido de ;Codigo: y el código. escribir ya está proporcionada y utiliza el flujo recibido.\nMovido: dos unos, que confirman que origen está vacío y destino no lo está.\nVivos: un uno para la base, la derivada y la ficha, porque mover el propietario no ha destruido esos objetos.\nAntesDeSalir: tres ceros si se pidió reset; tres unos si la medida sigue viva hasta cerrar el bloque.\nFinalVivos: tres ceros en ambos modos.\nDestruidos: un uno para la base, la derivada y la ficha, con cada final registrado una sola vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden de las ternas siempre es base, derivada y ficha. main escribe la última terna después de cerrar el bloque que contiene destino. Esa ubicación permite comprobar la limpieza al salir, incluso cuando no se ha utilizado reset."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva los constructores, Ficha, las declaraciones, escribir y main. El inicial fabrica sólo una Medida y deja sin completar los dos registros de destrucción. Compila y se destruye de forma compatible, pero no cumple el informe ni los contadores pedidos. Completa la fábrica y los dos destructores; no cambies la salida para ocultar un registro que falta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la fábrica y registrar la destrucción completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los tres cuerpos indicados. Compila y compara las seis líneas. Sólo el primer caso correcto es obligatorio; los cuatro ensayos siguientes son opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\nMedida::~Medida() noexcept {\n    // Registra el final de esta parte base en ciclo_.\n}\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    // Registra el final de esta derivada en balance_. No borres ficha_ manualmente.\n}\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    // Construye una MedidaIdentificada con ambos datos y el ciclo recibido.\n    (void)codigo;\n    return std::make_unique<Medida>(numero, ciclo);\n}\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n",
+          "initialStandardInput": "6 41 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 41 1",
+                "outputs": [
+                  "Informe:Numero:6;Codigo:41\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "0 -3 0",
+                "outputs": [
+                  "Informe:Numero:0;Codigo:-3\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:1,1,1\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "-7 0 1",
+                "outputs": [
+                  "Informe:Numero:-7;Codigo:0\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "19 4 0",
+                "outputs": [
+                  "Informe:Numero:19;Codigo:4\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:1,1,1\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              },
+              {
+                "standardInput": "-11 23 1",
+                "outputs": [
+                  "Informe:Numero:-11;Codigo:23\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+                ],
+                "explanation": "crear_medida devuelve make_unique<MedidaIdentificada>(numero, codigo, ciclo) como propietario base. Cada destructor actualiza los dos contadores que le corresponden. El miembro unique_ptr<Ficha> se destruye automáticamente; no se borra manualmente. Al salir, o al llamar reset, el destructor virtual permite completar la derivada y su base una vez."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se pide reset: la medida y la ficha ya deben haber terminado antes de cerrar el bloque."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6 41 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Informe:Numero:6;Codigo:41\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: salir del bloque y conservar los datos"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La medida tiene número cero y código negativo. Se conserva hasta salir del bloque."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 -3 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Informe:Numero:0;Codigo:-3\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:1,1,1\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "El número es negativo y el código cero. Se destruye con reset."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-7 0 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Informe:Numero:-7;Codigo:0\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La destrucción ocurre al salir del bloque, sin reset anticipado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "19 4 0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Informe:Numero:19;Codigo:4\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:1,1,1\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se conservan número negativo y código positivo en el informe anterior a reset."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "-11 23 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Informe:Numero:-11;Codigo:23\nMovido:1,1\nVivos:1,1,1\nAntesDeSalir:0,0,0\nFinalVivos:0,0,0\nDestruidos:1,1,1"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: cada destructor termina su propia parte"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <sstream>\n#include <utility>\n\nstruct Ciclo {\n    int bases_vivas = 0;\n    int derivadas_vivas = 0;\n    int fichas_vivas = 0;\n    int bases_destruidas = 0;\n    int derivadas_destruidas = 0;\n    int fichas_destruidas = 0;\n};\nclass Ficha {\npublic:\n    Ficha(int codigo, Ciclo& ciclo) : codigo_{codigo}, ciclo_{ciclo} { ++ciclo_.fichas_vivas; }\n    Ficha(const Ficha&) = delete;\n    Ficha& operator=(const Ficha&) = delete;\n    ~Ficha() noexcept { --ciclo_.fichas_vivas; ++ciclo_.fichas_destruidas; }\n    int codigo() const noexcept { return codigo_; }\nprivate:\n    int codigo_;\n    Ciclo& ciclo_;\n};\nclass Medida {\npublic:\n    Medida(int numero, Ciclo& ciclo) : numero_{numero}, ciclo_{ciclo} { ++ciclo_.bases_vivas; }\n    virtual ~Medida() noexcept;\n    Medida(const Medida&) = delete;\n    Medida& operator=(const Medida&) = delete;\n    int numero() const noexcept { return numero_; }\n    virtual void escribir(std::ostream& salida) const { salida << \"Numero:\" << numero_; }\nprivate:\n    int numero_;\n    Ciclo& ciclo_;\n};\nclass MedidaIdentificada : public Medida {\npublic:\n    MedidaIdentificada(int numero, int codigo, Ciclo& ciclo)\n        : Medida{numero, ciclo}, ficha_{std::make_unique<Ficha>(codigo, ciclo)}, balance_{ciclo} {\n        ++balance_.derivadas_vivas;\n    }\n    ~MedidaIdentificada() noexcept override;\n    void escribir(std::ostream& salida) const override {\n        Medida::escribir(salida);\n        salida << \";Codigo:\" << ficha_->codigo();\n    }\nprivate:\n    std::unique_ptr<Ficha> ficha_;\n    Ciclo& balance_;\n};\nMedida::~Medida() noexcept {\n    --ciclo_.bases_vivas;\n    ++ciclo_.bases_destruidas;\n}\nMedidaIdentificada::~MedidaIdentificada() noexcept {\n    --balance_.derivadas_vivas;\n    ++balance_.derivadas_destruidas;\n}\nstd::unique_ptr<Medida> crear_medida(int numero, int codigo, Ciclo& ciclo) {\n    return std::make_unique<MedidaIdentificada>(numero, codigo, ciclo);\n}\nint main() {\n    int numero = 0, codigo = 0, retiro = 0;\n    if (!(std::cin >> numero >> codigo >> retiro) || retiro < 0 || retiro > 1) { return 1; }\n    Ciclo ciclo;\n    {\n        auto origen = crear_medida(numero, codigo, ciclo);\n        std::ostringstream informe;\n        {\n            const Medida& vista = *origen;\n            vista.escribir(informe);\n        }\n        std::cout << \"Informe:\" << informe.str() << '\\n';\n        std::unique_ptr<Medida> destino = std::move(origen);\n        std::cout << \"Movido:\" << (origen == nullptr) << ',' << (destino != nullptr) << '\\n';\n        std::cout << \"Vivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n        if (retiro == 1) { destino.reset(); }\n        std::cout << \"AntesDeSalir:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n';\n    }\n    std::cout << \"FinalVivos:\" << ciclo.bases_vivas << ',' << ciclo.derivadas_vivas << ',' << ciclo.fichas_vivas << '\\n'\n              << \"Destruidos:\" << ciclo.bases_destruidas << ',' << ciclo.derivadas_destruidas << ',' << ciclo.fichas_destruidas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fábrica construye una MedidaIdentificada y transfiere su propiedad al resultado std::unique_ptr<Medida>. No devuelve una Medida por valor ni una referencia a una variable local. La medida completa mantiene su ficha y su comportamiento virtual."
+        },
+        {
+          "type": "paragraph",
+          "text": "El destructor derivado registra el final de esa parte. No llama a Medida::~Medida ni borra ficha_. El lenguaje destruye los miembros y la base después del cuerpo: ficha_ termina la Ficha y el destructor base registra el final de Medida. La misma secuencia se utiliza cuando el propietario base se vacía con reset y cuando se destruye al salir del bloque (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los contadores permiten observar lo ocurrido; la limpieza real procede de los destructores y de los propietarios. origen no vuelve a participar después de mover su propiedad. vista deja de utilizarse antes de retirar la medida. ciclo, en cambio, sigue vivo hasta después de observar los resultados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un destructor virtual no da propiedad a todos los accesos"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_prestamo_no_es_propietario",
+          "question": "Una función recibe const Medida& para consultar una medida que pertenece a un unique_ptr del llamador. La base tiene destructor virtual. ¿Qué debe hacer esa función con la vida de la medida?",
+          "options": [
+            "Destruirla al terminar la consulta, porque virtual hace que toda referencia base sea propietaria.",
+            "Limitarse a consultarla durante el préstamo; el propietario sigue siendo responsable de su destrucción.",
+            "Crear otro unique_ptr con la dirección de la referencia para conservar el mismo acuerdo de propiedad."
+          ],
+          "correctIndex": 1,
+          "explanation": "El destructor virtual permite una ruta de destrucción compatible mediante un propietario base. No concede propiedad a las referencias o punteros observadores. Crear un segundo propietario independiente para la misma dirección produciría responsabilidades de destrucción duplicadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar ambos momentos de destrucción"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l5_reset_y_salida_bloque",
+          "question": "El ensayo con Retiro igual a uno cumple todas las líneas, pero con Retiro igual a cero FinalVivos todavía muestra una derivada viva. ¿Qué permite concluir la comparación?",
+          "options": [
+            "Que mover el propietario siempre copia el objeto y deja una segunda derivada viva.",
+            "Que el modo cero debería aceptarse sin revisar, porque reset ya pasó una vez.",
+            "Que se ha observado un incumplimiento en la limpieza al salir o en su registro; hay que revisar esa ruta sin sustituirla por reset en main."
+          ],
+          "correctIndex": 2,
+          "explanation": "El modo cero conserva el objeto hasta que termina el bloque de destino. En ese momento debe completarse la destrucción y registrarse una vez. Que otra ruta pase no acredita ésta. Los contadores, los destructores y la ubicación de la observación permiten localizar la causa sin cambiar el contrato pedido."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "901b1629a083d415509762a1d974c19e87f51d99ec6eb2ba63ddd96e838cab57"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "033cf2bd895c4ba070e81a018d6b525000b050936b17f8997bcd40beda91c633"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "5a3ae545cc633b0cc3f4734f6a388f8adedfb4694d0ee4e02e4c78f0d8bf8299"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "7e776632240b1593b8fbb3b545a78f7e898452753877cbae76303058ba48c115"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "ebfb69d50827acb883dc13cf954abab5d4199bd69bc455313e918a3a5263d944"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "f3de3859b72510b667b51654306838acc8cef7c4c7bae215318a590eb8994f17"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "28d65b38c1ce99b8c3eecb880fbee8105bd851145aa8ddc6dc3c6a66d956bc97"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "d306b56d123f9a3711bc1fb2029630d5d6b6baceb44e21aee5cf97e363f2218e"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1bcd94cb3fc559c6b585bf8c266810b55c7ee6499c2050af0f05a9c1e644507e"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "940378a9e517228fb387bd7eb189ef9577eecccf9b370a1424ac3770f0559d4f"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "b03018c33fb7c84f163c12724eaf8ba8a0b9438df50dd98893cbfb63642625b4"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "8a267fbcc07fac1de3bcf83fdbc9300ac310701e08a83d5d7a425fe9d3370cbb"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "2fb76b53e5f08cace99e3b8dc7b0315fd8c7dff48dfd6ff3bdabe180640eee76"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "6017cfb9f5de1705328b38a7b594f59e9596b891dcd55c42aa5626067fc1c795"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1ef6ca53d2acf87119c583034c04094114ef58137ed3e867b23ab357ee9cdb84"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "a0c52a01bf910bdc181f2444d817cc5ceb8c932e43f71afefa2e02ef1cba8b4f"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "b1707a2cc637a69554ee4ebecf562ec86ce8ce8aae5481fcc76c7f313e4d1e4e"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "111763d0cfed880f9eedcc271add2e08ad1bd462bb47c12f0a4f4f1e02cc3ef0"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "fecff7a67edc78f6a5f0fa6a0c52015881c4533a56489cb951c74a2b53370e72"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "198f9556d07884df0aa733fc2e907ab3e77f90ba42b6a35561d4bd147793911f"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "519827cc05e9425bc93c64920ce90fd41a726b62a59aa18322b4ddfd2bdedad6"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "265f34f73202f70790f8dfa36dd28156d07a291e8c2cc4a67caabba4bdab0c38"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1310a677dd39ce4b429e0af4f0c33cca2f52421e6cd9c28724e933b059b34e47"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0006",
+            "sha256": "b38fcbd533e9006dacf207e687d0ce02f23f83bc99a8d05b948ddf08dddc5206"
+          },
+          {
+            "id": "block_0020_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0008",
+            "sha256": "58f53ca8cf0a9f018c4f371547a7af796038767233ab283db9c49d1e4dbd0e3f"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0004",
+            "sha256": "397a6494f535cb98a8591338898777ca35b63ba59bc34dc89c9e82ca9663ab7f"
+          },
+          {
+            "id": "block_0021_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0006",
+            "sha256": "b97469033fe2dea1e3e36b28517e7e6d0d25f2faffa8349296b0a7597ad57e3d"
+          },
+          {
+            "id": "block_0021_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0010",
+            "sha256": "26ba139cfc6d006da3ac7e035c05bd051fae9cdde74f330f15b8f175fdd95c9d"
+          },
+          {
+            "id": "block_0021_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0012",
+            "sha256": "133cdf0bf30ceab800a51b86b2436fc351be5db789f15f4ad1a4e2173f312fac"
+          },
+          {
+            "id": "block_0021_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0016",
+            "sha256": "e07de18d986658dd81dab393dd86bc9b9d27b411f4799a294d32da1d49d08f65"
+          },
+          {
+            "id": "block_0021_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0018",
+            "sha256": "fd885569fbc1a0bb3d34783ef2edf938268293ddc5e01036053d7b53d1bfda99"
+          },
+          {
+            "id": "block_0021_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0022",
+            "sha256": "2bc399902da21fac33aa79449845ed1c977053c65b5e08296803c8bef8562e37"
+          },
+          {
+            "id": "block_0021_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0024",
+            "sha256": "cb4b76ca80013163fc2fb0eb109c650ee4a09a1c19fc9507bbc31d69d675f388"
+          }
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          {
+            "id": "block_0022_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0022_0001",
+            "sha256": "5f0e1b1fc0905d69c87ca7a267f24341519615b3f136ccb00d6e9a64e35639ef"
+          },
+          {
+            "id": "block_0022_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0022_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          {
+            "id": "block_0023_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0023_0001",
+            "sha256": "29c46e58aeb0e202adbac8f528fe3a99aef244c49220ff046a4e777da7ad1116"
+          }
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          {
+            "id": "block_0024_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0024_0001",
+            "sha256": "337713f1cfd3ed8827d8f74e4e24af5984fb918c000960d3456823bb5338393f"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002",
+          "block_0018_0003",
+          "block_0018_0004"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003",
+          "block_0020_0004",
+          "block_0020_0005",
+          "block_0020_0006",
+          "block_0020_0007",
+          "block_0020_0008"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003",
+          "block_0021_0004",
+          "block_0021_0005",
+          "block_0021_0006",
+          "block_0021_0007",
+          "block_0021_0008",
+          "block_0021_0009",
+          "block_0021_0010",
+          "block_0021_0011",
+          "block_0021_0012",
+          "block_0021_0013",
+          "block_0021_0014",
+          "block_0021_0015",
+          "block_0021_0016",
+          "block_0021_0017",
+          "block_0021_0018",
+          "block_0021_0019",
+          "block_0021_0020",
+          "block_0021_0021",
+          "block_0021_0022",
+          "block_0021_0023",
+          "block_0021_0024"
+        ]
+      },
+      {
+        "id": "page_0022",
+        "blocks": [
+          "block_0022_0000",
+          "block_0022_0001",
+          "block_0022_0002",
+          "block_0022_0003",
+          "block_0022_0004"
+        ]
+      },
+      {
+        "id": "page_0023",
+        "blocks": [
+          "block_0023_0000",
+          "block_0023_0001"
+        ]
+      },
+      {
+        "id": "page_0024",
+        "blocks": [
+          "block_0024_0000",
+          "block_0024_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "f5900012ca243fb9f946c8d08b0a014e0eb0dd6400748bf1f2229ffb91284a6c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "901b1629a083d415509762a1d974c19e87f51d99ec6eb2ba63ddd96e838cab57"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "033cf2bd895c4ba070e81a018d6b525000b050936b17f8997bcd40beda91c633"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5a3ae545cc633b0cc3f4734f6a388f8adedfb4694d0ee4e02e4c78f0d8bf8299"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "7e776632240b1593b8fbb3b545a78f7e898452753877cbae76303058ba48c115"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "ebfb69d50827acb883dc13cf954abab5d4199bd69bc455313e918a3a5263d944"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f3de3859b72510b667b51654306838acc8cef7c4c7bae215318a590eb8994f17"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "28d65b38c1ce99b8c3eecb880fbee8105bd851145aa8ddc6dc3c6a66d956bc97"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "d306b56d123f9a3711bc1fb2029630d5d6b6baceb44e21aee5cf97e363f2218e"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1bcd94cb3fc559c6b585bf8c266810b55c7ee6499c2050af0f05a9c1e644507e"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "940378a9e517228fb387bd7eb189ef9577eecccf9b370a1424ac3770f0559d4f"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "b03018c33fb7c84f163c12724eaf8ba8a0b9438df50dd98893cbfb63642625b4"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "8a267fbcc07fac1de3bcf83fdbc9300ac310701e08a83d5d7a425fe9d3370cbb"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "2fb76b53e5f08cace99e3b8dc7b0315fd8c7dff48dfd6ff3bdabe180640eee76"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "6017cfb9f5de1705328b38a7b594f59e9596b891dcd55c42aa5626067fc1c795"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1ef6ca53d2acf87119c583034c04094114ef58137ed3e867b23ab357ee9cdb84"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "a0c52a01bf910bdc181f2444d817cc5ceb8c932e43f71afefa2e02ef1cba8b4f"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "b1707a2cc637a69554ee4ebecf562ec86ce8ce8aae5481fcc76c7f313e4d1e4e"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "111763d0cfed880f9eedcc271add2e08ad1bd462bb47c12f0a4f4f1e02cc3ef0"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "fecff7a67edc78f6a5f0fa6a0c52015881c4533a56489cb951c74a2b53370e72"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "198f9556d07884df0aa733fc2e907ab3e77f90ba42b6a35561d4bd147793911f"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "519827cc05e9425bc93c64920ce90fd41a726b62a59aa18322b4ddfd2bdedad6"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "265f34f73202f70790f8dfa36dd28156d07a291e8c2cc4a67caabba4bdab0c38"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1310a677dd39ce4b429e0af4f0c33cca2f52421e6cd9c28724e933b059b34e47"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0006",
+                "sha256": "b38fcbd533e9006dacf207e687d0ce02f23f83bc99a8d05b948ddf08dddc5206"
+              },
+              {
+                "id": "block_0020_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0008",
+                "sha256": "58f53ca8cf0a9f018c4f371547a7af796038767233ab283db9c49d1e4dbd0e3f"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0004",
+                "sha256": "397a6494f535cb98a8591338898777ca35b63ba59bc34dc89c9e82ca9663ab7f"
+              },
+              {
+                "id": "block_0021_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0006",
+                "sha256": "b97469033fe2dea1e3e36b28517e7e6d0d25f2faffa8349296b0a7597ad57e3d"
+              },
+              {
+                "id": "block_0021_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0010",
+                "sha256": "26ba139cfc6d006da3ac7e035c05bd051fae9cdde74f330f15b8f175fdd95c9d"
+              },
+              {
+                "id": "block_0021_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0012",
+                "sha256": "133cdf0bf30ceab800a51b86b2436fc351be5db789f15f4ad1a4e2173f312fac"
+              },
+              {
+                "id": "block_0021_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0016",
+                "sha256": "e07de18d986658dd81dab393dd86bc9b9d27b411f4799a294d32da1d49d08f65"
+              },
+              {
+                "id": "block_0021_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0018",
+                "sha256": "fd885569fbc1a0bb3d34783ef2edf938268293ddc5e01036053d7b53d1bfda99"
+              },
+              {
+                "id": "block_0021_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0022",
+                "sha256": "2bc399902da21fac33aa79449845ed1c977053c65b5e08296803c8bef8562e37"
+              },
+              {
+                "id": "block_0021_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0024",
+                "sha256": "cb4b76ca80013163fc2fb0eb109c650ee4a09a1c19fc9507bbc31d69d675f388"
+              }
+            ]
+          },
+          {
+            "id": "page_0022",
+            "blocks": [
+              {
+                "id": "block_0022_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0022_0001",
+                "sha256": "5f0e1b1fc0905d69c87ca7a267f24341519615b3f136ccb00d6e9a64e35639ef"
+              },
+              {
+                "id": "block_0022_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0022_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0023",
+            "blocks": [
+              {
+                "id": "block_0023_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0023_0001",
+                "sha256": "29c46e58aeb0e202adbac8f528fe3a99aef244c49220ff046a4e777da7ad1116"
+              }
+            ]
+          },
+          {
+            "id": "page_0024",
+            "blocks": [
+              {
+                "id": "block_0024_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0024_0001",
+                "sha256": "337713f1cfd3ed8827d8f74e4e24af5984fb918c000960d3456823bb5338393f"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

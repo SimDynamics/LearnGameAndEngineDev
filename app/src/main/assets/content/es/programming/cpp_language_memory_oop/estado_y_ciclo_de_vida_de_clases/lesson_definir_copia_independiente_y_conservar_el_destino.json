@@ -1,0 +1,2204 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__definir_copia_independiente_y_conservar_el_destino",
+  "title": "Definir una copia independiente y conservar el destino",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar a Celda una copia independiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior vimos que la copia predeterminada de una clase con unique_ptr no puede copiar ese miembro. Eso no impide que la clase ofrezca otra forma de copiarse. Podemos escribir un constructor de copia que lea el int gestionado por el origen y cree otro int con el mismo valor. Cada Celda tendrá entonces su propio propietario y su propio int (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta lección una Celda puede estar vacía o gestionar un único int. Su copia debe reproducir ese estado: si el origen está vacío, la copia también queda vacía; si tiene int, la copia recibe otro int independiente. Cambiar o vaciar una de esas Celdas no debe cambiar ni vaciar la otra. Esta es la decisión de copia que elegimos para nuestra clase."
+        },
+        {
+          "type": "paragraph",
+          "text": "El miembro unique_ptr sigue sin copiarse. Tampoco se toma el puntero prestado que devuelve get para convertirlo en otro propietario del mismo int. En el caso ocupado se crea otro objeto y se copia su valor entero, distinguiendo la dirección de un objeto del dato que guarda (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Celda declara el constructor de copia y las operaciones de movimiento de forma separada. Escribiremos el cuerpo del constructor de copia; los movimientos siguen utilizando = default. Así copiar conserva al origen y crea contenido independiente, mientras mover puede transferir el miembro propietario, como ya estudiamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar el miembro antes del cuerpo del constructor"
+        },
+        {
+          "type": "paragraph",
+          "text": "El miembro dato_ tiene un inicializador que crea un int con valor cuatro. El constructor sin argumentos de Celda utiliza ese inicializador. Sin embargo, al copiar queremos preparar el miembro según el origen, que incluso puede estar vacío. No necesitamos crear primero ese int habitual para sustituirlo después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso nuestro constructor de copia comienza con Celda::Celda(const Celda& otra) : dato_{}. La parte dato_{} inicializa explícitamente el miembro propietario como vacío antes de entrar en el cuerpo. Al indicar ese inicializador, no se ejecuta el que está escrito junto a la declaración del miembro. El nombre Celda::Celda identifica fuera de la clase la definición de su constructor (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No basta con escribir un cuerpo que compruebe el origen y olvidar cómo se inicializó el miembro. En un constructor propio, si no indicáramos aquí la inicialización de dato_, se utilizaría su inicializador habitual antes del cuerpo. La regla de ignorar esos inicializadores en la copia por miembros de la lección anterior correspondía a los constructores de copia y movimiento predeterminados, no a cualquier constructor cuyo cuerpo escribamos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una vez que dato_ está vacío, el cuerpo comprueba el propietario de otra. Si tiene objeto, lee su int y pide a make_unique<int> que cree un int nuevo con ese valor. Si está vacío, no entra en esa preparación: no reserva memoria para un int ni intenta leer uno inexistente. Los miembros ya construidos mantienen su limpieza automática si una construcción posterior termina por excepción (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar el valor con el que se crea el nuevo int"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l7_completar_valor_del_clon",
+          "question": "Completa el hueco con una expresión que proporcione el int leído de otra. La comprobación anterior ya asegura que esa Celda tiene objeto. El nuevo int debe empezar con el mismo valor y pertenecer a copia de forma independiente. No proporciones una dirección ni transfieras el propietario de otra.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>([]);\n    }\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda origen;\n    origen.cambiar(0);\n    Celda copia = origen;\n    copia.cambiar(8);\n    std::cout << origen.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "*otra.dato_"
+          ],
+          "answerAlternatives": [
+            [
+              "*otra.dato_",
+              "*(otra.dato_)",
+              "(*otra.dato_)",
+              "otra.valor()"
+            ]
+          ],
+          "explanation": "make_unique<int> recibe el valor entero del objeto gestionado por otra y crea un int diferente con ese valor. Desreferenciar su miembro propietario u obtener el int mediante valor() son dos formas admitidas de leerlo bajo la condición de que haya objeto. La modificación posterior de copia no afecta al int de origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "La clase declara también operator=, pero este programa sólo construye una copia; no asigna una Celda a otra ya existente. Por eso aquí basta con la definición del constructor de copia. Más adelante escribiremos la definición de la asignación para los programas que la utilizan."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar el valor y la independencia de los objetos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor siguiente utiliza la lectura del origen para crear su propio int. main construye copia desde una Celda constante y modifica después sólo la copia. Al final consulta ambos valores y compara los accesos prestados que devuelve acceso(). En esa comparación los dos ints siguen vivos."
+        },
+        {
+          "type": "paragraph",
+          "text": "acceso() devuelve const int*: permite observar la identidad del int sin crear otro propietario y sin escribir mediante ese puntero. Comparar esos accesos no copia ni transfiere nada. En este programa la copia debe tener un objeto distinto, además de haber empezado con el mismo valor que el origen."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_construir_copia_independiente",
+          "language": "cpp",
+          "question": "¿Qué muestran el valor del origen, el valor de la copia modificada y la comparación entre sus accesos?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    const Celda origen;\n    Celda copia{origen};\n    copia.cambiar(8);\n    std::cout << origen.valor() << ':' << copia.valor() << ':'\n              << (origen.acceso() != copia.acceso());\n    return 0;\n}\n",
+          "answers": [
+            "4:8:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor crea otro int con el valor leído del origen. cambiar escribe en el int de copia y el origen conserva su propio valor. Los dos accesos se comparan mientras ambos objetos siguen vivos y confirman que no se ha compartido el mismo int entre dos propietarios."
+        },
+        {
+          "type": "paragraph",
+          "text": "valor() requiere que la Celda tenga objeto porque desreferencia el propietario para leer el int. hay() permite comprobarlo sin acceder a ese int. cambiar() hace su propia comprobación: si la Celda está vacía, devuelve false sin intentar escribir. El constructor también distingue el caso vacío antes de leer, y los programas preparados sólo llaman a valor() cuando hay objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer una fuente constante sin prometer const profundo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El parámetro const Celda& permite recibir una Celda constante sin construir otra para entrar en el constructor. La implementación usa ese acceso para leer el estado y conservar la fuente. Puede consultar dato_ de otra Celda porque los miembros de la misma clase tienen acceso a sus miembros privados, como ya estudiamos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay que recuperar también la diferencia entre el propietario y el objeto gestionado. Si un unique_ptr<int> es constante, no podemos reasignar o vaciar ese propietario mediante él. Sin embargo, eso no convierte al int gestionado en const int. Nuestra copia sólo lee ese int porque así cumple el contrato de Celda; no porque const aplicado al propietario vuelva constante todo lo que permite alcanzar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l7_const_fuente_y_objeto_gestionado",
+          "question": "Dentro del constructor, otra tiene tipo const Celda& y su miembro es unique_ptr<int>. ¿Qué distinción debemos mantener?",
+          "options": [
+            "El int gestionado se vuelve constante, pero el miembro propietario puede reasignarse porque la referencia sólo protege a Celda.",
+            "Se permite vaciar el propietario de otra porque el constructor está creando un destino nuevo y tiene acceso a los miembros privados.",
+            "No se puede reasignar ese miembro propietario por otra; su int no se vuelve const por ello y nuestra implementación se limita a leerlo."
+          ],
+          "correctIndex": 2,
+          "explanation": "El acceso privado permite nombrar el miembro, pero no elimina const del objeto por el que se accede. Esa const impide reasignar el propietario mediante otra. El tipo del objeto gestionado sigue siendo int; no modificar su contenido es parte del comportamiento que implementamos para conservar la fuente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar también el estado vacío"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estar vacío forma parte de los estados admitidos de Celda. No es un error que deba rechazarse al copiar. Si el origen no gestiona int, la nueva Celda debe reproducir su ausencia de objeto. La inicialización explícita dato_{} permite empezar en ese estado sin ejecutar la creación habitual del constructor sin argumentos."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el programa se construye una Celda, se vacía y después se construye una copia constante desde ella. El constructor comprueba el origen antes de intentar leer su int. La consulta final utiliza hay(), que funciona también cuando no hay objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_construir_copia_vacia",
+          "language": "cpp",
+          "question": "¿Qué imprimen las dos consultas de presencia?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda vacia;\n    vacia.vaciar();\n    const Celda copia{vacia};\n    std::cout << vacia.hay() << ':' << copia.hay();\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vaciar deja al origen sin int. El constructor de copia inicializa su propietario vacío y no entra en el if al comprobar esa fuente. Por eso la copia reproduce el estado vacío, sin leer memoria inexistente ni crear el int habitual del constructor sin argumentos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recibir una Celda por valor ya puede significar copiar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora que Celda tiene un constructor de copia propio, una función puede recibir una Celda por valor desde un argumento lvalue. Al llamar con el nombre origen del siguiente programa se construye el parámetro copiando esa Celda. No se está ofreciendo movimiento: se quiere que el llamador conserve su objeto y que la función trabaje con contenido independiente (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "modificar_copia recibe aquí una Celda con objeto, cambia el valor de su propio int y devuelve ese valor como un int independiente. La responsabilidad del parámetro sobre su int es automática. Al terminar la instrucción que contiene la llamada, el parámetro ya se ha destruido; el entero devuelto puede seguir guardado en resultado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_parametro_celda_por_valor",
+          "language": "cpp",
+          "question": "¿Qué muestra main para origen y para el resultado de la función?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint modificar_copia(Celda parametro) {\n    parametro.cambiar(9);\n    return parametro.valor();\n}\n\nint main() {\n    Celda origen;\n    const int resultado = modificar_copia(origen);\n    std::cout << origen.valor() << ':' << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "4:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La inicialización del parámetro usa el constructor de copia y crea otro int. La función modifica ese objeto, no el del llamador. Devuelve una copia del valor entero; destruir el parámetro y su int no destruye el resultado entero guardado por main."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato de recibir por valor no obliga por sí solo a realizar siempre una copia. La operación concreta depende de la expresión que se aporta y de las operaciones disponibles. Aquí el argumento es el nombre de una Celda existente y copiable; por eso recuperamos una copia, a diferencia de las transferencias que practicamos con std::move (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar cambia un destino que ya existe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construir Celda copia{origen}; crea una Celda nueva. En destino = origen;, en cambio, destino ya existe y puede gestionar un int anterior. La asignación debe preparar el estado que recibirá y encargarse del anterior cuando la operación se acepte. La declaración siguiente se escribe dentro de public de Celda; no es un programa independiente (Prata, 2012; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Celda& operator=(const Celda& otra);"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta función miembro actúa sobre el destino. this apunta a ese objeto; otra permite leer el origen. El tipo Celda& del retorno establece que se devolverá una referencia a una Celda existente. Nuestra implementación devolverá *this: el propio destino asignado. No devolverá una copia nueva ni una referencia a una candidata local que va a terminar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de preparar nada hay que distinguir la autoasignación: el origen y el destino pueden ser el mismo objeto. La comparación this == &otra comprueba esa identidad. Dos Celdas distintas que guarden enteros iguales no son el mismo objeto. Comparar sólo los valores no sirve para decidir si se está asignando una Celda a sí misma."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para esta clase elegimos que la autoasignación termine sin reservar, sin sustituir el int y sin cambiar su identidad. Devuelve una referencia al mismo destino y sirve también cuando éste está vacío. Es una decisión explícita del contrato; una implementación que prepare una copia y luego intercambie también puede conservar el valor en autoasignación, pero podría reservar y sustituir el objeto gestionado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar una candidata antes de sustituir el estado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre Celdas distintas elegimos una política concreta: si el origen tiene objeto, se crea siempre un int nuevo independiente, aunque el destino ya contenga un int con el mismo valor. El objeto anterior del destino debe terminar al completar la asignación. No es una exigencia universal para toda asignación correcta: en otro contrato podría ser válido reutilizar el int del destino y copiarle el valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestra estrategia utiliza una Celda candidata local construida por copia desde otra. Así aprovechamos el constructor que ya distingue origen ocupado y vacío. Toda la preparación que pueda necesitar memoria ocurre mientras destino conserva su propietario anterior y la fuente conserva el suyo. Si esa construcción lanza, aún no se ha cambiado el destino (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sólo cuando la candidata está preparada intercambiamos su miembro propietario con el miembro del destino. Es el swap de unique_ptr<int> ya estudiado: intercambia quién gestiona cada objeto, sin copiar los ints ni necesitar una reserva nueva. Con los propietarios y el liberador habitual que utilizamos, ese intercambio no lanza (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después del intercambio, el destino gestiona el estado preparado y la candidata conserva el propietario anterior del destino. Al salir de la función se destruye esa candidata automática; su miembro unique_ptr se encarga de terminar el int anterior, si lo había. La referencia devuelta sigue dando acceso al destino que existe en el llamador."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el origen distinto está vacío, construir la candidata no reserva para un int. Intercambiarla con el destino deja a éste vacío y lleva su estado anterior a la candidata para su limpieza. Copiar una fuente vacía es una asignación aceptada, no un rechazo. Si falla una preparación, los accesos al int anterior del destino siguen siendo válidos porque ese int no ha terminado; tras una sustitución aceptada, ya no deben utilizarse los accesos prestados a ese int anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el destino cuando no puede prepararse la copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera dos Celdas distintas: el origen gestiona un int con valor dos y el destino uno con valor ocho. Queremos preparar una copia del dos antes de cambiar el destino. Si la reserva de ese nuevo int lanza std::bad_alloc, la candidata no completa su construcción. El origen sigue con su int de valor dos y el destino sigue con su int de valor ocho: no se ha llegado al intercambio."
+        },
+        {
+          "type": "paragraph",
+          "text": "La conservación del destino no se consigue deshaciendo cambios ni reconstruyendo lo que se había borrado. Su estado anterior nunca se modificó. La candidata usa miembros que gestionan automáticamente lo que hayan llegado a construir. Esa combinación permite que la excepción salga de la asignación y se capture en el llamador sin perder el estado anterior (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "A esta promesa de conservar el estado anterior ante un fallo la llamamos garantía fuerte frente a excepciones. Aquí la delimitamos al estado de las Celdas afectadas por esta asignación. No afirma que toda operación posterior del programa vaya a tener éxito ni que una excepción revierta cualquier cambio externo que otro código haya realizado (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l7_fallo_al_preparar_la_candidata",
+          "question": "El origen y el destino son distintos y contienen 6 y 9. La reserva del int de la candidata lanza std::bad_alloc y el llamador la captura. ¿Qué estado conserva la estrategia explicada y por qué?",
+          "options": [
+            "El origen conserva 6 y el destino queda vacío: hay que liberar su int antes de intentar crear el nuevo.",
+            "El origen conserva 6 y el destino conserva 9: la candidata no terminó y no se llegó a intercambiar los propietarios.",
+            "El origen queda vacío y el destino conserva 9: intentar construir la copia ya consume el propietario de la fuente."
+          ],
+          "correctIndex": 1,
+          "explanation": "La preparación utiliza copia, no transferencia desde la fuente. Como falla antes del intercambio, ninguno de los propietarios de origen y destino ha cambiado. Liberar primero el int anterior del destino impediría cumplir esta conservación al fallar la reserva."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de copia que falla no produce una Celda nueva completamente construida. La promesa de conservar un destino anterior corresponde a la asignación, donde ese destino ya existe. Tampoco es necesario provocar un agotamiento real de memoria para razonar sobre el orden: la conservación se deduce de que la preparación precede a cualquier modificación del destino."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: asignar una copia a una Celda existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor proporciona la clase Celda y su constructor de copia, que ya crea contenido independiente. También conserva sus movimientos generados y su limpieza automática. Tu tarea consiste en completar únicamente el cuerpo de Celda::operator=(const Celda& otra). No cambies los miembros, las otras funciones ni main."
+        },
+        {
+          "type": "paragraph",
+          "text": "El destino es la Celda sobre la que se llama a operator=; this apunta a ella. otra se refiere a la fuente de los datos. La asignación debe cumplir estas condiciones:\nSi ambos accesos identifican la misma Celda, devuelve inmediatamente una referencia al destino, sin crear ni destruir un int.\nSi son Celdas distintas y el origen tiene objeto, prepara un int nuevo con el mismo valor, incluso si el destino ya tiene un int de ese valor.\nSi son distintas y el origen está vacío, deja vacío al destino. Esta copia también se acepta.\nConserva el origen. Al sustituir un destino ocupado, termina su int anterior.\nSi no puede prepararse la copia, conserva ambos estados anteriores y deja salir std::bad_alloc.\nAl completar la asignación, devuelve una referencia al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Utiliza una Celda candidata local construida por copia y el intercambio de los miembros propietarios. El constructor proporcionado ya distingue origen ocupado y vacío. Comprueba la identidad antes de construir esa candidata. No compares los valores para decidir si el origen y el destino son la misma Celda."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo inicial contiene (void)otra; para reconocer explícitamente el parámetro todavía sin utilizar y evitar un aviso. Compila, pero se limita a devolver el destino sin asignarle nada. Retira esa instrucción provisional al completar la operación. No imprimas informes desde operator= ni imites los resultados con textos constantes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cómo utiliza main la asignación que vas a completar"
+        },
+        {
+          "type": "paragraph",
+          "text": "main crea dos Celdas. El índice cero identifica primera y el uno, segunda. Ambas se construyen con un int de valor cuatro; después se cambia el de segunda a siete. Cada ejecución empieza de nuevo con esos estados."
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con una cantidad de órdenes de uno a doce. Cada orden contiene tres enteros, operacion, a y b:\n1 a b: copiar desde la Celda de índice a hacia la de índice b. Se admite que ambos índices sean iguales.\n2 a b: poner un int nuevo con valor b en la Celda a. Sólo se admiten valores de cero a nueve.\n3 a b: vaciar la Celda a; se lee b y se ignora. Vaciar una Celda ya vacía también se acepta.\n4 a b: cambiar a b el valor del int que ya tiene la Celda a. Se requiere que tenga objeto y que b esté entre cero y nueve.\nUna operación desconocida o un índice requerido distinto de cero y uno se rechaza sin cambios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las órdenes de una historia actúan sucesivamente sobre las mismas dos Celdas. No son casos independientes. En las copias, main comprueba los índices antes de elegir las referencias al origen y al destino. copiar llama a tu asignación y devuelve true cuando termina. Si recibe std::bad_alloc, la captura y devuelve false; las Celdas siguen existiendo fuera de ese try."
+        },
+        {
+          "type": "paragraph",
+          "text": "poner, cambiar y vaciar ya están implementadas. poner prepara otro int antes de sustituir el anterior y devuelve false si falla esa reserva. cambiar no reserva ni sustituye el objeto: escribe en el int existente o rechaza sin cambios si falta objeto o el valor está fuera del intervalo. vaciar termina el int actual, si lo hay. No modifiques estas funciones para compensar una asignación incorrecta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una entrada que no pueda leerse completa o una cantidad fuera de uno a doce hace terminar el programa con código uno. No se interpreta como una orden rechazada del historial. Las entradas de los casos declarados están completas. No se exige agotar la memoria del equipo ni añadir una orden que provoque ese agotamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer la historia sin confundir ausencia y cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Inicio muestra los estados preparados antes de la primera orden. Tras cada orden aparece una línea con tres partes:\nResultado: uno significa que la orden se aceptó; cero significa que se rechazó.\nAntes: estado de las dos Celdas antes de esa orden.\nActual: estado de las mismas Celdas después de la orden.\nFinal muestra cómo quedan al terminar la historia. Los estados siempre se escriben en el orden índice cero, índice uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "X representa una Celda vacía. El dígito cero representa un int presente cuyo valor es cero. Por eso, copiar una Celda que contiene cero crea un int nuevo; copiar una Celda vacía no crea ninguno y deja vacío al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes se obtiene guardando dos indicadores de presencia y dos valores enteros antes de ejecutar la orden. Son datos independientes para preparar el informe. No se conservan punteros al int anterior del destino: ese int puede terminar durante la asignación aceptada. Actual consulta las Celdas después de la operación."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera orden del caso obligatorio se copia la primera Celda hacia la segunda. La primera conserva su int de valor cuatro. La segunda recibe otro int con ese valor y termina su int anterior de valor siete. Después se modifica el int de la primera; la segunda debe conservar su propio valor. Esta separación permite detectar que el programa no está compartiendo un único int entre dos propietarios."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir reservas y estados de una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada fila presenta una asignación independiente entre Celdas ya preparadas. En las dos primeras, origen y destino son objetos distintos. En la tercera, ambos nombres se refieren a la misma Celda. Aplica la política concreta de esta práctica; se supone que las reservas solicitadas tienen éxito."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l7_reservas_y_estados",
+          "prompt": "Escribe por fila cuántos int nuevos se crean durante la asignación, el valor final del origen y el del destino. Cuenta sólo la asignación de esa fila, no la preparación inicial de las Celdas. Usa -1 para representar vacío en estos campos; los int presentes admitidos siguen siendo de cero a nueve.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Origen antes",
+                "Destino antes",
+                "¿Misma Celda?"
+              ],
+              "rows": [
+                [
+                  "0",
+                  "7",
+                  "No"
+                ],
+                [
+                  "X",
+                  "7",
+                  "No"
+                ],
+                [
+                  "4",
+                  "4",
+                  "Sí"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "copias",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1: int nuevos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 1: origen final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 1: destino final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 2: int nuevos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Fila 2: origen final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Fila 2: destino final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "Fila 3: int nuevos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "h",
+                  "type": "numeric",
+                  "label": "Fila 3: origen final",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "i",
+                  "type": "numeric",
+                  "label": "Fila 3: destino final",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "g": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "h": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "i": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El origen con cero sí tiene int: se crea otro int con cero y se sustituye el siete del destino. El origen vacío no pide un int nuevo y deja vacío al destino. La autoasignación termina antes de preparar la candidata, sin reservas ni sustituciones.",
+            "incorrect": "Distingue primero si el origen tiene objeto y si origen y destino son la misma Celda. Cero es un valor presente. En Celdas distintas, la copia reproduce la presencia o ausencia del origen; en la misma Celda, conserva el objeto sin crear otro."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completar la asignación conservando el destino ante un fallo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el cuerpo indicado y compila el programa. Sólo el primer caso correcto es obligatorio para avanzar. Las otras historias se conservan como ensayos opcionales. La salida comprueba los estados; el contrato incluye además la independencia, la identidad conservada en autoasignación y la preparación previa a la sustitución."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    // Completa la autocopia, la candidata y el intercambio antes del retorno.\n    (void)otra;\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nbool copiar(const Celda& origen, Celda& destino) {\n    try {\n        destino = origen;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Celda& primera, const Celda& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Celda primera;\n    Celda segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            const Celda& origen = a == 0 ? primera : segunda;\n            Celda& destino = b == 0 ? primera : segunda;\n            aceptado = copiar(origen, destino);\n        } else if (indice_valido(a)) {\n            Celda& celda = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = celda.poner(b);\n            } else if (operacion == 3) {\n                aceptado = celda.vaciar();\n            } else if (operacion == 4) {\n                aceptado = celda.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n",
+          "initialStandardInput": "12\n1 0 1\n4 0 9\n4 1 0\n1 1 0\n4 1 6\n3 1 0\n1 1 0\n2 0 5\n1 0 0\n1 0 1\n4 0 2\n1 2 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "12\n1 0 1\n4 0 9\n4 1 0\n1 1 0\n4 1 6\n3 1 0\n1 1 0\n2 0 5\n1 0 0\n1 0 1\n4 0 2\n1 2 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:4:4\nResultado:1;Antes:4:4;Actual:9:4\nResultado:1;Antes:9:4;Actual:9:0\nResultado:1;Antes:9:0;Actual:0:0\nResultado:1;Antes:0:0;Actual:0:6\nResultado:1;Antes:0:6;Actual:0:X\nResultado:1;Antes:0:X;Actual:X:X\nResultado:1;Antes:X:X;Actual:5:X\nResultado:1;Antes:5:X;Actual:5:X\nResultado:1;Antes:5:X;Actual:5:5\nResultado:1;Antes:5:5;Actual:2:5\nResultado:0;Antes:2:5;Actual:2:5\nFinal:2:5"
+                ],
+                "explanation": "La asignación copia el estado de otra sin consumirlo. Comprueba la identidad antes de preparar una candidata; intercambia sólo después de construirla y devuelve el destino. Las copias de estados vacíos se aceptan y cero sigue siendo un valor presente."
+              },
+              {
+                "standardInput": "6\n3 0 0\n1 0 0\n1 0 1\n2 0 0\n1 0 1\n4 1 8\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:X\nResultado:1;Antes:X:X;Actual:0:X\nResultado:1;Antes:0:X;Actual:0:0\nResultado:1;Antes:0:0;Actual:0:8\nFinal:0:8"
+                ],
+                "explanation": "La asignación copia el estado de otra sin consumirlo. Comprueba la identidad antes de preparar una candidata; intercambia sólo después de construirla y devuelve el destino. Las copias de estados vacíos se aceptan y cero sigue siendo un valor presente."
+              },
+              {
+                "standardInput": "8\n1 1 0\n1 0 1\n2 0 10\n4 1 -1\n1 -2147483648 1\n3 2 0\n8 0 1\n4 1 0\n",
+                "outputs": [
+                  "Inicio:4:7\nResultado:1;Antes:4:7;Actual:7:7\nResultado:1;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:1;Antes:7:7;Actual:7:0\nFinal:7:0"
+                ],
+                "explanation": "La asignación copia el estado de otra sin consumirlo. Comprueba la identidad antes de preparar una candidata; intercambia sólo después de construirla y devuelve el destino. Las copias de estados vacíos se aceptan y cero sigue siendo un valor presente."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una historia de las mismas dos Celdas: copia, cambios independientes, cero, vaciado, copia desde vacío, reutilización, autoasignación y rechazo de un índice inválido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "12\n1 0 1\n4 0 9\n4 1 0\n1 1 0\n4 1 6\n3 1 0\n1 1 0\n2 0 5\n1 0 0\n1 0 1\n4 0 2\n1 2 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4:7\nResultado:1;Antes:4:7;Actual:4:4\nResultado:1;Antes:4:4;Actual:9:4\nResultado:1;Antes:9:4;Actual:9:0\nResultado:1;Antes:9:0;Actual:0:0\nResultado:1;Antes:0:0;Actual:0:6\nResultado:1;Antes:0:6;Actual:0:X\nResultado:1;Antes:0:X;Actual:X:X\nResultado:1;Antes:X:X;Actual:5:X\nResultado:1;Antes:5:X;Actual:5:X\nResultado:1;Antes:5:X;Actual:5:5\nResultado:1;Antes:5:5;Actual:2:5\nResultado:0;Antes:2:5;Actual:2:5\nFinal:2:5"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: vacío, valores iguales y rechazos"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "La autoasignación de una Celda vacía se acepta sin crear un int. Copiar desde ella hacia otra Celda deja vacío al destino. Más adelante se crean copias independientes de un int cuyo valor es cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "6\n3 0 0\n1 0 0\n1 0 1\n2 0 0\n1 0 1\n4 1 8\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4:7\nResultado:1;Antes:4:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:7\nResultado:1;Antes:X:7;Actual:X:X\nResultado:1;Antes:X:X;Actual:0:X\nResultado:1;Antes:0:X;Actual:0:0\nResultado:1;Antes:0:0;Actual:0:8\nFinal:0:8"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras copias operan entre Celdas distintas, incluso cuando sus valores ya coinciden. Los índices, valores y operación rechazados conservan los estados. El entero negativo extremo cabe en el int de Windows y se rechaza por comparación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n1 1 0\n1 0 1\n2 0 10\n4 1 -1\n1 -2147483648 1\n3 2 0\n8 0 1\n4 1 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4:7\nResultado:1;Antes:4:7;Actual:7:7\nResultado:1;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:0;Antes:7:7;Actual:7:7\nResultado:1;Antes:7:7;Actual:7:0\nFinal:7:0"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: preparar la copia, intercambiar y limpiar"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    if (this == &otra) {\n        return *this;\n    }\n    Celda candidata{otra};\n    dato_.swap(candidata.dato_);\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\nbool indice_valido(int indice) {\n    return indice == 0 || indice == 1;\n}\n\nbool copiar(const Celda& origen, Celda& destino) {\n    try {\n        destino = origen;\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\nvoid mostrar_dato(bool hay, int valor) {\n    if (hay) {\n        std::cout << valor;\n    } else {\n        std::cout << 'X';\n    }\n}\n\nvoid mostrar(const Celda& primera, const Celda& segunda) {\n    mostrar_dato(primera.hay(), primera.hay() ? primera.valor() : 0);\n    std::cout << ':';\n    mostrar_dato(segunda.hay(), segunda.hay() ? segunda.valor() : 0);\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    Celda primera;\n    Celda segunda;\n    segunda.cambiar(7);\n    std::cout << \"Inicio:\";\n    mostrar(primera, segunda);\n    std::cout << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int operacion = 0;\n        int a = 0;\n        int b = 0;\n        if (!(std::cin >> operacion >> a >> b)) {\n            return 1;\n        }\n        const bool habia0 = primera.hay();\n        const bool habia1 = segunda.hay();\n        const int anterior0 = habia0 ? primera.valor() : 0;\n        const int anterior1 = habia1 ? segunda.valor() : 0;\n        bool aceptado = false;\n        if (operacion == 1 && indice_valido(a) && indice_valido(b)) {\n            const Celda& origen = a == 0 ? primera : segunda;\n            Celda& destino = b == 0 ? primera : segunda;\n            aceptado = copiar(origen, destino);\n        } else if (indice_valido(a)) {\n            Celda& celda = a == 0 ? primera : segunda;\n            if (operacion == 2) {\n                aceptado = celda.poner(b);\n            } else if (operacion == 3) {\n                aceptado = celda.vaciar();\n            } else if (operacion == 4) {\n                aceptado = celda.cambiar(b);\n            }\n        }\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\";\n        mostrar_dato(habia0, anterior0);\n        std::cout << ':';\n        mostrar_dato(habia1, anterior1);\n        std::cout << \";Actual:\";\n        mostrar(primera, segunda);\n        std::cout << '\\n';\n    }\n    std::cout << \"Final:\";\n    mostrar(primera, segunda);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera condición compara this con &otra. Si apuntan a la misma Celda, return *this; termina la asignación sin construir una candidata y sin cambiar el int gestionado. Esto conserva también cualquier préstamo válido a ese int. Dos Celdas distintas con valores iguales no entran en esa condición."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre objetos distintos, Celda candidata{otra}; utiliza el constructor de copia. Si otra tiene int, prepara otro int con el mismo valor. Si está vacía, prepara una candidata vacía. Hasta que termina esa construcción, el destino conserva su miembro propietario anterior. Si la reserva lanza, no se ejecuta el intercambio y copiar captura el fallo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una vez preparada la candidata, dato_.swap(candidata.dato_); intercambia los propietarios. El destino recibe el estado copiado. La candidata recibe el antiguo estado del destino. Al terminar la función se destruye la candidata y su miembro limpia el int anterior del destino, si lo había. El intercambio y la limpieza de estos propietarios de int no necesitan otra reserva ni lanzan (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "return *this; devuelve una referencia al destino que ya existía. No devuelve la candidata local. En una asignación aceptada entre objetos distintos se conservan el origen y su int; el destino tiene un int nuevo o queda vacío según la fuente. Cualquier préstamo al int anterior sustituido deja de servir: no debe desreferenciarse ni utilizarse para comprobar identidades después de terminar ese objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "La estrategia de preparar primero y sustituir después permite conservar el destino cuando falla la preparación. Esa conservación depende del orden de las acciones y de que el intercambio y la limpieza utilizados no lancen; no aparece automáticamente por escribir una captura de excepciones (Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la asignación y su referencia de retorno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora utiliza la referencia para seguir una asignación completa. El programa guarda la referencia que devuelve la asignación en resultado. Después cambia el int del destino y compara dos identidades diferentes:\n&resultado == &destino comprueba a qué Celda se refiere el retorno.\norigen.acceso() != destino.acceso() compara los int gestionados mientras ambos siguen vivos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_asignar_y_devolver_destino",
+          "language": "cpp",
+          "question": "¿Qué muestran los dos valores, la identidad de la referencia devuelta y la diferencia entre los accesos a los int?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    if (this == &otra) {\n        return *this;\n    }\n    Celda candidata{otra};\n    dato_.swap(candidata.dato_);\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda origen;\n    origen.cambiar(6);\n    Celda destino;\n    Celda& resultado = (destino = origen);\n    destino.cambiar(9);\n    std::cout << origen.valor() << ':' << destino.valor() << ':'\n              << (&resultado == &destino) << ':'\n              << (origen.acceso() != destino.acceso());\n    return 0;\n}\n",
+          "answers": [
+            "6:9:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se prepara otro int copiando el valor seis del origen y se sustituye el int anterior del destino. cambiar modifica sólo el nuevo int del destino. El retorno se refiere a ese destino; ambos propietarios conservan int distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignar el estado vacío también sustituye al anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta ocasión el origen está vacío y el destino todavía tiene un int. La candidata se construye vacía. El intercambio deja vacío al destino y pone el int anterior bajo la candidata para que se limpie al salir. No se intenta leer el origen ni se necesita reservar un int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_asignar_desde_vacio",
+          "language": "cpp",
+          "question": "¿Qué imprimen las consultas hay después de asignar desde el origen vacío?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    if (this == &otra) {\n        return *this;\n    }\n    Celda candidata{otra};\n    dato_.swap(candidata.dato_);\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda origen;\n    origen.vaciar();\n    Celda destino;\n    destino.cambiar(7);\n    destino = origen;\n    std::cout << origen.hay() << ':' << destino.hay();\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La asignación reproduce el estado vacío del origen y termina el int anterior del destino. El origen sigue vacío. Ninguna consulta hay desreferencia un propietario vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la identidad en la autoasignación"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa conserva un préstamo al int de celda y después asigna celda a sí misma. Con la implementación de referencia, la comparación de identidad provoca el retorno inmediato. El int no termina ni se sustituye, de modo que ese préstamo sigue siendo válido para la comparación que viene después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta comprobación utiliza precisamente la política de autoasignación que acabamos de implementar. No se debe conservar ni comparar ese préstamo si se cambia la operación por otra que destruya el int. Al terminar la observación, el puntero local se pone a nullptr; eso no destruye el int ni cambia quién lo gestiona."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_autoasignacion_conservar_identidad",
+          "language": "cpp",
+          "question": "¿Qué imprimen el valor, la comparación del préstamo y la identidad de la referencia devuelta?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    if (this == &otra) {\n        return *this;\n    }\n    Celda candidata{otra};\n    dato_.swap(candidata.dato_);\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda celda;\n    const int* prestado = celda.acceso();\n    Celda& resultado = (celda = celda);\n    std::cout << celda.valor() << ':' << (prestado == celda.acceso()) << ':'\n              << (&resultado == &celda);\n    prestado = nullptr;\n    return 0;\n}\n",
+          "answers": [
+            "4:1:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "this y &otra identifican la misma Celda. La asignación retorna antes de crear la candidata: conserva el int y devuelve esa misma Celda. El préstamo todavía apunta a un objeto vivo cuando se compara."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Encadenar asignaciones sin compartir los int"
+        },
+        {
+          "type": "paragraph",
+          "text": "La expresión primera = segunda = tercera; se agrupa como primera = (segunda = tercera). Primero se asigna tercera a segunda. Esa asignación devuelve una referencia a segunda; a continuación primera recibe una copia desde esa segunda. La agrupación de la expresión permite identificar qué objeto proporciona los datos en cada asignación (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada asignación de la referencia prepara contenido independiente entre Celdas distintas. Después de la expresión se cambia sólo el int de segunda. Sigue las dos asignaciones en ese orden y luego esa modificación para determinar los tres valores."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_encadenar_copias",
+          "language": "cpp",
+          "question": "¿Qué valores muestran primera, segunda y tercera al final?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    if (this == &otra) {\n        return *this;\n    }\n    Celda candidata{otra};\n    dato_.swap(candidata.dato_);\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda primera;\n    Celda segunda;\n    Celda tercera;\n    segunda.cambiar(6);\n    tercera.cambiar(2);\n    primera = segunda = tercera;\n    segunda.cambiar(9);\n    std::cout << primera.valor() << ':' << segunda.valor() << ':' << tercera.valor();\n    return 0;\n}\n",
+          "answers": [
+            "2:9:2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera asignación copia el dos de tercera hacia segunda. La referencia a segunda permite copiar ese dos hacia primera. Los tres int son independientes; cambiar después el de segunda a nueve conserva los otros dos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar de nuevo después de un movimiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una Celda que quedó vacía por movimiento sigue siendo un objeto existente. Puede recibir después una copia mediante su asignación. En este programa primero se construye una copia independiente; después se utiliza la asignación de movimiento generada, que transfiere el miembro unique_ptr y deja vacío al origen de ese movimiento. Finalmente vuelve a utilizarse la asignación por copia."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l7_copiar_tras_mover",
+          "language": "cpp",
+          "question": "¿Qué imprimen los valores finales y la comparación entre los accesos a los int?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <new>\n\nclass Celda {\npublic:\n    Celda() = default;\n    Celda(const Celda& otra);\n    Celda& operator=(const Celda& otra);\n    Celda(Celda&&) = default;\n    Celda& operator=(Celda&&) = default;\n    ~Celda() = default;\n    bool hay() const { return dato_ != nullptr; }\n    int valor() const { return *dato_; }\n    const int* acceso() const { return dato_.get(); }\n    bool poner(int valor);\n    bool cambiar(int valor);\n    bool vaciar();\nprivate:\n    std::unique_ptr<int> dato_ = std::make_unique<int>(4);\n};\nCelda::Celda(const Celda& otra) : dato_{} {\n    if (otra.dato_) {\n        dato_ = std::make_unique<int>(*otra.dato_);\n    }\n}\nCelda& Celda::operator=(const Celda& otra) {\n    if (this == &otra) {\n        return *this;\n    }\n    Celda candidata{otra};\n    dato_.swap(candidata.dato_);\n    return *this;\n}\nbool Celda::poner(int valor) {\n    if (valor < 0 || valor > 9) {\n        return false;\n    }\n    try {\n        auto candidato = std::make_unique<int>(valor);\n        dato_.swap(candidato);\n        return true;\n    } catch (const std::bad_alloc&) {\n        return false;\n    }\n}\n\nbool Celda::cambiar(int valor) {\n    if (!dato_ || valor < 0 || valor > 9) {\n        return false;\n    }\n    *dato_ = valor;\n    return true;\n}\n\nbool Celda::vaciar() {\n    dato_.reset();\n    return true;\n}\n\nint main() {\n    Celda primera;\n    Celda segunda = primera;\n    primera = std::move(segunda);\n    segunda = primera;\n    segunda.cambiar(0);\n    std::cout << primera.valor() << ':' << segunda.valor() << ':'\n              << (primera.acceso() != segunda.acceso());\n    return 0;\n}\n",
+          "answers": [
+            "4:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La construcción inicial crea dos int independientes. El movimiento entrega el de segunda a primera y deja vacía a segunda. La copia posterior crea otro int en segunda sin consumir primera; cambiar ese nuevo int a cero conserva el de primera."
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar y mover son decisiones distintas de esta interfaz. La copia mantiene la fuente y reproduce su estado con contenido independiente. Los movimientos generados transfieren aquí el miembro propietario. Las dos posibilidades se han declarado explícitamente porque declarar la copia propia impide obtener esos movimientos de forma implícita (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "01ecef494de927e7497626c20151bacbb1a58535230ff04148c944af69a53a3f"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "db18b915bbc2b57e5004d1e7fe0d563d4c69a45437b6ce021e448385cb21fb2f"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "0106c102181b8a35bfee1f0c7522ac6f6a834235a6dbdb9a136658554b71f84e"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "76a0ee88662beb2b0b5d9c7691c45758a5e518647e6f99601a8a83225a0e8cb9"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "6a43b9414a04b1bc4235b822873c45c2d5a0f121cfb7eba68e6303fb510cf65d"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "bf5f0d1881a343cb0cf52273caa6f19ca3299b2a79fc36ae77e209d37256498a"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "54f38cb3a96fac3fcc140e5728bf526cd952cd22a428ebb3d690639fd1c94506"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "3f2c130bcb5d218123e05ebc6d070dc7ca3f1371dfc38170d0af0dcc9439984b"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "562933a64cc3b2820db2050d8824e2070803a7aa2f2110e5ad71386c073db9c7"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "7a120e629a6081af963ba524d3cc9c72caaed6d8cc2fb602a1e4e1f9983afa1c"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0008",
+            "sha256": "d66edd30df557309b44367848eb879ac5310551b6f77d0206cb200bf55496797"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "25a1a8717384fec1ef2ceadcf53fa3e1a253e3d04612ff57ba93e6e825a8219c"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0006",
+            "sha256": "5367ed0c28b979af184b2e9d90518762d3e66d00eeb7cebaa2d45371022fd032"
+          },
+          {
+            "id": "block_0015_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0010",
+            "sha256": "877e444b450c510b2646ae33651013ab9a13557487a3399abc70ca425f63a1b9"
+          },
+          {
+            "id": "block_0015_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0012",
+            "sha256": "88d8685591232699109f66df2e26f41af0d5d9a4430423788d42fba32f16d808"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "03388ca7654fcc509c8c63317345dbc097853d93a4d20354072e850d1c3614b0"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "49d9e121c85ac02df13b844f4e62a27e0e76a0e73a1a5061cd10030b594dd692"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0018_0002",
+            "sha256": "51805f9137163027998cc983220fa963111b465f77a26f07d49ba2ae193cc26f"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0019_0003",
+            "sha256": "e8d6868e807f659fb893a0503f4ca57be748b9e661fe10b6d6538aec4ce26aad"
+          }
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          {
+            "id": "block_0020_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0020_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0020_0003",
+            "sha256": "46d26081aab5aff7a204bbe1cf303486da4ee7288e0cf66022a8efc8cdd277f4"
+          }
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          {
+            "id": "block_0021_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0021_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0021_0002",
+            "sha256": "494201f58c9e29a89e9dbbea144b4b05b903f36ed13b947855f4b004ff9f856b"
+          },
+          {
+            "id": "block_0021_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007",
+          "block_0014_0008"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005",
+          "block_0015_0006",
+          "block_0015_0007",
+          "block_0015_0008",
+          "block_0015_0009",
+          "block_0015_0010",
+          "block_0015_0011",
+          "block_0015_0012"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001",
+          "block_0018_0002"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001",
+          "block_0019_0002",
+          "block_0019_0003"
+        ]
+      },
+      {
+        "id": "page_0020",
+        "blocks": [
+          "block_0020_0000",
+          "block_0020_0001",
+          "block_0020_0002",
+          "block_0020_0003"
+        ]
+      },
+      {
+        "id": "page_0021",
+        "blocks": [
+          "block_0021_0000",
+          "block_0021_0001",
+          "block_0021_0002",
+          "block_0021_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "408f8906c6984570ba77dfa894b4a25a241fd5ddd7b6758bd808e60098ccbac1",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "01ecef494de927e7497626c20151bacbb1a58535230ff04148c944af69a53a3f"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "db18b915bbc2b57e5004d1e7fe0d563d4c69a45437b6ce021e448385cb21fb2f"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "0106c102181b8a35bfee1f0c7522ac6f6a834235a6dbdb9a136658554b71f84e"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "76a0ee88662beb2b0b5d9c7691c45758a5e518647e6f99601a8a83225a0e8cb9"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "6a43b9414a04b1bc4235b822873c45c2d5a0f121cfb7eba68e6303fb510cf65d"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "bf5f0d1881a343cb0cf52273caa6f19ca3299b2a79fc36ae77e209d37256498a"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "54f38cb3a96fac3fcc140e5728bf526cd952cd22a428ebb3d690639fd1c94506"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "3f2c130bcb5d218123e05ebc6d070dc7ca3f1371dfc38170d0af0dcc9439984b"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "562933a64cc3b2820db2050d8824e2070803a7aa2f2110e5ad71386c073db9c7"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "7a120e629a6081af963ba524d3cc9c72caaed6d8cc2fb602a1e4e1f9983afa1c"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0008",
+                "sha256": "d66edd30df557309b44367848eb879ac5310551b6f77d0206cb200bf55496797"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "25a1a8717384fec1ef2ceadcf53fa3e1a253e3d04612ff57ba93e6e825a8219c"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0006",
+                "sha256": "5367ed0c28b979af184b2e9d90518762d3e66d00eeb7cebaa2d45371022fd032"
+              },
+              {
+                "id": "block_0015_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0010",
+                "sha256": "877e444b450c510b2646ae33651013ab9a13557487a3399abc70ca425f63a1b9"
+              },
+              {
+                "id": "block_0015_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0012",
+                "sha256": "88d8685591232699109f66df2e26f41af0d5d9a4430423788d42fba32f16d808"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "03388ca7654fcc509c8c63317345dbc097853d93a4d20354072e850d1c3614b0"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "49d9e121c85ac02df13b844f4e62a27e0e76a0e73a1a5061cd10030b594dd692"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0018_0002",
+                "sha256": "51805f9137163027998cc983220fa963111b465f77a26f07d49ba2ae193cc26f"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0019_0003",
+                "sha256": "e8d6868e807f659fb893a0503f4ca57be748b9e661fe10b6d6538aec4ce26aad"
+              }
+            ]
+          },
+          {
+            "id": "page_0020",
+            "blocks": [
+              {
+                "id": "block_0020_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0020_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0020_0003",
+                "sha256": "46d26081aab5aff7a204bbe1cf303486da4ee7288e0cf66022a8efc8cdd277f4"
+              }
+            ]
+          },
+          {
+            "id": "page_0021",
+            "blocks": [
+              {
+                "id": "block_0021_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0021_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0021_0002",
+                "sha256": "494201f58c9e29a89e9dbbea144b4b05b903f36ed13b947855f4b004ff9f856b"
+              },
+              {
+                "id": "block_0021_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

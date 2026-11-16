@@ -1,0 +1,1814 @@
+{
+  "id": "cpp_language_memory_oop__estado_y_ciclo_de_vida_de_clases__declarar_y_comprobar_noexcept",
+  "title": "Declarar y comprobar noexcept",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar que una excepción no debe salir de una función"
+        },
+        {
+          "type": "paragraph",
+          "text": "En las últimas lecciones escribimos movimientos que sólo transferían un unique_ptr y asignaban enteros. Sus acciones concretas no necesitaban propagar una excepción. Ahora aprenderemos a expresar ese compromiso en la declaración de una función, mediante noexcept después de sus parámetros (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int prometida(int dato) noexcept;\nint explicita(int dato) noexcept(true);\nint permitida(int dato) noexcept(false);"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras declaraciones establecen el mismo compromiso: ninguna excepción debe salir de la función. noexcept sin el valor entre paréntesis equivale a noexcept(true). Es responsabilidad de la implementación cumplirlo; la palabra no añade una captura de excepciones ni convierte automáticamente una operación que puede fallar en otra que siempre tiene éxito (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "noexcept(false) permite que una excepción salga. En una función ordinaria como int normal(int dato), cuya definición escribimos sin esa especificación, también se permite la propagación. Eso no afirma que una llamada concreta vaya a lanzar: su cuerpo puede limitarse a devolver un entero. No extendemos esta regla de las funciones ordinarias a todos los destructores o a las operaciones generadas, cuyas reglas recuperaremos después (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar una expresión con el operador noexcept"
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma palabra tiene otro uso: con el operador noexcept(expresión) preguntamos si, según las reglas del lenguaje, evaluar esa expresión no permite que salga una excepción. Devuelve un bool: true cuando se cumple esa condición y false cuando la expresión se considera potencialmente lanzadora. En estos programas esos valores se imprimen como uno y cero. La consulta se resuelve sin ejecutar la expresión escrita dentro; no equivale a llamarla dentro de un try para ver qué ocurre (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En noexcept(prometida(3)), lo consultado es la llamada prometida(3). El compilador utiliza la especificación de la función y las operaciones que forman la expresión. Una llamada a una función ordinaria sin compromiso de no propagación se considera potencialmente lanzadora, aunque el cuerpo visible de ese ejemplo no contenga throw. Esa clasificación y lo que ocurre al ejecutar de verdad la función son cuestiones distintas (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_declaraciones_y_consultas",
+          "language": "cpp",
+          "question": "Escribe las dos líneas: primero las cuatro consultas y después las dos llamadas ejecutadas de verdad.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint prometida(int dato) noexcept { return dato; }\nint explicita(int dato) noexcept(true) { return dato; }\nint permitida(int dato) noexcept(false) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal(3)) << ':' << noexcept(prometida(3)) << ':'\n              << noexcept(explicita(3)) << ':' << noexcept(permitida(3)) << '\\n';\n    std::cout << normal(3) << ':' << prometida(3);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1:0\n3:3"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Las consultas distinguen las funciones con compromiso de no propagación de las funciones ordinarias que permiten propagar. No ejecutan ninguna de ellas. La segunda línea sí llama a normal y prometida: ambas devuelven el dato recibido. Permitir propagar no obliga a lanzar una excepción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una consulta no ejecuta el incremento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para distinguir consultar de ejecutar, utilizaremos un entero cuenta. En noexcept(++cuenta), el incremento forma parte de lo consultado, pero no se realiza. Decimos que es un operando no evaluado: se analiza la expresión para responder a la consulta, sin producir sus cambios durante la ejecución (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después aparece ++cuenta como una instrucción independiente. Esa instrucción sí se ejecuta. Sigue en orden la primera consulta, la lectura de cuenta y el incremento posterior; no cuentes el incremento escrito dentro del operador como si fuera otra instrucción ejecutada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_consulta_sin_incremento",
+          "language": "cpp",
+          "question": "¿Qué imprimen la consulta y cuenta en la primera línea, y la lectura final en la segunda?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint main() {\n    int cuenta = 0;\n    std::cout << noexcept(++cuenta) << ':' << cuenta << '\\n';\n    ++cuenta;\n    std::cout << cuenta;\n    return 0;\n}\n",
+          "answers": [
+            "1:0\n1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El operador responde sobre la expresión de incremento sin modificar cuenta. Sólo la instrucción posterior incrementa el entero. La clasificación de esa expresión no es una prueba de que se haya ejecutado ni una orden para ejecutarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nombrar una función y escribir su llamada son expresiones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En noexcept(normal), el operando es sólo el nombre de la función. No se está consultando una llamada a normal. En noexcept(normal(2)), el operando sí tiene la forma de una llamada y se tienen en cuenta las condiciones correspondientes a esa llamada. Ninguno de los dos operandos se ejecuta por aparecer dentro del operador (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso, para preguntar por una llamada concreta, debemos escribir la llamada completa con sus argumentos. Consultar únicamente el nombre no permite deducir qué compromiso tiene esa función al llamarla."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_nombre_frente_a_llamada",
+          "language": "cpp",
+          "question": "¿Qué imprimen la consulta del nombre y la consulta de la llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\n\nint main() {\n    std::cout << noexcept(normal) << ':' << noexcept(normal(2));\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Nombrar normal no es una llamada que pueda propagar su excepción. normal(2) sí es una expresión de llamada a una función ordinaria sin especificación de no propagación. El operador distingue ambas expresiones sin ejecutar el cuerpo en ninguno de los dos casos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No evaluar no significa aceptar cualquier expresión"
+        },
+        {
+          "type": "paragraph",
+          "text": "El compilador debe poder entender y comprobar la expresión consultada. Por ejemplo, noexcept(sin_declarar()) se rechaza si sin_declarar no se ha declarado como una función que pueda llamarse así. El operador no convierte un nombre desconocido en una llamada válida ni evita comprobar los tipos de sus argumentos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La consulta tampoco sustituye las comprobaciones del contrato de una operación. Que una expresión no propague excepciones no demuestra que sus datos sean válidos ni que respete un límite de un array. Conservamos las validaciones aprendidas antes de acceder a un objeto o modificar su estado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mantener el compromiso en declaración y definición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede tener primero una declaración y más adelante su definición. Las dos describen la misma función, de modo que deben expresar un compromiso compatible sobre propagación de excepciones. Declararla noexcept y definirla después como función ordinaria sin ese compromiso no es una manera de conservar la promesa sólo para algunas llamadas: es una discrepancia que se rechaza al compilar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "noexcept y noexcept(true) expresan el mismo compromiso. Podemos utilizar cualquiera de esas formas en ambos lugares. noexcept(false) expresa otra condición y no debe sustituir a una promesa de no propagación en la definición."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u6l9_completar_promesa_coherente",
+          "question": "Completa ambos huecos para que leer tenga el compromiso de no dejar salir excepciones tanto en su declaración como en su definición. Usa la palabra clave correspondiente, con o sin el valor verdadero explícito. Conserva el cuerpo, la consulta y la llamada real de main.",
+          "template": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint leer(int dato) [];\n\nint leer(int dato) [] {\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(leer(3)) << ':' << leer(3);\n    return 0;\n}\n",
+          "answers": [
+            "noexcept",
+            "noexcept"
+          ],
+          "answerAlternatives": [
+            [
+              "noexcept",
+              "noexcept(true)"
+            ],
+            [
+              "noexcept",
+              "noexcept(true)"
+            ]
+          ],
+          "explanation": "Las dos posiciones deben expresar la misma especificación de no propagación. noexcept y noexcept(true) son equivalentes. La consulta de main no ejecuta leer; la llamada posterior sí lo hace y devuelve el entero recibido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los argumentos se preparan antes de entrar en la función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una expresión de llamada incluye más que el cuerpo de la función que recibirá los datos. Antes de entrar se evalúan las expresiones que proporcionan sus argumentos. Si una de ellas lanza, la función que iba a recibir ese argumento todavía no ha empezado. Una promesa noexcept de esa función no convierte en no lanzadores los cálculos previos de los argumentos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Fuera es el tipo de señal de error declarado al principio del siguiente programa. preparar lanza esa señal. aceptar promete no dejar salir excepciones y aumenta entradas al comenzar su cuerpo. Las consultas de la primera línea no ejecutan esas llamadas; después, dentro del try, sí se intenta realizar la llamada completa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_argumento_falla_antes_de_entrar",
+          "language": "cpp",
+          "question": "Escribe las consultas de la primera línea y el informe producido por el catch. Sigue si llega a iniciarse el cuerpo de aceptar.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint entradas = 0;\n\nint preparar() { throw Fuera{}; }\nint aceptar(int dato) noexcept {\n    ++entradas;\n    return dato;\n}\n\nint main() {\n    std::cout << noexcept(aceptar(1)) << ':'\n              << noexcept(aceptar(preparar())) << '\\n';\n    try {\n        std::cout << aceptar(preparar());\n    } catch (const Fuera&) {\n        std::cout << \"Capturada:\" << entradas;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1:0\nCapturada:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La llamada con un literal no necesita ejecutar preparar. La llamada cuyo argumento depende de preparar incluye esa operación potencialmente lanzadora. Al ejecutar la segunda forma, preparar lanza antes de entrar en aceptar; por eso entradas no aumenta y el catch exterior puede recibir Fuera. La excepción no ha salido del cuerpo de aceptar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar una promesa no ejecuta ni verifica todo el cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente sólo evalúa la consulta noexcept(limite()). No ejecuta limite. La función está declarada con el compromiso de no propagación, pero su cuerpo llama a lanzar, que lanzaría Fuera si se ejecutara. La consulta usa la especificación de limite; no realiza una prueba de ejecución del cuerpo ni certifica que el autor haya cumplido su compromiso (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_consultar_sin_ejecutar_limite",
+          "language": "cpp",
+          "question": "¿Qué imprime este programa, que sólo consulta la expresión de llamada?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\n\nvoid lanzar() { throw Fuera{}; }\nvoid limite() noexcept { lanzar(); }\n\nint main() {\n    std::cout << noexcept(limite());\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La consulta produce su resultado a partir de la llamada a una función declarada noexcept. No se entra en limite y no se ejecuta lanzar. Este programa no provoca la salida de una excepción a través de ese compromiso."
+        },
+        {
+          "type": "paragraph",
+          "text": "No añadimos una llamada real a limite a este programa. Su cuerpo sirve para distinguir la especificación que consulta el operador de las consecuencias que tendría incumplirla al ejecutar la función."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué significa que una excepción salga del límite prometido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función noexcept puede contener operaciones que lancen y puede tratarlas dentro. El compromiso se incumple cuando una excepción intenta salir de la función. En ese caso se invoca std::terminate y el programa no continúa mediante un catch situado en el llamador. Escribir noexcept no genera un tratamiento local automático (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l9_excepcion_que_saliera_de_noexcept",
+          "question": "Sin ejecutar ese caso: si una llamada real a limite dejara salir Fuera, ¿qué ocurriría aunque el llamador tuviera un catch para Fuera?",
+          "options": [
+            "El compilador tendría que rechazar cualquier definición noexcept que llame a una función capaz de lanzar.",
+            "El catch del llamador recibiría Fuera normalmente, porque escribir noexcept sólo sirve para las consultas.",
+            "Se invocaría std::terminate; el catch del llamador no recuperaría esa excepción que intenta salir de limite."
+          ],
+          "correctIndex": 2,
+          "explanation": "La promesa de no propagación tiene una consecuencia durante la ejecución. Si la excepción alcanza la salida de la función noexcept, se llama a std::terminate. La posibilidad de que ocurra no obliga al compilador a rechazar la definición, y un catch exterior no evita esa consecuencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "No usamos ese escenario para predecir una traza de destructores. C++23 permite que, antes de esa terminación, el proceso de finalizar llamadas y destruir sus objetos locales de duración automática se realice de forma completa, parcial o que no se realice, según la implementación. Las garantías de limpieza que seguimos durante una propagación ordinaria hasta un catch no permiten fijar aquí una secuencia portable de destrucciones (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Capturar dentro no restaura los datos por sí solo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede cumplir noexcept capturando dentro una excepción y comunicando un rechazo mediante un bool. Devolver false es una salida normal de la función: no es una excepción que se propague. La implementación debe tratar las excepciones que puedan salir de las acciones que realiza; la palabra noexcept no escribe ese tratamiento por nosotros (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Además hay que decidir qué estado se conserva cuando se rechaza una operación. Supón que una función cambia un dato del llamador antes de una acción que lanza. Capturar esa excepción después no deshace el cambio ya hecho. La conservación depende de cómo ordenamos y ejecutamos las acciones, como en la preparación de una candidata antes de sustituir el destino (Stroustrup, 2024)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u6l9_captura_interior_y_estado",
+          "question": "Una función noexcept cambia un dato del llamador, captura dentro una excepción posterior y devuelve false. ¿Qué conclusión está justificada?",
+          "options": [
+            "Incumple noexcept por haber lanzado una excepción dentro, aunque la capture antes de salir de la función.",
+            "Puede cumplir la promesa de no propagación, pero el cambio anterior del dato no se deshace automáticamente al devolver false.",
+            "Cumple la promesa y por ello el dato recupera el valor que tenía antes de la llamada, sin otras acciones."
+          ],
+          "correctIndex": 1,
+          "explanation": "noexcept se refiere a que no salga una excepción. Una captura interior puede permitirlo, pero no implica que los cambios anteriores se reviertan. Si el contrato exige conservar un dato al rechazar, el cuerpo debe organizar la preparación y la escritura para cumplir también esa condición."
+        },
+        {
+          "type": "paragraph",
+          "text": "Son compromisos diferentes: no propagar excepciones, informar de éxito o rechazo y conservar determinados datos. Una función puede realizar reservas y capturar su fallo; noexcept no significa que no reserve ni que siempre acepte. Tampoco promete que todo el estado externo quede intacto: cada contrato debe indicar qué conserva y qué efectos permite (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la expresión completa, incluidos sus argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa es independiente del ejemplo donde preparar lanzaba una excepción. Aquí preparar devuelve tres y no escribe noexcept en su declaración. Aun así, la consulta de su llamada se basa en esa declaración: no analiza el cuerpo para concluir que esta ejecución concreta terminaría sin lanzar."
+        },
+        {
+          "type": "paragraph",
+          "text": "normal tampoco declara la promesa; segura sí la declara. En cada expresión de la tabla se consultan todas las operaciones necesarias, incluidos los argumentos de una llamada. Ninguna de estas consultas ejecuta las funciones ni incrementa cuenta."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nint normal(int dato) { return dato; }\nint segura(int dato) noexcept { return dato; }\nint preparar() { return 3; }\n\nint main() {\n    int cuenta = 0;\n    std::cout << noexcept(normal(2)) << ':' << noexcept(segura(2)) << ':'\n              << noexcept(segura(preparar())) << ':' << noexcept(++cuenta)\n              << ':' << cuenta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "p3_u6l9_consultas_completas",
+          "prompt": "Escribe el resultado de noexcept para cada expresión: 1 si la consulta es true y 0 si es false. Son cuatro consultas separadas; cuenta empieza en cero.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Fila",
+                "Expresión consultada"
+              ],
+              "rows": [
+                [
+                  "1",
+                  "normal(2)"
+                ],
+                [
+                  "2",
+                  "segura(2)"
+                ],
+                [
+                  "3",
+                  "segura(preparar())"
+                ],
+                [
+                  "4",
+                  "++cuenta"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "consultas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Fila 1",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Fila 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Fila 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Fila 4",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La función ordinaria normal no promete impedir la salida de excepciones. segura sí lo promete, pero preparar es un argumento cuya llamada no tiene esa promesa. El incremento entero no lanza una excepción; la consulta no lo ejecuta y cuenta sigue en cero.",
+            "incorrect": "Comprueba la declaración de cada función que interviene, también la usada para obtener un argumento. No deduzcas la promesa de una función ordinaria por lo sencillo que parezca su cuerpo. La consulta de ++cuenta no incrementa cuenta."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia: capturar antes de salir de la función"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor proporciona revisar y la declaración bool aplicar_revision(int& estado, int entrada) noexcept;. Completa sólo el cuerpo de aplicar_revision. No cambies revisar, su contador, la declaración ni main."
+        },
+        {
+          "type": "paragraph",
+          "text": "revisar recibe un entero y realiza estas acciones en orden:\nIncrementa revisiones para registrar que se ha utilizado.\nSi la entrada está fuera de cero a nueve, lanza un objeto Fuera.\nSi es válida, devuelve nueve menos la entrada.\nLa resta se realiza después de comprobar el intervalo; no se resta del entero extremo rechazado."
+        },
+        {
+          "type": "paragraph",
+          "text": "aplicar_revision debe ofrecer otra forma de utilizar esa revisión:\nLlama exactamente una vez a revisar con la entrada recibida.\nSi la llamada devuelve un resultado, guarda ese candidato en estado y devuelve true.\nSi la llamada lanza Fuera, captura esa excepción dentro de aplicar_revision, conserva estado y devuelve false.\nNo dejes salir la excepción hacia main y no repitas la revisión para obtener de nuevo el resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Organiza la llamada a revisar dentro de try y trata Fuera mediante catch en la propia función. Prepara el resultado antes de modificar estado. La declaración noexcept no añade esa captura ni guarda una copia automática del estado anterior. La conservación depende del orden que escribas."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contador revisiones es un entero compartido por estas funciones, definido fuera de ellas. Cada llamada a revisar lo aumenta incluso cuando después lanza Fuera. Conservar estado ante un rechazo no significa devolver ese contador a su valor anterior. En esta práctica el intervalo de una a doce entradas mantiene acotado el número de revisiones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer las entradas y el informe de la revisión"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada comienza con una cantidad de valores de uno a doce, seguida de esos enteros. Cada ejecución empieza con estado igual a cuatro y revisiones igual a cero. Los valores se procesan, por orden, sobre ese mismo estado; cada valor aceptado prepara el que recibirá la entrada siguiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Inicio muestra el estado inicial, la consulta Noexcept de aplicar_revision y el contador anterior a las llamadas reales. La consulta no llama a aplicar_revision, no llama a revisar y no aumenta el contador. Después se muestra una línea por entrada:\nResultado vale uno cuando se acepta y cero cuando se captura Fuera.\nAntes contiene una copia del estado anterior a la llamada.\nActual muestra el estado posterior.\nRevisiones cuenta las llamadas reales a revisar.\nFinal conserva el último estado y el total de revisiones."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera entrada del caso obligatorio es dos. revisar la acepta y devuelve nueve menos dos, que es siete. Ese siete sustituye al cuatro de estado. La entrada siguiente es diez: revisar incrementa su contador y lanza Fuera antes de realizar la resta. La captura debe devolver false conservando el siete anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo inicial compila y mantiene la declaración noexcept, pero todavía devuelve false sin llamar a revisar. Las conversiones (void)estado y (void)entrada reconocen los parámetros sin usar para evitar avisos; retíralas al completar el cuerpo. La cantidad inválida o una entrada que no pueda leerse completa hace terminar main con código uno; esos errores de lectura no son valores rechazados por revisar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Implementar la revisión sin propagar Fuera"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el cuerpo indicado y compila. Sólo el primer caso correcto es obligatorio para avanzar. Las otras historias permanecen como ensayos opcionales con sus datos separados."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    // Completa la revisión y el tratamiento de Fuera dentro de esta función.\n    (void)estado;\n    (void)entrada;\n    return false;\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n    return 0;\n}\n",
+          "initialStandardInput": "8\n2\n10\n0\n9\n-1\n4\n5\n2147483647\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "8\n2\n10\n0\n9\n-1\n4\n5\n2147483647\n",
+                "outputs": [
+                  "Inicio:4;Noexcept:1;Revisiones:0\nResultado:1;Antes:4;Actual:7;Revisiones:1\nResultado:0;Antes:7;Actual:7;Revisiones:2\nResultado:1;Antes:7;Actual:9;Revisiones:3\nResultado:1;Antes:9;Actual:0;Revisiones:4\nResultado:0;Antes:0;Actual:0;Revisiones:5\nResultado:1;Antes:0;Actual:5;Revisiones:6\nResultado:1;Antes:5;Actual:4;Revisiones:7\nResultado:0;Antes:4;Actual:4;Revisiones:8\nFinal:4;Revisiones:8"
+                ],
+                "explanation": "Prepara el candidato con una única llamada a revisar dentro de try. Asigna al estado sólo cuando la llamada vuelve normalmente. Trata Fuera dentro de esta función y devuelve false conservando el estado. El contador ya incrementado no se restaura."
+              },
+              {
+                "standardInput": "3\n0\n0\n9\n",
+                "outputs": [
+                  "Inicio:4;Noexcept:1;Revisiones:0\nResultado:1;Antes:4;Actual:9;Revisiones:1\nResultado:1;Antes:9;Actual:9;Revisiones:2\nResultado:1;Antes:9;Actual:0;Revisiones:3\nFinal:0;Revisiones:3"
+                ],
+                "explanation": "Prepara el candidato con una única llamada a revisar dentro de try. Asigna al estado sólo cuando la llamada vuelve normalmente. Trata Fuera dentro de esta función y devuelve false conservando el estado. El contador ya incrementado no se restaura."
+              },
+              {
+                "standardInput": "4\n-2147483648\n-1\n10\n9\n",
+                "outputs": [
+                  "Inicio:4;Noexcept:1;Revisiones:0\nResultado:0;Antes:4;Actual:4;Revisiones:1\nResultado:0;Antes:4;Actual:4;Revisiones:2\nResultado:0;Antes:4;Actual:4;Revisiones:3\nResultado:1;Antes:4;Actual:0;Revisiones:4\nFinal:0;Revisiones:4"
+                ],
+                "explanation": "Prepara el candidato con una única llamada a revisar dentro de try. Asigna al estado sólo cuando la llamada vuelve normalmente. Trata Fuera dentro de esta función y devuelve false conservando el estado. El contador ya incrementado no se restaura."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una historia del mismo estado con valores admitidos, fronteras y rechazos. Los intentos que lanzan Fuera también cuentan como una revisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "8\n2\n10\n0\n9\n-1\n4\n5\n2147483647\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4;Noexcept:1;Revisiones:0\nResultado:1;Antes:4;Actual:7;Revisiones:1\nResultado:0;Antes:7;Actual:7;Revisiones:2\nResultado:1;Antes:7;Actual:9;Revisiones:3\nResultado:1;Antes:9;Actual:0;Revisiones:4\nResultado:0;Antes:0;Actual:0;Revisiones:5\nResultado:1;Antes:0;Actual:5;Revisiones:6\nResultado:1;Antes:5;Actual:4;Revisiones:7\nResultado:0;Antes:4;Actual:4;Revisiones:8\nFinal:4;Revisiones:8"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: repetir un valor y recuperar tras rechazos"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras entradas iguales siguen siendo dos revisiones reales. Las entradas cero y nueve producen resultados presentes dentro del intervalo admitido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "3\n0\n0\n9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4;Noexcept:1;Revisiones:0\nResultado:1;Antes:4;Actual:9;Revisiones:1\nResultado:1;Antes:9;Actual:9;Revisiones:2\nResultado:1;Antes:9;Actual:0;Revisiones:3\nFinal:0;Revisiones:3"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se conservan el estado y la posibilidad de aceptar después de tres rechazos. El entero negativo extremo se descarta antes de restar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4\n-2147483648\n-1\n10\n9\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Inicio:4;Noexcept:1;Revisiones:0\nResultado:0;Antes:4;Actual:4;Revisiones:1\nResultado:0;Antes:4;Actual:4;Revisiones:2\nResultado:0;Antes:4;Actual:4;Revisiones:3\nResultado:1;Antes:4;Actual:0;Revisiones:4\nFinal:0;Revisiones:4"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: la captura y la conservación están en el cuerpo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\nint main() {\n    int cantidad = 0;\n    if (!(std::cin >> cantidad) || cantidad < 1 || cantidad > 12) {\n        return 1;\n    }\n    int estado = 4;\n    std::cout << \"Inicio:\" << estado << \";Noexcept:\"\n              << noexcept(aplicar_revision(estado, 0))\n              << \";Revisiones:\" << revisiones << '\\n';\n    for (int i = 0; i < cantidad; ++i) {\n        int entrada = 0;\n        if (!(std::cin >> entrada)) {\n            return 1;\n        }\n        const int antes = estado;\n        const bool aceptado = aplicar_revision(estado, entrada);\n        std::cout << \"Resultado:\" << aceptado << \";Antes:\" << antes\n                  << \";Actual:\" << estado << \";Revisiones:\"\n                  << revisiones << '\\n';\n    }\n    std::cout << \"Final:\" << estado << \";Revisiones:\" << revisiones;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada a revisar está dentro de try. Si acepta la entrada, primero se inicializa candidato con su resultado; después se asigna ese entero a estado y se devuelve true. Si revisar lanza Fuera, no se llega a la asignación. El catch de la misma función devuelve false y estado conserva su valor anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "La captura ocurre antes de salir de aplicar_revision. La función puede utilizar una operación que lanza porque trata aquí la excepción que esa operación produce. La promesa noexcept no prohíbe ese tratamiento interno; impide que una excepción salga de la función (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La conservación tiene un alcance concreto: estado no cambia al capturar Fuera. revisiones sí aumenta porque revisar lo incrementa antes de comprobar el dato. Ni la captura ni noexcept deshacen ese incremento. No hemos prometido que todos los valores observables del programa sean idénticos tras un rechazo (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este cuerpo cuenta con el contrato concreto de revisar: para las entradas recibidas puede lanzar Fuera y no utiliza otras operaciones que propaguen una excepción. Si se cambiara esa función para lanzar otro tipo, habría que volver a comprobar el tratamiento y la promesa del adaptador. Añadir noexcept no corrige una dependencia que deja salir errores sin tratar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una excepción interna no contradice la promesa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente utiliza la referencia para revisar dos entradas. Sigue las llamadas reales y el contador antes de consultar otra vez noexcept. Esa última consulta no representa una tercera revisión."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_captura_interna_y_contador",
+          "language": "cpp",
+          "question": "¿Qué muestran los dos resultados de aceptación, el estado, el contador y la consulta final?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Fuera {};\nint revisiones = 0;\n\nint revisar(int entrada) {\n    ++revisiones;\n    if (entrada < 0 || entrada > 9) {\n        throw Fuera{};\n    }\n    return 9 - entrada;\n}\n\nbool aplicar_revision(int& estado, int entrada) noexcept;\nbool aplicar_revision(int& estado, int entrada) noexcept {\n    try {\n        const int candidato = revisar(entrada);\n        estado = candidato;\n        return true;\n    } catch (const Fuera&) {\n        return false;\n    }\n}\n\nint main() {\n    int estado = 4;\n    const bool primera = aplicar_revision(estado, 10);\n    const bool segunda = aplicar_revision(estado, 2);\n    std::cout << primera << ':' << segunda << ':' << estado << ':'\n              << revisiones << ':' << noexcept(aplicar_revision(estado, 8));\n    return 0;\n}\n",
+          "answers": [
+            "0:1:7:2:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La primera revisión rechaza diez lanzando Fuera y la captura devuelve false. La segunda acepta dos y obtiene siete. Sólo se han ejecutado dos revisiones; la consulta final devuelve true sin ejecutar el adaptador."
+        },
+        {
+          "type": "paragraph",
+          "text": "Devolver false es una forma de informar de un rechazo previsto. No contradice noexcept: no se ha dejado escapar una excepción. Tampoco significa que se haya cumplido el objetivo de aceptar el dato. Separa el resultado de la operación de la forma elegida para comunicarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar los movimientos propios y los generados"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el ejemplo, Generada no escribe su constructor de movimiento. El compilador obtiene su especificación a partir de la operación de su miembro unique_ptr. Propia sí escribe el cuerpo de su constructor y no añade noexcept. Prometida escribe un cuerpo equivalente y declara expresamente la promesa (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres variables se construyen con propietarios vacíos. Después sólo se consultan expresiones de construcción: no se ejecuta ninguna de esas construcciones de movimiento al evaluar el operador noexcept. Los destructores de estos tipos tampoco propagan excepciones."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u6l9_movimiento_y_especificacion",
+          "language": "cpp",
+          "question": "¿Qué muestran las tres consultas, en el orden Generada, Propia y Prometida?",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n\nstruct Generada {\n    std::unique_ptr<int> dato;\n};\n\nstruct Propia {\n    std::unique_ptr<int> dato;\n    Propia() = default;\n    Propia(Propia&& otra) : dato{std::move(otra.dato)} {}\n};\n\nstruct Prometida {\n    std::unique_ptr<int> dato;\n    Prometida() = default;\n    Prometida(Prometida&& otra) noexcept : dato{std::move(otra.dato)} {}\n};\n\nint main() {\n    Generada a;\n    Propia b;\n    Prometida d;\n    std::cout << noexcept(Generada{std::move(a)}) << ':'\n              << noexcept(Propia{std::move(b)}) << ':'\n              << noexcept(Prometida{std::move(d)});\n    return 0;\n}\n",
+          "answers": [
+            "1:0:1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El movimiento generado utiliza la especificación que corresponde al miembro propietario. El constructor propio de Propia, sin la declaración expresa, sigue siendo potencialmente lanzador aunque su cuerpo actual sólo mueva ese miembro. Prometida expresa la promesa en su declaración."
+        },
+        {
+          "type": "paragraph",
+          "text": "La Muestra de la lección anterior definía sus movimientos para coordinar el propietario y la etiqueta. Haber comprobado que sus acciones actuales no reservan ni lanzan no añadía automáticamente noexcept a esas firmas propias. Una vez justificadas esas acciones se puede declarar esa promesa tanto dentro de la clase como en las definiciones correspondientes. No hay que volver a escribir la limpieza del miembro ni cambiar su política de estados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para decidirlo revisa todas las acciones de la operación, incluidas las funciones llamadas, la preparación de sus argumentos y la limpieza que pueda realizar. Una función puede necesitar memoria aunque no escriba new en su propio cuerpo. El criterio es qué excepciones pueden salir de su implementación, no sólo qué palabras aparecen escritas en ella (Prata, 2012; Stroustrup, 2024)."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "136fbed8253a4a9c7add55528bf81b7b87430d7664514a5011a25fd69b7cf0e4"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "23660c176f9b5df003eed6ea8844ae5074b3a2ebbc232dcd6c4269959b1e68b8"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "58482ae9bf85188526bbdbb958703467686cc19d7344f1baf601bc0e2553dded"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1da361756f4cd753bf04b5776cd217f63ba3f7caf7096ea6f2177adea70b7cf3"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "58a3e55b36aaa85156b7f224d95fd9b3c92e84d8a6bc477a02deec6f259e2404"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "19a2e90e58cfd87d3d7aadcfbf79808ec8e2600a26813a2f4ee35592b13dbdc5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "d486627ea21d07cf1c6c3ef2f4e6bb7b0b1786432553fc43398092bca88c86ed"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "65d7035e15fb489c504d267bd19656d535f43c8b5e4469ab63ef6a5c2cd430af"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "4f033f3fc338a9c4990d3f2970ffac0c8f462e71df20e5426715042990b20761"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "79a339f66c8e0a0e548d20271c6d831387cc2787fd97f60bf5e3be423cc4ffc7"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "5b0cb7734dcd3dca49fe585d932844431d6cbf5cd9e8b7c26880510fe41370d5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "7638083ec4561cc5a50d78d95b041c52e215e010f88357426847da345f4cd04f"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0006",
+            "sha256": "7f06beac14ca289e0e1a60e9d72549c857b65501ddd7df29f9d1522941db0dce"
+          },
+          {
+            "id": "block_0013_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0008",
+            "sha256": "31a50d2116cd5168fc9c418d02b9e9d157283fc2b71d58a6fad06878784dd7b7"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "d64231ded61f556e86f25cb160fc96e58a465d2932d8f2a816a06575d49c8ab8"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0006",
+            "sha256": "52bc2f92fb24d307883a1d9306fba6a22438f938bd78e192ae0cb6b869d00c11"
+          },
+          {
+            "id": "block_0014_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0010",
+            "sha256": "5dab029048b1a08e4d9214a1899d053e9c7160c971eca0a22ba9815b52e5b23b"
+          },
+          {
+            "id": "block_0014_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0012",
+            "sha256": "35bbeb7ae6d1706141bdb77269c3b947f05e6957cdc9f1080b6633152303aae2"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "37309376e622da005f137bfb877a73a10a9c05fc8e414963405aca5d5578855e"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "c557fb360973abae85e53c8d4bbcd7bdccb672386faeb674a2781ed7dad2d2a1"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "6ecdd203da63143e3ab1ff8a09d5cb0c274babd2ebfe993f2d0e9d6883602300"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005",
+          "block_0013_0006",
+          "block_0013_0007",
+          "block_0013_0008"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005",
+          "block_0014_0006",
+          "block_0014_0007",
+          "block_0014_0008",
+          "block_0014_0009",
+          "block_0014_0010",
+          "block_0014_0011",
+          "block_0014_0012"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "4903ca7f92bce242cc2d3f0f7dffb89c7da4e9449efc767580bfdc47135dae7c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "136fbed8253a4a9c7add55528bf81b7b87430d7664514a5011a25fd69b7cf0e4"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "23660c176f9b5df003eed6ea8844ae5074b3a2ebbc232dcd6c4269959b1e68b8"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "58482ae9bf85188526bbdbb958703467686cc19d7344f1baf601bc0e2553dded"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1da361756f4cd753bf04b5776cd217f63ba3f7caf7096ea6f2177adea70b7cf3"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "58a3e55b36aaa85156b7f224d95fd9b3c92e84d8a6bc477a02deec6f259e2404"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "19a2e90e58cfd87d3d7aadcfbf79808ec8e2600a26813a2f4ee35592b13dbdc5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "d486627ea21d07cf1c6c3ef2f4e6bb7b0b1786432553fc43398092bca88c86ed"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "65d7035e15fb489c504d267bd19656d535f43c8b5e4469ab63ef6a5c2cd430af"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "4f033f3fc338a9c4990d3f2970ffac0c8f462e71df20e5426715042990b20761"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "79a339f66c8e0a0e548d20271c6d831387cc2787fd97f60bf5e3be423cc4ffc7"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "5b0cb7734dcd3dca49fe585d932844431d6cbf5cd9e8b7c26880510fe41370d5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "7638083ec4561cc5a50d78d95b041c52e215e010f88357426847da345f4cd04f"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0006",
+                "sha256": "7f06beac14ca289e0e1a60e9d72549c857b65501ddd7df29f9d1522941db0dce"
+              },
+              {
+                "id": "block_0013_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0008",
+                "sha256": "31a50d2116cd5168fc9c418d02b9e9d157283fc2b71d58a6fad06878784dd7b7"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "d64231ded61f556e86f25cb160fc96e58a465d2932d8f2a816a06575d49c8ab8"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0006",
+                "sha256": "52bc2f92fb24d307883a1d9306fba6a22438f938bd78e192ae0cb6b869d00c11"
+              },
+              {
+                "id": "block_0014_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0010",
+                "sha256": "5dab029048b1a08e4d9214a1899d053e9c7160c971eca0a22ba9815b52e5b23b"
+              },
+              {
+                "id": "block_0014_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0012",
+                "sha256": "35bbeb7ae6d1706141bdb77269c3b947f05e6957cdc9f1080b6633152303aae2"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "37309376e622da005f137bfb877a73a10a9c05fc8e414963405aca5d5578855e"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "c557fb360973abae85e53c8d4bbcd7bdccb672386faeb674a2781ed7dad2d2a1"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "6ecdd203da63143e3ab1ff8a09d5cb0c274babd2ebfe993f2d0e9d6883602300"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

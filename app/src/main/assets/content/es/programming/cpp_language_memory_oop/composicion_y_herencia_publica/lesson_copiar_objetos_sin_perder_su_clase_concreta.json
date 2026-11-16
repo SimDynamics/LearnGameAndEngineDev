@@ -1,0 +1,2051 @@
+{
+  "id": "cpp_language_memory_oop__composicion_y_herencia_publica__copiar_objetos_sin_perder_su_clase_concreta",
+  "title": "Copiar objetos sin perder su clase concreta",
+  "compilerPuzzlesRequired": true,
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultar, transferir y copiar resuelven necesidades diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una referencia permite consultar el objeto que ya existe. Mover su unique_ptr cambia qué propietario lo gestiona, pero tampoco crea otro objeto. Si necesitamos conservar dos objetos independientes, con el mismo tipo concreto y los mismos datos iniciales, hace falta una operación diferente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera primero este programa con las clases de la colección anterior. vista sigue accediendo al mismo objeto después de transferir el propietario, porque destino lo mantiene vivo. No hay dos objetos por tener dos nombres desde los que se accede a él."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l10_prestamo_y_movimiento_no_crean_copia",
+          "language": "cpp",
+          "question": "Escribe toda la salida de esta recuperación, incluidos | y la coma.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\nprivate:\n    int numero_;\n};\nclass SalidaCodigo : public Salida {\npublic:\n    explicit SalidaCodigo(int codigo) : codigo_{codigo} {}\n    void escribir(std::ostream& destino) const override {\n        destino << \"Codigo:\" << codigo_;\n    }\nprivate:\n    int codigo_;\n};\nint main() {\n    std::unique_ptr<Salida> origen = std::make_unique<SalidaNumero>(4);\n    const Salida& vista = *origen;\n    std::unique_ptr<Salida> destino = std::move(origen);\n    vista.escribir(std::cout);\n    std::cout << '|' << (origen == nullptr) << ',' << (destino != nullptr);\n    return 0;\n}\n",
+          "answers": [
+            "Numero:4|1,1"
+          ],
+          "outputComparison": "exact",
+          "explanation": "vista conserva el acceso al objeto de número cuatro. El movimiento transfiere ese objeto a destino y deja origen vacío. El objeto continúa vivo, por eso la referencia puede consultarlo. Se imprime su número y después se confirma que origen está vacío y destino tiene objeto. No se ha creado una copia de la muestra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamaremos clonar a crear otro objeto del mismo tipo concreto y con un estado inicial equivalente, bajo un propietario nuevo. La operación será virtual para que una llamada mediante Salida pueda elegir la creación que corresponde al objeto recibido. Es una operación de nuestra interfaz, no una acción automática asociada al nombre clonar (Stroustrup & Sutter, 2026)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La interfaz pide un objeto nuevo sin copiar sólo la base"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "clonar es una consulta const que devuelve std::unique_ptr<Salida>. El contrato elegido exige que devuelva un propietario no vacío de un objeto nuevo, de la misma clase concreta y con todos los datos de valor del original. El original debe conservarse. El const no impide crear y devolver un objeto distinto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar un objeto base desde una derivada sólo copiaría su parte base cuando esa copia estuviera permitida. Ya estudiamos esa pérdida de datos adicionales. La clonación virtual permite que cada clase concreta construya una copia completa en vez de pedir una copia del tipo base (Prata, 2012; Stroustrup & Sutter, 2026)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta interfaz hemos eliminado la copia y la asignación ordinarias de Salida. Es una política elegida, no una obligación para todas las jerarquías. La copia generada automáticamente para estas derivadas intentaría copiar su base; al estar eliminada esa operación, también queda eliminada esa copia generada. Para clonar construiremos expresamente su clase con todos sus int."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor por defecto de Salida sí está disponible para preparar la parte base de esos objetos nuevos. Su destructor virtual público conserva la limpieza correcta mediante el propietario base. No hay un constructor virtual: la selección virtual se hace al llamar a clonar; su cuerpo utilizará después un constructor concreto ordinario."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el clon con los datos de su propia clase"
+        },
+        {
+          "type": "paragraph",
+          "text": "SalidaNumero conserva un int. Su clonar debe crear otra SalidaNumero inicializada con el valor de numero_ y devolver su propiedad. No debe entregar un acceso al objeto actual ni transferir la propiedad del original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el retorno con make_unique y el dato leído del objeto actual. La declaración conserva unique_ptr<Salida>: el resultado creado para la clase concreta se convierte al propietario base al devolverlo."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u8l10_crear_clon_con_numero_del_objeto",
+          "question": "Completa la expresión devuelta usando std::make_unique<SalidaNumero> y el miembro numero_ del objeto actual. No uses una copia de *this: en este modelo la copia ordinaria está eliminada.",
+          "template": "class SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return [];\n    }\nprivate:\n    int numero_;\n};\n",
+          "answers": [
+            "std::make_unique<SalidaNumero>(numero_)"
+          ],
+          "answerAlternatives": [
+            [
+              "std::make_unique<SalidaNumero>(numero_)",
+              "std::make_unique<SalidaNumero>(this->numero_)",
+              "std::make_unique<SalidaNumero>((*this).numero_)",
+              "std::make_unique<SalidaNumero>((numero_))",
+              "::std::make_unique<SalidaNumero>(numero_)",
+              "::std::make_unique<SalidaNumero>(this->numero_)",
+              "::std::make_unique<SalidaNumero>((*this).numero_)",
+              "::std::make_unique<SalidaNumero>((numero_))"
+            ]
+          ],
+          "explanation": "make_unique construye una SalidaNumero nueva con el entero leído de numero_. Su propietario puede devolverse como unique_ptr<Salida>. La llamada no cambia el int original ni crea otro propietario del mismo objeto. El miembro puede nombrarse directamente, mediante this o mediante *this; ::std también califica el espacio estándar desde el global."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar el original permite comprobar la independencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaNumero>(numero_);\n    }\nprivate:\n    int numero_;\n};\nint main() {\n    SalidaNumero original{6};\n    std::unique_ptr<Salida> copia = original.clonar();\n    original.cambiar_numero(8);\n    original.escribir(std::cout);\n    std::cout << '|';\n    copia->escribir(std::cout);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada a clonar construye el objeto nuevo mientras original conserva el número seis. Después cambiar_numero asigna ocho al int de original. El clon conserva su propio int con el valor anterior, por eso sus informes dejan de coincidir. La independencia no significa que ambas copias deban cambiar juntas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí se invoca el constructor que recibe un int; no el constructor de copia de SalidaNumero. Eliminar la copia ordinaria no impide construir otro objeto a partir de los datos que su constructor público acepta. Cada propietario retira después su propio objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar todos los datos conserva también el tipo concreto"
+        },
+        {
+          "type": "paragraph",
+          "text": "SalidaIdentificada conserva numero_ y codigo_. Su implementación construye una SalidaIdentificada con ambos valores. Si omitiera el código o construyera una SalidaNumero, devolvería un objeto distinto del que exige nuestro contrato, aunque pudiera devolverlo mediante unique_ptr<Salida>."
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia vista tiene tipo const Salida&, pero la llamada virtual selecciona clonar de SalidaIdentificada. El propietario del resultado ofrece la interfaz base y el objeto nuevo conserva la clase concreta. En la comparación se examinan únicamente accesos a dos objetos todavía vivos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l10_clonar_identificada_con_datos_independientes",
+          "language": "cpp",
+          "question": "Escribe la salida completa, incluidos los dos informes y todos los separadores.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaNumero>(numero_);\n    }\nprivate:\n    int numero_;\n};\nclass SalidaIdentificada : public Salida {\npublic:\n    SalidaIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_ << \";Codigo:\" << codigo_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaIdentificada>(numero_, codigo_);\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nint main() {\n    SalidaIdentificada original{5, 23};\n    const Salida& vista = original;\n    std::unique_ptr<Salida> copia = vista.clonar();\n    std::cout << (&vista != copia.get()) << '|';\n    original.cambiar_numero(9);\n    original.escribir(std::cout);\n    std::cout << '|';\n    copia->escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "1|Numero:9;Codigo:23|Numero:5;Codigo:23"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El clon es otro objeto, de modo que su dirección base es distinta de la del original y se imprime uno. El cambio posterior pone nueve en el número original sin alterar su código veintitrés. El clon conserva el número cinco y ese mismo código inicial. Su informe todavía contiene Codigo porque se construyó una SalidaIdentificada completa, no una copia de la parte base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir el propietario devuelto no cambia la firma del override"
+        },
+        {
+          "type": "paragraph",
+          "text": "Todas nuestras declaraciones de clonar devuelven exactamente std::unique_ptr<Salida>. Dentro de cada cuerpo sí puede crearse un propietario de la clase concreta y convertirse al tipo del resultado. Esa conversión de un valor devuelto ya se utilizó al crear objetos mediante una interfaz común (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No es válido cambiar el resultado de la sobrescritura a unique_ptr<SalidaIncorrecta>. Los propietarios son clases distintas. La regla que admite ciertos resultados covariantes, es decir, resultados de una sobrescritura que se ajustan a una clase más derivada, se aplica a determinados punteros o referencias a clases; no a estas clases propietarias. Analiza el rechazo sin ejecutar el programa (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup & Sutter, 2026)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\nclass SalidaIncorrecta : public Salida {\npublic:\n    void escribir(std::ostream& destino) const override {\n        destino << \"Texto\";\n    }\n    std::unique_ptr<SalidaIncorrecta> clonar() const override {\n        return std::make_unique<SalidaIncorrecta>();\n    }\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l10_resultado_del_override_y_conversion_de_propiedad",
+          "question": "¿Qué distingue este rechazo del retorno que usan las implementaciones correctas?",
+          "options": [
+            "make_unique no puede crear una clase que deriva de una interfaz abstracta, aunque implemente todas sus operaciones.",
+            "El override debe mantener unique_ptr<Salida>. Dentro de ese cuerpo puede devolver el resultado de crear la clase concreta mediante la conversión de propietario correspondiente.",
+            "Falta repetir virtual antes de clonar en la derivada; esa palabra permitiría cualquier tipo de propietario como resultado."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comprobación de la sobrescritura compara sus tipos de resultado. unique_ptr<SalidaIncorrecta> no es un resultado covariante permitido para esta declaración base. Las implementaciones correctas declaran unique_ptr<Salida>, y el resultado de make_unique de la concreta se convierte a ese tipo al retornar. Repetir virtual no cambia esas reglas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La vida del clon no depende de mantener el original"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada clon tiene su propio propietario y su propio objeto. Retirar el original no retira el clon. Esa es una diferencia comprobable respecto de guardar otro puntero o referencia al mismo objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l10_retirar_original_y_consultar_copia_viva",
+          "language": "cpp",
+          "question": "Escribe la salida de la consulta posterior a reset.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaNumero>(numero_);\n    }\nprivate:\n    int numero_;\n};\nclass SalidaIdentificada : public Salida {\npublic:\n    SalidaIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_ << \";Codigo:\" << codigo_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaIdentificada>(numero_, codigo_);\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nint main() {\n    std::unique_ptr<Salida> original = std::make_unique<SalidaIdentificada>(-2, 0);\n    std::unique_ptr<Salida> copia = original->clonar();\n    original.reset();\n    std::cout << (original == nullptr) << '|';\n    copia->escribir(std::cout);\n    return 0;\n}\n",
+          "answers": [
+            "1|Numero:-2;Codigo:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "reset retira la SalidaIdentificada original y deja vacío su propietario. copia gestiona otra SalidaIdentificada, que conserva el número menos dos y el código cero. Por eso se puede consultar después. El programa no conserva ni utiliza un préstamo al objeto que se retiró."
+        },
+        {
+          "type": "paragraph",
+          "text": "clonar no debe construir un propietario a partir de get() del original. Eso volvería a adjudicar el mismo objeto a dos propietarios exclusivos, en lugar de crear la copia independiente exigida. Nuestros cuerpos usan make_unique para crear el objeto nuevo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una colección independiente necesita nuevos objetos en cada posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "El vector de unique_ptr no puede copiar sus propietarios. Para obtener otra colección independiente, se pide a cada objeto su clon y se guarda el propietario devuelto en la nueva colección, manteniendo el orden. No se mueven los propietarios de origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa tiene exactamente dos elementos conocidos y muestra sus dos clonaciones por separado. Cada posición contiene objeto antes de llamar a clonar. Una función general tendrá que recorrer las posiciones existentes y definir qué admite si encuentra un propietario vacío. No confundas el vector sin elementos con una posición cuyo propietario no tiene objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u8l10_copiar_objetos_de_coleccion_y_retirar_origen",
+          "language": "cpp",
+          "question": "Escribe toda la salida, incluidas las comparaciones, los informes y los tamaños finales.",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaNumero>(numero_);\n    }\nprivate:\n    int numero_;\n};\nclass SalidaIdentificada : public Salida {\npublic:\n    SalidaIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_ << \";Codigo:\" << codigo_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaIdentificada>(numero_, codigo_);\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nint main() {\n    std::vector<std::unique_ptr<Salida>> origen;\n    origen.push_back(std::make_unique<SalidaNumero>(3));\n    origen.push_back(std::make_unique<SalidaIdentificada>(7, 0));\n    std::vector<std::unique_ptr<Salida>> copia;\n    copia.push_back(origen[0]->clonar());\n    copia.push_back(origen[1]->clonar());\n    std::cout << (origen[0].get() != copia[0].get()) << ','\n              << (origen[1].get() != copia[1].get()) << '|';\n    origen.clear();\n    for (const auto& propietario : copia) {\n        propietario->escribir(std::cout);\n        std::cout << '|';\n    }\n    std::cout << origen.size() << ',' << copia.size();\n    return 0;\n}\n",
+          "answers": [
+            "1,1|Numero:3|Numero:7;Codigo:0|0,2"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cada comparación confirma que el objeto de la copia es distinto del correspondiente original. Después clear retira los dos originales, pero los clones siguen vivos bajo los propietarios de copia. En el mismo orden aparecen el informe simple con tres y el identificado con siete y código cero. origen termina sin elementos y copia conserva dos. El vector nuevo contiene objetos independientes, no propietarios movidos desde origen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una preparación fallida no debe entregar una colección a medias"
+        },
+        {
+          "type": "paragraph",
+          "text": "Clonar puede necesitar reservar almacenamiento. Por eso nuestras funciones clonar no prometen noexcept. Si una creación falla, no hay por qué entregar un propietario vacío fingiendo una copia completa. Se puede dejar salir la excepción y mantener el contrato de que un retorno normal contiene el clon solicitado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para preparar una colección nueva, sus propietarios pueden mantenerse en un vector local hasta terminar todas las clonaciones. Si una llamada lanza y la excepción se propaga hasta un catch compatible exterior, se destruye ese vector local y se limpian los clones que ya había recibido. Los objetos originales siguen bajo sus propios propietarios y no se han movido ni cambiado. Recuperamos la preparación antes de sustituir que ya utilizamos con recursos y construcciones interrumpidas (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Preparar una copia exige pedir un clon para cada elemento con objeto. Su coste depende de cuántos objetos haya y de los datos que copie cada clase. No equivale al simple traslado de los propietarios, y no deducimos una velocidad medida a partir de que ambas acciones utilicen unique_ptr."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una derivada futura debe conservar también sus propios datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El compilador comprueba que clonar sobrescriba una operación de la base y que su resultado tenga un tipo válido. No demuestra que el cuerpo construya la clase concreta que exigimos ni que conserve todos sus datos. Esa parte pertenece al contrato y a sus comprobaciones."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l10_clon_heredado_no_duplica_automaticamente_otra_derivada",
+          "question": "Se añade SalidaConMarca, derivada de SalidaIdentificada, con un dato marca adicional. No sobrescribe clonar. La implementación heredada sigue construyendo una SalidaIdentificada con número y código. ¿Qué ocurre al pedir el clon de una SalidaConMarca?",
+          "options": [
+            "La operación virtual completa por sí sola el constructor con marca, aunque ese dato no aparezca en el cuerpo heredado.",
+            "No puede compilar ninguna llamada, porque toda derivada está obligada por el lenguaje a repetir cada función virtual heredada.",
+            "El cuerpo heredado construye la clase padre que nombra, sin el nuevo dato. Para cumplir el contrato de clonación, SalidaConMarca tendría que aportar una implementación que construya su propia clase con todos sus datos."
+          ],
+          "correctIndex": 2,
+          "explanation": "La selección virtual elige una implementación disponible; no reescribe su cuerpo ni inventa argumentos para otra clase. Heredar esa implementación puede ser válido para el lenguaje y aun así incumplir el contrato de copiar el tipo concreto completo. La nueva clase debe conservar también su marca al definir cómo crea su clon."
+        },
+        {
+          "type": "paragraph",
+          "text": "La política de copia ordinaria también sigue siendo explícita en este modelo. El siguiente intento de copiar SalidaNumero mediante su constructor de copia generado se rechaza porque la copia de su base está eliminada. Eso no contradice que clonar pueda construir otra SalidaNumero pasando su int al constructor público."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <memory>\n#include <utility>\n#include <vector>\n\nclass Salida {\npublic:\n    Salida() = default;\n    Salida(const Salida&) = delete;\n    Salida& operator=(const Salida&) = delete;\n    virtual ~Salida() = default;\n    virtual void escribir(std::ostream& destino) const = 0;\n    virtual std::unique_ptr<Salida> clonar() const = 0;\n};\nclass SalidaNumero : public Salida {\npublic:\n    explicit SalidaNumero(int numero) : numero_{numero} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaNumero>(numero_);\n    }\nprivate:\n    int numero_;\n};\nclass SalidaIdentificada : public Salida {\npublic:\n    SalidaIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    void cambiar_numero(int numero) { numero_ = numero; }\n    void escribir(std::ostream& destino) const override {\n        destino << \"Numero:\" << numero_ << \";Codigo:\" << codigo_;\n    }\n    std::unique_ptr<Salida> clonar() const override {\n        return std::make_unique<SalidaIdentificada>(numero_, codigo_);\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nint main() {\n    SalidaNumero original{4};\n    SalidaNumero copia{original};\n    copia.escribir(std::cout);\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtener una colección independiente sin perder sus tipos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Necesitamos conservar una copia de las muestras antes de modificar la colección original. Una simple mantiene su número. Una identificada mantiene además su código y su forma de escribir el informe. La copia debe seguir funcionando después de destruir los objetos originales."
+        },
+        {
+          "type": "paragraph",
+          "text": "La interfaz Muestra añade clonar(), que devuelve std::unique_ptr<Muestra>. El contrato exige un propietario no vacío de otro objeto de la misma clase concreta y con los mismos datos. El objeto original sigue vivo y conserva sus valores. No se transfiere su propiedad a la copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta variante, Muestra declara su constructor público por defecto y elimina la copia y la asignación ordinarias. Cada implementación de clonar construirá su clase concreta mediante su constructor de datos. No utilizará la copia eliminada de la base ni devolverá un propietario formado a partir de this o de un puntero prestado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos cuerpos clonar de MuestraSimple y MuestraIdentificada y la función duplicar. Conserva las declaraciones virtuales, los constructores, campos, consultas, funciones de cambio, crear, informar y main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué debe conservar cada clonación"
+        },
+        {
+          "type": "paragraph",
+          "text": "MuestraSimple::clonar debe crear otra MuestraSimple que conserve el mismo número. MuestraIdentificada::clonar debe crear otra MuestraIdentificada que conserve tanto el número como el código. Los números y códigos cero o negativos son datos normales; no indican que falte un objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos funciones declaran el mismo resultado, unique_ptr<Muestra>, porque sobrescriben la operación de esa interfaz. Dentro de cada cuerpo se puede construir el tipo concreto con make_unique y devolver su propietario mediante la conversión al tipo base. La conversión del resultado no cambia el objeto construido (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "No devuelvas un propietario vacío para representar una muestra cuyo número sea cero. Tampoco devuelvas una MuestraSimple al clonar una identificada: aunque conserve su número, perdería el código y la implementación de escribir exigida por su clase."
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar_numero(int) es otra operación ya proporcionada en esta variante de la interfaz. En las dos clases asigna el entero recibido a numero_. No cambia el código de la identificada. La utilizaremos después de clonar para comprobar que una modificación del original no altera su copia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Clonar cada objeto y conservar el orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestras es el alias del vector de unique_ptr<Muestra> que acabamos de estudiar. duplicar recibe const Muestras& origen. Su contrato recibe una colección vacía o con propietarios no vacíos; no recibe posiciones sin objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función debe devolver un vector con la misma cantidad de elementos. Para cada muestra original debe contener un objeto nuevo, obtenido con la operación clonar de esa muestra. La copia de la posición cero corresponde al original de la posición cero, y así sucesivamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulta los propietarios por referencia o por índices válidos. Cada resultado de clonar entrega la propiedad de su objeto nuevo; esa propiedad puede entrar en el vector de resultados. No copies unique_ptr ni muevas los propietarios de origen: sus objetos deben seguir allí y con los mismos datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La implementación debe servir también para otra clase que cumpla la interfaz. No elijas entre Simple e Identificada dentro de duplicar ni reconstruyas objetos a partir de sus rótulos. Cada objeto concreto ya sabe cómo crear su copia mediante clonar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una clonación lanza una excepción, deja que salga de duplicar. No ocultes el error devolviendo sólo las copias anteriores. Si la excepción continúa hasta un catch compatible del llamador, los propietarios locales ya completados limpian esas copias durante la salida por excepción; los originales conservan sus propietarios (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué hace main para comprobar la independencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "main construye original con crear. Después llama a duplicar y guarda el resultado en copia. Antes de consultar el resultado comprueba que las dos colecciones tengan el mismo tamaño y que sus propietarios copiados no estén vacíos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero se escribe el informe Original. Si hay alguna muestra, cambiar_numero asigna nuevo al número de la primera original. Después se escribe OriginalCambiado. Las muestras que estaban en las demás posiciones conservan sus datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "original.clear() destruye después las muestras originales. La línea OriginalRetirado:0 muestra que esa colección quedó sin elementos. Por último se escribe el informe Copia: debe conservar todos los datos iniciales, incluido el número que se cambió en el original. El informe utiliza sólo los objetos que poseen sus propios propietarios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando la colección está vacía, no se intenta cambiar su primera posición. Los tres informes tienen tamaño cero y no hay líneas de muestras. Si cambia un dato a su mismo valor, también debe existir una copia independiente; una salida igual por sí sola no demuestra identidad distinta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entrada y avisos del inicial"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los primeros dos int son:\nCantidad: número de muestras, entre cero y cuatro.\nNuevo: entero que se asignará al número de la primera muestra original, si existe.\nDespués se proporcionan Cantidad grupos de tres int: Tipo, Numero y Codigo. Tipo cero construye una simple; tipo uno construye una identificada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los espacios y los saltos de línea separan datos; cada grupo de tres enteros forma la muestra siguiente. Numero, Codigo y Nuevo admiten cualquier int representable. No se calcula Nuevo sumando al valor anterior: se usa directamente el entero recibido, sin introducir una suma que pudiera desbordarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una entrada incompleta, un entero no representable, una cantidad fuera de cero a cuatro o un tipo distinto de cero y uno termina main con código uno antes de escribir informes. Si ya existen muestras locales, sus propietarios las limpian al retornar."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial compila y devuelve un vector vacío desde duplicar. Con una entrada no vacía, main muestra CopiaIncompleta y termina con código tres. Una vez completada esa función, si algún clonar sigue devolviendo vacío, main muestra CopiaVacia y termina con código cuatro antes de consultar ese resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "main también captura std::bad_alloc y muestra SinMemoria con código dos si una reserva no puede completarse. Esa excepción se declara en <new> y su recorrido recupera la limpieza ya estudiada. No necesitas provocar agotamiento de memoria para resolver ni comprobar los casos de la práctica."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear las copias concretas y reunirlas sin alterar los originales"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los tres cuerpos indicados, compila y compara los informes. Sólo el primer caso correcto es obligatorio para avanzar; los cuatro siguientes son ensayos opcionales."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <new>\n#include <vector>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void cambiar_numero(int valor) noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n    virtual std::unique_ptr<Muestra> clonar() const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void cambiar_numero(int valor) noexcept override { numero_ = valor; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\n    std::unique_ptr<Muestra> clonar() const override {\n        return {};\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void cambiar_numero(int valor) noexcept override { numero_ = valor; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\n    std::unique_ptr<Muestra> clonar() const override {\n        return {};\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nMuestras duplicar(const Muestras& origen) {\n    // Crea un objeto independiente por cada muestra, en el mismo orden.\n    (void)origen;\n    return {};\n}\nvoid informar(const char* titulo, const Muestras& datos, std::ostream& salida) {\n    salida << titulo << ':' << datos.size() << '\\n';\n    std::size_t posicion = 0;\n    for (const auto& propietario : datos) {\n        salida << posicion << ':';\n        propietario->escribir(salida);\n        salida << '\\n';\n        ++posicion;\n    }\n}\nint main() {\n    int cantidad = 0, nuevo = 0;\n    if (!(std::cin >> cantidad >> nuevo) || cantidad < 0 || cantidad > 4) {\n        return 1;\n    }\n    try {\n        Muestras original;\n        for (int i = 0; i < cantidad; ++i) {\n            int tipo = 0, numero = 0, codigo = 0;\n            if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n                return 1;\n            }\n            original.push_back(crear(tipo, numero, codigo));\n        }\n        Muestras copia = duplicar(original);\n        if (copia.size() != original.size()) {\n            std::cout << \"CopiaIncompleta\";\n            return 3;\n        }\n        for (const auto& propietario : copia) {\n            if (!propietario) {\n                std::cout << \"CopiaVacia\";\n                return 4;\n            }\n        }\n        informar(\"Original\", original, std::cout);\n        if (!original.empty()) {\n            original.at(0)->cambiar_numero(nuevo);\n        }\n        informar(\"OriginalCambiado\", original, std::cout);\n        original.clear();\n        std::cout << \"OriginalRetirado:\" << original.size() << '\\n';\n        informar(\"Copia\", copia, std::cout);\n    } catch (const std::bad_alloc&) {\n        std::cout << \"SinMemoria\";\n        return 2;\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "2 -7\n0 5 99\n1 -4 0\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "2 -7\n0 5 99\n1 -4 0\n",
+                "outputs": [
+                  "Original:2\n0:Numero:5\n1:Numero:-4;Codigo:0\nOriginalCambiado:2\n0:Numero:-7\n1:Numero:-4;Codigo:0\nOriginalRetirado:0\nCopia:2\n0:Numero:5\n1:Numero:-4;Codigo:0\n"
+                ],
+                "explanation": "Cada clonar crea una nueva instancia de su propia clase y conserva sus datos. duplicar consulta cada propietario original, obtiene su clonación virtual y guarda el propietario nuevo en el mismo orden. La modificación y destrucción de los originales no afecta a los objetos copiados."
+              },
+              {
+                "standardInput": "0 8\n",
+                "outputs": [
+                  "Original:0\nOriginalCambiado:0\nOriginalRetirado:0\nCopia:0\n"
+                ],
+                "explanation": "Cada clonar crea una nueva instancia de su propia clase y conserva sus datos. duplicar consulta cada propietario original, obtiene su clonación virtual y guarda el propietario nuevo en el mismo orden. La modificación y destrucción de los originales no afecta a los objetos copiados."
+              },
+              {
+                "standardInput": "1 9\n1 0 -3\n",
+                "outputs": [
+                  "Original:1\n0:Numero:0;Codigo:-3\nOriginalCambiado:1\n0:Numero:9;Codigo:-3\nOriginalRetirado:0\nCopia:1\n0:Numero:0;Codigo:-3\n"
+                ],
+                "explanation": "Cada clonar crea una nueva instancia de su propia clase y conserva sus datos. duplicar consulta cada propietario original, obtiene su clonación virtual y guarda el propietario nuevo en el mismo orden. La modificación y destrucción de los originales no afecta a los objetos copiados."
+              },
+              {
+                "standardInput": "2 -9\n1 5 0\n1 5 0\n",
+                "outputs": [
+                  "Original:2\n0:Numero:5;Codigo:0\n1:Numero:5;Codigo:0\nOriginalCambiado:2\n0:Numero:-9;Codigo:0\n1:Numero:5;Codigo:0\nOriginalRetirado:0\nCopia:2\n0:Numero:5;Codigo:0\n1:Numero:5;Codigo:0\n"
+                ],
+                "explanation": "Cada clonar crea una nueva instancia de su propia clase y conserva sus datos. duplicar consulta cada propietario original, obtiene su clonación virtual y guarda el propietario nuevo en el mismo orden. La modificación y destrucción de los originales no afecta a los objetos copiados."
+              },
+              {
+                "standardInput": "4 0\n1 -9 2\n0 0 7\n1 0 0\n0 -9 0\n",
+                "outputs": [
+                  "Original:4\n0:Numero:-9;Codigo:2\n1:Numero:0\n2:Numero:0;Codigo:0\n3:Numero:-9\nOriginalCambiado:4\n0:Numero:0;Codigo:2\n1:Numero:0\n2:Numero:0;Codigo:0\n3:Numero:-9\nOriginalRetirado:0\nCopia:4\n0:Numero:-9;Codigo:2\n1:Numero:0\n2:Numero:0;Codigo:0\n3:Numero:-9\n"
+                ],
+                "explanation": "Cada clonar crea una nueva instancia de su propia clase y conserva sus datos. duplicar consulta cada propietario original, obtiene su clonación virtual y guarda el propietario nuevo en el mismo orden. La modificación y destrucción de los originales no afecta a los objetos copiados."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Primer caso obligatorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos tipos distintos: se modifica la primera original y luego se retiran ambas. Las copias conservan los datos iniciales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2 -7\n0 5 99\n1 -4 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:2\n0:Numero:5\n1:Numero:-4;Codigo:0\nOriginalCambiado:2\n0:Numero:-7\n1:Numero:-4;Codigo:0\nOriginalRetirado:0\nCopia:2\n0:Numero:5\n1:Numero:-4;Codigo:0\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ensayos opcionales: vacío, código negativo y datos iguales"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Colección vacía: no hay acceso a una primera posición."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "0 8\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:0\nOriginalCambiado:0\nOriginalRetirado:0\nCopia:0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una muestra identificada con número cero y código negativo: el original cambia, su copia conserva el cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "1 9\n1 0 -3\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:1\n0:Numero:0;Codigo:-3\nOriginalCambiado:1\n0:Numero:9;Codigo:-3\nOriginalRetirado:0\nCopia:1\n0:Numero:0;Codigo:-3\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos objetos con valores iguales: deben producir dos copias distintas y conservar su orden."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2 -9\n1 5 0\n1 5 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:2\n0:Numero:5;Codigo:0\n1:Numero:5;Codigo:0\nOriginalCambiado:2\n0:Numero:-9;Codigo:0\n1:Numero:5;Codigo:0\nOriginalRetirado:0\nCopia:2\n0:Numero:5;Codigo:0\n1:Numero:5;Codigo:0\n"
+        },
+        {
+          "type": "heading",
+          "text": "Ensayo opcional"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuatro muestras mezcladas: cambiar el primer número a cero no elimina el código ni altera las demás posiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "4 0\n1 -9 2\n0 0 7\n1 0 0\n0 -9 0\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salida esperada"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Original:4\n0:Numero:-9;Codigo:2\n1:Numero:0\n2:Numero:0;Codigo:0\n3:Numero:-9\nOriginalCambiado:4\n0:Numero:0;Codigo:2\n1:Numero:0\n2:Numero:0;Codigo:0\n3:Numero:-9\nOriginalRetirado:0\nCopia:4\n0:Numero:-9;Codigo:2\n1:Numero:0\n2:Numero:0;Codigo:0\n3:Numero:-9\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: pedir a cada objeto que construya su copia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <new>\n#include <vector>\n\nclass Muestra {\npublic:\n    Muestra() = default;\n    Muestra(const Muestra&) = delete;\n    Muestra& operator=(const Muestra&) = delete;\n    virtual ~Muestra() = default;\n    virtual int numero() const noexcept = 0;\n    virtual void cambiar_numero(int valor) noexcept = 0;\n    virtual void escribir(std::ostream& salida) const = 0;\n    virtual std::unique_ptr<Muestra> clonar() const = 0;\n};\nclass MuestraSimple : public Muestra {\npublic:\n    explicit MuestraSimple(int numero) : numero_{numero} {}\n    int numero() const noexcept override { return numero_; }\n    void cambiar_numero(int valor) noexcept override { numero_ = valor; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero();\n    }\n    std::unique_ptr<Muestra> clonar() const override {\n        return std::make_unique<MuestraSimple>(numero());\n    }\nprivate:\n    int numero_;\n};\nclass MuestraIdentificada : public Muestra {\npublic:\n    MuestraIdentificada(int numero, int codigo) : numero_{numero}, codigo_{codigo} {}\n    int numero() const noexcept override { return numero_; }\n    int codigo() const noexcept { return codigo_; }\n    void cambiar_numero(int valor) noexcept override { numero_ = valor; }\n    void escribir(std::ostream& salida) const override {\n        salida << \"Numero:\" << numero() << \";Codigo:\" << codigo();\n    }\n    std::unique_ptr<Muestra> clonar() const override {\n        return std::make_unique<MuestraIdentificada>(numero(), codigo());\n    }\nprivate:\n    int numero_;\n    int codigo_;\n};\nstd::unique_ptr<Muestra> crear(int tipo, int numero, int codigo) {\n    if (tipo == 0) {\n        return std::make_unique<MuestraSimple>(numero);\n    }\n    return std::make_unique<MuestraIdentificada>(numero, codigo);\n}\nusing Muestras = std::vector<std::unique_ptr<Muestra>>;\n\nMuestras duplicar(const Muestras& origen) {\n    Muestras resultado;\n    for (const auto& propietario : origen) {\n        resultado.push_back(propietario->clonar());\n    }\n    return resultado;\n}\nvoid informar(const char* titulo, const Muestras& datos, std::ostream& salida) {\n    salida << titulo << ':' << datos.size() << '\\n';\n    std::size_t posicion = 0;\n    for (const auto& propietario : datos) {\n        salida << posicion << ':';\n        propietario->escribir(salida);\n        salida << '\\n';\n        ++posicion;\n    }\n}\nint main() {\n    int cantidad = 0, nuevo = 0;\n    if (!(std::cin >> cantidad >> nuevo) || cantidad < 0 || cantidad > 4) {\n        return 1;\n    }\n    try {\n        Muestras original;\n        for (int i = 0; i < cantidad; ++i) {\n            int tipo = 0, numero = 0, codigo = 0;\n            if (!(std::cin >> tipo >> numero >> codigo) || tipo < 0 || tipo > 1) {\n                return 1;\n            }\n            original.push_back(crear(tipo, numero, codigo));\n        }\n        Muestras copia = duplicar(original);\n        if (copia.size() != original.size()) {\n            std::cout << \"CopiaIncompleta\";\n            return 3;\n        }\n        for (const auto& propietario : copia) {\n            if (!propietario) {\n                std::cout << \"CopiaVacia\";\n                return 4;\n            }\n        }\n        informar(\"Original\", original, std::cout);\n        if (!original.empty()) {\n            original.at(0)->cambiar_numero(nuevo);\n        }\n        informar(\"OriginalCambiado\", original, std::cout);\n        original.clear();\n        std::cout << \"OriginalRetirado:\" << original.size() << '\\n';\n        informar(\"Copia\", copia, std::cout);\n    } catch (const std::bad_alloc&) {\n        std::cout << \"SinMemoria\";\n        return 2;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada cuerpo clonar usa el constructor de datos de su propia clase. En la identificada se proporcionan numero() y codigo(); conservar sólo el número no cumpliría su contrato. No se necesita copiar ordinariamente Muestra ni construir un objeto de la base abstracta."
+        },
+        {
+          "type": "paragraph",
+          "text": "duplicar no clasifica objetos: llama a clonar mediante el propietario base y entrega ese resultado al vector nuevo. El propietario de cada original permanece en origen. Si no hay elementos, el recorrido no entra y se devuelve una colección vacía."
+        },
+        {
+          "type": "paragraph",
+          "text": "También es válido recorrer con índices y dar un nombre al propietario nuevo antes de moverlo al resultado. Lo necesario es obtener una copia nueva por cada original, conservar su clase concreta y sus datos, y mantener el mismo orden. No se impone una única escritura del recorrido."
+        },
+        {
+          "type": "paragraph",
+          "text": "El return de resultado permite transferir el vector local al llamador sin copiar los propietarios de sus elementos. No hace falta escribir std::move(resultado). La creación de cada objeto copiado fue una operación distinta, realizada antes por clonar (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar o destruir el original no cambia la copia"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l10_copia_independiente_tras_retirar_original",
+          "question": "Una identificada de número cero y código menos tres se clona. Después se cambia a nueve el número de la original y se destruye esa original. ¿Qué debe conservar el objeto copiado?",
+          "options": [
+            "El número nueve, porque la clonación conserva un préstamo al miembro numero_ del objeto original.",
+            "Una muestra identificada con número cero y código menos tres, bajo su propio propietario y todavía válida para consultar.",
+            "Una muestra simple con número cero: devolver un propietario base elimina el código de cualquier resultado."
+          ],
+          "correctIndex": 1,
+          "explanation": "Clonar creó otro objeto de la misma clase, con sus datos propios. Cambiar el campo del original o destruirlo no cambia esos datos ni termina la vida del objeto copiado. El propietario base permite acceder a la interfaz y destruir la derivada; no elimina su código."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una excepción no convierte una copia parcial en una copia completa"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u8l10_fallo_intermedio_no_publicar_vector_parcial",
+          "question": "duplicar ya guardó una primera copia y la clonación de la segunda lanza. El error continúa hasta un catch del llamador. ¿Qué debe ocurrir con la primera copia local y con los originales?",
+          "options": [
+            "La primera copia debe devolverse como resultado correcto, porque su construcción sí terminó.",
+            "Hay que mover los originales al vector local para reconstruir los datos de la segunda muestra.",
+            "La primera copia local se limpia al salir por excepción; los propietarios originales y sus objetos se conservan. No se devuelve un resultado parcial como si duplicar hubiera terminado."
+          ],
+          "correctIndex": 2,
+          "explanation": "El vector local posee únicamente las copias ya completadas. Cuando la excepción sale hacia el catch exterior, ese vector se destruye y sus propietarios limpian esos objetos. No se modificaron los propietarios originales. Devolver un prefijo ocultaría que no se pudo obtener la colección completa."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "eac5c756694c3d245a2b5263f1f359dcb38ac0d41f66b280e543aa6e92e0e643"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "b1bd0b5219806b3282f69663b3039cc2ae245644bc261031dd0f885278e5d35f"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "721b12078ab905433a43055f3fc9fc92603ef980316c7315469c70811d4d2978"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "84d714b4480cc5a72cabe630223f601b5a81b54ed44426f2e7b1d4ecd64f87e2"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "53fb254fdb71cc101a6a062c133ee49dc740a1281410b54a9baeb726040e20cb"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "db9a65f00f0f79d752e9e033648934b23a481e5043ef954086292268ce614acc"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "f02f8e1183262e3f8c907a0059fea37f5ad9dc19f63dcc16ef89abdf78568549"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "f0d59f4b5862d532859e300941909573902551d158587c8778dd6ee94ba14001"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "5948610872fc6797dbd724d9667b26f0e55e5d2a213bb3955c87279008b19cc2"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "5f3389900ae896f2d071e2694d7facfefef7a36f753845acc63de5003655b535"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "10352246adc27560490a0ef3b576dc609a9d2926069df9f0281f9d0706697bef"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          {
+            "id": "block_0014_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0014_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0014_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          {
+            "id": "block_0015_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0002",
+            "sha256": "825a9a720aa4cbc7661f2ab39ca73dfd96892b254566de47b057c9c0e83762dc"
+          },
+          {
+            "id": "block_0015_0003",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0015_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0006",
+            "sha256": "f243a2698e482accc632612a17947b3616350dd5c40a479d6a68e7121b13754c"
+          },
+          {
+            "id": "block_0015_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0015_0008",
+            "sha256": "35f682ff5af47b96a7ba386cab6a90188fb0716e1dec8aa2331f82c436f1fa6e"
+          }
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          {
+            "id": "block_0016_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0001",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0004",
+            "sha256": "f4ea0f8f4bb1a7acfadd68edc647a8b1553240cd01a2e954726b50af5723ba27"
+          },
+          {
+            "id": "block_0016_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0006",
+            "sha256": "c8ac9de94a7d6021060406f2f2095a62fa2d3c3acee8d7dcd8e733289280dee1"
+          },
+          {
+            "id": "block_0016_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0010",
+            "sha256": "84b5cb169dec8b87ab564cf076b8866e5abfd8fda491e9d998eec63a44785951"
+          },
+          {
+            "id": "block_0016_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0012",
+            "sha256": "457459f938794e32e97544e18b2640b6b3255b9c6e68d3c19ec8aa080be25848"
+          },
+          {
+            "id": "block_0016_0013",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0016",
+            "sha256": "5e4a1113a343dc65dbc833355b478539894920e317d8dc60aa1554022c8019d6"
+          },
+          {
+            "id": "block_0016_0017",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0018",
+            "sha256": "852482441108afa65b7096afff2d63ddefac6b93280ab5762e626fc68d105e53"
+          },
+          {
+            "id": "block_0016_0019",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0016_0020",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0021",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0022",
+            "sha256": "38ded84228c431a8600132ae760d5e0da49aa581ff5be5caabf0f6d9c2c0fa8d"
+          },
+          {
+            "id": "block_0016_0023",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0016_0024",
+            "sha256": "76c2eef9ca61b0f04f92815124ed1d8d6addb05550060fbad6d10b0dca8fa96d"
+          }
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          {
+            "id": "block_0017_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0017_0001",
+            "sha256": "b7648f7c646d2abb95a9791ad2867e76216e0ca768885e27952c93f7b15ccd87"
+          },
+          {
+            "id": "block_0017_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0017_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          {
+            "id": "block_0018_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0018_0001",
+            "sha256": "ece565b348a13a85f4a5d72e72a94dc6b12dc0999a75974a15adc04a60eae990"
+          }
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          {
+            "id": "block_0019_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0019_0001",
+            "sha256": "86b7240b21499d2609c485a2f775bb7ad0e0b982342e6e48e0a9022261c9dde2"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004"
+        ]
+      },
+      {
+        "id": "page_0014",
+        "blocks": [
+          "block_0014_0000",
+          "block_0014_0001",
+          "block_0014_0002",
+          "block_0014_0003",
+          "block_0014_0004",
+          "block_0014_0005"
+        ]
+      },
+      {
+        "id": "page_0015",
+        "blocks": [
+          "block_0015_0000",
+          "block_0015_0001",
+          "block_0015_0002",
+          "block_0015_0003",
+          "block_0015_0004",
+          "block_0015_0005",
+          "block_0015_0006",
+          "block_0015_0007",
+          "block_0015_0008"
+        ]
+      },
+      {
+        "id": "page_0016",
+        "blocks": [
+          "block_0016_0000",
+          "block_0016_0001",
+          "block_0016_0002",
+          "block_0016_0003",
+          "block_0016_0004",
+          "block_0016_0005",
+          "block_0016_0006",
+          "block_0016_0007",
+          "block_0016_0008",
+          "block_0016_0009",
+          "block_0016_0010",
+          "block_0016_0011",
+          "block_0016_0012",
+          "block_0016_0013",
+          "block_0016_0014",
+          "block_0016_0015",
+          "block_0016_0016",
+          "block_0016_0017",
+          "block_0016_0018",
+          "block_0016_0019",
+          "block_0016_0020",
+          "block_0016_0021",
+          "block_0016_0022",
+          "block_0016_0023",
+          "block_0016_0024"
+        ]
+      },
+      {
+        "id": "page_0017",
+        "blocks": [
+          "block_0017_0000",
+          "block_0017_0001",
+          "block_0017_0002",
+          "block_0017_0003",
+          "block_0017_0004",
+          "block_0017_0005"
+        ]
+      },
+      {
+        "id": "page_0018",
+        "blocks": [
+          "block_0018_0000",
+          "block_0018_0001"
+        ]
+      },
+      {
+        "id": "page_0019",
+        "blocks": [
+          "block_0019_0000",
+          "block_0019_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "6c217ebf875db7e66f3cba31fb5030deb4527c69542d5dae1a914e2d54cffc23",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "eac5c756694c3d245a2b5263f1f359dcb38ac0d41f66b280e543aa6e92e0e643"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "b1bd0b5219806b3282f69663b3039cc2ae245644bc261031dd0f885278e5d35f"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "721b12078ab905433a43055f3fc9fc92603ef980316c7315469c70811d4d2978"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "84d714b4480cc5a72cabe630223f601b5a81b54ed44426f2e7b1d4ecd64f87e2"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "53fb254fdb71cc101a6a062c133ee49dc740a1281410b54a9baeb726040e20cb"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "db9a65f00f0f79d752e9e033648934b23a481e5043ef954086292268ce614acc"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "f02f8e1183262e3f8c907a0059fea37f5ad9dc19f63dcc16ef89abdf78568549"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "f0d59f4b5862d532859e300941909573902551d158587c8778dd6ee94ba14001"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "5948610872fc6797dbd724d9667b26f0e55e5d2a213bb3955c87279008b19cc2"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "5f3389900ae896f2d071e2694d7facfefef7a36f753845acc63de5003655b535"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "10352246adc27560490a0ef3b576dc609a9d2926069df9f0281f9d0706697bef"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0014",
+            "blocks": [
+              {
+                "id": "block_0014_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0014_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0014_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0015",
+            "blocks": [
+              {
+                "id": "block_0015_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0002",
+                "sha256": "825a9a720aa4cbc7661f2ab39ca73dfd96892b254566de47b057c9c0e83762dc"
+              },
+              {
+                "id": "block_0015_0003",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0015_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0006",
+                "sha256": "f243a2698e482accc632612a17947b3616350dd5c40a479d6a68e7121b13754c"
+              },
+              {
+                "id": "block_0015_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0015_0008",
+                "sha256": "35f682ff5af47b96a7ba386cab6a90188fb0716e1dec8aa2331f82c436f1fa6e"
+              }
+            ]
+          },
+          {
+            "id": "page_0016",
+            "blocks": [
+              {
+                "id": "block_0016_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0001",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0004",
+                "sha256": "f4ea0f8f4bb1a7acfadd68edc647a8b1553240cd01a2e954726b50af5723ba27"
+              },
+              {
+                "id": "block_0016_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0006",
+                "sha256": "c8ac9de94a7d6021060406f2f2095a62fa2d3c3acee8d7dcd8e733289280dee1"
+              },
+              {
+                "id": "block_0016_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0010",
+                "sha256": "84b5cb169dec8b87ab564cf076b8866e5abfd8fda491e9d998eec63a44785951"
+              },
+              {
+                "id": "block_0016_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0012",
+                "sha256": "457459f938794e32e97544e18b2640b6b3255b9c6e68d3c19ec8aa080be25848"
+              },
+              {
+                "id": "block_0016_0013",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0016",
+                "sha256": "5e4a1113a343dc65dbc833355b478539894920e317d8dc60aa1554022c8019d6"
+              },
+              {
+                "id": "block_0016_0017",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0018",
+                "sha256": "852482441108afa65b7096afff2d63ddefac6b93280ab5762e626fc68d105e53"
+              },
+              {
+                "id": "block_0016_0019",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0016_0020",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0021",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0022",
+                "sha256": "38ded84228c431a8600132ae760d5e0da49aa581ff5be5caabf0f6d9c2c0fa8d"
+              },
+              {
+                "id": "block_0016_0023",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0016_0024",
+                "sha256": "76c2eef9ca61b0f04f92815124ed1d8d6addb05550060fbad6d10b0dca8fa96d"
+              }
+            ]
+          },
+          {
+            "id": "page_0017",
+            "blocks": [
+              {
+                "id": "block_0017_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0017_0001",
+                "sha256": "b7648f7c646d2abb95a9791ad2867e76216e0ca768885e27952c93f7b15ccd87"
+              },
+              {
+                "id": "block_0017_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0017_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0018",
+            "blocks": [
+              {
+                "id": "block_0018_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0018_0001",
+                "sha256": "ece565b348a13a85f4a5d72e72a94dc6b12dc0999a75974a15adc04a60eae990"
+              }
+            ]
+          },
+          {
+            "id": "page_0019",
+            "blocks": [
+              {
+                "id": "block_0019_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0019_0001",
+                "sha256": "86b7240b21499d2609c485a2f775bb7ad0e0b982342e6e48e0a9022261c9dde2"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

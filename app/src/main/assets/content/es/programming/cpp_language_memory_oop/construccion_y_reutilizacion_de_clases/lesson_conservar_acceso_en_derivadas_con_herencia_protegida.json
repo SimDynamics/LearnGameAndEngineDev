@@ -1,0 +1,1279 @@
+{
+  "id": "cpp_language_memory_oop__construccion_y_reutilizacion_de_clases__conservar_acceso_en_derivadas_con_herencia_protegida",
+  "title": "Conservar acceso en derivadas con herencia protegida",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un miembro protegido de una relación protegida"
+        },
+        {
+          "type": "paragraph",
+          "text": "protected puede aparecer en dos lugares con funciones diferentes. Dentro de RegistroBase, la sección protected: declara guardar como operación protegida. La base ofrece esa operación a los miembros derivados correspondientes, pero no como una llamada disponible para cualquier función externa. El entero numero_ sigue siendo privado (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, protected después de los dos puntos de Intermedia : protected RegistroBase elige cómo se hereda la base. Las operaciones públicas y protegidas de RegistroBase son accesibles como protegidas en Intermedia. Esto permite utilizarlas internamente también desde clases derivadas posteriores, sin ofrecer esa base como una interfaz pública exterior (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Intermedia declara su propia consulta en public. Esa función pública consulta la base por dentro y devuelve el int por valor. No hay que confundir el acceso de consulta con el acceso de leer o guardar, que proceden de RegistroBase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el acceso interno al continuar la derivación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Posterior deriva públicamente de Intermedia. Su constructor prepara esa base intermedia y ésta prepara RegistroBase. Hay un solo RegistroBase dentro de cada objeto de esta cadena. Todos los enteros se inicializan antes de consultarse."
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar utiliza la operación protegida guardar sobre el propio objeto. por_referencia entrega a un ayudante una referencia constante a la parte RegistroBase. por_puntero obtiene una vista equivalente con un puntero. Estas conversiones se solicitan dentro de un método de Posterior y la cadena permite ese acceso interno (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l4_cadena_protegida_con_acceso_interno_posterior",
+          "language": "cpp",
+          "question": "Escribe toda la salida, siguiendo qué parte del mismo objeto consultan las tres funciones finales.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nint consultar_registro(const RegistroBase& registro) {\n    return registro.leer();\n}\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass Posterior : public Intermedia {\npublic:\n    explicit Posterior(int numero) : Intermedia{numero} {}\n    void cambiar(int numero) { guardar(numero); }\n    int por_referencia() const { return consultar_registro(*this); }\n    int por_puntero() const {\n        const RegistroBase* vista = this;\n        return vista->leer();\n    }\n};\nint main() {\n    Posterior dato{4};\n    std::cout << dato.consulta() << '|';\n    dato.cambiar(9);\n    std::cout << dato.consulta() << ':' << dato.por_referencia()\n              << ':' << dato.por_puntero();\n    return 0;\n}\n",
+          "answers": [
+            "4|9:9:9"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto comienza con cuatro en su parte RegistroBase, que consulta devuelve mediante Intermedia. cambiar guarda nueve en esa misma parte. Después consulta, por_referencia y por_puntero observan nueve. No se ha copiado el objeto al crear las vistas. La consulta pública propia de Intermedia sigue disponible en Posterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una derivación pública posterior no hace pública la base anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "La relación public entre Posterior e Intermedia permite que main utilice las operaciones públicas de Intermedia, como consulta. No vuelve pública la relación protected entre Intermedia y RegistroBase. Por eso los siguientes intentos, analizados por separado con las clases anteriores, se rechazan al compilar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Posterior dato{4};\nstd::cout << dato.leer();"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Posterior dato{4};\nconst RegistroBase& vista = dato;"
+        },
+        {
+          "type": "paragraph",
+          "text": "leer se hereda como operación protegida a través de Intermedia; la vista también intenta atravesar desde fuera una relación de base protegida. Un puntero const RegistroBase* inicializado con &dato desde main encuentra la misma restricción. Las vistas internas de la página anterior se solicitaron en otro contexto y sí estaban permitidas (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l4_public_posterior_no_abre_base_protegida",
+          "question": "¿Qué acceso ofrece la cadena actual desde main?",
+          "options": [
+            "Permite usar consulta de Intermedia a través de Posterior, pero no convertir implícitamente Posterior en RegistroBase& desde main.",
+            "El public de Posterior convierte todas las relaciones anteriores en públicas y permite llamar a guardar desde main.",
+            "La relación protegida impide construir cualquier Posterior, aunque sus constructores sean públicos y válidos."
+          ],
+          "correctIndex": 0,
+          "explanation": "consulta fue declarada pública por Intermedia y Posterior la hereda públicamente. La relación protegida anterior con RegistroBase no cambia: main no obtiene por ella una vista implícita de esa base ni acceso a sus operaciones protegidas. Los constructores públicos sí pueden preparar correctamente el objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una base privada limita el acceso directo, pero conserva las funciones públicas propias"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora IntermediaPrivada hereda privadamente de RegistroBase y ofrece dos funciones públicas propias: consulta y cambiar. Dentro de sus cuerpos puede usar la base privada. PosteriorDesdePrivada deriva públicamente de esa intermedia y puede utilizar esas funciones públicas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l4_base_privada_no_elimina_funciones_publicas_intermedias",
+          "language": "cpp",
+          "question": "Escribe la salida y distingue la llamada a una función de IntermediaPrivada del acceso directo a RegistroBase.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass IntermediaPrivada : private RegistroBase {\npublic:\n    explicit IntermediaPrivada(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n    void cambiar(int numero) { RegistroBase::guardar(numero); }\n};\nclass PosteriorDesdePrivada : public IntermediaPrivada {\npublic:\n    explicit PosteriorDesdePrivada(int numero) : IntermediaPrivada{numero} {}\n    void preparar(int numero) { IntermediaPrivada::cambiar(numero); }\n};\nint main() {\n    PosteriorDesdePrivada dato{2};\n    std::cout << dato.consulta() << '|';\n    dato.preparar(6);\n    std::cout << dato.consulta();\n    return 0;\n}\n",
+          "answers": [
+            "2|6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El objeto comienza con dos. consulta es pública en IntermediaPrivada y está disponible a través de PosteriorDesdePrivada. preparar llama a cambiar, también pública, cuyo cuerpo autorizado guarda seis en RegistroBase. La última consulta obtiene seis. No fue necesario que preparar accediera directamente a guardar ni que convirtiera el objeto en una vista de RegistroBase."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con esta relación privada, un método de PosteriorDesdePrivada no puede llamar directamente a RegistroBase::guardar ni convertir implícitamente *this en una referencia a esa base. Esas facultades no pasan a la clase posterior. Sin embargo, las funciones públicas propias que IntermediaPrivada decide ofrecer no desaparecen (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Así se precisa la comparación: la relación protegida permite continuar el uso directo interno de las operaciones accesibles de la base; la privada permite que la clase inmediata utilice la base y que ofrezca funciones propias para las clases que la usen o deriven después. No es correcto resumir la privada diciendo que la clase posterior no puede hacer nada con el estado de la base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ninguna de esas relaciones hace accesible el dato privado original"
+        },
+        {
+          "type": "paragraph",
+          "text": "numero_ fue declarado privado en RegistroBase. Ni Intermedia ni Posterior pueden nombrarlo directamente en sus métodos. Heredar mediante protected conserva el acceso a operaciones accesibles de la base; no convierte los datos privados de esa base en datos protegidos (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass PosteriorIncorrecta : public Intermedia {\npublic:\n    explicit PosteriorIncorrecta(int numero) : Intermedia{numero} {}\n    int directo() const { return numero_; }\n};\nint main() {\n    PosteriorIncorrecta dato{4};\n    std::cout << dato.consulta();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l4_dato_privado_original_no_se_vuelve_protegido",
+          "question": "¿Cómo puede directo() consultar ese número sin cambiar su privacidad ni la cadena de herencia?",
+          "options": [
+            "Quitando const de directo(), porque los datos privados sólo se ocultan a las consultas constantes.",
+            "Devolviendo RegistroBase::leer(), que utiliza la función pública original a través de la base accesible dentro de ese método.",
+            "Añadiendo otro protected a la clase PosteriorIncorrecta para convertir numero_ en un dato suyo."
+          ],
+          "correctIndex": 1,
+          "explanation": "El método puede utilizar RegistroBase::leer() en este contexto interno. El int sigue siendo privado de RegistroBase y se consulta a través de su función. Cambiar const o escribir una sección protected en la derivada no cambia dónde se declaró numero_ ni quién puede nombrarlo directamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Para una operación protegida también importa el objeto utilizado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una operación protegida no queda limitada al propio this. Un método de Gestor puede utilizar guardar sobre otro objeto Gestor recibido por referencia. La expresión destino tiene el tipo derivado adecuado y la parte RegistroBase de ese objeto es accesible desde el método (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l4_operacion_protegida_sobre_otro_objeto_del_tipo_derivado",
+          "language": "cpp",
+          "question": "Escribe los valores finales de origen y destino después de guardar_en.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass Intermedia : protected RegistroBase {\npublic:\n    explicit Intermedia(int numero) : RegistroBase{numero} {}\n    int consulta() const { return RegistroBase::leer(); }\n};\nclass Gestor : public Intermedia {\npublic:\n    explicit Gestor(int numero) : Intermedia{numero} {}\n    void guardar_en(Gestor& destino, int numero) {\n        destino.guardar(numero);\n    }\n    int leer_otro(const RegistroBase& otro) const { return otro.leer(); }\n};\nint main() {\n    Gestor origen{4};\n    Gestor destino{8};\n    origen.guardar_en(destino, 6);\n    std::cout << origen.consulta() << ':' << destino.consulta();\n    return 0;\n}\n",
+          "answers": [
+            "4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "guardar_en se invoca mediante origen, pero llama a guardar sobre destino. Por eso el primer objeto conserva cuatro y el segundo cambia de ocho a seis. La protección permite ese acceso desde Gestor sobre una expresión de tipo Gestor; no significa que siempre se deba modificar el objeto que recibió la llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, reemplazar el parámetro de guardar_en por RegistroBase& destino hace inválida esa llamada a destino.guardar(numero). Una referencia de tipo RegistroBase& no da al método de Gestor permiso para usar la operación protegida sobre cualquier RegistroBase. El tipo de esa expresión importa, aunque en alguna llamada pudiera referirse a la parte base de un objeto derivado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void guardar_en(RegistroBase& destino, int numero) {\n    destino.guardar(numero);\n}"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l4_base_arbitraria_no_da_acceso_protegido",
+          "question": "El fragmento se coloca como método de Gestor. ¿Por qué se rechaza?",
+          "options": [
+            "Porque una función miembro no puede recibir referencias a otras clases.",
+            "Porque toda operación protegida sólo puede actuar sobre this, nunca sobre otro objeto.",
+            "Porque el acceso a guardar se intenta sobre una expresión de tipo RegistroBase, no de tipo Gestor o de una clase derivada de Gestor."
+          ],
+          "correctIndex": 2,
+          "explanation": "El acceso protegido tiene una comprobación adicional sobre el tipo de la expresión del objeto. Desde este método de Gestor, destino de tipo RegistroBase& no cumple la condición para guardar. El programa anterior sí podía usar otro Gestor. Esto no prohíbe llamar a una operación pública original como otro.leer() cuando ya se dispone de un RegistroBase& válido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los valores por defecto de class y struct se deciden en dos lugares"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se omite el acceso después de los dos puntos de la clase, class utiliza herencia privada y struct utiliza herencia pública. Por separado, si se omite una sección de acceso al declarar miembros, los de class empiezan siendo privados y los de struct empiezan siendo públicos. Ninguno elige protected automáticamente (ISO/IEC JTC 1/SC 22/WG 21, 2023; Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "PorClase omite el acceso de la base y empieza declarando marca_. Después abre public: para sus funciones. PorStruct también omite el acceso de la base y no escribe ninguna sección antes de marca_. Sigue las dos decisiones sin confundirlas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l4_defaults_de_base_y_de_miembro_son_distintos",
+          "language": "cpp",
+          "question": "Escribe la salida completa. En PorClase se usan funciones propias; en PorStruct se utiliza también la interfaz pública heredada.",
+          "code": "#include <iostream>\n\nclass RegistroBase {\npublic:\n    explicit RegistroBase(int numero) : numero_{numero} {}\n    int leer() const { return numero_; }\nprotected:\n    void guardar(int numero) { numero_ = numero; }\nprivate:\n    int numero_;\n};\nclass PorClase : RegistroBase {\n    int marca_{5};\npublic:\n    PorClase() : RegistroBase{3} {}\n    int numero() const { return RegistroBase::leer(); }\n    int marca() const { return marca_; }\n};\nstruct PorStruct : RegistroBase {\n    int marca_{6};\n    PorStruct() : RegistroBase{4} {}\n};\nint main() {\n    const PorClase a;\n    const PorStruct b;\n    std::cout << a.numero() << ':' << a.marca()\n              << '|' << b.leer() << ':' << b.marca_;\n    return 0;\n}\n",
+          "answers": [
+            "3:5|4:6"
+          ],
+          "outputComparison": "exact",
+          "explanation": "PorClase tiene base privada y marca_ privada. Sus funciones públicas devuelven el número tres y la marca cinco. PorStruct tiene base pública y marca_ pública por defecto, así que main puede usar b.leer() y b.marca_ para obtener cuatro y seis. Los inicializadores establecieron todos esos valores antes de la consulta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir public: dentro de PorClase no convierte en pública la relación con RegistroBase, que se eligió al declarar la clase. Escribir protected RegistroBase en esa relación tampoco haría protegidos todos los miembros propios declarados después. Cada posición regula una decisión diferente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir qué operaciones deben continuar hacia las clases posteriores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una base protegida permite que los miembros accesibles de la base se sigan utilizando internamente a lo largo de la cadena mostrada. Al mismo tiempo, no ofrece una conversión implícita exterior a esa base. La interfaz pública continúa siendo la que declaran las clases y la que heredan públicamente de clases intermedias accesibles (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La elección no obliga a usar protected en toda jerarquía. Si basta con contener un objeto y llamar a sus operaciones públicas, la composición sigue siendo una opción directa. Si se elige herencia, hay que revisar tanto la relación entre las clases como las operaciones que cada una ofrece, y comprobar sobre qué objeto se intenta realizar cada acceso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar una clase que otras derivadas puedan ajustar"
+        },
+        {
+          "type": "paragraph",
+          "text": "EstadoBase conserva un entero privado. Su consulta leer es pública y su operación fijar está protegida. La clase que reutilice esa parte debe decidir qué consultas y cambios ofrecerá desde fuera."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "class EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Componente debe utilizar EstadoBase como base protegida. Ofrece actual() como consulta pública. Limitado deriva públicamente de Componente y necesita usar fijar desde su propio método cambiar. No queremos que main pueda obtener implícitamente una vista EstadoBase del objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada Limitado guarda un límite no negativo. Su estado inicial debe estar entre cero y ese límite, incluidos ambos extremos. El constructor ya comprueba estas condiciones y lanza std::invalid_argument si no se cumplen."
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar recibe un candidato. Debe rechazar uno negativo o mayor que el límite, devolver false y conservar el dato anterior. Debe aceptar uno que esté dentro del intervalo, guardarlo mediante fijar y devolver true. La comparación y los retornos ya están escritos."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u9l4_construir_extension_con_base_protegida",
+          "question": "Completa la relación de Componente con EstadoBase para conservar el acceso en Limitado sin ofrecer esa base públicamente. Completa también la llamada que guarda nuevo dentro de cambiar, usando la operación protegida que recibe ese int.",
+          "template": "class Componente : [] EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        []\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\n",
+          "answers": [
+            "protected",
+            "EstadoBase::fijar(nuevo);"
+          ],
+          "answerAlternatives": [
+            [
+              "protected"
+            ],
+            [
+              "EstadoBase::fijar(nuevo);",
+              "fijar(nuevo);",
+              "this->fijar(nuevo);",
+              "(*this).fijar(nuevo);",
+              "this->EstadoBase::fijar(nuevo);",
+              "::EstadoBase::fijar(nuevo);"
+            ]
+          ],
+          "explanation": "protected EstadoBase mantiene sus operaciones accesibles para una derivada posterior como Limitado en los contextos permitidos, sin hacer pública la conversión a EstadoBase. Desde cambiar, EstadoBase::fijar(nuevo) modifica la parte base del propio objeto, después de comprobar el intervalo. Una base privada en Componente impediría a Limitado ese acceso directo; una base pública ofrecería la conversión exterior que el enunciado no quiere."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: acceso protegido y comprobación del valor"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado dato{2, 5};\n    std::cout << dato.actual() << '|';\n    bool aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(6);\n    std::cout << aceptado << ':' << dato.actual();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "dato comienza con dos y límite cinco. actual es una función pública de Componente que Limitado mantiene disponible por su relación pública con Componente. Su cuerpo consulta la parte EstadoBase que Componente sí puede utilizar."
+        },
+        {
+          "type": "paragraph",
+          "text": "cambiar(5) acepta el extremo superior, llama a fijar y devuelve true. cambiar(6) detecta que seis supera el límite, devuelve false y no llama a fijar. Por eso la consulta posterior sigue obteniendo cinco."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "2|1:5|0:5"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa escribe cada bool sin activar otro formato: true aparece como uno y false como cero. Primero guarda el resultado de cambiar en aceptado y después consulta actual, de modo que el orden de las acciones se ve directamente en las instrucciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "La herencia protegida concede el acceso que cambiar necesita para usar la base. No comprueba el intervalo automáticamente: esa parte del contrato la realiza el cuerpo de cambiar que hemos escrito. El int de EstadoBase sigue siendo privado y se modifica mediante su operación accesible, sin nombrarlo desde Limitado (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar los extremos y conservar el dato tras un rechazo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa utiliza las clases de la referencia y cambia sólo main. El objeto empieza con tres y límite cuatro. Sigue por separado la aceptación de cada candidato y la consulta del dato que queda guardado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l4_aceptar_extremos_y_conservar_tras_rechazo",
+          "language": "cpp",
+          "question": "Escribe la salida completa. Cada grupo contiene el resultado bool y el estado posterior, separados por dos puntos.",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado dato{3, 4};\n    bool aceptado = dato.cambiar(-1);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(0);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(4);\n    std::cout << aceptado << ':' << dato.actual() << '|';\n    aceptado = dato.cambiar(5);\n    std::cout << aceptado << ':' << dato.actual();\n    return 0;\n}\n",
+          "answers": [
+            "0:3|1:0|1:4|0:4"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Menos uno se rechaza y conserva tres. Cero se acepta y sustituye el dato por cero. Cuatro se acepta porque coincide con el límite. Cinco se rechaza y conserva cuatro. Los bool de aceptación son respectivamente 0, 1, 1 y 0. El acceso protegido permite la llamada interna, pero es la condición de cambiar la que evita guardar los candidatos rechazados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar la cadena completa y su límite"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia generada de Limitado prepara su parte Componente, incluida EstadoBase, y su miembro limite_ a partir del origen. No copia sólo el valor consultado por actual. Los dos objetos terminan con sus propios datos y con el mismo límite inicial (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l4_copiar_estado_y_limite_de_extension",
+          "language": "cpp",
+          "question": "Escribe los resultados y estados consultados en este programa, incluido el último estado de original.",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass EstadoBase {\npublic:\n    explicit EstadoBase(int inicial) : numero_{inicial} {}\n    int leer() const noexcept { return numero_; }\nprotected:\n    void fijar(int nuevo) noexcept { numero_ = nuevo; }\nprivate:\n    int numero_;\n};\n\nclass Componente : protected EstadoBase {\npublic:\n    explicit Componente(int inicial) : EstadoBase{inicial} {}\n    int actual() const noexcept { return EstadoBase::leer(); }\n};\n\nclass Limitado : public Componente {\npublic:\n    Limitado(int inicial, int limite)\n        : Componente{inicial}, limite_{limite} {\n        if (limite_ < 0 || inicial < 0 || inicial > limite_) {\n            throw std::invalid_argument(\"rango\");\n        }\n    }\n\n    bool cambiar(int nuevo) noexcept {\n        if (nuevo < 0 || nuevo > limite_) {\n            return false;\n        }\n        EstadoBase::fijar(nuevo);\n        return true;\n    }\n\nprivate:\n    int limite_;\n};\nint main() {\n    Limitado original{2, 5};\n    Limitado copia{original};\n    bool aceptado = original.cambiar(5);\n    std::cout << aceptado << ':' << original.actual() << '|';\n    aceptado = copia.cambiar(1);\n    std::cout << aceptado << ':' << copia.actual() << '|';\n    aceptado = copia.cambiar(6);\n    std::cout << aceptado << ':' << copia.actual() << '|'\n              << original.actual();\n    return 0;\n}\n",
+          "answers": [
+            "1:5|1:1|0:1|5"
+          ],
+          "outputComparison": "exact",
+          "explanation": "copia comienza con estado dos y límite cinco. original acepta cinco y conserva su propio estado cinco. copia acepta uno y después rechaza seis porque su límite copiado también es cinco, así que conserva uno. La última consulta de original sigue obteniendo cinco. Cambiar un objeto no modifica el otro; la herencia protegida no los hace compartir el mismo int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La base pública inmediata y la base protegida no ofrecen la misma vista"
+        },
+        {
+          "type": "paragraph",
+          "text": "Limitado deriva públicamente de Componente. Por eso main puede pasar un Limitado a una función que recibe const Componente&. La función siguiente sólo llama a actual, que Componente ofrece públicamente."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int consultar_componente(const Componente& dato) {\n    return dato.actual();\n}\nint main() {\n    Limitado dato{3, 5};\n    std::cout << consultar_componente(dato);\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "3"
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, main no puede escribir const EstadoBase& vista = dato; con ese Limitado. Para llegar a EstadoBase la cadena incluye la relación protegida declarada por Componente. La relación pública de Limitado con Componente no convierte esa otra relación en pública (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l4_vista_publica_inmediata_no_abre_base_protegida",
+          "question": "¿Por qué consultar_componente(dato) es válido mientras que la vista externa a EstadoBase se rechaza?",
+          "options": [
+            "Porque const permite saltarse cualquier acceso privado o protegido de las clases base.",
+            "Porque Limitado ofrece públicamente su relación con Componente, pero la relación que Componente tiene con EstadoBase sigue siendo protegida.",
+            "Porque las funciones libres reciben siempre una copia y esa copia elimina las restricciones de acceso."
+          ],
+          "correctIndex": 1,
+          "explanation": "La conversión solicitada por consultar_componente termina en Componente y utiliza la relación pública inmediata. La otra conversión necesita además alcanzar EstadoBase, cuya relación protegida no es accesible desde main. La referencia constante no elimina ese control de acceso ni crea una copia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir qué acceso conservar para una extensión"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l4_protegida_cuando_posterior_necesita_base",
+          "question": "Componente debe permitir que sus futuras derivadas usen directamente operaciones protegidas de EstadoBase, pero no quiere ofrecer desde main la conversión implícita a EstadoBase. ¿Qué elección cumple esas dos condiciones en la cadena estudiada?",
+          "options": [
+            "Heredar EstadoBase públicamente; las nuevas derivadas podrán usarlo y la conversión desde main seguirá inaccesible.",
+            "Heredar EstadoBase privadamente; una relación pública posterior volverá a abrir automáticamente el acceso directo a esa base.",
+            "Heredar EstadoBase de forma protegida y mantener explícitas las operaciones que Componente y sus derivadas ofrecen al usuario."
+          ],
+          "correctIndex": 2,
+          "explanation": "La relación protegida conserva el uso interno de esa base para las derivadas posteriores en los contextos permitidos. La relación pública también permitiría la conversión exterior no deseada. La privada limita ese acceso directo a EstadoBase en la clase posterior, aunque las funciones públicas propias de Componente seguirían disponibles. La decisión depende de esas necesidades, no de que protected sea una elección universalmente mejor."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "e9f054c0b80e4671ef258b947414cee584b418b3ffd05ad1b53b0642fa7528ab"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "2cb634e12cebac72cfb99d084fc3d0bdf44c9c632d0c2559f0ed5b8fabfb88d4"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "98fec207e7b691494eee255ff6b84024054cc51f2f62874ecae21d2868cb7cd3"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "74433cbf819ecfa145f70832ba06cc3940f821e31ff1ccfb30f07a971e795e76"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "04996a9ef3664f6b157fcd1aa7c935e09c5a94517de2b7aa35cfef0e305cb887"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "737cf7a8c302815aebdc343b32db4f1c2ba0c94710da2776329de032342ab7d6"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "6a0320609ab6212b45a076410c65eb4151d613922da1df716862feb337299ccb"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "bc67a4234a10318a61508fe81de6999792592a57aa67269de733af784a878188"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "68c0bed5bb4b00c3d54007b952136b8adf7874cd15624ab6a2e9d81c4e80b67d"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "31bff2ca70d115b0417ebca231778a78cfe61ef280b9481b2577f987990c6392"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "76a3dffb0c419a754381edc359d9aeba4197c237416ea4573cb3fb77436e6f88"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "48c945525c8fe277f948f5aec14410e028d5cc62ea0f79b0d94b4aad8307806a"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "65c2d6fb49ec23ca797ec48355b3b158f5780bb8d226c18f843cbd8e622ae2fa"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "21721a7ea18f0dbab08b0d357b401b920ad900f83e9683051192b77c9b66382e"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "5a3c9941522dd5cf51578f6f600a19bd9cad634e65b015892180c8157a73133b"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "794d0e4206e88a44437eb3cae0f41e79f0554489d36cedfeffd2f729092b2de2"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "fd0e70ee8e9f556ccc6618b7253911720e8530aeefd1829c84d4aabf0e735ffb"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "17eb9f2fc9d3b082312ece5f0535fe82b1bb1d96a7e2858be770b2d1e360e7a6"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "b84e8fe77a0d6dd6efe8e8626f69ee26589e364c159052dc8758aa3ef60ce671"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "aeaac5b0da7df16b4b86b4bbdd6474e6b55f788ecda961d15a07eb297f2d64b5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "378a56a827fb55befdbfb33de47588702c1d986abf515c255741bedc66a16a06"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "dfeb138ad18cf4edbcd545654c8aee7f6581b6f9a58254ec8b06bc24606e19d1"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "cc7cb52c320c6259c32437fde3ef3e9aaae17767feddaa47bd6f119df8d2fda1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "f4b1829b39f0cff49db00697af37b8555748e1f41d30367090919a2fea61a5cf",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "e9f054c0b80e4671ef258b947414cee584b418b3ffd05ad1b53b0642fa7528ab"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "2cb634e12cebac72cfb99d084fc3d0bdf44c9c632d0c2559f0ed5b8fabfb88d4"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "98fec207e7b691494eee255ff6b84024054cc51f2f62874ecae21d2868cb7cd3"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "74433cbf819ecfa145f70832ba06cc3940f821e31ff1ccfb30f07a971e795e76"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "04996a9ef3664f6b157fcd1aa7c935e09c5a94517de2b7aa35cfef0e305cb887"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "737cf7a8c302815aebdc343b32db4f1c2ba0c94710da2776329de032342ab7d6"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "6a0320609ab6212b45a076410c65eb4151d613922da1df716862feb337299ccb"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "bc67a4234a10318a61508fe81de6999792592a57aa67269de733af784a878188"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "68c0bed5bb4b00c3d54007b952136b8adf7874cd15624ab6a2e9d81c4e80b67d"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "31bff2ca70d115b0417ebca231778a78cfe61ef280b9481b2577f987990c6392"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "76a3dffb0c419a754381edc359d9aeba4197c237416ea4573cb3fb77436e6f88"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "48c945525c8fe277f948f5aec14410e028d5cc62ea0f79b0d94b4aad8307806a"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "65c2d6fb49ec23ca797ec48355b3b158f5780bb8d226c18f843cbd8e622ae2fa"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "21721a7ea18f0dbab08b0d357b401b920ad900f83e9683051192b77c9b66382e"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "5a3c9941522dd5cf51578f6f600a19bd9cad634e65b015892180c8157a73133b"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "794d0e4206e88a44437eb3cae0f41e79f0554489d36cedfeffd2f729092b2de2"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "fd0e70ee8e9f556ccc6618b7253911720e8530aeefd1829c84d4aabf0e735ffb"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "17eb9f2fc9d3b082312ece5f0535fe82b1bb1d96a7e2858be770b2d1e360e7a6"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "b84e8fe77a0d6dd6efe8e8626f69ee26589e364c159052dc8758aa3ef60ce671"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "aeaac5b0da7df16b4b86b4bbdd6474e6b55f788ecda961d15a07eb297f2d64b5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "378a56a827fb55befdbfb33de47588702c1d986abf515c255741bedc66a16a06"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "dfeb138ad18cf4edbcd545654c8aee7f6581b6f9a58254ec8b06bc24606e19d1"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "cc7cb52c320c6259c32437fde3ef3e9aaae17767feddaa47bd6f119df8d2fda1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}

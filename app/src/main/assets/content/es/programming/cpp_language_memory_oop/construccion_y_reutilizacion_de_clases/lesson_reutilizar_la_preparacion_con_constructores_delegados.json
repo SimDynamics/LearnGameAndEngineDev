@@ -1,0 +1,1175 @@
+{
+  "id": "cpp_language_memory_oop__construccion_y_reutilizacion_de_clases__reutilizar_la_preparacion_con_constructores_delegados",
+  "title": "Reutilizar la preparación con constructores delegados",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reutilizar una preparación al ofrecer varios constructores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una clase puede ofrecer varias formas de construir un objeto. Por ejemplo, una recibe dos enteros y otra recibe sólo el primero y elige un segundo valor. Si después cambia una regla común y se modifica sólo uno de los cuerpos, las formas de construcción dejarán de aplicar la misma regla."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un constructor puede encargar esa preparación a otro constructor de su misma clase. Esa forma de reutilización se llama delegación. El constructor que recibe el encargo se llama constructor destino; cuando termina correctamente, se ejecuta el cuerpo del constructor que delegó. Ambos trabajan sobre el mismo objeto (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La delegación se escribe en la lista que aparece después de los dos puntos del constructor. En lugar de nombrar un miembro o una base, se nombra la propia clase y se proporcionan los argumentos del destino. Las sobrecargas disponibles determinan qué constructor recibe esos argumentos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Seguiremos objetos pequeños con todos sus datos inicializados. Después compararemos dos fallos distintos: que no termine el destino y que el destino sí termine, pero lance después el cuerpo del constructor que delegó. No se puede aplicar a ambos la misma explicación sobre qué destructor se ejecuta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El destino se ejecuta antes del cuerpo que delega"
+        },
+        {
+          "type": "paragraph",
+          "text": "Par(int, int) inicializa directamente primero_ y segundo_ y después ejecuta su cuerpo. Par(int) delega mediante Par{primero, 5}: el argumento recibido y el segundo valor elegido permiten seleccionar el constructor de dos enteros."
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada Par dato{7} no crea un Par auxiliar. El destino prepara los miembros de dato y ejecuta el cuerpo que imprime Central. Sólo después empieza el cuerpo que imprime Uno. Ese cuerpo puede consultar o realizar acciones sobre el estado ya preparado; no inicia otra vez los mismos miembros (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l1_destino_antes_de_cuerpo_delegante",
+          "language": "cpp",
+          "question": "Escribe toda la salida, incluidas las marcas de construcción, consulta y destrucción.",
+          "code": "#include <iostream>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central|\";\n    }\n    explicit Par(int primero) : Par{primero, 5} {\n        std::cout << \"Uno|\";\n    }\n    ~Par() { std::cout << \"FinPar|\"; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() {\n    {\n        Par dato{7};\n        std::cout << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Central|Uno|7,5|FinPar|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El constructor de dos enteros prepara el primer dato con siete y el segundo con cinco y escribe Central. Después se ejecuta el cuerpo de Par(int), que escribe Uno. La consulta de main obtiene esos dos datos. Al salir del bloque se ejecuta una vez el destructor de dato y aparece FinPar; después main escribe Fin. Los dos cuerpos constructores no representaban dos objetos distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Delegar ocupa toda la lista de inicializadores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la lista nombra a la propia clase para delegar, ese debe ser su único inicializador. No se combina con otro inicializador para un miembro o una base. El destino ya es el responsable de preparar el objeto antes de que empiece el cuerpo delegante (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cadena de delegación debe llegar a un constructor que prepare directamente las partes del objeto. No puede regresar al constructor inicial, ni directamente ni pasando por otros constructores. Ese ciclo haría inválido el programa; una compilación que no lo señalara no convertiría el ciclo en válido. Aquí todos los recorridos llegan al constructor que inicializa los miembros y no regresan a uno anterior (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Analiza este rechazo de compilación. El problema no depende de que los valores elegidos sean pequeños o de que el destino prepare los dos int."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nclass Par {\npublic:\n    Par(int primero, int segundo) : primero_{primero}, segundo_{segundo} {}\n    Par() : Par{2, 5}, segundo_{9} {}\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() { return 0; }\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l1_delegacion_no_admite_otro_inicializador",
+          "question": "¿Por qué se rechaza la definición de Par()?",
+          "options": [
+            "Porque un constructor que delega sólo puede pasar argumentos que haya recibido; no puede elegir valores literales.",
+            "Porque el inicializador que delega en Par debe ser el único de esa lista y aquí se añadió también segundo_{9}.",
+            "Porque los constructores de dos enteros no pueden ser destinos de un constructor sin argumentos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Par{2, 5} nombra la propia clase y selecciona su constructor de dos enteros. Esa delegación debe ocupar sola la lista. No es válido añadir segundo_{9}. Los literales pueden servir de argumentos y un constructor sin argumentos sí puede delegar en otro que los reciba."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un temporal dentro del cuerpo no es delegar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajuste() inicializa expresamente sus propios miembros con cero antes de entrar en su cuerpo. La instrucción Ajuste{3, 6}; del cuerpo crea otro objeto, sin nombre, que llamamos temporal. No vuelve a preparar los miembros del objeto actual. La notación de construir un objeto sin nombre ya permite expresar un valor de clase independiente (Stroustrup, 2024)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ese temporal termina al acabar su instrucción. Su destructor permite distinguirlo del Ajuste que se estaba construyendo. Los miembros del objeto actual siguen teniendo valores establecidos: no estamos leyendo datos indeterminados ni intentando obtener un resultado de ese error (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l1_constructor_en_cuerpo_crea_temporal_distinto",
+          "language": "cpp",
+          "question": "Escribe la salida completa y distingue los dos objetos que se destruyen en momentos diferentes.",
+          "code": "#include <iostream>\n\nclass Ajuste {\npublic:\n    Ajuste(int primero, int segundo) : primero_{primero}, segundo_{segundo} {\n        std::cout << \"Central:\" << primero_ << ',' << segundo_ << '|';\n    }\n    Ajuste() : primero_{0}, segundo_{0} {\n        Ajuste{3, 6};\n        std::cout << \"Cuerpo:\" << primero_ << ',' << segundo_ << '|';\n    }\n    ~Ajuste() { std::cout << \"Fin:\" << primero_ << ',' << segundo_ << '|'; }\n    int primero() const { return primero_; }\n    int segundo() const { return segundo_; }\nprivate:\n    int primero_;\n    int segundo_;\n};\nint main() {\n    {\n        Ajuste dato;\n        std::cout << \"Dato:\" << dato.primero() << ',' << dato.segundo() << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Central:3,6|Fin:3,6|Cuerpo:0,0|Dato:0,0|Fin:0,0|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "El temporal se construye con tres y seis y escribe Central con esos datos. Al terminar la instrucción se destruye y escribe Fin:3,6. El cuerpo de Ajuste() consulta sus propios miembros, inicializados con cero, y escribe Cuerpo:0,0. dato conserva esos ceros durante la consulta de main y se destruye después al salir del bloque, escribiendo Fin:0,0. Ese temporal no delegó la construcción de dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para delegar hay que seleccionar el destino en la lista anterior al cuerpo. Una expresión que construye otro objeto dentro del cuerpo tiene un efecto distinto, aunque nombre la misma clase y use argumentos que también aceptaría otro constructor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir la construcción completa con un miembro observable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Preparado tiene un miembro marca_ de tipo Marca y un int valor_. El constructor de dos argumentos los inicializa directamente; no delega. Es el destino del constructor de un argumento. Marca+ identifica la construcción de ese miembro y Marca- su destrucción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Destino y DestinoListo se imprimen en el cuerpo de dos argumentos. Delegado y DelegadoListo pertenecen al cuerpo que delega. Objeto- pertenece a ~Preparado. Uso se escribe desde main después de completar su declaración, y Captura identifica la recepción de Fallo en el catch exterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "El modo cero permite completar ambos cuerpos. El modo uno lanza desde el destino antes de su última marca. El modo dos deja terminar el destino y lanza después desde el cuerpo que delegó. Fallo conserva el número de la etapa para que el catch pueda mostrarlo. Primero observa el recorrido sin fallo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l1_delegacion_correcta_un_objeto_y_un_miembro",
+          "language": "cpp",
+          "question": "Escribe la traza completa del programa con modo cero.",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{0};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Marca+|Destino|DestinoListo|Delegado|DelegadoListo|Uso:6|Objeto-|Marca-|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "marca_ se construye una vez. El destino completa su cuerpo, después se completa el cuerpo que delega y main puede consultar el valor seis. Al salir del try se ejecuta ~Preparado, que escribe Objeto-, y después se destruye marca_, que escribe Marca-. El catch no se ejecuta y main añade Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si este destino falla, el cuerpo que delega no empieza"
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo uno lanza el constructor de dos argumentos. Ese destino estaba inicializando directamente los miembros y todavía no había terminado. marca_ sí se había construido, así que debe limpiarse; la construcción de Preparado aún no se había completado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Éste es el caso de los constructores que preparan sus partes directamente, como los estudiados con miembros y bases: se destruyen las partes completadas, pero no se ejecuta el cuerpo destructor del objeto cuya construcción no terminó. El cuerpo delegante tampoco se alcanza porque el destino no regresó correctamente (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La excepción llega a un catch compatible exterior. La traza no describe una terminación sin un manejador: observamos la limpieza realizada antes de entrar en ese catch."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l1_destino_directo_que_lanza_antes_de_completarse",
+          "language": "cpp",
+          "question": "Escribe la salida con modo uno, distinguiendo el destructor del miembro del destructor del objeto.",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{1};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Marca+|Destino|Marca-|Captura:1|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se construye marca_ y el destino escribe Destino. Después lanza Fallo{1}, sin alcanzar DestinoListo. No se entra en el cuerpo que delega ni se ejecuta ~Preparado. Sí se destruye marca_, que escribe Marca-. La excepción llega después al catch, que escribe Captura:1, y main termina con Fin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si el destino terminó y falla después el cuerpo que delega, sí se destruye el objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "En modo dos, el constructor destino regresa correctamente después de preparar los miembros y completar su cuerpo. Cuando empieza el cuerpo que delegó, el objeto ya ha sido construido por ese destino. Después ese segundo cuerpo lanza antes de terminar normalmente."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla es distinta: si sale por excepción el cuerpo de este constructor delegante, se ejecuta el destructor del objeto. Después se destruyen sus miembros, como parte de esa destrucción. No hay dos objetos ni dos destructores del objeto por haber intervenido dos cuerpos constructores (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l1_cuerpo_delegante_que_lanza_tras_destino_completo",
+          "language": "cpp",
+          "question": "Escribe la traza para modo dos hasta el catch compatible y el final de main.",
+          "code": "#include <iostream>\n\nstruct Fallo {\n    int etapa;\n};\nclass Marca {\npublic:\n    Marca() { std::cout << \"Marca+|\"; }\n    ~Marca() { std::cout << \"Marca-|\"; }\n};\nclass Preparado {\npublic:\n    Preparado(int valor, int modo) : marca_{}, valor_{valor} {\n        std::cout << \"Destino|\";\n        if (modo == 1) { throw Fallo{1}; }\n        std::cout << \"DestinoListo|\";\n    }\n    explicit Preparado(int modo) : Preparado{6, modo} {\n        std::cout << \"Delegado|\";\n        if (modo == 2) { throw Fallo{2}; }\n        std::cout << \"DelegadoListo|\";\n    }\n    ~Preparado() { std::cout << \"Objeto-|\"; }\n    int valor() const { return valor_; }\nprivate:\n    Marca marca_;\n    int valor_;\n};\nint main() {\n    try {\n        Preparado dato{2};\n        std::cout << \"Uso:\" << dato.valor() << '|';\n    } catch (const Fallo& error) {\n        std::cout << \"Captura:\" << error.etapa << '|';\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Marca+|Destino|DestinoListo|Delegado|Objeto-|Marca-|Captura:2|Fin"
+          ],
+          "outputComparison": "exact",
+          "explanation": "marca_ se prepara y el destino alcanza DestinoListo. El cuerpo delegante escribe Delegado y lanza Fallo{2}. Como el destino ya había construido el objeto, ahora se ejecuta ~Preparado y aparece Objeto-; después se destruye marca_ y aparece Marca-. No se alcanza DelegadoListo ni Uso. Tras esa destrucción se entra en el catch y se imprime Captura:2, seguido de Fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso no basta con decir «si lanza un constructor, nunca se ejecuta el destructor del objeto». Hay que identificar qué constructor estaba trabajando y si el destino ya había completado el objeto. La declaración de dato no termina con éxito en ninguno de los dos fallos, pero el estado alcanzado antes de lanzar es diferente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir varios accesos a una misma comprobación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tramo conserva dos extremos enteros: inicio_ y fin_. Su regla es que fin_ no sea menor que inicio_. Se permiten extremos iguales y también valores negativos: el tramo de menos cuatro a menos uno cumple la regla. Los miembros son const porque esta versión no cambia sus extremos después de construir el objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de dos argumentos ya inicializa ambos miembros y comprueba su orden. Si fin_ es menor que inicio_, lanza std::invalid_argument. Si acepta los datos, escribe Preparado|. Ese mensaje se escribe después de la comprobación; no aparece si la comprobación lanza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa los dos inicializadores de la clase siguiente. Debe haber una única comprobación del orden, en el constructor de dos argumentos. Conserva los miembros, cuerpos y declaraciones que ya están escritos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Constructor con un argumento: recibe fin y construye el tramo desde cero hasta ese valor, utilizando el constructor de dos argumentos. Después ejecuta su propio cuerpo, que escribe DesdeCero|."
+        },
+        {
+          "type": "paragraph",
+          "text": "Constructor sin argumentos: debe utilizar el constructor de un argumento con el valor cero. Después ejecuta su propio cuerpo, que escribe Vacio|. Este recorrido pasa por los tres constructores, en vez de saltar directamente al de dos argumentos."
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "p3_u9l1_construir_dos_vias_de_delegacion",
+          "question": "Completa cada hueco con el inicializador que cumpla el recorrido descrito. El constructor con un argumento debe delegar al de dos argumentos con inicio cero; el constructor sin argumentos debe delegar al de un argumento con fin cero.",
+          "template": "class Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : [] {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : [] {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\n",
+          "answers": [
+            "Tramo(0, fin)",
+            "Tramo(0)"
+          ],
+          "answerAlternatives": [
+            [
+              "Tramo(0, fin)",
+              "Tramo{0, fin}",
+              "::Tramo(0, fin)",
+              "::Tramo{0, fin}"
+            ],
+            [
+              "Tramo(0)",
+              "Tramo{0}",
+              "::Tramo(0)",
+              "::Tramo{0}"
+            ]
+          ],
+          "explanation": "Tramo(0, fin) selecciona el constructor de dos argumentos y deja allí la inicialización y la comprobación del orden. Tramo(0) selecciona el constructor de un argumento; este delega a su vez al de dos. Se inicializa un solo objeto. Al regresar, se ejecuta primero el cuerpo de un argumento y después el cuerpo sin argumentos. También son válidos los inicializadores con llaves que contienen esos mismos argumentos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia: seguir la cadena sin construir objetos adicionales"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\nint main() {\n    {\n        Tramo dato;\n        dato.escribir(std::cout);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La definición Tramo dato; selecciona el constructor sin argumentos. Su inicializador selecciona el de un argumento con fin igual a cero. El inicializador de este último selecciona el de dos argumentos con inicio y fin iguales a cero. Ninguno de esos pasos crea otro Tramo: todos participan en la preparación de dato (ISO/IEC JTC 1/SC 22/WG 21, 2023; Prata, 2012)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el constructor de dos argumentos se inicializan inicio_ y fin_, se comprueba que el orden es válido y se escribe Preparado|. Al terminar ese constructor, se ejecuta el cuerpo de un argumento, que escribe DesdeCero|. Por último se ejecuta el cuerpo sin argumentos, que escribe Vacio|."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de que termine toda la construcción, main llama a escribir y muestra los extremos. Al salir del bloque se destruye dato. Hay una sola llamada a su destructor, aunque hayan intervenido tres cuerpos de constructor (ISO/IEC JTC 1/SC 22/WG 21, 2023)."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Preparado|DesdeCero|Vacio|[0,0]|Retirado|"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar entradas que eligen recorridos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos main utilizan la misma clase Tramo de la referencia. Cada uno sustituye al main anterior; son programas separados. Conservar la misma clase permite observar qué cuerpo se ejecuta al cambiar solamente los argumentos de construcción."
+        },
+        {
+          "type": "heading",
+          "text": "Un límite positivo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    { Tramo dato{6}; dato.escribir(std::cout); }\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Preparado|DesdeCero|[0,6]|Retirado|"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se selecciona el constructor de un argumento. Este delega al de dos con los extremos cero y seis. Se escribe Preparado|, después DesdeCero| y después los extremos. El cuerpo sin argumentos no participa, por eso no aparece Vacio|."
+        },
+        {
+          "type": "heading",
+          "text": "Dos extremos proporcionados directamente"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    { Tramo dato{-3, 2}; dato.escribir(std::cout); }\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "Preparado|[-3,2]|Retirado|"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí se selecciona directamente el constructor de dos argumentos. El orden de menos tres a dos es válido. No se ejecutan los otros dos cuerpos: delegar permite reutilizar un constructor, pero no obliga a pasar por todos los constructores de la clase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el control sin modificar un objeto anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa siguiente conserva la misma clase y sustituye su main. Primero construye anterior con los extremos menos cuatro y menos uno. Después intenta construir otro Tramo con el único argumento menos dos, dentro de try. El manejador catch corresponde a std::invalid_argument y permite continuar si ese intento lanza."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sigue qué constructor recibe menos dos y qué datos proporciona al siguiente. Comprueba dónde está la instrucción que puede lanzar y qué instrucciones quedan sin ejecutar. Después de catch, el programa consulta anterior, que fue construido fuera de ese try y sigue dentro de su propio bloque."
+        },
+        {
+          "type": "output_prediction",
+          "id": "p3_u9l1_conservar_anterior_si_falla_el_destino",
+          "language": "cpp",
+          "question": "¿Qué texto completo escribe este programa? Incluye los separadores | y los extremos entre corchetes.",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nclass Tramo {\npublic:\n    Tramo(int inicio, int fin) : inicio_{inicio}, fin_{fin} {\n        if (fin_ < inicio_) {\n            throw std::invalid_argument(\"orden\");\n        }\n        std::cout << \"Preparado|\";\n    }\n\n    explicit Tramo(int fin) : Tramo(0, fin) {\n        std::cout << \"DesdeCero|\";\n    }\n\n    Tramo() : Tramo(0) {\n        std::cout << \"Vacio|\";\n    }\n\n    ~Tramo() { std::cout << \"Retirado|\"; }\n\n    void escribir(std::ostream& salida) const {\n        salida << '[' << inicio_ << ',' << fin_ << \"]|\";\n    }\n\nprivate:\n    const int inicio_;\n    const int fin_;\n};\nint main() {\n    {\n        Tramo anterior{-4, -1};\n        try {\n            Tramo intento{-2};\n            intento.escribir(std::cout);\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Capturado|\";\n        }\n        anterior.escribir(std::cout);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Preparado|Capturado|[-4,-1]|Retirado|"
+          ],
+          "outputComparison": "exact",
+          "explanation": "anterior se construye directamente con -4 y -1, acepta su orden y escribe Preparado|. El intento de un argumento -2 delega al constructor de dos argumentos con 0 y -2. Como -2 es menor que 0, ese destino lanza antes de escribir Preparado|. No se ejecuta el cuerpo DesdeCero| ni el destructor de intento. catch escribe Capturado|. anterior conserva sus extremos y escribe [-4,-1]|. Al salir de su bloque se destruye ese único objeto completado y aparece Retirado|."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir dónde debe mantenerse una regla común"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "p3_u9l1_mantener_regla_en_destino",
+          "question": "Se añade otra forma de crear Tramo, pero todas las formas deben conservar la regla fin no menor que inicio. ¿Qué organización mantiene una única inicialización y comprobación comunes?",
+          "options": [
+            "Repetir la comprobación sólo en el nuevo constructor y eliminarla del de dos argumentos, aunque este siga siendo público.",
+            "Hacer que el nuevo constructor llegue al constructor de dos argumentos, que conserva la inicialización y la comprobación; añadir en el cuerpo nuevo únicamente las acciones propias de esa forma de crear el objeto.",
+            "Construir un Tramo temporal dentro del cuerpo nuevo y suponer que sus extremos se convierten en los extremos del objeto que se está construyendo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los argumentos que aporte la nueva forma se comprueban al llegar al constructor común. Mantener público el de dos argumentos exige que ese mismo acceso también conserve la regla. Un temporal construido en un cuerpo sería otro objeto; no inicializaría por delegación los miembros const del objeto actual. El cuerpo que delega puede realizar acciones adicionales después del destino, pero no añadir otro inicializador de miembro a la misma lista."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "035b16349c30dd881c1d8ffd6bdaff728041d9103d3ab2ca2b593dbcc97220cc"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "0fc4172bbd3dab4fb54d65c47db52880b96897ca25435f2ba841956029c8088e"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "b1be9e7dbaca865865327c081f9d698e4f0b9034156da626b435af7fbfa3b6ce"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "f91aaa551c954245b16196f0996efc396812b100a284c8ee63c3531e8b6c6578"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "26f4c7fbc9dc89ee5ee5fc0f2feeb07706037a16f80dc1007d9c41e3aa9953ad"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "05562e3d502dcfc80db73b661795c958e1fdb576811e42cc0785871f2409fed1"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "eb287157db894460ba62da885f8a3e04b495d9ae94b4c6a03b7c4116955c3715"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "bd285671dadda6d841dbe04b173b9cc6a4c1ce058638f27059ffcb5950d4f545"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "69ea7bf850cff3986deea377f14a7f940b69ea24ee823cf85f6200e145e0ec58"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1fbc94699437bca89817f56402e440631e7e51d688110c76d708d5d30dbe176d"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "64ba7c2a7a138af5b89e411307ef6322485913e960eba307ba107e885870e711"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "cd88dd031f3a8cf35cb71f855636d1122c65a0ad784e2adf46fab71c72bd8097"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0007",
+            "sha256": "787727f474a9b828589773da40aa0e6e97f434cb7ca3884138ead21b7cc1e6fc"
+          },
+          {
+            "id": "block_0009_0008",
+            "sha256": "a3593b6dba795a7fcaf4dfe0b6a9e59f8033a714c48d432398779b8d3798b7e4"
+          },
+          {
+            "id": "block_0009_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "487b07954a2f8ed74a047233e68629bfbfaf8eca064f58113f12058e1891c824"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "7468a48d1123c067bb05a947c7021c7245769552a36b9ab3f05176301cbc5912"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006",
+          "block_0009_0007",
+          "block_0009_0008",
+          "block_0009_0009"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "28c64825b4f7f563545a952f7b61c1d31965d01cf22212e820ca7f2a66545120",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "035b16349c30dd881c1d8ffd6bdaff728041d9103d3ab2ca2b593dbcc97220cc"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "0fc4172bbd3dab4fb54d65c47db52880b96897ca25435f2ba841956029c8088e"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "b1be9e7dbaca865865327c081f9d698e4f0b9034156da626b435af7fbfa3b6ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "f91aaa551c954245b16196f0996efc396812b100a284c8ee63c3531e8b6c6578"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "26f4c7fbc9dc89ee5ee5fc0f2feeb07706037a16f80dc1007d9c41e3aa9953ad"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "05562e3d502dcfc80db73b661795c958e1fdb576811e42cc0785871f2409fed1"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "eb287157db894460ba62da885f8a3e04b495d9ae94b4c6a03b7c4116955c3715"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "bd285671dadda6d841dbe04b173b9cc6a4c1ce058638f27059ffcb5950d4f545"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "69ea7bf850cff3986deea377f14a7f940b69ea24ee823cf85f6200e145e0ec58"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1fbc94699437bca89817f56402e440631e7e51d688110c76d708d5d30dbe176d"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "64ba7c2a7a138af5b89e411307ef6322485913e960eba307ba107e885870e711"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "cd88dd031f3a8cf35cb71f855636d1122c65a0ad784e2adf46fab71c72bd8097"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "787727f474a9b828589773da40aa0e6e97f434cb7ca3884138ead21b7cc1e6fc"
+              },
+              {
+                "id": "block_0009_0008",
+                "sha256": "a3593b6dba795a7fcaf4dfe0b6a9e59f8033a714c48d432398779b8d3798b7e4"
+              },
+              {
+                "id": "block_0009_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "487b07954a2f8ed74a047233e68629bfbfaf8eca064f58113f12058e1891c824"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "7468a48d1123c067bb05a947c7021c7245769552a36b9ab3f05176301cbc5912"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
