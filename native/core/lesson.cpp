@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/named_rule_battery_check.hpp"
 
 #include <algorithm>
 #include <set>
@@ -428,6 +429,12 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
                 token(item.function);token(std::to_string(item.input));
                 token(std::to_string(item.expected));
             }
+            // Absence adds no bytes to the legacy objective. The explicit
+            // battery requirement creates a new receipt scope while keeping
+            // the same owner, drafts and historical achievements.
+            if(contract.execution_probe->battery_check)
+                token(named_rule_battery_spec_frame(
+                    *contract.execution_probe->battery_check));
         }
     }
     if(activity.open_battery_probe) {

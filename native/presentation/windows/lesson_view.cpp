@@ -4198,7 +4198,9 @@ struct LessonView {
                     block(index),running_program);
                 const bool independent=(!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
-                    fresh.named_rule_probe_correct)&&
+                    (fresh.named_rule_probe_correct&&
+                     (!block(index).named_rule_source_check->execution_probe->battery_check||
+                      fresh.named_rule_battery_correct)))&&
                     (!block(index).open_battery_probe||
                      fresh.open_battery_probe_correct)&&
                     (!block(index).boolean_battery_probe||
@@ -4225,7 +4227,13 @@ struct LessonView {
                         "La batería no acreditó los casos originales y el caso nuevo mediante ejecuciones independientes. Comprueba las llamadas, los resultados esperados y que ningún fallo detenga los casos posteriores.",
                         "The test battery did not prove the original and new case using independent executions. Check calls, expected results, and that failures never skip later cases.",
                         "La batterie ne prouve pas les cas originaux et le nouveau cas par des exécutions indépendantes. Vérifiez les appels, les résultats attendus et tous les cas suivants.");
-                if(!independent&&preserved_source&&!block(index).open_battery_probe&&
+                const bool named_battery_pending=block(index).named_rule_source_check&&
+                    block(index).named_rule_source_check->execution_probe&&
+                    block(index).named_rule_source_check->execution_probe->battery_check&&
+                    fresh.named_rule_probe_correct&&!fresh.named_rule_battery_correct;
+                if(named_battery_pending&&preserved_source)
+                    text+='\n'+fresh.named_rule_battery_feedback;
+                if(!independent&&!named_battery_pending&&preserved_source&&!block(index).open_battery_probe&&
                    !block(index).boolean_battery_probe&&!block(index).reduction_probe&&
                    !block(index).integer_battery_probe&&!block(index).adjustment_project_probe)
                     text+='\n'+ui(

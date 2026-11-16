@@ -1,4 +1,5 @@
 #include "core/named_rule_check.hpp"
+#include "core/named_rule_battery_check.hpp"
 #include <array>
 #include <iostream>
 #include <stdexcept>
@@ -1268,10 +1269,255 @@ int main() {return 0;}
     if(!named_rule_single_file_probe_source(single,prose_only))
         throw std::runtime_error("A comment or string disabled the independent probe");
 }
+
+void named_battery_require(bool condition, std::string_view message) {
+    if(!condition) throw std::runtime_error(std::string(message));
+}
+lgaed::curriculum::NamedRuleBatterySpec named_battery_example() {
+    return {"", {{"precio_total",0,0},{"precio_total",5,35},
+        {"alcanza_minimo",0,0},{"alcanza_minimo",5,1}}, 1};
+}
+std::string named_battery_source() {
+    return R"cpp(#include <iostream>
+int precio_total(int articulos) {
+    const int precio_creditos{7};
+    return articulos * precio_creditos;
+}
+bool alcanza_minimo(int articulos) {
+    const int minimo_articulos{5};
+    return articulos >= minimo_articulos;
+}
+int main() {
+    bool correcto=true;
+    for(const int articulos : {0,5}) {
+        const int total=precio_total(articulos);
+        const bool minimo=alcanza_minimo(articulos);
+        const bool coincide=total==(articulos==0?0:35) && minimo==(articulos==5);
+        std::cout<<articulos<<" "<<total<<" "<<minimo<<" "<<coincide<<"\n";
+        if(!coincide)correcto=false;
+    }
+    return correcto?0:1;
+}
+)cpp";
+}
+void real_battery_contract_and_sources() {
+    using namespace lgaed::curriculum;
+    const auto spec=named_battery_example();
+    const auto source=named_battery_source();
+    const auto require=named_battery_require;
+    require(named_rule_battery_spec_valid(spec),"Valid mixed int/bool battery contract");
+    require(named_rule_battery_source_valid(source,spec),"Valid single-file battery source");
+    require(named_rule_battery_driver_valid(source),"The real main remains a valid driver");
+    const auto plan=named_rule_battery_plan(spec);
+    require(plan && plan->size()==5 && !plan->front().target &&
+        plan->back().target==3,"Baseline plus one independent mutation per required call");
+    for(std::size_t i=0;i<spec.cases.size();++i)
+        require((*plan)[i+1].mutation==NamedRuleBatteryMutation::mutate &&
+            (*plan)[i+1].target==i,"Each mutation names exactly its authored case");
+
+    auto invalid=spec;
+    invalid.cases.push_back(spec.cases.front());
+    require(!named_rule_battery_spec_valid(invalid),"Duplicate function/input contract rejected");
+    invalid=spec;invalid.cases.clear();
+    require(!named_rule_battery_spec_valid(invalid),"Empty contract rejected");
+    invalid=spec;invalid.failure_exit_code=0;
+    require(!named_rule_battery_spec_valid(invalid),"Success cannot be the failure policy");
+    invalid=spec;invalid.source_path="../library.cpp";
+    require(!named_rule_battery_spec_valid(invalid),"Traversal path rejected");
+    invalid=spec;invalid.cases[0].function="x); forged(";
+    require(!named_rule_battery_spec_valid(invalid),"Injected identifier rejected");
+    invalid=spec;invalid.cases[0].function="main";
+    require(!named_rule_battery_spec_valid(invalid),"main is never the instrumented function");
+    invalid=spec;invalid.cases[2].expected=2;
+    require(named_rule_battery_spec_valid(invalid) &&
+        !named_rule_battery_source_valid(source,invalid),"Boolean result requires zero or one");
+    invalid=spec;
+    for(int i=0;i<33;++i)invalid.cases.push_back({"precio_total",100+i,700+7*i});
+    require(!named_rule_battery_spec_valid(invalid),"Mutation work is bounded to 32 cases");
+
+    const auto frame=named_rule_battery_spec_frame(spec);
+    invalid=spec;invalid.cases[0].expected=1;
+    require(named_rule_battery_spec_frame(invalid)!=frame,"Expected result belongs to objective identity");
+    invalid=spec;invalid.failure_exit_code=2;
+    require(named_rule_battery_spec_frame(invalid)!=frame,"Failure policy belongs to objective identity");
+    invalid=spec;invalid.source_path="library.cpp";
+    require(named_rule_battery_spec_frame(invalid)!=frame,"Reviewed source path belongs to objective identity");
+    require(!named_rule_battery_source_valid(source,invalid),"CMake library cannot contain main");
+    const auto main=source.substr(source.find("int main()"));
+    const auto library=source.substr(0,source.find("int main()"));
+    require(named_rule_battery_source_valid(library,invalid),"CMake source validates without the driver");
+    require(!named_rule_battery_source_valid(library,spec),"Single-file source needs its own main");
+    require(named_rule_battery_instrument_driver(main,invalid).has_value(),
+        "CMake instrumentation preserves the submitted driver");
+    require(!named_rule_battery_instrument_driver(source,spec),
+        "Raw single-file source cannot skip the source instrumentation step");
+
+    const auto replace=[&](std::string from,std::string to) {
+        auto changed=source;const auto at=changed.find(from);
+        require(at!=std::string::npos,"Source fixture fragment missing");
+        changed.replace(at,from.size(),to);return changed;
+    };
+    require(named_rule_battery_source_valid(
+        "int precio_total(int cantidad);\nbool alcanza_minimo(int numero);\n"+source,spec),
+        "Forward declarations can name the same int parameter differently");
+    for(const auto& bad : std::vector<std::string>{
+        replace("int precio_total(int articulos)","long precio_total(int articulos)"),
+        replace("int precio_total(int articulos)","int precio_total(int& articulos)"),
+        replace("int precio_total(int articulos)","static int precio_total(int articulos)"),
+        replace("int precio_total(int articulos)","constexpr int precio_total(int articulos)"),
+        replace("int precio_total(int articulos)","int precio_total(int articulos) noexcept"),
+        replace("int main() {","int main() noexcept {"),
+        source+"\nint precio_total(long articulos) { return 0; }\n",
+        source+"\nint main(int argc,char** argv) { return 0; }\n",
+        replace("int main() {","int main() {\n#include <cstdio>\n"),
+        "#define activo 1\n"+source,
+        "/* comentario */ #if 0\n"+source+"\n#endif\n",
+        source+"\nint entorno=__LINE__;\n",
+        source+"\nvoid final() { auto cierre=&std::exit; cierre(0); }\n",
+        source+"\nint lgaed_named_rule_battery_count=0;\n",
+        source+"\nint lgaed_boolean_battery_count=0;\n",
+        source+"\nint lgaed_integer_battery_count=0;\n",
+        source+"\nconst char* testigo=\"LGAED_NAMED_RULE_BATTERY_END\";\n",
+        replace("return articulos * precio_creditos;","(void)__func__; return articulos * precio_creditos;")})
+        require(!named_rule_battery_source_valid(bad,spec),"Unsupported or forged source rejected");
+    require(!named_rule_battery_driver_valid("int main() {\n#include <cstdio>\nreturn 0; }\n"),
+        "Nested include also rejected in a raw CMake driver");
+    require(!named_rule_battery_driver_valid("int main() noexcept { return 0; }\n"),
+        "Driver main grammar matches the source validator");
+    require(named_rule_battery_source_valid(source+
+        "\n// __LINE__, exit(0), lgaed_named_rule_battery_ are only prose.\n"
+        "const char* comentario=\"__func__ __FUNCTION__ exit(0)\";\n",spec),
+        "Ordinary prose is not mistaken for executable environment queries");
+
+    for(const auto& phase:*plan) {
+        const auto instrumented=named_rule_battery_instrument_source(source,spec,phase);
+        require(instrumented.has_value(),"Mixed int/bool source instrumentation failed");
+        require(instrumented->find(main)!=std::string::npos,
+            "Instrumentation must retain the complete real main");
+        require(instrumented->find("const int precio_creditos{7};")!=std::string::npos &&
+            instrumented->find("return articulos >= minimo_articulos;")!=std::string::npos,
+            "Instrumentation must retain the original function bodies");
+        require(named_rule_battery_instrument_driver(*instrumented,spec).has_value(),
+            "Single-file driver witness composes after source instrumentation");
+    }
+    require(!named_rule_battery_instrument_source(source,spec,
+        {NamedRuleBatteryMutation::mutate,99}),"An undeclared mutation is never generated");
+    require(!named_rule_battery_instrument_source(source,spec,
+        {NamedRuleBatteryMutation::baseline,0}),"Baseline cannot select a mutant target");
+
+    // Functional probes can intentionally include an input outside the battery.
+    NamedRuleExecutionProbe probe{"","",{{"precio_total",11,77}}};
+    probe.battery_check=spec;
+    require(named_rule_probe_checks(probe).has_value() &&
+        probe.battery_check->cases.size()==4 && probe.cases.size()==1,
+        "Private function probes and the student's required calls remain separate");
+}
+std::vector<lgaed::curriculum::NamedRuleBatteryRun> named_battery_evidence() {
+    using namespace lgaed::curriculum;
+    const auto spec=named_battery_example();
+    const auto plan=*named_rule_battery_plan(spec);
+    const std::array changed{1,0,1,0};
+    std::vector<NamedRuleBatteryRun> runs;
+    for(std::size_t r=0;r<plan.size();++r) {
+        NamedRuleBatteryRun run;
+        run.program_frame="original-project-and-objective";
+        run.compiled=run.executed=run.completed_normally=true;
+        run.exit_code=r==0?0:1;run.phase=plan[r];
+        for(std::size_t c=0;c<spec.cases.size();++c) {
+            const auto& item=spec.cases[c];
+            const int result=r==c+1?changed[c]:item.expected;
+            run.calls.push_back({item.function,item.input,result});
+            run.stdout_bytes+=item.function+" "+std::to_string(item.input)+" "+
+                std::to_string(item.expected)+" "+std::to_string(result)+"\n";
+        }
+        run.stdout_bytes+=r==0?"Bateria: OK\n":"Bateria: FALLO\n";
+        runs.push_back(std::move(run));
+    }
+    return runs;
+}
+void real_battery_traces_and_verdicts() {
+    using namespace lgaed::curriculum;
+    const auto require=named_battery_require;
+    const std::string prefix="LGAED_NAMED_RULE_BATTERY_";
+    const auto parsed=named_rule_battery_parse_trace(
+        "aviso="+prefix+"CALL:0,precio_total,5,35\r\n"
+        "continua\n"+prefix+"CALL:1,alcanza_minimo,5,1\n"+prefix+"END\r\n");
+    require(parsed && parsed->completed_normally && parsed->calls.size()==2 &&
+        parsed->visible=="aviso=continua\n" &&
+        parsed->calls[0]==NamedRuleBatteryObservation{"precio_total",5,35},
+        "Trace extraction preserves partial student stderr and both line endings");
+    for(const auto& malformed:std::vector<std::string>{
+        prefix+"CALL:1,precio_total,0,0\n",
+        prefix+"CALL:0,precio_total,0,0,extra\n",
+        prefix+"CALL:0,precio_total,2147483648,0\n",
+        prefix+"CALL:0,precio_total,0,0",
+        prefix+"FORGED\n",
+        prefix+"END\n"+prefix+"END\n",
+        prefix+"END\n"+prefix+"CALL:0,precio_total,0,0\n"})
+        require(!named_rule_battery_parse_trace(malformed),"Malformed or duplicate private trace rejected");
+    const auto interrupted=named_rule_battery_parse_trace(prefix+"CALL:0,precio_total,0,0\n");
+    require(interrupted && !interrupted->completed_normally,
+        "A partial trace cannot fabricate normal completion");
+    require(!named_rule_battery_parse_trace(std::string("visible\0hidden",14)),
+        "NUL in a trace is not silently ignored");
+    require(!named_rule_battery_parse_trace(std::string(4*1024*1024+1,'x')),
+        "Trace input has a finite byte limit");
+
+    const auto spec=named_battery_example();
+    const auto good=named_battery_evidence();
+    const auto verify=[&](const auto& runs) {
+        return named_rule_battery_verify(spec,runs,"original-project-and-objective").accepted;
+    };
+    require(verify(good),"A complete real battery detects every independent mutant");
+    auto reverse=good;
+    for(auto& run:reverse)std::ranges::reverse(run.calls);
+    require(verify(reverse),"Call coverage is independent of case declaration order");
+
+    auto broken=good;broken.pop_back();
+    require(!verify(broken),"Every declared mutation requires its own run");
+    broken=good;broken[1].program_frame="previous-revision";
+    require(!verify(broken),"Evidence from a different source revision is rejected");
+    broken=good;broken[1].phase=broken[2].phase;
+    require(!verify(broken),"A result cannot be credited to a different mutant");
+    broken=good;broken[1].compiled=false;
+    require(!verify(broken),"Compilation failure is not a detected comparison failure");
+    broken=good;broken[1].executed=false;
+    require(!verify(broken),"Missing execution is not a comparison result");
+    broken=good;broken[1].completed_normally=false;
+    require(!verify(broken),"Timeout or abnormal completion cannot kill a mutant");
+    broken=good;broken[0].calls[0].result=12;
+    require(!verify(broken),"The public baseline must calculate each authored value");
+    broken=good;broken[1].calls[0].result=0;
+    require(!verify(broken),"A mutant trace must contain its actual altered value");
+    broken=good;broken[1].calls.pop_back();
+    require(!verify(broken),"Stopping after the first failure omits a required call");
+    broken=good;broken[1].calls[1]=broken[1].calls[0];
+    require(!verify(broken),"A repeated function call cannot replace another case");
+    broken=good;broken[1].calls.push_back(broken[1].calls[0]);
+    require(!verify(broken),"Computing an expected value by another call is detected");
+    broken=good;broken[1].calls[0].input=19;
+    require(!verify(broken),"A private probe input cannot replace a battery case");
+    broken=good;broken[1].exit_code=0;
+    require(!verify(broken),"Self-comparison or an unconditional success must fail a mutant");
+    broken=good;broken[1].exit_code=2;
+    require(!verify(broken),"Failure exit must follow its authored policy");
+    broken=good;broken[1].stdout_bytes=broken[0].stdout_bytes;
+    require(!verify(broken),"Fixed stdout cannot report the actual discrepancy");
+    broken=good;broken[2].stdout_bytes=broken[1].stdout_bytes;
+    require(!verify(broken),"A shared fixed failure report does not identify different cases");
+    broken=good;broken[1].stdout_bytes.clear();
+    require(!verify(broken),"A failure needs a visible diagnostic");
+    require(named_rule_battery_detail::changed(std::numeric_limits<int>::min())==0 &&
+        named_rule_battery_detail::changed(std::numeric_limits<int>::max())==0 &&
+        named_rule_battery_detail::changed(0)==1,
+        "Mutations never overflow and remain representable as bool or int");
+}
+
 int main() {
     try {
         capacity();separate_rules();price_and_minimum();
         comment_only_header_changes();independently_generated_probe();
+        real_battery_contract_and_sources();real_battery_traces_and_verdicts();
         std::cout<<"PASS local named rules: roles, values, uses and rejected shortcuts\n";
         return 0;
     }catch(const std::exception& e){

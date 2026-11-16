@@ -469,6 +469,9 @@ struct FreshExecution {
     bool adjustment_project_probe_correct = false;
     std::string adjustment_project_probe_feedback;
     std::string adjustment_project_request_fingerprint;
+    bool named_rule_battery_correct = false;
+    std::string named_rule_battery_feedback;
+    std::string named_rule_battery_request_fingerprint;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {

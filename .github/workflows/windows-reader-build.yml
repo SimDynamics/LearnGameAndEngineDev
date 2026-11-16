@@ -27,6 +27,7 @@ on:
       - scripts/curriculum/test_open_battery_contract.py
       - scripts/curriculum/test_reduction_contract.py
       - scripts/curriculum/test_integer_battery_contract.py
+      - scripts/curriculum/test_named_rule_checks.py
       - scripts/curriculum/retirement_fixture_source.py
       - scripts/curriculum/diagnostic_fixture_source.py
       - scripts/curriculum/test_general_choice_editorial.py
@@ -75,6 +76,8 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_reduction_contract.py -v
       - name: Verify integer batteries and earlier client preservation
         run: python -B -m unittest discover -s scripts/curriculum -p test_integer_battery_contract.py -v
+      - name: Verify named-rule battery contracts and legacy compatibility
+        run: python -B -m unittest discover -s scripts/curriculum -p test_named_rule_checks.py -v
       - name: Compile readers and execute catalog and actual Win32 regressions
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
       - name: Preserve configure and compilation results

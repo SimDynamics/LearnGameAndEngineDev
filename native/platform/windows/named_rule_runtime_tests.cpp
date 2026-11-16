@@ -65,9 +65,21 @@ void authored_root_roundtrip(const Lesson& original) {
                     {"function":"cajas_para","input":19,"expected":4},
                     {"function":"cajas_para","input":20,"expected":4},
                     {"function":"llega_a_tiempo","input":4,"expected":1},
-                    {"function":"llega_a_tiempo","input":5,"expected":0}]},
+                    {"function":"llega_a_tiempo","input":5,"expected":0}],
+           "batteryCheck":{"cases":[{"function":"cajas_para","input":0,"expected":0},
+                       {"function":"cajas_para","input":4,"expected":1},
+                       {"function":"cajas_para","input":8,"expected":2},
+                       {"function":"cajas_para","input":20,"expected":4},
+                       {"function":"cajas_para","input":1,"expected":1},
+                       {"function":"cajas_para","input":5,"expected":1},
+                       {"function":"cajas_para","input":17,"expected":3},
+                       {"function":"cajas_para","input":6,"expected":1},
+                       {"function":"cajas_para","input":7,"expected":2},
+                       {"function":"llega_a_tiempo","input":4,"expected":1},
+                       {"function":"llega_a_tiempo","input":5,"expected":0}],
+             "failureExitCode":1}},
          "rules":[{"function":"cajas_para","value":6,
-                   "purposeWords":["capacidad","plaza","cupo"],"minUses":2},
+                   "purposeWords":["capacidad","plaza","cupo","caja"],"minUses":2},
                   {"function":"llega_a_tiempo","value":4,
                    "purposeWords":["plazo","dias","tiempo"],"minUses":1}]},
         {"activity":"block_0007_0004","path":"",
@@ -75,9 +87,20 @@ void authored_root_roundtrip(const Lesson& original) {
            "cases":[{"function":"precio_total","input":11,"expected":77},
                     {"function":"precio_total","input":5,"expected":35},
                     {"function":"alcanza_minimo","input":4,"expected":0},
-                    {"function":"alcanza_minimo","input":5,"expected":1}]},
+                    {"function":"alcanza_minimo","input":5,"expected":1}],
+           "batteryCheck":{"cases":[{"function":"precio_total","input":0,"expected":0},
+                       {"function":"precio_total","input":4,"expected":28},
+                       {"function":"precio_total","input":5,"expected":35},
+                       {"function":"precio_total","input":6,"expected":42},
+                       {"function":"precio_total","input":10,"expected":70},
+                       {"function":"alcanza_minimo","input":0,"expected":0},
+                       {"function":"alcanza_minimo","input":4,"expected":0},
+                       {"function":"alcanza_minimo","input":5,"expected":1},
+                       {"function":"alcanza_minimo","input":6,"expected":1},
+                       {"function":"alcanza_minimo","input":10,"expected":1}],
+             "failureExitCode":1}},
          "rules":[{"function":"precio_total","value":7,
-                   "purposeWords":["precio","costo","tarifa"],"minUses":1},
+                   "purposeWords":["precio","costo","tarifa","credito"],"minUses":1},
                   {"function":"alcanza_minimo","value":5,
                    "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]},
         {"activity":"block_0008_0007","path":"",
@@ -85,9 +108,20 @@ void authored_root_roundtrip(const Lesson& original) {
            "cases":[{"function":"precio_total","input":11,"expected":77},
                     {"function":"precio_total","input":5,"expected":35},
                     {"function":"alcanza_minimo","input":4,"expected":0},
-                    {"function":"alcanza_minimo","input":5,"expected":1}]},
+                    {"function":"alcanza_minimo","input":5,"expected":1}],
+           "batteryCheck":{"cases":[{"function":"precio_total","input":0,"expected":0},
+                       {"function":"precio_total","input":4,"expected":28},
+                       {"function":"precio_total","input":5,"expected":35},
+                       {"function":"precio_total","input":6,"expected":42},
+                       {"function":"precio_total","input":10,"expected":70},
+                       {"function":"alcanza_minimo","input":0,"expected":0},
+                       {"function":"alcanza_minimo","input":4,"expected":0},
+                       {"function":"alcanza_minimo","input":5,"expected":1},
+                       {"function":"alcanza_minimo","input":6,"expected":1},
+                       {"function":"alcanza_minimo","input":10,"expected":1}],
+             "failureExitCode":1}},
          "rules":[{"function":"precio_total","value":7,
-                   "purposeWords":["precio","costo","tarifa"],"minUses":1},
+                   "purposeWords":["precio","costo","tarifa","credito"],"minUses":1},
                   {"function":"alcanza_minimo","value":5,
                    "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]}
     ])json";
@@ -843,6 +877,307 @@ bool llega_a_tiempo(int dias) {
     std::cout<<"PASS original U3 CMake: forged matching stdout rejected by independent function tests\n";
 }
 
+
+Block named_battery_owner(const Lesson& lesson,std::size_t page,std::size_t index) {
+    auto owner=lesson.pages.at(page).blocks.at(index);
+    require(owner.output_check&&owner.output_check->cases.size()==1,
+        "The authentic named-rule battery no longer has one authored case");
+    if(owner.cmake) {
+        require(owner.stable_id=="block_0005_0006",
+            "The named CMake battery owner changed");
+        owner.named_rule_source_check=NamedRuleSourceCheck{
+            "componente/src/cajas.cpp",{
+                {"cajas_para",6,{"capacidad","plaza","cupo","caja"},2},
+                {"llega_a_tiempo",4,{"plazo","tiempo","dias"},1}}};
+        owner.named_rule_source_check->editable_paths={
+            "componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"};
+        owner.named_rule_source_check->comment_only_paths={
+            "componente/publico/envio/cajas.h"};
+        owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+            "pruebas/cajas_casos.cpp","envio/cajas.h",{
+                {"cajas_para",0,0},{"cajas_para",6,1},{"cajas_para",7,2},
+                {"cajas_para",19,4},{"cajas_para",20,4},
+                {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}}};
+        owner.named_rule_source_check->execution_probe->battery_check=
+            NamedRuleBatterySpec{"componente/src/cajas.cpp",{
+                {"cajas_para",0,0},{"cajas_para",4,1},{"cajas_para",8,2},
+                {"cajas_para",20,4},{"cajas_para",1,1},{"cajas_para",5,1},
+                {"cajas_para",17,3},{"cajas_para",6,1},{"cajas_para",7,2},
+                {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}},1};
+    }else{
+        require((owner.stable_id=="block_0007_0004"||
+                 owner.stable_id=="block_0008_0007")&&owner.project_files.empty(),
+            "The authentic single-file battery owner changed");
+        owner.named_rule_source_check=NamedRuleSourceCheck{"",{
+            {"precio_total",7,{"precio","costo","tarifa","credito"},1},
+            {"alcanza_minimo",5,{"minimo","cantidad","umbral"},1}}};
+        owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+            "","",{{"precio_total",11,77},{"precio_total",5,35},
+                   {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}};
+        owner.named_rule_source_check->execution_probe->battery_check=
+            NamedRuleBatterySpec{"",{
+                {"precio_total",0,0},{"precio_total",4,28},
+                {"precio_total",5,35},{"precio_total",6,42},{"precio_total",10,70},
+                {"alcanza_minimo",0,0},{"alcanza_minimo",4,0},
+                {"alcanza_minimo",5,1},{"alcanza_minimo",6,1},
+                {"alcanza_minimo",10,1}},1};
+    }
+    return owner;
+}
+CppRunRequest named_battery_reference(const Lesson& lesson,const Block& owner,
+        const std::filesystem::path& projects,std::size_t ordinal) {
+    auto request=request_of(owner);
+    request.request_id=1400+ordinal*10;
+    request.revision=700+ordinal*10;
+    request.projects_directory=projects;
+    request.project_key=draft_key("programming",lesson,owner)+"/battery";
+    request.compile_timeout=std::chrono::seconds(120);
+    request.execution_timeout=std::chrono::seconds(8);
+    if(owner.cmake) {
+        // These are the actual published reference functions and complete
+        // eleven-comparison checker, not reconstructed passing transcripts.
+        const auto& functions=lesson.pages.at(6).blocks.at(1);
+        const auto& battery=lesson.pages.at(6).blocks.at(3);
+        require(functions.type==BlockType::code&&battery.type==BlockType::code&&
+            !functions.code.empty()&&!battery.code.empty(),
+            "The original CMake reference functions or battery are missing");
+        change_project(request,"componente/src/cajas.cpp",functions.code);
+        change_project(request,"pruebas/cajas_casos.cpp",battery.code);
+        for(auto& file:request.project_files)
+            if(file.first=="componente/publico/envio/cajas.h")
+                file.second=replace_unique(std::move(file.second),
+                    "cajas de 4 plazas","cajas de 6 plazas");
+    }else{
+        const auto& reference=lesson.pages.at(8).blocks.at(1);
+        require(reference.type==BlockType::code&&!reference.code.empty(),
+            "The complete published price/minimum reference is missing");
+        request.source_utf8=reference.code;
+    }
+    require(compiler_runtime_request_allowed(owner,request),
+        "The complete original reference was rejected by the authored battery requirement");
+    return request;
+}
+CppRunResult execute_named_battery(const Block& owner,const CppRunRequest& request) {
+    const auto result=run_cpp(request);
+    require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+        result.execution.succeeded(),
+        "The named-rule battery control did not compile and run: "+result.error_utf8+
+        result.compilation.stderr_bytes+result.execution.stderr_bytes);
+    const auto captured=capture_cpp_execution(request,result);
+    require(captured.named_rule_probe_correct&&
+        evaluate_cpp_output_check(*owner.output_check,captured,request.revision).verdict==
+            OutputVerdict::correct,
+        "The battery control did not isolate correct functions and identical public output");
+    return result;
+}
+void actual_named_batteries(const Lesson& lesson,const std::filesystem::path& projects) {
+    std::optional<CppRunResult> previous_single;
+    std::size_t ordinal=0;
+    for(const auto [page,index]:{
+            std::pair<std::size_t,std::size_t>{5,6},{7,4},{8,7}}) {
+        const auto owner=named_battery_owner(lesson,page,index);
+        const auto passing=named_battery_reference(lesson,owner,projects,ordinal++);
+        const auto real=execute_named_battery(owner,passing);
+        const auto fresh=capture_cpp_execution(passing,real);
+        require(fresh.named_rule_battery_correct&&real.named_rule_battery_evidence&&
+            real.named_rule_battery_evidence->runs.size()==
+                passing.named_rule_probe->battery_check->cases.size()+1&&
+            fresh.named_rule_battery_request_fingerprint==
+                cpp_named_rule_battery_request_fingerprint(passing),
+            "The genuine complete reference did not prove its preserved battery: "+
+                fresh.named_rule_battery_feedback);
+
+        // The previous independent driver proves only the functions. Correct
+        // functions plus a fixed transcript must still fail this new objective.
+        auto fixed=passing;
+        ++fixed.request_id;++fixed.revision;
+        fixed.project_key+="/fixed";
+        const auto transcript=owner.output_check->cases.front().outputs.front();
+        const auto fixed_main="int main(){std::cout << R\"LGAED("+transcript+
+            ")LGAED\";return 0;}\n";
+        if(fixed.cmake) {
+            change_project(fixed,"pruebas/cajas_casos.cpp",
+                "#include <iostream>\n"+fixed_main);
+        }else{
+            const auto main=fixed.source_utf8.find("int main()");
+            require(main!=fixed.source_utf8.npos,
+                "The published reference main is unavailable");
+            fixed.source_utf8.resize(main);
+            fixed.source_utf8+=fixed_main;
+        }
+        require(compiler_runtime_request_allowed(owner,fixed),
+            "The fixed-output regression did not reach execution of the preserved functions");
+        const auto fake=execute_named_battery(owner,fixed);
+        const auto fake_capture=capture_cpp_execution(fixed,fake);
+        require(!fake_capture.named_rule_battery_correct&&
+            !fake_capture.named_rule_battery_feedback.empty(),
+            "Correct functions plus a fixed battery transcript earned battery evidence");
+
+        // Omission/duplicate-call/phase matrices are covered by the portable
+        // verifier. These two controls additionally exercise instrumentation,
+        // the real compiler and the Windows completion gate in both formats.
+        if(page==5||page==7) {
+            auto defective=passing;
+            defective.request_id+=2;defective.revision+=2;
+            defective.project_key+="/defective";
+            if(defective.cmake) {
+                for(auto& file:defective.project_files)
+                    if(file.first=="pruebas/cajas_casos.cpp")
+                        file.second=replace_unique(std::move(file.second),
+                            "comprobar(5, 1)","comprobar(5, cajas_para(5))");
+            }else{
+                for(const auto& call:{"comprobar(0, 0, false)",
+                        "comprobar(4, 28, false)","comprobar(5, 35, true)",
+                        "comprobar(6, 42, true)","comprobar(10, 70, true)"}) {
+                    const auto old="    if (!"+std::string(call)+") { correcto = false; }";
+                    const auto replacement="    correcto = correcto && "+std::string(call)+";";
+                    defective.source_utf8=replace_unique(
+                        std::move(defective.source_utf8),old,replacement);
+                }
+            }
+            require(compiler_runtime_request_allowed(owner,defective),
+                "The defective battery control was rejected before actual observation");
+            const auto observed=execute_named_battery(owner,defective);
+            const auto rejected=capture_cpp_execution(defective,observed);
+            require(!rejected.named_rule_battery_correct,
+                defective.cmake?
+                    "A self-referential expected value proved an independent comparison":
+                    "A short-circuiting checker proved all comparisons after a failure");
+            state::StateData empty;
+            state::prepare_lesson_state(empty,lesson);
+            require(!record_compiler_puzzle_case(empty,lesson,owner,defective,rejected,
+                    "defective battery")&&!compiler_puzzle_completed(empty,lesson,owner),
+                "An observed defective battery earned a native completion receipt");
+        }
+
+        // Binding controls reuse real observations; they do not recompile an
+        // unchanged reference merely to alter a fingerprint, request or channel.
+        auto other=passing;
+        if(other.cmake) {
+            for(auto& file:other.project_files)
+                if(file.first=="pruebas/cajas_casos.cpp")file.second+="\n// other source\n";
+        }else other.source_utf8+="\n// other source\n";
+        require(!capture_cpp_execution(other,real).named_rule_battery_correct,
+            "Battery evidence from different submitted source was accepted");
+        other=passing;++other.revision;
+        require(!capture_cpp_execution(other,real).named_rule_battery_correct,
+            "Battery evidence from another source revision was accepted");
+        other=passing;++other.request_id;
+        require(!capture_cpp_execution(other,real).named_rule_battery_correct,
+            "Battery evidence from another request was accepted");
+        other=passing;
+        ++other.named_rule_probe->battery_check->cases.front().expected;
+        require(!capture_cpp_execution(other,real).named_rule_battery_correct,
+            "Battery evidence satisfied a different authored expected value");
+        auto mixed=real;
+        mixed.named_rule_battery_evidence->original_program_fingerprint="0";
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "Battery evidence carried a foreign program fingerprint");
+        mixed=real;
+        mixed.named_rule_battery_request_fingerprint="0";
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "The worker accepted a foreign battery request fingerprint");
+        mixed=real;
+        mixed.named_rule_battery_evidence->runs.front().stdout_bytes+="extra\n";
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "The instrumented baseline no longer matched public stdout");
+        mixed=real;
+        mixed.named_rule_battery_evidence->runs.front().stderr_bytes+="extra\n";
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "The instrumented baseline no longer matched public stderr");
+        mixed=real;
+        mixed.named_rule_battery_evidence->runs.back().program_frame="0";
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "A mutant observation from another program supplied battery credit");
+        mixed=real;
+        mixed.named_rule_battery_evidence->runs.back().calls.clear();
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "Missing calls in a real mutant observation were accepted");
+        mixed=real;
+        mixed.named_rule_battery_evidence->runs.pop_back();
+        require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+            "An incomplete set of observed mutant phases earned battery credit");
+        if(page==8) {
+            require(previous_single&&previous_single->named_rule_battery_evidence,
+                "The earlier genuine single-file battery was not observed");
+            mixed=real;
+            mixed.named_rule_battery_evidence=previous_single->named_rule_battery_evidence;
+            require(!capture_cpp_execution(passing,mixed).named_rule_battery_correct,
+                "The same reference from another owner supplied its battery evidence");
+        }
+        if(!passing.cmake)previous_single=real;
+
+        // Additional evidence does not change legacy objectives which never
+        // requested it. Reuse the actual public execution and function probe
+        // under that less restrictive contract; no synthetic success is made.
+        auto legacy_owner=owner;
+        legacy_owner.named_rule_source_check->execution_probe->battery_check.reset();
+        auto legacy_request=fixed;
+        legacy_request.named_rule_probe->battery_check.reset();
+        const auto legacy_capture=capture_cpp_execution(legacy_request,fake);
+        require(legacy_capture.named_rule_probe_correct&&
+            compiler_runtime_request_allowed(legacy_owner,legacy_request)&&
+            reference_objective_frame(lesson,legacy_owner)!=
+                reference_objective_frame(lesson,owner)&&
+            exercise_key(lesson,legacy_owner)==exercise_key(lesson,owner)&&
+            draft_key("programming",lesson,legacy_owner)==
+                draft_key("programming",lesson,owner),
+            "The optional battery requirement changed legacy behavior or draft identities");
+        state::StateData saved;
+        state::prepare_lesson_state(saved,lesson);
+        state::Draft draft;
+        draft.source=passing.cmake?
+            lesson.pages.at(6).blocks.at(3).code:passing.source_utf8;
+        draft.source+="\n// keep this unpublished draft\n";
+        draft.input="draft input";
+        const auto key=draft_key("programming",lesson,owner);
+        state::put_draft(saved,key,draft);
+        require(record_compiler_puzzle_case(saved,lesson,legacy_owner,
+                legacy_request,legacy_capture,"legacy function evidence")&&
+            compiler_puzzle_completed(saved,lesson,legacy_owner)&&
+            !compiler_puzzle_completed(saved,lesson,owner),
+            "A legacy receipt disappeared or promoted itself to the new battery objective");
+        const auto preserved=state::encode(saved);
+        require(!record_compiler_puzzle_case(saved,lesson,owner,fixed,fake_capture,
+                "fixed battery output")&&state::encode(saved)==preserved&&
+            compiler_puzzle_completed(saved,lesson,legacy_owner)&&
+            !compiler_puzzle_completed(saved,lesson,owner),
+            "A rejected new battery erased history/drafts or earned new progress");
+        require(record_compiler_puzzle_case(saved,lesson,owner,passing,fresh,
+                "preserved real battery")&&compiler_puzzle_completed(saved,lesson,owner),
+            "The first real case with a complete battery did not grant progress");
+        const auto completed=state::encode(saved);
+        require(!record_compiler_puzzle_case(saved,lesson,owner,fixed,fake_capture,
+                "later fixed battery")&&state::encode(saved)==completed&&
+            compiler_puzzle_completed(saved,lesson,owner),
+            "A later battery failure erased the previously earned achievement");
+        const auto reopened=state::decode(state::encode(saved));
+        const auto restored=state::get_draft(reopened,key,"","");
+        require(compiler_puzzle_completed(reopened,lesson,owner)&&
+            compiler_puzzle_completed(reopened,lesson,legacy_owner)&&
+            compiler_puzzle_case_count(reopened,lesson,owner)==1&&
+            restored.has_saved&&restored.source==draft.source&&restored.input==draft.input,
+            "Reopening lost either battery receipt, historical receipt or draft");
+
+        // A prospective second output case is optional. It neither represents
+        // another battery phase nor becomes a second mandatory editor attempt.
+        auto optional_owner=owner;
+        auto optional_case=optional_owner.output_check->cases.front();
+        optional_case.standard_input="optional input\n";
+        optional_case.outputs={"optional result not executed\n"};
+        optional_owner.output_check->cases.push_back(std::move(optional_case));
+        state::StateData first_only;
+        state::prepare_lesson_state(first_only,lesson);
+        require(record_compiler_puzzle_case(first_only,lesson,optional_owner,
+                passing,fresh,"first case only")&&
+            compiler_puzzle_completed(first_only,lesson,optional_owner)&&
+            compiler_puzzle_case_count(first_only,lesson,optional_owner)==1,
+            "Private battery phases made another output case mandatory");
+        std::cout<<"PASS authentic named battery "<<owner.stable_id
+            <<": preserved comparisons, fixed output rejected, history retained\n";
+    }
+}
+
 void single_file_examples(const Lesson& lesson) {
     const NamedRuleSourceCheck rules{"",{
         NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa","credito"},1},
@@ -914,6 +1249,7 @@ int main(int argc,char** argv) {
             // Keep CMakeScratch/TryCompile and MSVC object paths below the
             // verified Windows CMAKE_OBJECT_PATH_MAX limit on hosted runners.
             environment.paths.projects/L"u3-cmake");
+        actual_named_batteries(lesson,environment.paths.projects/L"u3-battery");
         std::cout<<"PASS original named-rule editors: source constraints, historic receipt and draft isolation\n";
         return 0;
     }catch(const std::exception& error){

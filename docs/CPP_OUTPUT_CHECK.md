@@ -1632,6 +1632,136 @@ la sonda del primer caso forma parte de su propio criterio de corrección.
 Para los editores de un solo archivo, `path` y `editablePaths` deben
 ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
 
+### Batería del estudiante con comparaciones sensibles a errores
+
+Comprobar las funciones con un `main` privado no demuestra que el
+comprobador escrito por el estudiante realice sus propias comparaciones.
+Las funciones pueden ser correctas y, aun así, su `main` puede limitarse
+a imprimir el informe esperado. Cuando el objetivo de la práctica incluye
+conservar o construir una batería real, `executionProbe` admite el campo
+optativo `batteryCheck`:
+
+```json
+"batteryCheck": {
+  "cases": [
+    {"function": "cajas_para", "input": 0, "expected": 0},
+    {"function": "cajas_para", "input": 4, "expected": 1},
+    {"function": "cajas_para", "input": 8, "expected": 2},
+    {"function": "cajas_para", "input": 20, "expected": 4},
+    {"function": "cajas_para", "input": 1, "expected": 1},
+    {"function": "cajas_para", "input": 5, "expected": 1},
+    {"function": "cajas_para", "input": 17, "expected": 3},
+    {"function": "cajas_para", "input": 6, "expected": 1},
+    {"function": "cajas_para", "input": 7, "expected": 2},
+    {"function": "llega_a_tiempo", "input": 4, "expected": 1},
+    {"function": "llega_a_tiempo", "input": 5, "expected": 0}
+  ],
+  "failureExitCode": 1
+}
+```
+
+Este objeto se sitúa **dentro de `executionProbe`**. No se declara como
+otro campo de `compilerNamedRuleChecks`, ni en el bloque `cpp_compiler`.
+Es un ejemplo de autoría; incorporar el mecanismo al motor no modifica
+automáticamente los JSON curriculares existentes.
+
+Esta batería utiliza el backend nativo MSVC y la acción de compilar y
+ejecutar (`compile_run`). La entrada inicial del editor y la entrada del
+primer caso de `outputCheck` deben estar vacías: las llamadas se realizan
+desde el propio comprobador, sin datos por stdin. Ese primer caso espera
+código de salida cero y, si declara un `target`, debe ser el objetivo
+ejecutable original del editor CMake. Los ensayos posteriores
+del editor pueden conservar entradas opcionales. Un mismo editor no puede
+combinar `batteryCheck` con `compilerCmakeGraphChecks`; el cargador rechaza
+esa combinación antes de presentar una actividad que no podría acreditarse.
+
+Las dos listas de casos tienen propósitos separados:
+
+| Lista | Qué exige |
+| --- | --- |
+| `executionProbe.cases` | Las funciones entregadas calculan correctamente los datos de la sonda privada. |
+| `executionProbe.batteryCheck.cases` | El comprobador del estudiante llama a las funciones con los datos requeridos, utiliza sus resultados y detecta una discrepancia en cada comparación. |
+
+No se exige que ambas listas coincidan.
+Cuando un par función/entrada aparece en ambas listas, su esperado debe
+coincidir para que los dos requisitos puedan cumplirse a la vez.
+En el ejemplo, la sonda privada
+puede conservar la entrada `19` y la batería del estudiante exige sus
+nueve casos de piezas y dos de plazo. La entrada privada `19` no se añade
+por ello a la batería que debe escribir el estudiante. Para los editores
+de precio y mínimo, la batería puede exigir ambas funciones con las
+entradas `0`, `4`, `5`, `6` y `10`, mientras la sonda privada comprueba
+también el precio con `11`.
+
+El motor conserva el comprobador original del intento y prepara
+ejecuciones aisladas de control y de sensibilidad. En la ejecución de
+control registra las llamadas y comprueba los resultados requeridos.
+Cada par declarado debe llamarse exactamente una vez; el orden de las
+llamadas puede variar. Se aplica la misma cobertura en las ejecuciones
+de sensibilidad.
+En cada ejecución de sensibilidad altera el resultado de un solo par
+función/entrada, usando un valor distinto del esperado. La batería debe
+detectar el cambio, terminar con `failureExitCode` y continuar hasta
+comprobar los demás casos. Esta última condición impide que un primer
+fallo o una cadena con cortocircuito omitan el resto de la batería.
+Cada alteración debe producir un informe visible no vacío, distinto del
+control y de los informes de las demás alteraciones, para poder
+identificar qué caso falló. Los testigos privados de instrumentación
+no cuentan como parte de ese informe.
+Los esperados se declaran por separado de las funciones evaluadas;
+calcular el esperado llamando a esa misma función no demuestra
+independencia.
+
+Un informe fijo, llamadas cuyos resultados se descartan o una batería
+que elimina un caso requerido no acreditan este requisito. Se conservan
+además las comprobaciones de constantes nombradas, la sonda privada, el
+primer caso público, los permisos de archivos y las restricciones de
+cabeceras. No se exige un nombre concreto para las funciones auxiliares
+del comprobador.
+
+`batteryCheck.cases` contiene entre 1 y 32 objetos con exactamente
+`function`, `input` y `expected`. Cada par función/entrada debe ser único;
+las funciones deben estar declaradas en `rules` y todas deben tener
+algún caso de batería. Los datos son enteros con signo de 32 bits.
+Para una función que devuelve `bool`, `expected` utiliza el entero
+`0` o `1`, no un booleano JSON. `failureExitCode` es optativo, vale `1`
+cuando falta y admite un entero de `1` a `4294967295`.
+
+La instrumentación admite una definición global por función con firma
+`int nombre(int parametro)` o `bool nombre(int parametro)`. El tipo se
+obtiene del código real, sin un campo de tipos en JSON. Esta gramática
+acotada no admite sobrecargas, parámetros por referencia, `static`,
+`inline`, `constexpr`, atributos ni `noexcept` en esa firma. Las
+declaraciones de la misma función dentro de ese archivo, si existen,
+deben coincidir con su firma. El cuerpo puede utilizar las
+implementaciones válidas que admita el análisis de reglas nombradas;
+no se conserva una solución de referencia como única respuesta.
+
+El archivo fuente se deriva de `path`; el comprobador y la cabecera
+proceden de `executionProbe.harness` y `executionProbe.header`. No existe
+un `sourcePath` adicional que pueda desviar la comprobación. En un editor
+de archivo único se instrumenta su programa; en CMake se instrumentan
+el archivo de funciones y el comprobador declarado. El programa de
+archivo único y el comprobador CMake contienen exactamente un `main`
+global; el archivo de funciones CMake no contiene `main`. Se rechazan fuentes
+que dependan de marcadores del entorno, terminen anticipadamente el
+proceso o intenten usar los nombres y testigos privados de esta prueba.
+Los límites léxicos de la instrumentación no equivalen a una barrera
+de seguridad frente a código nativo deliberadamente hostil.
+
+La especificación y las ejecuciones pertenecen al intento concreto y a
+la revisión exacta de sus fuentes. El requisito forma parte de la huella
+del objetivo: un recibo obtenido sólo con la sonda de funciones no
+acredita posteriormente una batería. Cuando `batteryCheck` falta, se
+conservan los criterios y la huella anteriores, sin añadir fases ni
+tokens de ausencia. Los IDs, `stateLayout` y las direcciones de los
+borradores no cambian. Una declaración publicada conserva la misma
+regla de inmutabilidad: no puede retirarse o relajarse silenciosamente.
+
+Estas ejecuciones automáticas forman parte del criterio del primer caso
+del editor. Los demás casos de `outputCheck` siguen siendo ensayos
+optativos; no se convierten en pasos obligatorios de navegación.
+
 ### Cabeceras de edición limitada a comentarios
 
 Las actividades que piden corregir una descripción, sin alterar firmas ni

@@ -1,6 +1,7 @@
 #pragma once
 #include "core/cpp_project.hpp"
 #include "core/named_rule_check.hpp"
+#include "core/named_rule_battery_check.hpp"
 #include "core/open_battery_check.hpp"
 #include "core/boolean_battery_check.hpp"
 #include "core/reduction_check.hpp"
@@ -143,6 +144,10 @@ struct CppNamedRuleProbe {
     std::string source_sha256, project_sha256;
     CppPhaseResult compilation, execution;
 };
+struct CppNamedRuleBatteryEvidence {
+    std::string original_program_fingerprint;
+    std::vector<curriculum::NamedRuleBatteryRun> runs;
+};
 struct CppOpenBatteryEvidence {
     std::string original_project_fingerprint;
     std::vector<curriculum::OpenBatteryRun> runs;
@@ -229,6 +234,8 @@ struct CppRunResult {
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::optional<CppNamedRuleProbe> named_rule_probe;
+    std::optional<CppNamedRuleBatteryEvidence> named_rule_battery_evidence;
+    std::string named_rule_battery_request_fingerprint;
     std::optional<CppOpenBatteryEvidence> open_battery_evidence;
     std::vector<CppObservationProbe> observation_probes;
     std::vector<CppAssertionProbe> assertion_probes;
@@ -286,6 +293,7 @@ struct CppProjectAvailability {
 // Ephemeral proof binding used again when a captured execution is consumed.
 // It does not change any existing persisted program or CMake receipt frame.
 [[nodiscard]] std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest&);
+[[nodiscard]] std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_reduction_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_integer_battery_request_fingerprint(const CppRunRequest&);
 [[nodiscard]] std::string cpp_adjustment_project_request_fingerprint(const CppRunRequest&);

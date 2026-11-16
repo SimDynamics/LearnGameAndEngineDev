@@ -2911,6 +2911,154 @@ def _validate_compiler_runtime_checks(document: dict) -> None:
             "The published client cannot be evaluated as the reviewed EOF case")
 
 
+def _named_rule_battery_tokens(source: str) -> tuple[str, ...]:
+    """Recognize instrumentable source, without treating its output as evidence."""
+    try:
+        source_size = len(source.encode("utf-8")) if type(source) is str else 0
+    except UnicodeError as exc:
+        raise LayoutError("Named-rule battery source must be valid UTF-8") from exc
+    require(0 < source_size <= 4 * 1024 * 1024 and "\x00" not in source and
+            "\\\n" not in source and "\\\r\n" not in source,
+            "Named-rule battery source is empty, excessive or contains a physical splice")
+    try:
+        tokens = tuple(token for token in code_format._cpp_tokens(source)
+                       if not token.startswith("comment:"))
+    except code_format.SourceFormatError as exc:
+        raise LayoutError("Named-rule battery source cannot be tokenized: " + str(exc)) from exc
+    forbidden = {
+        "__LINE__", "__FILE__", "__FILEW__", "__BASE_FILE__", "__COUNTER__",
+        "__INCLUDE_LEVEL__", "__DATE__", "__TIME__", "__TIMESTAMP__",
+        "__PRETTY_FUNCTION__", "__FUNCSIG__", "__FUNCDNAME__", "__builtin_LINE",
+        "__builtin_COLUMN", "__builtin_FILE", "__builtin_FUNCTION",
+        "__builtin_source_location", "source_location", "exit", "_Exit", "_exit",
+        "quick_exit", "ExitProcess", "TerminateProcess", "ExitThread", "_endthread",
+        "_endthreadex", "_c_exit", "__func__", "__FUNCTION__",
+    }
+    depth = 0
+    for token in tokens:
+        require(token not in {"op:#", "op:##", "op:%:", "op:%:%:"} and
+                not token.startswith(("id:lgaed_named_rule_battery_",
+                                      "id:lgaed_boolean_battery_",
+                                      "id:lgaed_integer_battery_")) and
+                not (token.startswith("literal:") and
+                     "LGAED_NAMED_RULE_BATTERY_" in token) and
+                not (token.startswith("id:") and token[3:] in forbidden),
+                "Named-rule battery source uses private names or unsupported environment control")
+        if token.startswith("directive:"):
+            require(depth == 0 and re.match(
+                r'(?:#|%:)[ \t\r\v\f]*include[ \t\r\v\f]*[<"]', token[10:]),
+                "Named-rule battery permits only global #include directives")
+        if token in {"op:{", "op:<%"}:
+            depth += 1
+            require(depth <= 4096, "Named-rule battery source nesting is excessive")
+        elif token in {"op:}", "op:%>"}:
+            depth -= 1
+            require(depth >= 0, "Named-rule battery source has an unmatched closing brace")
+    require(depth == 0, "Named-rule battery source has an unclosed brace")
+    return tokens
+
+
+def _named_rule_battery_closing(tokens: tuple[str, ...], start: int,
+                                opening: str, ending: str) -> int:
+    nesting = 0
+    for index in range(start, len(tokens)):
+        if tokens[index] == opening or (opening == "op:{" and tokens[index] == "op:<%"):
+            nesting += 1
+            require(nesting <= 4096, "Named-rule battery source nesting is excessive")
+        elif tokens[index] == ending or (ending == "op:}" and tokens[index] == "op:%>"):
+            nesting -= 1
+            if nesting == 0:
+                return index
+    raise LayoutError("Named-rule battery source has an unclosed delimiter")
+
+
+def _named_rule_battery_return_type(tokens: tuple[str, ...], function: str) -> str:
+    """Admit one original global int(int) or bool(int), with no fixed implementation."""
+    identifier = re.compile(r"[A-Za-z_][A-Za-z_0-9]{0,127}\Z")
+    require(type(function) is str and identifier.fullmatch(function) and function != "main",
+            "Named-rule battery function must be a bounded C++ identifier")
+    definitions, prototypes = [], []
+    depth = 0
+    for index, token in enumerate(tokens):
+        if token == "id:" + function and tokens[index + 1:index + 2] == ("op:(",):
+            previous = tokens[index - 1] if index else ""
+            call_end = _named_rule_battery_closing(tokens, index + 1, "op:(", "op:)")
+            following = tokens[call_end + 1] if call_end + 1 < len(tokens) else ""
+            declaration = ((previous.startswith("id:") and
+                            previous not in {"id:return", "id:co_return", "id:throw"}) or
+                           following in {"op:{", "op:<%"} or
+                           (depth == 0 and previous in {"op:&", "op:*", "op:&&"} and
+                            index > 1 and tokens[index - 2] in {"id:int", "id:bool"}))
+            if declaration:
+                require(depth == 0 and previous in {"id:int", "id:bool"} and
+                        index + 5 < len(tokens) and
+                        (index == 1 or tokens[index - 2] in {"op:;", "op:}", "op:%>"} or
+                         tokens[index - 2].startswith("directive:")),
+                        "Named-rule battery requires an unqualified global int or bool definition")
+                end = index + 4
+                signature = tokens[index - 1:end + 1]
+                require(len(signature) == 6 and
+                        signature[2:4] == ("op:(", "id:int") and
+                        signature[4].startswith("id:") and
+                        identifier.fullmatch(signature[4][3:]) and
+                        signature[4] != "id:main" and signature[5] == "op:)",
+                        "Named-rule battery function requires one named int parameter")
+                following = tokens[end + 1]
+                if following == "op:{":
+                    body_end = _named_rule_battery_closing(tokens, end + 1, "op:{", "op:}")
+                    require(not any(part in {"id:__func__", "id:__FUNCTION__", "id:__FUNCSIG__"}
+                                    for part in tokens[end + 2:body_end]),
+                            "Named-rule battery function cannot inspect its instrumented identity")
+                    definitions.append(signature)
+                else:
+                    require(following == "op:;",
+                            "Named-rule battery function has an unsupported qualifier or declaration")
+                    prototypes.append(signature)
+        if token in {"op:{", "op:<%"}:
+            depth += 1
+        elif token in {"op:}", "op:%>"}:
+            depth -= 1
+    require(len(definitions) == 1 and all(item[0] == definitions[0][0] for item in prototypes),
+            "Named-rule battery needs one definition and matching original prototypes")
+    return definitions[0][0][3:]
+
+
+def _validate_named_rule_battery_source(source: str, cases: list[dict],
+                                       single_file: bool = True) -> None:
+    tokens = _named_rule_battery_tokens(source)
+    returns = {function: _named_rule_battery_return_type(tokens, function)
+               for function in dict.fromkeys(case["function"] for case in cases)}
+    require(all(returns[case["function"]] != "bool" or case["expected"] in (0, 1)
+                for case in cases),
+            "Named-rule bool battery expectations must be the integers zero or one")
+    require(_named_rule_battery_main_count(tokens) == (1 if single_file else 0),
+            "Named-rule battery requires one single-file main or a separate CMake checker")
+
+
+def _named_rule_battery_main_count(tokens: tuple[str, ...]) -> int:
+    depth, definitions = 0, 0
+    for index, token in enumerate(tokens):
+        if depth == 0 and token == "id:main" and tokens[index + 1:index + 2] == ("op:(",):
+            require(index > 0 and tokens[index - 1] == "id:int",
+                    "Named-rule checker main must return int")
+            end = _named_rule_battery_closing(tokens, index + 1, "op:(", "op:)") + 1
+            if end < len(tokens) and tokens[end] in {"op:{", "op:<%"}:
+                definitions += 1
+            else:
+                require(end < len(tokens) and tokens[end] == "op:;",
+                        "Named-rule checker main has an unsupported declaration or qualifier")
+        if token in {"op:{", "op:<%"}:
+            depth += 1
+        elif token in {"op:}", "op:%>"}:
+            depth -= 1
+    return definitions
+
+
+def _named_rule_battery_driver(source: str) -> None:
+    require(_named_rule_battery_main_count(_named_rule_battery_tokens(source)) == 1,
+            "Named-rule battery requires one original checker main")
+
+
 def _validate_compiler_named_rule_checks(document: dict) -> None:
     """Validate source-role prerequisites without rewriting editor history."""
     if "compilerNamedRuleChecks" not in document:
@@ -2987,7 +3135,8 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     "Named-rule purpose vocabulary must be bounded and unique")
         if "executionProbe" in record:
             probe = record["executionProbe"]
-            require(type(probe) is dict and set(probe) == {"harness", "header", "cases"},
+            require(type(probe) is dict and {"harness", "header", "cases"} <= set(probe) <=
+                    {"harness", "header", "cases", "batteryCheck"},
                     "Independent named-rule probes require harness, header and cases")
             harness, header = probe["harness"], probe["header"]
             single_file = not bool(files)
@@ -3032,6 +3181,65 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                 covered.add(case["function"])
             require(covered == functions,
                     "Every named function requires an independent execution case")
+            if "batteryCheck" in probe:
+                first_case = block["outputCheck"]["cases"][0]
+                require(block.get("initialStandardInput", "") == "" and
+                        type(first_case) is dict and first_case.get("standardInput") == "",
+                        "Named-rule batteries require empty initial and first-case standard input")
+                require(type(first_case.get("exitCode", 0)) is int and
+                        first_case.get("exitCode", 0) == 0 and
+                        ("target" not in first_case or
+                         (type(block.get("cmake")) is dict and
+                          first_case["target"] == block["cmake"].get("target"))),
+                        "Named-rule batteries require public success from the original executable target")
+                graphs = document.get("compilerCmakeGraphChecks", [])
+                require(type(graphs) is list and not any(
+                    type(graph) is dict and graph.get("activity") == identity for graph in graphs),
+                    "Named-rule batteries cannot share an owner with a CMake graph check")
+                battery = probe["batteryCheck"]
+                require(type(battery) is dict and {"cases"} <= set(battery) <=
+                        {"cases", "failureExitCode"},
+                        "Named-rule battery checks require cases and an optional failure exit")
+                failure_exit = battery.get("failureExitCode", 1)
+                require(type(failure_exit) is int and 1 <= failure_exit <= 0xFFFFFFFF,
+                        "Named-rule battery failure exit must be a positive Win32 return code")
+                required_cases = battery["cases"]
+                require(type(required_cases) is list and 1 <= len(required_cases) <= 32,
+                        "Named-rule battery requires 1..32 independent comparisons")
+                private_expected = {(case["function"], case["input"]): case["expected"]
+                                    for case in comparisons}
+                required_seen, required_functions = set(), set()
+                for case in required_cases:
+                    require(type(case) is dict and set(case) == {
+                        "function", "input", "expected"} and
+                        type(case["function"]) is str and case["function"] in functions and
+                        type(case["input"]) is int and type(case["expected"]) is int and
+                        all(-(2 ** 31) <= case[key] <= 2 ** 31 - 1
+                            for key in ("input", "expected")),
+                        "Required battery cases must use named functions and C++ int facts")
+                    case_key = case["function"], case["input"]
+                    require(case_key not in required_seen,
+                            "A named-rule battery repeated a required input")
+                    require(case_key not in private_expected or
+                            case["expected"] == private_expected[case_key],
+                            "Shared private and student-battery cases cannot have different expected results")
+                    required_seen.add(case_key)
+                    required_functions.add(case["function"])
+                require(required_functions == functions,
+                        "Every named function needs a required student-battery comparison")
+                require(source == "" or (len(source) <= 256 and
+                        re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_./-]*\.cpp", source) and
+                        ".." not in source),
+                        "Named-rule battery source requires a safe original relative C++ path")
+                original_source = block["initialCode"] if single_file else next(
+                    entry["initialCode"] for entry in files if entry.get("path") == source)
+                _validate_named_rule_battery_source(original_source, required_cases, single_file)
+                if single_file:
+                    _named_rule_battery_driver(original_source)
+                else:
+                    original_driver = next(entry["initialCode"] for entry in files
+                                           if entry.get("path") == harness)
+                    _named_rule_battery_driver(original_driver)
         # An editable .cpp file can itself be the CMake test driver.
         # Never allow it to fabricate stdout unless a separate independent
         # executable verifies the same functions.

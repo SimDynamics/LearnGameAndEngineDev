@@ -202,6 +202,10 @@ std::string review_target(const CppRunRequest& request) {
 }
 bool matches_runtime_capture(const CppRunRequest& captured,const curriculum::FreshExecution& execution) {
     return !captured.diagnostic
+        &&(!captured.named_rule_probe||!captured.named_rule_probe->battery_check||
+            (!execution.named_rule_battery_request_fingerprint.empty()&&
+             execution.named_rule_battery_request_fingerprint==
+                cpp_named_rule_battery_request_fingerprint(captured)))
         &&(!captured.boolean_battery_probe||
             (!execution.boolean_battery_request_fingerprint.empty()&&
              execution.boolean_battery_request_fingerprint==
@@ -579,6 +583,17 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
     if(block.named_rule_source_check) {
         const auto& named=*block.named_rule_source_check;
         if(request.named_rule_probe!=named.execution_probe)return false;
+        if(named.execution_probe&&named.execution_probe->battery_check) {
+            const auto& battery=*named.execution_probe->battery_check;
+            if(!curriculum::named_rule_battery_spec_valid(battery)||
+               battery.source_path!=named.path||!request.stdin_utf8.empty()||
+               request.backend!=CppRunRequest::Backend::native_msvc||
+               request.open_battery_probe||request.boolean_battery_probe||
+               request.reduction_probe||request.integer_battery_probe||
+               request.adjustment_project_probe||request.rejection_probe||
+               request.observation_probe||request.assertion_mode||
+               request.cmake_graph_check||request.capture_cmake_graph)return false;
+        }
         if(!named.execution_probe&&std::ranges::any_of(named.editable_paths,
                 [](std::string_view path) {
                     return curriculum::is_cpp_source_file(path);
@@ -948,6 +963,10 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
        (block.named_rule_source_check&&
            block.named_rule_source_check->execution_probe&&
            !execution.named_rule_probe_correct)||
+       (block.named_rule_source_check&&
+           block.named_rule_source_check->execution_probe&&
+           block.named_rule_source_check->execution_probe->battery_check&&
+           !execution.named_rule_battery_correct)||
        (block.open_battery_probe&&!execution.open_battery_probe_correct)||
        (block.adjustment_project_probe&&!execution.adjustment_project_probe_correct)||
         (block.boolean_battery_probe&&!execution.boolean_battery_probe_correct)||

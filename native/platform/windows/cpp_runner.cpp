@@ -384,6 +384,50 @@ std::string fingerprint(const CppRunRequest& request,bool configuration=false){r
     +"/windows-cpp-profile-v1/"+std::to_string(build::cpp_standard)+'/'+utf8(build::cpp_standard_option)+"/Zc:__cplusplus/cmake-rules-v1");}
 // A separate domain preserves every existing CMake fingerprint. Source and
 // prepared input must participate when no projectFiles exist.
+bool named_rule_battery_requested(const CppRunRequest& request) {
+    return request.named_rule_probe&&request.named_rule_probe->battery_check.has_value();
+}
+std::string named_rule_battery_fingerprint(const CppRunRequest& request) {
+    if(!named_rule_battery_requested(request)||
+       !curriculum::named_rule_battery_spec_valid(*request.named_rule_probe->battery_check))
+        return {};
+    const auto field=[](std::string_view value) {
+        return std::to_string(value.size())+":"+std::string(value);
+    };
+    const auto& probe=*request.named_rule_probe;
+    auto frame=std::string("windows-named-rule-battery-capture-v1/")+
+        field(std::to_string(request.request_id))+field(std::to_string(request.revision))+
+        field(request.source_utf8)+field(request.stdin_utf8)+field(fingerprint(request))+
+        field(std::to_string(static_cast<int>(request.backend)))+
+        field(std::to_string(static_cast<int>(request.action)))+
+        field(utf8(request.projects_directory.wstring()))+field(request.project_key)+
+        field(std::to_string(request.compile_timeout.count()))+
+        field(std::to_string(request.execution_timeout.count()))+
+        field(std::to_string(request.output_limit_bytes))+
+        field(probe.harness_path)+field(probe.header)+
+        field(std::to_string(probe.cases.size()));
+    for(const auto& item:probe.cases)
+        frame+=field(item.function)+field(std::to_string(item.input))+
+            field(std::to_string(item.expected));
+    frame+=field(curriculum::named_rule_battery_spec_frame(*probe.battery_check));
+    return state::sha256(frame);
+}
+bool named_rule_battery_context(const CppRunRequest& request) {
+    if(!named_rule_battery_requested(request)||
+       request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||!request.stdin_utf8.empty()||
+       request.diagnostic||request.open_battery_probe||request.boolean_battery_probe||
+       request.reduction_probe||request.integer_battery_probe||request.adjustment_project_probe||
+       request.rejection_probe||request.observation_probe||request.assertion_mode||
+       request.cmake_graph_check||request.capture_cmake_graph||!request.source_files.empty())return false;
+    const auto& spec=*request.named_rule_probe->battery_check;
+    if(!curriculum::named_rule_battery_spec_valid(spec))return false;
+    if(request.cmake)return !request.project_files.empty()&&!spec.source_path.empty()&&
+        !request.named_rule_probe->harness_path.empty()&&
+        spec.source_path!=request.named_rule_probe->harness_path;
+    return request.project_files.empty()&&spec.source_path.empty()&&
+        request.named_rule_probe->harness_path.empty()&&request.named_rule_probe->header.empty();
+}
 std::string boolean_battery_fingerprint(const CppRunRequest& request) {
     if(!request.boolean_battery_probe)return {};
     const auto field=[](std::string_view value) {
@@ -1876,6 +1920,9 @@ bool verified_default_option_probe(const CppRunRequest& request,
 std::string cpp_boolean_battery_request_fingerprint(const CppRunRequest& request) {
     return boolean_battery_fingerprint(request);
 }
+std::string cpp_named_rule_battery_request_fingerprint(const CppRunRequest& request) {
+    return named_rule_battery_fingerprint(request);
+}
 std::string cpp_reduction_request_fingerprint(const CppRunRequest& request) {
     return reduction_fingerprint(request);
 }
@@ -1909,6 +1956,12 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
         ||(request.action!=CppRunRequest::Action::compile_run&&request.action!=CppRunRequest::Action::execute)
         ||!result.error_utf8.empty()
         ||(request.cmake&&result.executable!=std::optional<std::string>{request.cmake->target}))return fresh;
+    if(named_rule_battery_requested(request)) {
+        const auto binding=named_rule_battery_fingerprint(request);
+        if(binding.empty()||result.named_rule_battery_request_fingerprint!=binding||
+           (request.cmake&&(result.project_fingerprint!=fingerprint(request)||
+            result.configuration_fingerprint!=fingerprint(request,true))))return fresh;
+    }
     if(request.boolean_battery_probe&&
        result.boolean_battery_request_fingerprint!=boolean_battery_fingerprint(request))return fresh;
     if(request.reduction_probe) {
@@ -2225,6 +2278,29 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 // run. Only the generated main emits this final witness.
                 probe.execution.stderr_bytes==
                     curriculum::named_rule_probe_completion_marker;
+        }
+    }
+    if(named_rule_battery_requested(request)) {
+        const auto frame=named_rule_battery_fingerprint(request);
+        fresh.named_rule_battery_request_fingerprint=frame;
+        fresh.named_rule_battery_feedback=
+            "No se obtuvo una comprobación completa de la batería de esta revisión.";
+        if(named_rule_battery_context(request)&&result.target_type=="EXECUTABLE"&&
+           result.named_rule_battery_evidence&&
+           result.named_rule_battery_evidence->original_program_fingerprint==frame) {
+            const auto& runs=result.named_rule_battery_evidence->runs;
+            if(!runs.empty()&&result.compilation.succeeded()&&result.execution.succeeded()&&
+               runs.front().exit_code==*result.execution.exit_code&&
+               runs.front().stdout_bytes==result.execution.stdout_bytes&&
+               runs.front().stderr_bytes==result.execution.stderr_bytes) {
+                const auto verdict=curriculum::named_rule_battery_verify(
+                    *request.named_rule_probe->battery_check,runs,frame);
+                fresh.named_rule_battery_correct=verdict.accepted;
+                fresh.named_rule_battery_feedback=verdict.reason;
+            }else{
+                fresh.named_rule_battery_feedback=
+                    "La batería observada no reproduce la salida y terminación del programa ejecutado.";
+            }
         }
     }
     if(request.rejection_probe&&result.rejection_probe&&
@@ -2839,6 +2915,145 @@ std::optional<std::string> integer_battery_driver_path(const CppRunRequest& requ
     return driver;
 }
 
+curriculum::NamedRuleBatteryRun named_rule_battery_observation(
+        const curriculum::NamedRuleBatteryPhase& phase,std::string_view frame,
+        const CppPhaseResult& compilation,const CppPhaseResult& execution) {
+    curriculum::NamedRuleBatteryRun run;
+    run.program_frame=frame;
+    run.phase=phase;
+    run.compiled=compilation.succeeded();
+    run.executed=execution.status==CppPhaseStatus::completed&&execution.exit_code.has_value();
+    run.exit_code=execution.exit_code.value_or(0);
+    run.stdout_bytes=execution.stdout_bytes;
+    run.stderr_bytes=execution.stderr_bytes;
+    if(const auto trace=curriculum::named_rule_battery_parse_trace(execution.stderr_bytes)) {
+        run.calls=trace->calls;
+        run.completed_normally=run.executed&&trace->completed_normally;
+        run.stderr_bytes=trace->visible;
+    }
+    return run;
+}
+
+// Preserve and execute the submitted checker. Only the reviewed functions are
+// instrumented, and one declared call receives a changed result per phase.
+// The existing owned-workspace helpers hide the phase sources while running
+// and restore the public build, logs and program-created files afterwards.
+void run_named_rule_battery_cmake(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& input,const std::filesystem::path& compiler_input,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    validate_request_project(request);
+    const auto workspace=cmake_workspace(request);
+    const auto shared_lock=project_mutex(workspace);
+    std::unique_lock<std::timed_mutex> lock(*shared_lock,std::defer_lock);
+    while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()) {
+        result.compilation.status=CppPhaseStatus::cancelled;
+        return;
+    }
+    const bool supported=named_rule_battery_context(request);
+    const auto environment=compiler_environment();
+    run_cmake_unlocked(request,result,input,compiler_input,stop,&environment,supported);
+    if(!supported||!result.compilation.succeeded()||result.artifact.empty()||
+       result.target_type!="EXECUTABLE"||stop.stop_requested())return;
+    const auto& probe=*request.named_rule_probe;
+    const auto& spec=*probe.battery_check;
+    const auto library=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==spec.source_path;});
+    const auto driver=std::ranges::find_if(request.project_files,
+        [&](const auto& file){return file.first==probe.harness_path;});
+    const auto instrumented_driver=driver!=request.project_files.end()
+        ?curriculum::named_rule_battery_instrument_driver(driver->second,spec)
+        :std::optional<std::string>{};
+    auto build_tree=retain_cmake_probe_tree(workspace);
+    auto run_tree=retain_cmake_probe_tree(result.run_directory);
+    const auto original_build=build_tree;
+    execute_hidden_cmake_phase(request,result,workspace,environment,
+        build_tree,run_tree,true,stop);
+    if(!result.execution.succeeded()||stop.stop_requested()||
+       library==request.project_files.end()||!instrumented_driver)return;
+    const auto plan=curriculum::named_rule_battery_plan(spec);
+    if(!plan)return;
+    CppNamedRuleBatteryEvidence evidence;
+    evidence.original_program_fingerprint=named_rule_battery_fingerprint(request);
+    const auto restore_public=[&] {
+        restore_cmake_probe_tree(workspace,build_tree);
+        restore_cmake_probe_tree(result.run_directory,run_tree);
+    };
+    try {
+        restore_cmake_probe_tree(workspace,original_build);
+        for(const auto& phase:*plan) {
+            if(stop.stop_requested())break;
+            const auto instrumented=curriculum::named_rule_battery_instrument_source(
+                library->second,spec,phase);
+            if(!instrumented)break;
+            auto private_request=request;
+            private_request.named_rule_probe.reset();
+            for(auto& file:private_request.project_files)
+                if(file.first==spec.source_path)file.second=*instrumented;
+                else if(file.first==probe.harness_path)file.second=*instrumented_driver;
+            if(cmake_workspace(private_request)!=workspace)
+                throw std::runtime_error("A named-rule probe changed its CMake workspace identity");
+            clear_cmake_probe_tree(result.run_directory);
+            write_exact(input,request.stdin_utf8);
+            write_exact(compiler_input,"");
+            write_exact(result.run_directory/L"toolchain.txt",initial_toolchain);
+            CppRunResult observed;
+            observed.request_id=request.request_id;
+            observed.revision=request.revision;
+            observed.run_directory=result.run_directory;
+            run_cmake_unlocked(private_request,observed,input,compiler_input,stop,
+                &environment,true);
+            const bool bound=observed.project_fingerprint==fingerprint(private_request)&&
+                observed.configuration_fingerprint==fingerprint(private_request,true)&&
+                observed.artifact==result.artifact&&observed.target_type=="EXECUTABLE";
+            if(bound&&observed.compilation.succeeded()&&!stop.stop_requested()) {
+                auto private_build=retain_cmake_probe_tree(workspace);
+                auto private_run=retain_cmake_probe_tree(result.run_directory);
+                execute_hidden_cmake_phase(private_request,observed,workspace,environment,
+                    private_build,private_run,false,stop);
+            }
+            auto run=named_rule_battery_observation(phase,
+                evidence.original_program_fingerprint,observed.compilation,observed.execution);
+            run.compiled=run.compiled&&bound&&
+                (observed.configuration.status==CppPhaseStatus::not_started||
+                 observed.configuration.succeeded());
+            evidence.runs.push_back(std::move(run));
+            if(!evidence.runs.back().compiled||!evidence.runs.back().executed)break;
+        }
+    }catch(...) {
+        restore_public();
+        throw;
+    }
+    restore_public();
+    result.named_rule_battery_evidence=std::move(evidence);
+}
+
+void complete_named_rule_battery_single(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& compiler,const std::vector<wchar_t>& environment,
+        std::string_view initial_toolchain,std::stop_token stop) {
+    if(!named_rule_battery_context(request)||request.cmake||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto& spec=*request.named_rule_probe->battery_check;
+    const auto plan=curriculum::named_rule_battery_plan(spec);
+    if(!plan)return;
+    CppNamedRuleBatteryEvidence evidence;
+    evidence.original_program_fingerprint=named_rule_battery_fingerprint(request);
+    const auto make_source=[&](std::size_t index)->std::optional<std::string> {
+        const auto instrumented=curriculum::named_rule_battery_instrument_source(
+            request.source_utf8,spec,(*plan)[index]);
+        return instrumented?curriculum::named_rule_battery_instrument_driver(*instrumented,spec)
+            :std::optional<std::string>{};
+    };
+    const auto observe=[&](std::size_t index,const CppPhaseResult& compilation,
+                          const CppPhaseResult& execution) {
+        evidence.runs.push_back(named_rule_battery_observation((*plan)[index],
+            evidence.original_program_fingerprint,compilation,execution));
+    };
+    if(execute_private_single_file_phases(request,result,compiler,environment,initial_toolchain,
+            plan->size(),make_source,observe,stop))
+        result.named_rule_battery_evidence=std::move(evidence);
+}
+
 void run_integer_battery_cmake(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& input,const std::filesystem::path& compiler_input,
         std::string_view initial_toolchain,std::stop_token stop) {
@@ -3199,6 +3414,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     result.revision = request.revision;
     if(request.diagnostic)result.diagnostic.emplace();
     try {
+        if(named_rule_battery_requested(request))
+            result.named_rule_battery_request_fingerprint=named_rule_battery_fingerprint(request);
         if(request.boolean_battery_probe)
             result.boolean_battery_request_fingerprint=boolean_battery_fingerprint(request);
         if(request.reduction_probe)
@@ -3255,6 +3472,12 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             return result;
         }
         if(request.cmake){
+            if(named_rule_battery_requested(request)) {
+                run_named_rule_battery_cmake(request,result,input,compiler_input,
+                    initial_toolchain,stop);
+                complete_named_rule_probe(request,result,stop);
+                return result;
+            }
             if(request.adjustment_project_probe) {
                 run_adjustment_project_cmake(request,result,input,compiler_input,
                     initial_toolchain,stop);
@@ -3274,7 +3497,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const auto arguments=single_file_arguments(result.run_directory);
-        const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe;
+        const bool has_private_probe=request.boolean_battery_probe||request.reduction_probe||
+            named_rule_battery_requested(request);
         const auto private_environment=has_private_probe
             ?compiler_environment():std::vector<wchar_t>{};
         const auto fixed_environment=has_private_probe?&private_environment:nullptr;
@@ -3300,6 +3524,8 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             }
         }
         complete_named_rule_probe(request,result,stop);
+        complete_named_rule_battery_single(request,result,compiler,private_environment,
+            initial_toolchain,stop);
         complete_rejection_stream_probe(request,result,stop);
         complete_observation_probes(request,result,stop);
         complete_boolean_battery_probe(request,result,compiler,private_environment,initial_toolchain,stop);
