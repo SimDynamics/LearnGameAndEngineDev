@@ -629,6 +629,8 @@ void console_queued_mouse_focus_and_hit_regions() {
     // covers the complete delivered mouse sequence, focus/capture and the
     // normal keyboard route, not desktop-global SendInput timing or hit-testing.
     // CS_DBLCLKS below independently verifies that the actual class opts in.
+    std::size_t compared_points=0,old_word_differences=0;
+    std::vector<std::string> selection_failures;
     for(const int surface:{0,1,2,3,4}) {
         const bool compiler=surface!=0,output=surface==1||surface==2,editable=surface>=3;
         Fixture fixture([](state::StateData& data,const curriculum::Lesson&) {
@@ -645,10 +647,12 @@ void console_queued_mouse_focus_and_hit_regions() {
         ShowWindow(fixture.host,SW_SHOWNORMAL);SetActiveWindow(fixture.host);pump(fixture.host);
         const auto display=fixture.control(0,editable?10:output?14:1);
         const auto source=compiler?fixture.control(0,10):nullptr;
+        std::string point_context,app_trace;
         const auto check=[&](bool condition,std::string_view message) {
             if(!condition)throw std::runtime_error(std::string(message)+": surface="+std::to_string(surface)+
                 ", focus="+std::to_string(GetFocus()?GetDlgCtrlID(GetFocus()):-1)+
-                ", capture="+std::to_string(GetCapture()?GetDlgCtrlID(GetCapture()):-1));
+                ", capture="+std::to_string(GetCapture()?GetDlgCtrlID(GetCapture()):-1)+
+                "\n"+point_context+"\n"+app_trace);
         };
         check(!(GetWindowLongPtrW(fixture.host,GWL_EXSTYLE)&WS_EX_NOACTIVATE),
             "The queued mouse fixture must allow normal activation");
@@ -729,6 +733,21 @@ void console_queued_mouse_focus_and_hit_regions() {
             check(GetFocus()==display,"The completed console gesture lost its actual keyboard focus");
             check(GetCapture()==nullptr,"The completed console gesture retained mouse capture");
         };
+        const auto trace=[&](HWND edit,std::string_view stage,POINT local,std::string& result) {
+            CHARRANGE range{};SendMessageW(edit,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&range));
+            const auto packed=GetMessagePos();
+            POINT message{static_cast<short>(LOWORD(packed)),static_cast<short>(HIWORD(packed))},cursor{};
+            ScreenToClient(edit,&message);GetCursorPos(&cursor);ScreenToClient(edit,&cursor);
+            POINTL location{local.x,local.y};
+            const auto character=SendMessageW(edit,EM_CHARFROMPOS,0,reinterpret_cast<LPARAM>(&location));
+            result+=std::string(stage)+" sel="+std::to_string(range.cpMin)+","+std::to_string(range.cpMax)+
+                " focus="+std::to_string(GetFocus()?GetDlgCtrlID(GetFocus()):-1)+
+                " capture="+std::to_string(GetCapture()?GetDlgCtrlID(GetCapture()):-1)+
+                " point="+std::to_string(local.x)+","+std::to_string(local.y)+" cp="+std::to_string(character)+
+                " time="+std::to_string(GetMessageTime())+" msg="+std::to_string(message.x)+","+std::to_string(message.y)+
+                " cursor="+std::to_string(cursor.x)+","+std::to_string(cursor.y)+
+                " key="+std::to_string(GetKeyState(VK_LBUTTON))+" async="+std::to_string(GetAsyncKeyState(VK_LBUTTON))+"\n";
+        };
         const auto click_sequence=[&](POINT point,bool on_text,bool preserve_first_click) {
             // Begin with another actual control focused and a selection already
             // present. Never repair focus or selection between mouse messages.
@@ -736,6 +755,7 @@ void console_queued_mouse_focus_and_hit_regions() {
             SetFocus(elsewhere);check(GetFocus()==elsewhere,"Cannot focus the independent control before the gesture");
             const CHARRANGE previous{native_text.empty()?0:1,native_text.empty()?0:4};
             SendMessageW(display,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            app_trace.clear();trace(display,"before",point,app_trace);
             POINT screen=point;ClientToScreen(display,&screen);
             const auto mouse=[&](UINT message,WPARAM keys) {
                 // Fullscreen can move the HWND during DBLCLK. The physical
@@ -744,6 +764,7 @@ void console_queued_mouse_focus_and_hit_regions() {
                 check(PostMessageW(display,message,keys,MAKELPARAM(local.x,local.y))!=FALSE,
                     "Cannot queue a real console mouse message");
                 pump(fixture.host);
+                trace(display,message==WM_LBUTTONDOWN?"DOWN":message==WM_LBUTTONDBLCLK?"DBLCLK":"UP",local,app_trace);
             };
             mouse(WM_LBUTTONDOWN,MK_LBUTTON);
             if(on_text)check(GetFocus()==display,"A text DOWN was withheld from the native RichEdit and lost focus");
@@ -760,6 +781,52 @@ void console_queued_mouse_focus_and_hit_regions() {
                     "The double-click console action changed the first click's native selection");
             }
         };
+        const auto native_selection=[&](POINT point,LONG character) {
+            // Reuse the native-only drag baseline already exercised below:
+            // the same real RichEdit class, text/style, zoom and format rectangle.
+            // No LessonView gesture, editor or gutter subclass is attached.
+            auto bounds=RECT{};GetWindowRect(display,&bounds);
+            MapWindowPoints(HWND_DESKTOP,GetParent(display),reinterpret_cast<POINT*>(&bounds),2);
+            struct NativeEdit {HWND value{};~NativeEdit(){if(value)DestroyWindow(value);}};
+            NativeEdit native{CreateWindowExW(static_cast<DWORD>(GetWindowLongPtrW(display,GWL_EXSTYLE)),
+                MSFTEDIT_CLASS,L"",static_cast<DWORD>(GetWindowLongPtrW(display,GWL_STYLE)),
+                bounds.left,bounds.top,bounds.right-bounds.left,bounds.bottom-bounds.top,GetParent(display),
+                reinterpret_cast<HMENU>(49999),GetModuleHandleW(nullptr),nullptr)};
+            check(native.value!=nullptr,"Cannot create a native-only double-click baseline");
+            set_rich_text(native.value,text,{},true);
+            auto font=character_format(display,character);
+            SendMessageW(native.value,EM_SETCHARFORMAT,SCF_ALL,reinterpret_cast<LPARAM>(&font));
+            SendMessageW(native.value,EM_SETOPTIONS,ECOOP_SET,SendMessageW(display,EM_GETOPTIONS,0,0));
+            int numerator=0,denominator=0;
+            SendMessageW(display,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),reinterpret_cast<LPARAM>(&denominator));
+            SendMessageW(native.value,EM_SETZOOM,numerator,denominator);
+            RECT format{};SendMessageW(display,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+            SendMessageW(native.value,EM_SETRECTNP,0,reinterpret_cast<LPARAM>(&format));
+            POINT scroll{};SendMessageW(display,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            SendMessageW(native.value,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            POINTL glyph{};SendMessageW(native.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&glyph),character);
+            const auto original=position(character);
+            check(edit_text(native.value)==text&&glyph.x==original.x&&glyph.y==original.y,
+                "The native-only baseline differs in text or the independently addressed glyph position");
+            const auto elsewhere=fixture.fullscreen()?fixture.view:fixture.control(107);
+            SetFocus(elsewhere);check(GetFocus()==elsewhere,"Cannot seed the native baseline's independent focus");
+            // Seed the same selection as the app before its first DOWN. Never
+            // copy the app's final selection into this independent control.
+            const CHARRANGE previous{native_text.empty()?0:1,native_text.empty()?0:4};
+            SendMessageW(native.value,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&previous));
+            std::string recorded;trace(native.value,"before",point,recorded);
+            for(const auto message:{WM_LBUTTONDOWN,WM_LBUTTONUP,WM_LBUTTONDBLCLK,WM_LBUTTONUP}) {
+                const WPARAM keys=message==WM_LBUTTONUP?0:MK_LBUTTON;
+                check(PostMessageW(native.value,message,keys,MAKELPARAM(point.x,point.y))!=FALSE,
+                    "Cannot queue a native-only double-click message");
+                pump(fixture.host);
+                trace(native.value,message==WM_LBUTTONDOWN?"DOWN":message==WM_LBUTTONDBLCLK?"DBLCLK":"UP",point,recorded);
+            }
+            CHARRANGE result{};SendMessageW(native.value,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&result));
+            check(GetFocus()==native.value&&GetCapture()==nullptr,
+                "The native-only baseline did not finish with its own focus and free capture");
+            return std::pair{result,recorded};
+        };
         const int base=scale();check(base>0,"The queued console fixture has no valid original scale");
         const auto text_points=[&](bool full,int expected_scale) {
             if(native_text.empty())return;
@@ -768,12 +835,29 @@ void console_queued_mouse_focus_and_hit_regions() {
             const std::array<LONG,3> characters{static_cast<LONG>(word+4),
                 static_cast<LONG>(word+10),static_cast<LONG>(native_text.size()-1)};
             for(const auto character:characters)for(const bool right_half:{false,true}) {
-                click_sequence(glyph_point(character,right_half),true,false);
+                const auto point=glyph_point(character,right_half);
+                point_context="character="+std::to_string(character)+", right_half="+std::to_string(right_half)+
+                    ", full="+std::to_string(full)+", scale="+std::to_string(expected_scale)+
+                    ", point="+std::to_string(point.x)+","+std::to_string(point.y);
+                app_trace.clear();
+                const auto native=native_selection(point,character);
+                click_sequence(point,true,false);
                 const auto selected=selection();
                 check(fixture.fullscreen()==full&&scale()==expected_scale,
                     "A delivered double click on a glyph changed fullscreen or zoom");
-                check(selected.cpMin<=character&&selected.cpMax>character&&selected.cpMax-selected.cpMin>1,
-                    "A delivered text double click did not preserve native word selection");
+                ++compared_points;
+                const bool old_word=selected.cpMin<=character&&selected.cpMax>character&&selected.cpMax-selected.cpMin>1;
+                const bool same=selected.cpMin==native.first.cpMin&&selected.cpMax==native.first.cpMax;
+                const auto detail="surface="+std::to_string(surface)+", "+point_context+
+                    ", app="+std::to_string(selected.cpMin)+","+std::to_string(selected.cpMax)+
+                    ", native="+std::to_string(native.first.cpMin)+","+std::to_string(native.first.cpMax);
+                if(!old_word){++old_word_differences;std::cout<<"INFO old glyph-word expectation differs: "<<detail<<"\n";}
+                if(!same) {
+                    const auto failure=detail+"\nAPP after each queued message:\n"+app_trace+
+                        "NATIVE after each queued message:\n"+native.second;
+                    std::cout<<"FAIL native selection mismatch: "<<failure;
+                    selection_failures.push_back(failure);
+                }
             }
         };
         const auto gutter=[&](bool full,int expected_scale) {
@@ -820,6 +904,11 @@ void console_queued_mouse_focus_and_hit_regions() {
         check(state::string_value(read_lesson_state(fixture.view),"console_queue_qa","unrelated")=="conservar",
             "Queued console gestures modified unrelated profile data");
     }
+    std::cout<<"INFO exact native-only double-click comparisons="<<compared_points
+        <<"; old glyph-word expectation differences="<<old_word_differences<<"\n";
+    if(!selection_failures.empty())throw std::runtime_error(
+        "Queued console text selection differs from native RichEdit in "+std::to_string(selection_failures.size())+
+        " points; first mismatch:\n"+selection_failures.front());
     std::cout<<"PASS queued native mouse DOWN/UP/DBLCLK/UP: glyph halves, line/document ends, independent trailing/below blanks, line-number gutters, real focus/capture/Escape, readonly/output/CPP/CMake sources and Undo; no desktop-global input injection\n";
 }
 
