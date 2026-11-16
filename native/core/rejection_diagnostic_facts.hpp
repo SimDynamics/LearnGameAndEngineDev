@@ -93,6 +93,19 @@ inline bool mentions(const std::vector<Word>& words,std::initializer_list<std::s
     for(const auto& word:words)if(one_of(word.text,names))return true;
     return false;
 }
+// Word offsets belong to fold_spanish(source), not the original UTF-8 bytes.
+// Keep numeric ranges such as 0..20 inside their clause.
+inline bool clause_boundary(std::string_view folded,const Word& left,
+        const Word& right,bool comma=false) {
+    for(auto at=left.end;at<right.start;++at) {
+        const auto character=folded[at];
+        if(character==';'||character=='!'||character=='?'||character=='\n'||
+                (comma&&character==','))return true;
+        if(character=='.'&&(at==0||folded[at-1]!='.')&&
+                (at+1==folded.size()||folded[at+1]!='.'))return true;
+    }
+    return false;
+}
 inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::string_view> names,int expected) {
     bool found=false;
     for(std::size_t i=0;i<words.size();++i)if(one_of(words[i].text,names)) {
@@ -429,6 +442,224 @@ inline bool actionable(const std::vector<Word>& words) {
     }
     return false;
 }
+
+// This checks claims made by a diagnostic, independently of its request to
+// review the input. A later imperative cannot make an invented action true.
+// Lexical classes supply grammatical roles: no individual mention of a
+// correction or of inventory is itself an incompatible assertion.
+inline bool correction_noun(std::string_view word) {
+    return one_of(word,{"correccion","correcciones","rectificacion",
+        "rectificaciones","ajuste","ajustes","modificacion","modificaciones"});
+}
+inline bool input_subject(std::string_view word) {
+    return one_of(word,{"dato","datos","entrada","entradas","cantidad",
+        "cantidades","valor","valores","pieza","piezas","cobro","cobros",
+        "devolucion","devoluciones"});
+}
+inline bool automatic_word(std::string_view word) {
+    return one_of(word,{"automaticamente","automatico","automatica",
+        "automaticos","automaticas"});
+}
+enum class ChangePredicate { none, completed, realization, automatic_present };
+inline ChangePredicate change_predicate(std::string_view word) {
+    if(one_of(word,{"corregido","corregida","corregidos","corregidas",
+            "corrigio","corrigieron","corregi","corregimos",
+            "rectificado","rectificada","rectificados","rectificadas",
+            "rectifico","rectificaron","ajustado","ajustada","ajustados",
+            "ajustadas","ajusto","ajustaron","modificado","modificada",
+            "modificados","modificadas","modifico","modificaron"}))
+        return ChangePredicate::completed;
+    if(one_of(word,{"aplico","aplicaron","aplicado","aplicada","aplicados",
+            "aplicadas","realizo","realizaron","realizado","realizada",
+            "realizados","realizadas","efectuo","efectuaron","efectuado",
+            "efectuada","efectuados","efectuadas","hizo","hicieron",
+            "hecho","hecha","hechos","hechas","completo","completaron",
+            "completado","completada","completados","completadas"}))
+        return ChangePredicate::realization;
+    if(one_of(word,{"corrige","corrigen","rectifica","rectifican",
+            "ajusta","ajustan","modifica","modifican"}))
+        return ChangePredicate::automatic_present;
+    return ChangePredicate::none;
+}
+inline bool claim_link(std::string_view word) {
+    return input_subject(word)||correction_noun(word)||automatic_word(word)||
+        one_of(word,{"el","la","los","las","un","una","unos","unas",
+            "lo","le","les","se","hay","ha","han","habia","habian","fue",
+            "fueron","es","son","esta","estan","era","eran","ser",
+            "estar","sea","sean","sido","estado","ya","aun","todavia","de","del",
+            "a","que","por","solo","solamente","unicamente","ninguna",
+            "ningun","ninguno","ningunos","ningunas"});
+}
+struct ClaimQualification { bool negated=false,modal=false; };
+inline ClaimQualification qualify_claim(const std::vector<Word>& words,
+        std::size_t begin,std::size_t end,std::size_t predicate) {
+    ClaimQualification result;
+    // Follow auxiliaries, determiners and the predicate's own subject/object.
+    // Another lexical verb ends the scope, so "no revise ... se corrigio"
+    // cannot lend its negation to the second predicate.
+    for(auto cursor=predicate;cursor>begin;) {
+        const auto at=--cursor;
+        const auto& word=words[at].text;
+        if(one_of(word,{"no","nunca","jamas","sin","ni","ninguna",
+                "ningun","ninguno","ningunos","ningunas"})) {
+            // Focus can precede the verb ("no solo se corrigio") or qualify
+            // its object ("no se corrigio solamente el dato"). Both affirm
+            // the action. Stay inside this predicate's grammatical span;
+            // a focus word in another clause cannot cancel its negation.
+            bool focus=false;
+            if(word=="no")for(auto next=at+1;next<end;++next) {
+                if(one_of(words[next].text,{"solo","solamente","unicamente"})) {
+                    focus=true;break;
+                }
+                if(next!=predicate&&!claim_link(words[next].text))break;
+            }
+            if(!focus)result.negated=true;
+        }else if(one_of(word,{"debe","deben","deberia","deberian","puede",
+                "pueden","podria","podrian","necesario","necesaria",
+                "necesarios","necesarias","requiere","requieren",
+                "recomienda","recomiendan","solicita","solicitan"}))
+            result.modal=true;
+        else if(!claim_link(word))break;
+    }
+    return result;
+}
+inline bool program_agent(const std::vector<Word>& words,std::size_t begin,
+        std::size_t predicate) {
+    // Clitics and adverbs can separate the program/reflexive subject from its
+    // present-tense verb. Stop at another lexical word instead of borrowing
+    // an actor from an unrelated statement or an informal imperative. The
+    // caller already excluded negated claims, so a surviving "no" is focus.
+    for(auto cursor=predicate;cursor>begin;) {
+        const auto& word=words[--cursor].text;
+        if(one_of(word,{"se","programa","sistema","cliente"}))return true;
+        if(!automatic_word(word)&&!one_of(word,{"lo","la","los","las","le",
+                "les","ya","aun","todavia","tambien","no","solo","solamente",
+                "unicamente"}))break;
+    }
+    return false;
+}
+inline bool correction_object(const std::vector<Word>& words,std::size_t begin,
+        std::size_t end,std::size_t predicate) {
+    for(auto cursor=predicate;cursor>begin;) {
+        const auto& word=words[--cursor].text;
+        if(correction_noun(word))return true;
+        if(!claim_link(word))break;
+    }
+    for(auto cursor=predicate+1;cursor<end;++cursor) {
+        const auto& word=words[cursor].text;
+        if(correction_noun(word))return true;
+        if(!claim_link(word))break;
+    }
+    return false;
+}
+inline bool inventory_word(std::string_view word) {
+    return one_of(word,{"stock","existencias","inventario","disponibilidad",
+        "agotado","agotada","agotados","agotadas"});
+}
+inline bool inventory_state(std::string_view word) {
+    return one_of(word,{"hay","habia","habian","existe","existen","falta",
+        "faltan","faltaba","faltaban","escasez","sin","agotado","agotada",
+        "agotados","agotadas","insuficiente","insuficientes"});
+}
+inline bool attribution_predicate(const std::vector<Word>& words,std::size_t begin,
+        std::size_t end,std::size_t at) {
+    const auto& word=words[at].text;
+    if(one_of(word,{"atribuye","atribuyen","atribuyo","atribuyeron",
+            "atribuido","atribuida","atribuibles","atribuir","atribuya",
+            "atribuyan","provoca","provocan","provoco","provocaron",
+            "provocado","provocada","causo","causaron","causado","causada"}))return true;
+    if(word=="debe"&&at>begin&&words[at-1].text=="se"&&
+            at+1<end&&words[at+1].text=="a")return true;
+    if(one_of(word,{"es","son","fue","eran"})) {
+        for(auto cursor=begin;cursor<end;++cursor)
+            if(one_of(words[cursor].text,{"causa","motivo","razon"}))return true;
+        // The rejection may have an implicit subject: "no es falta de..."
+        // and "el rechazo no es por..." deny a causal identification. Bind
+        // that complement to its copula before looking for a "por" relation;
+        // otherwise the noun "rechazo" can be mistaken for a verb before no.
+        for(auto next=at+1;next<end;++next) {
+            if(one_of(words[next].text,{"por","falta","escasez"}))return true;
+            if(!one_of(words[next].text,{"un","una","el","la","los","las",
+                    "solo","solamente","unicamente"}))break;
+        }
+    }
+    return false;
+}
+inline bool coordinated_claim(const std::vector<Word>& words,std::size_t at) {
+    if(!one_of(words[at].text,{"y","e"}))return false;
+    for(auto next=at+1;next<words.size()&&next<=at+7;++next) {
+        if(change_predicate(words[next].text)!=ChangePredicate::none||
+                inventory_state(words[next].text))return true;
+        if(!claim_link(words[next].text)&&
+                !one_of(words[next].text,{"no","nunca","jamas"}))break;
+    }
+    return false;
+}
+enum class UnsupportedClaim { none, correction, inventory };
+inline UnsupportedClaim unsupported_claims(std::string_view folded,
+        const std::vector<Word>& words) {
+    for(std::size_t begin=0;begin<words.size();) {
+        auto end=begin+1;
+        while(end<words.size()&&!clause_boundary(folded,words[end-1],words[end],true)&&
+                !one_of(words[end].text,{"pero","sino"})&&
+                !coordinated_claim(words,end))++end;
+        bool automatic=false,explicit_other_object=false,has_input=false;
+        for(auto at=begin;at<end;++at) {
+            automatic=automatic||automatic_word(words[at].text);
+            has_input=has_input||input_subject(words[at].text);
+            explicit_other_object=explicit_other_object||one_of(words[at].text,
+                {"mensaje","diagnostico","redaccion","informe","texto","codigo"});
+        }
+        for(auto at=begin;at<end;++at) {
+            const auto change=change_predicate(words[at].text);
+            if(change==ChangePredicate::none)continue;
+            const auto qualification=qualify_claim(words,begin,end,at);
+            if(qualification.negated||qualification.modal)continue;
+            if(change==ChangePredicate::realization&&!correction_object(words,begin,end,at))continue;
+            if(change==ChangePredicate::automatic_present) {
+                // A present-tense program/reflexive action is not the informal
+                // imperative "corrige". Automaticity must belong to this clause.
+                if(!automatic||!program_agent(words,begin,at))continue;
+            }
+            if(automatic||has_input||!explicit_other_object)
+                return UnsupportedClaim::correction;
+        }
+        for(auto at=begin;at<end;++at) {
+            if(!inventory_word(words[at].text))continue;
+            std::optional<std::size_t> attribution;
+            for(auto verb=begin;verb<end;++verb)
+                if(attribution_predicate(words,begin,end,verb)&&
+                        (!attribution||verb<at))attribution=verb;
+            if(!attribution)for(auto relation=begin;relation<at;++relation) {
+                if(words[relation].text!="por")continue;
+                attribution=relation;
+                for(auto verb=relation;verb>begin;) {
+                    --verb;
+                    if(one_of(words[verb].text,{"rechazo","rechaza","rechazan",
+                            "rechazaron","falla","fallan","fallo"})) {
+                        attribution=verb;break;
+                    }
+                }
+            }
+            if(attribution) {
+                // The negation belongs to attribution, not to "existencias":
+                // "no se atribuye ... falta de existencias" denies that cause.
+                const auto qualification=qualify_claim(words,begin,end,*attribution);
+                if(!qualification.negated&&!qualification.modal)
+                    return UnsupportedClaim::inventory;
+                continue;
+            }
+            for(auto state=begin;state<end;++state)if(inventory_state(words[state].text)) {
+                // "No hay existencias" still asserts an unobserved inventory
+                // state. Negating existence does not deny the factual claim.
+                if(!qualify_claim(words,begin,end,state).modal)
+                    return UnsupportedClaim::inventory;
+            }
+        }
+        begin=end;
+    }
+    return UnsupportedClaim::none;
+}
 // Qualify each explicit validity claim by its own subject and clause.
 // Mentioning both fields in a later domain instruction does not say that
 // both observed values failed. Diagnostics need not make such a claim at all.
@@ -441,15 +672,13 @@ inline bool validity_claims_match(std::string_view line,const std::vector<Word>&
         return 0;
     };
     const auto boundary=[&](std::size_t left,std::size_t right) {
+        if(clause_boundary(source,words[left],words[right]))return true;
         for(auto at=words[left].end;at<words[right].start;++at) {
             const auto c=source[at];
-            if(c==';'||c=='!'||c=='?'||c=='\n')return true;
             // A field label may introduce its verdict ("cobros: invalidos").
             // The colon after the numeric preamble still starts a new clause.
             if(c==':'&&!field(words[left].text)&&
                     !one_of(words[left].text,{"ambos","ambas"}))return true;
-            if(c=='.'&&(at==0||source[at-1]!='.')&&
-                    (at+1==source.size()||source[at+1]!='.'))return true;
         }
         return false;
     };
@@ -553,8 +782,11 @@ inline bool validity_claims_match(std::string_view line,const std::vector<Word>&
 }
 inline RejectionReview examine(std::string_view line,RejectionOperation kind,const RejectionFacts& fact) {
     const auto tokens=words(line);
-    if(mentions(tokens,{"stock","existencias","agotado","agotadas","inventario","disponibilidad"}))
+    const auto claim=unsupported_claims(fold_spanish(line),tokens);
+    if(claim==UnsupportedClaim::inventory)
         return {false,"Se atribuyó el rechazo a existencias no observadas."};
+    if(claim==UnsupportedClaim::correction)
+        return {false,"Se afirmó una corrección de datos que el programa no realizó."};
     if(!mentions(tokens,kind==RejectionOperation::boxes
         ?std::initializer_list<std::string_view>{"caja","cajas"}
         :std::initializer_list<std::string_view>{"saldo"}))

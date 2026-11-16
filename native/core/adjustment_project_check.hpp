@@ -299,6 +299,11 @@ inline AdjustmentProjectVerdict client_output(std::span<const OpenBatteryCall> i
            !all_equal_nonempty(values(data,Field::upper),request.upper))
             return {false,"Un rechazo omite o confunde valor, inferior y superior."};
         const auto words=rejection_detail::words(record);
+        const auto claim=rejection_detail::unsupported_claims(record,words);
+        if(claim==rejection_detail::UnsupportedClaim::correction)
+            return {false,"Un rechazo afirmó una corrección de datos que el cliente no realizó."};
+        if(claim==rejection_detail::UnsupportedClaim::inventory)
+            return {false,"Un rechazo atribuyó la causa a existencias no observadas."};
         if(!rejection_detail::range(record,words,20,-20))
             return {false,"Cada rechazo debe comunicar el dominio permitido [-20,20]."};
         if(!order_condition(record))

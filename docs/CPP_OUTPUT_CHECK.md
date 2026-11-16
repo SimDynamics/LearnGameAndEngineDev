@@ -703,6 +703,9 @@ automáticamente tres aspectos de esa misma revisión:
   sólo resultados nuevos, y termina normalmente con 1 si hubo rechazos o con
   0 en otro caso. Se verifican el lote original y variaciones independientes;
   los mensajes pueden variar conservando los hechos y la orientación exigidos.
+  Cada rechazo reutiliza la comprobación de afirmaciones de U3L6: una corrección
+  ficticia o una causa de existencias no observada invalida el diagnóstico,
+  mientras una negación explícita de esa afirmación conserva su significado.
 - El comprobador utiliza la misma biblioteca, ejecuta su propia batería con
   esperados independientes y observa tanto la aceptación como el destino.
   La batería cubre las categorías del contrato y continúa después de una
@@ -955,6 +958,15 @@ La variante de saldos requiere, por orden, un rechazo inferior, una aceptación 
 un rechazo superior, con los otros operandos válidos y sin reutilizar los pares
 preparados.
 
+El diagnóstico describe los datos observados y solicita revisarlos. No acredita
+una afirmación de que el programa ya los corrigió o los corrige automáticamente.
+El análisis diferencia esa afirmación de una orden como «Corrija la cantidad» o
+de su negación explícita, como «No se ha corregido automáticamente el dato».
+También distingue negar una causa —«No se atribuye el rechazo a falta de
+existencias»— de afirmar una escasez no observada, como «No hay existencias».
+La negación se aplica a su propia cláusula: no anula una afirmación contradictoria
+que aparezca después de un punto, punto y coma o enlace adversativo.
+
 Para acreditar el editor también debe compilarse y ejecutarse **otra fuente
 aislada** que llama a la misma función del estudiante con dos objetos
 `std::ostringstream` distintos. La prueba rechaza una función que escribe
@@ -967,6 +979,12 @@ función e introducir otras declaraciones. No confunde las llaves que aparecen
 dentro de cadenas, literales crudos o comentarios con delimitadores del
 programa. La ejecución, la prueba independiente y los casos se sellan con
 la revisión y la fuente vigente.
+
+Las pruebas de autoría y de ejecución nativa admiten tanto la lección histórica
+como la misma lección con las declaraciones revisadas ya publicadas. Validan
+los propietarios, tipos y orden antes de construir en memoria el modelo previo
+para contrastar su conservación. No retiran ni reescriben el contrato publicado
+en el recurso curricular.
 
 **Estado editorial:** la activación de la capacidad técnica es optativa hasta
 que Work publique ambas declaraciones y compruebe el primer caso y sus sondas

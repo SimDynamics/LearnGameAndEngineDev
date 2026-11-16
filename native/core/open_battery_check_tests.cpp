@@ -496,6 +496,27 @@ void construction_judgments() {
     for(auto at=runs[1].stderr_bytes.find("Revise");at!=std::string::npos;at=runs[1].stderr_bytes.find("Revise",at+9))
         runs[1].stderr_bytes.replace(at,6,"No revise");
     verify(!accepted(runs),"Negated review instructions passed the diagnostic facts");
+    // Change only one diagnostic's claim: its request/data, domain, order,
+    // advice, stdout totals, exit and all independent observations stay intact.
+    // Exercise both rejections so a valid first message cannot mask the second.
+    for(const auto& [claim,should_accept]:std::array{
+            std::pair{"El dato se ha corregido automáticamente. ",false},
+            std::pair{"No se ha corregido automáticamente el dato. ",true},
+            std::pair{"Rechazo por falta de existencias. ",false},
+            std::pair{"No se atribuye el rechazo a falta de existencias. ",true}}) {
+        for(const std::size_t diagnostic:{0u,1u}) {
+            runs=reference;
+            auto& error=runs[1].stderr_bytes;
+            constexpr std::string_view advice="Revise los tres valores.";
+            const auto first=error.find(advice);
+            verify(first!=std::string::npos,"The prepared client lost its first review instruction");
+            const auto at=diagnostic==0?first:error.find(advice,first+advice.size());
+            verify(at!=std::string::npos,"The prepared client lost its second review instruction");
+            error.insert(at,claim);
+            verify(accepted(runs)==should_accept,
+                std::string("A client diagnostic misjudged an affirmed or denied claim: ")+claim);
+        }
+    }
     runs=reference;runs[6].observations.clear();
     verify(!accepted(runs),"Calls inside assert disappeared under NDEBUG but earned credit");
     runs=reference;runs[6].exit_code=1;

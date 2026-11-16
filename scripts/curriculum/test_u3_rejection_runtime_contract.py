@@ -14,15 +14,47 @@ RECORDS = [
 ]
 
 
+def historical_fixture(current):
+    """Build the pre-declaration QA model from a validated current lesson."""
+    layout.validate(current)
+    if "compilerRuntimeChecks" in current and current["compilerRuntimeChecks"] != RECORDS:
+        raise layout.LayoutError("Unexpected published U3L6 runtime contract")
+    original = copy.deepcopy(current)
+    original.pop("compilerRuntimeChecks", None)
+    layout.validate(original)
+    return original
+
+
 class RejectionRuntimeDeclarationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original = layout.load(LESSON)
+        cls.current = layout.load(LESSON)
+        cls.original = historical_fixture(cls.current)
 
     def declared(self):
         current = copy.deepcopy(self.original)
         current["compilerRuntimeChecks"] = copy.deepcopy(RECORDS)
         return current
+
+    def test_fixture_accepts_an_already_published_declaration_without_mutation(self):
+        published = self.declared()
+        preserved = copy.deepcopy(published)
+        historical = historical_fixture(published)
+        self.assertEqual(self.original, historical)
+        self.assertEqual(preserved, published)
+        self.assertEqual(published["pages"], historical["pages"])
+        self.assertEqual(published["stateLayout"], historical["stateLayout"])
+
+    def test_fixture_does_not_hide_an_unexpected_published_contract(self):
+        for records in (None, [], list(reversed(RECORDS)),
+                        [{"activity": "block_0003_0003", "kind": "nonBlank"}]):
+            with self.subTest(records=records):
+                current = self.declared()
+                current["compilerRuntimeChecks"] = copy.deepcopy(records)
+                preserved = copy.deepcopy(current)
+                with self.assertRaises(layout.LayoutError):
+                    historical_fixture(current)
+                self.assertEqual(preserved, current)
 
     def test_two_original_editors_are_declared_without_rewriting_source_or_state(self):
         revised = self.declared()

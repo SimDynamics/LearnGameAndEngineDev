@@ -8,12 +8,33 @@ on:
       - native/core/rejection_diagnostic_facts.hpp
       - native/core/rejection_diagnostic_facts_tests.cpp
       - native/core/code_format_compat.hpp
+      - native/platform/windows/u3_runtime_semantics_tests.cpp
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/text_semantics.py
+      - scripts/curriculum/test_u3_rejection_runtime_contract.py
+      - scripts/curriculum/test_u3_observation_runtime_contract.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_diagnosticos_para_corregir_una_peticion.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_automatizar_la_revision_sin_borrar_evidencia.json
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  runtime-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact Codex source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify historical and published U3 runtime declarations
+        run: |
+          python3 -B -m unittest discover -s scripts/curriculum -p test_u3_rejection_runtime_contract.py -v
+          python3 -B -m unittest discover -s scripts/curriculum -p test_u3_observation_runtime_contract.py -v
+
   portable-semantics:
     runs-on: ubuntu-24.04
     timeout-minutes: 8

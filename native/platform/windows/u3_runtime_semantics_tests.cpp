@@ -13,6 +13,7 @@
 #include <winrt/Windows.Data.Json.h>
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -53,19 +54,35 @@ struct Declared {
 };
 Declared with_reviewed_runtime(const std::filesystem::path& path,bool rejection) {
     const auto bytes=read(path);
-    auto original=load_lesson(path,"es");
     auto root=JsonObject::Parse(winrt::to_hstring(bytes));
-    require(!root.HasKey(L"compilerRuntimeChecks"),
-        "Work has already published the U3 declaration; use its current contract");
     JsonArray records;
     insert(records,"block_0003_0003",rejection?
         "semanticRejectionBoxesV1":"observationCompleteV1");
     insert(records,"block_0006_0003",rejection?
         "semanticRejectionBalanceV1":"observationDifferencesV1");
-    root.Insert(L"compilerRuntimeChecks",records);
+    if(root.HasKey(L"compilerRuntimeChecks")) {
+        const auto authored=root.GetNamedArray(L"compilerRuntimeChecks");
+        require(authored.Size()==records.Size(),
+            "The published U3 runtime declarations changed their reviewed scope");
+        for(std::uint32_t entry=0;entry<records.Size();++entry) {
+            const auto actual=authored.GetObjectAt(entry);
+            const auto wanted=records.GetObjectAt(entry);
+            require(actual.Size()==2&&actual.HasKey(L"activity")&&actual.HasKey(L"kind"),
+                "The published U3 runtime declaration has unexpected fields");
+            require(actual.GetNamedString(L"activity")==wanted.GetNamedString(L"activity")&&
+                actual.GetNamedString(L"kind")==wanted.GetNamedString(L"kind"),
+                "The published U3 runtime owner, kind or order differs from its reviewed contract");
+        }
+    }else{
+        root.Insert(L"compilerRuntimeChecks",records);
+    }
     const auto revised=winrt::to_string(root.Stringify());
     auto lesson=parse_lesson_json(revised,"es");
     auto metadata=parse_lesson_progress_metadata(revised,"es");
+    // Derive the historical QA model in memory even after Work publishes the
+    // exact reviewed declarations. The effective model keeps the authored data.
+    root.Remove(L"compilerRuntimeChecks");
+    auto original=parse_lesson_json(winrt::to_string(root.Stringify()),"es");
     require(original.id==lesson.id&&lesson.id==metadata.id&&
         original.state_layout.lineage==lesson.state_layout.lineage&&
         original.state_layout.lineage==metadata.state_layout.lineage&&
@@ -90,16 +107,22 @@ Declared with_reviewed_runtime(const std::filesystem::path& path,bool rejection)
     }
     return {std::move(original),std::move(lesson),std::move(metadata)};
 }
-std::string boxes(std::string source) {
+std::string boxes(std::string source,bool false_correction=false) {
+    const auto conclusion=false_correction?
+        "El dato se ha corregido automáticamente. Revise la cantidad.":
+        "No se ha corregido automáticamente el dato. Revise la cantidad.";
     return replace_once(std::move(source),R"cpp(destino << "Error\n";)cpp",
-        R"cpp(destino << "Cajas, peticion " << peticion << ", piezas " << piezas
-            << ": rango permitido de 0 a 20; revise la cantidad.\n";)cpp");
+        std::string(R"cpp(destino << "Cajas, peticion " << peticion << ", piezas " << piezas
+            << ": rango permitido de 0 a 20; )cpp")+conclusion+R"cpp(\n";)cpp");
 }
-std::string balances(std::string source) {
+std::string balances(std::string source,bool false_correction=false) {
+    const auto conclusion=false_correction?
+        "Se aplicó una corrección automática. Revise ambos datos.":
+        "No se atribuye el rechazo a falta de existencias. Revise ambos datos.";
     return replace_once(std::move(source),R"cpp(destino << "Error de saldo\n";)cpp",
-        R"cpp(destino << "Saldo, peticion " << peticion << ", cobros " << cobros
+        std::string(R"cpp(destino << "Saldo, peticion " << peticion << ", cobros " << cobros
             << ", devoluciones " << devoluciones
-            << ": rango permitido de 0 a 9; revise ambos datos.\n";)cpp");
+            << ": rango permitido de 0 a 9; )cpp")+conclusion+R"cpp(\n";)cpp");
 }
 std::string reports(std::string original,ReportMode mode) {
     constexpr std::string_view marker="int main() {";
@@ -152,7 +175,7 @@ std::string reports(std::string original,ReportMode mode) {
 }
 
 void actual_msvc_case(const Lesson& lesson,std::string_view identity,std::string source,
-        const std::filesystem::path& projects,std::uint64_t request_id) {
+        const std::filesystem::path& projects,std::uint64_t request_id,bool should_pass=true) {
     const auto at=stable_block_position(lesson,identity);
     require(at.has_value(),"A U3 runtime editor is missing");
     const auto& block=lesson.pages[at->page].blocks[at->block];
@@ -185,6 +208,29 @@ void actual_msvc_case(const Lesson& lesson,std::string_view identity,std::string
         block.output_check->cases.front().exit_code,
         "The real U3 executable did not finish with the authored normal status");
     const auto expected=evaluate_cpp_output_check(*block.output_check,captured,request.revision);
+    if(!should_pass) {
+        // These are real candidate and private-probe executions. Correct
+        // numerical output cannot excuse a fictitious automatic correction.
+        require(block.output_check->rejection_operation&&result.rejection_probe&&
+            result.rejection_probe->compilation.succeeded()&&
+            result.rejection_probe->execution.succeeded(),
+            "The false-diagnostic candidate did not complete its real MSVC stream probe");
+        require(expected.verdict==OutputVerdict::incorrect&&expected.stdout_correct&&
+            expected.exit_code_correct&&!expected.stderr_correct&&
+            !captured.rejection_probe_correct,
+            "A fictitious correction passed semantic checking, or its real public output changed");
+        require(!record_compiler_puzzle_case(qaState,lesson,block,request,captured,"false correction")&&
+            !compiler_puzzle_completed(qaState,lesson,block)&&
+            compiler_puzzle_case_count(qaState,lesson,block)==0,
+            "A false automatic-correction claim earned an authentic first-case receipt");
+        const auto restored=state::decode(state::encode(qaState));
+        require(!compiler_puzzle_completed(restored,lesson,block)&&
+            compiler_puzzle_case_count(restored,lesson,block)==0,
+            "Reopening credited a rejected automatic-correction claim");
+        std::cout<<"PASS real MSVC U3 "<<identity
+            <<", matching stdout and normal exit rejected for fictitious correction\n";
+        return;
+    }
     require(expected.verdict==OutputVerdict::correct,
         "The real MSVC capture failed stdout, stderr or the independent semantic probe: "+
         expected.feedback);
@@ -239,7 +285,11 @@ int main() try {
         reports(editor(report.original,"block_0003_0003").initial_code,ReportMode::complete),projects,3);
     actual_msvc_case(report.lesson,"block_0006_0003",
         reports(editor(report.original,"block_0006_0003").initial_code,ReportMode::differences),projects,4);
-    std::cout<<"PASS four original U3 editors with real MSVC, semantic probes, sealed progress\n";
+    actual_msvc_case(diagnostic.lesson,"block_0003_0003",
+        boxes(editor(diagnostic.original,"block_0003_0003").initial_code,true),projects,5,false);
+    actual_msvc_case(diagnostic.lesson,"block_0006_0003",
+        balances(editor(diagnostic.original,"block_0006_0003").initial_code,true),projects,6,false);
+    std::cout<<"PASS four original U3 editors and two false-diagnostic candidates with real MSVC, semantic probes and sealed progress\n";
     return 0;
 }catch(const std::exception& error){
     std::cerr<<"FAIL real U3 curricular runtime: "<<error.what()<<'\n';

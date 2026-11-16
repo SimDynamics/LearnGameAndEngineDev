@@ -201,6 +201,101 @@ void validity_claims_keep_their_field_and_clause() {
         "The alternative stream accepted a false accusation of the valid operand");
 }
 
+void unsupported_claims_keep_their_predicate_and_polarity() {
+    constexpr RejectionFacts boxes[]{{1,-1},{3,21}};
+    constexpr RejectionFacts balances[]{{2,10,0},{3,0,-1}};
+    const auto message=[](RejectionOperation operation,const RejectionFacts& fact,
+            std::string_view statement,bool request_review) {
+        auto text=std::string(operation==RejectionOperation::boxes?"Cajas":"Saldo")+
+            ", petición "+std::to_string(fact.request);
+        if(operation==RejectionOperation::boxes)
+            text+=", piezas="+std::to_string(fact.first)+": intervalo entero permitido 0..20. ";
+        else text+=", cobros="+std::to_string(fact.first)+", devoluciones="+
+            std::to_string(fact.second)+": intervalo entero permitido 0..9. ";
+        text+=statement;
+        if(request_review)text+=" Revise los datos.";
+        return text+'\n';
+    };
+    for(const auto operation:{RejectionOperation::boxes,RejectionOperation::balance}) {
+        const auto facts=operation==RejectionOperation::boxes?
+            std::span<const RejectionFacts>(boxes):std::span<const RejectionFacts>(balances);
+        const auto check_statement=[&](std::string_view statement,bool accepted,
+                bool request_review=true) {
+            const auto first=message(operation,facts[0],statement,request_review);
+            const auto second=message(operation,facts[1],statement,request_review);
+            const auto result=evaluate_rejection_diagnostics(first+second,operation,facts);
+            require(result.correct==accepted,
+                "A diagnostic changed the meaning or scope of a claim: "+std::string(statement)+
+                " / "+result.reason);
+            const auto streamed=lgaed::curriculum::evaluate_rejection_stream_probe(
+                first+'\x1e'+second,"",operation);
+            require(streamed.correct==accepted,
+                "The alternative ostream disagreed about the same diagnostic claim: "+
+                std::string(statement));
+        };
+        for(const auto statement:{
+            "El dato se ha corregido automáticamente.",
+            "Se aplicó una corrección automática.",
+            "La cantidad fue corregida automáticamente.",
+            "La corrección automática se realizó.",
+            "El dato se corrige automáticamente.",
+            "El programa corrige automáticamente la cantidad.",
+            "El sistema lo corrige automáticamente.",
+            "El programa ya corrige automáticamente el dato.",
+            "El programa no solamente lo corrige automáticamente.",
+            "No sólo se ha corregido automáticamente el dato.",
+            "No solamente se aplicó una corrección automática.",
+            "No se corrigió solamente el dato, sino también el informe.",
+            "El dato no era válido; se ha corregido automáticamente.",
+            "No se ha corregido automáticamente el dato; se aplicó una corrección automática.",
+            "No se ha corregido automáticamente el dato, pero se aplicó una corrección automática.",
+            "No se ha corregido el dato y se aplicó una corrección automática.",
+            "Se rechazó por falta de existencias.",
+            "El rechazo se atribuye a falta de existencias.",
+            "La causa es falta de existencias.",
+            "El rechazo se debe a falta de existencias.",
+            "El rechazo es por falta de existencias.",
+            "Es falta de existencias.",
+            "Sin existencias.",
+            "No hay existencias.",
+            "No se atribuye el rechazo a falta de existencias; no hay existencias.",
+            "No se atribuye el rechazo a falta de existencias, pero faltan existencias."
+        })check_statement(statement,false);
+        for(const auto statement:{
+            "No se ha corregido automáticamente el dato.",
+            "No se aplicó ninguna corrección automática.",
+            "La cantidad no fue corregida automáticamente.",
+            "Ninguna corrección automática se realizó.",
+            "El dato no se corrige automáticamente.",
+            "El programa no corrige automáticamente la cantidad.",
+            "El sistema no lo corrige automáticamente.",
+            "El programa ya no corrige automáticamente el dato.",
+            "El programa no solamente no lo corrige automáticamente.",
+            "La cantidad debe ser corregida.",
+            "La corrección automática podría ser aplicada.",
+            "Se solicita que el dato sea corregido.",
+            "Se solicita que la corrección sea aplicada.",
+            "No hay ninguna corrección automática aplicada.",
+            "No hay una corrección automática realizada.",
+            "No se ha corregido ni ajustado el dato.",
+            "No sólo no se ha corregido el dato, sino que no se ha ajustado.",
+            "No se corrigió el dato; solamente se rechazó.",
+            "No se atribuye el rechazo a falta de existencias.",
+            "La causa no es falta de existencias.",
+            "El rechazo no se debe a falta de existencias.",
+            "El rechazo no es por falta de existencias.",
+            "No es falta de existencias.",
+            "No se rechazó por falta de existencias.",
+            "La comprobación no consulta las existencias.",
+            "No se ha corregido automáticamente el dato; no se atribuye el rechazo a falta de existencias."
+        })check_statement(statement,true);
+        check_statement("Corrija la cantidad.",true,false);
+        check_statement("Es necesario corregir los datos.",true,false);
+        check_statement("No se ha corregido automáticamente el dato.",false,false);
+        check_statement("No se atribuye el rechazo a falta de existencias.",false,false);
+    }
+}
+
 void source_edits_stay_inside_assigned_diagnostic() {
     using lgaed::curriculum::rejection_function_only_edit;
     const std::string original=
@@ -420,10 +515,11 @@ int main() {
     try {
         accepted_semantics();
         validity_claims_keep_their_field_and_clause();
+        unsupported_claims_keep_their_predicate_and_polarity();
         source_edits_stay_inside_assigned_diagnostic();
         rejected_semantics();
         std::cout<<"PASS U3L6 semantic diagnostics: closed intervals, spaced dashes, "
-            "three valid review actions, field identities, scoped validity claims and negative cases\n";
+            "three valid review actions, field identities, scoped validity and action claims, negative cases\n";
         return 0;
     }catch(const std::exception& error){
         std::cerr<<"FAIL U3L6 diagnostic semantics: "<<error.what()<<'\n';
