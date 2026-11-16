@@ -312,10 +312,181 @@ void verify_history(const std::filesystem::path& directory,const JsonObject& sam
     check(state::read_bytes(source_file)==original_bytes,"Semantic view QA changed a predecessor document");
     check(state::read_bytes(state_file)==state_bytes,"Semantic view QA changed its original answer source");
 }
+
+std::size_t project_controls(HWND view) {
+    std::size_t count=0;
+    EnumChildWindows(view,[](HWND child,LPARAM parameter)->BOOL {
+        wchar_t kind[128]{};
+        if(GetClassNameW(child,kind,128)&&
+            std::wstring_view(kind)==L"LearnGameAndEngineDev.CppProjectControls")
+            ++*reinterpret_cast<std::size_t*>(parameter);
+        return TRUE;
+    },reinterpret_cast<LPARAM>(&count));
+    return count;
+}
+
+std::size_t verify_formatted_compiler_retirement(const std::filesystem::path& directory) {
+    const auto manifest=JsonObject::Parse(winrt::to_hstring(text(directory/"manifest.json")));
+    std::size_t executed=0;
+    for(const auto& entry:manifest.GetNamedArray(L"cases")) {
+        const auto sample=entry.GetObject();
+        if(!sample.HasKey(L"retiredCompilerCases"))continue;
+        const auto before_file=fixture(directory,sample.GetNamedString(L"before"));
+        const auto after_file=fixture(directory,sample.GetNamedString(L"after"));
+        const auto before_bytes=state::read_bytes(before_file),after_bytes=state::read_bytes(after_file);
+        const auto before=windows::load_lesson(before_file,"es");
+        const auto after=windows::load_lesson(after_file,"es");
+        const auto progress=windows::load_lesson_progress_metadata(after_file,"es");
+        for(const auto& run:sample.GetNamedArray(L"retiredCompilerCases")) {
+            const auto spec=run.GetObject();
+            const auto identity=winrt::to_string(spec.GetNamedString(L"id"));
+            const auto at=curriculum::stable_block_position(before,identity);
+            check(at.has_value(),"The formatted retirement QA lost its active predecessor");
+            const auto& owner=before.pages[at->page].blocks[at->block];
+            check(owner.type==curriculum::BlockType::cpp_compiler&&owner.cmake&&
+                owner.source_format_original_initial_code&&owner.source_format_original_project_files&&
+                owner.output_check&&!owner.output_check->cases.empty(),
+                "Formatted retirement QA needs an existing formatted CMake objective");
+            const auto retired=std::ranges::find(after.retired_blocks,identity,&curriculum::Block::stable_id);
+            const auto catalog=std::ranges::find(progress.retired_blocks,identity,&curriculum::Block::stable_id);
+            check(retired!=after.retired_blocks.end()&&catalog!=progress.retired_blocks.end()&&
+                !curriculum::stable_block_position(after,identity)&&
+                !curriculum::stable_block_position(progress,identity)&&
+                owner.initial_code==retired->initial_code&&owner.project_files==retired->project_files&&
+                retired->source_format_original_initial_code==owner.source_format_original_initial_code&&
+                retired->source_format_original_project_files==owner.source_format_original_project_files&&
+                catalog->source_format_original_initial_code==retired->source_format_original_initial_code&&
+                catalog->source_format_original_project_files==retired->source_format_original_project_files,
+                "Full/progress retirement changed the compiler source, original archive or active membership");
+            const auto environment=resolve_windows_environment({ProfileId::Codex,
+                L"sf-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+                    std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(executed),false});
+            check(!std::filesystem::exists(environment.paths.root),
+                "Formatted retirement QA requires a new isolated profile");
+            initialize_profile_directories(environment.paths);
+            state::StateData data;seed_answers(data,before,at->page,false);
+            const auto& objective=owner.output_check->cases.at(
+                static_cast<std::size_t>(spec.GetNamedNumber(L"case")));
+            windows::CppRunRequest request;request.request_id=executed+1;request.revision=executed+1;
+            request.source_utf8=owner.initial_code;request.stdin_utf8=objective.standard_input;
+            request.project_files=owner.project_files;request.source_files=owner.source_files;request.cmake=owner.cmake;
+            request.project_key=curriculum::draft_key("programming",before,owner);
+            request.projects_directory=environment.paths.root/"p";
+            auto task=std::async(std::launch::async,[request]{return windows::run_cpp(request);});
+            while(task.wait_for(std::chrono::milliseconds(0))!=std::future_status::ready) {
+                pump();MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);
+            }
+            const auto result=task.get();const auto execution=windows::capture_cpp_execution(request,result);
+            const auto verdict=windows::evaluate_cpp_output_check(*owner.output_check,execution,request.revision);
+            if(!result.compilation.succeeded()||verdict.verdict!=curriculum::OutputVerdict::correct)
+                std::cerr<<"FORMATTED_RETIREMENT_RUN "<<winrt::to_string(sample.GetNamedString(L"name"))
+                    <<" configure="<<result.configuration.stdout_bytes<<result.configuration.stderr_bytes
+                    <<" compile="<<result.compilation.stdout_bytes<<result.compilation.stderr_bytes
+                    <<" execute="<<result.execution.stdout_bytes<<result.execution.stderr_bytes<<'\n';
+            const auto feedback=std::string("Correcto")+(verdict.feedback.empty()?"":"\n"+verdict.feedback);
+            check(result.compilation.succeeded()&&result.execution.status==windows::CppPhaseStatus::completed&&
+                verdict.verdict==curriculum::OutputVerdict::correct&&
+                windows::record_compiler_puzzle_case(data,before,owner,request,execution,feedback),
+                "The formatted compiler retirement fixture did not earn a real CMake execution receipt");
+            ++executed;
+            state::Draft draft;draft.source=owner.initial_code;draft.input=objective.standard_input;
+            draft.selection_start=3;draft.selection_end=3;draft.has_saved=true;
+            draft.indentation_json=state::make_indentation_metadata(draft.source,{});
+            state::put_draft(data,request.project_key,draft);save(environment,data);
+            std::vector<LessonReadingRegion> previous;LessonPageState previous_page;
+            {HiddenView view(environment,before);view.page(at->page);
+                const auto ready=[&] {
+                    const auto regions=lesson_reading_regions(view.view);
+                    return std::ranges::any_of(regions,[&](const auto& region){
+                        return region.block_index==at->block&&region.feedback&&region.correct;});
+                };
+                const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(10);
+                while(!ready()&&std::chrono::steady_clock::now()<deadline) {
+                    pump();MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);
+                }
+                check(ready()&&project_controls(view.view)>0,
+                    "The genuine predecessor did not display its CMake controls and earned feedback");
+                previous=lesson_reading_regions(view.view);previous_page=lesson_page_state(view.view);
+                data=view.saved();
+            }
+            const auto original_receipts=data.preferences.at("native_windows");
+            const auto original_drafts=data.preferences.at("cpp_lesson_drafts");
+            const auto verify=[&](const state::StateData& current) {
+                state::validate_lesson_state(current,after);
+                check(current.preferences.at("native_windows")==original_receipts&&
+                    current.preferences.at("cpp_lesson_drafts")==original_drafts&&
+                    windows::compiler_puzzle_completed(current,after,*retired)&&
+                    windows::compiler_puzzle_case_count(current,after,*retired)==1&&
+                    windows::compiler_puzzle_completed(current,progress,*catalog),
+                    "Retirement changed the actual receipt, draft or catalog ownership");
+            };
+            state::StateData saved;
+            for(int reopen=0;reopen!=2;++reopen) {
+                HiddenView view(environment,after);view.page(at->page);
+                check(project_controls(view.view)==0,
+                    "An archived formatted compiler created active CMake controls after retirement");
+                const auto current=lesson_reading_regions(view.view);
+                for(const auto& region:previous)if(region.block_index==at->block)
+                    check(std::ranges::none_of(current,[&](const auto& active){return active.key==region.key;}),
+                        "The retired compiler still appears in the active reader");
+                const auto archives=retired_lesson_reading_archives(view.view);
+                const auto index=static_cast<std::size_t>(sample.GetNamedArray(L"history").GetAt(
+                    sample.GetNamedArray(L"history").Size()-1).GetObject().GetNamedNumber(L"index"));
+                const auto& archived=archives.at(index);
+                check(archived.page_identity==previous_page.narration_page_identity&&
+                    archived.regions.size()==previous.size(),
+                    "The retired compiler lost its exact published reader script");
+                for(std::size_t i=0;i<previous.size();++i)
+                    same_region(previous[i],archived.regions[i],"formatted compiler retirement",i);
+                saved=view.saved();verify(saved);
+            }
+            {state::StateStore store(environment.paths.root);auto physical=store.load();
+                verify(physical);
+                // Opening an unchanged page prepares authenticated provenance
+                // in memory; it does not mark the view dirty or force a write.
+                // Compare both snapshots at that same adoption stage, retaining
+                // every original preference, before explicitly persisting it.
+                state::prepare_lesson_state(physical,after);
+                check(physical==saved,
+                    "Physical reopening changed more than authenticated retirement adoption");
+                store.save(physical);
+            }
+            {state::StateStore store(environment.paths.root);const auto physical=store.load();
+                check(physical==saved,"Explicitly saved retired compiler state changed on reopening");
+                verify(physical);
+            }
+            const auto empty_environment=resolve_windows_environment({ProfileId::Codex,
+                L"sfe-"+std::to_wstring(GetCurrentProcessId())+L"-"+
+                    std::to_wstring(GetTickCount64())+L"-"+std::to_wstring(executed),false});
+            check(!std::filesystem::exists(empty_environment.paths.root),
+                "The unearned retirement control requires its own new QA profile");
+            initialize_profile_directories(empty_environment.paths);
+            state::StateData unearned;seed_answers(unearned,after,at->page,false);
+            save(empty_environment,unearned);
+            {HiddenView view(empty_environment,after);view.page(at->page);
+                LessonViewHooks hooks;hooks.lesson_completed=[](HWND){};
+                set_lesson_view_hooks(view.view,std::move(hooks));pump();
+                check(project_controls(view.view)==0&&lesson_options_snapshot(view.view).finish_enabled,
+                    "A retired compiler still blocks completion without a receipt");
+                const auto fresh=view.saved();
+                check(!windows::compiler_puzzle_completed(fresh,after,*retired)&&
+                    windows::compiler_puzzle_case_count(fresh,after,*retired)==0,
+                    "Opening a retired compiler fabricated a new execution achievement");
+            }
+            std::cout<<"PASS formatted compiler retirement "<<winrt::to_string(sample.GetNamedString(L"name"))
+                <<": real CMake receipt, exact full/progress archive, drafts, hidden prior script, "
+                <<"no active project controls or unearned gate, physical reopen\n";
+        }
+        check(state::read_bytes(before_file)==before_bytes&&state::read_bytes(after_file)==after_bytes,
+            "Formatted retirement view QA changed an authenticated fixture");
+    }
+    check(executed==3,"Formatted retirement view QA omitted one-step, successive or marked compiler retirement");
+    return executed;
+}
 }
 
 int wmain(int argc,wchar_t** argv)try {
-    check(argc==2,"Expected the isolated semantic retirement fixture directory");
+    check(argc==3,"Expected the isolated semantic and source-format retirement fixture directories");
     check(SUCCEEDED(OleInitialize(nullptr)),"Cannot initialize semantic Win32 QA controls");
     struct OleScope {~OleScope(){OleUninitialize();}} ole;
     INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES|ICC_BAR_CLASSES};
@@ -337,12 +508,14 @@ int wmain(int argc,wchar_t** argv)try {
     check(counts.root>0&&counts.marked>0&&counts.correct>0&&counts.reviewed>0&&counts.compilations==3&&
         counts.compiler_feedback>0&&counts.multicase_feedback>0&&counts.prior_choice_feedback>0,
         "Semantic view QA omitted root, exact intent, feedback verdicts or real multicase execution");
+    const auto retired_compilations=verify_formatted_compiler_retirement(std::filesystem::path(argv[2]));
     check(GetForegroundWindow()==foreground&&GetFocus()==focus,
         "Hidden semantic QA changed focus or the foreground application");
     FreeLibrary(edit);
     std::cout<<"PASS semantic retirement view: "<<counts.pages<<" historical page/verdict views, "
         <<counts.regions<<" exact supported reading regions, "<<counts.marked
-        <<" authored meanings, exact root/correct/reviewed feedback, and three real MSVC cases (two multicase, one prior choice). "
+        <<" authored meanings, exact root/correct/reviewed feedback, three real MSVC cases and "
+        <<retired_compilations<<" real CMake receipts retained after retiring formatted compilers. "
         <<"Isolated QA; no playback, human listening acceptance or learner credit.\n";
     return 0;
 }catch(const std::exception& error) {

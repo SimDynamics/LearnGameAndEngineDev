@@ -1,6 +1,7 @@
 #include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "platform/windows/state_store.hpp"
 
 #include <commctrl.h>
 #include <ole2.h>
@@ -466,6 +467,13 @@ void require_local_paste_format(HWND edit, LONG start, LONG end, const CHARFORMA
         + "/" + std::to_string(expected.yHeight) + "/" + std::to_string(expected.crTextColor) + "/" + lgaed::presentation::utf8(expected.szFaceName));
 }
 
+void require_persistable_indentation(const EditorDocument& document) {
+    const auto metadata = lgaed::state::make_indentation_metadata(
+        document.text, document.indentation_starts);
+    require(lgaed::state::indentation_units(document.text, metadata) == document.indentation_starts,
+        "The real draft validator must round-trip every surviving indentation unit");
+}
+
 struct ChangeProbe {
     bool streaming = false;
     unsigned streams = 0, replacements = 0;
@@ -475,6 +483,7 @@ struct ChangeProbe {
     unsigned updates = 0;
     bool last_update_frozen = false;
     bool callback_failed = false;
+    bool persist_indentation = false;
     EditorDocument observed;
     std::string visible;
 };
@@ -529,6 +538,7 @@ LRESULT CALLBACK host_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpar
                     if(frozen<2)++probe->notifications_without_freeze;
                     document->Unfreeze(&frozen);
                     probe->observed = editor->document();
+                    if (probe->persist_indentation) require_persistable_indentation(probe->observed);
                     probe->visible = lgaed::presentation::edit_text(control);
                     lgaed::presentation::style_cpp(control);
                 }
@@ -1424,6 +1434,159 @@ int main(int argc,char** argv) {
         require(field.adapter->document().text == "x", "Original unit still deletes as a unit");
     });
 
+    test("Typing before indentation removes only obsolete origins before saving and Undo restores them", [] {
+        for (const bool shortcut : {false, true}) {
+            auto original = predefined_code_document("    value;\n    next;");
+            ChangeProbe probe; probe.persist_indentation = true;
+            Fixture field(original, true, {}, true, &probe);
+            if (shortcut) require(field.adapter->insert_shortcut("x"), "Insert the configured token");
+            else field.character(L'x');
+            const auto edited = field.adapter->document();
+            const std::vector<std::int64_t> remaining{original.indentation_starts.back() + 1};
+            require(edited.text == "x    value;\n    next;" && edited.indentation_starts == remaining,
+                "Typing before a prefix must retain every source character and only the unaffected next-line origin");
+            require(probe.notifications > 0 && !probe.callback_failed &&
+                probe.observed.text == edited.text && probe.observed.indentation_starts == remaining,
+                "The parent must observe persistable indentation during the edit itself");
+            require_persistable_indentation(edited);
+            field.adapter->undo();
+            const auto undone = field.adapter->document();
+            require(undone.text == original.text && undone.indentation_starts == original.indentation_starts &&
+                undone.selection_start == 0 && undone.selection_end == 0 && !probe.callback_failed,
+                "One Undo must restore the exact earlier text, selection and complete indentation origin");
+            require_persistable_indentation(undone);
+            field.adapter->redo();
+            require(field.adapter->document().text == edited.text &&
+                field.adapter->document().indentation_starts == remaining && !probe.callback_failed,
+                "Redo must restore the edited snapshot without resurrecting an interior origin");
+            field.cursor(5); field.key(VK_BACK, L'\b');
+            require(field.adapter->document().text == "x   value;\n    next;",
+                "Backspace in the former prefix must now remove only one ordinary space");
+        }
+    });
+
+    test("Joining code lines preserves whitespace without retaining an interior indentation unit", [] {
+        for (const bool backward : {false, true}) {
+            auto original = predefined_code_document("prefix;\n    value;\n    next;");
+            original.selection_start = original.selection_end = backward ? 8 : 7;
+            ChangeProbe probe; probe.persist_indentation = true;
+            Fixture field(original, true, {}, true, &probe);
+            if (backward) field.key(VK_BACK, L'\b');
+            else field.key(VK_DELETE);
+            const auto edited = field.adapter->document();
+            const std::vector<std::int64_t> remaining{original.indentation_starts.back() - 1};
+            require(edited.text == "prefix;    value;\n    next;" && edited.indentation_starts == remaining,
+                "Deleting only the newline must preserve all spaces and the unrelated line's proven origin");
+            require(probe.notifications > 0 && !probe.callback_failed &&
+                probe.observed.indentation_starts == remaining,
+                "Native Delete and assisted Backspace must both save valid origins before notifying their owner");
+            require_persistable_indentation(edited);
+            field.adapter->undo();
+            const auto undone = field.adapter->document();
+            require(undone.text == original.text && undone.indentation_starts == original.indentation_starts &&
+                undone.selection_start == original.selection_start &&
+                undone.selection_end == original.selection_end && !probe.callback_failed,
+                "Undo of a line join must restore both line origins and its original insertion point");
+            require_persistable_indentation(undone);
+            field.adapter->redo();
+            require(field.adapter->document().text == edited.text &&
+                field.adapter->document().indentation_starts == remaining && !probe.callback_failed,
+                "Redo of a line join must keep the complete edited snapshot");
+            field.cursor(11); field.key(VK_BACK, L'\b');
+            require(field.adapter->document().text == "prefix;   value;\n    next;",
+                "The joined interior spaces must not remain a four-space deletion unit");
+        }
+    });
+
+    test("Interior Tab stops keep their spaces and history without acquiring indentation provenance", [] {
+        for (const std::string source : {"abcd", "abcd ", "abcd  ", "abcd   ", "    abcd"}) {
+            for (const bool physical : {false, true}) {
+                auto original = predefined_code_document(source);
+                original.selection_start = original.selection_end = static_cast<std::int64_t>(source.size());
+                ChangeProbe probe; probe.persist_indentation = true;
+                Fixture field(original, true, {}, true, &probe);
+                if (physical) field.key(VK_TAB, L'\t'); else field.adapter->insert_tab();
+                const auto count = 4 - source.size() % 4;
+                const auto edited = field.adapter->document();
+                require(edited.text == source + std::string(count, ' ') &&
+                    edited.indentation_starts == original.indentation_starts && !probe.callback_failed,
+                    "Tab after code must reach its next stop without changing any source or genuine leading origin");
+                require_persistable_indentation(edited);
+                field.adapter->undo();
+                const auto undone = field.adapter->document();
+                require(undone.text == source && undone.indentation_starts == original.indentation_starts &&
+                    undone.selection_start == original.selection_start &&
+                    undone.selection_end == original.selection_end && !probe.callback_failed,
+                    "Undo must restore the exact manual spaces that preceded the interior Tab");
+                field.adapter->redo();
+                require(field.adapter->document().text == edited.text &&
+                    field.adapter->document().indentation_starts == original.indentation_starts,
+                    "Redo must preserve an interior Tab's characters without fabricating a prefix");
+                field.key(VK_BACK, L'\b');
+                require(field.adapter->document().text == edited.text.substr(0, edited.text.size() - 1),
+                    "Interior Tab spaces must remain ordinary characters for backward deletion");
+            }
+        }
+    });
+
+    test("Editing a raw literal revokes affected indentation origins without changing literal data", [] {
+        auto original = predefined_code_document("    value;\n    next;");
+        ChangeProbe probe; probe.persist_indentation = true;
+        Fixture field(original, true, {}, true, &probe);
+        require(field.adapter->insert_shortcut("R\"(\n"), "Insert the raw-string opening as one edit");
+        const auto edited = field.adapter->document();
+        require(edited.text == "R\"(\n" + original.text && edited.indentation_starts.empty() &&
+            !probe.callback_failed,
+            "Indentation newly enclosed in an unfinished raw string is literal data, not a removable tab unit");
+        require_persistable_indentation(edited);
+        field.adapter->undo();
+        require(field.adapter->document().text == original.text &&
+            field.adapter->document().indentation_starts == original.indentation_starts && !probe.callback_failed,
+            "Undo must recover the earlier code and both original indentation identities");
+        require_persistable_indentation(field.adapter->document());
+        field.adapter->redo();
+        require(field.adapter->document().text == edited.text && field.adapter->document().indentation_starts.empty(),
+            "Redo must recover the literal source with ordinary data spaces");
+        field.cursor(8); field.key(VK_BACK, L'\b');
+        require(field.adapter->document().text == "R\"(\n   value;\n    next;",
+            "Backspace must remove only one of the preserved raw-string data spaces");
+    });
+
+    test("Draft indentation round-trips LF CR and CRLF with exact UTF16 source selections", [] {
+        for (const std::string ending : {"\n", "\r", "\r\n"}) {
+            const std::string source = "😀" + ending + "    value;" + ending + "\t    next;" + ending;
+            auto original = predefined_code_document(source);
+            const auto first = static_cast<std::int64_t>(2 + ending.size());
+            const auto second = static_cast<std::int64_t>(13 + 2 * ending.size());
+            require(original.indentation_starts == std::vector<std::int64_t>({first, second}),
+                "Predefined indentation offsets must count UTF16 units and each authored line separator exactly");
+            original.selection_start = first + 4;
+            original.selection_end = static_cast<std::int64_t>(lgaed::presentation::wide(source).size());
+            Fixture field(original);
+            const auto shown = field.adapter->document();
+            require(shown.text == original.text && shown.indentation_starts == original.indentation_starts &&
+                shown.selection_start == original.selection_start && shown.selection_end == original.selection_end,
+                "Displaying an untouched draft must preserve its source spelling, units and raw selection offsets");
+            require_persistable_indentation(shown);
+            lgaed::state::Draft draft;
+            draft.source = shown.text; draft.input = "entrada\r\n😀";
+            draft.indentation_json = lgaed::state::make_indentation_metadata(shown.text, shown.indentation_starts);
+            draft.selection_start = shown.selection_start; draft.selection_end = shown.selection_end;
+            lgaed::state::StateData data;
+            lgaed::state::put_draft(data, "qa/indentation-separators", draft);
+            const auto restored = lgaed::state::get_draft(data, "qa/indentation-separators", "unused", "unused");
+            require(restored.has_saved && restored.source == draft.source && restored.input == draft.input &&
+                restored.indentation_json == draft.indentation_json &&
+                restored.selection_start == draft.selection_start && restored.selection_end == draft.selection_end &&
+                lgaed::state::indentation_units(restored.source, restored.indentation_json) == original.indentation_starts,
+                "Draft persistence must preserve CR LF CRLF, non-BMP source, stdin, selection and every genuine unit");
+        }
+        bool rejected = false;
+        try { (void)lgaed::state::make_indentation_metadata("code    value;", {4}); }
+        catch (const std::runtime_error&) { rejected = true; }
+        require(rejected, "Supporting CR must retain the existing rejection of an actual interior indentation mark");
+    });
+
     test("UTF16 indentation offsets preserve non-BMP text and existing tabs", [] {
         const std::string source = "😀\n    x\n\ty\n";
         const auto document = predefined_code_document(source);
@@ -1677,6 +1840,66 @@ int main(int argc,char** argv) {
             "Revealing the new line overwrote the viewport saved for Undo: before="+std::to_string(before.y)+
                 " revealed="+std::to_string(revealed.y)+" restored="+std::to_string(restored.y)+
                 " source-equal="+std::to_string(field.adapter->document().text==source));
+        field.adapter->normalize_viewport();
+        POINT normalized{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&normalized));
+        require(normalized.x==before.x&&normalized.y==before.y,
+            "The owner's deferred viewport normalization changed the exact scroll restored by Undo");
+        field.adapter->redo();
+        field.adapter->normalize_viewport();
+        POINT redone{};SendMessageW(field.edit,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&redone));
+        const auto repeated=field.adapter->document();
+        require(redone.x==revealed.x&&redone.y==revealed.y&&repeated.text==inserted.text&&
+            repeated.indentation_starts==inserted.indentation_starts&&
+            repeated.selection_start==inserted.selection_start&&repeated.selection_end==inserted.selection_end,
+            "Redo and deferred normalization must restore the same native view and complete edited snapshot");
+    });
+
+    test("Undo and Redo adapt saved scrolling after the viewport grows", [] {
+        for (const int height : {400, 950}) {
+            std::string source;
+            for (unsigned index = 0; index < 35; ++index) source += "    value;\n";
+            source += "    if (ready) {}";
+            auto original = predefined_code_document(source);
+            original.selection_start = original.selection_end = static_cast<std::int64_t>(source.size() - 1);
+            Fixture field(original);
+            ShowWindow(field.host, SW_SHOWNOACTIVATE);
+            SetFocus(field.edit);
+            require(GetFocus() == field.edit, "Viewport history requires the actual editor caret");
+            UpdateWindow(field.host);
+            SendMessageW(field.edit, EM_SCROLLCARET, 0, 0);
+            POINT before{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&before));
+            require(before.y > 0, "The small viewport must scroll before recording its history");
+            field.key(VK_RETURN, L'\r');
+            const auto edited = field.adapter->document();
+            require(MoveWindow(field.host, 0, 0, 640, height + 100, TRUE) != FALSE &&
+                MoveWindow(field.edit, 0, 0, 600, height, TRUE) != FALSE,
+                "Grow the actual native viewport between editing and Undo");
+            UpdateWindow(field.host);
+            POINT resized{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&resized));
+            field.adapter->undo();
+            field.adapter->normalize_viewport();
+            const auto undone = field.adapter->document();
+            POINT restored{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&restored));
+            require(undone.text == source && undone.indentation_starts == original.indentation_starts &&
+                undone.selection_start == original.selection_start && undone.selection_end == original.selection_end,
+                "Undo after resizing must retain exact source, caret and indentation origin");
+            require(restored.y >= 0 && restored.y < before.y,
+                "Undo must adapt the small viewport's old bottom offset to its larger current viewport");
+            if (height == 950) require(restored.y == 0 && SendMessageW(field.edit, EM_GETFIRSTVISIBLELINE, 0, 0) == 0,
+                "A restored source that now fits completely must not leave an empty scrolled viewport");
+            field.adapter->redo();
+            field.adapter->normalize_viewport();
+            const auto redone = field.adapter->document();
+            POINT repeated{};
+            SendMessageW(field.edit, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&repeated));
+            require(redone.text == edited.text && redone.indentation_starts == edited.indentation_starts &&
+                redone.selection_start == edited.selection_start && redone.selection_end == edited.selection_end &&
+                repeated.x == resized.x && repeated.y == resized.y,
+                "Redo in the unchanged larger viewport must restore its actual saved scroll and complete edited snapshot");
+        }
     });
 
     test("A snapshot load exception restores notification masking and edit capture", [] {

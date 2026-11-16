@@ -1227,8 +1227,22 @@ El código visible del archivo histórico mantiene sus bytes publicados. El mism
 contrato se comprueba en la carga completa de la lección y en la carga de progreso.
 
 El plan de retiro sigue sujeto a los propietarios admitidos por cada contrato.
-Esta composición permite retirar otro bloque de la lección; no autoriza retirar
-el propietario de un archivo `sourceFormatRevisions` que deba seguir activo.
+Un bloque `code` o `cpp_compiler` que ya tenga `sourceFormatRevisions` puede
+retirarse mediante la misma operación `retire()`. Su archivo original completo
+permanece bajo la identidad histórica; `retired.block` conserva exactamente la
+última presentación publicada, incluidos sus saltos físicos y sus guías. Antes
+de aceptar el retiro, Python y Windows comprueban la equivalencia léxica,
+proyectan sólo las fuentes para contrastar el contrato original y verifican
+la cadena editorial y la captura de lectura correspondientes.
+
+Windows conserva las fuentes originales de ese editor retirado al resolver
+sus borradores, objetivos y recibos históricos. Un diagnóstico de compilación
+formateado se carga con su fuente original autenticada; no se reinterpreta como
+un objetivo nuevo. El propietario deja de crear controles y obligaciones
+activas, pero sus datos y lecturas anteriores permanecen disponibles. Cambiar
+tokens, archivos, respuestas, casos, identidad o procedencia sigue rechazado.
+Los propietarios con revisiones cerradas de compilador, de casos o de tarjetas
+conservan sus requisitos propios de actividad; esta ampliación no los retira.
 
 ### Marcado semántico de las lecturas retiradas
 

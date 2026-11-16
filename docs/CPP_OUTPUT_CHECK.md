@@ -504,6 +504,76 @@ con declaraciones incorporadas únicamente en el perfil QA y comprueba la
 secuencia del cliente, los recibos y la reapertura. Ambos tests nativos
 están registrados en ReaderBuild y en la construcción completa de Windows.
 
+## Ampliar una batería CMake de retorno y destino
+
+La variante original de `compilerOpenBatteryChecks`, sin campo `kind`, acredita
+una comparación nueva de una función `bool(int, int, int, int&)`. Su acuerdo es
+el ajuste de menor magnitud a un intervalo: los tres datos pertenecen a
+`[-20,20]`, los extremos están ordenados y un rechazo conserva el destino.
+La declaración identifica la biblioteca, el comprobador y las llamadas
+históricas; no sustituye los archivos ni convierte una impresión en evidencia.
+
+En el propietario `block_0006_0011` de U3L10, el contrato tiene esta forma:
+
+```json
+{
+  "compilerOpenBatteryChecks": [
+    {
+      "activity": "block_0006_0011",
+      "library": "src/ajuste.cpp",
+      "test": "pruebas/casos.cpp",
+      "function": "intentar_ajuste",
+      "comparison": "comprobar",
+      "target": "comprobar_ajustes",
+      "originalCases": [
+        {"value": 2, "lower": 3, "upper": 7, "initial": 77},
+        {"value": 5, "lower": 3, "upper": 7, "initial": -8},
+        {"value": 9, "lower": 3, "upper": 7, "initial": 19},
+        {"value": 4, "lower": 4, "upper": 4, "initial": -4},
+        {"value": -20, "lower": 20, "upper": 20, "initial": 8},
+        {"value": 20, "lower": -20, "upper": -20, "initial": 17},
+        {"value": 0, "lower": 7, "upper": 3, "initial": 77},
+        {"value": 21, "lower": 3, "upper": 7, "initial": -8},
+        {"value": -21, "lower": 3, "upper": 7, "initial": 19},
+        {"value": 0, "lower": -21, "upper": 7, "initial": -4},
+        {"value": 0, "lower": 3, "upper": 21, "initial": 8}
+      ]
+    }
+  ]
+}
+```
+
+La declaración debe corresponder a las comparaciones del archivo original.
+En el programa presentado se conservan la biblioteca, la cabecera, el cliente
+y CMake; sólo puede cambiar el archivo de pruebas. La ejecución debe contener
+las once llamadas originales y exactamente una terna nueva. Las mutaciones
+independientes alteran por separado la aceptación y el destino de cada llamada,
+incluida la añadida: el comprobador debe detectar cada defecto, comunicarlo y
+continuar con las demás llamadas. El inicial sin ampliar sigue sin acreditar
+el objetivo aunque termine con `Fallos=0`.
+
+### Entrada y acciones de ejecución
+
+El caso obligatorio derivado exige entrada vacía y el objetivo
+`comprobar_ajustes`. El `initialStandardInput` histórico conserva el lote del
+cliente; no se borra ni se cambia para ajustar la comprobación. El estudiante
+vacía «Entrada» como indica la consigna. Esa entrada antigua no acredita la
+batería ni provoca sus ejecuciones privadas.
+
+Se admiten tanto «Compilar, ejecutar y comprobar» como la secuencia
+«Configurar y generar», «Construir objetivo» y «Ejecutar objetivo construido».
+Configurar o construir por separado no concede el logro. Al ejecutar el
+objetivo construido se conservan las comprobaciones existentes de la revisión
+y del artefacto; cada variante privada se vuelve a compilar para comprobar la
+mutación correspondiente, aunque la acción pública haya sido sólo ejecutar.
+
+El recibo se vincula a la revisión pública y al caso de entrada vacía. Los
+recibos de un objetivo anterior permanecen en sus claves históricas y no se
+convierten en aciertos del objetivo corregido. Los borradores, la entrada
+inicial, los propietarios y sus mapas conservan su identidad. La prueba nativa
+de este recorrido se registra como `native.open_battery_runtime`; la prueba
+de menor alcance del ejecutor sigue en `native.open_battery_runner`.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.
@@ -1482,6 +1552,16 @@ permanecen intactos; un acierto anterior de salida no satisface automáticamente
 la nueva comprobación. Para avanzar sigue bastando el primer caso correcto
 que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
 
+La API de ejecución Windows admite tanto `compile_run` como la secuencia
+`configure` → `build` → `execute` para esta comprobación estructural. Configurar
+o construir por separado no concede el logro. Al ejecutar el objetivo ya
+construido, el motor comprueba que sus fuentes, configuración, objetivo y
+artefacto siguen vigentes y evalúa el grafo de esa misma revisión junto con el
+resultado nuevo. Una consola restaurada no crea otra evidencia y un cambio de
+fuentes u opciones exige reconstruir. El lector utiliza su acción combinada
+«Compilar, ejecutar y comprobar»; esta compatibilidad del ejecutor no añade ni
+cambia controles de la interfaz.
+
 `project` es opcional. Cada objetivo requiere `name` y `type`
 (`EXECUTABLE` o `STATIC_LIBRARY`); `sources`, `linksTo` y
 `exactSources` son opcionales. Las fuentes declaradas son rutas originales
@@ -1497,7 +1577,7 @@ Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
 ni se sustituye por una búsqueda textual del código fuente. Para exigir los requisitos explícitos de los objetivos, un elemento de
 `targets` puede declarar `"explicitCxx20": true` y
 `"explicitCxxExtensionsOff": true`. Estas propiedades optativas obligan a
-comprobar que **CMake ejecutó** una declaración de C++20 y una desactivación
+comprobar que **CMake ejecutó** una declaración de C++20 o posterior y una desactivación
 de extensiones sobre el objetivo, además de construirlo y ejecutar su primer
 caso correctamente. El perfil Windows puede aportar C++23 y extensiones
 desactivadas, pero eso **no** satisface las propiedades del alumno.
@@ -1507,8 +1587,15 @@ CMake limitada a los archivos CMake originales del proyecto. Sólo acepta
 órdenes ejecutadas y argumentos expandidos: `target_compile_features(objetivo
 PRIVATE cxx_std_20)`, `set_target_properties(objetivo PROPERTIES
 CXX_STANDARD 20)` y `set_property(TARGET objetivo PROPERTY
-CXX_STANDARD 20)` son formas equivalentes para el mínimo. Para extensiones
-se admiten `set_target_properties(... PROPERTIES CXX_EXTENSIONS OFF)` y
+CXX_STANDARD 20)` son formas equivalentes para el mínimo. También se
+admiten las declaraciones explícitas de C++23 y C++26 cuando el compilador
+permite construirlas. El motor distingue la lista `COMPILE_FEATURES` de la
+selección `CXX_STANDARD`: una característica `cxx_std_20` activa sigue
+exigiendo al menos C++20 aunque después se seleccione la propiedad 17; una
+propiedad 23 también satisface el mínimo. Bajar una propiedad 20 a 17 sin
+una característica suficiente, o retirar esa característica, no acredita
+el requisito. Los valores heredados del perfil siguen sin contar como una
+declaración del alumno. Para extensiones se admiten `set_target_properties(... PROPERTIES CXX_EXTENSIONS OFF)` y
 `set_property(TARGET ... PROPERTY CXX_EXTENSIONS OFF)`, con los valores
 falsos admitidos por CMake. Una orden posterior que active las extensiones
 invalida el requisito. Las rutas, fuentes y enlaces siguen contrastándose
@@ -1616,8 +1703,10 @@ fijada siempre a la implementación especial no acreditan la construcción.
 
 La ejecución adicional utiliza un espacio de configuración y huella propia,
 conserva los proyectos y borradores del estudiante y nunca modifica la
-opción seleccionada en el editor. Si la compilación o ejecución de la
-configuración `OFF` falla, falta evidencia y no se concede el logro. El
+opción seleccionada en el editor. También se construye y ejecuta cuando la acción
+pública es `execute`: el artefacto `ON` ya construido no sustituye la
+construcción privada `OFF`. Si la compilación o ejecución de la configuración
+`OFF` falla, falta evidencia y no se concede el logro. El
 primer caso correcto del editor sigue siendo el único obligatorio; esta
 segunda ejecución es la comprobación interna del mismo objetivo, no un
 segundo caso que el estudiante deba activar manualmente.

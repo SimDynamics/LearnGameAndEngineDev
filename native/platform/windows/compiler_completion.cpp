@@ -69,6 +69,13 @@ const std::vector<std::string>* integer_client_receipt(const state::StateData& d
     return fields&&fields->size()==3&&!(*fields)[0].empty()&&!(*fields)[1].empty()&&
         (*fields)[2]==integer_client_seal(key,(*fields)[0],(*fields)[1])?fields:nullptr;
 }
+void validate_integer_client_receipt(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(block.integer_battery_probe&&block.integer_battery_probe->prerequisite&&
+       state::find(data,"native_windows",integer_client_key(lesson,block))&&
+       !integer_client_receipt(data,lesson,block))
+        throw std::runtime_error("Invalid integer battery client provenance; data was preserved.");
+}
 bool integer_battery_project_matches(const curriculum::Block& block,const CppRunRequest& request) {
     if(!block.integer_battery_probe||block.integer_battery_probe!=request.integer_battery_probe||
        !block.cmake||!request.cmake||
@@ -416,10 +423,7 @@ std::optional<CurrentCompilerGuidance> current_v2_guidance(const curriculum::Les
 }
 void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return;const auto key=base(lesson,block);
-    if(block.integer_battery_probe&&block.integer_battery_probe->prerequisite&&
-       state::find(data,"native_windows",integer_client_key(lesson,block))&&
-       !integer_client_receipt(data,lesson,block))
-        throw std::runtime_error("Invalid integer battery client provenance; data was preserved.");
+    validate_integer_client_receipt(data,lesson,block);
     for(const auto suffix:{"program","completed","feedback"})if(const auto value=state::find(data,"native_windows",key+suffix);value&&!std::holds_alternative<std::string>(*value))
         throw std::runtime_error("Invalid compiler execution provenance; data was preserved.");
     const auto program=state::string_value(data,"native_windows",key+"program");const auto proofs=case_proofs(data,key);
@@ -484,7 +488,9 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
         if(!block.cmake||request.cmake!=block.cmake||
            !curriculum::open_battery_probe_spec_valid(authored)||
            request.cmake->target!=authored.test_target||
-           request.action!=CppRunRequest::Action::compile_run||
+           (request.action!=CppRunRequest::Action::compile_run&&
+            request.action!=CppRunRequest::Action::execute)||
+           !request.stdin_utf8.empty()||
            request.backend!=CppRunRequest::Backend::native_msvc||
            request.diagnostic||request.source_files!=block.source_files||
            request.project_files.size()!=block.project_files.size())
@@ -506,7 +512,8 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
            request.cmake->build_type!=block.cmake->build_type||
            request.cmake->options!=block.cmake->options||
            request.backend!=CppRunRequest::Backend::native_msvc||
-           request.action!=CppRunRequest::Action::compile_run||
+           (request.action!=CppRunRequest::Action::compile_run&&
+            request.action!=CppRunRequest::Action::execute)||
            !request.capture_cmake_graph||request.diagnostic)
             return false;
         // A published editor may start on the client while its mandatory
@@ -773,6 +780,8 @@ std::string compiler_puzzle_historical_feedback(const state::StateData& data,con
     return previous?compiler_puzzle_feedback(data,lesson,*previous):std::string{};
 }
 void validate_compiler_puzzle_state(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    // Client provenance is independent of the optional editorial case history.
+    validate_integer_client_receipt(data,lesson,block);
     // Never erase a malformed additional receipt. The original stdout proof
     // stays intact; the new record must be independently authenticated.
     if(selective_history_owner(lesson,block)&&
@@ -861,7 +870,8 @@ static void adopt_compiler_case_stage(state::StateData& data,const curriculum::L
 void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::Lesson& lesson) {
     // Validate every reusable version before the staged store changes any receipt.
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks)
-        if(block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
+        if((block.integer_battery_probe&&block.integer_battery_probe->prerequisite)||
+           block.compiler_revision||!block.compiler_case_order_revisions.empty()||!block.compiler_case_revisions.empty())
             validate_compiler_puzzle_state(data,lesson,block);
     for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
         const auto stages=compiler_case_stages(block);

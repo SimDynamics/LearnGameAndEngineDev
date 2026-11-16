@@ -423,7 +423,7 @@ std::vector<std::int64_t> indentation_units(std::string_view source, std::string
         if (number != static_cast<double>(offset) || offset < previous + 4 || offset < 0 ||
             static_cast<std::uint64_t>(offset) + 4 > text.size() || text.substr(static_cast<std::size_t>(offset), 4) != L"    ")
             throw std::runtime_error("La identidad de sangria contiene rangos invalidos.");
-        const auto first = text.rfind(L'\n', static_cast<std::size_t>(offset));
+        const auto first = text.find_last_of(L"\r\n", static_cast<std::size_t>(offset));
         const auto line_start = first == text.npos ? 0 : first + 1;
         for (auto cursor = line_start; cursor < static_cast<std::size_t>(offset); ++cursor)
             if (text[cursor] != L' ' && text[cursor] != L'\t')

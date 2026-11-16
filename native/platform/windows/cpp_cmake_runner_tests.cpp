@@ -768,6 +768,68 @@ set(elegido comprobar)
 add_executable(comprobar inventario.cpp)
 target_compile_features(${elegido} PRIVATE cxx_std_20)
 set_property(TARGET ${elegido} PROPERTY CXX_EXTENSIONS OFF)
+)cmake",true},
+        // The authored minimum accepts stronger language modes. Features
+        // and CXX_STANDARD remain independent when either property changes.
+        {"stronger-feature-minimum",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_23)
+)cmake",true},
+        {"stronger-standard-property",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(comprobar PROPERTIES CXX_STANDARD 23)
+)cmake",true},
+        {"feature-before-stronger-standard",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_target_properties(comprobar PROPERTIES CXX_STANDARD 23)
+)cmake",true},
+        {"stronger-standard-before-feature",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 23)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+)cmake",true},
+        {"active-feature-with-lower-property",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",true},
+        {"lower-standard-only",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",false},
+        {"standard-minimum-overwritten",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 20)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",false},
+        {"feature-minimum-removed",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_property(TARGET comprobar PROPERTY COMPILE_FEATURES)
+set_property(TARGET comprobar PROPERTY CXX_STANDARD 17)
+)cmake",false},
+        {"feature-list-keeps-property-boundaries",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(comprobar PROPERTIES COMPILE_FEATURES "cxx_std_20;cxx_std_17" CXX_STANDARD 17)
 )cmake",true}
     };
     std::uint64_t variant_id=1460;
@@ -1027,6 +1089,109 @@ target_link_libraries(cotizar PRIVATE tarifas)
     check(compiler_puzzle_completed(option_reopened,option_original,option_before)&&
         compiler_puzzle_completed(option_reopened,option_mapped,option_after),
         "Reopening lost old ON output or new ON/OFF structural credit");
+    // The same objective must also work with the three actions taught by
+    // the course. This distinct workspace has no prebuilt public or OFF target.
+    auto phased_option=option_request;
+    phased_option.project_key="qa/op-ph";
+    phased_option.request_id=1560;
+    phased_option.revision=560;
+    state::StateData phased_saved;
+    state::prepare_lesson_state(phased_saved,option_mapped);
+    const auto phased_seed=phased_saved;
+    check(!inspect_cpp_project(phased_option).configured&&
+        !inspect_cpp_project(phased_option).built,
+        "The phased CMake fixture unexpectedly reused an earlier workspace");
+    phased_option.action=CppRunRequest::Action::configure;
+    const auto phased_configured=run_cpp(phased_option);
+    check(phased_configured.error_utf8.empty()&&
+        phased_configured.configuration.succeeded()&&
+        phased_configured.compilation.status==CppPhaseStatus::not_started&&
+        phased_configured.execution.status==CppPhaseStatus::not_started&&
+        phased_configured.cmake_graph&&!phased_configured.cmake_option_probe&&
+        !compiler_runtime_request_allowed(option_after,phased_option)&&
+        !record_compiler_puzzle_case(phased_saved,option_mapped,option_after,
+            phased_option,capture_cpp_execution(phased_option,phased_configured),
+            "Sólo configuración")&&phased_saved==phased_seed,
+        "Configuring alone failed or granted the ON/OFF runtime achievement: "+
+            phased_configured.error_utf8+phased_configured.configuration.stderr_bytes);
+    phased_option.action=CppRunRequest::Action::build;
+    ++phased_option.request_id;
+    const auto phased_built=run_cpp(phased_option);
+    built(phased_built);
+    check(phased_built.execution.status==CppPhaseStatus::not_started&&
+        phased_built.cmake_graph&&!phased_built.cmake_option_probe&&
+        inspect_cpp_project(phased_option).built&&
+        !compiler_runtime_request_allowed(option_after,phased_option)&&
+        !record_compiler_puzzle_case(phased_saved,option_mapped,option_after,
+            phased_option,capture_cpp_execution(phased_option,phased_built),
+            "Sólo construcción")&&phased_saved==phased_seed,
+        "Building alone granted the ON/OFF runtime achievement");
+    phased_option.action=CppRunRequest::Action::execute;
+    ++phased_option.request_id;
+    check(compiler_runtime_request_allowed(option_after,phased_option),
+        "The graph objective refused Execute built target after configure/build");
+    const auto phased_run=run_cpp(phased_option);
+    ran(phased_run);
+    const auto phased_fresh=capture_cpp_execution(phased_option,phased_run);
+    check(phased_run.configuration.status==CppPhaseStatus::not_started&&
+        phased_run.execution.stdout_bytes=="0:4:10"&&
+        phased_run.execution.stderr_bytes.empty()&&
+        phased_run.cmake_graph&&phased_run.cmake_option_probe&&
+        phased_run.cmake_option_probe->configuration.succeeded()&&
+        phased_run.cmake_option_probe->compilation.succeeded()&&
+        phased_run.cmake_option_probe->execution.succeeded()&&
+        phased_run.cmake_option_probe->execution.stdout_bytes=="0:6:15"&&
+        phased_run.cmake_option_probe->execution.stderr_bytes.empty()&&
+        phased_run.cmake_option_probe->graph&&
+        phased_fresh.cmake_graph_correct&&
+        record_compiler_puzzle_case(phased_saved,option_mapped,option_after,
+            phased_option,phased_fresh,"ON ejecutado y OFF reconstruido")&&
+        compiler_puzzle_completed(phased_saved,option_mapped,option_after)&&
+        compiler_puzzle_case_count(phased_saved,option_mapped,option_after)==1,
+        "Execute built target failed to rebuild OFF or earn its structural receipt");
+    const auto phased_earned=phased_saved;
+    const auto phased_reopened=state::decode(state::encode(phased_saved));
+    check(phased_reopened==phased_earned&&
+        compiler_puzzle_completed(phased_reopened,option_metadata,
+            option_metadata.pages.at(11).blocks.at(3)),
+        "Reopening lost the receipt earned by the separate CMake actions");
+
+    // A source edit keeps valid configure state but makes the old binary
+    // stale. Neither an actual execute nor relabelled earlier evidence may
+    // grant the new source credit or erase an already earned achievement.
+    auto stale_option=phased_option;
+    ++stale_option.request_id;
+    ++stale_option.revision;
+    bool edited_special=false;
+    for(auto& file:stale_option.project_files)
+        if(file.first=="especial.cpp") {
+            file.second+="\n// QA: revisión nueva todavía sin construir\n";
+            edited_special=true;
+        }
+    const auto stale_availability=inspect_cpp_project(stale_option);
+    check(edited_special&&stale_availability.configured&&!stale_availability.built,
+        "Editing the ON source failed to invalidate its previously built artifact");
+    const auto stale_option_run=run_cpp(stale_option);
+    const auto stale_option_fresh=capture_cpp_execution(stale_option,stale_option_run);
+    check(!stale_option_run.error_utf8.empty()&&
+        !stale_option_run.execution.succeeded()&&!stale_option_run.cmake_option_probe&&
+        !stale_option_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(phased_saved,option_mapped,option_after,
+            stale_option,stale_option_fresh,"Ejecutable obsoleto")&&
+        phased_saved==phased_earned,
+        "An obsolete artifact earned a receipt or erased the earlier achievement");
+    auto relabelled_run=phased_run;
+    relabelled_run.request_id=stale_option.request_id;
+    relabelled_run.revision=stale_option.revision;
+    const auto relabelled_fresh=capture_cpp_execution(stale_option,relabelled_run);
+    auto uncredited_phase=phased_seed;
+    check(!relabelled_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(uncredited_phase,option_mapped,option_after,
+            stale_option,relabelled_fresh,"Captura de otra revisión")&&
+        uncredited_phase==phased_seed,
+        "Changing request IDs promoted old ON/OFF evidence to the edited source");
+    std::cout << "PASS separate CMake actions, fresh OFF build, receipt reopening and stale-source rejection\n";
+
     const std::vector<std::pair<std::string,std::string>> rejected_options={
         {"wrong-default",R"cmake(cmake_minimum_required(VERSION 3.20)
 project(Cotizaciones LANGUAGES CXX)

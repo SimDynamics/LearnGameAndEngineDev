@@ -233,6 +233,29 @@ Lexical context_at(std::wstring_view text, std::size_t cursor) {
     return code_context(text, cursor).lexical;
 }
 
+void retain_prefix_units(const std::wstring& text, std::vector<std::int64_t>& starts) {
+    validate(text, starts);
+    if (starts.empty()) return;
+    std::vector<std::pair<std::size_t,std::size_t>> literals;
+    (void)code_context(text, text.size(), &literals);
+    std::size_t cursor = 0, literal_index = 0, retained = 0;
+    bool prefix = true;
+    for (const auto unit : starts) {
+        const auto start = static_cast<std::size_t>(unit);
+        while (cursor < start) {
+            const auto character = text[cursor++];
+            if (character == L'\r' || character == L'\n') prefix = true;
+            else if (character != L' ' && character != L'\t') prefix = false;
+        }
+        while (literal_index < literals.size() && literals[literal_index].second <= start) ++literal_index;
+        const bool literal = literal_index < literals.size() && literals[literal_index].first <= start;
+        // Proven origin is not permission to remove spaces after they become
+        // interior whitespace or literal data. Never infer a replacement mark.
+        if (prefix && !literal) starts[retained++] = unit;
+    }
+    starts.resize(retained);
+}
+
 std::size_t line_start_at(std::wstring_view text, std::size_t cursor) {
     if (!cursor) return 0;
     const auto previous = text.rfind(L'\n', cursor - 1);
@@ -309,6 +332,7 @@ struct CodeEditor::Impl {
         CHARRANGE cursor{};
         POINT scroll{};
         std::optional<OriginalRepresentation> original;
+        std::array<LONG,8> viewport{};
     };
     HWND window;
     bool multiline;
@@ -316,6 +340,7 @@ struct CodeEditor::Impl {
     bool auto_indent;
     std::function<void()> submit;
     bool applying = false;
+    bool preserved_history_scroll = false;
     bool suppress_tab_char = false;
     bool suppress_backspace_char = false;
     bool suppress_enter_char = false;
@@ -334,16 +359,42 @@ struct CodeEditor::Impl {
     Snapshot& now() { return history[current]; }
     const Snapshot& now() const { return history[current]; }
 
+    std::array<LONG,8> viewport_geometry() const {
+        RECT format{};
+        SendMessageW(window,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        CHARFORMAT2W font{};font.cbSize=sizeof(font);
+        SendMessageW(window,EM_GETCHARFORMAT,SCF_DEFAULT,reinterpret_cast<LPARAM>(&font));
+        int numerator=0,denominator=0;
+        SendMessageW(window,EM_GETZOOM,reinterpret_cast<WPARAM>(&numerator),
+            reinterpret_cast<LPARAM>(&denominator));
+        return {format.left,format.top,format.right,format.bottom,font.yHeight,
+            static_cast<LONG>(numerator),static_cast<LONG>(denominator),
+            static_cast<LONG>(GetDpiForWindow(window))};
+    }
+
     void cursor_snapshot() {
         if (applying) return;
         now().cursor = selection(window);
-        SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&now().scroll));
+        POINT scroll{};
+        SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&scroll));
+        const auto viewport = viewport_geometry();
+        if(scroll.x!=now().scroll.x||scroll.y!=now().scroll.y||viewport!=now().viewport)
+            preserved_history_scroll=false;
+        now().scroll=scroll;
+        now().viewport=viewport;
     }
 
     void restore_top_when_all_lines_fit() {
         if(!window||!multiline)return;
         POINT old_scroll{};
         SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&old_scroll));
+        if(preserved_history_scroll) {
+            // The owner can request another normalization after Undo's native
+            // callback returns. Keep that same recorded view authoritative.
+            if(!history.empty()&&old_scroll.x==now().scroll.x&&old_scroll.y==now().scroll.y&&
+                    viewport_geometry()==now().viewport)return;
+            preserved_history_scroll=false;
+        }
         const auto visible_first=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
         if(old_scroll.y<=0&&visible_first<=0)return;
         RECT format{};
@@ -403,6 +454,12 @@ struct CodeEditor::Impl {
     }
 
     void commit(Snapshot next) {
+        // Both native edits and assistance reach this point before a parent
+        // captures the draft. Preserve the predecessor's complete origin for
+        // Undo, but keep only still-valid indentation in the edited snapshot.
+        retain_prefix_units(next.text, next.units);
+        next.viewport = viewport_geometry();
+        preserved_history_scroll=false;
         history.resize(current + 1);
         history.push_back(std::move(next));
         ++current;
@@ -453,9 +510,12 @@ struct CodeEditor::Impl {
         applying = was_applying;
     }
 
-    void apply(const Snapshot& value, bool notify_parent = true, bool load_document = false, bool reveal_cursor = false) {
+    void apply(const Snapshot& value, bool notify_parent = true, bool load_document = false,
+        bool reveal_cursor = false, bool history_replay = false) {
         const auto previous_applying = applying;
         const auto desired_scroll=value.scroll;
+        const auto recorded_viewport=value.viewport;
+        preserved_history_scroll=false;
         const auto events = SendMessageW(window, EM_GETEVENTMASK, 0, 0);
         struct ApplyingScope {
             bool& target;
@@ -523,8 +583,7 @@ struct CodeEditor::Impl {
         if(reveal_cursor) {
             SendMessageW(window,EM_SCROLLCARET,0,0);
         }
-        restore_top_when_all_lines_fit();
-        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
+        if(!history_replay)restore_top_when_all_lines_fit();
         if(notify_parent&&!previous_applying&&(events&ENM_CHANGE)) {
             // EN_CHANGE intentionally runs inside Freeze so syntax coloring
             // cannot flash. Native line geometry is final only after Unfreeze;
@@ -538,6 +597,15 @@ struct CodeEditor::Impl {
         // Native paragraph positions become authoritative after the outer
         // Unfreeze and final scroll/layout restoration, including Undo/Redo.
         if(!previous_applying&&gutter)gutter->refresh_content();
+        // A native position recorded with this same viewport is authoritative
+        // during Undo/Redo. The row-height estimate can otherwise shorten a
+        // legitimate final-row offset. Check after owner/gutter layout: changed
+        // geometry still needs repair, including when every source row fits.
+        if(history_replay&&recorded_viewport!=viewport_geometry())
+            restore_top_when_all_lines_fit();
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
+        now().viewport=viewport_geometry();
+        preserved_history_scroll=history_replay;
     }
 
     void capture() {
@@ -579,11 +647,12 @@ struct CodeEditor::Impl {
         SendMessageW(window, EM_GETSCROLLPOS, 0, reinterpret_cast<LPARAM>(&next.scroll));
         commit(std::move(next));
         restore_top_when_all_lines_fit();
-        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
         // TOM/UI Automation can change the native story without WM_SETTEXT or
         // EM_REPLACESEL. The completed edit observed here owns its paragraph
         // refresh; cursor/format-only observations take the early return above.
         if(gutter)gutter->refresh_content();
+        SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&now().scroll));
+        now().viewport=viewport_geometry();
     }
 
     void replace(std::size_t start, std::size_t end, std::wstring_view replacement,
@@ -818,13 +887,13 @@ struct CodeEditor::Impl {
         if (current == 0) return;
         cursor_snapshot();
         --current;
-        apply(now());
+        apply(now(),true,false,false,true);
     }
     void redo() {
         if (current + 1 == history.size()) return;
         cursor_snapshot();
         ++current;
-        apply(now());
+        apply(now(),true,false,false,true);
     }
 
     static LRESULT CALLBACK subclass(HWND window, UINT message, WPARAM wparam,
@@ -954,6 +1023,7 @@ struct CodeEditor::Impl {
                     self.restore_top_when_all_lines_fit();
                     SendMessageW(window,EM_GETSCROLLPOS,0,
                         reinterpret_cast<LPARAM>(&self.now().scroll));
+                    self.now().viewport=self.viewport_geometry();
                     if(const auto parent=GetParent(window))
                         SendMessageW(parent,WM_COMMAND,
                             MAKEWPARAM(GetDlgCtrlID(window),CodeEditor::layout_ready_notification),
@@ -1032,7 +1102,9 @@ void CodeEditor::reset(EditorDocument document) {
     if (original != text)
         representation = Impl::OriginalRepresentation{original, std::move(document.indentation_starts),
             original_cursor, view_cursor};
-    Impl::Snapshot snapshot{std::move(text), std::move(units), view_cursor, {0, 0}, std::move(representation)};
+    Impl::Snapshot snapshot{std::move(text), std::move(units), view_cursor, {0, 0},
+        std::move(representation), impl_->viewport_geometry()};
+    impl_->preserved_history_scroll=false;
     impl_->history.clear();
     impl_->history.push_back(std::move(snapshot));
     impl_->current = 0;

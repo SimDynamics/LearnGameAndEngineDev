@@ -36,6 +36,34 @@ std::string read(const std::filesystem::path& path) {
     return {std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
 }
 
+bool same_json(const winrt::Windows::Data::Json::IJsonValue& left,
+        const winrt::Windows::Data::Json::IJsonValue& right) {
+    using winrt::Windows::Data::Json::JsonValueType;
+    if(left.ValueType()!=right.ValueType())return false;
+    switch(left.ValueType()) {
+    case JsonValueType::String:return left.GetString()==right.GetString();
+    case JsonValueType::Number:return left.GetNumber()==right.GetNumber();
+    case JsonValueType::Boolean:return left.GetBoolean()==right.GetBoolean();
+    case JsonValueType::Null:return true;
+    case JsonValueType::Array: {
+        const auto a=left.GetArray(),b=right.GetArray();
+        if(a.Size()!=b.Size())return false;
+        for(std::uint32_t i=0;i<a.Size();++i)
+            if(!same_json(a.GetAt(i),b.GetAt(i)))return false;
+        return true;
+    }
+    case JsonValueType::Object: {
+        const auto a=left.GetObject(),b=right.GetObject();
+        if(a.Size()!=b.Size())return false;
+        for(const auto& entry:a)
+            if(!b.HasKey(entry.Key())||!same_json(entry.Value(),b.GetNamedValue(entry.Key())))
+                return false;
+        return true;
+    }
+    }
+    return false;
+}
+
 void successful(const CppRunResult& result) {
     require(result.error_utf8.empty(), "Adapter error: " + result.error_utf8);
     require(result.compilation.succeeded(), "Compilation: " +
@@ -1346,8 +1374,20 @@ int main(int count, char**) {
           ]
         }])json";
         auto document=JsonObject::Parse(winrt::to_hstring(original_text));
-        document.Insert(L"compilerOpenBatteryChecks",
-            JsonArray::Parse(winrt::to_hstring(declaration)));
+        auto declarations=document.HasKey(L"compilerOpenBatteryChecks")
+            ?document.GetNamedArray(L"compilerOpenBatteryChecks"):JsonArray{};
+        const auto desired=JsonArray::Parse(winrt::to_hstring(declaration)).GetObjectAt(0);
+        bool present=false;
+        std::uint32_t declaration_index=declarations.Size();
+        for(std::uint32_t i=0;i<declarations.Size();++i)
+            if(declarations.GetObjectAt(i).GetNamedString(L"activity")==
+                    desired.GetNamedString(L"activity")) {
+                require(!present&&same_json(declarations.GetAt(i),desired),
+                    "An existing open battery declaration has an incompatible contract");
+                present=true;declaration_index=i;
+            }
+        if(!present)declarations.Append(desired);
+        document.Insert(L"compilerOpenBatteryChecks",declarations);
         const auto reviewed=winrt::to_string(document.Stringify());
         const auto loaded=windows::parse_lesson_json(reviewed,"es");
         const auto saved=windows::parse_lesson_progress_metadata(reviewed,"es");
@@ -1369,11 +1409,16 @@ int main(int count, char**) {
         const auto& before=mapped(original);
         const auto& owner=mapped(loaded);
         const auto& progress=mapped(saved);
-        require(!before.output_check&&owner.output_check&&progress.output_check&&
+        require(owner.output_check&&progress.output_check&&
                 owner.output_check->open_battery_check&&
                 progress.output_check->open_battery_check&&
                 owner.open_battery_probe&&progress.open_battery_probe&&
                 owner.open_battery_probe==progress.open_battery_probe&&
+                (!before.output_check||
+                    (before.output_check->open_battery_check&&
+                     before.open_battery_probe==owner.open_battery_probe&&
+                     reference_objective_frame(original,before)==
+                         reference_objective_frame(loaded,owner)))&&
                 owner.open_battery_probe->original_cases.size()==11&&
                 owner.open_battery_probe->comparison_name=="comprobar"&&
                 owner.stable_id==before.stable_id&&
@@ -1385,13 +1430,22 @@ int main(int count, char**) {
                 progress.address.page==before.address.page&&
                 progress.address.block==before.address.block,
                 "Root-only goal changed a historical source, owner or progress contract");
-        auto valid=request(owner.initial_code,owner.standard_input.value_or(""));
+        require(before.standard_input&&!before.standard_input->empty()&&
+                owner.standard_input==before.standard_input&&
+                progress.standard_input==before.standard_input&&
+                owner.output_check->cases.front().standard_input.empty()&&
+                progress.output_check->cases.front().standard_input.empty(),
+                "The open battery must require empty runtime input without rewriting its initial client batch");
+        auto valid=request(owner.initial_code,"");
         valid.project_key="u3l10-loader-qa";
         valid.cmake=owner.cmake;
         valid.project_files=owner.project_files;
         valid.open_battery_probe=owner.open_battery_probe;
         require(windows::compiler_runtime_request_allowed(owner,valid),
                 "The authentic authored CMake project was not recognized");
+        auto old_input=valid;old_input.stdin_utf8=*owner.standard_input;
+        require(!windows::compiler_runtime_request_allowed(owner,old_input),
+                "The historical client batch was accepted as checker input");
         auto lacking=valid;lacking.open_battery_probe.reset();
         require(!windows::compiler_runtime_request_allowed(owner,lacking),
                 "The test driver was accepted without its independent objective");
@@ -1444,6 +1498,25 @@ int main(int count, char**) {
         old[old_key+"completed"]=state::sha256("compiler-complete-v1/"+
             pack(old_key)+pack(program)+pack(old_proof));
         old[old_key+"feedback"]=std::string("Historical v1 result");
+        // The action/input correction keeps v2 but changes its first input.
+        // An authentic former v2 seal stays historical; it cannot satisfy the
+        // corrected empty-input case or be overwritten by its new receipt.
+        auto prior_input_owner=owner;
+        prior_input_owner.output_check->cases.front().standard_input=*before.standard_input;
+        const auto prior_input_frame=reference_objective_frame(loaded,prior_input_owner);
+        const auto prior_input_key=prefix+state::sha256(prior_input_frame)+"/";
+        const auto& prior_case=prior_input_owner.output_check->cases.front();
+        const auto prior_input_proof=state::sha256("compiler-case-v1/"+
+            pack(prior_input_key)+pack(program)+pack("0")+pack(prior_case.standard_input)+
+            pack(prior_case.executable.value_or("")));
+        old[prior_input_key+"program"]=program;
+        old[prior_input_key+"cases"]=std::vector<std::string>{prior_input_proof};
+        old[prior_input_key+"completed"]=state::sha256("compiler-complete-v1/"+
+            pack(prior_input_key)+pack(program)+pack(prior_input_proof));
+        old[prior_input_key+"feedback"]=std::string("Historical v2 prepared client input");
+        require(prior_input_key!=old_key&&prior_input_key!=new_key&&
+                windows::compiler_puzzle_completed(recorded,loaded,prior_input_owner),
+                "The former v2 input fixture did not retain a distinct valid receipt");
         const auto historical=recorded;
         require(old_key!=new_key&&
                 !windows::compiler_puzzle_completed(recorded,loaded,owner)&&
@@ -1468,8 +1541,14 @@ int main(int count, char**) {
         }
         const auto reopened_state=state::decode(state::encode(recorded));
         require(windows::compiler_puzzle_completed(
-                    reopened_state,saved,progress),
+                    reopened_state,saved,progress)&&
+                windows::compiler_puzzle_completed(reopened_state,loaded,prior_input_owner),
                 "The independent battery achievement was lost on historical progress reopening");
+        for(const auto& [key,value]:historical.preferences.at("native_windows")) {
+            const auto retained=state::find(reopened_state,"native_windows",key);
+            require(retained&&*retained==value,
+                    "Reopening changed a prior v1 or former-input v2 receipt");
+        }
         windows::validate_compiler_puzzle_state(reopened_state,saved,progress);
         auto tampered=reopened_state;
         for(auto& [name,value]:tampered.preferences["native_windows"])
@@ -1488,13 +1567,13 @@ int main(int count, char**) {
             require(rejected,"Forged original CMake battery metadata was accepted");
         };
         auto altered=JsonObject::Parse(winrt::to_hstring(reviewed));
-        altered.GetNamedArray(L"compilerOpenBatteryChecks").GetObjectAt(0)
+        altered.GetNamedArray(L"compilerOpenBatteryChecks").GetObjectAt(declaration_index)
             .GetNamedArray(L"originalCases").GetObjectAt(0)
             .Insert(L"value",JsonValue::CreateNumberValue(3));
         rejects(altered);
         auto duplicate=JsonObject::Parse(winrt::to_hstring(reviewed));
         auto entries=duplicate.GetNamedArray(L"compilerOpenBatteryChecks");
-        entries.Append(entries.GetObjectAt(0));
+        entries.Append(entries.GetObjectAt(declaration_index));
         rejects(duplicate);
     });
 

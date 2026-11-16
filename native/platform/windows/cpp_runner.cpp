@@ -780,14 +780,42 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             [&](const auto& item){return item.name==name;});
         return it==observed.end()?nullptr:&*it;
     };
+    // A minimum requested by compile features and a selected CXX_STANDARD
+    // are independent CMake requirements. A later standard property must not
+    // erase an active feature minimum, nor may a removed feature keep credit.
+    struct AuthoredCxxRequirement {
+        bool feature_minimum=false,selected_standard=false;
+    };
+    std::map<std::string,AuthoredCxxRequirement> cxx_requirements;
+    const auto at_least_cxx20=[](std::string_view value) {
+        // C++98 is not newer than C++20; do not compare the suffix numerically.
+        return value=="20"||value=="23"||value=="26";
+    };
+    const auto feature_minimum=[&](std::string_view values) {
+        for(;;) {
+            const auto separator=values.find(';');
+            const auto value=values.substr(0,separator);
+            if(value.starts_with("cxx_std_")&&
+               at_least_cxx20(value.substr(8)))return true;
+            if(separator==values.npos)return false;
+            values.remove_prefix(separator+1);
+        }
+    };
     const auto apply_property=[&](std::string_view name,
             std::string_view key,std::string_view value) {
         auto* target=target_for(name);
         if(!target)return;
         if(equals(key,"CXX_EXTENSIONS"))
             target->explicit_extensions_off=off(value);
-        else if(equals(key,"CXX_STANDARD"))
-            target->explicit_cxx20=value=="20";
+        else if(equals(key,"CXX_STANDARD")||equals(key,"COMPILE_FEATURES")) {
+            auto& authored=cxx_requirements[target->name];
+            if(equals(key,"CXX_STANDARD"))
+                authored.selected_standard=at_least_cxx20(value);
+            else
+                authored.feature_minimum=feature_minimum(value);
+            target->explicit_cxx20=
+                authored.feature_minimum||authored.selected_standard;
+        }
     };
     std::string line;
     std::size_t records=0;
@@ -813,9 +841,12 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
             }
             if(authored_path.empty())continue;
             const auto command=json_text(event,L"cmd");
-            std::vector<std::string> args;
+            std::vector<std::string> args,property_args;
             for(const auto& value:event.GetNamedArray(L"args")) {
                 const auto expanded=winrt::to_string(value.GetString());
+                // Property values may themselves be semicolon-separated
+                // feature lists. Keep their original key/value boundaries.
+                property_args.push_back(expanded);
                 std::size_t begin=0;
                 for(;;) {
                     const auto end=expanded.find(';',begin);
@@ -937,39 +968,52 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                         applies_to_target=true;
                     else if(equals(args[i],"INTERFACE"))
                         applies_to_target=false;
-                    else if(applies_to_target&&equals(args[i],"cxx_std_20"))
+                    else if(applies_to_target&&feature_minimum(args[i])) {
+                        cxx_requirements[target->name].feature_minimum=true;
                         target->explicit_cxx20=true;
+                    }
                 }
-            }else if(equals(command,"set_target_properties")&&args.size()>=4) {
-                const auto separator=std::ranges::find_if(args,
+            }else if(equals(command,"set_target_properties")&&property_args.size()>=4) {
+                const auto separator=std::ranges::find_if(property_args,
                     [&](const auto& arg){return equals(arg,"PROPERTIES");});
-                if(separator==args.end())continue;
-                const auto pos=static_cast<std::size_t>(separator-args.begin());
-                if(pos==0)continue;
+                if(separator==property_args.end())continue;
+                const auto pos=static_cast<std::size_t>(separator-property_args.begin());
+                const auto expanded_separator=std::ranges::find_if(args,
+                    [&](const auto& arg){return equals(arg,"PROPERTIES");});
+                const auto target_count=static_cast<std::size_t>(expanded_separator-args.begin());
+                if(pos==0||expanded_separator==args.end())continue;
                 bool explicit_off=false;
-                for(auto i=pos+1;i+1<args.size();i+=2) {
-                    if(equals(args[i],"CXX_EXTENSIONS")&&off(args[i+1]))
+                for(auto i=pos+1;i+1<property_args.size();i+=2) {
+                    if(equals(property_args[i],"CXX_EXTENSIONS")&&off(property_args[i+1]))
                         explicit_off=true;
-                    for(std::size_t t=0;t<pos;++t)
-                        apply_property(args[t],args[i],args[i+1]);
+                    for(std::size_t t=0;t<target_count;++t)
+                        apply_property(args[t],property_args[i],property_args[i+1]);
                 }
-                record_list(pos,explicit_off);
-            }else if(equals(command,"set_property")&&args.size()>=5&&
-                     equals(args.front(),"TARGET")) {
-                const auto separator=std::ranges::find_if(args,
+                record_list(target_count,explicit_off);
+            }else if(equals(command,"set_property")&&property_args.size()>=4&&
+                     equals(property_args.front(),"TARGET")) {
+                const auto separator=std::ranges::find_if(property_args,
                     [&](const auto& arg){return equals(arg,"PROPERTY");});
-                if(separator==args.end())continue;
-                const auto pos=static_cast<std::size_t>(separator-args.begin());
-                if(pos<2||pos+3!=args.size())continue;
+                if(separator==property_args.end())continue;
+                const auto pos=static_cast<std::size_t>(separator-property_args.begin());
+                const auto expanded_separator=std::ranges::find_if(args,
+                    [&](const auto& arg){return equals(arg,"PROPERTY");});
+                const auto target_end=static_cast<std::size_t>(expanded_separator-args.begin());
+                if(pos<2||pos+2>property_args.size()||expanded_separator==args.end())continue;
                 bool append=false;
                 for(std::size_t i=1;i<pos;++i)
-                    append=append||equals(args[i],"APPEND")||
-                        equals(args[i],"APPEND_STRING");
+                    append=append||equals(property_args[i],"APPEND")||
+                        equals(property_args[i],"APPEND_STRING");
                 if(append)continue;
-                for(std::size_t i=1;i<pos;++i)
-                    apply_property(args[i],args[pos+1],args[pos+2]);
-                record_list(pos-1,equals(args[pos+1],"CXX_EXTENSIONS")&&
-                    off(args[pos+2]),1);
+                std::string value;
+                for(std::size_t i=pos+2;i<property_args.size();++i) {
+                    if(i>pos+2)value+=';';
+                    value+=property_args[i];
+                }
+                for(std::size_t i=1;i<target_end;++i)
+                    apply_property(args[i],property_args[pos+1],value);
+                record_list(target_end-1,equals(property_args[pos+1],"CXX_EXTENSIONS")&&
+                    off(value),1);
             }
         }
     }catch(const std::exception&) {
@@ -1390,7 +1434,8 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     };
     if(!request.cmake||!request.capture_cmake_graph||
        request.backend!=CppRunRequest::Backend::native_msvc||
-       request.action!=CppRunRequest::Action::compile_run||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
        request.request_id!=result.request_id||
        request.revision!=result.revision||!result.error_utf8.empty()||
        !result.compilation.succeeded()||
@@ -1667,6 +1712,9 @@ CppRunRequest default_option_request(const CppRunRequest& request,
         const curriculum::CmakeOptionSelectionRequirement& option,
         const curriculum::CmakeGraphRequirement& authored) {
     auto off=request;
+    // A public execute reuses only its verified ON artifact. The independent
+    // OFF configuration must still build its own target before it can run.
+    off.action=CppRunRequest::Action::compile_run;
     off.request_id=~request.request_id;
     off.project_key+="/cmake-option-off-v1/"+option.name;
     off.cmake->options.erase(option.name);
@@ -1985,7 +2033,8 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(!valid){fresh.report_probe_correct=false;break;}
         }
     }
-    if(request.open_battery_probe&&result.open_battery_evidence) {
+    if(request.open_battery_probe&&request.stdin_utf8.empty()&&
+       result.open_battery_evidence) {
         const auto& evidence=*result.open_battery_evidence;
         const auto frame=fingerprint(request);
         fresh.open_battery_probe_correct=
@@ -2070,7 +2119,8 @@ void complete_cmake_option_probe(const CppRunRequest& request,
         CppRunResult& result,std::stop_token stop) {
     if(!request.cmake_graph_check||
        !request.cmake_graph_check->option_selection||
-       request.action!=CppRunRequest::Action::compile_run||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
        !result.compilation.succeeded()||!result.execution.succeeded()||
        !result.error_utf8.empty()||stop.stop_requested())return;
     const auto& authored=*request.cmake_graph_check;
@@ -2136,7 +2186,9 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
         std::stop_token stop) {
     if(!request.open_battery_probe||!request.cmake||
        request.backend!=CppRunRequest::Backend::native_msvc||
-       request.action!=CppRunRequest::Action::compile_run||
+       (request.action!=CppRunRequest::Action::compile_run&&
+        request.action!=CppRunRequest::Action::execute)||
+       !request.stdin_utf8.empty()||
        !result.compilation.succeeded()||!result.execution.succeeded()||
        !result.error_utf8.empty()||stop.stop_requested())return;
     const auto& spec=*request.open_battery_probe;
@@ -2157,6 +2209,8 @@ void complete_open_battery_probe(const CppRunRequest& request,CppRunResult& resu
             lib->second,spec.function_name,mutation,target);
         if(!source)return false;
         auto private_request=request;
+        // Even a public execute needs a fresh build of each private mutation.
+        private_request.action=CppRunRequest::Action::compile_run;
         private_request.open_battery_probe.reset(); // no nested probes
         private_request.named_rule_probe.reset();
         private_request.rejection_probe.reset();

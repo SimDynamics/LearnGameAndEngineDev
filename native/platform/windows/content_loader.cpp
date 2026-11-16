@@ -2043,8 +2043,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         }
         return compiler_case_projection(source,found->second,historical,editorial_prefix);
     };
-    // Full pre-format snapshots are authored once, under existing active
-    // identities. They are not extra answers, storage slots or drafts.
+    // Full pre-format snapshots retain their existing identity, including
+    // after an authenticated retirement. They are not extra answers, storage
+    // slots or drafts; current/retired ownership is checked below.
     std::map<std::string,JsonObject> source_format_originals;
     if(metadata.HasKey(L"sourceFormatRevisions")) {
         require(result.version==2,"Source format archives require stateLayout v2");
@@ -2053,8 +2054,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         for(const auto& item_value:revisions){
             const auto item=item_value.GetObject();allowed_keys(item,{"id","block"},true);
             const auto id=text(item,"id");
-            require(valid_id(id)&&current_blocks.contains(id)&&!source_format_originals.contains(id),
-                "Unknown, inactive or duplicated source-format owner");
+            require(valid_id(id)&&result.signatures.contains(id)&&!source_format_originals.contains(id),
+                "Unknown or duplicated source-format owner");
             const auto previous=item.GetNamedObject(L"block");
             const auto before=state_fingerprint(case_order_source(id,previous,true));
             // A formatting archive can begin after an authenticated compiler,
@@ -2133,7 +2134,29 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto block = item.GetNamedObject(L"block"); const auto type = text(block,"type");
             require(type == "heading" || type == "paragraph" || type == "note" || type == "code" || type == "cpp_compiler" || type == "image",
                     "Only compiler activities and their presentation blocks can be retired");
-            require(state_fingerprint(block) == result.signatures.at(retired.id),"A retired response/code contract changed");
+            auto projected=block;
+            if(const auto format=source_format_originals.find(retired.id);
+                    format!=source_format_originals.end()) {
+                projected=source_format_projection(block,format->second);
+                const auto& original=format->second;
+                if(original.HasKey(L"question")!=block.HasKey(L"question")||
+                        (original.HasKey(L"question")&&text(original,"question")!=text(block,"question"))) {
+                    // A retired owner no longer has active semantic fields.
+                    // Its wording must be authenticated by its own exact
+                    // reading snapshot, never by another owner's markers.
+                    std::size_t snapshots=0;
+                    if(metadata.HasKey(L"retirementHistory"))
+                        for(const auto& value:array(metadata,"retirementHistory")) {
+                            const auto snapshot=value.GetObject();
+                            const auto owners=strings(array(snapshot,"retired"),true,false);
+                            if(std::ranges::find(owners,retired.id)==owners.end())continue;
+                            require_formatted_question_semantics(snapshot,retired.id,original,block);
+                            ++snapshots;
+                        }
+                    require(snapshots==1,"A retired formatted question needs its own exact reading snapshot");
+                }
+            }
+            require(state_fingerprint(projected) == result.signatures.at(retired.id),"A retired response/code contract changed");
             retired.raw_json = utf8(block.Stringify()); retired.sha256 = fingerprint(block);
             result.retired.push_back(std::move(retired));
         }
@@ -2147,6 +2170,11 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     require(current_pages == origin_pages && current_blocks.size() + result.retired.size() == result.signatures.size(),
             "State map loses historical identities");
+    for(const auto& [id,original]:source_format_originals) {
+        (void)original;
+        require(current_blocks.contains(id)||successors.contains(id),
+            "A source-format archive needs its active or retired owner");
+    }
     // Historical reading / bibliography checks compare against the immutable
     // pre-format source, never an unreviewed hash of freshly spaced code.
     const auto protected_source=[&](const std::string& owner,const JsonObject& current,bool historical=false) {
@@ -3154,8 +3182,11 @@ void resolve_addresses(Lesson& lesson) {
         }
     }
     for (const auto& retired : layout.retired) {
-        auto block = read_block(JsonObject::Parse(winrt::to_hstring(retired.raw_json)),retired.raw_json);
+        const auto source=JsonObject::Parse(key(retired.raw_json));
+        const auto format=historical_format_source(retired.id,source);
+        auto block=read_block(source,retired.raw_json,format?&*format:nullptr);
         block.stable_id = retired.id; block.address = addresses.at(retired.id);
+        if(format)apply_source_format(block,*format);
         apply_math_text(block,true);
         intentional_exit_owner(block);
         crt_output_owner(block);
@@ -4244,7 +4275,9 @@ void read_compiler_open_battery_checks(const JsonObject& root,Lesson& lesson) {
         runtime.open_battery_check=true;
         runtime.input_comparison=TextComparison::exact;
         OutputCase first;
-        first.standard_input=owner->standard_input.value_or("");
+        // This checker supplies its own cases and runs with empty input.
+        // Preserve the historical client input on the original editor.
+        first.standard_input.clear();
         first.executable=check.test_target;
         first.outputs={""}; // Independent mutation evidence, never stdout comparison.
         first.explanation="La batería comprobó sus casos anteriores y el nuevo "
