@@ -297,7 +297,7 @@ add_custom_command(OUTPUT ${LGAED_COMPILER_CASE_ORDER_FILES}
     VERBATIM)
 add_custom_target(lgaed_compiler_case_order_fixtures DEPENDS ${LGAED_COMPILER_CASE_ORDER_FILES})
 
-# Case-contract proposals preserve the complete published AssetCheck programs.
+# Case-contract proposals preserve complete published programs and client modes.
 set(LGAED_COMPILER_CASE_REVISION_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/compiler-case-revision")
 set(LGAED_COMPILER_CASE_REVISION_FILES
     "${LGAED_COMPILER_CASE_REVISION_DIR}/manifest.json"
@@ -312,7 +312,19 @@ set(LGAED_COMPILER_CASE_REVISION_FILES
     "${LGAED_COMPILER_CASE_REVISION_DIR}/u6l19-client.cases-only.json"
     "${LGAED_COMPILER_CASE_REVISION_DIR}/u6l19-client.changed-client.json"
     "${LGAED_COMPILER_CASE_REVISION_DIR}/u6l19-client.returned-client.json"
-    "${LGAED_COMPILER_CASE_REVISION_DIR}/u6l19-client.formatted-client.json")
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u6l19-client.formatted-client.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u1l1-single-client.before.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u1l1-single-client.after.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u1l1-single-client.cases-only.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u1l1-single-client.changed-client.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u1l1-single-client.returned-client.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u1l1-single-client.formatted-client.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u2l2-cmake-client.before.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u2l2-cmake-client.after.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u2l2-cmake-client.cases-only.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u2l2-cmake-client.changed-client.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u2l2-cmake-client.returned-client.json"
+    "${LGAED_COMPILER_CASE_REVISION_DIR}/u2l2-cmake-client.formatted-client.json")
 add_custom_command(OUTPUT ${LGAED_COMPILER_CASE_REVISION_FILES}
     COMMAND ${_lgaed_state_fixture_python}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/compiler_case_revision_fixture_source.py"
@@ -329,7 +341,7 @@ add_custom_command(OUTPUT ${LGAED_COMPILER_CASE_REVISION_FILES}
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
         "${CMAKE_SOURCE_DIR}/scripts/curriculum/validar_json_programacion.py"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Authenticate case revisions and the U6L19 client transition against complete published lessons"
+    COMMENT "Authenticate case revisions and ordinary, single-file and CMake clients against published lessons"
     VERBATIM)
 add_custom_target(lgaed_compiler_case_revision_fixtures DEPENDS ${LGAED_COMPILER_CASE_REVISION_FILES})
 

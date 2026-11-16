@@ -535,13 +535,14 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.order_code_whitespace_view
         COMMAND lgaed_order_code_whitespace_view_tests --whitespace)
     set_tests_properties(native.order_code_whitespace_view PROPERTIES TIMEOUT 60)
-    # Compile the full RichEdit test translation unit in Windows CI as well.
-    # This catches obsolete presentation APIs before a local Release install,
-    # without running desktop-color assertions on a noninteractive runner.
+    # Compile the full RichEdit test translation unit and execute independent
+    # native hit geometry without desktop-color assertions on the CI runner.
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options
         user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
+    add_test(NAME native.rich_text_hit_geometry COMMAND lgaed_rich_text_tests --native-hit-geometry)
+    set_tests_properties(native.rich_text_hit_geometry PROPERTIES TIMEOUT 30 RUN_SERIAL TRUE)
     # Run the real native edit/scroll and gutter regression on the same
     # isolated Windows runner that builds the curricular reading controls.
     add_executable(lgaed_code_editor_viewport_tests
@@ -1923,6 +1924,8 @@ if(BUILD_TESTING)
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
     add_test(NAME native.rich_text COMMAND lgaed_rich_text_tests)
+    add_test(NAME native.rich_text_hit_geometry COMMAND lgaed_rich_text_tests --native-hit-geometry)
+    set_tests_properties(native.rich_text_hit_geometry PROPERTIES TIMEOUT 30 RUN_SERIAL TRUE)
     add_test(NAME native.curricular_text_roles COMMAND lgaed_rich_text_tests --curricular-roles)
     set_tests_properties(native.curricular_text_roles PROPERTIES TIMEOUT 60)
     add_test(NAME native.unmarked_prose_roles COMMAND lgaed_rich_text_tests --unmarked-prose)

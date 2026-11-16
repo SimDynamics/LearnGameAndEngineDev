@@ -1192,12 +1192,7 @@ class CompilerClientCaseRevisionTests(unittest.TestCase):
             self.reject(lambda: general_fixtures.client_revised(broken, general_fixtures.OWNER, newer,
                         layout._blocks(broken)[general_fixtures.OWNER]['outputCheck']['cases']))
 
-    def test_single_file_cmake_and_diagnostic_objectives_do_not_enter_the_client_api(self):
-        for before in (general_fixtures.order_fixtures.synthetic_publication(),
-                       general_fixtures.order_fixtures.synthetic_publication(project=True)):
-            old = layout._blocks(before)[general_fixtures.OWNER]
-            self.reject(lambda: general_fixtures.client_revised(before, general_fixtures.OWNER,
-                        old['initialCode'].replace('value{}', 'value{2}'), old['outputCheck']['cases']))
+    def test_diagnostic_objectives_do_not_enter_the_client_api(self):
         before = general_fixtures.synthetic_client_publication()
         bad = deepcopy(before)
         layout._blocks(bad)[general_fixtures.OWNER]['compileCheck'] = {'expected': 'failure'}
@@ -1338,6 +1333,365 @@ class CompilerClientCaseRevisionTests(unittest.TestCase):
                     layout.main()
             self.assertEqual(source.read_bytes(), original)
             self.assertEqual(output.read_bytes(), saved)
+
+
+class CompilerClientModeRevisionTests(unittest.TestCase):
+    owner = general_fixtures.OWNER
+
+    def publication(self, mode, edit=None):
+        document = general_fixtures.order_fixtures.synthetic_publication(marked=False, project=mode == 'cmake')
+        references = document.pop('referenceAfter')
+        document.pop('stateLayout')
+        if edit is not None:
+            edit(document['pages'][0]['blocks'][1])
+        result = layout.prepare_v2(document, 'es', {'es': document})
+        result['referenceAfter'] = references
+        layout.validate(result)
+        return result
+
+    def source(self, document):
+        block = layout._blocks(document)[self.owner]
+        if 'projectFiles' not in block:
+            return block['initialCode']
+        return next(file['initialCode'] for file in block['projectFiles'] if file['path'] == 'main.cpp')
+
+    def revise(self, document, *, source=None, cases=None, path='main.cpp', return_to=None):
+        block = layout._blocks(document)[self.owner]
+        if source is None:
+            source = self.source(document).replace('value{}', 'value{1}')
+        return layout.revise_compiler_client_cases(document, self.owner, {'path': path, 'source': source},
+            block['outputCheck']['cases'] if cases is None else cases, case_semantics=[], return_to=return_to)
+
+    def reject(self, operation):
+        with self.assertRaises((ValueError, KeyError, TypeError, IndexError)):
+            operation()
+
+    def test_single_source_changes_only_initial_code_and_explicit_cases(self):
+        before = self.publication('single')
+        cases = [{'standardInput': '7', 'outputs': ['7\n'], 'exitCode': 0},
+                 {'standardInput': '9', 'outputs': ['9\n'], 'exitCode': 0}]
+        after = self.revise(before, cases=cases)
+        old, new = layout._blocks(before)[self.owner], layout._blocks(after)[self.owner]
+        restored = deepcopy(new)
+        restored['initialCode'] = old['initialCode']
+        restored['outputCheck']['cases'] = old['outputCheck']['cases']
+        self.assertEqual(restored, old)
+        self.assertFalse({'projectFiles', 'sourceFiles', 'cmake'} & new.keys())
+        self.assertEqual(new['initialStandardInput'], old['initialStandardInput'])
+        self.assertEqual(after['stateLayout']['compilerCaseRevisions'][0]['block'], old)
+        self.assertEqual(layout.original_projection(after)['pages'], layout.original_projection(before)['pages'])
+        self.assertEqual(layout._blocks(layout.align_for_previous_validation(before, after))[self.owner], old)
+
+    def test_cmake_preserves_independent_top_level_source_recipe_and_configuration(self):
+        for top_source in ('', 'int independent{7};\n', general_fixtures.order_fixtures.SOURCE):
+            with self.subTest(top_source=top_source):
+                before = self.publication('cmake', lambda b: b.update(initialCode=top_source,
+                    cmake={'target': 'alpha', 'buildType': 'Release', 'options': {'MODE': 'ON'}}))
+                after = self.revise(before)
+                old, new = layout._blocks(before)[self.owner], layout._blocks(after)[self.owner]
+                self.assertEqual(new['initialCode'], top_source)
+                self.assertEqual(new['cmake'], old['cmake'])
+                self.assertEqual(new['projectFiles'][0], old['projectFiles'][0])
+                self.assertNotIn('sourceFiles', new)
+                restored = deepcopy(new)
+                restored['projectFiles'][1] = old['projectFiles'][1]
+                self.assertEqual(restored, old)
+                self.assertEqual(layout.original_projection(after)['pages'], layout.original_projection(before)['pages'])
+                self.assertEqual(layout._blocks(layout.align_for_previous_validation(before, after))[self.owner], old)
+
+    def test_single_source_requires_virtual_path_and_keeps_project_modes_distinct(self):
+        before = self.publication('single')
+        for path in ('', 'Main.cpp', './main.cpp', 'src/main.cpp', 'main.cc', None):
+            with self.subTest(path=path):
+                self.reject(lambda: self.revise(before, path=path))
+        for edit in (lambda b: b.update(sourceFiles=[]), lambda b: b.update(projectFiles=[]),
+                     lambda b: b.update(cmake={'target': 'alpha'})):
+            self.reject(lambda: self.revise(self.publication('single', edit), source='int main() {}\n'))
+
+    def test_single_source_limit_counts_utf8_bytes_before_and_after_the_revision(self):
+        before = self.publication('single')
+        limit = 4 * 1024 * 1024
+        boundary = '// ' + 'é' * ((limit - 4) // 2) + '\n'
+        self.assertEqual(len(boundary.encode('utf-8')), limit)
+        after = self.revise(before, source=boundary)
+        self.assertEqual(self.source(after), boundary)
+        self.reject(lambda: self.revise(before, source=boundary + ' '))
+        self.reject(lambda: self.revise(self.publication('single',
+                    lambda b: b.update(initialCode=boundary + ' ')), source='int main() {}\n'))
+
+    def test_single_source_predecessor_must_be_nonempty_but_is_not_trimmed(self):
+        empty = self.publication('single', lambda b: b.update(initialCode=''))
+        layout.validate(empty)
+        self.reject(lambda: self.revise(empty, source='int main() { return 0; }\n'))
+        spaces = self.publication('single', lambda b: b.update(initialCode=' \t\n'))
+        after = self.revise(spaces, source='int main() { return 0; }\n')
+        self.assertEqual(after['stateLayout']['compilerCaseRevisions'][0]['block']['initialCode'], ' \t\n')
+        layout.validate_transition(spaces, after)
+
+    def test_both_new_modes_require_changed_nonempty_source_and_explicit_cases(self):
+        for mode in ('single', 'cmake'):
+            before = self.publication(mode)
+            with self.subTest(mode=mode):
+                for source in (self.source(before), '', 'int main() {\0}\n', None):
+                    client = {'path': 'main.cpp', 'source': source}
+                    self.reject(lambda: layout.revise_compiler_client_cases(before, self.owner, client,
+                        layout._blocks(before)[self.owner]['outputCheck']['cases'], case_semantics=[]))
+                self.reject(lambda: self.revise(before, cases=[]))
+                self.reject(lambda: layout.revise_compiler_client_cases(before, self.owner,
+                    {'path': 'main.cpp', 'source': 'int main() {}\n'},
+                    layout._blocks(before)[self.owner]['outputCheck']['cases']))
+                self.reject(lambda: self.revise(self.publication(mode,
+                    lambda b: b.update(compileCheck={'expected': 'failure'}))))
+
+    def test_cmake_selects_an_existing_cpp_path_without_reinterpreting_the_recipe(self):
+        for path in ('src/client.CPP', 'driver.cc', 'driver.cxx', 'driver.c++'):
+            def edit(block):
+                block['initialCode'] = ''
+                block['projectFiles'][1]['path'] = path
+                block['projectFiles'][0]['initialCode'] = '# The learner must complete this recipe.\n'
+            before = self.publication('cmake', edit)
+            after = self.revise(before, source='int main() { return 0; }\n', path=path)
+            self.assertEqual(layout._blocks(after)[self.owner]['projectFiles'][0],
+                             layout._blocks(before)[self.owner]['projectFiles'][0])
+        before = self.publication('cmake')
+        for path in ('CMakeLists.txt', 'main.h', 'MAIN.cpp', '../main.cpp', 'missing.cpp'):
+            self.reject(lambda: self.revise(before, path=path))
+        self.reject(lambda: self.revise(self.publication('cmake', lambda b: b.update(sourceFiles=['main.cpp']))))
+        self.reject(lambda: self.revise(self.publication('cmake',
+                    lambda b: b['projectFiles'][0].update(extra='not an authored file field'))))
+
+    def test_cmake_configuration_uses_native_limits_without_changing_legacy_publications(self):
+        valid = {'target': 'alpha', 'buildType': 'RelWithDebInfo',
+                 'options': {f'Option{i}': 'é' * 2048 if i == 0 else 'ON' for i in range(64)}}
+        before = self.publication('cmake', lambda b: b.update(cmake=valid))
+        after = self.revise(before)
+        self.assertEqual(layout._blocks(after)[self.owner]['cmake'], valid)
+        invalid = [None, {}, {'target': 'two words'}, {'target': 'alpha', 'extra': True},
+                   {'target': 'alpha', 'buildType': 'debug'}, {'target': 'alpha', 'options': []},
+                   {'target': 'alpha', 'options': {f'Option{i}': 'ON' for i in range(65)}},
+                   {'target': 'alpha', 'options': {'Mode': 'é' * 2049}}]
+        invalid += [{'target': 'alpha', 'options': {name: value}} for name, value in
+                    (('cmake_hidden', 'ON'), ('lGp_private', 'ON'), ('0Bad', 'ON'),
+                     ('Mode', 1), ('Mode', 'line\nline'), ('Mode', '\x7f'))]
+        for config in invalid:
+            with self.subTest(config=config if not isinstance(config, dict) else list(config)):
+                self.reject(lambda: self.revise(self.publication('cmake', lambda b: b.update(cmake=config))))
+
+    def test_cmake_file_count_and_total_bytes_follow_its_smaller_native_budget(self):
+        def counted(count):
+            return self.publication('cmake', lambda b: b['projectFiles'].extend(
+                {'path': f'notes/{index}.txt', 'initialCode': ''} for index in range(count - 2)))
+        self.assertEqual(len(layout._blocks(self.revise(counted(128)))[self.owner]['projectFiles']), 128)
+        self.reject(lambda: self.revise(counted(129)))
+        limit = 8 * 1024 * 1024
+        def sized(block):
+            used = sum(len(file['initialCode'].encode('utf-8')) for file in block['projectFiles'])
+            block['projectFiles'].append({'path': 'padding.txt', 'initialCode': 'x' * (limit - used)})
+        before = self.publication('cmake', sized)
+        old = self.source(before)
+        after = self.revise(before, source=old.replace('return 0', 'return 1'))
+        self.assertEqual(sum(len(file['initialCode'].encode('utf-8')) for file in
+                             layout._blocks(after)[self.owner]['projectFiles']), limit)
+        self.reject(lambda: self.revise(before, source=old + '\n'))
+
+    def test_client_epochs_cases_only_and_returns_preserve_both_storage_modes(self):
+        for mode in ('single', 'cmake'):
+            with self.subTest(mode=mode):
+                before = self.publication(mode)
+                first = self.revise(before)
+                middle = self.revise(first, source=self.source(first).replace('value{1}', 'value{2}'))
+                self.reject(lambda: self.revise(middle, source=self.source(first)))
+                returned = self.revise(middle, source=self.source(first), return_to=1)
+                records = returned['stateLayout']['compilerCaseRevisions']
+                self.assertEqual(len({layout.fingerprint(item) for item in records}), 3)
+                self.assertEqual(layout._blocks(first)[self.owner], layout._blocks(returned)[self.owner])
+                layout.validate_transition(before, returned)
+                cases = layout._blocks(first)[self.owner]['outputCheck']['cases'][:2]
+                cases_only = layout.revise_compiler_cases(first, self.owner, cases, case_semantics=[])
+                self.assertEqual(cases_only['stateLayout']['compilerCaseRevisions'][0], records[0])
+                self.assertNotIn('client', cases_only['stateLayout']['compilerCaseRevisions'][-1])
+                self.assertEqual(self.source(cases_only), self.source(first))
+                bad = deepcopy(returned)
+                bad['stateLayout']['compilerCaseRevisions'].pop(1)
+                self.reject(lambda: layout.validate(bad))
+
+    def test_format_before_and_after_clients_keeps_every_source_in_its_authored_epoch(self):
+        for mode in ('single', 'cmake'):
+            with self.subTest(mode=mode):
+                before = self.publication(mode)
+                preformatted = general_fixtures.order_fixtures.formatted(before, self.owner)
+                after_format = self.revise(preformatted)
+                self.assertEqual(after_format['stateLayout']['sourceFormatRevisions'],
+                                 preformatted['stateLayout']['sourceFormatRevisions'])
+                first = self.revise(before)
+                formatted = general_fixtures.order_fixtures.formatted(first, self.owner)
+                second = self.revise(formatted, source=self.source(formatted).replace('value{1}', 'value{2}'))
+                archive = formatted['stateLayout']['sourceFormatRevisions'][0]['block']
+                self.assertEqual(archive, layout._blocks(first)[self.owner])
+                self.assertEqual(second['stateLayout']['sourceFormatRevisions'][0]['block'], archive)
+                for current in (after_format, formatted, second):
+                    layout.validate(current)
+                    self.assertEqual(layout._compiler_case_order_contract(current, self.owner,
+                        layout._blocks(current)[self.owner]), layout._blocks(before)[self.owner])
+                layout.validate_transition(before, second)
+
+    def test_cmake_top_level_format_is_independent_of_the_revised_file(self):
+        before = self.publication('cmake', lambda b: b.update(initialCode='int independent{7};\n'))
+        for format_first in (True, False):
+            with self.subTest(format_first=format_first):
+                first = before if format_first else self.revise(before)
+                changed = deepcopy(first)
+                layout._blocks(changed)[self.owner]['initialCode'] = 'int  independent{7};\n\n'
+                formatted = layout.prepare_v2(changed, 'es', {'es': first}, first)
+                current = self.revise(formatted) if format_first else self.revise(formatted,
+                    source=self.source(formatted).replace('value{1}', 'value{2}'))
+                self.assertEqual(layout._blocks(current)[self.owner]['initialCode'], 'int  independent{7};\n\n')
+                self.assertEqual(layout._compiler_case_order_contract(current, self.owner,
+                    layout._blocks(current)[self.owner]), layout._blocks(before)[self.owner])
+                layout.validate_transition(formatted, current)
+
+    def test_cmake_client_proof_cannot_hide_changes_to_other_sources_or_recipe(self):
+        before = self.publication('cmake', lambda b: b.update(initialCode='int independent{7};\n'))
+        first = self.revise(before)
+        formatted = general_fixtures.order_fixtures.formatted(first, self.owner)
+        edits = (lambda b: b.update(initialCode='int independent{8};\n'),
+                 lambda b: b['projectFiles'][0].update(initialCode='add_executable(other main.cpp)\n'),
+                 lambda b: b['cmake'].update(target='other'),
+                 lambda b: b['cmake'].update(options={'MODE': 'ON'}))
+        for document in (first, formatted):
+            for edit in edits:
+                bad = deepcopy(document)
+                edit(layout._blocks(bad)[self.owner])
+                bad['stateLayout']['editorial'][-1]['afterSha256'] = layout.fingerprint(layout._blocks(bad)[self.owner])
+                self.reject(lambda: layout.validate(bad))
+
+    def test_other_retirement_snapshots_keep_the_original_source_mode_and_epoch(self):
+        for mode in ('single', 'cmake'):
+            before = self.publication(mode)
+            first = self.revise(before)
+            for source in (before, first):
+                with self.subTest(mode=mode, revised=source is first):
+                    retired = layout.retire(source, [general_fixtures.NOTE])
+                    current = self.revise(retired, source=self.source(source).replace(
+                        'value{1}' if source is first else 'value{}', 'value{2}'))
+                    layout.validate_transition(source, current)
+                    snapshot = current['stateLayout']['retirementHistory'][0]
+                    view = {'pages': snapshot['pages'], 'stateLayout': {'current': snapshot['current']}}
+                    self.assertEqual(layout._blocks(view)[self.owner], layout._blocks(source)[self.owner])
+                    self.assertEqual(snapshot['editorialPrefix']['count'], len(source['stateLayout']['editorial']))
+
+
+class CompilerClientModeFixtureTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.manifest, cls.payloads = general_fixtures.build_client_mode_fixtures()
+        cls.entries = {entry['mode']: entry for entry in cls.manifest['clientModes']}
+
+    def stage(self, mode, key):
+        return json.loads(self.payloads[self.entries[mode][key]])
+
+    def test_real_mode_publications_and_translations_are_exactly_pinned(self):
+        expected = {
+            'single': {'es': (96331, 'cc0f934ce40085ef095c10ac08cdc44290e75e6ecc60d6444d86f979877f18df'),
+                       'en': (21665, '74998e2ac1eef4336177ccbfd7d72535c6a63a1b84cd30892e811ae28a58de0b'),
+                       'fr': (23504, 'add47016262fb54830a4e0a4101842051bb0c94e31e50113910b97a29da363a9')},
+            'cmake': {'es': (193752, '3903d921c21510dfa19570683c39bb0b6431367c94872cae0a85d89e9e9b2979'),
+                      'en': (41868, 'c9f5fe440c7f76a6027652db3e9927086a0e85dcb149ead70db8abe19217aa9d'),
+                      'fr': (44962, 'fe7bc29fb6a2ecf8a33a6203e8db61346edc78b4d87a0edb1309a0c943ecffb1')}}
+        self.assertEqual(set(self.entries), set(expected))
+        for mode, locales in expected.items():
+            self.assertEqual(general_fixtures.CLIENT_MODE_SOURCES[mode]['locales'], locales)
+            for locale, (size, digest) in locales.items():
+                with self.subTest(mode=mode, locale=locale):
+                    raw = general_fixtures.client_mode_historical_bytes(mode, locale)
+                    self.assertEqual((len(raw), hashlib.sha256(raw).hexdigest()), (size, digest))
+            self.assertEqual(self.payloads[self.entries[mode]['before']].encode('utf-8'),
+                             general_fixtures.client_mode_historical_bytes(mode))
+
+    def test_real_transitions_preserve_faults_auxiliaries_recipes_and_only_separate_cases(self):
+        expected = {'single': [('5 5 1', ''), ('4 5 1', ''), ('6 5 0', '')],
+                    'cmake': [('4 7', '3'), ('7 7', '0'), ('9 7', '0')]}
+        for mode in expected:
+            with self.subTest(mode=mode):
+                owner = self.entries[mode]['id']
+                before, after = self.stage(mode, 'before'), self.stage(mode, 'after')
+                old, new = layout._blocks(before)[owner], layout._blocks(after)[owner]
+                self.assertEqual(new['outputCheck']['cases'], [
+                    {'standardInput': stdin, 'outputs': [stdout], 'exitCode': 0} for stdin, stdout in expected[mode]])
+                restored = deepcopy(new)
+                if mode == 'single':
+                    restored['initialCode'] = old['initialCode']
+                    self.assertIn('return disponibles < minimo;', new['initialCode'])
+                    self.assertIn('std::cin >> disponibles >> minimo >> esperado;', new['initialCode'])
+                    self.assertFalse({'projectFiles', 'sourceFiles', 'cmake'} & new.keys())
+                    self.assertEqual(old['initialCode'].split('\nint main() {')[0],
+                                     new['initialCode'].split('\nint main() {')[0])
+                else:
+                    self.assertEqual(new['initialCode'], '')
+                    self.assertEqual(new['cmake'], old['cmake'])
+                    for index, file in enumerate(old['projectFiles']):
+                        if file['path'] == 'main.cpp':
+                            restored['projectFiles'][index] = file
+                        else:
+                            self.assertEqual(new['projectFiles'][index], file)
+                    self.assertIn('STATIC', old['projectFiles'][0]['initialCode'])
+                    self.assertTrue(any('+ 1' in file['initialCode'] for file in old['projectFiles']))
+                restored['outputCheck']['cases'] = old['outputCheck']['cases']
+                self.assertEqual(restored, old)
+                for identity, block in layout._blocks(before).items():
+                    if identity != owner:
+                        self.assertEqual(layout._blocks(after)[identity], block)
+                for field in ('referenceAfter', 'activityAfter', 'compilerPuzzlesRequired',
+                              'compilerWorkflowChecks', 'compilerCmakeGraphChecks', 'compilerNamedRuleChecks'):
+                    self.assertEqual(before.get(field), after.get(field))
+
+    def test_six_real_publications_keep_client_epochs_and_cases_only_authoring_separate(self):
+        for mode, entry in self.entries.items():
+            with self.subTest(mode=mode):
+                owner = entry['id']
+                before, first, cases, changed, returned, formatted = [self.stage(mode, key) for key in
+                    ('before', 'after', 'casesOnly', 'changedClient', 'returnedClient', 'formattedClient')]
+                self.assertEqual(layout._blocks(cases)[owner]['outputCheck']['cases'],
+                                 layout._blocks(first)[owner]['outputCheck']['cases'][:2])
+                self.assertNotIn('client', cases['stateLayout']['compilerCaseRevisions'][-1])
+                self.assertEqual(layout._blocks(returned)[owner], layout._blocks(first)[owner])
+                self.assertEqual(layout._blocks(changed)[owner]['outputCheck'], layout._blocks(first)[owner]['outputCheck'])
+                self.assertIn('returnTo', returned['stateLayout']['editorial'][-1])
+                self.assertEqual(len({layout.fingerprint(item) for item in
+                    returned['stateLayout']['compilerCaseRevisions']}), 3)
+                self.assertEqual(formatted['stateLayout']['compilerCaseRevisions'], first['stateLayout']['compilerCaseRevisions'])
+                for previous, current in ((before, first), (first, cases), (first, changed),
+                                          (changed, returned), (first, formatted), (before, returned)):
+                    layout.validate_transition(previous, current)
+                    self.assertEqual(layout._blocks(layout.align_for_previous_validation(previous, current))[owner],
+                                     layout._blocks(previous)[owner])
+                for document in (first, formatted, returned):
+                    contract.ERRORS.clear()
+                    contract.validate_lesson_state_contract(document, 'client-mode-fixture')
+                    self.assertEqual(contract.ERRORS, [])
+
+    def test_shared_mode_format_and_retirement_snapshots_authenticate_their_actual_publication(self):
+        self.assertEqual(len(self.manifest['clientModeValid']), 12)
+        for entry in self.manifest['clientModeValid']:
+            with self.subTest(mode=entry['mode'], name=entry['name']):
+                current = json.loads(self.payloads[entry['file']])
+                layout.validate(current)
+                if not entry['name'].startswith('retirement-'):
+                    continue
+                source = json.loads(self.payloads[entry['snapshotSource']])
+                snapshot = current['stateLayout']['retirementHistory'][0]
+                view = {'pages': snapshot['pages'], 'stateLayout': {'current': snapshot['current']}}
+                self.assertEqual(layout._blocks(view)[entry['owner']], layout._blocks(source)[entry['owner']])
+                self.assertEqual(snapshot['editorialPrefix'], layout._retirement_editorial_prefix(
+                    source, len(source['stateLayout']['editorial'])))
+
+    def test_shared_mode_negatives_reject_changes_outside_the_authenticated_client(self):
+        self.assertEqual(len(self.manifest['invalid']), 21)
+        self.assertIn('client-single-empty-predecessor', {item['name'] for item in self.manifest['invalid']})
+        for item in self.manifest['invalid']:
+            with self.subTest(name=item['name']):
+                with self.assertRaises((ValueError, KeyError, TypeError, IndexError)):
+                    layout.validate(json.loads(self.payloads[item['file']]))
 
 
 class RetirementEditorialPrefixTests(unittest.TestCase):

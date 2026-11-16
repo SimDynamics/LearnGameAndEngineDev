@@ -52,6 +52,29 @@ CLIENT_SOURCES = {
 CLIENT_OWNER = "block_0008_0008"
 CLIENT_REFERENCE = "series_cinco_referencia_cliente"
 CLIENT_INPUT_OWNER = "block_0020_0002"
+CLIENT_MODE_COMMIT = "51d3786537b4b8485f526875561b9a3db11b1afc"
+CLIENT_MODE_SOURCES = {
+    "single": {
+        "name": "u1l1-single-client", "id": "block_0004_0008",
+        "asset": "app/src/main/assets/content/es/programming/programming_practice_tools/"
+                 "evidencia_y_diagnostico/lesson_versiones_del_fuente_y_del_ejecutable.json",
+        "locales": {
+            "es": (96331, "cc0f934ce40085ef095c10ac08cdc44290e75e6ecc60d6444d86f979877f18df"),
+            "en": (21665, "74998e2ac1eef4336177ccbfd7d72535c6a63a1b84cd30892e811ae28a58de0b"),
+            "fr": (23504, "add47016262fb54830a4e0a4101842051bb0c94e31e50113910b97a29da363a9"),
+        },
+    },
+    "cmake": {
+        "name": "u2l2-cmake-client", "id": "block_0005_0012",
+        "asset": "app/src/main/assets/content/es/programming/programming_practice_tools/"
+                 "construccion_reproducible/lesson_objetivos_dependencias_y_enlace.json",
+        "locales": {
+            "es": (193752, "3903d921c21510dfa19570683c39bb0b6431367c94872cae0a85d89e9e9b2979"),
+            "en": (41868, "c9f5fe440c7f76a6027652db3e9927086a0e85dcb149ead70db8abe19217aa9d"),
+            "fr": (44962, "fe7bc29fb6a2ecf8a33a6203e8db61346edc78b4d87a0edb1309a0c943ecffb1"),
+        },
+    },
+}
 
 
 @lru_cache(maxsize=None)
@@ -226,6 +249,219 @@ def build_client_fixtures() -> tuple[dict, dict[str, str]]:
     invalid("wrong-snapshot-epoch", lambda d,r,b:
             d["stateLayout"]["retirementHistory"][0].__setitem__("editorialPrefix",
                 layout._retirement_editorial_prefix(d, 0)), baseline=retired_after)
+    return manifest, payloads
+
+
+@lru_cache(maxsize=None)
+def client_mode_historical_bytes(mode: str, locale: str = "es") -> bytes:
+    spec = CLIENT_MODE_SOURCES[mode]
+    size, digest = spec["locales"][locale]
+    asset = spec["asset"].replace("/es/", "/" + locale + "/")
+    environment = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1",
+                       GIT_TERMINAL_PROMPT="0")
+    raw = subprocess.check_output(
+        ["git", "--no-optional-locks", "-c", f"safe.directory={ROOT}", "show",
+         f"{CLIENT_MODE_COMMIT}:{asset}"], cwd=ROOT, env=environment, stderr=subprocess.PIPE)
+    if len(raw) != size or hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError("The client mode differs from its complete pinned P2 publication")
+    return raw
+
+
+def client_mode_source(block: dict) -> str:
+    if "projectFiles" not in block:
+        return block["initialCode"]
+    return next(entry["initialCode"] for entry in block["projectFiles"] if entry["path"] == "main.cpp")
+
+
+def client_mode_set_source(block: dict, source: str) -> None:
+    if "projectFiles" not in block:
+        block["initialCode"] = source
+    else:
+        next(entry for entry in block["projectFiles"] if entry["path"] == "main.cpp")["initialCode"] = source
+
+
+def client_mode_cases(mode: str) -> list[dict]:
+    pairs = (("5 5 1", ""), ("4 5 1", ""), ("6 5 0", "")) if mode == "single" else (
+             ("4 7", "3"), ("7 7", "0"), ("9 7", "0"))
+    return [{"standardInput": value, "outputs": [output], "exitCode": 0} for value, output in pairs]
+
+
+def client_mode_initial_source(mode: str, document: dict) -> str:
+    owner = layout._blocks(document)[CLIENT_MODE_SOURCES[mode]["id"]]
+    source = client_mode_source(owner)
+    if source.count("\nint main() {") != 1:
+        raise ValueError("The pinned client no longer has its one independently identified main")
+    prefix = source[:source.index("\nint main() {")]
+    if mode == "single":
+        body = (
+            "\nint main() {\n"
+            "    int disponibles{0};\n"
+            "    int minimo{0};\n"
+            "    bool esperado{false};\n"
+            "    std::cin >> disponibles >> minimo >> esperado;\n"
+            "    return comprobar(disponibles, minimo, esperado) ? 0 : 1;\n"
+            "}\n")
+    else:
+        body = (
+            "\nint main() {\n"
+            "    int disponibles{0};\n"
+            "    int necesarias{0};\n"
+            "    std::cin >> disponibles >> necesarias;\n"
+            "    std::cout << faltan_unidades(disponibles, necesarias);\n"
+            "    return 0;\n"
+            "}\n")
+    return prefix + body
+
+
+def client_mode_formatted(document: dict, identity: str, mode: str) -> dict:
+    changed = deepcopy(document)
+    block = layout._blocks(changed)[identity]
+    client_mode_set_source(block, client_mode_source(block).replace("\n", "\n\n"))
+    family = {"es": document}
+    if set(document["stateLayout"]["family"]) != {"es"}:
+        family.update({locale: json.loads(client_mode_historical_bytes(mode, locale)) for locale in ("en", "fr")})
+    return layout.prepare_v2(changed, "es", family, document)
+
+
+def build_client_mode_fixtures() -> tuple[dict, dict[str, str]]:
+    """Single-file and CMake clients retain their own storage and build recipes."""
+    manifest, payloads = {"clientModes": [], "clientModeValid": [], "invalid": []}, {}
+    def put(filename, document, *, raw=None):
+        payloads[filename] = raw.decode("utf-8") if raw is not None else json.dumps(
+            document, ensure_ascii=False, indent=2) + "\n"
+        return filename
+    for mode, spec in CLIENT_MODE_SOURCES.items():
+        before = json.loads(client_mode_historical_bytes(mode))
+        layout.validate(before)
+        identity, prefix = spec["id"], spec["name"]
+        source, cases = client_mode_initial_source(mode, before), client_mode_cases(mode)
+        after = client_revised(before, identity, source, cases)
+        cases_only = revised(after, identity, cases[:-1])
+        read = ("    std::cin >> disponibles >> minimo >> esperado;" if mode == "single"
+                else "    std::cin >> disponibles >> necesarias;")
+        guarded = read.replace("    std::cin", "    if (!(std::cin").replace(";", ")) { return 1; }")
+        if source.count(read) != 1:
+            raise ValueError("The independent stdin client changed its one input operation")
+        changed_client = client_revised(after, identity, source.replace(read, guarded), cases)
+        prior = [edge for edge in changed_client["stateLayout"]["editorial"] if edge["id"] == identity]
+        nodes = [prior[0]["beforeSha256"], *[edge["afterSha256"] for edge in prior]]
+        returned = client_revised(changed_client, identity, source, cases,
+            return_to=nodes.index(layout.fingerprint(layout._blocks(after)[identity])))
+        formatted = client_mode_formatted(after, identity, mode)
+        manifest["clientModes"].append({
+            "name": "real-" + prefix, "mode": mode, "id": identity, "path": "main.cpp",
+            "before": put(prefix + ".before.json", before, raw=client_mode_historical_bytes(mode)),
+            "after": put(prefix + ".after.json", after),
+            "casesOnly": put(prefix + ".cases-only.json", cases_only),
+            "changedClient": put(prefix + ".changed-client.json", changed_client),
+            "returnedClient": put(prefix + ".returned-client.json", returned),
+            "formattedClient": put(prefix + ".formatted-client.json", formatted)})
+        for previous, current in ((before, after), (after, cases_only), (after, changed_client),
+                                  (changed_client, returned), (after, formatted), (before, returned)):
+            layout.validate_transition(previous, current)
+
+        # CMake's upper initialCode is deliberately independent of main.cpp.
+        # Formatting all its slots checks that reversing a client never copies
+        # that placeholder over its separately authenticated format history.
+        plain = order_fixtures.synthetic_publication(marked=False, project=mode == "cmake")
+        old = layout._blocks(plain)[OWNER]
+        newer = client_mode_source(old).replace("int value{};", "int value{1};")
+        changed = client_revised(plain, OWNER, newer, old["outputCheck"]["cases"])
+        format_after = order_fixtures.formatted(changed, OWNER)
+        format_before = order_fixtures.formatted(plain, OWNER)
+        after_format = client_revised(format_before, OWNER, newer, old["outputCheck"]["cases"])
+        final_client = client_revised(format_after, OWNER, newer.replace("value{1}", "value{2}"),
+                                      old["outputCheck"]["cases"])
+        retired_before = layout.retire(plain, [NOTE])
+        after_retirement = client_revised(retired_before, OWNER, newer, old["outputCheck"]["cases"])
+        retired_after = layout.retire(changed, [NOTE])
+        for name, document in (("plain", changed), ("format-after", format_after),
+                               ("format-before", after_format), ("format-then-client", final_client),
+                               ("retirement-before", after_retirement), ("retirement-after", retired_after)):
+            layout.validate(document)
+            entry = {"name": name, "mode": mode, "file": put(
+                "synthetic-client-" + mode + "-" + name + ".json", document)}
+            if name.startswith("retirement-"):
+                predecessor = plain if name.endswith("before") else changed
+                entry.update(owner=OWNER, snapshotSource=put(
+                    "synthetic-client-" + mode + "-" + name + ".source.json", predecessor))
+            manifest["clientModeValid"].append(entry)
+        layout.validate_transition(plain, format_after)
+        layout.validate_transition(plain, final_client)
+
+        def invalid(name, operation, *, baseline=after, refresh=False):
+            bad = deepcopy(baseline)
+            item = bad["stateLayout"]["compilerCaseRevisions"][-1]
+            block = layout._blocks(bad)[item["id"]]
+            operation(bad, item, block)
+            if refresh:
+                bad["stateLayout"]["editorial"][-1]["afterSha256"] = layout.fingerprint(block)
+            try:
+                layout.validate(bad)
+            except (ValueError, TypeError, KeyError, IndexError):
+                name = "client-" + mode + "-" + name
+                manifest["invalid"].append({"name": name, "file": put("invalid-" + name + ".json", bad)})
+            else:
+                raise AssertionError("Invalid client mode was accepted: " + mode + "/" + name)
+        invalid("wrong-path", lambda d,r,b: r["client"].__setitem__(
+            "path", "Main.cpp" if mode == "single" else "CMakeLists.txt"))
+        invalid("source-selection", lambda d,r,b: b.__setitem__("sourceFiles", ["main.cpp"]), refresh=True)
+        invalid("unrecorded-source", lambda d,r,b: client_mode_set_source(
+            b, client_mode_source(b).replace("return 0;", "return 9;") if mode == "cmake"
+            else client_mode_source(b).replace("disponibles < minimo", "disponibles > minimo")), refresh=True)
+        invalid("missing-client", lambda d,r,b: r.pop("client"))
+        oversized = "x" * ((4 if mode == "single" else 8) * 1024 * 1024 + 1)
+        invalid("source-size", lambda d,r,b: r["client"].__setitem__("source", oversized))
+        invalid("wrong-snapshot-epoch", lambda d,r,b: d["stateLayout"]["retirementHistory"][0].__setitem__(
+            "editorialPrefix", layout._retirement_editorial_prefix(d, 0)), baseline=retired_after)
+        intermediate_source = newer.replace("value{1}", "value{7}")
+        intermediate = client_revised(changed, OWNER, intermediate_source, old["outputCheck"]["cases"])
+        middle = client_revised(intermediate, OWNER, newer.replace("value{1}", "value{2}"),
+                                old["outputCheck"]["cases"])
+        cyclic = client_revised(middle, OWNER, intermediate_source, old["outputCheck"]["cases"], return_to=2)
+        invalid("missing-event-before-return", lambda d,r,b:
+                d["stateLayout"]["compilerCaseRevisions"].pop(1), baseline=cyclic)
+        if mode == "single":
+            invalid("invented-project", lambda d,r,b: b.__setitem__("projectFiles", [
+                {"path": "main.cpp", "initialCode": b["initialCode"]}]), refresh=True)
+            # Build an internally authenticated but non-runnable predecessor:
+            # the public revision API must now reject this empty source, so
+            # construct the invalid journal explicitly instead of using it.
+            empty_source = deepcopy(plain)
+            layout._blocks(empty_source)[OWNER]["initialCode"] = ""
+            empty_source.pop("stateLayout")
+            references = empty_source.pop("referenceAfter")
+            empty = layout.prepare_v2(empty_source, "es", {"es": empty_source})
+            empty["referenceAfter"] = references
+            layout.validate(empty)
+            forged = deepcopy(empty)
+            prior_block = layout._blocks(empty)[OWNER]
+            forged_block = layout._blocks(forged)[OWNER]
+            forged_block["initialCode"] = newer
+            empty_record = {
+                "id": OWNER, "block": deepcopy(prior_block),
+                "client": {"path": "main.cpp", "source": newer},
+                "cases": deepcopy(prior_block["outputCheck"]["cases"]),
+                "editorialIndex": 0,
+                "historySha256": layout.fingerprint({
+                    "lessonId": empty["id"], "locale": "es", "editorial": []}),
+                "semanticBefore": [], "semanticAfter": []}
+            if empty["stateLayout"]["editorial"]:
+                raise ValueError("The independent empty-source origin must have no editorial events")
+            forged["stateLayout"]["compilerCaseRevisions"] = [empty_record]
+            forged["stateLayout"]["editorial"].append({
+                "id": OWNER, "beforeSha256": layout.fingerprint(prior_block),
+                "afterSha256": layout.fingerprint(forged_block)})
+            invalid("empty-predecessor", lambda d,r,b: None, baseline=forged)
+        else:
+            invalid("independent-initial-code", lambda d,r,b: b.__setitem__(
+                "initialCode", "int main() { return 9; }\n"), refresh=True)
+            invalid("target", lambda d,r,b: b["cmake"].__setitem__("target", "foreign"), refresh=True)
+            invalid("options", lambda d,r,b: b["cmake"].__setitem__("options", {"QA_EXTRA": "ON"}), refresh=True)
+            invalid("description", lambda d,r,b: b["projectFiles"][0].__setitem__(
+                "initialCode", b["projectFiles"][0]["initialCode"].replace("STATIC", "SHARED")), refresh=True)
+            invalid("auxiliary", lambda d,r,b: b["projectFiles"][2].__setitem__(
+                "initialCode", b["projectFiles"][2]["initialCode"].replace("+ 1", "+ 2")), refresh=True)
     return manifest, payloads
 
 
@@ -525,6 +761,11 @@ def build_fixtures() -> tuple[dict, dict[str, str]]:
     manifest["clientValid"] = client_manifest["clientValid"]
     manifest["invalid"].extend(client_manifest["invalid"])
     payloads.update(client_payloads)
+    mode_manifest, mode_payloads = build_client_mode_fixtures()
+    manifest["clientModes"] = mode_manifest["clientModes"]
+    manifest["clientModeValid"] = mode_manifest["clientModeValid"]
+    manifest["invalid"].extend(mode_manifest["invalid"])
+    payloads.update(mode_payloads)
     return manifest, payloads
 
 
